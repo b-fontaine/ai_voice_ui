@@ -1,0 +1,27 @@
+domain: flutter-di-state
+description: DI (get_it 9.3 + injectable 3.0) et gestion d'état (Bloc uniquement, bloc 9.2 / flutter_bloc 9.1) pour l'app Flutter multi-agents
+subindexes: [di/index.yaml, bloc/index.yaml]
+keywords: [get_it, injectable, dependency injection, scope, pushNewScope, micro-package, ExternalModule, bloc, flutter_bloc, cubit, freezed, sealed, event transformer, bloc_concurrency, restartable, emit.forEach, BlocObserver, bloc_test, BlocSelector, genui state]
+notes:
+  # bloc/
+  - {id: bloc-observer, path: bloc/bloc-observer.md, summary: "BlocObserver global: onEvent/onTransition/onDone, logging", tags: [bloc, observability]}
+  - {id: bloc-emit-foreach, path: bloc/emit-foreach.md, summary: "emit.forEach/onEach pour flux runner voix, + restartable", tags: [bloc, streams, audio]}
+  - {id: bloc-event-transformers, path: bloc/event-transformers.md, summary: "sequential/droppable/restartable/concurrent et cas voix", tags: [bloc, concurrency, voice]}
+  - {id: bloc-naming, path: bloc/naming.md, summary: "Events au passé (Subject+Noun+Verb), states noms", tags: [bloc, naming]}
+  - {id: bloc-no-cubit, path: bloc/no-cubit.md, summary: "Règle projet: Bloc uniquement (traçabilité, transformers), lint prefer_bloc", tags: [bloc, rule, cubit]}
+  - {id: bloc-no-non-serializable-state, path: bloc/no-non-serializable-state.md, summary: "Objets GenUI/WebRTC/audio hors de l'état; ids seulement", tags: [bloc, genui, anti-pattern]}
+  - {id: bloc-packages-versions, path: bloc/packages-versions.md, summary: "Versions bloc, flutter_bloc, bloc_concurrency, bloc_test, bloc_lint, freezed", tags: [bloc, versions]}
+  - {id: bloc-providers-selector, path: bloc/providers-selector.md, summary: "BlocProvider vs .value, MultiBlocProvider, BlocSelector", tags: [bloc, widgets, performance]}
+  - {id: bloc-sealed-freezed, path: bloc/sealed-freezed.md, summary: "Events/states en sealed class @freezed, switch exhaustif", tags: [bloc, freezed, sealed]}
+  - {id: bloc-state-modeling, path: bloc/state-modeling.md, summary: "Union scellée vs classe + status enum (VGV)", tags: [bloc, state, vgv]}
+  # di/
+  - {id: di-dispose-method, path: di/dispose-method.md, summary: "@disposeMethod; séparer stop() et dispose()", tags: [di, dispose, lifecycle]}
+  - {id: di-environments-order, path: di/environments-order.md, summary: "@Environment (dev/test/prod), filtres, @Order", tags: [di, environment, testing]}
+  - {id: di-factory-method-module, path: di/factory-method-module.md, summary: "@module, @preResolve, @factoryMethod, @factoryParam, @PostConstruct", tags: [di, injectable, async]}
+  - {id: di-get-it-scopes, path: di/get-it-scopes.md, summary: "pushNewScope/popScope/dropScope, scope injectable, scope voiceSession", tags: [di, scope, session]}
+  - {id: di-micro-packages, path: di/micro-packages.md, summary: "@InjectableInit.microPackage + ExternalModule pour workspace multi-packages", tags: [di, workspace, monorepo]}
+  - {id: di-named-implementations, path: di/named-implementations.md, summary: "@Named pour runners openai/gemini, factory si choix runtime", tags: [di, named, voice-runner]}
+  - {id: di-no-service-locator, path: di/no-service-locator.md, summary: "Règle: getIt seulement à la racine de composition, jamais dans Bloc/build", tags: [di, anti-pattern, bloc]}
+  - {id: di-registration-annotations, path: di/registration-annotations.md, summary: "@injectable/@singleton/@lazySingleton, as:, cache; Bloc = factory", tags: [di, injectable, lifecycle]}
+  - {id: di-setup-versions, path: di/setup-versions.md, summary: "Versions get_it/injectable/generator, configureDependencies, breaking changes v3", tags: [di, versions, injectable, get_it]}
+  - {id: di-testing, path: di/testing.md, summary: "reset, allowReassignment, scope de test, environnement test", tags: [di, testing]}

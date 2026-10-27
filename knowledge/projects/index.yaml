@@ -1,0 +1,11 @@
+domain: projects
+description: Analyse des projets Septeo existants (sources de patterns et d'anti-patterns)
+notes:
+  # ai-voice-widget/
+  - {id: proj-avw-genui-bridge, path: ai-voice-widget/genui-bridge.md, summary: "Outil vocal show_screen -> GenUI/A2UI", tags: [project, genui, a2ui, multi-agent]}
+  - {id: proj-avw-overview, path: ai-voice-widget/overview.md, summary: "Widget voix Flutter: archi, DI, BLoC, deps", tags: [project, flutter, realtime-voice, genui]}
+  - {id: proj-avw-risks, path: ai-voice-widget/risks.md, summary: "Bugs connus à ne pas reproduire", tags: [project, anti-pattern, webrtc, security]}
+  - {id: proj-avw-voice-runners, path: ai-voice-widget/voice-runners.md, summary: "Implémentation OpenAI WebRTC + Gemini Live", tags: [project, realtime-voice, webrtc, openai, gemini]}
+  # saaster-kit/
+  - {id: proj-sk-overview, path: saaster-kit/overview.md, summary: "Starter SaaS Flutter+Go, structure, règles", tags: [project, flutter, go, saas, bdd]}
+  - {id: proj-sk-patterns, path: saaster-kit/patterns.md, summary: "DI par env, routing modulaire, fixture BDD", tags: [project, di, routing, bdd, pattern]}

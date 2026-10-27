@@ -1,0 +1,115 @@
+# Index racine de la base de connaissances (zettelkasten). Lire en premier.
+# Procédure : tasks → ids ; sinon keywords → domaine → index du domaine → notes ; suivre links sur 1 niveau.
+version: 1
+updated: 2026-10-26
+conventions: _conventions.md
+tags_index: tags.yaml
+lint: python3 -I knowledge/_tools/kb_lint.py
+
+domains:
+  - name: projects
+    prefixes: [proj-]
+    index: projects/index.yaml
+    description: "Analyse des projets Septeo existants (ai_voice_widget, septeo_saaster_kit) : patterns réutilisables et bugs à ne pas reproduire"
+    keywords: [projet, project, existant, legacy, ai_voice_widget, saaster kit, septeo, anti-pattern, bug, risque, risk, IAiRunner, show_screen, référence, reference]
+  - name: realtime-voice
+    prefixes: [rt-]
+    index: realtime-voice/index.yaml
+    description: "Agents vocaux voice-to-voice temps réel (OpenAI GPT-Live/Realtime, Gemini Live) dans Flutter via flutter_webrtc ou firebase_ai"
+    keywords: [voix, voice, temps réel, realtime, gpt-live, gpt-live-1, openai, gemini live, live api, firebase_ai, webrtc, flutter_webrtc, sdp, ice, audio, micro, microphone, écho, echo cancellation, AEC, barge-in, interruption, VAD, transcription, délégation, delegation, sideband, jeton éphémère, ephemeral token, latence, latency, session]
+  - name: genui
+    prefixes: [genui-]
+    index: genui/index.yaml
+    description: "GenUI (package genui / genui_a2a 0.10.x) et protocole A2UI : catalogues, surfaces, data binding, actions, intégrations LLM, tests, migrations"
+    keywords: [genui, a2ui, ui générative, generative ui, catalogue, catalog, CatalogItem, surface, SurfaceController, Conversation, data model, binding, PromptBuilder, createSurface, updateComponents, action utilisateur, user action, genui_a2a, migration]
+  - name: flutter-architecture
+    prefixes: [arch-]
+    index: flutter-architecture/index.yaml
+    description: "Architecture d'app Flutter : guide officiel, Clean Architecture, Feature-Sliced Design, workspace pub, lints d'import, structure recommandée"
+    keywords: [architecture, clean architecture, FSD, feature sliced design, couche, layer, slice, segment, barrel, public api, repository, use case, viewmodel, Result, Either, freezed, go_router, navigation, workspace, monorepo, import_lint, dependency rule, structure, dossier, folder]
+  - name: flutter-di-state
+    prefixes: [di-, bloc-]
+    index: flutter-di-state/index.yaml
+    description: "DI (get_it 9.3 + injectable 3.0) et gestion d'état Bloc uniquement (bloc 9.2 / flutter_bloc 9.1)"
+    keywords: [injection de dépendances, dependency injection, DI, get_it, injectable, scope, singleton, environment, micro-package, service locator, bloc, flutter_bloc, cubit, état, state, event, sealed, freezed, transformer, bloc_concurrency, restartable, emit.forEach, BlocObserver, BlocProvider, BlocSelector]
+  - name: testing
+    prefixes: [test-]
+    index: testing/index.yaml
+    description: "Stratégie et outillage de tests Flutter : TDD, BDD Gherkin (bdd_widget_test), bloc_test, mocktail, goldens, E2E, temps réel, CI"
+    keywords: [test, tests, testing, TDD, BDD, gherkin, feature file, scénario, scenario, bdd_widget_test, bloc_test, blocTest, mock, mocktail, fake, golden, alchemist, integration_test, patrol, e2e, fakeAsync, coverage, couverture, CI, very_good_analysis, lint]
+  - name: performance
+    prefixes: [perf-]
+    index: performance/index.yaml
+    description: "Performance Flutter 3.47 : web/Wasm, Impeller, rebuilds, profiling, desktop, audio temps réel"
+    keywords: [performance, perf, jank, rebuild, repaint, RepaintBoundary, saveLayer, profiling, DevTools, web, wasm, skwasm, canvaskit, COOP, COEP, multi-view, impeller, shader, desktop, isolate, audio, buffer, visualiseur, visualizer, 60 Hz, taille, bundle size]
+  - name: agent-protocols
+    prefixes: [proto-]
+    index: agent-protocols/index.yaml
+    description: "Protocoles d'agents et transports : MCP, A2A, AG-UI, A2UI (renvoi), WebRTC/WebSocket/WebTransport, SDK Dart"
+    keywords: [protocole, protocol, MCP, model context protocol, outil MCP, tool, resource, prompt, elicitation, A2A, agent-to-agent, agent card, task, AG-UI, ag_ui, A2UI, transport, websocket, SSE, webtransport, oauth, autorisation, authorization, mcp_dart, dart_mcp]
+  - name: multi-agent
+    prefixes: [ma-]
+    index: multi-agent/index.yaml
+    description: "Orchestration multi-agents de l'app : architecture cible, placement des agents, patterns, latence, sécurité, observabilité, évaluations"
+    keywords: [multi-agents, multi-agent, orchestrateur, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
+
+entrypoints:
+  - {id: proj-avw-overview, why: "Projet de référence : archi, DI, Bloc et dépendances du widget voix existant"}
+  - {id: proj-avw-risks, why: "Bugs et anti-patterns à ne pas reproduire (obligatoire avant le code voix)"}
+  - {id: ma-target-architecture, why: "Décision : voix → délégation unique → orchestrateur → GenUI / MCP / A2A"}
+  - {id: ma-where-to-run-agents, why: "Décision : quoi tourne côté client, quoi côté backend"}
+  - {id: proto-protocol-map, why: "Quel protocole pour quoi (MCP, A2A, AG-UI, A2UI, WebRTC)"}
+  - {id: rt-gpt-live-overview, why: "Fiche du modèle vocal OpenAI gpt-live-1"}
+  - {id: rt-provider-abstraction, why: "Port VoiceSession commun aux fournisseurs voix"}
+  - {id: rt-ephemeral-keys, why: "Aucune clé longue durée côté client : mécanismes par fournisseur"}
+  - {id: genui-architecture, why: "SurfaceController, Transport, Conversation : le moteur genui 0.10"}
+  - {id: genui-voice-bridge, why: "Patron : l'agent vocal délègue l'UI à un agent GenUI"}
+  - {id: arch-recommended-structure, why: "Arborescence recommandée de l'app (Clean + FSD)"}
+  - {id: arch-recommended-dependency-rules, why: "Graphe d'imports autorisé et garde-fous CI"}
+  - {id: di-no-service-locator, why: "Règle DI : getIt seulement à la racine de composition"}
+  - {id: bloc-no-cubit, why: "Règle état : Bloc uniquement, Cubit interdit"}
+  - {id: test-tdd-red-green-refactor, why: "Méthode : TDD outside-in depuis Gherkin"}
+
+tasks:
+  - task: "Implémenter une session voix OpenAI (GPT-Live / WebRTC)"
+    notes: [rt-gpt-live-overview, rt-openai-realtime-vs-live, rt-gpt-live-webrtc-session, rt-flutter-webrtc-gpt-live-connect, rt-gpt-live-session-config, rt-gpt-live-lifecycle, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-ephemeral-keys, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-echo-cancellation, rt-graceful-close, proj-avw-voice-runners, proj-avw-risks]
+  - task: "Implémenter une session voix Gemini Live"
+    notes: [rt-gemini-live-models, rt-gemini-38-migration, rt-gemini-firebase-ai-dart, rt-gemini-audio-vad, rt-gemini-function-calling, rt-gemini-session-limits, rt-gemini-ephemeral-tokens, perf-audio-latency, perf-audio-packages, rt-echo-cancellation, proj-avw-voice-runners, proj-avw-risks]
+  - task: "Abstraire un fournisseur voix (runner / VoiceSession)"
+    notes: [rt-provider-abstraction, rt-transcription, rt-barge-in, rt-graceful-close, di-named-implementations, di-dispose-method, test-realtime-fake-runner, proj-avw-voice-runners, proj-avw-risks]
+  - task: "Exposer un outil à l'agent vocal / déléguer à l'orchestrateur"
+    notes: [rt-tool-calling-voice, rt-gpt-live-delegation, rt-gemini-function-calling, ma-target-architecture, ma-real-tool-results, ma-filler-acknowledgements, ma-realtime-handoff-limits, ma-guardrails, rt-latency]
+  - task: "Ajouter un Bloc"
+    notes: [bloc-no-cubit, bloc-sealed-freezed, bloc-state-modeling, bloc-naming, bloc-event-transformers, bloc-emit-foreach, bloc-no-non-serializable-state, bloc-providers-selector, perf-bloc-scoped-rebuilds, di-registration-annotations, di-no-service-locator, test-bloc-test]
+  - task: "Enregistrer une dépendance (get_it / injectable)"
+    notes: [di-setup-versions, di-registration-annotations, di-factory-method-module, di-named-implementations, di-environments-order, di-get-it-scopes, di-dispose-method, di-micro-packages, di-no-service-locator, di-testing]
+  - task: "Écrire un test BDD (Gherkin / bdd_widget_test)"
+    notes: [test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-build-yaml, test-bdd-hooks-steps, test-bdd-app-running-fixture, test-mock-boundaries-only, di-environments-order, proj-sk-patterns]
+  - task: "Écrire un test unitaire de Bloc ou de code temps réel"
+    notes: [test-bloc-test, test-bloc-mockbloc-whenlisten, test-mocktail-essentials, test-mocktail-vs-mockito, test-fake-async-streams, test-realtime-fake-runner, test-mock-boundaries-only, di-testing]
+  - task: "Ajouter un composant au catalogue GenUI"
+    notes: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-user-actions, genui-a2ui-security, genui-prompt-builder, genui-error-reporting, genui-test-catalog-items]
+  - task: "Brancher genui sur un LLM ou sur l'agent vocal"
+    notes: [genui-overview, genui-architecture, genui-voice-bridge, genui-custom-llm-adapter, genui-firebase-ai, genui-a2a-connector, genui-conversation-events, genui-multiple-surfaces, genui-a2ui-messages, genui-test-surface-controller, proj-avw-genui-bridge]
+  - task: "Migrer du code genui 0.6/0.7/0.9 vers 0.10"
+    notes: [genui-migration-from-0-7, genui-migration-0-10, genui-overview, genui-a2ui-overview, proj-avw-genui-bridge, ma-package-versions]
+  - task: "Brancher un outil MCP"
+    notes: [proto-mcp-overview, proto-mcp-primitives, proto-mcp-transports, proto-mcp-authorization, proto-mcp-elicitation, proto-mcp-deprecations, proto-mcp-dart-sdks, ma-mcp-security, ma-prompt-injection-tools, rt-tool-calling-voice]
+  - task: "Intégrer un agent distant A2A"
+    notes: [proto-a2a-overview, proto-a2a-agent-card, proto-a2a-task-lifecycle, proto-a2a-message-parts-artifacts, proto-a2a-streaming-push, proto-a2a-bindings, proto-a2a-security, proto-a2a-dart-sdk, genui-a2a-connector]
+  - task: "Choisir un protocole ou un transport (AG-UI, WebSocket, SSE, WebRTC)"
+    notes: [proto-protocol-map, proto-stack-recommendation, proto-rtc-transport-choice, proto-rtc-flutter-packages, proto-rtc-webtransport, proto-agui-overview, genui-a2ui-transports]
+  - task: "Créer une feature / structurer le code"
+    notes: [arch-recommended-structure, arch-clean-fsd-combo, arch-recommended-dependency-rules, arch-fsd-layers, arch-fsd-public-api, arch-clean-flutter-layers, arch-dto-mappers, arch-error-handling, arch-result-pattern, arch-freezed, arch-go-router, arch-pub-workspaces]
+  - task: "Sécuriser clés, credentials et sorties d'agents"
+    notes: [rt-ephemeral-keys, rt-gemini-ephemeral-tokens, ma-where-to-run-agents, ma-mcp-security, ma-prompt-injection-tools, ma-guardrails, genui-a2ui-security, proto-a2a-security, proj-avw-risks]
+  - task: "Optimiser l'audio et le visualiseur"
+    notes: [perf-audio-latency, perf-audio-isolates, perf-audio-visualizer-60hz, perf-repaint-boundary, perf-bloc-scoped-rebuilds, perf-audio-packages, rt-echo-cancellation, rt-latency]
+  - task: "Build et performance web (Wasm, multi-view)"
+    notes: [perf-web-wasm-build, perf-web-renderers, perf-web-coop-coep, perf-web-initial-load, perf-web-multi-view, perf-web-no-isolates, perf-web-profiling]
+  - task: "Observabilité et évaluation des agents"
+    notes: [ma-otel-genai-spans, ma-voice-agent-evals, ma-guardrails, bloc-observer]
+  - task: "CI, lints et couverture"
+    notes: [test-coverage-ci, test-very-good-analysis, arch-analyzer-plugins, arch-import-lint, arch-dependency-validator, test-integration-test, test-patrol, test-golden-alchemist]
+  - task: "Vérifier une version de package"
+    notes: [ma-package-versions, bloc-packages-versions, di-setup-versions, perf-audio-packages, genui-overview, proto-rtc-flutter-packages, proto-a2a-dart-sdk, proto-mcp-dart-sdks]

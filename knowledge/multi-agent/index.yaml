@@ -1,0 +1,24 @@
+domain: multi-agent
+description: Orchestration multi-agents pour l'app voix temps réel + GenUI/A2UI (patterns, architecture cible, latence, sécurité, observabilité, évals)
+notes:
+  # architecture/
+  - {id: ma-flutter-event-bus, path: architecture/flutter-event-bus.md, summary: "DÉCISION: AgentEventBus sealed + BLoCs, état GenUI hors BLoC", tags: [flutter, bloc, streams]}
+  - {id: ma-target-architecture, path: architecture/target-architecture.md, summary: "DÉCISION: voix -> délégation unique -> orchestrateur -> GenUI/MCP/A2A", tags: [architecture, decision]}
+  - {id: ma-where-to-run-agents, path: architecture/where-to-run-agents.md, summary: "DÉCISION: audio/rendu client, orchestrateur/GenUI/MCP/A2A backend", tags: [architecture, decision]}
+  # latency/
+  - {id: ma-filler-acknowledgements, path: latency/filler-acknowledgements.md, summary: "Accusés auto GPT-Live, acknowledgement_delay_ms, thinking vs commentary", tags: [latency, ux]}
+  - {id: ma-real-tool-results, path: latency/real-tool-results.md, summary: "Jamais de faux ok ; operation ID, annulation, idempotence", tags: [tool-calling, reliability]}
+  # ops/
+  - {id: ma-guardrails, path: ops/guardrails.md, summary: "Output guardrails transcript (debounce 100), needsApproval, couches internes", tags: [guardrails, security]}
+  - {id: ma-otel-genai-spans, path: ops/otel-genai-spans.md, summary: "invoke_agent / execute_tool / conversation.id (statut Development)", tags: [observability, opentelemetry]}
+  - {id: ma-package-versions, path: ops/package-versions.md, summary: "Versions pub.dev / SDK observées le 2026-10-26 ; genui_* 0.7 discontinued", tags: [versions, pub.dev]}
+  - {id: ma-voice-agent-evals, path: ops/voice-agent-evals.md, summary: "Crawl/walk/run, graders déterministes + LLM, latence 1er audio", tags: [evaluation, testing]}
+  # patterns/
+  - {id: ma-adk-collaboration-modes, path: patterns/adk-collaboration-modes.md, summary: "ADK sub_agents, transfer_to_agent, AgentTool, modes chat/task/single_turn", tags: [google-adk, coordinator]}
+  - {id: ma-handoff-vs-agent-as-tool, path: patterns/handoff-vs-agent-as-tool.md, summary: "Agent.as_tool() vs handoffs (OpenAI Agents SDK) ; voix = manager", tags: [openai-agents-sdk, handoff]}
+  - {id: ma-realtime-handoff-limits, path: patterns/realtime-handoff-limits.md, summary: "Handoff vocal = même modèle ; déléguer par outil pour un autre modèle", tags: [realtime-voice, handoff]}
+  - {id: ma-simplicity-first, path: patterns/simplicity-first.md, summary: "Workflows vs agents, commencer simple, soigner l'ACI (Anthropic)", tags: [anthropic, design-principle]}
+  - {id: ma-workflow-patterns, path: patterns/workflow-patterns.md, summary: "Chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer", tags: [anthropic, router, orchestrator]}
+  # security/
+  - {id: ma-mcp-security, path: security/mcp-security.md, summary: "Token passthrough, SSRF, handles d'état, scopes minimaux", tags: [security, mcp]}
+  - {id: ma-prompt-injection-tools, path: security/prompt-injection-tools.md, summary: "Retours d'outils/agents = données ; OWASP LLM01 ; règles internes", tags: [security, prompt-injection]}

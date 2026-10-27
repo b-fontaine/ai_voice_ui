@@ -1,0 +1,13 @@
+domain: flutter-di-state/di
+description: Injection de dépendances get_it 9.3.0 + injectable 3.0.0 (annotations, scopes, micro-packages, tests)
+notes:
+  - {id: di-dispose-method, path: dispose-method.md, summary: "@disposeMethod; séparer stop() et dispose()", tags: [di, dispose, lifecycle]}
+  - {id: di-environments-order, path: environments-order.md, summary: "@Environment (dev/test/prod), filtres, @Order", tags: [di, environment, testing]}
+  - {id: di-factory-method-module, path: factory-method-module.md, summary: "@module, @preResolve, @factoryMethod, @factoryParam, @PostConstruct", tags: [di, injectable, async]}
+  - {id: di-get-it-scopes, path: get-it-scopes.md, summary: "pushNewScope/popScope/dropScope, scope injectable, scope voiceSession", tags: [di, scope, session]}
+  - {id: di-micro-packages, path: micro-packages.md, summary: "@InjectableInit.microPackage + ExternalModule pour workspace multi-packages", tags: [di, workspace, monorepo]}
+  - {id: di-named-implementations, path: named-implementations.md, summary: "@Named pour runners openai/gemini, factory si choix runtime", tags: [di, named, voice-runner]}
+  - {id: di-no-service-locator, path: no-service-locator.md, summary: "Règle: getIt seulement à la racine de composition, jamais dans Bloc/build", tags: [di, anti-pattern, bloc]}
+  - {id: di-registration-annotations, path: registration-annotations.md, summary: "@injectable/@singleton/@lazySingleton, as:, cache; Bloc = factory", tags: [di, injectable, lifecycle]}
+  - {id: di-setup-versions, path: setup-versions.md, summary: "Versions get_it/injectable/generator, configureDependencies, breaking changes v3", tags: [di, versions, injectable, get_it]}
+  - {id: di-testing, path: testing.md, summary: "reset, allowReassignment, scope de test, environnement test", tags: [di, testing]}

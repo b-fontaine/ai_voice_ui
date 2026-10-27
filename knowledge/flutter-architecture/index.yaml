@@ -1,0 +1,35 @@
+domain: flutter-architecture
+description: Architecture d'app Flutter (guide officiel, Clean, FSD, workspace pub, lints d'import) et structure recommandée pour l'app multi-agents
+notes:
+  # clean/
+  - {id: arch-clean-dependency-rule, path: clean/dependency-rule.md, summary: "Règle de dépendance Clean: vers l'intérieur uniquement", tags: [clean-architecture, design-principle]}
+  - {id: arch-dto-mappers, path: clean/dto-mappers.md, summary: "DTO par fournisseur IA -> entités communes via mappers", tags: [dto, mapper]}
+  - {id: arch-either-vs-result, path: clean/either-vs-result.md, summary: "fpdart vs result_dart vs Result maison (versions 2026-10)", tags: [error-handling, either, result]}
+  - {id: arch-clean-flutter-layers, path: clean/flutter-layers.md, summary: "domain/data/presentation en Flutter, repo abstrait, use-case appelable", tags: [clean-architecture, flutter]}
+  # fsd/
+  - {id: arch-fsd-dart-mapping, path: fsd/dart-mapping.md, summary: "Adapter FSD en Dart: packages, lib/src, import_lint, dependency_validator", tags: [fsd, dart, workspace, lint]}
+  - {id: arch-fsd-layers, path: fsd/layers.md, summary: "7 couches FSD v2.1, processes déprécié, import strictement descendant", tags: [fsd, layers]}
+  - {id: arch-fsd-pages-first, path: fsd/pages-first.md, summary: "FSD v2.1 pages first: extraire seulement si partagé", tags: [fsd, decomposition]}
+  - {id: arch-fsd-public-api, path: fsd/public-api.md, summary: "Public API par index, pas d'export *, cross-imports @x; transposition Dart", tags: [fsd, public-api, barrel]}
+  - {id: arch-fsd-slices-segments, path: fsd/slices-segments.md, summary: "Slices métier, segments ui/model/api/lib/config et équivalent Clean", tags: [fsd, slices, segments]}
+  # official/
+  - {id: arch-command-pattern, path: official/command-pattern.md, summary: "Command0/Command1 ChangeNotifier et équivalent BLoC", tags: [mvvm, command]}
+  - {id: arch-compass-structure, path: official/compass-structure.md, summary: "Arborescence de l'app exemple Compass (ui par feature, data par type)", tags: [folder-structure, official]}
+  - {id: arch-official-components, path: official/components.md, summary: "Rôles View/ViewModel/Repository/Service, transposés aux agents", tags: [flutter, mvvm, repository, official]}
+  - {id: arch-official-layers, path: official/layers.md, summary: "Guide officiel: couches UI/Data + domaine optionnel, flux unidirectionnel", tags: [flutter, architecture, mvvm, official]}
+  - {id: arch-official-recommendations, path: official/recommendations.md, summary: "17 recommandations officielles avec priorité", tags: [best-practice, official]}
+  - {id: arch-result-pattern, path: official/result-pattern.md, summary: "Result<T> sealed Ok/Error officiel, switch exhaustif", tags: [error-handling, result]}
+  - {id: arch-official-use-cases, path: official/use-cases.md, summary: "Use-cases seulement si multi-repo, complexe ou réutilisé", tags: [domain, use-case, official]}
+  # patterns/
+  - {id: arch-error-handling, path: patterns/error-handling.md, summary: "Erreurs par couche: exception -> Result -> failure typée -> état", tags: [error-handling, failure]}
+  - {id: arch-freezed, path: patterns/freezed.md, summary: "freezed 4.0.3: entités, états, unions sealed, switch", tags: [freezed, immutability]}
+  - {id: arch-go-router, path: patterns/go-router.md, summary: "go_router 18.1.1 feature-complete, shell routes, routes typées", tags: [go_router, routing]}
+  # synthesis/
+  - {id: arch-clean-fsd-combo, path: synthesis/clean-fsd-combo.md, summary: "FSD vertical + Clean par slice, orchestrateur via ports d'entities", tags: [clean-architecture, fsd, multi-agent]}
+  - {id: arch-recommended-dependency-rules, path: synthesis/recommended-dependency-rules.md, summary: "Graphe de dépendances autorisé et garde-fous lint/CI", tags: [imports, lint, ci]}
+  - {id: arch-recommended-structure, path: synthesis/recommended-structure.md, summary: "Arborescence workspace recommandée pour l'app multi-agents", tags: [folder-structure, workspace, multi-agent]}
+  # tooling/
+  - {id: arch-analyzer-plugins, path: tooling/analyzer-plugins.md, summary: "Analyzer plugins natifs Dart 3.10 vs custom_lint", tags: [lint, analyzer-plugin, custom_lint]}
+  - {id: arch-dependency-validator, path: tooling/dependency-validator.md, summary: "dependency_validator 5.1: missing/unused/promoted en CI", tags: [tooling, pubspec, ci]}
+  - {id: arch-import-lint, path: tooling/import-lint.md, summary: "import_lint 2.0 (plugin natif Dart 3.10) règles target/from/except", tags: [lint, imports]}
+  - {id: arch-pub-workspaces, path: tooling/pub-workspaces.md, summary: "Pub workspaces Dart 3.6+, resolution: workspace, Melos 8", tags: [pub, workspace, monorepo]}

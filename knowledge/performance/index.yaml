@@ -1,0 +1,29 @@
+domain: performance
+description: Performance Flutter (web/Wasm, Impeller mobile/desktop, rebuilds, profiling, audio temps réel) — infos datées 2026-10-26, Flutter 3.47 stable
+notes:
+  # audio/
+  - {id: perf-audio-packages, path: audio/audio-packages-versions.md, summary: "Versions pub.dev 2026-10-26: record 7.1.2, flutter_soloud 5.2.1, flutter_webrtc 1.6.3, flutter_bloc 9.1.1", tags: [audio, packages, versions]}
+  - {id: perf-audio-isolates, path: audio/audio-processing-isolates.md, summary: "Isolate long-vécu (spawn+ports) pour flux audio, BackgroundIsolateBinaryMessenger, limites", tags: [audio, isolates]}
+  - {id: perf-audio-latency, path: audio/latency-and-buffers.md, summary: "PCM16 24k défaut ou 16k (gpt-live-1) / 16k->24k (Gemini), chunks pairs, 100ms=4800o, WebRTC recommandé", tags: [audio, latency, buffer]}
+  - {id: perf-audio-visualizer-60hz, path: audio/visualizer-60hz.md, summary: "CustomPainter(repaint: ValueListenable) + Ticker + RepaintBoundary, zéro rebuild", tags: [audio, visualization, custompainter]}
+  # desktop/
+  - {id: perf-desktop-specifics, path: desktop/desktop-specifics.md, summary: "Desktop: Impeller Metal/Vulkan depuis 3.47, opt-out temporaire, fin Intel Mac, iOS 15/macOS 12 min", tags: [desktop, windows, macos, linux]}
+  # mobile/
+  - {id: perf-impeller-status, path: mobile/impeller-status.md, summary: "Impeller défaut iOS/Android29+/desktop(3.47), fallback OpenGL, opt-outs", tags: [impeller, android, ios, desktop]}
+  - {id: perf-shader-jank, path: mobile/shader-compilation-jank.md, summary: "Jank 1re animation = Skia; Impeller précompile; SkSL warmup obsolète", tags: [impeller, shader, jank]}
+  # profiling/
+  - {id: perf-profile-mode-devtools, path: profiling/profile-mode-devtools.md, summary: "--profile sur appareil réel, budget 16/8ms, UI vs raster, DevTools Performance", tags: [profiling, devtools]}
+  - {id: perf-web-profiling, path: profiling/web-profiling-chrome.md, summary: "Web: Chrome DevTools Performance + debugProfile*Enabled; profiler JS et Wasm", tags: [profiling, web]}
+  # rendering/
+  - {id: perf-avoid-rebuilds, path: rendering/avoid-rebuilds.md, summary: "const, setState bas, child réutilisé, pas d'operator== sur widgets", tags: [rebuild, const]}
+  - {id: perf-bloc-scoped-rebuilds, path: rendering/bloc-scoped-rebuilds.md, summary: "buildWhen, BlocSelector, context.select; jamais d'audio 60Hz dans le BlocState", tags: [bloc, rebuild]}
+  - {id: perf-lazy-lists, path: rendering/lazy-lists-and-intrinsics.md, summary: "ListView.builder, itemExtent, slivers, éviter passes intrinsèques et shrinkWrap", tags: [listview, lazy, layout]}
+  - {id: perf-repaint-boundary, path: rendering/repaint-boundary.md, summary: "Isoler les zones repeintes souvent; debugRepaintRainbowEnabled; coût mémoire GPU", tags: [repaint, layers]}
+  - {id: perf-savelayer, path: rendering/savelayer-opacity-clip.md, summary: "saveLayer/Opacity/clip/ombres: coûts raster et diagnostic DevTools", tags: [raster, opacity, clip]}
+  # web/
+  - {id: perf-web-coop-coep, path: web/coop-coep-headers.md, summary: "COOP same-origin + COEP credentialless/require-corp pour skwasm multi-thread; piège widget embarqué", tags: [web, wasm, headers]}
+  - {id: perf-web-initial-load, path: web/initial-load-size.md, summary: "deferred imports, wasm deferred loading, --web-content-hash (incompatible deferred pour l'instant), canvasKitVariant", tags: [web, deferred-loading, caching]}
+  - {id: perf-web-multi-view, path: web/multi-view-embedding.md, summary: "multiViewEnabled, addView/removeView, runWidget, initialData, CSS host", tags: [web, embedding, multi-view]}
+  - {id: perf-web-no-isolates, path: web/no-isolates-on-web.md, summary: "Pas d'isolates web: compute() sur main thread; Web Worker/AudioWorklet via js_interop", tags: [web, isolates, audio]}
+  - {id: perf-web-renderers, path: web/renderers-canvaskit-skwasm.md, summary: "CanvasKit (JS) vs skwasm (Wasm), config renderer au bootstrap, pas d'Impeller web", tags: [web, renderer, skwasm]}
+  - {id: perf-web-wasm-build, path: web/wasm-build.md, summary: "--wasm opt-in, fallback JS auto, support navigateurs (Safari/Firefox opt-in), package:web obligatoire", tags: [web, wasm, js-interop]}

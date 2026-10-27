@@ -1,0 +1,34 @@
+domain: realtime-voice
+description: Agents vocaux temps réel voice-to-voice (OpenAI GPT-Live/Realtime, Gemini Live) dans Flutter via flutter_webrtc ou firebase_ai — état oct. 2026
+notes:
+  # gemini/
+  - {id: rt-gemini-38-migration, path: gemini/gemini-38-migration.md, summary: "3.8 vs 3.1 : async FC par défaut, proactive audio, checklist migration", tags: [gemini, migration, function-calling]}
+  - {id: rt-gemini-audio-vad, path: gemini/gemini-audio-vad.md, summary: "PCM16 16 kHz en entrée / 24 kHz en sortie, VAD auto/manuel, interrupted, voix", tags: [gemini, audio, vad, barge-in]}
+  - {id: rt-gemini-ephemeral-tokens, path: gemini/gemini-ephemeral-tokens.md, summary: "Jetons éphémères v1beta/auth_tokens, Live API seulement, défauts 1 min / 30 min", tags: [gemini, security, ephemeral-token]}
+  - {id: rt-gemini-firebase-ai-dart, path: gemini/gemini-firebase-ai-dart.md, summary: "API Live de firebase_ai 5.1.0 (LiveSession, LiveServerContent), plateformes", tags: [gemini, dart, firebase-ai-logic, packages]}
+  - {id: rt-gemini-function-calling, path: gemini/gemini-function-calling.md, summary: "Sync vs NON_BLOCKING, scheduling INTERRUPT/WHEN_IDLE/SILENT, support par modèle, absent de firebase_ai 5.1.0", tags: [gemini, tools, async]}
+  - {id: rt-gemini-live-models, path: gemini/gemini-live-models.md, summary: "3.8 Live recommandé ; Firebase AI Logic ne liste que 3.1 preview / 2.5", tags: [gemini, models, firebase-ai-logic]}
+  - {id: rt-gemini-session-limits, path: gemini/gemini-session-limits.md, summary: "15 min audio / ~10 min connexion, resumption 2 h, compression, GoAway", tags: [gemini, session-resumption, context-compression]}
+  # openai/
+  - {id: rt-gpt-live-delegation, path: openai/gpt-live-delegation.md, summary: "Délégation responses vs client (fixée à la création), événements, retour d'outils, accusés, append ≤ 500 tokens", tags: [openai, gpt-live, tools, delegation]}
+  - {id: rt-gpt-live-lifecycle, path: openai/gpt-live-lifecycle.md, summary: "Événements client/serveur GPT-Live, session.started→session.close→session.closed", tags: [openai, gpt-live, events, lifecycle]}
+  - {id: rt-gpt-live-overview, path: openai/gpt-live-overview.md, summary: "Fiche gpt-live-1 : endpoints, prix 0,05 $/min, limites, transports", tags: [openai, gpt-live, models, pricing]}
+  - {id: rt-gpt-live-session-config, path: openai/gpt-live-session-config.md, summary: "Champs de session immuables, voix (FR : brise, sillage), historique input", tags: [openai, gpt-live, voices, config]}
+  - {id: rt-gpt-live-sideband, path: openai/gpt-live-sideband.md, summary: "Attache serveur wss /v1/live/sessions/{id}/attach : orchestrateur backend, un seul propriétaire des résultats", tags: [openai, gpt-live, backend, tools]}
+  - {id: rt-gpt-live-webrtc-session, path: openai/gpt-live-webrtc-session.md, summary: "POST /v1/live/sessions via relais SDP backend, data channel oai-events", tags: [openai, gpt-live, webrtc, sdp, security]}
+  - {id: rt-openai-realtime-vs-live, path: openai/openai-realtime-vs-live.md, summary: "Différences API Realtime (gpt-realtime-2.1, client_secrets) vs GPT-Live", tags: [openai, realtime-api, comparison]}
+  - {id: rt-openai-webrtc-package, path: openai/openai-webrtc-package.md, summary: "openai_webrtc 0.5.0 : communautaire, Realtime seulement, à ne pas utiliser", tags: [openai, packages, flutter]}
+  # patterns/
+  - {id: rt-barge-in, path: patterns/barge-in.md, summary: "Interruption : signaux par fournisseur, vider le buffer, AEC", tags: [pattern, barge-in, vad]}
+  - {id: rt-ephemeral-keys, path: patterns/ephemeral-keys.md, summary: "Auth client par fournisseur (relais SDP, client_secrets, auth_tokens, App Check) + règles internes de jetons", tags: [security, auth, backend]}
+  - {id: rt-graceful-close, path: patterns/graceful-close.md, summary: "Ordre de fermeture, stop vs dispose, timeouts", tags: [pattern, lifecycle, dispose]}
+  - {id: rt-latency, path: patterns/latency.md, summary: "Leviers de latence perçue (transport, VAD, outils non bloquants)", tags: [pattern, latency, performance]}
+  - {id: rt-provider-abstraction, path: patterns/provider-abstraction.md, summary: "Port VoiceSession + adaptateurs par fournisseur", tags: [pattern, architecture, interface]}
+  - {id: rt-tool-calling-voice, path: patterns/tool-calling-voice.md, summary: "Agent vocal → orchestrateur : délégation, async, idempotence", tags: [pattern, tools, orchestrator, multi-agent]}
+  - {id: rt-transcription, path: patterns/transcription.md, summary: "Événements de transcription par fournisseur, normalisation", tags: [pattern, transcription]}
+  # webrtc/
+  - {id: rt-echo-cancellation, path: webrtc/echo-cancellation.md, summary: "AEC WebRTC (APM logiciel, AEC matériel Android) vs pipeline PCM maison", tags: [webrtc, audio, aec]}
+  - {id: rt-flutter-webrtc-audio-routing, path: webrtc/flutter-webrtc-audio-routing.md, summary: "Helper.setSpeakerphoneOn, configs audio Android/Apple, sélection de périphérique", tags: [webrtc, audio, speakerphone]}
+  - {id: rt-flutter-webrtc-gpt-live-connect, path: webrtc/flutter-webrtc-gpt-live-connect.md, summary: "Squelette Dart flutter_webrtc → GPT-Live", tags: [webrtc, gpt-live, code]}
+  - {id: rt-flutter-webrtc-overview, path: webrtc/flutter-webrtc-overview.md, summary: "flutter_webrtc 1.6.3 : 6 plateformes, API clés, build", tags: [webrtc, flutter, packages]}
+  - {id: rt-flutter-webrtc-permissions, path: webrtc/flutter-webrtc-permissions.md, summary: "Permissions micro iOS/Android/macOS/web", tags: [webrtc, permissions]}

@@ -1,0 +1,31 @@
+domain: testing
+description: Stratégie et outillage de tests Flutter (TDD, BDD Gherkin, bloc_test, mocks, goldens, E2E, temps réel, CI/lints)
+notes:
+  # bdd/
+  - {id: test-bdd-app-running-fixture, path: bdd/app-running-fixture.md, summary: "Step 'the app is running' façon myAppIsRunning: DI test + fakes + taille de vue", tags: [bdd, fixture, di]}
+  - {id: test-bdd-widget-test, path: bdd/bdd-widget-test.md, summary: "bdd_widget_test 3.0.4: .feature -> testWidgets via build_runner, setup, material_ui", tags: [bdd, gherkin, build_runner]}
+  - {id: test-bdd-build-yaml, path: bdd/build-yaml-options.md, summary: "Options featureBuilder: stepFolderName, addHooks, externalSteps, include, customHeaders, Patrol", tags: [bdd, build-yaml, config]}
+  - {id: test-bdd-feature-syntax, path: bdd/feature-syntax.md, summary: "Background, After, Rule, Scenario Outline/Examples, DataTable, tags, # language", tags: [bdd, gherkin, data-table]}
+  - {id: test-bdd-gherkin-practices, path: bdd/gherkin-best-practices.md, summary: "Gherkin déclaratif, un comportement par scénario, vocabulaire stable", tags: [bdd, gherkin, best-practice]}
+  - {id: test-bdd-hooks-steps, path: bdd/hooks-reusable-steps.md, summary: "Steps prédéfinis, steps externes partagés (voice_test_kit), hooks before/after", tags: [bdd, hooks, steps]}
+  # bloc/
+  - {id: test-bloc-test, path: bloc/bloc-test.md, summary: "blocTest 10.0.0 sur un Bloc (pas de Cubit) : paramètres, mock du runner, concurrence, un test par handler", tags: [bloc, bloc_test]}
+  - {id: test-bloc-mockbloc-whenlisten, path: bloc/mockbloc-whenlisten.md, summary: "MockCubit + whenListen pour tester un widget isolé de son bloc", tags: [bloc, widgets, mocktail]}
+  # ci/
+  - {id: test-coverage-ci, path: ci/coverage-ci.md, summary: "flutter test --coverage, very_good test 1.5.0 flags, pipeline CI proposé", tags: [coverage, ci, very_good_cli]}
+  - {id: test-very-good-analysis, path: ci/very-good-analysis.md, summary: "very_good_analysis 11.0.0: include versionné, désactivation de règles", tags: [lint, analysis]}
+  # golden/
+  - {id: test-golden-alchemist, path: golden/alchemist.md, summary: "alchemist 0.14.1 (golden_toolkit discontinué): CI vs platform goldens, config", tags: [golden, alchemist]}
+  # integration/
+  - {id: test-integration-test, path: integration/integration-test.md, summary: "integration_test SDK: binding, commandes, web via flutter drive, limites", tags: [integration, e2e]}
+  - {id: test-patrol, path: integration/patrol.md, summary: "Patrol 4.10.0 / patrol_cli 4.8.0: UI native (permission micro), finders $, BDD", tags: [integration, patrol, native]}
+  # mocking/
+  - {id: test-mocktail-essentials, path: mocking/mocktail-essentials.md, summary: "when/thenAnswer, any(named:), registerFallbackValue, verify, captureAny", tags: [mocktail, api]}
+  - {id: test-mocktail-vs-mockito, path: mocking/mocktail-vs-mockito.md, summary: "mocktail 1.0.5 (sans codegen) recommandé vs mockito 5.8.1", tags: [mock, mocktail, mockito]}
+  # realtime/
+  - {id: test-fake-async-streams, path: realtime/fake-async-streams.md, summary: "fakeAsync 1.3.3 + clock pour backoff/timeout/debounce sans délai réel", tags: [fake_async, time, streams]}
+  - {id: test-realtime-fake-runner, path: realtime/fake-runner.md, summary: "FakeAiRunner à StreamControllers; extraire parseur/transport du runner WebRTC", tags: [realtime-voice, webrtc, fake]}
+  # strategy/
+  - {id: test-mock-boundaries-only, path: strategy/mock-boundaries-only.md, summary: "Ne doubler que les frontières (runner voix, transport A2UI, horloge); fake vs mock", tags: [mock, fake, architecture]}
+  - {id: test-pyramid-flutter, path: strategy/pyramid-flutter.md, summary: "Pyramide unit/widget/integration (doc Flutter 3.47) et répartition proposée", tags: [strategy, unit, widgets, integration]}
+  - {id: test-tdd-red-green-refactor, path: strategy/tdd-red-green-refactor.md, summary: "Cycle red/green/refactor appliqué au projet, outside-in depuis Gherkin", tags: [tdd, method]}
