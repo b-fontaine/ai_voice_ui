@@ -1,0 +1,6 @@
+domain: decisions
+description: Registre chronologique des décisions d'architecture et de technologie (ADR) ; archives brutes des panels listées dans _archive/index.yaml (ignorées par le lint)
+notes:
+  - {id: adr-0001-initial-constraints, path: adr-0001-initial-constraints.md, summary: "2026-10-26 acceptée — Flutter, Clean+FSD, get_it/injectable, Bloc sans Cubit, TDD/BDD", tags: [adr, decision]}
+  - {id: adr-0002-orchestrator-backend, path: adr-0002-orchestrator-backend.md, summary: "2026-10-27 acceptée — orchestrateur côté backend dès la phase 1", tags: [adr, decision, orchestrator]}
+  - {id: adr-0003-backend-go, path: adr-0003-backend-go.md, summary: "2026-10-27 acceptée puis reconfirmée — backend Go ; Rust/hybride/Python/TS/Dart écartés, historique complet", tags: [adr, decision, backend, go]}

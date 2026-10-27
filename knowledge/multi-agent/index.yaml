@@ -1,0 +1,34 @@
+domain: multi-agent
+description: Orchestration multi-agents pour l'app voix temps réel + GenUI/A2UI (patterns, architecture cible, latence, sécurité, observabilité, évals)
+notes:
+  # architecture/
+  - {id: ma-flutter-event-bus, path: architecture/flutter-event-bus.md, summary: "DÉCISION: AgentEventBus sealed + BLoCs, état GenUI hors BLoC", tags: [flutter, bloc, streams]}
+  - {id: ma-target-architecture, path: architecture/target-architecture.md, summary: "DÉCISION: voix -> délégation unique -> orchestrateur -> GenUI/MCP/A2A", tags: [architecture, decision]}
+  - {id: ma-where-to-run-agents, path: architecture/where-to-run-agents.md, summary: "DÉCISION: audio/rendu client, orchestrateur/GenUI/MCP/A2A backend", tags: [architecture, decision]}
+  # latency/
+  - {id: ma-filler-acknowledgements, path: latency/filler-acknowledgements.md, summary: "Accusés auto GPT-Live, acknowledgement_delay_ms, thinking vs commentary", tags: [latency, ux]}
+  - {id: ma-real-tool-results, path: latency/real-tool-results.md, summary: "Jamais de faux ok ; operation ID, annulation, idempotence", tags: [tool-calling, reliability]}
+  # ops/
+  - {id: ma-guardrails, path: ops/guardrails.md, summary: "Output guardrails transcript (debounce 100), needsApproval, couches internes", tags: [guardrails, security]}
+  - {id: ma-otel-genai-spans, path: ops/otel-genai-spans.md, summary: "invoke_agent / execute_tool / conversation.id (statut Development)", tags: [observability, opentelemetry]}
+  - {id: ma-package-versions, path: ops/package-versions.md, summary: "Versions pub.dev / SDK observées le 2026-10-26 ; genui_* 0.7 discontinued", tags: [versions, pub.dev]}
+  - {id: ma-voice-agent-evals, path: ops/voice-agent-evals.md, summary: "Crawl/walk/run, graders déterministes + LLM, latence 1er audio", tags: [evaluation, testing]}
+  # patterns/
+  - {id: ma-adk-collaboration-modes, path: patterns/adk-collaboration-modes.md, summary: "ADK sub_agents, transfer_to_agent, AgentTool, modes chat/task/single_turn", tags: [google-adk, coordinator]}
+  - {id: ma-handoff-vs-agent-as-tool, path: patterns/handoff-vs-agent-as-tool.md, summary: "Agent.as_tool() vs handoffs (OpenAI Agents SDK) ; voix = manager", tags: [openai-agents-sdk, handoff]}
+  - {id: ma-realtime-handoff-limits, path: patterns/realtime-handoff-limits.md, summary: "Handoff vocal = même modèle ; déléguer par outil pour un autre modèle", tags: [realtime-voice, handoff]}
+  - {id: ma-simplicity-first, path: patterns/simplicity-first.md, summary: "Workflows vs agents, commencer simple, soigner l'ACI (Anthropic)", tags: [anthropic, design-principle]}
+  - {id: ma-workflow-patterns, path: patterns/workflow-patterns.md, summary: "Chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer", tags: [anthropic, router, orchestrator]}
+  # security/
+  - {id: ma-mcp-security, path: security/mcp-security.md, summary: "Token passthrough, SSRF, handles d'état, scopes minimaux", tags: [security, mcp]}
+  - {id: ma-prompt-injection-tools, path: security/prompt-injection-tools.md, summary: "Retours d'outils/agents = données ; OWASP LLM01 ; règles internes", tags: [security, prompt-injection]}
+  # backend/
+  - {id: ma-backend-stack-options, path: backend/stack-options.md, summary: "Comparatif Go/hybride/Python/TS/Dart + Rust (2 scénarios équipe), scores par lentille (2026-10-27)", tags: [backend, decision]}
+  - {id: ma-backend-stack-recommendation, path: backend/stack-recommendation.md, summary: "DÉCISION: orchestrateur tout-Go, services, frontières, schéma, risques", tags: [backend, decision, go]}
+  - {id: ma-backend-phase1-plan, path: backend/phase1-plan.md, summary: "Plan phase 1 ordonné du backend Go (spikes, BDD, sideband, GenUI)", tags: [backend, plan]}
+  - {id: ma-backend-sdk-landscape, path: backend/sdk-landscape.md, summary: "Matrice SDK backend par langage + faits API transverses (GPT-Live, MCP, A2A, A2UI)", tags: [backend, sdk, versions]}
+  - {id: ma-backend-sdk-go, path: backend/sdk-go.md, summary: "openai-go live/sideband, genai, go-sdk MCP, a2a-go/v2, ADK Go, Temporal, A2UI", tags: [backend, go, sdk]}
+  - {id: ma-backend-sdk-python, path: backend/sdk-python.md, summary: "openai 3.39 live, ADK 2.13, a2ui-agent-sdk, conflits mcp<2/openai<3", tags: [backend, python, sdk]}
+  - {id: ma-backend-sdk-typescript, path: backend/sdk-typescript.md, summary: "openai 7.45 live.create/SidebandWS, MCP v2, @a2ui/agent 0.0.2, zod 3/4", tags: [backend, typescript, sdk]}
+  - {id: ma-backend-sdk-dart, path: backend/sdk-dart.md, summary: "openai_dart/googleai_dart communautaires, pas d'A2A v1.0 ni Temporal", tags: [backend, dart, sdk]}
+  - {id: ma-backend-sdk-rust, path: backend/sdk-rust.md, summary: "rmcp 3.8, a2a-rs 0.x, Temporal GA ; pas de SDK OpenAI/Gemini officiel, oai-rt-rs communautaire", tags: [backend, rust, sdk]}

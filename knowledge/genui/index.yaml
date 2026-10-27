@@ -1,0 +1,33 @@
+domain: genui
+description: GenUI (package Flutter genui / genui_a2a) et protocole A2UI — API 0.10.x, catalogues, data binding, actions, intégrations LLM, tests, migrations (état au 2026-10-26)
+notes:
+  # a2ui/
+  - {id: genui-a2ui-client-messages, path: a2ui/client-messages.md, summary: "action, error, a2uiClientCapabilities, sendDataModel", tags: [a2ui, events]}
+  - {id: genui-a2ui-messages, path: a2ui/messages-v09.md, summary: "createSurface / updateComponents / updateDataModel / deleteSurface (v0.9) avec exemples", tags: [a2ui, messages]}
+  - {id: genui-a2ui-overview, path: a2ui/overview.md, summary: "A2UI : principes, statut v0.9.1 prod / v1.0 RC / v0.8 legacy", tags: [a2ui, protocol]}
+  - {id: genui-a2ui-security, path: a2ui/security.md, summary: "Catalogue = liste blanche et frontière de sécurité : négociation, double validation, openUrl/images, prompt injection", tags: [a2ui, security]}
+  - {id: genui-a2ui-transports, path: a2ui/transports.md, summary: "Contrat de transport et bindings A2A, AG-UI, MCP, SSE, WebSocket", tags: [a2ui, transport]}
+  - {id: genui-a2ui-v1-rc, path: a2ui/v1-rc.md, summary: "v1.0 RC : @path/@call, RPC bidirectionnel, catalogues mixtes, plus de theme", tags: [a2ui, versions]}
+  # catalog/
+  - {id: genui-catalog-ids, path: catalog/catalog-ids.md, summary: "catalogId (contrat), catalogue basique v0.9, multi-catalogues, versionnement", tags: [genui, a2ui, catalog]}
+  - {id: genui-custom-catalog-item, path: catalog/custom-catalog-item.md, summary: "CatalogItem = name + json_schema_builder + widgetBuilder, exampleData, copyWith", tags: [genui, catalog]}
+  # core/
+  - {id: genui-architecture, path: core/architecture.md, summary: "SurfaceController (moteur) + Transport/A2uiTransportAdapter + Conversation (façade), flux complet", tags: [genui, architecture]}
+  - {id: genui-conversation-events, path: core/conversation-events.md, summary: "ConversationEvent (SurfaceAdded/Removed, ContentReceived, Waiting, Error) et ConversationState", tags: [genui, events]}
+  - {id: genui-data-model, path: core/data-model-binding.md, summary: "DataModel par surface, binding {path}, two-way inputs, DataContext/Bound*", tags: [genui, data-binding]}
+  - {id: genui-error-reporting, path: core/error-reporting.md, summary: "Erreurs VALIDATION_FAILED renvoyées automatiquement au LLM, plafonner les boucles", tags: [genui, validation]}
+  - {id: genui-multiple-surfaces, path: core/multiple-surfaces.md, summary: "Plusieurs surfaces par surfaceId, cycle de vie, buffering, createSurface en double = erreur", tags: [genui, surface]}
+  - {id: genui-overview, path: core/overview.md, summary: "Statut alpha, versions pub.dev (genui 0.10.4, genui_a2a 0.10.1, a2ui_core 0.3.0), refonte a2ui_flutter", tags: [genui, versions]}
+  - {id: genui-prompt-builder, path: core/prompt-builder.md, summary: "PromptBuilder.chat (createOnly) vs custom (SurfaceOperations), coût 3-5k tokens", tags: [genui, prompt]}
+  - {id: genui-user-actions, path: core/user-actions.md, summary: "UserActionEvent -> onSubmit -> ChatMessage UiInteractionPart -> LLM, ActionDelegate", tags: [genui, actions]}
+  # integration/
+  - {id: genui-custom-llm-adapter, path: integration/custom-llm-adapter.md, summary: "Brancher OpenAI ou autre LLM via Transport custom (patron simple_chat), variante tool call", tags: [genui, openai, adapter]}
+  - {id: genui-firebase-ai, path: integration/firebase-ai.md, summary: "Voie Firebase AI Logic (firebase_ai 5.1.0) : onSend + addChunk", tags: [genui, gemini, firebase]}
+  - {id: genui-a2a-connector, path: integration/genui-a2a.md, summary: "genui_a2a A2uiAgentConnector : A2A message/stream sur SSE, capabilities", tags: [genui, a2a]}
+  - {id: genui-voice-bridge, path: integration/voice-agent-bridge.md, summary: "Patron : agent vocal -> outil show_ui -> agent GenUI texte, retour des actions (opinion)", tags: [genui, realtime-voice, multi-agent]}
+  # migration/
+  - {id: genui-migration-from-0-7, path: migration/from-0-7-content-generators.md, summary: "Table de correspondance 0.6/0.7 (ContentGenerator, GenUiConversation) -> 0.10", tags: [genui, migration]}
+  - {id: genui-migration-0-10, path: migration/to-0-10.md, summary: "Ruptures 0.10 (types a2ui_core, store supprimé) et changelog jusqu'à 0.10.6", tags: [genui, migration]}
+  # testing/
+  - {id: genui-test-catalog-items, path: testing/catalog-item-widget-tests.md, summary: "Widget test d'un CatalogItem via catalog.buildWidget, validation exampleData, DebugCatalogView", tags: [genui, testing]}
+  - {id: genui-test-surface-controller, path: testing/surface-controller-tests.md, summary: "Rendu bout en bout : messages A2UI scriptés -> SurfaceController -> Surface, Transport factice", tags: [genui, testing]}

@@ -1,0 +1,4 @@
+# Archives brutes des décisions (sorties intégrales des agents). Non relues : la référence est l'ADR.
+archives:
+  - {path: 2026-10-27-backend-stack-panel.md, decision: adr-0003-backend-go, summary: "Sorties intégrales du panel 5 stacks"}
+  - {path: 2026-10-27-backend-rust-eval.md, decision: adr-0003-backend-go, summary: "Sorties intégrales de l'évaluation Rust"}
