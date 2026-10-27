@@ -31,6 +31,7 @@ Sous Claude Code, le skill `kb-lookup` automatise cette procédure.
 - **État :** `flutter_bloc` en **Bloc uniquement, Cubit interdit**. Events et states sont des `sealed`/`freezed`. Les flux passent par `emit.forEach`/`onEach`. Choisir un transformer de concurrence explicite.
 - **Tests :** TDD (rouge → vert → refactor). Les comportements utilisateur sont décrits en BDD avec `bdd_widget_test` (fichiers `.feature`) **avant** l'implémentation. On ne mocke qu'aux frontières (runners voix, réseau, plateforme).
 - **Orchestrateur :** il tourne **côté backend dès le départ** (décision du 2026-10-27). L'app Flutter ne porte que l'audio et WebRTC, le rendu A2UI et les outils locaux sans secret. Voir `ma-target-architecture` et `ma-where-to-run-agents`.
+- **Backend :** écrit **en Go** (décision du 2026-10-27), dans un module `backend/agent_orchestrator` du `septeo_saaster_kit`, en architecture hexagonale. Les fournisseurs (Live, A2UI) sont isolés derrière des ports. Les JWT sont vérifiés par JWKS (jamais `ParseUnverified`) et les origines CORS sont restreintes. Voir `ma-backend-stack-recommendation` et `ma-backend-phase1-plan`.
 - **Sécurité :** aucune clé API longue durée côté client. Utiliser des sessions ou jetons éphémères créés par un backend.
 - **Voix :**
   - une seule source de capture micro ;

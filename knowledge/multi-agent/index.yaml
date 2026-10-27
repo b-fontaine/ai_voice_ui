@@ -22,3 +22,12 @@ notes:
   # security/
   - {id: ma-mcp-security, path: security/mcp-security.md, summary: "Token passthrough, SSRF, handles d'état, scopes minimaux", tags: [security, mcp]}
   - {id: ma-prompt-injection-tools, path: security/prompt-injection-tools.md, summary: "Retours d'outils/agents = données ; OWASP LLM01 ; règles internes", tags: [security, prompt-injection]}
+  # backend/
+  - {id: ma-backend-stack-options, path: backend/stack-options.md, summary: "Comparatif Go/hybride/Python/TS/Dart, scores par lentille (panel 2026-10-27)", tags: [backend, decision]}
+  - {id: ma-backend-stack-recommendation, path: backend/stack-recommendation.md, summary: "DÉCISION: orchestrateur tout-Go, services, frontières, schéma, risques", tags: [backend, decision, go]}
+  - {id: ma-backend-phase1-plan, path: backend/phase1-plan.md, summary: "Plan phase 1 ordonné du backend Go (spikes, BDD, sideband, GenUI)", tags: [backend, plan]}
+  - {id: ma-backend-sdk-landscape, path: backend/sdk-landscape.md, summary: "Matrice SDK backend par langage + faits API transverses (GPT-Live, MCP, A2A, A2UI)", tags: [backend, sdk, versions]}
+  - {id: ma-backend-sdk-go, path: backend/sdk-go.md, summary: "openai-go live/sideband, genai, go-sdk MCP, a2a-go/v2, ADK Go, Temporal, A2UI", tags: [backend, go, sdk]}
+  - {id: ma-backend-sdk-python, path: backend/sdk-python.md, summary: "openai 3.39 live, ADK 2.13, a2ui-agent-sdk, conflits mcp<2/openai<3", tags: [backend, python, sdk]}
+  - {id: ma-backend-sdk-typescript, path: backend/sdk-typescript.md, summary: "openai 7.45 live.create/SidebandWS, MCP v2, @a2ui/agent 0.0.2, zod 3/4", tags: [backend, typescript, sdk]}
+  - {id: ma-backend-sdk-dart, path: backend/sdk-dart.md, summary: "openai_dart/googleai_dart communautaires, pas d'A2A v1.0 ni Temporal", tags: [backend, dart, sdk]}

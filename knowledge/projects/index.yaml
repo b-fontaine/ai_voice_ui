@@ -7,5 +7,6 @@ notes:
   - {id: proj-avw-risks, path: ai-voice-widget/risks.md, summary: "Bugs connus à ne pas reproduire", tags: [project, anti-pattern, webrtc, security]}
   - {id: proj-avw-voice-runners, path: ai-voice-widget/voice-runners.md, summary: "Implémentation OpenAI WebRTC + Gemini Live", tags: [project, realtime-voice, webrtc, openai, gemini]}
   # saaster-kit/
+  - {id: proj-sk-backend, path: saaster-kit/backend.md, summary: "Backend Go réutilisable (hexagonal, OTel, Temporal, Godog) et pièges (JWT non vérifié)", tags: [project, go, backend, security]}
   - {id: proj-sk-overview, path: saaster-kit/overview.md, summary: "Starter SaaS Flutter+Go, structure, règles", tags: [project, flutter, go, saas, bdd]}
   - {id: proj-sk-patterns, path: saaster-kit/patterns.md, summary: "DI par env, routing modulaire, fixture BDD", tags: [project, di, routing, bdd, pattern]}

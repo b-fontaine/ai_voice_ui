@@ -1,7 +1,7 @@
 # Index racine de la base de connaissances (zettelkasten). Lire en premier.
 # Procédure : tasks → ids ; sinon keywords → domaine → index du domaine → notes ; suivre links sur 1 niveau.
 version: 1
-updated: 2026-10-26
+updated: 2026-10-27
 conventions: _conventions.md
 tags_index: tags.yaml
 lint: python3 -I knowledge/_tools/kb_lint.py
@@ -51,7 +51,7 @@ domains:
     prefixes: [ma-]
     index: multi-agent/index.yaml
     description: "Orchestration multi-agents de l'app : architecture cible, placement des agents, patterns, latence, sécurité, observabilité, évaluations"
-    keywords: [multi-agents, multi-agent, orchestrateur, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
+    keywords: [multi-agents, multi-agent, orchestrateur, backend, go, golang, stack backend, sidecar, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
 
 entrypoints:
   - {id: proj-avw-overview, why: "Projet de référence : archi, DI, Bloc et dépendances du widget voix existant"}
@@ -107,6 +107,8 @@ tasks:
     notes: [perf-audio-latency, perf-audio-isolates, perf-audio-visualizer-60hz, perf-repaint-boundary, perf-bloc-scoped-rebuilds, perf-audio-packages, rt-echo-cancellation, rt-latency]
   - task: "Build et performance web (Wasm, multi-view)"
     notes: [perf-web-wasm-build, perf-web-renderers, perf-web-coop-coep, perf-web-initial-load, perf-web-multi-view, perf-web-no-isolates, perf-web-profiling]
+  - task: "Concevoir / faire évoluer le backend orchestrateur"
+    notes: [ma-backend-stack-recommendation, ma-backend-phase1-plan, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
   - task: "Observabilité et évaluation des agents"
     notes: [ma-otel-genai-spans, ma-voice-agent-evals, ma-guardrails, bloc-observer]
   - task: "CI, lints et couverture"
