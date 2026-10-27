@@ -37,5 +37,15 @@
   | `perf-` | performance |
   | `proto-` | protocoles agents |
   | `ma-` | orchestration multi-agents |
+| `adr-` | décisions (ADR) |
+
+- **Décisions (ADR) :** une note `knowledge/decisions/adr-NNNN-<slug>.md` par décision technologique ou d'architecture. Le numéro est séquentiel et n'est jamais réutilisé. Une note contient :
+  - les métadonnées : date, statut (proposée, acceptée, remplacée par adr-XXXX, abandonnée), décideur et part de l'assistant ;
+  - le contexte et les **hypothèses**, en signalant celles qui ne sont pas confirmées ;
+  - les options, la décision, les raisons et les options écartées ;
+  - les cas où il faudra réexaminer la décision ;
+  - les chemins des archives.
+- **Une décision n'est jamais effacée :** on la marque remplacée et on crée un nouvel ADR.
+- **Les sorties brutes** des panels, recherches et juges vont dans `decisions/_archive/AAAA-MM-JJ-<slug>.md`, sans limite de taille et ignorées par le lint.
 
 - **Info datée :** toute information susceptible d'évoluer (version, modèle, preview) indique sa date dans `updated` et le mentionne dans le corps.

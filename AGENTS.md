@@ -45,7 +45,14 @@ Sous Claude Code, le skill `kb-lookup` automatise cette procédure.
 - `~/septeo/ai_voice_widget` : runners OpenAI/Gemini et pont voix → GenUI (`knowledge/projects/ai-voice-widget/`).
 - `~/septeo/septeo_saaster_kit` : DI par environnement, routing modulaire, fixture BDD (`knowledge/projects/saaster-kit/`).
 
-## 4. Entretenir la base
+## 4. Décisions technologiques (historique obligatoire)
+
+- **Lire `knowledge/decisions/` avant de proposer ou de contester un choix technologique.** On y trouve les décisions déjà prises, leurs raisons, les options écartées et les cas où il faut les réexaminer.
+- **Toute nouvelle décision** donne lieu à un nouvel ADR. Une décision **remplacée** donne aussi un nouvel ADR, et l'ancien est marqué « remplacée par ». Une décision réévaluée puis **reconfirmée** s'ajoute à l'historique de son ADR existant. Les sorties brutes des panels vont dans `decisions/_archive/`. Un ADR n'est jamais effacé : on le marque remplacé.
+- **Signaler explicitement toute hypothèse non confirmée** par le porteur du projet (compétences de l'équipe, contraintes d'hébergement…), et la faire confirmer avant de la noter comme décision.
+- **L'assistant recommande, le porteur décide.** L'ADR indique qui a décidé.
+
+## 5. Entretenir la base
 
 - **Format :** respecter `knowledge/_conventions.md` (une idée par note, moins de 60 lignes, frontmatter `id`/`tags`/`status`/`updated`/`sources`/`links`).
 - **Quand écrire une note :**

@@ -5,7 +5,7 @@ tags: [multi-agent, architecture, decision, realtime-voice, genui, a2ui, mcp, a2
 status: opinion
 updated: 2026-10-27
 sources: [https://developers.openai.com/api/docs/guides/live-delegation, https://ai.google.dev/gemini-api/docs/live-tools, https://openai.github.io/openai-agents-js/guides/voice-agents/build/]
-links: [proj-avw-genui-bridge, proj-avw-risks, rt-gpt-live-delegation, ma-where-to-run-agents, ma-flutter-event-bus, ma-handoff-vs-agent-as-tool, ma-real-tool-results, rt-gemini-function-calling, proto-a2a-overview, rt-tool-calling-voice, genui-voice-bridge, proto-stack-recommendation, rt-gpt-live-sideband]
+links: [adr-0002-orchestrator-backend, proj-avw-genui-bridge, proj-avw-risks, rt-gpt-live-delegation, ma-where-to-run-agents, ma-flutter-event-bus, ma-handoff-vs-agent-as-tool, ma-real-tool-results, rt-gemini-function-calling, proto-a2a-overview, rt-tool-calling-voice, genui-voice-bridge, proto-stack-recommendation, rt-gpt-live-sideband]
 ---
 # Architecture cible (décision interne, validée le 2026-10-27 : orchestrateur backend dès la phase 1)
 

@@ -17,6 +17,13 @@ Le format de référence est `knowledge/_conventions.md`. Le relire avant d'écr
    - si c'est une nouvelle tâche type, la section `tasks` de `knowledge/index.yaml`.
 5. **Contrôler :** `python3 -I knowledge/_tools/kb_lint.py` doit afficher 0 erreur.
 
+## Enregistrer une décision (ADR)
+1. Prendre le numéro suivant dans `knowledge/decisions/index.yaml`.
+2. Écrire `knowledge/decisions/adr-NNNN-<slug>.md` selon `_conventions.md` : date, statut, décideur, contexte et hypothèses (en marquant celles qui ne sont pas confirmées), options, décision, raisons, options écartées, cas de réexamen, archives.
+3. Archiver les sorties brutes (propositions, vérifications, jugements, synthèse) dans `decisions/_archive/AAAA-MM-JJ-<slug>.md`, puis les référencer dans la section `archives` de l'index.
+4. Si la décision en remplace une autre, passer l'ancien ADR à « remplacée par adr-NNNN ». Ne jamais le supprimer.
+5. Lier l'ADR aux notes techniques concernées, dans les deux sens.
+
 ## Refactoring (environ tous les 10 ajouts, ou sur demande)
 - Fusionner les doublons : garder une note canonique et rediriger les `links`.
 - Scinder les notes de plus de 60 lignes.

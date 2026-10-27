@@ -47,11 +47,16 @@ domains:
     index: agent-protocols/index.yaml
     description: "Protocoles d'agents et transports : MCP, A2A, AG-UI, A2UI (renvoi), WebRTC/WebSocket/WebTransport, SDK Dart"
     keywords: [protocole, protocol, MCP, model context protocol, outil MCP, tool, resource, prompt, elicitation, A2A, agent-to-agent, agent card, task, AG-UI, ag_ui, A2UI, transport, websocket, SSE, webtransport, oauth, autorisation, authorization, mcp_dart, dart_mcp]
+  - name: decisions
+    prefixes: [adr-]
+    index: decisions/index.yaml
+    description: "Registre chronologique des décisions d'architecture/technologie (ADR), avec archives brutes des panels"
+    keywords: [décision, decision, ADR, historique, history, choix technologique, pourquoi, why, alternative, option écartée, rejected, panel, juge, judge, comparatif, reconsidérer]
   - name: multi-agent
     prefixes: [ma-]
     index: multi-agent/index.yaml
     description: "Orchestration multi-agents de l'app : architecture cible, placement des agents, patterns, latence, sécurité, observabilité, évaluations"
-    keywords: [multi-agents, multi-agent, orchestrateur, backend, go, golang, stack backend, sidecar, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
+    keywords: [multi-agents, multi-agent, orchestrateur, backend, go, golang, rust, stack backend, sidecar, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
 
 entrypoints:
   - {id: proj-avw-overview, why: "Projet de référence : archi, DI, Bloc et dépendances du widget voix existant"}
@@ -65,7 +70,7 @@ entrypoints:
   - {id: genui-architecture, why: "SurfaceController, Transport, Conversation : le moteur genui 0.10"}
   - {id: genui-voice-bridge, why: "Patron : l'agent vocal délègue l'UI à un agent GenUI"}
   - {id: arch-recommended-structure, why: "Arborescence recommandée de l'app (Clean + FSD)"}
-  - {id: arch-recommended-dependency-rules, why: "Graphe d'imports autorisé et garde-fous CI"}
+  - {id: adr-0003-backend-go, why: "Décisions : lire le registre decisions/ avant tout choix technologique"}
   - {id: di-no-service-locator, why: "Règle DI : getIt seulement à la racine de composition"}
   - {id: bloc-no-cubit, why: "Règle état : Bloc uniquement, Cubit interdit"}
   - {id: test-tdd-red-green-refactor, why: "Méthode : TDD outside-in depuis Gherkin"}
@@ -108,10 +113,12 @@ tasks:
   - task: "Build et performance web (Wasm, multi-view)"
     notes: [perf-web-wasm-build, perf-web-renderers, perf-web-coop-coep, perf-web-initial-load, perf-web-multi-view, perf-web-no-isolates, perf-web-profiling]
   - task: "Concevoir / faire évoluer le backend orchestrateur"
-    notes: [ma-backend-stack-recommendation, ma-backend-phase1-plan, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
+    notes: [adr-0003-backend-go, adr-0002-orchestrator-backend, ma-backend-stack-recommendation, ma-backend-phase1-plan, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, ma-backend-sdk-rust, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
   - task: "Observabilité et évaluation des agents"
     notes: [ma-otel-genai-spans, ma-voice-agent-evals, ma-guardrails, bloc-observer]
   - task: "CI, lints et couverture"
     notes: [test-coverage-ci, test-very-good-analysis, arch-analyzer-plugins, arch-import-lint, arch-dependency-validator, test-integration-test, test-patrol, test-golden-alchemist]
   - task: "Vérifier une version de package"
     notes: [ma-package-versions, bloc-packages-versions, di-setup-versions, perf-audio-packages, genui-overview, proto-rtc-flutter-packages, proto-a2a-dart-sdk, proto-mcp-dart-sdks]
+  - task: "Prendre, contester ou consulter une décision technologique / d'architecture"
+    notes: [adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-options]
