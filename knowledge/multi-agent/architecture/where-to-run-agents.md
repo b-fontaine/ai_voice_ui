@@ -3,11 +3,11 @@ id: ma-where-to-run-agents
 title: Où exécuter chaque agent — client vs backend
 tags: [multi-agent, architecture, decision, security, flutter]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-27
 sources: [https://developers.openai.com/api/docs/guides/live, https://ai.google.dev/gemini-api/docs/live, https://ai.google.dev/gemini-api/docs/ephemeral-tokens]
 links: [ma-target-architecture, rt-gpt-live-sideband, rt-ephemeral-keys, ma-prompt-injection-tools, proj-avw-risks, perf-web-no-isolates, proto-stack-recommendation]
 ---
-# Placement des agents (décision interne)
+# Placement des agents (décision interne, validée le 2026-10-27 : orchestrateur backend dès la phase 1)
 
 | Composant | Où | Pourquoi |
 |---|---|---|

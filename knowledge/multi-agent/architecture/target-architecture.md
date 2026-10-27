@@ -3,11 +3,11 @@ id: ma-target-architecture
 title: Architecture cible voix → orchestrateur → GenUI / MCP / A2A
 tags: [multi-agent, architecture, decision, realtime-voice, genui, a2ui, mcp, a2a]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-27
 sources: [https://developers.openai.com/api/docs/guides/live-delegation, https://ai.google.dev/gemini-api/docs/live-tools, https://openai.github.io/openai-agents-js/guides/voice-agents/build/]
 links: [proj-avw-genui-bridge, proj-avw-risks, rt-gpt-live-delegation, ma-where-to-run-agents, ma-flutter-event-bus, ma-handoff-vs-agent-as-tool, ma-real-tool-results, rt-gemini-function-calling, proto-a2a-overview, rt-tool-calling-voice, genui-voice-bridge, proto-stack-recommendation, rt-gpt-live-sideband]
 ---
-# Architecture cible (décision interne)
+# Architecture cible (décision interne, validée le 2026-10-27 : orchestrateur backend dès la phase 1)
 
 **Principe :** l'agent vocal reste l'unique interlocuteur. Tout le travail passe par **un seul point de délégation** vers un orchestrateur backend. Celui-ci appelle comme **outils** l'agent GenUI, les serveurs MCP et les agents A2A.
 

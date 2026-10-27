@@ -30,6 +30,7 @@ Sous Claude Code, le skill `kb-lookup` automatise cette procédure.
 - **DI :** `get_it` + `injectable`, avec injection **par constructeur**. Interdit d'appeler `getIt` dans un widget ou un Bloc.
 - **État :** `flutter_bloc` en **Bloc uniquement, Cubit interdit**. Events et states sont des `sealed`/`freezed`. Les flux passent par `emit.forEach`/`onEach`. Choisir un transformer de concurrence explicite.
 - **Tests :** TDD (rouge → vert → refactor). Les comportements utilisateur sont décrits en BDD avec `bdd_widget_test` (fichiers `.feature`) **avant** l'implémentation. On ne mocke qu'aux frontières (runners voix, réseau, plateforme).
+- **Orchestrateur :** il tourne **côté backend dès le départ** (décision du 2026-10-27). L'app Flutter ne porte que l'audio et WebRTC, le rendu A2UI et les outils locaux sans secret. Voir `ma-target-architecture` et `ma-where-to-run-agents`.
 - **Sécurité :** aucune clé API longue durée côté client. Utiliser des sessions ou jetons éphémères créés par un backend.
 - **Voix :**
   - une seule source de capture micro ;

@@ -18,7 +18,7 @@ notes:
   - {id: proto-agui-overview, path: ag-ui/overview.md, summary: "AG-UI = runtime agent↔app (CopilotKit); transporte A2UI", tags: [ag-ui]}
   # comparison/
   - {id: proto-protocol-map, path: comparison/protocol-map.md, summary: "Quel protocole pour quoi: MCP=outils, A2A=agents, AG-UI=runtime app, A2UI=format UI, WebRTC=média", tags: [comparison, architecture]}
-  - {id: proto-stack-recommendation, path: comparison/stack-recommendation.md, summary: "Stack conseillée: orchestrateur in-app puis serveur; protocoles minimaux côté Flutter", tags: [recommendation, orchestrator]}
+  - {id: proto-stack-recommendation, path: comparison/stack-recommendation.md, summary: "Stack décidée: orchestrateur backend minimal dès la phase 1, A2A/AG-UI en phase 2; protocoles minimaux côté Flutter", tags: [recommendation, orchestrator]}
   # mcp/
   - {id: proto-mcp-authorization, path: mcp/authorization.md, summary: "OAuth 2.1, RFC 9728/8707/9207, PKCE, CIMD; DCR déprécié", tags: [mcp, auth]}
   - {id: proto-mcp-dart-sdks, path: mcp/dart-sdks.md, summary: "mcp_dart 2.4.3 (spec 2026-07-28, HTTP, OAuth) vs dart_mcp 0.5.2 (expérimental, stdio)", tags: [mcp, dart]}
