@@ -1,0 +1,9 @@
+domain: roadmap
+description: "Comment arriver au talk et au-delà : jalons J0-J9, backlog par epics, spikes, registre des questions ouvertes, pistes hors MVP"
+docs:
+  - {id: p-rm-roadmap, path: roadmap.md, summary: "Jalons J0 (en cours, en attente de relecture du porteur) à J9 (talk) + Au-delà : objectif, contenu, exigences, critère de sortie, dépendances, risques ; sans dates", tags: [roadmap, jalons, mvp, talk, planification]}
+  - {id: p-rm-backlog, path: backlog.md, summary: "10 epics → FR-01..FR-20 (MoSCoW de la fiche) et NFR-01..NFR-12 ; matrice de couverture exigence → jalon", tags: [backlog, epics, moscow, couverture, exigences]}
+  - {id: p-rm-spikes, path: spikes.md, summary: "SP-00 Widgetbook 4 (fait) ; SP-01..SP-07 et SP-09 à mener en J1 (versions genui/A2UI, gpt-live-1, A2A Go, latence, rejeu, audio macOS, rendu 1920×1080, Windows) ; SP-08 optionnel", tags: [spike, risques, j1, versions, latence, audio, a2ui]}
+  - {id: p-rm-open-questions, path: open-questions.md, summary: "Registre Q-01..Q-64 : écarts entre sources E1..E22 (sans reco), hypothèses, pdr-0012 à confirmer, points techniques de l'architecture (Q-37..Q-57), traçabilité (Q-61..Q-63) ; règle de clôture via product-decide", tags: [questions-ouvertes, ecarts, hypotheses, decisions]}
+  - {id: p-rm-beyond, path: beyond.md, summary: "Pistes après le talk, toutes hors MVP : agent tiers A2A, vraies sources, web/mobile, multi-utilisateur, langues, open source, réutilisation Septeo, A2UI v1.0", tags: [au-dela, hors-perimetre, evolutions, roadmap]}
+  - {id: p-rm-backend-production-plan, path: backend-production-plan.md, summary: "Plan de construction du backend Go en 13 étapes (ex-note knowledge ma-backend-phase1-plan, transférée le 2026-10-28) ; pensé pour un socle de production Septeo, écart avec la démo de conférence ouvert (Q-15, Q-27)", tags: [backend, go, plan, deploiement]}

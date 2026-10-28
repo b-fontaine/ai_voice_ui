@@ -1,0 +1,112 @@
+# Index racine de la documentation produit de Genesis Canvas (Release Copilot). Lire en premier.
+# Procédure : tasks → ids ; sinon keywords → zone → index de la zone → documents ; suivre links sur 1 niveau.
+# Savoir réutilisable (faits vérifiés, patterns, ADR génériques) : knowledge/index.yaml (skill kb-lookup).
+version: 1
+updated: 2026-10-28
+product: "Genesis Canvas — cas d'usage Release Copilot"
+conventions: _conventions.md
+readme: README.md
+lint: python3 -I product/_tools/product_lint.py
+
+zones:
+  - name: functional
+    prefix: p-fn-
+    index: functional/index.yaml
+    description: "Produit fonctionnel : vision, personas et parcours en 3 actes, périmètre, exigences FR/NFR, règles RG, écran en 6 zones, catalogue, jeu de données, maquettes et écarts E1-E22, risques et DoD, glossaire, scénarios Gherkin"
+    keywords: [fonctionnel, functional, vision, persona, parcours, acte, périmètre, scope, exigence, requirement, FR, NFR, MoSCoW, règle, RG, écran, zone, orbe, barge-in, interruption, raccourci, catalogue, composant, jeu de données, dataset, maquette, mockup, écart, risque, plan B, DoD, glossaire, gherkin, feature, scénario, BDD]
+  - name: architecture
+    prefix: p-ar-
+    index: architecture/index.yaml
+    description: "Architecture du produit : vue d'ensemble C4, app Flutter desktop (Clean + FSD, Bloc), backend Go hexagonal, agents A2A et protocoles, stack et versions, rejeu et mode secours, sécurité, qualité, environnement de scène"
+    keywords: [architecture, C4, conteneur, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition]
+  - name: roadmap
+    prefix: p-rm-
+    index: roadmap/index.yaml
+    description: "Trajectoire : jalons J0-J9 jusqu'au talk, backlog par epics, spikes, registre des questions ouvertes Q-xx, pistes après le talk"
+    keywords: [roadmap, jalon, milestone, planification, backlog, epic, couverture, spike, question ouverte, Q-, hypothèse, échéance, après le talk, au-delà, évolution]
+  - name: decisions
+    prefix: pdr-
+    index: decisions/index.yaml
+    description: "Décisions produit (PDR, fonctionnelles ou techniques, propres à Genesis Canvas) et ADR génériques de knowledge/ hérités par le produit"
+    keywords: [décision, decision, PDR, ADR, pourquoi, choix, arbitrage, acceptée, proposée, remplacée, historique, héritage]
+
+meta:
+  - {id: p-readme, path: README.md, summary: "Porte d'entrée humaine et IA : produit en bref, par où commencer selon le profil, carte des documents, état, décisions, questions majeures, contribution"}
+  - {id: p-conventions, path: _conventions.md, summary: "Où écrire, frontmatter, écriture, traçabilité, cycle de vie des PDR, index YAML, lint"}
+  - {id: p-sources, path: sources/README.md, summary: "Sources primaires : fiche produit (validée) et maquettes (illustration) ; règles d'ajout"}
+
+entrypoints:
+  - {id: p-readme, why: "vue d'ensemble et carte de la documentation"}
+  - {id: p-fn-vision, why: "ce qu'est le produit et pourquoi il existe"}
+  - {id: p-fn-requirements, why: "exigences FR-01..FR-20, contrat fonctionnel"}
+  - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
+  - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
+  - {id: p-rm-roadmap, why: "jalons J0-J9 et dépendances"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-64)"}
+  - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
+
+tasks:
+  - task: "Comprendre le produit (première lecture)"
+    docs: [p-readme, p-fn-vision, p-fn-personas-journey, p-fn-scope, p-fn-screen, p-ar-overview, p-rm-roadmap]
+  - task: "Implémenter l'acte 1 « Créer » (construction des surfaces)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-screen, p-fn-catalog, p-fn-dataset, p-fn-mockups, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0008-single-screen-show-the-making]
+    knowledge: [genui-a2ui-messages, genui-multiple-surfaces, genui-custom-catalog-item, proto-a2a-task-lifecycle, ma-filler-acknowledgements, ux-genui-streaming-loading]
+  - task: "Implémenter l'acte 2 « Transformer » (mutation sur place, correction)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-mockups, p-ar-agents-protocols, p-ar-frontend, p-rm-open-questions]
+    knowledge: [genui-a2ui-messages, genui-data-model, genui-multiple-surfaces]
+  - task: "Implémenter l'acte 3 « Interagir » (clic → agent → voix)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-catalog, p-ar-agents-protocols, p-ar-backend, p-ar-security]
+    knowledge: [genui-user-actions, genui-a2ui-security, ma-real-tool-results, rt-gpt-live-sideband]
+  - task: "Ajouter ou modifier un composant du catalogue Genesis"
+    docs: [p-fn-catalog, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-quality, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions]
+    knowledge: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-test-catalog-items, ux-genui-catalog-as-ds, ds-component-api, ds-widgetbook-4-genui, test-golden-alchemist]
+  - task: "Implémenter le barge-in, « Stop », le bruit court et le faire-taire clavier"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-screen, p-ar-agents-protocols, p-ar-frontend, p-ar-stage-runtime, p-rm-spikes]
+    knowledge: [rt-barge-in, rt-gpt-live-lifecycle, rt-transcription, rt-echo-cancellation, rt-graceful-close, proto-a2a-task-lifecycle, proj-avw-risks]
+  - task: "Implémenter la session voix (gpt-live-1, session créée par relais SDP backend, aucune clé dans l'app, délégation)"
+    docs: [pdr-0012-voice-provider-openai, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-fn-nfr]
+    knowledge: [rt-gpt-live-overview, rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-ephemeral-keys, rt-provider-abstraction, rt-graceful-close, proj-avw-risks]
+  - task: "Implémenter l'enregistrement, le rejeu et le mode secours"
+    docs: [p-ar-replay, p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-risks-acceptance, pdr-0006-replay-fallback-must, pdr-0005-frozen-fictional-dataset]
+    knowledge: [genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only]
+  - task: "Construire l'écran (6 zones, orbe, rail, flux protocole, étagère, rejeu)"
+    docs: [p-fn-screen, p-fn-mockups, p-fn-glossary, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform]
+    knowledge: [ux-desktop-shortcuts, ux-desktop-focus, perf-audio-visualizer-60hz, perf-repaint-boundary, ds-a11y-wcag-contrast]
+  - task: "Concevoir ou modifier le backend orchestrateur et les agents A2A"
+    docs: [p-ar-backend, p-ar-agents-protocols, p-ar-security, p-ar-stack, p-fn-dataset, pdr-0011-adopt-knowledge-adrs, p-rm-backend-production-plan]
+    knowledge: [adr-0002-orchestrator-backend, adr-0003-backend-go, ma-target-architecture, ma-backend-sdk-go, proto-a2a-overview, proto-a2a-agent-card]
+  - task: "Écrire ou faire évoluer un scénario BDD"
+    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-requirements, p-ar-quality]
+    knowledge: [test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-app-running-fixture, test-tdd-red-green-refactor]
+  - task: "Mesurer les NFR (latence, 60 i/s, lisibilité, coût)"
+    docs: [p-fn-nfr, p-ar-quality, p-ar-replay, p-fn-risks-acceptance]
+    knowledge: [rt-latency, perf-desktop-specifics, ds-a11y-wcag-contrast, ma-otel-genai-spans, ma-voice-agent-evals]
+  - task: "Choisir ou figer une version de la stack"
+    docs: [p-ar-stack, pdr-0010-pinned-experimental-versions, p-rm-spikes, p-rm-open-questions]
+    knowledge: [ma-package-versions, genui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions]
+  - task: "Prendre, proposer ou remplacer une décision produit"
+    docs: [p-conventions, p-rm-open-questions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai]
+    knowledge: [adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go]
+  - task: "Traiter un écart entre sources ou une question ouverte"
+    docs: [p-rm-open-questions, p-fn-mockups, p-sources, p-conventions]
+  - task: "Planifier le prochain jalon"
+    docs: [p-rm-roadmap, p-rm-backlog, p-rm-spikes, p-rm-open-questions, p-fn-requirements, p-fn-nfr]
+  - task: "Préparer une répétition ou le talk"
+    docs: [p-ar-stage-runtime, p-fn-risks-acceptance, p-ar-replay, p-fn-personas-journey, p-fn-screen, p-fn-nfr]
+    knowledge: [rt-echo-cancellation, rt-flutter-webrtc-audio-routing, perf-desktop-specifics, ux-desktop-shortcuts]
+  - task: "Proposer une évolution après le talk"
+    docs: [p-rm-beyond, p-fn-scope, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts]
+
+# Où est défini chaque identifiant métier (id du document).
+requirement_index:
+  "FR-01..FR-20": p-fn-requirements
+  "NFR-01..NFR-12": p-fn-nfr
+  "RG-01..RG-28": p-fn-business-rules
+  "S-01..S-09 (scénarios BDD)": p-fn-requirements
+  "E1..E22 (écarts entre sources)": p-fn-mockups
+  "Q-01..Q-64 (questions ouvertes)": p-rm-open-questions
+  "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
+  "J0..J9 (jalons)": p-rm-roadmap
+  "EP-01..EP-10 (epics)": p-rm-backlog
+  "SP-00..SP-09 (spikes)": p-rm-spikes
+  "pdr-0001..pdr-0012": decisions/index.yaml

@@ -1,0 +1,12 @@
+domain: architecture
+description: "Architecture de Genesis Canvas : vue d'ensemble C4, app Flutter desktop, backend Go orchestrateur, agents et protocoles (WebRTC, sideband, A2A, A2UI), stack et versions, rejeu, sécurité, qualité, environnement de scène"
+docs:
+  - {id: p-ar-overview, path: overview.md, summary: "Contexte et conteneurs (Mermaid), répartition client/backend, principes, carte NFR-01/02/03/07/08/09 → composants", tags: [architecture, c4, orchestrateur, nfr]}
+  - {id: p-ar-frontend, path: frontend.md, summary: "App Flutter desktop : slices FSD, couches Clean, Blocs et transformers, DI, rendu GenUI, catalogue genesis, design system, arborescence", tags: [frontend, flutter, fsd, bloc, genui, design-system]}
+  - {id: p-ar-backend, path: backend.md, summary: "Orchestrateur Go hexagonal : modules, ports, règles de l'orchestrateur, session GPT-Live, agents A2A, configuration, profil de déploiement démo", tags: [backend, go, hexagonal, a2a, sideband]}
+  - {id: p-ar-agents-protocols, path: agents-protocols.md, summary: "Protocoles par frontière et séquences Mermaid des actes 1-3, de l'interruption et de « Stop » ; écarts E1, E3, E7-E9, E11", tags: [protocoles, a2a, a2ui, webrtc, sequence, barge-in]}
+  - {id: p-ar-stack, path: stack.md, summary: "Tableau des technologies : version relevée dans knowledge, date, statut stable/bêta/expérimental, source ; plateformes", tags: [stack, versions, epinglage]}
+  - {id: p-ar-replay, path: replay.md, summary: "Journal de session JSONL, lecteur de rejeu 0,25×–2×, bascule secours < 2 s, déterminisme, réutilisations du journal", tags: [rejeu, mode-secours, journal, determinisme]}
+  - {id: p-ar-security, path: security.md, summary: "Menaces et parades : clé OpenAI côté backend, catalogue fermé, actions typées, injection, coût ; tension authentification", tags: [securite, cles, a2ui, cout]}
+  - {id: p-ar-quality, path: quality.md, summary: "Pyramide de tests TDD/BDD, traçabilité scénario → exigence, mesure de chaque NFR, CI, observabilité", tags: [qualite, tdd, bdd, nfr, ci]}
+  - {id: p-ar-stage-runtime, path: stage-runtime.md, summary: "Machine de démo, réseau, chaîne audio et sono, régie clavier, checklist avant talk, protocole de répétition (DoD)", tags: [scene, audio, reseau, repetition]}
