@@ -137,7 +137,7 @@ tasks:
   - task: "Ajouter un composant au design system et à son Widgetbook"
     notes: [ds-component-api, ds-atomic-design, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target, ds-a11y-flutter-signals, test-golden-alchemist, ux-desktop-focus, ux-desktop-pointer-hover]
   - task: "Mettre en place ou configurer Widgetbook (catalogue, Cloud, CI)"
-    notes: [adr-0008-ds-widgetbook-4-beta, adr-0006-ds-no-widgetbook-cloud, ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-testing, ds-widgetbook-4-genui, ds-widgetbook-4-risks, ds-widgetbook-publish-web, ds-widgetbook-monorepo, ds-widgetbook-versions, arch-pub-workspaces]
+    notes: [adr-0008-ds-widgetbook-4-beta, adr-0006-ds-no-widgetbook-cloud, ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-testing, ds-widgetbook-4-genui, ds-widgetbook-4-risks, ds-widgetbook-4-spike, ds-widgetbook-publish-web, ds-widgetbook-monorepo, ds-widgetbook-versions, arch-pub-workspaces]
   - task: "Concevoir l'UX d'un écran desktop (clavier, menus, layout)"
     notes: [ux-desktop-shortcuts, ux-desktop-focus, ux-desktop-pointer-hover, ux-desktop-menus, ux-desktop-adaptive-layout, ux-desktop-undo-dnd-windows, ux-desktop-platform-kits, ds-a11y-wcag-focus-target, perf-desktop-specifics]
   - task: "Concevoir l'UX d'une surface GenUI ou d'une interaction IA / voix"

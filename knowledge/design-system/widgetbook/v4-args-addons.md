@@ -5,7 +5,7 @@ tags: [widgetbook, args, addons, theme, material-ui, design-system]
 status: verified
 updated: 2026-10-28
 sources: [https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/args/enum_arg.dart, https://github.com/widgetbook/widgetbook/blob/v4/docs/args/enum.mdx, https://raw.githubusercontent.com/widgetbook/widgetbook/refs/heads/v4/docs/assets/guides/v4-migration/prompt.md, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/addons/locale_addon.dart, https://github.com/widgetbook/widgetbook/blob/v4/docs/addons/overview.mdx, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/addons/viewport_addon/viewports/macos_viewports.dart, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/addons/theme_addon/theme_addon.dart, https://github.com/widgetbook/widgetbook/issues/2044, https://pub.dev/api/archives/widgetbook-4.0.0-beta.14.tar.gz]
-links: [ds-widgetbook-4-stories, ds-material-ui-decoupling, adr-0004-ds-visual-base-m3, ds-tokens-theme-extension, ds-widgetbook-addons]
+links: [ds-widgetbook-4-stories, ds-material-ui-decoupling, adr-0004-ds-visual-base-m3, ds-tokens-theme-extension, ds-widgetbook-addons, ds-widgetbook-4-spike]
 ---
 # Les knobs deviennent des Args typés ; le thème material_ui passe par `ThemeAddon<T>`
 
@@ -47,6 +47,7 @@ final addons = [
 ```
 
 ## ⚠️ Pièges
+- **`appBuilder` obligatoire avec material_ui** (constaté par le spike) : l'`appBuilder` par défaut crée un `MaterialApp` de `flutter/material`. Fournir `m.MaterialApp(home: m.Material(child: child))` ([[ds-widgetbook-4-spike]]).
 - **Collision `ThemeMode` :** `package:widgetbook/widgetbook.dart` exporte `ThemeMode<T>` (le Mode de `ThemeAddon`), homonyme de l'enum Flutter qu'utilise `Config.themeMode`. Si un fichier importe les deux, utiliser `hide` ou un préfixe. Déduit des exports, non testé par compilation.
 - `AlignAddon` est un addon **maison** de l'exemple officiel. L'addon du package s'appelle `AlignmentAddon`.
 - Le prompt de migration officiel écrit `BooleanArg`, `SegmentedArgStyle` et `SingleArg([...])`, qui n'existent pas dans beta.14 ([[ds-widgetbook-4-risks]]).

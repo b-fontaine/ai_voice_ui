@@ -5,7 +5,7 @@ tags: [widgetbook, testing, scenarios, accessibility, golden, design-system]
 status: verified
 updated: 2026-10-28
 sources: [https://pub.dev/api/archives/widgetbook-4.0.0-beta.14.tar.gz, https://docs.widgetbook.io/~v4/testing/run-scenarios, https://docs.widgetbook.io/~v4/testing/accessibility, https://docs.widgetbook.io/~v4/genui/testing, https://pub.dev/packages/widgetbook/versions/4.0.0-beta.14/changelog, https://github.com/widgetbook/widgetbook/issues/678, https://github.com/widgetbook/widgetbook/issues/1991, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/framework/scenario.dart, https://pub.dev/api/archives/widgetbook_cli-4.0.0-beta.14.tar.gz]
-links: [ds-widgetbook-4-stories, adr-0006-ds-no-widgetbook-cloud, test-golden-alchemist, ds-widgetbook-a11y-tooling, ds-widgetbook-4-genui]
+links: [ds-widgetbook-4-stories, adr-0006-ds-no-widgetbook-cloud, test-golden-alchemist, ds-widgetbook-a11y-tooling, ds-widgetbook-4-genui, ds-widgetbook-4-spike]
 ---
 # `testWidgetbook` capture des snapshots, mais ne compare rien : ce n'est pas un golden
 
@@ -45,5 +45,8 @@ links: [ds-widgetbook-4-stories, adr-0006-ds-no-widgetbook-cloud, test-golden-al
 - **Gate a11y :** un script lit la clé `"violations"` de `build/.widgetbook/**/*.json`. Ce JSON n'a pas de schéma publié : le gate reste fragile d'une bêta à l'autre.
 - Lancer les tests sur un runner CI fixe : les pixels dépendent de l'OS hôte, comme pour tout golden.
 
-## ⚠️ Pièges
-- **Non vérifié :** `testWidgetbook` sur `--platform chrome`. Le code écrit avec `dart:io`, donc c'est probablement incompatible.
+## ⚠️ Pièges (constatés par le spike, [[ds-widgetbook-4-spike]])
+- `--platform chrome` : « No tests ran », sans erreur. Rester sur la VM.
+- Déclarer des `ScenarioDefinition` supprime le scénario implicite « Default » : déclarer « Light » et « Dark » explicitement.
+- `MinTapTargetGuideline` ignore les nœuds qui touchent le bord de la vue (`isAtBoundary`). Ajouter une marge autour des stories, sinon un bouton seul n'est jamais contrôlé.
+- Le jeu `recommended` (48 et 44) échoue en densité compacte desktop (40 px) : déclarer un jeu WCAG 2.5.8 à 24 px.

@@ -5,7 +5,7 @@ tags: [adr, decision, widgetbook, beta, design-system]
 status: opinion
 updated: 2026-10-28
 sources: [https://pub.dev/api/packages/widgetbook, https://docs.widgetbook.io/~v4/whats-new-in-v4]
-links: [ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-risks, ds-widgetbook-4-genui, ds-widgetbook-versions]
+links: [ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-risks, ds-widgetbook-4-genui, ds-widgetbook-versions, ds-widgetbook-4-spike]
 ---
 # ADR-0008 — Widgetbook 4.0.0-beta.14, version épinglée exacte
 
@@ -29,6 +29,9 @@ links: [ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-risks, ds-w
 - **#1984 :** l'état peut fuir entre stories quand un `BlocProvider` est injecté par `setup`. Les composants du DS sont sans Bloc ; les stories de features utilisent des Blocs frais par story. À vérifier pendant le spike.
 - **#1797 :** pas de stratégie d'URL `path` ni de liens profonds fiables. Pour la démo, on navigue depuis l'accueil.
 - **Guide de migration IA en partie périmé :** on part de zéro en v4, sans migrer de code 3.x.
+
+## Résultat du spike (2026-10-28)
+Décision **maintenue** : la beta.14 tient sous Flutter 3.47.8 avec `material_ui` (web, Wasm, Linux). Le #1984 n'est pas reproduit et le #1797 n'affecte pas la stratégie hash. Cinq contournements sont à appliquer (`appBuilder` material_ui, imports des stories, marge, règles a11y desktop, scénarios Light/Dark explicites) : [[ds-widgetbook-4-spike]].
 
 ## Quand réexaminer
 - Sortie de la 4.0.0 stable : passer à `^4.0.0`.
