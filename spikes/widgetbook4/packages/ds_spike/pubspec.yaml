@@ -1,0 +1,15 @@
+name: ds_spike
+description: Mini design system du spike Widgetbook 4 (material_ui).
+publish_to: none
+version: 0.0.1
+resolution: workspace
+environment:
+  sdk: ^3.13.0
+  flutter: ^3.47.0
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: 1.8.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

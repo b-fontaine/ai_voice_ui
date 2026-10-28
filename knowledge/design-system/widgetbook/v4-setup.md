@@ -5,7 +5,7 @@ tags: [widgetbook, setup, codegen, build-runner, beta, design-system]
 status: verified
 updated: 2026-10-28
 sources: [https://pub.dev/api/packages/widgetbook, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/CHANGELOG.md, https://github.com/widgetbook/widgetbook/blob/v4/examples/full_example/build.yaml, https://github.com/widgetbook/widgetbook/blob/v4/examples/full_example/pubspec.yaml, https://github.com/widgetbook/widgetbook/blob/v4/docs/quick-start.mdx, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook_cli/lib/src/templates/main_template.dart, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/runner.dart, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/lib/src/core/framework/config.dart, https://pub.dev/api/archives/widgetbook-4.0.0-beta.14.tar.gz, https://docs.widgetbook.io/~v4/whats-new-in-v4]
-links: [adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-risks, ds-widgetbook-monorepo]
+links: [adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-risks, ds-widgetbook-monorepo, ds-widgetbook-4-spike]
 ---
 # En v4, un seul package `widgetbook` (générateur et tests inclus) plus `build_runner`
 
@@ -57,4 +57,4 @@ targets:
 
 ## ⚠️ Pièges
 - Le template de test importe `package:widgetbook_workspace/widgetbook.config.dart` en dur : corriger l'import si le package est renommé.
-- **Non vérifié :** aucun code compilé avec Flutter 3.47 / Dart 3.13 (seules les contraintes et l'exemple officiel font foi), ni `build_runner` dans un membre de pub workspace ([[ds-widgetbook-monorepo]]).
+- **Vérifié par le spike** (2026-10-28) : compilation sous Flutter 3.47.8 / Dart 3.13.7 et `build_runner` dans un membre de pub workspace. Les types des paramètres du widget doivent être importés dans le `*.stories.dart`, puisque le code généré est un `part` ([[ds-widgetbook-4-spike]]).

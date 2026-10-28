@@ -1,0 +1,7 @@
+name: widgetbook4_spike
+publish_to: none
+environment:
+  sdk: ^3.13.0
+workspace:
+  - packages/ds_spike
+  - widgetbook
