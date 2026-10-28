@@ -3,9 +3,9 @@ id: p-fn-requirements
 title: Exigences fonctionnelles FR-01 à FR-20
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
-links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal]
+links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action]
 tags: [exigences, fr, moscow, bdd]
 ---
 # Exigences fonctionnelles (FR-01 à FR-20)
@@ -34,12 +34,12 @@ Les ids S-xx sont une numérotation de l'assistant ; les titres sont ceux de la 
 |---|---|---|---|---|
 | FR-01 | Au démarrage, le canevas est vide, avec seulement l'orbe vocal animé | Must | Contexte des S-01..S-04 (« le canevas est vide ») | RG-01 |
 | FR-02 | Ce que dit le speaker s'affiche en direct dans la barre de transcription | Must | S-01 | RG-25 |
-| FR-03 | Chaque agent sollicité s'allume dans le rail des agents, avec la tâche qu'il traite | Must | S-01, S-03 | RG-25 |
+| FR-03 | Chaque agent sollicité s'allume dans le rail des agents, avec la tâche qu'il traite | Must | S-01, S-03 | RG-25, RG-29 |
 | FR-04 | Chaque surface apparaît en 3 temps : squelette, composants, données | Must | S-01 (squelette < 1,5 s) | RG-02, RG-03 |
 | FR-05 | Le panneau protocole met en évidence le message qui correspond au composant en train d'apparaître | Must | — | RG-25 |
 | FR-06 | Le composant utilisé s'allume dans l'étagère du catalogue | Should | — | RG-25 |
 | FR-07 | Une demande de modification transforme une surface existante sur place, sans la recréer | Must | S-02 | RG-06 ; ⚠️ écarts E8 · Q-21 (surface retirée) et E19 · Q-58 (critère iOS dans la maquette alors que S-02 dit « uniquement Android ») |
-| FR-08 | Un clic sur un composant généré est transmis à l'agent, qui répond à la voix | Must | S-03 | RG-18, RG-28 |
+| FR-08 | Un clic sur un composant généré est transmis à l'agent, qui répond à la voix | Must | S-03 | RG-18, RG-28, RG-30 |
 | FR-09 | Toute la génération est enregistrée et rejouable à une vitesse de 0,25× à 2× | Must | — | RG-19 |
 | FR-10 | Un raccourci clavier bascule en mode secours (rejeu d'une session enregistrée) | Must | S-04 | RG-20, RG-21 |
 | FR-11 | Un raccourci remet le canevas à l'état vide | Must | — | RG-21, RG-23 |

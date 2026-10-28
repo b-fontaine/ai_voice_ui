@@ -3,9 +3,9 @@ id: p-fn-glossary
 title: Glossaire
 area: functional
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, knowledge:genui-a2ui-overview, knowledge:rt-barge-in]
-links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture]
+links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout]
 tags: [glossaire, vocabulaire]
 ---
 # Glossaire
@@ -57,13 +57,13 @@ tags: [glossaire, vocabulaire]
 | Terme | Définition | Source |
 |---|---|---|
 | **Orchestrateur** | Agent qui comprend la demande, planifie et délègue aux agents spécialisés ; tourne côté backend. | Fiche § 3 ; [ma-target-architecture] |
-| **Agent spécialisé** | Agent dédié à un domaine (fiche : Qualité, Voix du client, Livraison ; maquettes : Crash, Avis stores, Changelog, Captures d'écran — E1 · Q-01). | Fiche § 3 ; maquettes |
+| **Agent spécialisé** | Agent dédié à un domaine nommé par son rôle métier : Qualité, Voix du client, Livraison ([pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)). Les maquettes utilisaient des noms de source (Crash, Avis stores, Changelog, Captures d'écran) — E1 tranché. L'orchestrateur choisit les agents qu'il active ; les autres restent en veille. | Fiche § 3 ; maquettes |
 | **A2A** | Protocole Agent-to-Agent : transport des messages entre l'orchestrateur, les agents et le client. | [genui-a2a-connector] |
 | **A2UI** | Protocole Agent-to-UI : JSON déclaratif qui décrit une interface (composants, données) sans code. Version visée : E3 · Q-03. | [genui-a2ui-overview] |
 | **GenUI** | Package Flutter (`genui`, `genui_a2a`) qui rend les messages A2UI avec les widgets du catalogue. | [genui-overview] |
 | **Surface** | Zone d'UI générée, identifiée par un `surfaceId`, avec son propre modèle de données. Au plus 6 visibles (RG-05). | [genui-multiple-surfaces] ; fiche § 3 |
-| **Catalogue** | Liste fermée des composants que l'IA peut utiliser ; le développeur en fixe l'apparence. Identifié par un `catalogId` (maquette : `genesis.release`). | Fiche § 7 ; [genui-catalog-ids] |
-| **Composant** | Élément du catalogue (ex. Indicateur clé / Carte KPI). | Fiche § 7 ; maquettes |
+| **Catalogue** | Liste fermée de **6 composants** que l'IA peut utiliser ; le développeur en fixe l'apparence ([pdr-0014](../decisions/pdr-0014-six-component-catalog.md)). Identifié par un `catalogId` (maquette : `genesis.release`). La mise en page des surfaces n'en fait pas partie ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)). | Fiche § 7 ; [genui-catalog-ids] |
+| **Composant** | Élément du catalogue, nommé comme dans la fiche (ex. Indicateur clé ; libellé de maquette : Carte KPI). | Fiche § 7 ; maquettes |
 | **Data model / binding** | Données d'une surface, liées aux composants par chemin (ex. `/series/android`). | [genui-data-model] ; maquette 2 |
 
 ## Rejeu et secours

@@ -58,7 +58,7 @@ tasks:
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-catalog, p-ar-agents-protocols, p-ar-backend, p-ar-security]
     knowledge: [genui-user-actions, genui-a2ui-security, ma-real-tool-results, rt-gpt-live-sideband]
   - task: "Ajouter ou modifier un composant du catalogue Genesis"
-    docs: [p-fn-catalog, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-quality, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions]
+    docs: [p-fn-catalog, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-quality, pdr-0007-closed-catalog-stage-theme, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, p-rm-open-questions]
     knowledge: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-test-catalog-items, ux-genui-catalog-as-ds, ds-component-api, ds-widgetbook-4-genui, test-golden-alchemist]
   - task: "Implémenter le barge-in, « Stop », le bruit court et le faire-taire clavier"
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-screen, p-ar-agents-protocols, p-ar-frontend, p-ar-stage-runtime, p-rm-spikes]
@@ -101,7 +101,7 @@ tasks:
 requirement_index:
   "FR-01..FR-20": p-fn-requirements
   "NFR-01..NFR-12": p-fn-nfr
-  "RG-01..RG-28": p-fn-business-rules
+  "RG-01..RG-30": p-fn-business-rules
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "E1..E22 (écarts entre sources)": p-fn-mockups
   "Q-01..Q-64 (questions ouvertes)": p-rm-open-questions

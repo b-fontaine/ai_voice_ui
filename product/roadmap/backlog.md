@@ -3,9 +3,9 @@ id: p-rm-backlog
 title: Backlog par epics et couverture des exigences
 area: roadmap
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3-p7, product/sources/product-description.pdf#p11-p12]
-links: [p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must]
+links: [p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
 tags: [backlog, epics, moscow, couverture, exigences]
 ---
 # Backlog : epics → exigences → jalons
@@ -27,7 +27,7 @@ tags: [backlog, epics, moscow, couverture, exigences]
 | EP-09 | Jeu de données fictif et figé | NFR-08 | J3 |
 | EP-10 | Coût, mesures et répétitions (DoD) | NFR-11 + vérification de toutes les exigences | J2, J8 |
 
-Questions qui conditionnent les epics : EP-03 (Q-01, Q-15, Q-16, Q-17), EP-04 (Q-02, Q-03, Q-04, Q-21, Q-58, Q-60, Q-61), EP-06 (Q-20, Q-49, Q-62), EP-07 (Q-18, Q-19), EP-08 (Q-05), EP-09 (Q-08, Q-23), EP-10 (Q-13, Q-14, Q-24). Voir [open-questions.md](open-questions.md).
+Questions qui conditionnent les epics : EP-03 (Q-01, Q-15, Q-16, Q-17), EP-04 (Q-02, Q-03, Q-04, Q-21, Q-29, Q-58, Q-60, Q-61), EP-06 (Q-20, Q-49, Q-62). Tranchées : Q-01 (pdr-0013), Q-02 et Q-60 (pdr-0014), Q-29 (pdr-0015), Q-62 (pdr-0016) ; EP-04 porte 6 composants (étagère, grille de l'app), EP-06 « Bloquer » et « Valider » (RG-28, RG-30), EP-07 (Q-18, Q-19), EP-08 (Q-05), EP-09 (Q-08, Q-23), EP-10 (Q-13, Q-14, Q-24). Voir [open-questions.md](open-questions.md).
 
 ## Exigences fonctionnelles (fiche § 4)
 

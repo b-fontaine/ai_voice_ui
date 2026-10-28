@@ -3,9 +3,9 @@ id: pdr-0007-closed-catalog-stage-theme
 title: "PDR-0007 — Catalogue de composants fermé ; apparence par le thème de scène, jamais par l'IA"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf, knowledge:ux-genui-catalog-as-ds, knowledge:genui-a2ui-security, knowledge:genui-custom-catalog-item, knowledge:ux-genui-errors-validation]
-links: [p-fn-catalog, p-fn-business-rules, p-fn-nfr, p-fn-mockups, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0003-use-case-release-copilot, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, ux-genui-catalog-as-ds, genui-a2ui-security, genui-custom-catalog-item, ux-genui-errors-validation, genui-catalog-ids]
+links: [pdr-0014-six-component-catalog, p-fn-catalog, p-fn-business-rules, p-fn-nfr, p-fn-mockups, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0003-use-case-release-copilot, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, ux-genui-catalog-as-ds, genui-a2ui-security, genui-custom-catalog-item, ux-genui-errors-validation, genui-catalog-ids]
 tags: [pdr, decision, catalog, theme, genui, a2ui]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0007 — Catalogue fermé et thème de scène
 
-> **En bref.** L'IA compose uniquement avec un catalogue fermé de composants déclarés par le développeur ; leurs couleurs et tailles de texte viennent du thème de scène, jamais de l'IA. C'est le message clé du talk. Le principe est acté ; le **contenu exact** du catalogue reste ouvert (écart E2).
+> **En bref.** L'IA compose uniquement avec un catalogue fermé de composants déclarés par le développeur ; leurs couleurs et tailles de texte viennent du thème de scène, jamais de l'IA. C'est le message clé du talk. Le principe est acté ; le **contenu exact** du catalogue est arbitré par [pdr-0014](pdr-0014-six-component-catalog.md) (6 composants).
 
 Part de l'assistant : mise en forme de la fiche ; liens vers knowledge.
 
@@ -67,5 +67,6 @@ Le thème de scène impose au minimum un texte de 24 px et un contraste WCAG AA 
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 3, § 7) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR ; écarts E2 et E4 signalés | Assistant (mise en forme) |
+| 2026-10-29 | Contenu du catalogue arbitré par [pdr-0014](pdr-0014-six-component-catalog.md) (6 composants, Q-02) ; principe inchangé | Benoît FONTAINE (porteur), conversation |
 
 Pas d'archive brute.

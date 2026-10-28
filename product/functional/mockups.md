@@ -3,9 +3,9 @@ id: p-fn-mockups
 title: Maquettes et écarts avec la fiche
 area: functional
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/design-example.pdf, product/sources/product-description.pdf]
-links: [pdr-0002-desktop-platform, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, p-fn-screen, p-fn-catalog, p-fn-dataset, p-fn-personas-journey, p-fn-business-rules, p-rm-open-questions, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, genui-a2ui-overview, genui-a2ui-messages, genui-multiple-surfaces, test-bdd-feature-syntax]
+links: [pdr-0002-desktop-platform, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, p-fn-screen, p-fn-catalog, p-fn-dataset, p-fn-personas-journey, p-fn-business-rules, p-rm-open-questions, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, genui-a2ui-overview, genui-a2ui-messages, genui-multiple-surfaces, test-bdd-feature-syntax, pdr-0013-orchestrator-visible-agent-selection]
 tags: [maquettes, design, ecarts, a2ui]
 ---
 # Maquettes (design-example.pdf) et écarts
@@ -54,8 +54,8 @@ Chaque écart a sa question dans [p-rm-open-questions](../roadmap/open-questions
 
 | Id | Q | Écart | Fiche | Maquettes / autre source |
 |---|---|---|---|---|
-| E1 | Q-01 | Agents | 3 : Qualité, Voix du client, Livraison (§ 3) | 4 : Crash, Avis stores, Changelog, Captures d'écran ; « planifie · 4 tâches » |
-| E2 | Q-02 | Catalogue | 8 composants (§ 7) | 6 (Carte KPI, Courbes, Liste d'avis, Checklist, Timeline, Bouton d'action) + racine `Grid` ; voir [p-fn-catalog](catalog.md) |
+| E1 | Q-01 | Agents | 3 : Qualité, Voix du client, Livraison (§ 3) | 4 : Crash, Avis stores, Changelog, Captures d'écran ; « planifie · 4 tâches » — **tranché** : [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md) (noms de la fiche, sélection visible, nombre libre) |
+| E2 | Q-02 | Catalogue | 8 composants (§ 7) | 6 (Carte KPI, Courbes, Liste d'avis, Checklist, Timeline, Bouton d'action) + racine `Grid` ; voir [p-fn-catalog](catalog.md) — **tranché** : [pdr-0014](../decisions/pdr-0014-six-component-catalog.md) (6 composants, noms de la fiche, comportement des maquettes) |
 | E3 | Q-03 | Version A2UI | Non précisée ; la base knowledge vise genui 0.10 / A2UI **v0.9** (`createSurface`, `updateComponents`, `updateDataModel`, `deleteSurface`) [genui-a2ui-messages], v0.8 = legacy [genui-a2ui-overview] | Messages **v0.8** : `beginRendering`, `surfaceUpdate`, `dataModelUpdate` ; « A2UI v0.8 » |
 | E4 | Q-04 | « 6 » | Au plus 6 **surfaces** visibles (§ 3, NFR-06) | « n / 6 utilisés » compte les **composants** du catalogue |
 | E5 | Q-05..Q-09 | Hypothèses | Raccourcis « proposés, à valider » (Q-05) ; durée du talk (Q-06), OS de démo (Q-07), nom de l'app (Q-08), gabarit SDD (Q-09) non fixés | — |
@@ -64,7 +64,7 @@ Chaque écart a sa question dans [p-rm-open-questions](../roadmap/open-questions
 | E8 | Q-21 | Transformation | « Les surfaces existantes restent à leur place » (S-02, FR-07) | « 3 mutées · 1 en génération · **1 retirée** » (Timeline) + nouvelle surface Décision go/no-go |
 | E9 | Q-22 | Actes vs étapes | 3 actes : Créer, Transformer, Interagir (+ Rejouer) (§ 2) | Indicateur « 1 / 3 · VIDE », « 2 / 3 · CONSTRUCTION », « 3 / 3 · TRANSFORMATION » ; aucune maquette de l'acte 3 |
 | E10 | Q-28 | Composition de l'acte 1 | En-tête de release et Checklist marqués acte 1 (§ 7) | Acte 1 = KPI, courbe, avis, changelog ; ni en-tête ni checklist |
-| E11 | Q-29 | Modèle de surfaces | « surfaces » (6 max) | Une surface `release-3-4` à racine `Grid` (maquette 1), puis des surfaces distinctes `s-*` (maquette 2) [genui-multiple-surfaces] |
+| E11 | Q-29 | Modèle de surfaces | « surfaces » (6 max) | Une surface `release-3-4` à racine `Grid` (maquette 1), puis des surfaces distinctes `s-*` (maquette 2) [genui-multiple-surfaces] — **tranché** : [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md) (grille fixe tenue par l'app, N surfaces, pas de `Grid` dans le catalogue) |
 | E12 | Q-30 | État de l'orbe | « Réflexion » quand les agents travaillent ; orbe dans la barre supérieure (§ 6) | Pastille « EN ÉCOUTE » pendant planification et construction ; grand orbe au centre du canevas vide |
 | E13 | Q-31 | Zone Rejeu et flux | 6 zones dont Rejeu ; flux « replié par défaut » (§ 6) | Aucune zone Rejeu ; flux déplié (maquettes 1-2), replié (3) |
 | E14 | Q-32 | Filtres | Non décrits (ni zone ni composant) | Puces Android / iOS / Comparer 3.3 ↔ 3.4 : chrome de l'app ou UI générée ? |
@@ -74,7 +74,7 @@ Chaque écart a sa question dans [p-rm-open-questions](../roadmap/open-questions
 | E18 | Q-36 (lié à Q-18) | Persistance | Pas de persistance au-delà de la session (§ 3) | Le mode secours rejoue une session enregistrée **avant** le talk (FR-10) |
 | E19 | Q-58 | Acte 2 : périmètre Android | S-02 : « Et les données affichées concernent uniquement Android » (§ 4, FR-07) | Maquette 3 : la surface « Décision go/no-go · 3.4 » garde le critère « Sans crash iOS ≥ 99,5 % · 99,71 » ; la puce de filtre « iOS » reste affichée (non cochée) |
 | E20 | Q-59 | Répliques de l'IA dans la barre supérieure | Les répliques du speaker **et de l'IA** s'affichent en direct ; une réplique coupée est tronquée (§ 6, FR-19) | Maquettes 1-3 : seule la phrase du speaker est affichée, aucune réplique de l'IA |
-| E21 | Q-60 | Sentiment des avis | « La répartition des avis positifs et négatifs, avec 3 extraits » (§ 7) | Maquette 2 : `ReviewList` « Avis des stores » (une liste) ; maquette 3 : barre en 3 segments (négatif, neutre gris, positif) et un seul « thème n°1 · 212 mentions », sans 3 extraits |
+| E21 | Q-60 | Sentiment des avis | « La répartition des avis positifs et négatifs, avec 3 extraits » (§ 7) | Maquette 2 : `ReviewList` « Avis des stores » (une liste) ; maquette 3 : barre en 3 segments (négatif, neutre gris, positif) et un seul « thème n°1 · 212 mentions », sans 3 extraits — **tranché** : [pdr-0014](../decisions/pdr-0014-six-component-catalog.md) (version de la fiche : répartition + 3 extraits, plus la comparaison entre deux versions de la maquette 3) |
 | E22 | Q-64 | Plateformes cibles | Desktop : macOS prioritaire, Windows en secours (§ 1, [pdr-0002](../decisions/pdr-0002-desktop-platform.md)) | ADR hérités de `knowledge/`, contexte d'origine : « web, mobile et desktop » ([adr-0001-initial-constraints]) et « desktop et web » ([adr-0004-ds-visual-base-m3]) |
 
 E1 à E6 sont les écarts connus du porteur ; E7 à E9 ont été relevés en rédigeant la roadmap ; E10 à E18 en rédigeant le fonctionnel ; E19 à E21 lors de la revue de fidélité ; E22 lors du nettoyage de `knowledge/` (2026-10-28). Les questions Q-28 à Q-36, Q-58 à Q-60 et Q-64 figurent dans le registre [p-rm-open-questions](../roadmap/open-questions.md).

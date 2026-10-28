@@ -3,9 +3,9 @@ id: p-readme
 title: Documentation produit Genesis Canvas
 area: meta
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, AGENTS.md]
-links: [p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai]
+links: [p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
 tags: [meta, readme, entree, carte]
 ---
 # Genesis Canvas — documentation produit
@@ -40,7 +40,7 @@ tags: [meta, readme, entree, carte]
 | [architecture/](architecture/index.yaml) | [vue d'ensemble](architecture/overview.md), [frontend](architecture/frontend.md), [backend](architecture/backend.md), [agents et protocoles](architecture/agents-protocols.md) | Comment est-il construit, qui parle à qui ? |
 | | [stack](architecture/stack.md), [rejeu](architecture/replay.md), [sécurité](architecture/security.md), [qualité](architecture/quality.md), [scène](architecture/stage-runtime.md) | Avec quelles versions, comment tient-il sans réseau, comment le teste-t-on et le joue-t-on en salle ? |
 | [roadmap/](roadmap/index.yaml) | [roadmap](roadmap/roadmap.md), [backlog](roadmap/backlog.md), [spikes](roadmap/spikes.md), [questions ouvertes](roadmap/open-questions.md), [au-delà](roadmap/beyond.md), [plan backend de production](roadmap/backend-production-plan.md) | Dans quel ordre le construire, que reste-t-il à décider, que faire après le talk ? |
-| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0012`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
+| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0016`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
 | méta | [conventions](_conventions.md), [sources](sources/README.md), [`index.yaml`](index.yaml) | Comment écrire ici, d'où viennent les faits ? |
 
 ## État au 2026-10-28
@@ -50,8 +50,8 @@ tags: [meta, readme, entree, carte]
 | Jalon | **J0 Cadrage et docs** en cours, en attente de relecture du porteur ([roadmap](roadmap/roadmap.md)) ; aucun code applicatif |
 | Sources | fiche produit validée + 3 maquettes ([sources](sources/README.md)) |
 | Spikes | SP-00 Widgetbook 4 fait ; SP-01 à SP-07 et SP-09 (secours Windows) à mener en J1 ([spikes](roadmap/spikes.md)) |
-| Décisions | 11 PDR acceptées, 1 proposée (pdr-0012) ; 8 ADR hérités ([index](decisions/index.yaml)) |
-| Questions | 64 ouvertes, dont 22 écarts entre sources (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
+| Décisions | 15 PDR acceptées, 1 proposée (pdr-0012) ; 8 ADR hérités ([index](decisions/index.yaml)) |
+| Questions | 64 au registre : 5 tranchées, 59 ouvertes ; 22 écarts entre sources, dont E1, E2, E11 et E21 tranchés (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
 
 ## Décisions clés
 
@@ -63,7 +63,7 @@ Consigne du porteur : **tout laisser ouvert** ; rien n'est tranché dans les doc
 
 | Question | Pourquoi elle compte |
 |---|---|
-| Q-01 / Q-02 — agents et catalogue (fiche ≠ maquettes) | Fixent le contenu des actes 1 à 3 |
+| Q-01, Q-02, Q-29, Q-60, Q-62 tranchées (pdr-0013 à pdr-0016) ; Q-04 (limite « 6 ») reste ouverte, le catalogue compte 6 composants | Fixaient le contenu des actes 1 à 3 |
 | Q-03 — A2UI v0.8 (maquettes) ou v0.9 (genui 0.10) | Fixe le protocole affiché et le code de rendu |
 | Q-11 — confirmer `gpt-live-1` ([pdr-0012](decisions/pdr-0012-voice-provider-openai.md)) | Bloque J2 |
 | Q-15 / Q-16 / Q-37 — où tourne le backend, agents A2A réels, qui produit l'A2UI | Structurent le backend |

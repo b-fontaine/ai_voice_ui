@@ -3,9 +3,9 @@ id: pdr-0003-use-case-release-copilot
 title: "PDR-0003 — Cas d'usage métier : Release Copilot"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-vision, p-fn-personas-journey, p-fn-catalog, p-fn-dataset, p-fn-mockups, p-rm-open-questions, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0007-closed-catalog-stage-theme]
+links: [p-fn-vision, p-fn-personas-journey, p-fn-catalog, p-fn-dataset, p-fn-mockups, p-rm-open-questions, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0007-closed-catalog-stage-theme, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog]
 tags: [pdr, decision, use-case, release-copilot]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -45,7 +45,7 @@ Le domaine métier de la démo est la **préparation d'une release mobile** :
 Aucune alternative documentée dans la source.
 
 ## Conséquences
-- **Fonctionnel** : le catalogue est métier (En-tête de release, Indicateur clé, Liste des crashs, Checklist go/no-go…) ; son contenu exact reste ouvert (écart E2) → [p-fn-catalog](../functional/catalog.md), [pdr-0007-closed-catalog-stage-theme](pdr-0007-closed-catalog-stage-theme.md).
+- **Fonctionnel** : le catalogue est métier (En-tête de release, Indicateur clé, Liste des crashs, Checklist go/no-go…) ; son contenu exact est arrêté par pdr-0014 (6 composants) → [p-fn-catalog](../functional/catalog.md), [pdr-0007-closed-catalog-stage-theme](pdr-0007-closed-catalog-stage-theme.md).
 - **Données** : jeu fictif d'une app mobile en 3.3 et 3.4 → [p-fn-dataset](../functional/dataset.md).
 - **Architecture** : le nombre et le rôle des agents A2A (3 ou 4) conditionnent [p-ar-agents-protocols](../architecture/agents-protocols.md) ; l'architecture doit rester valable dans les deux cas tant que E1 est ouvert.
 - **Roadmap** : la question « montrer un agent d'un autre éditeur » (E6) étendrait le cas d'usage → [p-rm-open-questions](../roadmap/open-questions.md) (Q-10).
@@ -59,5 +59,6 @@ Aucune alternative documentée dans la source.
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR ; écart E1 signalé | Assistant (mise en forme) |
+| 2026-10-29 | Écart E1 tranché par [pdr-0013](pdr-0013-orchestrator-visible-agent-selection.md) ; décision inchangée | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

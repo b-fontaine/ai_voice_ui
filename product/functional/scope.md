@@ -3,9 +3,9 @@ id: p-fn-scope
 title: Périmètre du MVP
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3]
-links: [p-fn-vision, p-fn-requirements, p-fn-catalog, p-fn-dataset, p-fn-mockups, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, p-rm-open-questions]
+links: [p-fn-vision, p-fn-requirements, p-fn-catalog, p-fn-dataset, p-fn-mockups, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, p-rm-open-questions, pdr-0013-orchestrator-visible-agent-selection]
 tags: [perimetre, mvp, hors-perimetre]
 ---
 # Périmètre du MVP
@@ -18,8 +18,8 @@ tags: [perimetre, mvp, hors-perimetre]
 |---|---|---|---|
 | 1 | Un écran unique « Genesis Canvas » | 6 zones, voir [p-fn-screen](screen.md) | [pdr-0008](../decisions/pdr-0008-single-screen-show-the-making.md) |
 | 2 | Conversation vocale **en français** | Le speaker peut interrompre l'IA à tout moment | [pdr-0009](../decisions/pdr-0009-french-only.md) |
-| 3 | Un orchestrateur et **3 agents** visibles | Qualité (crashs), Voix du client (avis des stores), Livraison (changelog et checklist) | ⚠️ Maquette : 4 agents (écart E1 · Q-01) |
-| 4 | Un catalogue de **8 composants** | Au maximum **6 surfaces** visibles en même temps ; voir [p-fn-catalog](catalog.md) | ⚠️ Maquette : 6 composants (E2 · Q-02) ; « 6 » ambigu (E4 · Q-04) |
+| 3 | Un orchestrateur et **3 agents** visibles | Qualité (crashs), Voix du client (avis des stores), Livraison (changelog et checklist) | Nombre non fixé ; noms métier et sélection visible par l'orchestrateur ([pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md), E1 tranché) |
+| 4 | Un catalogue fermé de **6 composants** (voir [pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) | Au maximum **6 surfaces** visibles en même temps ; voir [p-fn-catalog](catalog.md) | Contenu tranché (E2 · Q-02, [pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) ; ⚠️ « 6 » ambigu (E4 · Q-04, ouverte) |
 | 5 | Agir sur un composant généré (bouton) | L'IA répond | FR-08 |
 | 6 | Enregistrement de chaque session et rejeu | Sert aussi de **mode secours** | [pdr-0006](../decisions/pdr-0006-replay-fallback-must.md) |
 | 7 | Jeu de données fictif et figé | Une app mobile en versions 3.3 et 3.4 ; ⚠️ nom de l'app à choisir (E5 · Q-08) | [pdr-0005](../decisions/pdr-0005-frozen-fictional-dataset.md), [p-fn-dataset](dataset.md) |

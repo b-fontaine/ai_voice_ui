@@ -1,11 +1,11 @@
 ---
 id: p-fn-business-rules
-title: Règles de fonctionnement RG-01 à RG-28
+title: Règles de fonctionnement RG-01 à RG-30
 area: functional
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements]
+links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -23,6 +23,7 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 | RG-05 | Au maximum 6 surfaces sont visibles en même temps. | § 3, § 6, NFR-06 ; ⚠️ écart E4 · Q-04 |
 | RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; ⚠️ écarts E8 · Q-21 et E19 · Q-58 |
 | RG-25 | La fabrication est montrée en continu : l'agent sollicité s'allume avec sa tâche, le message de protocole en cours est mis en évidence et relié à son composant, le composant utilisé s'allume dans l'étagère, la transcription est affichée en direct. | FR-02, FR-03, FR-05, FR-06, § 6 |
+| RG-29 | L'orchestrateur choisit à chaque demande les agents qu'il active, et le rail le montre : agents sollicités allumés avec leur tâche, agents non sollicités visiblement en veille. Les agents portent un nom de rôle métier (Qualité, Voix du client, Livraison). | FR-03, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md) |
 
 ## Catalogue et apparence
 
@@ -54,6 +55,7 @@ Repère technique : couper la voix n'annule pas d'elle-même les outils en cours
 |---|---|---|
 | RG-18 | Un clic sur un composant généré est transmis à l'agent concerné, qui s'allume dans le rail et répond à la voix **et** dans l'interface. | FR-08, § 6 (modes), S-03 |
 | RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; ⚠️ écart E17 · Q-35 |
+| RG-30 | « Valider la release » se comporte comme « Bloquer la release » (RG-18, RG-28) : clic transmis à Livraison, confirmation vocale, statut de la checklist mis à jour (par exemple « Validée »). | § 7 (Barre d'actions) ; [pdr-0016](../decisions/pdr-0016-validate-release-action.md) (Q-62) |
 
 ## Régie de scène et secours
 
@@ -74,14 +76,14 @@ Repère technique : couper la voix n'annule pas d'elle-même les outils en cours
 
 ## Numérotation
 
-Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème. On ne renumérote jamais une règle : une règle abandonnée est barrée et garde son numéro. Prochaine règle libre : **RG-29**.
+Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème. On ne renumérote jamais une règle : une règle abandonnée est barrée et garde son numéro. Prochaine règle libre : **RG-31**.
 
 ## Points ouverts
 
 - RG-05 : le plafond de 6 porte-t-il sur les surfaces ou sur les composants de l'étagère ? (E4 · Q-04)
 - RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21) ; elle garde aussi un critère iOS (99,71) alors que S-02 exige des données « uniquement Android » (E19 · Q-58).
 - RG-17 : la fiche affiche la réplique de l'IA (tronquée si coupée) dans la barre supérieure ; les maquettes n'en montrent aucune (E20 · Q-59).
-- Interactions vocales propres à chaque composant (fiche § 7 : détail d'un indicateur, autre période ou plateforme, filtre des crashs, avis d'une plateforme) : aucune règle ne les porte tant que leur place dans le MVP n'est pas décidée (Q-61). Effet de « Valider la release » non spécifié, à la différence de RG-28 (Q-62).
-- RG-14 / RG-15 : l'articulation avec le modèle de surfaces A2UI dépend de l'écart E11 · Q-29 ([genui-multiple-surfaces]).
+- Interactions vocales propres à chaque composant (fiche § 7 : détail d'un indicateur, autre période ou plateforme, filtre des crashs, avis d'une plateforme) : aucune règle ne les porte tant que leur place dans le MVP n'est pas décidée (Q-61).
+- RG-14 / RG-15 : modèle de surfaces tranché (E11 · Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : N surfaces dans une grille de l'app ([genui-multiple-surfaces]).
 
 Tous renvoient à [p-rm-open-questions](../roadmap/open-questions.md).

@@ -3,7 +3,7 @@ id: p-fn-screen
 title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
 links: [p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription]
 tags: [ecran, zones, orbe, raccourcis, interaction]
@@ -22,7 +22,7 @@ Un pointillé relie le message en cours dans le flux du protocole au composant q
 | **Canevas génératif** | Les surfaces générées (6 au maximum) | Vide au départ ; chaque surface passe par squelette, composants, données ; une modification transforme sur place | FR-01, FR-04, FR-07 |
 | **Rail des agents** | L'orchestrateur et les 3 agents spécialisés | Un agent s'allume quand il est sollicité, avec sa tâche ; une liaison animée montre la délégation | FR-03 |
 | **Flux du protocole** | Les messages d'interface envoyés par les agents | Replié par défaut, déplié à la demande ; le message en cours est mis en évidence et relié à son composant | FR-05 |
-| **Étagère du catalogue** | Les 8 composants disponibles | Le composant choisi par l'agent s'allume au moment où il est utilisé | FR-06 |
+| **Étagère du catalogue** | Les 6 composants disponibles ([pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) | Le composant choisi par l'agent s'allume au moment où il est utilisé | FR-06 |
 | **Rejeu** | Un curseur sur l'historique de la session | Rejoue la construction au ralenti ou en accéléré ; sert aussi de mode secours | FR-09, FR-10 |
 
 Libellés vus dans les maquettes : « AGENTS A2A » (rail), « FLUX A2UI · live » (flux), « CATALOGUE · n / 6 utilisés » (étagère), « CANEVAS · release-3-4 ». La zone Rejeu n'apparaît sur aucune maquette (écart E13 · Q-31, [p-fn-mockups](mockups.md)).

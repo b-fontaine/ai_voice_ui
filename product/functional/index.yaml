@@ -7,8 +7,8 @@ docs:
   - {id: p-fn-requirements, path: requirements.md, summary: "FR-01..FR-20 (MoSCoW) avec scénarios BDD S-01..S-09 et règles RG, couverture BDD", tags: [exigences, fr, moscow, bdd]}
   - {id: p-fn-nfr, path: nfr.md, summary: "NFR-01..NFR-12 avec mesure ; tension latence voix / latence UI", tags: [nfr, latence, lisibilite, resilience, securite]}
   - {id: p-fn-screen, path: screen.md, summary: "Écran unique en 6 zones, 7 états de l'orbe, modes d'interaction, raccourcis proposés", tags: [ecran, zones, orbe, raccourcis, interaction]}
-  - {id: p-fn-catalog, path: catalog.md, summary: "8 composants de la fiche, règles du catalogue, catalogue des maquettes (6) et correspondance apparente", tags: [catalogue, composants, a2ui, genui, theme]}
-  - {id: p-fn-business-rules, path: business-rules.md, summary: "Règles de fonctionnement RG-01..RG-28 : construction, catalogue, interruption, interaction, secours, données", tags: [regles, fonctionnement, interruption, catalogue, rejeu]}
+  - {id: p-fn-catalog, path: catalog.md, summary: "Catalogue retenu (6 composants, pdr-0014), règles du catalogue ; historique : 8 composants de la fiche et catalogue des maquettes", tags: [catalogue, composants, a2ui, genui, theme]}
+  - {id: p-fn-business-rules, path: business-rules.md, summary: "Règles de fonctionnement RG-01..RG-30 : construction, catalogue, interruption, interaction, secours, données", tags: [regles, fonctionnement, interruption, catalogue, rejeu]}
   - {id: p-fn-dataset, path: dataset.md, summary: "Jeu de données fictif figé (3.3/3.4) : valeurs vues dans les maquettes, identifiants, points à vérifier", tags: [donnees, dataset, determinisme, release]}
   - {id: p-fn-mockups, path: mockups.md, summary: "Description des 3 maquettes et registre des écarts E1..E22 entre sources", tags: [maquettes, design, ecarts, a2ui]}
   - {id: p-fn-risks-acceptance, path: risks-acceptance.md, summary: "Risques R1..R8 (probabilité, impact, parade), plan B, DoD de la démo, métriques du talk", tags: [risques, plan-b, dod, metriques, repetition]}

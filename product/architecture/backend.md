@@ -3,9 +3,9 @@ id: p-ar-backend
 title: Architecture du backend orchestrateur
 area: architecture
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, knowledge:adr-0003-backend-go, knowledge:ma-backend-stack-recommendation, product/roadmap/backend-production-plan.md, knowledge:ma-backend-sdk-go, knowledge:rt-gpt-live-sideband, knowledge:rt-gpt-live-delegation]
-links: [p-fn-risks-acceptance, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-security, p-ar-replay, p-ar-quality, p-ar-stack, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-recommendation, p-rm-backend-production-plan, ma-backend-sdk-go, proj-sk-backend, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-gpt-live-session-config, rt-transcription, rt-ephemeral-keys, ma-filler-acknowledgements, ma-real-tool-results, genui-a2ui-security, genui-a2ui-messages, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-agent-card, ma-otel-genai-spans, genui-a2ui-overview, ma-target-architecture, rt-graceful-close, rt-latency, proto-mcp-dart-sdks, ma-where-to-run-agents, rt-gpt-live-overview]
+links: [p-fn-risks-acceptance, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-security, p-ar-replay, p-ar-quality, p-ar-stack, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-recommendation, p-rm-backend-production-plan, ma-backend-sdk-go, proj-sk-backend, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-gpt-live-session-config, rt-transcription, rt-ephemeral-keys, ma-filler-acknowledgements, ma-real-tool-results, genui-a2ui-security, genui-a2ui-messages, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-agent-card, ma-otel-genai-spans, genui-a2ui-overview, ma-target-architecture, rt-graceful-close, rt-latency, proto-mcp-dart-sdks, ma-where-to-run-agents, rt-gpt-live-overview, pdr-0013-orchestrator-visible-agent-selection]
 tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 ---
 # Architecture du backend orchestrateur
@@ -41,7 +41,7 @@ tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 
 ## Orchestrateur : règles de comportement
 
-1. **Une délégation = un plan** de tâches (Qualité, Voix du client, Livraison… cf. E1), lancées **en parallèle** pour tenir NFR-03.
+1. **Une délégation = un plan** de tâches (Qualité, Voix du client, Livraison… ; l'orchestrateur ne sollicite que les agents utiles à la demande, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)), lancées **en parallèle** pour tenir NFR-03.
 2. Dès le plan connu, émettre l'activité des agents (rail) et un **squelette** de surface (`createSurface` + composants squelette, noms v0.9 selon Q-03) pour tenir NFR-02, sans attendre les données ([rt-latency] §5).
 3. La voix reçoit (RG-04) un **commentaire générique** de progression puis le **vrai résumé** une fois les résultats reçus ; jamais d'hypothèse ([ma-filler-acknowledgements], [ma-real-tool-results]).
 4. **Modifier sur place** (FR-07, FR-17, RG-06) : `updateComponents` / `updateDataModel` sur les `surfaceId` existants (noms v0.9 selon Q-03) ; un éventuel `deleteSurface` + `createSurface` dépend de Q-21 (E8) ([genui-a2ui-messages]).
@@ -73,7 +73,7 @@ tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 | `voice.delegation_type` | `client` (proposé, Q-47) | jamais en dur |
 | `voice.ack_delay_ms` | à régler en répétition | NFR-01 |
 | `a2ui.catalog_id`, `a2ui.version` | URI versionnée (Q-44) ; `v0.9` ⚠️ selon Q-03 / E3 | paramètre, jamais constante ; [genui-a2ui-overview] |
-| `agents[]` | URL d'Agent Card par agent | E1 |
+| `agents[]` | URL d'Agent Card par agent | nombre libre ([pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)) |
 | `dataset.path`, `dataset.version` | jeu figé | NFR-08 |
 | `limits.max_session_s`, `limits.budget` | plafond de coût | NFR-11 |
 | `auth.*`, `cors.allowed_origins` | voir [p-ar-security](security.md) | AGENTS.md §2 |
