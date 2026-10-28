@@ -3,7 +3,7 @@ id: rt-gpt-live-delegation
 title: GPT-Live — délégation (responses vs client) et tool calling
 tags: [openai, gpt-live, tools, function-calling, delegation, orchestrator, multi-agent]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/live-delegation.md, https://developers.openai.com/api/docs/guides/live, https://developers.openai.com/api/docs/guides/live-conversations]
 links: [rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-gpt-live-session-config, rt-tool-calling-voice, ma-target-architecture, ma-filler-acknowledgements, ma-real-tool-results, ma-realtime-handoff-limits, proj-avw-risks, proj-avw-voice-runners]
 ---
@@ -13,7 +13,7 @@ links: [rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-gpt-live-session-config,
 
 | | `"responses"` | `"client"` |
 |---|---|---|
-| Backend | Modèle Responses géré par OpenAI | Notre agent / orchestrateur |
+| Backend | Modèle Responses géré par OpenAI | Votre agent / orchestrateur |
 | Événement entrant | `session.delegation.created` (`target: "responses"`, `response_id`) puis `response.event` | `session.delegation.created` (`delegation.id`, `target: "client"`) **sans les mots de l'utilisateur** |
 
 ## Mode `responses`
@@ -27,7 +27,7 @@ links: [rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-gpt-live-session-config,
 ```
 Sans `response.create`, le backend ne reprend pas. Résultat manquant → `tool_outputs_required` (ou `function_call_outputs_required` s'il ne manque que des fonctions). Doublons et types incohérents rejetés.
 
-## Mode `client` (notre orchestrateur)
+## Mode `client` (orchestrateur maison)
 - Contexte de la demande à reconstruire depuis `session.input_transcript.delta` / `session.output_transcript.delta`.
 - Retour, chaque `content` ≤ 500 tokens avec un `event_id` unique :
   - `session.commentary.append` : à dire (le modèle peut paraphraser) ;

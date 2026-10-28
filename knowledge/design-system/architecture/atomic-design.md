@@ -3,7 +3,7 @@ id: ds-atomic-design
 title: Atomic Design (Frost) et sa projection en Flutter
 tags: [atomic-design, design-system, composition, architecture, widgets]
 status: sourced
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://atomicdesign.bradfrost.com/chapter-2/, https://docs.flutter.dev/resources/architectural-overview]
 links: [ds-package-structure, ds-component-api, genui-custom-catalog-item, arch-clean-fsd-combo, ux-genui-catalog-as-ds]
 ---
@@ -21,7 +21,7 @@ Frost insiste : pas de processus linéaire, mais un modèle pour penser **en mê
 ## Composition en Flutter
 L'aperçu d'architecture Flutter privilégie la composition : on compose des widgets au lieu de sous-classer `Container`. La hiérarchie est peu profonde et large, faite de petits widgets qui font une seule chose. (Opinion) Atomic Design s'y projette naturellement ; la doc Flutter ne le mentionne pas.
 
-## Projection dans le projet (opinion)
+## Projection dans une app FSD avec package DS (opinion)
 | Niveau | Emplacement |
 |---|---|
 | atoms, molecules, organisms | package design system ([[ds-package-structure]]) |

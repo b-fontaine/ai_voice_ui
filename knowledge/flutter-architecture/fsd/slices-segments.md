@@ -3,9 +3,9 @@ id: arch-fsd-slices-segments
 title: FSD — slices (métier) et segments (technique)
 tags: [fsd, slices, segments, cohesion]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://feature-sliced.design/docs/reference/slices-segments]
-links: [arch-fsd-layers, arch-fsd-public-api, arch-fsd-dart-mapping]
+links: [arch-fsd-layers, arch-fsd-public-api, arch-fsd-dart-mapping, bloc-no-cubit]
 ---
 # Slices = découpage métier ; segments = découpage technique
 
@@ -19,7 +19,7 @@ links: [arch-fsd-layers, arch-fsd-public-api, arch-fsd-dart-mapping]
 | Segment | Contenu FSD | Équivalent Clean/Flutter (opinion) |
 |---|---|---|
 | `ui` | composants, formatters, styles | presentation (widgets, pages) |
-| `model` | schémas, stores, logique métier | domain + state (entities, Bloc/Cubit, use-cases) |
+| `model` | schémas, stores, logique métier | domain + state (entities, Bloc — Cubit exclu, [[bloc-no-cubit]] —, use-cases) |
 | `api` | requêtes backend, types, mappers | data (services, DTO, mappers, repo impl) |
 | `lib` | helpers internes à la slice | utils privés |
 | `config` | configuration, feature flags | config, constantes |

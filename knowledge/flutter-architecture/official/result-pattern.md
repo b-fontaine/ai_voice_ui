@@ -3,9 +3,9 @@ id: arch-result-pattern
 title: Pattern Result officiel (sealed Ok/Error)
 tags: [flutter, error-handling, result, sealed-class, official]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/app-architecture/design-patterns/result, https://pub.dev/packages/result_dart]
-links: [arch-either-vs-result, arch-error-handling, arch-command-pattern]
+links: [arch-either-vs-result, arch-error-handling, arch-command-pattern, bloc-no-cubit]
 ---
 # Result<T> : rendre les erreurs explicites dans les signatures
 
@@ -20,7 +20,7 @@ sealed class Result<T> {
 final class Ok<T> extends Result<T> { const Ok(this.value); final T value; }
 final class Error<T> extends Result<T> { const Error(this.error); final Exception error; }
 
-// ViewModel / Cubit : la gestion des deux cas est exhaustive (sealed)
+// Bloc (Cubit exclu, voir bloc-no-cubit) : la gestion des deux cas est exhaustive (sealed)
 switch (await repo.getUserProfile()) {
   case Ok(:final value): profile = value;
   case Error(:final error): this.error = error;

@@ -3,7 +3,7 @@ id: test-tdd-red-green-refactor
 title: TDD en Flutter — cycle red/green/refactor
 tags: [tdd, method, flutter]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: []
 links: [test-pyramid-flutter, test-mock-boundaries-only, test-bloc-test, test-bdd-widget-test]
 ---
@@ -13,7 +13,7 @@ On écrit d'abord un test qui échoue (**red**), puis le code minimal qui le fai
 
 ## Application au projet multi-agents
 - **Point d'entrée par couche :**
-  - domaine et cubit : `test` / `blocTest`
+  - domaine et Bloc : `test` / `blocTest`
   - écran : `testWidgets` ou scénario `.feature`
 - **Outside-in :** pour une feature utilisateur (ex. « l'agent vocal affiche l'écran demandé »), on part d'un scénario Gherkin rouge. On descend ensuite en tests unitaires rouges sur l'orchestrateur et le BLoC.
 - **Taille de pas :** un seul `expect` nouveau par cycle. Le test passe au vert avec le code le plus bête possible, puis on généralise au refactor.

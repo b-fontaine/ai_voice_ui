@@ -43,11 +43,13 @@
 
 - **Décisions (ADR) :** une note `knowledge/decisions/adr-NNNN-<slug>.md` par décision technologique ou d'architecture. Le numéro est séquentiel et n'est jamais réutilisé. Une note contient :
   - les métadonnées : date, statut (proposée, acceptée, remplacée par adr-XXXX, abandonnée), décideur et part de l'assistant ;
+  - une ligne **Portée** : « générique » ou « générique, avec contexte d'origine propre au projet » ; dans le second cas, une section « Contexte d'origine (non générique) » encadre, sans les supprimer, les passages à ignorer sur un autre projet ;
   - le contexte et les **hypothèses**, en signalant celles qui ne sont pas confirmées ;
   - les options, la décision, les raisons et les options écartées ;
   - les cas où il faudra réexaminer la décision ;
   - les chemins des archives.
 - **Une décision n'est jamais effacée :** on la marque remplacée et on crée un nouvel ADR.
+- **Portabilité :** `knowledge/` doit rester autonome si on le copie seul. Aucune note ne renvoie à une documentation propre à un produit ; le savoir propre à un produit (architecture de l'app, plan de livraison, démo) vit hors de `knowledge/`, et c'est cette documentation qui cite les ids de `knowledge/`.
 - **Les sorties brutes** des panels, recherches et juges vont dans `decisions/_archive/AAAA-MM-JJ-<slug>.md`, sans limite de taille et ignorées par le lint.
 
 - **Info datée :** toute information susceptible d'évoluer (version, modèle, preview) indique sa date dans `updated` et le mentionne dans le corps.

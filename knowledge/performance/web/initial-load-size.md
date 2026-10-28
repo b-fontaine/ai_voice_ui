@@ -3,7 +3,7 @@ id: perf-web-initial-load
 title: Flutter web — taille initiale, deferred imports, cache
 tags: [web, deferred-loading, bundle-size, caching, startup]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources:
   - https://docs.flutter.dev/perf/deferred-components
   - https://docs.flutter.dev/platform-integration/web/wasm
@@ -32,7 +32,7 @@ Future<void> openGenUi() async {
 4. **Cache** : `--web-content-hash` (doc « 3.50+ ») hashe les entrypoints et `assets/**`. Les fichiers hashés passent en `immutable`, tandis que `index.html` et `flutter_bootstrap.js` sont en `max-age=0, must-revalidate`.
 5. Le service worker de cache n'est plus généré par défaut. Pour du offline, utiliser Workbox par exemple, alimenté par `build/web/precache_manifest.json` (généré avec `--web-content-hash`).
 
-Candidats au différé dans notre app : le catalogue GenUI et les écrans rarement ouverts. Le **runner voix** doit être prêt dès le premier geste utilisateur (opinion).
+Candidats au différé dans une app voix + GenUI : le catalogue GenUI et les écrans rarement ouverts. Le **runner voix**, lui, doit être prêt dès le premier geste utilisateur (opinion).
 
 ## ⚠️ Pièges
 - `--web-content-hash` ne supporte **pas encore** les imports différés (`deferred as`), ni en dart2js ni en dart2wasm : les points 1-2 et 4 sont pour l'instant incompatibles (doc deployment/web).

@@ -3,13 +3,13 @@ id: di-no-service-locator
 title: Anti-pattern — service locator dans les widgets et les blocs
 tags: [di, anti-pattern, bloc, widgets, get_it]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://engineering.verygood.ventures/architecture/ffca/presentation/, https://bloclibrary.dev/tutorials/flutter-todos/]
 links: [di-testing, bloc-providers-selector, di-registration-annotations, proj-avw-risks, proj-sk-patterns]
 ---
 # Pas de `getIt<T>()` dans un Bloc ni dans `build`
 
-**Règle projet :** `getIt` n'est appelé qu'à la **racine de composition**, c'est-à-dire dans le `create:` d'un `BlocProvider` au niveau page/route, ou dans le router. Les Blocs et services reçoivent leurs dépendances **par le constructeur**.
+**Règle (adr-0001) :** `getIt` n'est appelé qu'à la **racine de composition**, c'est-à-dire dans le `create:` d'un `BlocProvider` au niveau page/route, ou dans le router. Les Blocs et services reçoivent leurs dépendances **par le constructeur**.
 
 La doc bloc dit que le Bloc « relies on an instance of the repository to be injected via constructor ». VGV construit les dépendances avec Provider et `context.read()`, sans service locator.
 

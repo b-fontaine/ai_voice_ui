@@ -3,7 +3,7 @@ id: ux-desktop-platform-kits
 title: Kits UI par OS (fluent_ui, macos_ui) contre DS maison + conventions
 tags: [desktop, fluent-ui, macos-ui, design-system, ux]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://pub.dev/packages/fluent_ui, https://pub.dev/packages/macos_ui/versions, https://fluent2.microsoft.design/layout, https://learn.microsoft.com/en-us/windows/apps/design/basics/content-basics]
 links: [ds-material-ui-decoupling, ux-desktop-shortcuts, ux-desktop-menus, ds-spacing-shape-elevation]
 ---
@@ -18,7 +18,7 @@ links: [ds-material-ui-decoupling, ux-desktop-shortcuts, ux-desktop-menus, ds-sp
 - Windows : 8 epx entre boutons, et entre un bouton et son flyout. 8 epx entre un contrôle et son en-tête, 12 epx entre un contrôle et son libellé. 12 epx entre zones de contenu, 16 epx entre une surface et le texte en bordure.
 
 ## Recommandation (opinion)
-- Le projet a **un** DS maison construit sur `material_ui`, découplé de Material ([[ds-material-ui-decoupling]]). Il est catalogué dans Widgetbook et réutilisé par le catalogue GenUI.
+- Cas visé : **un seul** DS maison (par exemple construit sur `material_ui`, découplé de Material : [[ds-material-ui-decoupling]]), catalogué dans Widgetbook et réutilisé par le catalogue GenUI.
 - Deux kits par OS signifient trois rendus à maintenir et tester (goldens, Widgetbook, catalogue A2UI), avec un risque de dépendance (mainteneur unique, kit inactif).
 - L'adaptation plateforme passe par le **comportement**, pas par le look :
   - raccourcis `Ctrl`/`Cmd` et ordre des modificateurs ([[ux-desktop-shortcuts]]) ;

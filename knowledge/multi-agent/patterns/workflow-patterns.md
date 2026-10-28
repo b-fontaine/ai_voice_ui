@@ -3,13 +3,13 @@ id: ma-workflow-patterns
 title: Les cinq patterns de workflow (Anthropic)
 tags: [multi-agent, anthropic, router, orchestrator]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://www.anthropic.com/engineering/building-effective-agents]
 links: [ma-simplicity-first, ma-handoff-vs-agent-as-tool, ma-adk-collaboration-modes, ma-filler-acknowledgements]
 ---
 # Cinq patterns de workflow composables
 
-| Pattern | Principe | Usage chez nous |
+| Pattern | Principe | Usage type |
 |---|---|---|
 | **Prompt chaining** | Appels LLM séquentiels, contrôles programmatiques entre étapes | Description d'écran → génération A2UI → validation |
 | **Routing** | Classifier l'entrée puis l'envoyer vers un prompt/outil/modèle spécialisé | Intention vocale → GenUI, MCP ou A2A |

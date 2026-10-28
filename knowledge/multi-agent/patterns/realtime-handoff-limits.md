@@ -3,7 +3,7 @@ id: ma-realtime-handoff-limits
 title: Handoffs en session vocale temps réel — limites
 tags: [multi-agent, realtime-voice, handoff, openai-agents-sdk]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://openai.github.io/openai-agents-js/guides/voice-agents/build/, https://github.com/openai/openai-agents-js/blob/main/docs/src/content/docs/guides/voice-agents/build.mdx]
 links: [ma-handoff-vs-agent-as-tool, rt-gpt-live-delegation, ma-target-architecture]
 ---
@@ -26,4 +26,4 @@ Pour utiliser un autre modèle (un modèle de raisonnement, par exemple) ou un a
 - Pendant l'exécution d'un outil, l'agent ne traite pas de nouvelle demande. La doc suggère de faire annoncer l'appel.
 
 ## Conséquence
-Notre agent vocal = un seul agent temps réel. Le reste (orchestrateur, GenUI, MCP, A2A) est derrière des outils ou derrière la délégation native de GPT-Live ([[rt-gpt-live-delegation]]).
+Pour un agent vocal + orchestrateur : l'agent vocal = un seul agent temps réel. Le reste (orchestrateur, GenUI, MCP, A2A) est derrière des outils ou derrière la délégation native de GPT-Live ([[rt-gpt-live-delegation]]).

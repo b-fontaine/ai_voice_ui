@@ -3,7 +3,7 @@ id: arch-pub-workspaces
 title: Pub workspaces (Dart 3.6+) pour un monorepo Flutter
 tags: [dart, pub, workspace, monorepo, melos]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://dart.dev/tools/pub/workspaces, https://pub.dev/packages/melos]
 links: [arch-fsd-dart-mapping, arch-dependency-validator, arch-recommended-structure, proj-avw-overview, proj-sk-overview, di-micro-packages, ds-widgetbook-monorepo, ds-package-structure]
 ---
@@ -20,7 +20,7 @@ name: _
 publish_to: none
 environment: {sdk: ^3.6.0}
 workspace:
-  - apps/assistant_app
+  - apps/<app>
   - packages/core
   # globs (packages/*) uniquement à partir de Dart 3.11
 ---

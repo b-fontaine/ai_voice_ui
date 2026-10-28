@@ -11,6 +11,10 @@ links: [ds-material-ui-decoupling, ux-desktop-platform-kits, ds-color-from-seed,
 
 - **Statut :** acceptée le 2026-10-28.
 - **Décideur :** porteur du projet, qui retient la recommandation de l'assistant (« Ta reco est la bonne »).
+- **Portée :** générique, avec contexte d'origine propre au projet (voir « Contexte d'origine (non générique) »).
+
+## Contexte d'origine (non générique)
+Les raisons techniques (une base M3 pour desktop, web et surfaces GenUI ; rôles de couleur accessibles ; fragilité des kits par OS) sont réutilisables. Sont propres au projet d'origine : « L'app cible desktop et web » et « démo pour un talk Flutter GenUI » (Contexte), « trop coûteux pour une démo » (Options écartées), « pour la démo » et « retours du talk » (Quand réexaminer).
 
 ## Contexte
 - L'app cible desktop et web avec Flutter 3.47. C'est une démo pour un talk Flutter GenUI.
@@ -37,3 +41,6 @@ Option 1. Les composants `Ds*` reposent sur `material_ui`, avec des thèmes `Col
 ## Quand réexaminer
 - M3 Expressive livré officiellement dans `material_ui` (aujourd'hui seulement « en cours ») : évaluer son adoption pour la démo.
 - Les retours du talk réclament un rendu natif par OS.
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

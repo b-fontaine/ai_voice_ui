@@ -10,7 +10,7 @@ notes:
   - {id: test-bdd-hooks-steps, path: bdd/hooks-reusable-steps.md, summary: "Steps prédéfinis, steps externes partagés (voice_test_kit), hooks before/after", tags: [bdd, hooks, steps]}
   # bloc/
   - {id: test-bloc-test, path: bloc/bloc-test.md, summary: "blocTest 10.0.0 sur un Bloc (pas de Cubit) : paramètres, mock du runner, concurrence, un test par handler", tags: [bloc, bloc_test]}
-  - {id: test-bloc-mockbloc-whenlisten, path: bloc/mockbloc-whenlisten.md, summary: "MockCubit + whenListen pour tester un widget isolé de son bloc", tags: [bloc, widgets, mocktail]}
+  - {id: test-bloc-mockbloc-whenlisten, path: bloc/mockbloc-whenlisten.md, summary: "MockBloc + whenListen pour tester un widget isolé de son bloc", tags: [bloc, widgets, mocktail]}
   # ci/
   - {id: test-coverage-ci, path: ci/coverage-ci.md, summary: "flutter test --coverage, very_good test 1.5.0 flags, pipeline CI proposé", tags: [coverage, ci, very_good_cli]}
   - {id: test-very-good-analysis, path: ci/very-good-analysis.md, summary: "very_good_analysis 11.0.0: include versionné, désactivation de règles", tags: [lint, analysis]}

@@ -3,7 +3,7 @@ id: ma-voice-agent-evals
 title: Évaluer un agent vocal délégant (crawl / walk / run)
 tags: [multi-agent, evaluation, realtime-voice, gpt-live, testing]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/cookbook/examples/audio/voice_agent_evaluation]
 links: [ma-otel-genai-spans, ma-real-tool-results, test-realtime-fake-runner, test-pyramid-flutter]
 ---
@@ -43,6 +43,6 @@ Comme le modèle est non déterministe, répéter les runs et rapporter P50 et P
 - Ne changer qu'une variable à la fois.
 - Transformer chaque échec de production en scénario de régression.
 
-**Pour nous (opinion) :**
+**Recommandation pour un orchestrateur voix + A2UI (opinion) :**
 - CRAWL en CI sur l'orchestrateur, avec un faux runner côté Flutter ([[test-realtime-fake-runner]]).
 - WALK et RUN en nightly.

@@ -3,7 +3,7 @@ id: rt-tool-calling-voice
 title: Outils d'un agent vocal dans une archi multi-agents
 tags: [pattern, tools, orchestrator, genui, async, multi-agent]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/live-delegation.md, https://ai.google.dev/gemini-api/docs/live-tools, https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live]
 links: [rt-gpt-live-delegation, rt-gemini-function-calling, rt-gpt-live-sideband, rt-latency, proj-avw-genui-bridge, ma-real-tool-results, ma-target-architecture, genui-voice-bridge, ma-filler-acknowledgements]
 ---
@@ -13,7 +13,7 @@ L'agent vocal expose **peu d'outils génériques**, par exemple `delegate_to_orc
 
 **Correspondance par fournisseur :**
 - **GPT-Live, délégation `client` :** chaque `session.delegation.created` devient une tâche de l'orchestrateur. Les résultats reviennent par `session.commentary.append` (à dire) ou `session.thinking.append` (contexte). Ce mode est naturellement asynchrone.
-- **GPT-Live, délégation `responses` :** les outils `function` sont exécutés par notre code, côté client ou de préférence via sideband serveur. Le retour se fait par `response.item.create` puis `response.create`.
+- **GPT-Live, délégation `responses` :** les outils `function` sont exécutés par le code de l'application, côté client ou de préférence via sideband serveur. Le retour se fait par `response.item.create` puis `response.create`.
 - **Gemini 3.8 :** `NON_BLOCKING` avec `scheduling` (`WHEN_IDLE` pour un résultat, `SILENT` pour un simple effet UI).
 - **Gemini 3.1, ou `firebase_ai` Dart sans `behavior` :** appel synchrone. Il faut répondre vite, puis pousser le résultat final via `send(...)`.
 

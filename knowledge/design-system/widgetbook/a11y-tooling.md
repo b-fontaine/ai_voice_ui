@@ -9,7 +9,7 @@ links: [ds-widgetbook-testing, ds-widgetbook-addons, ds-a11y-flutter-signals, ds
 ---
 # Deux outils : `meetsGuideline` bloque en test, `accessibility_tools` alerte dans le catalogue
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-testing]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-testing]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 ## En test : `meetsGuideline`
 Matcher **asynchrone** : `await expectLater`, sémantique activée avant avec `tester.ensureSemantics()`, puis `handle.dispose()`.
@@ -41,8 +41,8 @@ BuilderAddon(
 - `checkFontOverflows: true` active le vérificateur de débordement du texte agrandi (expérimental, désactivé par défaut).
 - `IgnoreMinimumTapAreaSize` neutralise l'alerte de zone tactile pour une exception assumée.
 
-## Usage projet (opinion)
-App desktop + web : tester les composants DS avec `iOSTapTargetGuideline` (44, aligné sur le défaut desktop d'accessibility_tools) au minimum, et `androidTapTargetGuideline` pour les composants tactiles. Tests a11y dans la suite du package DS, pas dans le catalogue.
+## Usage recommandé (opinion)
+Pour une app desktop + web : tester les composants DS avec `iOSTapTargetGuideline` (44, aligné sur le défaut desktop d'accessibility_tools) au minimum, et `androidTapTargetGuideline` pour les composants tactiles. Tests a11y dans la suite du package DS, pas dans le catalogue.
 
 ## ⚠️ Pièges
 - Oublier `ensureSemantics()` ou `await` : le test ne vérifie rien de fiable.

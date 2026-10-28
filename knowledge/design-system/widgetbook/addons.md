@@ -9,7 +9,7 @@ links: [ds-widgetbook-versions, ds-widgetbook-api-history, ds-widgetbook-cloud-m
 ---
 # Les addons enveloppent chaque use case, et leur ordre compte
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-args-addons]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-args-addons]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 Un addon enveloppe **tous** les use cases dans un widget qu'on règle depuis l'interface Widgetbook : thème, taille d'écran, locale… On les déclare une fois, dans la liste `addons:` du widget racine `Widgetbook`.
 
@@ -24,7 +24,7 @@ Un addon enveloppe **tous** les use cases dans un widget qu'on règle depuis l'i
 - `AccessibilityAddon` : déprécié depuis 3.8.0. Le remplacer par `BuilderAddon` + le package `accessibility_tools`.
 - `DeviceFrameAddon` : déprécié depuis 3.15.0 au profit de `ViewportAddon`.
 
-## Configuration type du projet (opinion)
+## Configuration type (opinion)
 ```dart
 Widgetbook.material(
   directories: directories, // généré

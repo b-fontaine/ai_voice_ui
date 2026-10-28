@@ -3,7 +3,7 @@ id: ds-governance-versioning
 title: Gouvernance et versionnage du design system
 tags: [governance, semver, deprecation, changelog, design-system]
 status: sourced
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://dart.dev/tools/pub/dependencies, https://dart.dev/tools/pub/versioning, https://api.dart.dev/dart-core/Deprecated-class.html, https://docs.flutter.dev/release/compatibility-policy, https://dart.dev/tools/pub/package-layout, https://bradfrost.com/blog/post/a-design-system-governance-process/]
 links: [ds-package-structure, ds-widgetbook-testing, ds-material-ui-decoupling, test-coverage-ci]
 ---
@@ -35,7 +35,7 @@ const DsButton.secondary({...});
 
 Une snowflake (composant ponctuel d'un seul produit) va dans le backlog de l'équipe produit, pas dans le DS.
 
-## Application au projet (opinion)
+## Recommandation pour un DS interne (opinion)
 - Rester en 0.x tant que l'API bouge ; bumper la mineure à chaque changement cassant.
 - Nouveau composant : **pas d'ADR**, mais une revue DS (étapes 3 à 7) dans la PR. Un ADR seulement pour un choix technologique (lib de tokens, passage à Expressive).
 - Snowflakes : dans la feature FSD qui les utilise ; promotion au DS dès la 2ᵉ réutilisation.

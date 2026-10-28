@@ -5,7 +5,7 @@ notes:
   - {id: bloc-emit-foreach, path: emit-foreach.md, summary: "emit.forEach/onEach pour flux runner voix, + restartable", tags: [bloc, streams, audio]}
   - {id: bloc-event-transformers, path: event-transformers.md, summary: "sequential/droppable/restartable/concurrent et cas voix", tags: [bloc, concurrency, voice]}
   - {id: bloc-naming, path: naming.md, summary: "Events au passé (Subject+Noun+Verb), states noms", tags: [bloc, naming]}
-  - {id: bloc-no-cubit, path: no-cubit.md, summary: "Règle projet: Bloc uniquement (traçabilité, transformers), lint prefer_bloc", tags: [bloc, rule, cubit]}
+  - {id: bloc-no-cubit, path: no-cubit.md, summary: "Règle (adr-0001): Bloc uniquement (traçabilité, transformers), lint prefer_bloc", tags: [bloc, rule, cubit]}
   - {id: bloc-no-non-serializable-state, path: no-non-serializable-state.md, summary: "Objets GenUI/WebRTC/audio hors de l'état; ids seulement", tags: [bloc, genui, anti-pattern]}
   - {id: bloc-packages-versions, path: packages-versions.md, summary: "Versions bloc, flutter_bloc, bloc_concurrency, bloc_test, bloc_lint, freezed", tags: [bloc, versions]}
   - {id: bloc-providers-selector, path: providers-selector.md, summary: "BlocProvider vs .value, MultiBlocProvider, BlocSelector", tags: [bloc, widgets, performance]}

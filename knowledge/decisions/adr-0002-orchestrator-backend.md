@@ -3,7 +3,7 @@ id: adr-0002-orchestrator-backend
 title: "ADR-0002 — L'orchestrateur tourne côté backend dès la phase 1"
 tags: [adr, decision, orchestrator, architecture, security]
 status: opinion
-updated: 2026-10-27
+updated: 2026-10-28
 sources: []
 links: [adr-0001-initial-constraints, adr-0003-backend-go, ma-target-architecture, ma-where-to-run-agents, proto-stack-recommendation, rt-ephemeral-keys, proj-avw-risks]
 ---
@@ -12,11 +12,18 @@ links: [adr-0001-initial-constraints, adr-0003-backend-go, ma-target-architectur
 - **Date :** 2026-10-27
 - **Statut :** acceptée
 - **Décideur :** porteur du projet, sur recommandation de l'assistant (option marquée « Recommandé »).
+- **Portée :** générique, avec contexte d'origine propre au projet.
 
 ## Contexte
 Après la construction de la base, deux notes divergeaient :
 - [[proto-stack-recommendation]] plaçait l'orchestrateur **dans l'app** en phase 1, puis côté serveur en phase 2 ;
 - [[ma-target-architecture]] et [[ma-where-to-run-agents]] le plaçaient **côté backend** dès le départ.
+
+## Contexte d'origine (non générique)
+La décision (orchestrateur côté backend dès le départ) et ses raisons sont réutilisables. Les passages suivants décrivent le projet d'origine ; un lecteur d'un autre projet les ignore :
+- **« phase 1 » / « phase 2 »** (titre, contexte, options, conséquences) : phasage de livraison du projet d'origine. Lire « phase 1 » comme « dès le départ ».
+- **Réécriture de [[proto-stack-recommendation]]** (conséquences) : état de la note au 2026-10-27. Son phasage propre au projet en a été retiré depuis (2026-10-28).
+- **`AGENTS.md`** (conséquences) : fichier du dépôt d'origine, absent si `knowledge/` est copié seul.
 
 ## Hypothèses
 - GPT-Live n'offre pas de client secret, d'où le relais SDP côté serveur : c'est un fait vérifié dans la doc au 2026-10-26.
@@ -42,3 +49,6 @@ Pas d'archive brute : décision prise directement dans la conversation.
 - [[proto-stack-recommendation]] a été réécrite : phase 1 avec un backend minimal, phase 2 avec A2A et AG-UI.
 - La règle est ajoutée dans `AGENTS.md`.
 - Cette décision pose la question du langage du backend, tranchée par [[adr-0003-backend-go]].
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

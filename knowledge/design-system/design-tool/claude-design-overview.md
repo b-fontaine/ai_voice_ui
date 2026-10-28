@@ -7,9 +7,9 @@ updated: 2026-10-28
 sources: [https://www.anthropic.com/news/claude-design-anthropic-labs, https://support.claude.com/en/articles/14604416-get-started-with-claude-design, https://claude.com/product/design, https://support.claude.com/en/articles/17440474-move-from-standalone-claude-design-to-claude, https://support.claude.com/en/articles/14604406-claude-design-admin-guide-for-team-and-enterprise-plans, https://claude.com/blog/claude-design-stays-on-brand-for-daily-work, https://code.claude.com/docs/en/artifacts.md, https://code.claude.com/docs/en/changelog.md]
 links: [adr-0007-ds-design-tool-claude-design, ds-claude-design-tokens, ds-claude-design-workflow]
 ---
-# Claude Design est l'outil de design du projet ; il vit désormais dans Claude (artifacts)
+# Claude Design, outil de design d'Anthropic, vit désormais dans Claude (artifacts)
 
-Annoncé le 2026-04-17, Claude Design est un produit **Anthropic Labs** en *research preview*, propulsé par Claude Opus 4.7. Il produit designs, prototypes, slides et one-pagers. Choisi comme outil de design du projet ([[adr-0007-ds-design-tool-claude-design]]).
+Annoncé le 2026-04-17, Claude Design est un produit **Anthropic Labs** en *research preview*, propulsé par Claude Opus 4.7. Il produit designs, prototypes, slides et one-pagers. Retenu comme outil de design par [[adr-0007-ds-design-tool-claude-design]].
 
 ## Plans (état au 2026-10-28)
 - Au lancement (avril 2026) : Pro, Max, Team et Enterprise seulement ; désactivé par défaut sur Enterprise. Situation dépassée.

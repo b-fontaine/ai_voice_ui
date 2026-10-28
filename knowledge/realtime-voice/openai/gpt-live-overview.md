@@ -3,7 +3,7 @@ id: rt-gpt-live-overview
 title: GPT-Live (gpt-live-1) — fiche modèle
 tags: [openai, gpt-live, voice-to-voice, pricing, models]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/models/gpt-live-1, https://developers.openai.com/api/docs/guides/live.md]
 links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-openai-realtime-vs-live, rt-gpt-live-session-config]
 ---
@@ -31,7 +31,7 @@ Infos relevées le 2026-10-26 :
 - Le modèle voix gère le tour de parole.
 - Le backend délégué gère les outils et la logique métier.
 
-Cette séparation correspond naturellement à notre couple « agent vocal + orchestrateur ».
+Cette séparation correspond naturellement au couple « agent vocal + orchestrateur » d'une architecture multi-agents.
 
 ## ⚠️ Pièges
 - `gpt-live-1` **n'est pas** un modèle Realtime : `wss://…/v1/realtime?model=gpt-live-1` ne fonctionne pas. Voir [[rt-openai-realtime-vs-live]].

@@ -3,7 +3,7 @@ id: di-dispose-method
 title: injectable — @disposeMethod et cycle de vie
 tags: [di, injectable, dispose, lifecycle]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/injectable, https://pub.dev/documentation/get_it/latest/get_it/GetIt-class.html]
 links: [di-registration-annotations, di-get-it-scopes, proj-avw-risks, rt-graceful-close]
 ---
@@ -23,7 +23,7 @@ class GeminiLiveRunner implements IAiRunner {
 - Dans get_it, `registerSingleton` et `registerLazySingleton` acceptent `DisposingFunc<T>? dispose`.
 - `reset({bool dispose = true})` et `popScope()` appellent ces fonctions.
 
-**Règle projet (opinion) :** séparer **`stop()`** (fin de session : micro, peer connection et socket fermés, objet réutilisable) de **`dispose()`** (fin de vie : StreamControllers fermés). Le Bloc appelle `stop()`, get_it appelle `dispose()`.
+**Règle recommandée (opinion) :** séparer **`stop()`** (fin de session : micro, peer connection et socket fermés, objet réutilisable) de **`dispose()`** (fin de vie : StreamControllers fermés). Le Bloc appelle `stop()`, get_it appelle `dispose()`.
 
 ## ⚠️ Pièges
 - ai_voice_widget a deux bugs ici (proj-avw-risks #1 et #2) :

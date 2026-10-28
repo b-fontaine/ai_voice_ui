@@ -3,7 +3,7 @@ id: ma-mcp-security
 title: Sécurité MCP pour l'orchestrateur
 tags: [multi-agent, security, mcp, oauth]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://modelcontextprotocol.io/specification/latest/basic/security_best_practices]
 links: [ma-prompt-injection-tools, rt-ephemeral-keys, ma-where-to-run-agents, ma-otel-genai-spans, proto-mcp-authorization, proto-mcp-overview]
 ---
@@ -20,9 +20,9 @@ Source : *Security Best Practices* de la spec MCP (`latest`, qui référence la 
   - de préférence, passer par un proxy de sortie (egress).
 - **Handles d'état.** MCP est désormais *stateless*. Un handle (panier, workflow) n'est **pas** une authentification. Le lier côté serveur à `<user_id>:<handle>`, avec un `user_id` issu du token vérifié.
 - **Minimisation des scopes.** Partir d'un scope minimal, élever au besoin (`WWW-Authenticate scope=…`), sans scopes `*`.
-- **Serveurs locaux.** Consentement, commande affichée en entier, sandbox. Hors de notre périmètre mobile/web.
+- **Serveurs locaux.** Consentement, commande affichée en entier, sandbox. Hors du périmètre d'une app mobile/web.
 
-**Pour nous (opinion) :**
+**Recommandation pour un orchestrateur voix + A2UI (opinion) :**
 - Les clients MCP vivent dans l'orchestrateur, avec une liste blanche de serveurs et un token par utilisateur et par serveur.
 - Chaque appel est journalisé (span `execute_tool`, voir [[ma-otel-genai-spans]]).
 

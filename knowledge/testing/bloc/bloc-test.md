@@ -3,13 +3,13 @@ id: test-bloc-test
 title: bloc_test — blocTest (build, seed, act, expect, verify)
 tags: [bloc, bloc_test, unit, mocktail, testing]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/bloc_test, https://bloclibrary.dev/testing/, https://engineering.verygood.ventures/development/state_management/bloc_event_transformers/]
 links: [test-bloc-mockbloc-whenlisten, test-mocktail-essentials, test-fake-async-streams, test-realtime-fake-runner, bloc-event-transformers, bloc-emit-foreach, bloc-no-cubit, di-testing, proj-avw-overview]
 ---
 # blocTest : décrire les états émis en réponse à des events
 
-Version observée sur pub.dev le 2026-10-26 : `bloc_test` 10.0.0, publiée le 2025-01-12. Règle projet : **un `blocTest` par handler** ; le Bloc est construit **directement** avec des fakes ou mocks mocktail, sans get_it ([[di-testing]]). Bloc uniquement, pas de Cubit ([[bloc-no-cubit]]).
+Version observée sur pub.dev le 2026-10-26 : `bloc_test` 10.0.0, publiée le 2025-01-12. Règle recommandée : **un `blocTest` par handler** ; le Bloc est construit **directement** avec des fakes ou mocks mocktail, sans get_it ([[di-testing]]). Bloc uniquement, pas de Cubit ([[bloc-no-cubit]]).
 
 ```dart
 class _MockRunner extends Mock implements IAiRunner {}

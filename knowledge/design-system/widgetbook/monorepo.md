@@ -9,7 +9,7 @@ links: [ds-widgetbook-setup, ds-widgetbook-testing, arch-pub-workspaces, ds-pack
 ---
 # En monorepo, la doc propose un Widgetbook racine ou un Widgetbook par package
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-setup]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-setup]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 Au 2026-10-27, la page monorepo de la doc officielle décrit deux approches.
 
@@ -28,9 +28,9 @@ Un catalogue unique, qui référence le DS et l'app via des dépendances `path`.
 ## Melos
 Avec Melos, il peut falloir passer par des **dépendances versionnées** plutôt que `path`, et ajouter `widgetbook/` à la liste `packages` de `melos.yaml`.
 
-## Recommandation pour le projet (opinion)
-- **Un seul catalogue `apps/widgetbook`**, déclaré membre du pub workspace racine ([[arch-pub-workspaces]]). Il dépend du package DS (et plus tard des slices UI qui l'utilisent).
-- Raisons : une seule app à builder (desktop + web), une seule config d'addons/thèmes, un seul point d'entrée pour la revue et `widgetbook coverage` ([[ds-widgetbook-testing]]).
+## Recommandation (opinion)
+- **Un seul catalogue** (par exemple `apps/<catalogue>`), déclaré membre du pub workspace racine ([[arch-pub-workspaces]]). Il dépend du package DS (et plus tard des slices UI qui l'utilisent).
+- Raisons : une seule app à builder (pour toutes les plateformes cibles), une seule config d'addons/thèmes, un seul point d'entrée pour la revue et `widgetbook coverage` ([[ds-widgetbook-testing]]).
 - Le package DS ne dépend **jamais** de Widgetbook : la dépendance va du catalogue vers le DS.
 - Pas de Melos tant que les pub workspaces suffisent.
 

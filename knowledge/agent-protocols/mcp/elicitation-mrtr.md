@@ -3,7 +3,7 @@ id: proto-mcp-elicitation
 title: MCP — elicitation et Multi Round-Trip Requests
 tags: [mcp, elicitation, mrtr, ux, human-in-the-loop]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://modelcontextprotocol.io/specification/2026-07-28/client/elicitation, https://modelcontextprotocol.io/specification/2026-07-28/changelog]
 links: [proto-mcp-primitives, proto-mcp-authorization, proto-a2a-task-lifecycle]
 ---
@@ -26,7 +26,7 @@ Les réponses possibles sont `accept` (avec `content` en mode form), `decline` o
  "properties":{"ref":{"type":"string"}},"required":["ref"]}}}
 ```
 
-## Lien avec notre app (opinion)
+## Lien avec une app voix + GenUI (opinion)
 - Une elicitation de type form se rend bien comme **surface GenUI**, ou comme question posée par l'**agent vocal**.
 - Analogie : c'est l'équivalent MCP de `TASK_STATE_INPUT_REQUIRED` côté A2A.
 

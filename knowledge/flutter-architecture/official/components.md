@@ -3,9 +3,9 @@ id: arch-official-components
 title: Guide officiel — rôle des Views, ViewModels, Repositories, Services
 tags: [flutter, architecture, mvvm, repository, official]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/app-architecture/guide]
-links: [arch-official-layers, arch-command-pattern, arch-result-pattern, di-no-service-locator]
+links: [arch-official-layers, arch-command-pattern, arch-result-pattern, di-no-service-locator, bloc-no-cubit]
 ---
 # Responsabilités de chaque composant (doc officielle)
 
@@ -27,10 +27,10 @@ links: [arch-official-layers, arch-command-pattern, arch-result-pattern, di-no-s
 **Service** : il enveloppe une source externe (REST, plateforme, fichiers) et expose des `Future`/`Stream`.
 - Il est **sans état**, généralement un service par source de données.
 
-**Transposition à notre app multi-agents (opinion) :**
+**Transposition à une app multi-agents avec agent vocal (opinion) :**
 - `OpenAiRealtimeService` / `GeminiLiveService` : services sans état (transport WebRTC/WebSocket).
 - `VoiceSessionRepository` : état de la session, flux d'événements, tool calls.
-- `VoiceSessionCubit` : le rôle de ViewModel.
+- `VoiceSessionBloc` : le rôle de ViewModel (Bloc, pas Cubit : `bloc-no-cubit`).
 
 ⚠️ Pièges
 - Dans ai_voice_widget, le runner (le service) porte de l'état et des StreamControllers en singleton, ce qui empêche le redémarrage (`proj-avw-risks`). L'état doit vivre dans le repository.

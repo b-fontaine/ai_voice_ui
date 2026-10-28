@@ -3,7 +3,7 @@ id: proto-mcp-dart-sdks
 title: MCP en Dart/Flutter — mcp_dart vs dart_mcp
 tags: [mcp, dart, flutter, sdk, pub.dev]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://pub.dev/packages/mcp_dart, https://pub.dev/packages/dart_mcp]
 links: [ma-where-to-run-agents, proto-mcp-transports, proto-mcp-deprecations, proto-stack-recommendation]
 ---
@@ -27,10 +27,10 @@ Versions observées sur pub.dev le 2026-10-26.
 - **Desktop** : client et serveur, en stdio et en HTTP.
 
 ## Choix (opinion)
-- Pour une **app Flutter cliente** d'un serveur MCP distant, prendre `mcp_dart`. ⚠️ Dans ce projet, les clients MCP vivent dans l'orchestrateur backend ([[ma-where-to-run-agents]]). `mcp_dart` n'a de sens que si cet orchestrateur est écrit en Dart.
+- Pour une **app Flutter cliente** d'un serveur MCP distant, prendre `mcp_dart`. ⚠️ Si les clients MCP vivent dans un orchestrateur backend (placement recommandé : [[ma-where-to-run-agents]]), `mcp_dart` n'a de sens que si cet orchestrateur est écrit en Dart.
 - `dart_mcp` est adapté à l'outillage Dart (serveur MCP local en stdio, par exemple pour un IDE). Il ne convient pas à une app.
 - Alternative : laisser l'app ignorer MCP. C'est alors l'orchestrateur backend qui consomme MCP, et l'app ne parle qu'à l'orchestrateur.
 
 ⚠️ **Pièges**
 - La page pub.dev de `dart_mcp` liste « 2025-11-05 » comme version, probablement une coquille pour 2025-11-25. À vérifier.
-- `mcp_dart` revendique la conformité aux 25 scénarios d'autorisation 2026. C'est une auto-déclaration à valider par nos tests.
+- `mcp_dart` revendique la conformité aux 25 scénarios d'autorisation 2026. C'est une auto-déclaration à valider par ses propres tests.

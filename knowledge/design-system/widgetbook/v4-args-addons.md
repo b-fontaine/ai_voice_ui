@@ -29,7 +29,7 @@ Signatures relevées dans le code de 4.0.0-beta.14 (2026-10-28).
 - **Viewports desktop :** `MacosViewports.desktop`, `WindowsViewports.desktop` et `LinuxViewports.desktop` (1920x1080), `MacosViewports.macbookPro` (1770x970), tous en pixelRatio 2. `Viewports.all` couvre iOS, Android, macOS, Windows, Linux, et inclut `Viewports.none`.
 
 ## material_ui : issue #2044 (ouverte, 2026-10-02)
-`MaterialThemeAddon` est typé contre `package:flutter/material.dart` et refuse un `ThemeData` de `material_ui` ([[adr-0004-ds-visual-base-m3]]). Le mainteneur conseille le `ThemeAddon<T>` générique avec un builder maison : c'est une contrainte, pas un blocage. L'exemple officiel fait déjà ainsi : `ThemeAddon<AppThemeData>({...}, (context, theme, child) { return AppTheme(data: theme, child: child); })`. Esquisse pour le projet (opinion, noms `material_ui` non vérifiés) :
+`MaterialThemeAddon` est typé contre `package:flutter/material.dart` et refuse un `ThemeData` de `material_ui` ([[adr-0004-ds-visual-base-m3]]). Le mainteneur conseille le `ThemeAddon<T>` générique avec un builder maison : c'est une contrainte, pas un blocage. L'exemple officiel fait déjà ainsi : `ThemeAddon<AppThemeData>({...}, (context, theme, child) { return AppTheme(data: theme, child: child); })`. Esquisse (opinion, noms `material_ui` non vérifiés) :
 ```dart
 import 'package:material_ui/material_ui.dart' as m;
 import 'package:widgetbook/widgetbook.dart' hide ThemeMode;

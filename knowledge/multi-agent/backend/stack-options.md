@@ -3,13 +3,14 @@ id: ma-backend-stack-options
 title: Backend orchestrateur — comparatif des 5 stacks (panel du 2026-10-27)
 tags: [multi-agent, backend, decision, go, python, typescript, dart, rust]
 status: opinion
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://github.com/openai/openai-go/tree/main/live, https://crates.io/crates/oai-rt-rs, https://github.com/modelcontextprotocol/rust-sdk, https://github.com/a2ui-project/a2ui, https://github.com/modelcontextprotocol/go-sdk/releases, https://pypi.org/pypi/a2ui-agent-sdk/json, https://registry.npmjs.org/@a2ui/agent, https://pub.dev/packages/a2ui_core]
 links: [adr-0003-backend-go, ma-backend-stack-recommendation, ma-backend-sdk-landscape, ma-backend-sdk-rust, proj-sk-backend, ma-where-to-run-agents, ma-target-architecture, proto-stack-recommendation]
 ---
 # Comparatif des stacks backend (panel du 2026-10-27, scores /10 après fact-check)
 
-> ⚠️ **Hypothèse corrigée le 2026-10-27.** La lentille « Équipe » du premier panel supposait, sans confirmation, une « équipe Flutter + Go ». Le porteur a ensuite confirmé que l'équipe maîtrise tous les langages : le scénario A du tableau Rust est le plus représentatif, et Go y reste premier ([[adr-0003-backend-go]]).
+> ⚠️ **Hypothèse corrigée le 2026-10-27.** La lentille « Équipe » du premier panel supposait, sans confirmation, une « équipe Flutter + Go ». L'équipe d'origine (contexte du 2026-10-27) maîtrise en fait tous les langages : le scénario A du tableau Rust est le plus représentatif, et Go y reste premier ([[adr-0003-backend-go]]).
+> **Portée.** Les scores de la lentille « Équipe & exploitation » dépendent du contexte du projet évalué le 2026-10-27 (compétences de l'équipe, continuité avec le saaster kit Septeo). Pour un autre projet, recalculer cette lentille ; les faits SDK restent valables à leur date.
 
 Cinq propositions ont été vérifiées sur le code des SDK puis notées sous trois lentilles. Le cumul désigne **Go** ; l'hybride arrive deuxième.
 
@@ -56,4 +57,4 @@ Même méthode (proposition, deux fact-checks, trois lentilles), mais notée dan
 
 ⚠️ Pièges
 - Les scores sont une appréciation interne, pas une mesure. Aucun chiffre de latence ni de mémoire n'a été mesuré.
-- Depuis le 2026-10-27, la maîtrise de tous les langages (Go, Rust, Python…) est confirmée par le porteur : le scénario A est celui qui s'applique.
+- Depuis le 2026-10-27, l'équipe d'origine maîtrise tous les langages (Go, Rust, Python…) : le scénario A est celui qui s'applique à ce contexte.

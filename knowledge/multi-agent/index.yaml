@@ -1,10 +1,10 @@
 domain: multi-agent
-description: Orchestration multi-agents pour l'app voix temps réel + GenUI/A2UI (patterns, architecture cible, latence, sécurité, observabilité, évals)
+description: Orchestration multi-agents pour une app voix temps réel + GenUI/A2UI (patterns, architecture de référence, latence, sécurité, observabilité, évals, backend)
 notes:
   # architecture/
-  - {id: ma-flutter-event-bus, path: architecture/flutter-event-bus.md, summary: "DÉCISION: AgentEventBus sealed + BLoCs, état GenUI hors BLoC", tags: [flutter, bloc, streams]}
-  - {id: ma-target-architecture, path: architecture/target-architecture.md, summary: "DÉCISION: voix -> délégation unique -> orchestrateur -> GenUI/MCP/A2A", tags: [architecture, decision]}
-  - {id: ma-where-to-run-agents, path: architecture/where-to-run-agents.md, summary: "DÉCISION: audio/rendu client, orchestrateur/GenUI/MCP/A2A backend", tags: [architecture, decision]}
+  - {id: ma-flutter-event-bus, path: architecture/flutter-event-bus.md, summary: "Patron: bus AgentEvent sealed + un BLoC par préoccupation, état GenUI hors BLoC", tags: [flutter, bloc, streams]}
+  - {id: ma-target-architecture, path: architecture/target-architecture.md, summary: "Patron: voix -> délégation unique -> orchestrateur backend -> GenUI/MCP/A2A", tags: [architecture, recommendation]}
+  - {id: ma-where-to-run-agents, path: architecture/where-to-run-agents.md, summary: "Recommandation: audio/rendu client, orchestrateur/GenUI/MCP/A2A backend dès le départ (adr-0002)", tags: [architecture, recommendation]}
   # latency/
   - {id: ma-filler-acknowledgements, path: latency/filler-acknowledgements.md, summary: "Accusés auto GPT-Live, acknowledgement_delay_ms, thinking vs commentary", tags: [latency, ux]}
   - {id: ma-real-tool-results, path: latency/real-tool-results.md, summary: "Jamais de faux ok ; operation ID, annulation, idempotence", tags: [tool-calling, reliability]}
@@ -23,9 +23,8 @@ notes:
   - {id: ma-mcp-security, path: security/mcp-security.md, summary: "Token passthrough, SSRF, handles d'état, scopes minimaux", tags: [security, mcp]}
   - {id: ma-prompt-injection-tools, path: security/prompt-injection-tools.md, summary: "Retours d'outils/agents = données ; OWASP LLM01 ; règles internes", tags: [security, prompt-injection]}
   # backend/
-  - {id: ma-backend-stack-options, path: backend/stack-options.md, summary: "Comparatif Go/hybride/Python/TS/Dart + Rust (2 scénarios équipe), scores par lentille (2026-10-27)", tags: [backend, decision]}
-  - {id: ma-backend-stack-recommendation, path: backend/stack-recommendation.md, summary: "DÉCISION: orchestrateur tout-Go, services, frontières, schéma, risques", tags: [backend, decision, go]}
-  - {id: ma-backend-phase1-plan, path: backend/phase1-plan.md, summary: "Plan phase 1 ordonné du backend Go (spikes, BDD, sideband, GenUI)", tags: [backend, plan]}
+  - {id: ma-backend-stack-options, path: backend/stack-options.md, summary: "Comparatif Go/hybride/Python/TS/Dart + Rust (2 scénarios équipe), scores par lentille ; lentille Équipe liée au contexte (2026-10-27)", tags: [backend, decision]}
+  - {id: ma-backend-stack-recommendation, path: backend/stack-recommendation.md, summary: "Orchestrateur voix/A2UI tout-Go : stack SDK, services, frontières, schéma, risques (adr-0003)", tags: [backend, recommendation, go]}
   - {id: ma-backend-sdk-landscape, path: backend/sdk-landscape.md, summary: "Matrice SDK backend par langage + faits API transverses (GPT-Live, MCP, A2A, A2UI)", tags: [backend, sdk, versions]}
   - {id: ma-backend-sdk-go, path: backend/sdk-go.md, summary: "openai-go live/sideband, genai, go-sdk MCP, a2a-go/v2, ADK Go, Temporal, A2UI", tags: [backend, go, sdk]}
   - {id: ma-backend-sdk-python, path: backend/sdk-python.md, summary: "openai 3.39 live, ADK 2.13, a2ui-agent-sdk, conflits mcp<2/openai<3", tags: [backend, python, sdk]}

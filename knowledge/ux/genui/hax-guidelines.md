@@ -3,7 +3,7 @@ id: ux-ai-hax-guidelines
 title: Les 18 guidelines Human-AI Interaction (Microsoft HAX)
 tags: [ai-ux, hax, guidelines, microsoft]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://www.microsoft.com/en-us/research/wp-content/uploads/2019/01/Guidelines-for-Human-AI-Interaction-camera-ready.pdf, https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/]
 links: [ux-ai-human-in-the-loop, ux-ai-trust-feedback, ux-genui-errors-validation, ux-voice-multimodal]
 ---
@@ -34,7 +34,7 @@ Le HAX Toolkit les regroupe en 4 phases : au premier contact, pendant l'interact
 | G17 | Provide global controls |
 | G18 | Notify users about changes |
 
-## Usage dans le projet (opinion)
+## Usage recommandé (opinion)
 - S'en servir comme grille de revue d'une surface générée ou d'un parcours vocal.
 - G7, G8 et G9 couvrent l'invocation, le rejet et la correction (barge-in en voix, Stop et Regenerate à l'écran).
 - G16 et G17 : voir [[ux-ai-human-in-the-loop]]. G15 : voir [[ux-ai-trust-feedback]].

@@ -3,7 +3,7 @@ id: ux-desktop-undo-dnd-windows
 title: Undo/redo, glisser-déposer et multi-fenêtres sur desktop
 tags: [desktop, undo-redo, drag-and-drop, multi-window, ux]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://developer.apple.com/design/human-interface-guidelines/undo-and-redo, https://developer.apple.com/design/human-interface-guidelines/drag-and-drop, https://pub.dev/packages/super_drag_and_drop, https://flutter.dev/blog/desktop-windowing-apis, https://learn.microsoft.com/en-us/windows/apps/design/input/keyboard-accelerators]
 links: [ux-desktop-shortcuts, ux-desktop-menus, ux-ai-human-in-the-loop, genui-user-actions]
 ---
@@ -25,7 +25,7 @@ links: [ux-desktop-shortcuts, ux-desktop-menus, ux-ai-human-in-the-loop, genui-u
 - Au 2026-08-24 (blog Flutter), l'API `WindowController`/`Window` et `DialogWindowController`/`DialogWindow` n'existe que sur le canal **main**, derrière `flutter config --enable-windowing`. Elle peut encore changer.
 - Au 2026-10-27 : aucune annonce officielle de passage en stable n'a été trouvée.
 
-## Application au projet (opinion)
+## Application à une app voix + GenUI (opinion)
 - L'historique d'undo est un état de Bloc (pile d'events inversibles). Il couvre les modifications de formulaires GenUI avant leur envoi à l'agent.
 - Une action d'agent déjà exécutée (outil réel) ne s'annule pas par `Ctrl+Z`. On demande une confirmation avant ([[ux-ai-human-in-the-loop]]).
 - Ne pas bâtir de fonction clé sur le multi-fenêtres tant que l'API est expérimentale.

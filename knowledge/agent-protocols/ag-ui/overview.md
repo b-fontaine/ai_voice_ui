@@ -3,7 +3,7 @@ id: proto-agui-overview
 title: AG-UI — protocole agent ↔ application utilisateur
 tags: [ag-ui, frontend, streaming, copilotkit]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.ag-ui.com/introduction, https://docs.ag-ui.com/agentic-protocols, https://www.copilotkit.ai/blog/ag-ui-and-a2ui-explained-how-the-emerging-agentic-stack-fits-together]
 links: [proto-agui-events, proto-agui-dart-sdk, proto-a2ui-pointer, proto-protocol-map, genui-a2ui-transports]
 ---
@@ -22,8 +22,8 @@ AG-UI (Agent-User Interaction) est un protocole **à base d'événements** qui r
 - **A2UI** décrit *quelle* UI l'agent veut afficher : c'est un format de payload déclaratif.
 - La doc AG-UI dit que A2UI et AG-UI « work well together » ; CopilotKit (billet du 2025-12-15) parle de problèmes « highly complementary » : AG-UI transporte les instructions d'UI générative, dont A2UI.
 
-## Pertinence pour notre app (opinion)
-- Utile si l'orchestrateur tourne **côté serveur** et doit pousser vers l'app Flutter un flux unifié : texte, tool calls, état et surfaces A2UI.
+## Pertinence pour une app voix + GenUI (opinion)
+- Utile si l'orchestrateur tourne **côté serveur** et doit pousser vers l'app (ex. Flutter) un flux unifié : texte, tool calls, état et surfaces A2UI.
 - Si l'orchestrateur tourne **dans l'app**, AG-UI est superflu : les streams Dart internes et les events BLoC suffisent.
 
 ⚠️ **Pièges**

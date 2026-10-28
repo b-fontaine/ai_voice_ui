@@ -3,7 +3,7 @@ id: ux-ai-human-in-the-loop
 title: Human-in-the-loop — confirmer avant d'agir
 tags: [ai-ux, human-in-the-loop, confirmation, genui, safety]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://developer.apple.com/tutorials/data/design/human-interface-guidelines/generative-ai.json, https://www.microsoft.com/en-us/research/wp-content/uploads/2019/01/Guidelines-for-Human-AI-Interaction-camera-ready.pdf, https://docs.flutter.dev/ai/genui/components, https://a2ui.org/specification/v0.9.1-a2ui/]
 links: [ma-guardrails, ma-real-tool-results, genui-user-actions, genui-data-model, ux-ai-hax-guidelines]
 ---
@@ -21,7 +21,7 @@ links: [ma-guardrails, ma-real-tool-results, genui-user-actions, genui-data-mode
 - `sendDataModel` vaut `false` par défaut dans `createSurface` : seul le contexte résolu de l'action part. À `true`, tout le modèle part dans les métadonnées des messages client vers serveur, et seulement vers le serveur qui a créé la surface.
 - Chemin d'une action : [[genui-user-actions]].
 
-## Règles du projet (opinion)
+## Règles recommandées (opinion)
 - Toute action à effet de bord (écriture, envoi, paiement, suppression) passe par une **surface de confirmation du DS**, rendue par l'app et non composée par le LLM. Elle résume les conséquences (G16).
 - L'orchestrateur exécute l'outil seulement après la confirmation, et renvoie au modèle le vrai résultat ([[ma-real-tool-results]], [[ma-guardrails]]).
 - En voix, un « oui » oral ne suffit pas pour une action destructrice : la confirmation se fait à l'écran.

@@ -3,7 +3,7 @@ id: rt-openai-webrtc-package
 title: Package openai_webrtc (communautaire)
 tags: [openai, flutter, packages, webrtc, realtime-api]
 status: sourced
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/openai_webrtc]
 links: [rt-openai-realtime-vs-live, rt-flutter-webrtc-gpt-live-connect]
 ---
@@ -23,4 +23,4 @@ links: [rt-openai-realtime-vs-live, rt-flutter-webrtc-gpt-live-connect]
 - Il épingle `flutter_webrtc` 0.14.x, alors que la version actuelle est 1.6.3.
 - Son exemple serveur (README) cible l'API bêta : `POST /v1/realtime/sessions`, `gpt-4o-realtime-preview`, `client_secret.value`. En GA : `POST /v1/realtime/client_secrets`, champ `value` au premier niveau.
 
-**Ce qu'on en garde :** l'ordre des opérations WebRTC, utile comme lecture. On implémentera notre propre runner sur `flutter_webrtc` ([[rt-flutter-webrtc-gpt-live-connect]]).
+**Ce qu'on en garde :** l'ordre des opérations WebRTC, utile comme lecture. Pour GPT-Live, écrire son propre runner sur `flutter_webrtc` (opinion, [[rt-flutter-webrtc-gpt-live-connect]]).

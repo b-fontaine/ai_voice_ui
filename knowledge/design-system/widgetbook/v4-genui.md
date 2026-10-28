@@ -25,8 +25,8 @@ La doc v4 a une section GenUI (pages overview, catalog et testing), ajoutée le 
 - Les violations d'accessibilité de chaque scénario sont écrites dans `build/.widgetbook/<Component>/<Story>/<Scenario>.json`.
 - Le diff des snapshots et des régressions a11y par rapport à la branche de base est réservé à la publication sur Widgetbook Cloud.
 
-## Usage dans la démo du talk (opinion)
-- Le catalogue GenUI **est** le design system ([[ux-genui-catalog-as-ds]]) : une story par `CatalogItem`, avec des args alignés sur le `dataSchema`. C'est la démonstration visible du talk ([[adr-0008-ds-widgetbook-4-beta]]).
+## Usage recommandé (opinion)
+- Le catalogue GenUI **est** le design system ([[ux-genui-catalog-as-ds]]) : une story par `CatalogItem`, avec des args alignés sur le `dataSchema`. Le catalogue Widgetbook montre alors le vocabulaire visuel que l'agent peut employer.
 - Enregistrer quelques messages A2UI réels (fixtures JSON versionnées) et les rejouer via `CachedSurface`, un scénario par payload. Pas d'appel réseau ni de LLM dans le catalogue.
 - Sans Cloud ([[adr-0006-ds-no-widgetbook-cloud]]) : les violations a11y du JSON servent de gate maison, et les goldens restent dans alchemist ([[ds-widgetbook-4-testing]]).
 - Les tests unitaires des `CatalogItem` (schéma, parsing) restent dans la suite GenUI ([[genui-test-catalog-items]]). Widgetbook couvre le rendu.

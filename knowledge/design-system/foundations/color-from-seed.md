@@ -3,7 +3,7 @@ id: ds-color-from-seed
 title: Couleur — ColorScheme.fromSeed et DynamicSchemeVariant
 tags: [color, material-3, color-scheme, flutter, theming]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://api.flutter.dev/flutter/material/ColorScheme/ColorScheme.fromSeed.html, https://api.flutter.dev/flutter/material/DynamicSchemeVariant.html]
 links: [ds-color-m3-roles, ds-color-harmony, ds-color-dark-contrast, ds-tokens-theme-extension]
 ---
@@ -45,7 +45,7 @@ class AppTheme {
 //   highContrastTheme: t.highContrastLight, highContrastDarkTheme: t.highContrastDark)
 ```
 
-## Choix du projet (opinion)
+## Recommandation (opinion)
 - Variante explicite, jamais le défaut implicite : un `tonalSpot` pastel surprend souvent la marque.
 - Graine et variante viennent des tokens ([[ds-tokens-theme-extension]]), pas d'une constante dans un widget.
 

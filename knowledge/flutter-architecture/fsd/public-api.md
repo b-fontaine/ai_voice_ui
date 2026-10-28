@@ -3,7 +3,7 @@ id: arch-fsd-public-api
 title: FSD — public API d'une slice (index) et cross-imports @x
 tags: [fsd, public-api, barrel, encapsulation]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://feature-sliced.design/docs/reference/public-api, https://feature-sliced.design/docs/guides/migration/from-v2-0]
 links: [arch-fsd-layers, arch-fsd-dart-mapping, arch-import-lint]
 ---
@@ -25,7 +25,7 @@ Une slice expose un **public API**, en général un fichier index qui ré-export
 ```dart
 // packages/features/voice_agent/lib/voice_agent.dart
 export 'src/ui/voice_button.dart' show VoiceButton;
-export 'src/model/voice_session_cubit.dart' show VoiceSessionCubit, VoiceSessionState;
+export 'src/model/voice_session_bloc.dart' show VoiceSessionBloc, VoiceSessionEvent, VoiceSessionState;
 ```
 
 ⚠️ Pièges

@@ -3,7 +3,7 @@ id: ux-genui-streaming-loading
 title: Streaming et états de chargement des surfaces générées
 tags: [genui, a2ui, streaming, loading-states, ux]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://a2ui.org/specification/v0.9.1-a2ui/, https://a2ui.org/concepts/data-flow/, https://pub.dev/packages/genui, https://cloudscape.design/patterns/genai/genai-loading-states/, https://cloudscape.design/patterns/genai/response-regeneration/]
 links: [genui-a2ui-messages, genui-data-model, ux-genui-errors-validation, ux-voice-multimodal, rt-barge-in]
 ---
@@ -26,7 +26,7 @@ A2UI est diffusé en JSONL avec un rendu progressif : l'utilisateur voit l'inter
 - Libellés : « Generating » pour un contenu nouveau, « Loading » / « Fetching » pour un contenu existant. Pas de ponctuation finale.
 - Pendant la génération, le bouton d'envoi devient **Stop**. Après l'arrêt, **Regenerate** est disponible tout de suite. Regenerate remplace la réponse et **supprime les messages qui la suivaient**.
 
-## Application au projet (opinion)
+## Application à une app voix + GenUI (opinion)
 - Composant DS de chargement à deux états (traitement / génération) avec libellé localisé, réutilisé par toutes les surfaces.
 - Un composant structuré (tableau, formulaire) n'apparaît qu'une fois complet ; un skeleton du DS occupe sa place en attendant.
 - État de chargement porté par un Bloc dédié, alimenté par les événements de l'adaptateur via `emit.forEach`.

@@ -3,7 +3,7 @@ id: test-mocktail-vs-mockito
 title: mocktail vs mockito
 tags: [mock, mocktail, mockito, pub.dev]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/mocktail, https://pub.dev/packages/mockito]
 links: [test-mocktail-essentials, test-mock-boundaries-only, test-bloc-mockbloc-whenlisten]
 ---
@@ -22,7 +22,7 @@ Versions observées sur pub.dev le 2026-10-26 :
 
 ## Recommandation (opinion)
 mocktail, pour trois raisons :
-- le projet utilise déjà build_runner pour bdd_widget_test et injectable, et ajouter des fichiers `.mocks.dart` alourdit la boucle `watch` ;
+- un projet qui utilise déjà build_runner (bdd_widget_test, injectable) n'a pas besoin de fichiers `.mocks.dart` en plus : et ajouter des fichiers `.mocks.dart` alourdit la boucle `watch` ;
 - l'écosystème bloc_test est aligné sur mocktail ;
 - les fakes écrits à la main restent préférés pour les frontières à flux (cf. `test-mock-boundaries-only`).
 

@@ -21,8 +21,8 @@ Service SaaS de l'éditeur, payant, facturé **au snapshot et par mois**.
 - **Revues Figma :** comparaison des widgets avec les maquettes (paramètre `designLink` du use case).
 - **Codemagic** n'est qu'une intégration CI : il faut tout de même un VCS connecté.
 
-## Place dans le projet
-Décision du projet : pas de Cloud ([[adr-0006-ds-no-widgetbook-cloud]]) ; publication : [[ds-widgetbook-publish-web]].
+## Alternative sans Cloud
+Décision de s'en passer : [[adr-0006-ds-no-widgetbook-cloud]] ; publication auto-hébergée : [[ds-widgetbook-publish-web]].
 
 ## ⚠️ Pièges
 - Pour que Turbo soit fiable, interdire tout appel réseau dans les use cases : uniquement des fixtures locales.

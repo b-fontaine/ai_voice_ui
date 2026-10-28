@@ -9,7 +9,7 @@ links: [test-golden-alchemist, ds-widgetbook-a11y-tooling, ds-widgetbook-cloud, 
 ---
 # Le catalogue sert de référence ; les goldens alchemist restent le garde-fou bloquant
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-testing]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-testing]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 ## Stratégie (opinion)
 1. **Goldens alchemist** sur chaque composant DS (CI goldens bloquants) : voir [[test-golden-alchemist]], non dupliqué ici.

@@ -11,6 +11,10 @@ links: [ds-claude-design-overview, ds-claude-design-tokens, ds-claude-design-wor
 
 - **Statut :** acceptée le 2026-10-28.
 - **Décideur :** le porteur du projet a choisi « Claude Design ». L'assistant avait laissé ce point ouvert, faute de connaître l'outil de l'équipe.
+- **Portée :** générique, avec contexte d'origine propre au projet (voir « Contexte d'origine (non générique) »).
+
+## Contexte d'origine (non générique)
+Le choix réutilisable est « Claude Design pour maquettes et prototypes, DTCG du dépôt comme source de vérité ». Sont propres au projet d'origine : « slides du talk » (Décision) et « cohérent pour un talk » (Raisons).
 
 ## Contexte (vérifié le 2026-10-28)
 - Claude Design (Anthropic Labs, annoncé le 2026-04-17) produit des designs, des prototypes, des slides et des design systems.
@@ -36,3 +40,6 @@ links: [ds-claude-design-overview, ds-claude-design-tokens, ds-claude-design-wor
 ## Quand réexaminer
 - Claude Design ajoute un export DTCG ou Flutter.
 - Le format `tokens.json` change, puisque l'outil est en research preview.
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

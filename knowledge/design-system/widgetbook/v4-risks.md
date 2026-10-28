@@ -30,9 +30,9 @@ Le guide v4 recommande de migrer avec un agent IA : un prompt (`docs/assets/guid
 - il donne `LocaleAddon(supportedLocales, localizationsDelegates)`, alors que les delegates sont un positionnel **optionnel**.
 D'autres écarts ne sont pas exclus : le prompt n'a pas été relu ligne à ligne.
 
-## Issues ouvertes qui touchent le projet
+## Issues ouvertes notables
 Elles n'ont pas d'étiquette v4 : le tri v3/v4 a été fait à la main.
-- **#1984** (**non reproduit** par le spike du 2026-10-28 en beta.14 web : [[ds-widgetbook-4-spike]]) : si `setup` injecte un `BlocProvider`, passer d'une story sœur à l'autre peut garder l'état de la story précédente (beta.10/11). Les correctifs #1994 et #2012 ne règlent pas ce cas, et la PR #2020 a été fermée. **Impact direct**, puisque le projet est en Bloc uniquement ([[bloc-providers-selector]]).
+- **#1984** (**non reproduit** par le spike du 2026-10-28 en beta.14 web : [[ds-widgetbook-4-spike]]) : si `setup` injecte un `BlocProvider`, passer d'une story sœur à l'autre peut garder l'état de la story précédente (beta.10/11). Les correctifs #1994 et #2012 ne règlent pas ce cas, et la PR #2020 a été fermée. **Impact direct** pour une app en Bloc uniquement ([[bloc-providers-selector]]).
 - **#1797** (le spike confirme que la stratégie hash par défaut gère `#/?path=…` et le rechargement) : la stratégie d'URL « path » n'est pas supportée : un rechargement ou un lien profond renvoie à l'accueil, en `flutter run -d chrome` comme en `flutter build web` ([[ds-widgetbook-publish-web]]).
 - **#2043 :** `TimeDilationAddon` ralentit aussi l'interface de Widgetbook.
 - **#2041 :** `NullableDoubleArg` ne borne pas `initialValue` entre min et max.
@@ -44,4 +44,4 @@ Elles n'ont pas d'étiquette v4 : le tri v3/v4 a été fait à la main.
 - Relire toute sortie d'agent produite à partir du prompt de migration. Les signatures font foi : [[ds-widgetbook-4-args-addons]].
 - #1984 : les composants du DS n'ont pas de Bloc. Les stories de features créent un Bloc frais par story, dans le widget hôte plutôt que via `setup`, avec des fakes aux frontières. Contournement non vérifié : à valider pendant le spike.
 - #1797 : publier le catalogue web avec la stratégie d'URL par défaut, et ne pas promettre de liens profonds stables.
-- Repli : la 3.25.0 stable ([[ds-widgetbook-versions]]), si une bêta bloque la démo.
+- Repli : la 3.25.0 stable ([[ds-widgetbook-versions]]), si une bêta bloque une livraison.

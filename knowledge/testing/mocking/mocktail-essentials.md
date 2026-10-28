@@ -3,7 +3,7 @@ id: test-mocktail-essentials
 title: mocktail — API essentielle
 tags: [mocktail, mock, api]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/mocktail]
 links: [test-mocktail-vs-mockito, test-bloc-test]
 ---
@@ -41,4 +41,4 @@ test('demande une clé avec la config de session', () async {
 - `thenReturn` avec un `Future` ou un `Stream` lève une `ArgumentError` : utiliser `thenAnswer`.
 - Une méthode non stubbée renvoie `null` : avec un type de retour non nullable (ex. `Future<void>`), on obtient `type 'Null' is not a subtype of ...`.
 - Méthodes d'extension : impossibles à stubber ou vérifier (appel direct de l'extension réelle).
-- Le nom de modèle `gpt-live-1` reprend les notes `rt-` ; le projet actuel utilise `gpt-realtime-1.5` (`proj-avw-voice-runners`).
+- Le nom de modèle `gpt-live-1` reprend les notes `rt-` ; ai_voice_widget utilise `gpt-realtime-1.5` (`proj-avw-voice-runners`). En vrai code, le modèle vient de la configuration, pas d'un littéral.

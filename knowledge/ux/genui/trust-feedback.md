@@ -3,7 +3,7 @@ id: ux-ai-trust-feedback
 title: Confiance calibrée, sources et feedback
 tags: [ai-ux, trust, feedback, citations, explainability]
 status: sourced
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://pair.withgoogle.com/chapter/explainability-trust/, https://pair.withgoogle.com/chapter/feedback-controls/, https://www.nngroup.com/articles/explainable-ai/, https://cloudscape.design/patterns/genai/generative-AI-chat/, https://developer.apple.com/tutorials/data/design/human-interface-guidelines/generative-ai.json]
 links: [ux-ai-hax-guidelines, ux-ai-human-in-the-loop, ux-genui-errors-validation, ma-real-tool-results]
 ---
@@ -22,7 +22,7 @@ links: [ux-ai-hax-guidelines, ux-ai-human-in-the-loop, ux-genui-errors-validatio
 - **Apple HIG :** le feedback reste toujours **volontaire**. Les pouces haut/bas sont une suggestion (« Consider offering »).
 - **PAIR (Feedback & Control) :** il distingue le feedback **implicite** (*product logs*) et le feedback **explicite**. Il faut pouvoir refuser certains aspects du partage implicite, et pouvoir adapter, éditer ou désactiver la sortie de l'IA.
 
-## Application au projet (opinion)
+## Application à une app voix + GenUI (opinion)
 - Pas de pourcentage de confiance dans les surfaces générées. Si un niveau est utile, le montrer sous forme de catégorie avec l'action attendue (« à vérifier »).
 - Une citation n'est affichée que si elle provient d'un vrai résultat d'outil ([[ma-real-tool-results]]), jamais d'un texte du LLM.
 - Un composant DS de feedback (Helpful / Not helpful + commentaire facultatif) est attaché à chaque surface, sans bloquer le flux.

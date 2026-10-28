@@ -9,7 +9,7 @@ links: [ds-tokens-dtcg-format, ds-tokens-style-dictionary, ds-tokens-dtcg-themin
 ---
 # Figma ne parle pas Flutter : le dépôt Git doit rester la source des tokens
 
-> Le projet n'utilise pas Figma : outil de design = Claude Design ([[adr-0007-ds-design-tool-claude-design]], [[ds-claude-design-workflow]]). Note conservée comme référence.
+> Outil de design retenu par l'ADR : Claude Design, pas Figma ([[adr-0007-ds-design-tool-claude-design]], [[ds-claude-design-workflow]]). Note conservée comme référence.
 
 Au 2026-10-27, ni le `codeSyntax` des variables (Dev Mode) ni Code Connect ne prévoient Flutter. Le lien Figma ↔ code passe par des fichiers JSON.
 

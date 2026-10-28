@@ -9,7 +9,7 @@ links: [ds-widgetbook-versions, ds-widgetbook-addons, ds-widgetbook-monorepo, ds
 ---
 # Le catalogue est une app Flutter séparée ; le générateur ne produit que `directories`
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-setup]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-setup]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 **Quick start officiel :** `flutter create widgetbook --empty` (variante : `--platforms=web,macos`), puis renommer le package en `widgetbook_workspace` dans `widgetbook/pubspec.yaml` pour éviter le conflit avec le package `widgetbook`. Ensuite :
 `flutter pub add widgetbook widgetbook_annotation dev:widgetbook_generator dev:build_runner`, et l'app (ou le DS) à cataloguer en dépendance `path`.

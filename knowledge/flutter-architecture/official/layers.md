@@ -3,9 +3,9 @@ id: arch-official-layers
 title: Guide officiel Flutter — couches UI et Data (+ domaine optionnel)
 tags: [flutter, architecture, mvvm, official]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/app-architecture/guide]
-links: [arch-official-components, arch-official-use-cases, arch-official-recommendations, arch-clean-flutter-layers]
+links: [arch-official-components, arch-official-use-cases, arch-official-recommendations, arch-clean-flutter-layers, bloc-no-cubit]
 ---
 # Deux couches obligatoires, une optionnelle
 
@@ -28,5 +28,5 @@ La séparation des responsabilités est « le principe le plus important » du g
 - **Les repositories ne se connaissent jamais entre eux.**
 
 ⚠️ Pièges
-- Le guide ne parle ni de BLoC ni de Clean Architecture. Le « ViewModel » officiel est un `ChangeNotifier`, mais un Cubit/Bloc tient le même rôle (cf. projets Septeo, `proj-avw-overview`).
+- Le guide ne parle ni de BLoC ni de Clean Architecture. Le « ViewModel » officiel est un `ChangeNotifier`, mais un Bloc tient le même rôle (cf. projets Septeo, `proj-avw-overview`) ; Cubit exclu, voir [[bloc-no-cubit]].
 - Le dossier `domain/` du guide contient des **modèles**, pas forcément des use-cases.

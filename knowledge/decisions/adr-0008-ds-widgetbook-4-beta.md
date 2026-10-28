@@ -12,6 +12,10 @@ links: [ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-risks, ds-w
 - **Statut :** acceptée le 2026-10-28.
 - **Décideur :** le porteur du projet (« Maintenant »), **contre la recommandation de l'assistant**, qui conseillait d'attendre la stable.
 - **Raison du porteur :** le projet est une **démonstration pour un talk Flutter GenUI**, où l'avance de phase est assumée.
+- **Portée :** générique, avec contexte d'origine propre au projet (voir « Contexte d'origine (non générique) »).
+
+## Contexte d'origine (non générique)
+Sont propres au projet d'origine : la raison du porteur (« démonstration pour un talk Flutter GenUI », avance de phase assumée), l'« argument fort pour le talk », « pour la démo » (#1797) et le repli « avant la date du talk ». La recommandation de l'assistant (attendre la stable) n'a été écartée que pour cette raison. Les risques, mesures et le résultat du spike sont réutilisables.
 
 ## Contexte (vérifié le 2026-10-28)
 - La stable est 3.25.0. La préversion est **4.0.0-beta.14** (2026-09-11), compatible Flutter 3.47 : les exemples officiels v4 ciblent `flutter: ^3.47.0`. Aucune date de GA n'est annoncée [[ds-widgetbook-4-risks]].
@@ -36,3 +40,6 @@ Décision **maintenue** : la beta.14 tient sous Flutter 3.47.8 avec `material_ui
 ## Quand réexaminer
 - Sortie de la 4.0.0 stable : passer à `^4.0.0`.
 - Une bêta casse la démo et aucun contournement n'existe avant la date du talk : repli possible sur la 3.25.0, avec les notes 3.x.
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

@@ -3,7 +3,7 @@ id: ds-color-dark-contrast
 title: Couleur — mode sombre et contraste élevé
 tags: [color, dark-mode, high-contrast, material-3, accessibility]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://raw.githubusercontent.com/material-foundation/material-color-utilities/main/dart/lib/dynamiccolor/material_dynamic_colors.dart, https://api.flutter.dev/flutter/material/ColorScheme/ColorScheme.fromSeed.html, https://m3.material.io/styles/color/system/how-the-system-works, https://api.flutter.dev/flutter/widgets/MediaQueryData/highContrast.html]
 links: [ds-color-from-seed, ds-color-m3-roles, ds-a11y-flutter-signals, ds-a11y-wcag-contrast, ux-desktop-platform-kits]
 ---
@@ -24,8 +24,8 @@ links: [ds-color-from-seed, ds-color-m3-roles, ds-a11y-flutter-signals, ds-a11y-
 - `MediaQuery.highContrastOf(context)` = « Increase Contrast » (iOS) ou « High contrast text » (Android).
 - Le flag n'est mis à jour que sur **iOS 13+ et Android API 34+**. Sans ancêtre `MediaQuery`, il renvoie `false`.
 
-## Choix du projet (opinion)
-L'app cible desktop et web : on ne peut pas compter sur ce signal seul.
+## Recommandation (opinion)
+Pour une app desktop ou web, on ne peut pas compter sur ce signal seul.
 - Proposer un **réglage in-app** « Contraste : système / standard / moyen / élevé ».
 - Le porter par un Bloc de préférences (DI par constructeur), combiné avec `highContrastOf`.
 

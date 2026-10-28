@@ -1,13 +1,15 @@
 ---
 id: ma-where-to-run-agents
 title: Où exécuter chaque agent — client vs backend
-tags: [multi-agent, architecture, decision, security, flutter]
+tags: [multi-agent, architecture, recommendation, security, flutter]
 status: opinion
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/live, https://ai.google.dev/gemini-api/docs/live, https://ai.google.dev/gemini-api/docs/ephemeral-tokens]
 links: [adr-0002-orchestrator-backend, ma-target-architecture, rt-gpt-live-sideband, rt-ephemeral-keys, ma-prompt-injection-tools, proj-avw-risks, perf-web-no-isolates, proto-stack-recommendation]
 ---
-# Placement des agents (décision interne, validée le 2026-10-27 : orchestrateur backend dès la phase 1)
+# Placement des agents d'une app voix multi-agents : client ou backend
+
+**Recommandation :** le client ne porte que l'audio, WebRTC et le rendu A2UI ; l'orchestrateur tourne côté backend **dès le départ**, pas après une première version « tout client » ([[adr-0002-orchestrator-backend]]).
 
 | Composant | Où | Pourquoi |
 |---|---|---|

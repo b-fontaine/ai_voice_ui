@@ -1,5 +1,5 @@
 domain: flutter-di-state
-description: DI (get_it 9.3 + injectable 3.0) et gestion d'état (Bloc uniquement, bloc 9.2 / flutter_bloc 9.1) pour l'app Flutter multi-agents
+description: DI (get_it 9.3 + injectable 3.0) et gestion d'état (Bloc uniquement, bloc 9.2 / flutter_bloc 9.1) pour une app Flutter multi-agents
 subindexes: [di/index.yaml, bloc/index.yaml]
 keywords: [get_it, injectable, dependency injection, scope, pushNewScope, micro-package, ExternalModule, bloc, flutter_bloc, cubit, freezed, sealed, event transformer, bloc_concurrency, restartable, emit.forEach, BlocObserver, bloc_test, BlocSelector, genui state]
 notes:
@@ -8,7 +8,7 @@ notes:
   - {id: bloc-emit-foreach, path: bloc/emit-foreach.md, summary: "emit.forEach/onEach pour flux runner voix, + restartable", tags: [bloc, streams, audio]}
   - {id: bloc-event-transformers, path: bloc/event-transformers.md, summary: "sequential/droppable/restartable/concurrent et cas voix", tags: [bloc, concurrency, voice]}
   - {id: bloc-naming, path: bloc/naming.md, summary: "Events au passé (Subject+Noun+Verb), states noms", tags: [bloc, naming]}
-  - {id: bloc-no-cubit, path: bloc/no-cubit.md, summary: "Règle projet: Bloc uniquement (traçabilité, transformers), lint prefer_bloc", tags: [bloc, rule, cubit]}
+  - {id: bloc-no-cubit, path: bloc/no-cubit.md, summary: "Règle (adr-0001): Bloc uniquement (traçabilité, transformers), lint prefer_bloc", tags: [bloc, rule, cubit]}
   - {id: bloc-no-non-serializable-state, path: bloc/no-non-serializable-state.md, summary: "Objets GenUI/WebRTC/audio hors de l'état; ids seulement", tags: [bloc, genui, anti-pattern]}
   - {id: bloc-packages-versions, path: bloc/packages-versions.md, summary: "Versions bloc, flutter_bloc, bloc_concurrency, bloc_test, bloc_lint, freezed", tags: [bloc, versions]}
   - {id: bloc-providers-selector, path: bloc/providers-selector.md, summary: "BlocProvider vs .value, MultiBlocProvider, BlocSelector", tags: [bloc, widgets, performance]}

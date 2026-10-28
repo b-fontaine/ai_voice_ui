@@ -1,5 +1,5 @@
 domain: flutter-architecture
-description: Architecture d'app Flutter (guide officiel, Clean, FSD, workspace pub, lints d'import) et structure recommandée pour l'app multi-agents
+description: Architecture d'app Flutter (guide officiel, Clean, FSD, workspace pub, lints d'import) et gabarit de structure pour une app multi-agents
 notes:
   # clean/
   - {id: arch-clean-dependency-rule, path: clean/dependency-rule.md, summary: "Règle de dépendance Clean: vers l'intérieur uniquement", tags: [clean-architecture, design-principle]}
@@ -15,7 +15,7 @@ notes:
   # official/
   - {id: arch-command-pattern, path: official/command-pattern.md, summary: "Command0/Command1 ChangeNotifier et équivalent BLoC", tags: [mvvm, command]}
   - {id: arch-compass-structure, path: official/compass-structure.md, summary: "Arborescence de l'app exemple Compass (ui par feature, data par type)", tags: [folder-structure, official]}
-  - {id: arch-official-components, path: official/components.md, summary: "Rôles View/ViewModel/Repository/Service, transposés aux agents", tags: [flutter, mvvm, repository, official]}
+  - {id: arch-official-components, path: official/components.md, summary: "Rôles View/ViewModel/Repository/Service, transposés à un agent vocal (ViewModel = Bloc)", tags: [flutter, mvvm, repository, official]}
   - {id: arch-official-layers, path: official/layers.md, summary: "Guide officiel: couches UI/Data + domaine optionnel, flux unidirectionnel", tags: [flutter, architecture, mvvm, official]}
   - {id: arch-official-recommendations, path: official/recommendations.md, summary: "17 recommandations officielles avec priorité", tags: [best-practice, official]}
   - {id: arch-result-pattern, path: official/result-pattern.md, summary: "Result<T> sealed Ok/Error officiel, switch exhaustif", tags: [error-handling, result]}
@@ -27,7 +27,7 @@ notes:
   # synthesis/
   - {id: arch-clean-fsd-combo, path: synthesis/clean-fsd-combo.md, summary: "FSD vertical + Clean par slice, orchestrateur via ports d'entities", tags: [clean-architecture, fsd, multi-agent]}
   - {id: arch-recommended-dependency-rules, path: synthesis/recommended-dependency-rules.md, summary: "Graphe de dépendances autorisé et garde-fous lint/CI", tags: [imports, lint, ci]}
-  - {id: arch-recommended-structure, path: synthesis/recommended-structure.md, summary: "Arborescence workspace recommandée pour l'app multi-agents", tags: [folder-structure, workspace, multi-agent]}
+  - {id: arch-recommended-structure, path: synthesis/recommended-structure.md, summary: "Gabarit d'arborescence workspace (<repo>/apps/<app>, un package par agent) pour une app multi-agents", tags: [folder-structure, workspace, multi-agent]}
   # tooling/
   - {id: arch-analyzer-plugins, path: tooling/analyzer-plugins.md, summary: "Analyzer plugins natifs Dart 3.10 vs custom_lint", tags: [lint, analyzer-plugin, custom_lint]}
   - {id: arch-dependency-validator, path: tooling/dependency-validator.md, summary: "dependency_validator 5.1: missing/unused/promoted en CI", tags: [tooling, pubspec, ci]}

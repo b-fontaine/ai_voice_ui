@@ -3,7 +3,7 @@ id: rt-gpt-live-webrtc-session
 title: GPT-Live — créer une session WebRTC (relais SDP backend)
 tags: [openai, gpt-live, webrtc, sdp, backend, security]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/voice-webrtc, https://developers.openai.com/api/docs/guides/live.md]
 links: [rt-gpt-live-lifecycle, rt-ephemeral-keys, rt-flutter-webrtc-gpt-live-connect, rt-gpt-live-sideband, proto-rtc-transport-choice]
 ---
@@ -11,7 +11,7 @@ links: [rt-gpt-live-lifecycle, rt-ephemeral-keys, rt-flutter-webrtc-gpt-live-con
 
 Le client n'appelle **jamais** OpenAI directement :
 1. Il génère une offre SDP.
-2. Il l'envoie à **notre** backend.
+2. Il l'envoie à **son propre** backend (celui de l'application).
 3. Le backend appelle `POST https://api.openai.com/v1/live/sessions` avec la clé projet, puis renvoie la réponse SDP au client.
 
 La doc GPT-Live (au 2026-10-26) **ne décrit aucun jeton éphémère / client secret**. On lit seulement : « Keep the key and session configuration on your trusted server. »

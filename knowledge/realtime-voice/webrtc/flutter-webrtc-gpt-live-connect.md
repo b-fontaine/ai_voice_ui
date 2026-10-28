@@ -3,13 +3,13 @@ id: rt-flutter-webrtc-gpt-live-connect
 title: Connecter flutter_webrtc à GPT-Live (squelette)
 tags: [webrtc, flutter, gpt-live, openai, code]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/voice-webrtc, https://pub.dev/packages/flutter_webrtc]
 links: [rt-gpt-live-webrtc-session, rt-gpt-live-lifecycle, rt-flutter-webrtc-audio-routing, rt-graceful-close]
 ---
 # Squelette Dart : GPT-Live via flutter_webrtc
 
-Ce squelette transpose le flux officiel du navigateur. Il n'a pas été testé : les API `flutter_webrtc` sont réelles, mais l'assemblage relève de notre recommandation.
+Ce squelette transpose le flux officiel du navigateur. Il n'a pas été testé : les API `flutter_webrtc` sont réelles, mais l'assemblage est une recommandation interne (opinion).
 
 ```dart
 final pc = await createPeerConnection({'sdpSemantics': 'unified-plan'});
@@ -25,7 +25,7 @@ final offer = await pc.createOffer();
 await pc.setLocalDescription(offer);
 await _waitIceComplete(pc); // onIceGatheringState == RTCIceGatheringStateComplete, timeout 10 s
 final local = await pc.getLocalDescription();
-final answerSdp = await backend.createLiveSession(local!.sdp!); // NOTRE relais
+final answerSdp = await backend.createLiveSession(local!.sdp!); // relais SDP du backend applicatif
 await pc.setRemoteDescription(RTCSessionDescription(answerSdp, 'answer'));
 ```
 

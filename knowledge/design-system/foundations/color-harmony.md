@@ -3,7 +3,7 @@ id: ds-color-harmony
 title: Couleur — harmonies, HCT et harmonize
 tags: [color, color-harmony, hct, material-color-utilities, oklch]
 status: sourced
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://en.wikipedia.org/wiki/Harmony_(color), https://m3.material.io/styles/color/system/how-the-system-works, https://m3.material.io/styles/color/advanced/adjust-existing-colors, https://github.com/material-foundation/material-color-utilities, https://raw.githubusercontent.com/material-foundation/material-color-utilities/main/dart/lib/scheme/scheme_tonal_spot.dart, https://raw.githubusercontent.com/material-foundation/material-color-utilities/main/dart/lib/blend/blend.dart, https://raw.githubusercontent.com/material-foundation/material-color-utilities/main/dart/lib/temperature/temperature_cache.dart, https://www.w3.org/TR/css-color-4/]
 links: [ds-color-from-seed, ds-color-m3-roles, ds-tokens-dtcg-theming, ds-tokens-figma-sources]
 ---
@@ -36,7 +36,7 @@ final success = Color(Blend.harmonize(0xFF2E7D32, seed.toARGB32()));
 ## OKLCH pour concevoir une palette (CSS Color 4)
 `oklch(L C H)` : L de 0 % à 100 % (0.0 à 1.0) ; pour C, 100 % = 0.4 et C ne dépasse pas 0.5 en pratique. Oklab est plus uniforme que CIE Lab. En HSL, changer la teinte change la luminosité perçue.
 
-## Choix du projet (opinion)
+## Recommandation (opinion)
 - Marque figée → schéma de base custom ; couleurs métier → `harmonize` vers la primaire, exposées en `ThemeExtension`.
 - Pour les rampes conçues à la main (tokens Figma), raisonner en OKLCH ou HCT, jamais en HSL.
 

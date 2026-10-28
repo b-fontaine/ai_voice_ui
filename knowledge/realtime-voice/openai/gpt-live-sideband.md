@@ -3,7 +3,7 @@ id: rt-gpt-live-sideband
 title: GPT-Live — contrôle serveur (sideband attach)
 tags: [openai, gpt-live, backend, websocket, tools, security, multi-agent]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://developers.openai.com/api/docs/guides/voice-server-controls?api=live, https://developers.openai.com/api/docs/guides/voice-sip?api=live, https://developers.openai.com/api/docs/guides/voice-webrtc?api=live]
 links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-ephemeral-keys, ma-target-architecture, ma-where-to-run-agents]
 ---
@@ -27,7 +27,7 @@ Un serveur peut s'attacher à une session déjà créée en WebRTC (création pa
 - une copie de l'audio (`session.input_audio.append` / `session.output_audio.delta`, en PCM16LE mono 24 kHz base64)
 - `session.closed`
 
-**Pour notre architecture** (opinion) : l'orchestrateur backend attache le sideband et traite la délégation `client` ([[rt-gpt-live-delegation]]). Outils, autorisations, règles métier et credentials restent côté serveur ; Flutter ne gère que l'audio et le rendu A2UI ([[ma-target-architecture]]).
+**Dans une architecture « agent vocal + orchestrateur backend »** (opinion) : l'orchestrateur attache le sideband et traite la délégation `client` ([[rt-gpt-live-delegation]]). Outils, autorisations, règles métier et credentials restent côté serveur ; le client (ex. Flutter) ne gère que l'audio et le rendu A2UI ([[ma-target-architecture]]).
 
 ## ⚠️ Pièges
 - Pour terminer : `session.close`, attendre `session.closed`, puis fermer le WebSocket. Il existe aussi `POST /v1/live/sessions/{session_id}/hangup` (sans corps, documenté dans le guide SIP ; raison de clôture `close_requested`).

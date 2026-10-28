@@ -3,7 +3,7 @@ id: proto-a2a-agent-card
 title: A2A — Agent Card et découverte
 tags: [a2a, agent-card, discovery, well-known]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://a2a-protocol.org/latest/specification/, https://a2a-protocol.org/latest/whats-new-v1/]
 links: [proto-a2a-overview, proto-a2a-security, proto-a2a-bindings]
 ---
@@ -25,8 +25,8 @@ Un serveur A2A publie son Agent Card en JSON à l'URL `https://{domaine}/.well-k
 - Méthode `GetExtendedAgentCard`, ou `GET /extendedAgentCard` en REST.
 - Elle exige les schémas d'authentification déclarés dans la carte publique.
 
-## Usage dans notre app
-L'orchestrateur lit les cartes des agents distants pour choisir à qui déléguer, par exemple un agent métier côté serveur Septeo. Côté Flutter, `genui_a2a` expose une classe `AgentCard` (voir proto-a2a-dart-sdk).
+## Usage par un orchestrateur multi-agents (opinion)
+L'orchestrateur lit les cartes des agents distants pour choisir à qui déléguer, par exemple un agent métier hébergé côté serveur (chez Septeo : un agent d'un produit métier). Côté Flutter, `genui_a2a` expose une classe `AgentCard` (voir proto-a2a-dart-sdk).
 
 ⚠️ **Pièges**
 - En v0.3, les champs différaient (`url` + `preferredTransport` + `additionalInterfaces`). Il faut vérifier le `protocolVersion` annoncé par chaque interface.

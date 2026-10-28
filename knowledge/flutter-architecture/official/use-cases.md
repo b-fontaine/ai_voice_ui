@@ -3,7 +3,7 @@ id: arch-official-use-cases
 title: Use-cases optionnels — quand les ajouter
 tags: [flutter, architecture, domain, use-case, official]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/app-architecture/guide, https://docs.flutter.dev/app-architecture/recommendations]
 links: [arch-official-layers, arch-clean-flutter-layers, arch-clean-fsd-combo]
 ---
@@ -25,12 +25,12 @@ Un use-case est « une simple classe utilitaire aux entrées et sorties bien dé
 | moins de duplication entre ViewModels | plus de classes, plus de charge cognitive |
 | testabilité, lisibilité | plus de mocks, plus de boilerplate |
 
-**Notre cas (opinion) :** l'orchestrateur multi-agents remplit les trois critères :
+**Cas d'un orchestrateur multi-agents (opinion) :** il remplit les trois critères :
 - il combine la session voix, la surface GenUI et le contexte métier ;
 - il est complexe ;
 - il est partagé.
 
-Il justifie donc des use-cases explicites, par exemple `RouteUserIntent` ou `DelegateUiToGenUiAgent`. Pour un CRUD simple, on reste sans use-case.
+Il justifie donc des use-cases explicites (par exemple « router une intention utilisateur », « déléguer l'UI à l'agent GenUI »). Pour un CRUD simple, on reste sans use-case.
 
 ⚠️ Pièges
 - La Clean Architecture « dogmatique » (un use-case par appel de repository) contredit la recommandation officielle. saaster_kit le fait déjà (`proj-sk-overview`) : à n'appliquer que là où c'est utile.

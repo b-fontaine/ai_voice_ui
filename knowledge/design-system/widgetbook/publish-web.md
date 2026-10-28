@@ -9,7 +9,7 @@ links: [adr-0006-ds-no-widgetbook-cloud, ds-widgetbook-visual-review-ci, perf-we
 ---
 # Le catalogue v4 auto-hébergé est un simple dossier `build/web/` statique
 
-Sans Cloud ([[adr-0006-ds-no-widgetbook-cloud]]), la doc v4 dit de servir le `build/web/` produit par `flutter build web` depuis n'importe quel hébergeur statique. Build, hébergement et CI de publication sont à notre charge. Infos au 2026-10-28, widgetbook 4.0.0-beta.14.
+Sans Cloud ([[adr-0006-ds-no-widgetbook-cloud]]), la doc v4 dit de servir le `build/web/` produit par `flutter build web` depuis n'importe quel hébergeur statique. Build, hébergement et CI de publication sont alors à la charge de l'équipe. Infos au 2026-10-28, widgetbook 4.0.0-beta.14.
 
 ## Build
 - `--base-href /<repo>/` réécrit le `<base href>` de `web/index.html` ; la valeur commence et finit par `/`. Source : aide de la CLI (Flutter 3.47.8). La doc Flutter ne donne pas de recette GitHub Pages.
@@ -32,4 +32,4 @@ Sans Cloud ([[adr-0006-ds-no-widgetbook-cloud]]), la doc v4 dit de servir le `bu
 
 ## ⚠️ Pièges
 - Issue ouverte #1797 : la stratégie d'URL **path** n'est pas supportée ; rechargement ou lien profond renvoient à l'accueil (`flutter run -d chrome` comme `flutter build web`). Rester en hash (opinion).
-- Pour une démo en Wasm multi-thread, préférer Firebase Hosting à GitHub Pages (opinion).
+- Pour un catalogue publié en Wasm multi-thread, préférer Firebase Hosting à GitHub Pages (opinion).

@@ -3,7 +3,7 @@ id: proto-mcp-primitives
 title: MCP — tools, resources, prompts (qui contrôle quoi)
 tags: [mcp, tools, resources, prompts]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://modelcontextprotocol.io/specification/2026-07-28/server, https://modelcontextprotocol.io/specification/2026-07-28/changelog]
 links: [proto-mcp-overview, proto-mcp-elicitation]
 ---
@@ -23,8 +23,8 @@ Chaque primitive a un **maître** différent. Le choix de primitive détermine d
 - `tools/list` **devrait** être renvoyé dans un ordre déterministe, ce qui aide le cache de prompt du LLM.
 - Une resource introuvable renvoie maintenant l'erreur `-32602`, au lieu de `-32002`.
 
-## Application à notre architecture (opinion)
-- Les **outils métier Septeo** (lire un dossier, créer un RDV…) sont des tools MCP. L'orchestrateur les expose ensuite aux agents vocal et GenUI.
+## Application à une architecture voix + GenUI + orchestrateur (opinion)
+- Les **outils métier** (chez Septeo par exemple : lire un dossier, créer un RDV…) sont des tools MCP. L'orchestrateur les expose ensuite aux agents vocal et GenUI.
 - Pour l'agent vocal temps réel, on traduit les tools MCP en déclarations de fonctions du modèle Live (OpenAI ou Gemini). Le modèle n'appelle pas MCP directement.
 
 ⚠️ **Pièges**

@@ -1,7 +1,7 @@
 # Index racine de la base de connaissances (zettelkasten). Lire en premier.
 # Procédure : tasks → ids ; sinon keywords → domaine → index du domaine → notes ; suivre links sur 1 niveau.
 version: 1
-updated: 2026-10-27
+updated: 2026-10-28
 conventions: _conventions.md
 tags_index: tags.yaml
 lint: python3 -I knowledge/_tools/kb_lint.py
@@ -25,7 +25,7 @@ domains:
   - name: flutter-architecture
     prefixes: [arch-]
     index: flutter-architecture/index.yaml
-    description: "Architecture d'app Flutter : guide officiel, Clean Architecture, Feature-Sliced Design, workspace pub, lints d'import, structure recommandée"
+    description: "Architecture d'app Flutter : guide officiel, Clean Architecture, Feature-Sliced Design, workspace pub, lints d'import, gabarit de structure pour une app multi-agents"
     keywords: [architecture, clean architecture, FSD, feature sliced design, couche, layer, slice, segment, barrel, public api, repository, use case, viewmodel, Result, Either, freezed, go_router, navigation, workspace, monorepo, import_lint, dependency rule, structure, dossier, folder]
   - name: flutter-di-state
     prefixes: [di-, bloc-]
@@ -55,7 +55,7 @@ domains:
   - name: multi-agent
     prefixes: [ma-]
     index: multi-agent/index.yaml
-    description: "Orchestration multi-agents de l'app : architecture cible, placement des agents, patterns, latence, sécurité, observabilité, évaluations"
+    description: "Orchestration multi-agents d'une app voix : architecture de référence, placement des agents, patterns, stack backend, latence, sécurité, observabilité, évaluations"
     keywords: [multi-agents, multi-agent, orchestrateur, backend, go, golang, rust, stack backend, sidecar, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
   - name: design-system
     prefixes: [ds-]
@@ -71,16 +71,16 @@ domains:
 entrypoints:
   - {id: proj-avw-overview, why: "Projet de référence : archi, DI, Bloc et dépendances du widget voix existant"}
   - {id: proj-avw-risks, why: "Bugs et anti-patterns à ne pas reproduire (obligatoire avant le code voix)"}
-  - {id: ma-target-architecture, why: "Décision : voix → délégation unique → orchestrateur → GenUI / MCP / A2A"}
-  - {id: ma-where-to-run-agents, why: "Décision : quoi tourne côté client, quoi côté backend"}
+  - {id: ma-target-architecture, why: "Patron : voix → délégation unique → orchestrateur → GenUI / MCP / A2A"}
+  - {id: ma-where-to-run-agents, why: "Recommandation : quoi tourne côté client, quoi côté backend"}
   - {id: proto-protocol-map, why: "Quel protocole pour quoi (MCP, A2A, AG-UI, A2UI, WebRTC)"}
   - {id: rt-gpt-live-overview, why: "Fiche du modèle vocal OpenAI gpt-live-1"}
   - {id: rt-provider-abstraction, why: "Port VoiceSession commun aux fournisseurs voix"}
   - {id: rt-ephemeral-keys, why: "Aucune clé longue durée côté client : mécanismes par fournisseur"}
   - {id: genui-architecture, why: "SurfaceController, Transport, Conversation : le moteur genui 0.10"}
   - {id: genui-voice-bridge, why: "Patron : l'agent vocal délègue l'UI à un agent GenUI"}
-  - {id: arch-recommended-structure, why: "Arborescence recommandée de l'app (Clean + FSD)"}
-  - {id: adr-0003-backend-go, why: "Décisions : lire le registre decisions/ avant tout choix technologique"}
+  - {id: arch-recommended-structure, why: "Gabarit d'arborescence pour une app Flutter multi-agents (Clean + FSD)"}
+  - {id: adr-0003-backend-go, why: "Registre des ADR : lire decisions/ avant tout choix technologique"}
   - {id: di-no-service-locator, why: "Règle DI : getIt seulement à la racine de composition"}
   - {id: bloc-no-cubit, why: "Règle état : Bloc uniquement, Cubit interdit"}
   - {id: test-tdd-red-green-refactor, why: "Méthode : TDD outside-in depuis Gherkin"}
@@ -123,7 +123,7 @@ tasks:
   - task: "Build et performance web (Wasm, multi-view)"
     notes: [perf-web-wasm-build, perf-web-renderers, perf-web-coop-coep, perf-web-initial-load, perf-web-multi-view, perf-web-no-isolates, perf-web-profiling]
   - task: "Concevoir / faire évoluer le backend orchestrateur"
-    notes: [adr-0003-backend-go, adr-0002-orchestrator-backend, ma-backend-stack-recommendation, ma-backend-phase1-plan, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, ma-backend-sdk-rust, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
+    notes: [adr-0003-backend-go, adr-0002-orchestrator-backend, ma-backend-stack-recommendation, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, ma-backend-sdk-rust, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
   - task: "Observabilité et évaluation des agents"
     notes: [ma-otel-genai-spans, ma-voice-agent-evals, ma-guardrails, bloc-observer]
   - task: "CI, lints et couverture"

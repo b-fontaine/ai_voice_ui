@@ -11,6 +11,7 @@ links: [ds-tokens-style-dictionary, ds-tokens-dtcg-format, ds-tokens-dtcg-themin
 
 - **Statut :** acceptée le 2026-10-28.
 - **Décideur :** porteur du projet, qui retient la recommandation de l'assistant.
+- **Portée :** générique.
 
 ## Contexte
 - Le format DTCG 2025.10 est stable : c'est un *Final CG Report* du W3C, pas un standard [[ds-tokens-dtcg-format]].
@@ -43,3 +44,6 @@ links: [ds-tokens-style-dictionary, ds-tokens-dtcg-format, ds-tokens-dtcg-themin
 - Style Dictionary v5 prend entièrement en charge DTCG 2025.10 et le Resolver.
 - Un générateur Dart natif mûr apparaît.
 - L'outil de design exporte directement en Dart ([[adr-0007-ds-design-tool-claude-design]]).
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

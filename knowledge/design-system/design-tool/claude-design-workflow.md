@@ -9,7 +9,7 @@ links: [adr-0007-ds-design-tool-claude-design, ds-claude-design-tokens, adr-0005
 ---
 # Claude Design sert à la maquette ; le dépôt Git reste la source du design system Flutter
 
-Constat du 2026-10-28 : aucune source officielle ne mentionne Flutter ni un export Dart. Les rendus documentés sont tous web (HTML, previews React). D'où une chaîne à sens unique, code → design (décision du porteur, adr-0007).
+Constat du 2026-10-28 : aucune source officielle ne mentionne Flutter ni un export Dart. Les rendus documentés sont tous web (HTML, previews React). D'où une chaîne à sens unique, code → design ([[adr-0007-ds-design-tool-claude-design]]).
 
 ## Faits
 - `/design-sync` (skill intégrée à Claude Code) convertit le design system **React** d'un dépôt et l'envoie au site autonome `claude.ai/design`. Connexion claude.ai requise (`/design-login`) ; indisponible sur Bedrock, Google Cloud Agent Platform, Microsoft Foundry, Claude Platform on AWS et via un gateway Claude apps. Première synchro : plusieurs heures.
@@ -28,7 +28,7 @@ Constat du 2026-10-28 : aucune source officielle ne mentionne Flutter ni un expo
 **Ne pas utiliser `/design-sync`** pour le DS Flutter : il ne sait lire que du React.
 
 ## Décision et points ouverts
-- Sens de synchronisation **code → design** uniquement ; les retouches de tokens faites dans Claude Design sont reportées à la main dans le DTCG. **Confirmé par le porteur le 2026-10-28** ([[adr-0007-ds-design-tool-claude-design]]).
+- Sens de synchronisation **code → design** uniquement ; les retouches de tokens faites dans Claude Design sont reportées à la main dans le DTCG. **Confirmé le 2026-10-28** dans [[adr-0007-ds-design-tool-claude-design]].
 - Sort de `/design-sync` après le 2026-12-14 : la doc dit qu'il vise le site autonome ; aucun remplacement annoncé (non vérifié).
 
 ## ⚠️ Pièges

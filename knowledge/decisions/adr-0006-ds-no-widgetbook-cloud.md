@@ -11,6 +11,7 @@ links: [ds-widgetbook-cloud, ds-widgetbook-cloud-multi-snapshot, ds-widgetbook-t
 
 - **Statut :** acceptée le 2026-10-28.
 - **Décideur :** porteur du projet (« Je ne l'utiliserais pas »). Cela rejoint la recommandation de l'assistant, qui était de ne pas l'utiliser au départ.
+- **Portée :** générique.
 
 ## Contexte
 Widgetbook Cloud est un SaaS facturé au snapshot. Il offre la revue visuelle par PR, les revues Figma et les multi-snapshots [[ds-widgetbook-cloud]].
@@ -26,3 +27,6 @@ Widgetbook Cloud est un SaaS facturé au snapshot. Il offre la revue visuelle pa
 
 ## Quand réexaminer
 Si une équipe design externe doit approuver les PR visuellement.
+
+## Historique
+- 2026-10-28 — portée précisée lors du nettoyage de knowledge/ (porteur).

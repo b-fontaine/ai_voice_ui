@@ -1,11 +1,11 @@
 ---
 id: proj-sk-backend
-title: septeo_saaster_kit — ce que le backend Go offre à l'orchestrateur
+title: septeo_saaster_kit — backend Go réutilisable et pièges
 tags: [project, go, backend, hexagonal, temporal, bdd, security]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: ["~/septeo/septeo_saaster_kit (analyse locale du code, 2026-10-27)"]
-links: [proj-sk-overview, proj-sk-patterns, ma-backend-stack-recommendation, ma-backend-phase1-plan, ma-otel-genai-spans]
+links: [proj-sk-overview, proj-sk-patterns, ma-backend-stack-recommendation, ma-backend-sdk-go, ma-otel-genai-spans]
 ---
 # Backend Go du saaster kit (`backend/customer_service`, lu le 2026-10-27)
 
@@ -26,4 +26,4 @@ links: [proj-sk-overview, proj-sk-patterns, ma-backend-stack-recommendation, ma-
 - Seulement `grpc.UnaryInterceptor` (`server.go:60`) : pas d'intercepteur de stream.
 - `Makefile` l. 33-34 : chemins `/Users/bfontaine/go/bin` en dur.
 - `azure-pipelines.yml` : tâches `Docker@2` seulement, aucun `go test` ni Godog.
-- Les SDK agents Go exigent Go ≥ 1.26 (adk/v2 : 1.26.10) et OTel ≥ v1.47 : prévoir un module séparé.
+- Les SDK agents Go exigent Go ≥ 1.26 (adk/v2 : 1.26.10) et OTel ≥ v1.47 : un service agents ajouté au kit doit vivre dans un module Go séparé (`ma-backend-sdk-go`).

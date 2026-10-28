@@ -1,15 +1,15 @@
 ---
 id: bloc-no-cubit
-title: Règle projet — Bloc uniquement, Cubit interdit
+title: Règle (adr-0001) — Bloc uniquement, Cubit interdit
 tags: [bloc, rule, cubit, traceability, lint]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://bloclibrary.dev/bloc-concepts/, https://bloclibrary.dev/lint-rules/prefer_bloc/, https://pub.dev/packages/bloc_lint, https://pub.dev/packages/bloc, https://github.com/felangel/bloc/blob/master/packages/bloc_lint/lib/recommended.yaml]
-links: [bloc-event-transformers, bloc-observer, bloc-emit-foreach, bloc-sealed-freezed, bloc-packages-versions, test-bloc-test]
+links: [bloc-event-transformers, bloc-observer, bloc-emit-foreach, bloc-sealed-freezed, bloc-packages-versions, test-bloc-test, adr-0001-initial-constraints]
 ---
 # Règle : on utilise `Bloc`, jamais `Cubit`
 
-**Décision projet :** toute logique d'état passe par une classe qui étend `Bloc<Event, State>` avec des events scellés. `Cubit` est interdit, même pour un état « simple ».
+**Règle (adr-0001-initial-constraints) :** toute logique d'état passe par une classe qui étend `Bloc<Event, State>` avec des events scellés. `Cubit` est interdit, même pour un état « simple ».
 
 **Pourquoi (arguments tirés de la doc officielle bloc) :**
 1. **Traçabilité.** Bloc donne « the sequence of state changes as well as exactly what triggered those changes ». `onTransition` et `BlocObserver.onEvent`/`onTransition`/`onDone` n'existent que pour Bloc. Dans une app multi-agents (orchestrateur, voix, GenUI), savoir **quel événement** (tool call, VAD, action utilisateur) a provoqué un état est indispensable pour déboguer.
@@ -32,4 +32,4 @@ Exécuter `dart pub global activate bloc_tools`, puis `bloc lint .` en CI.
 
 ## ⚠️ Pièges
 - La doc décrit `prefer_bloc` comme « purely a stylistic rule ». C'est un choix d'équipe, pas une exigence technique.
-- Le skill `flutter-scaffold-feature` propose « BLoC ou Cubit ». Dans ce projet, toujours choisir Bloc.
+- Un générateur ou skill de scaffolding qui propose « BLoC ou Cubit » (ex. `flutter-scaffold-feature`) : sous cette règle, toujours choisir Bloc.

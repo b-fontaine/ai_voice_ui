@@ -9,7 +9,7 @@ links: [ds-widgetbook-versions, ds-widgetbook-addons]
 ---
 # Historique 3.x : éviter le code obsolète des vieux tutoriels
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-beta]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-beta]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 Entrées vérifiées une à une dans le changelog officiel :
 

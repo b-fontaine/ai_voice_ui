@@ -3,7 +3,7 @@ id: ma-guardrails
 title: Guardrails pour agents vocaux et délégués
 tags: [multi-agent, guardrails, security, realtime-voice, openai-agents-sdk]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://openai.github.io/openai-agents-js/guides/voice-agents/build/, https://developers.openai.com/api/docs/guides/live-delegation]
 links: [ma-prompt-injection-tools, ma-real-tool-results, genui-a2ui-security]
 ---
@@ -23,7 +23,7 @@ links: [ma-prompt-injection-tools, ma-real-tool-results, genui-a2ui-security]
 - L'application applique elle-même permissions, confirmations et règles métier.
 - `session.instructions.append` change ce que dit le modèle, mais **n'annule pas** le travail backend.
 
-**Couches chez nous (opinion) :**
+**Couches recommandées (opinion) :**
 1. Le prompt vocal décrit le périmètre et la politique de délégation.
 2. L'orchestrateur applique :
    - une liste blanche d'outils par rôle utilisateur ;

@@ -3,7 +3,7 @@ id: ux-genui-errors-validation
 title: Erreurs et validation dans une UI générée
 tags: [genui, a2ui, validation, errors, ux]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://a2ui.org/specification/v0.9.1-a2ui/, https://developer.apple.com/tutorials/data/design/human-interface-guidelines/generative-ai.json, https://pair.withgoogle.com/chapter/errors-failing/]
 links: [genui-error-reporting, ux-ai-human-in-the-loop, ux-genui-streaming-loading, ux-ai-trust-feedback]
 ---
@@ -26,7 +26,7 @@ links: [genui-error-reporting, ux-ai-human-in-the-loop, ux-genui-streaming-loadi
   - les erreurs de contexte ;
   - les erreurs « background », que ni l'utilisateur ni le système ne détectent.
 
-## Application au projet (opinion)
+## Application à une app voix + GenUI (opinion)
 - L'erreur `VALIDATION_FAILED` ne s'affiche jamais : l'utilisateur voit un état de chargement, puis un message générique du DS si le plafond de corrections est atteint.
 - Le message de chaque check s'affiche sous le champ, avec le composant d'erreur du DS, pas sous le bouton.
 - Chaque message d'erreur propose une action : réessayer, reformuler, ou continuer à la main avec un écran non généré.

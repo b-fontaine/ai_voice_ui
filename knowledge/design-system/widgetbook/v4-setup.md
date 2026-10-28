@@ -28,7 +28,7 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.10.1
 ```
-- `^2.10.1` vient de l'exemple : widgetbook n'impose pas de minimum à `build_runner`. **Projet (opinion) :** épingler la version **exacte** `widgetbook: 4.0.0-beta.14`, sans `^`. La doc v4 avertit que l'API peut casser entre versions mineures ([[ds-widgetbook-4-risks]], [[adr-0008-ds-widgetbook-4-beta]]).
+- `^2.10.1` vient de l'exemple : widgetbook n'impose pas de minimum à `build_runner`. **Recommandation (opinion) :** épingler la version **exacte** `widgetbook: 4.0.0-beta.14`, sans `^`. La doc v4 avertit que l'API peut casser entre versions mineures ([[ds-widgetbook-4-risks]], [[adr-0008-ds-widgetbook-4-beta]]).
 
 ## build.yaml : trois builders embarqués
 - `story_builder` : `lib/**.stories.dart` → `.stories.g.dart`, en `auto_apply: dependents`. Depuis beta.1, l'extension est `*.g.dart` (et non plus `*.book.dart`).

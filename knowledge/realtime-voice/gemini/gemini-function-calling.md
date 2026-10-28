@@ -3,7 +3,7 @@ id: rt-gemini-function-calling
 title: Gemini Live — function calling sync vs NON_BLOCKING
 tags: [gemini, live-api, tools, function-calling, async, orchestrator, latency, multi-agent]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://ai.google.dev/gemini-api/docs/live-tools, https://ai.google.dev/gemini-api/docs/live-guide, https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live, https://pub.dev/packages/firebase_ai, https://pub.dev/documentation/firebase_ai/latest/firebase_ai/FunctionDeclaration-class.html, https://pub.dev/documentation/firebase_ai/latest/firebase_ai/FunctionResponse-class.html]
 links: [rt-gemini-38-migration, rt-gemini-firebase-ai-dart, rt-tool-calling-voice, ma-filler-acknowledgements, ma-real-tool-results, ma-target-architecture, proj-avw-voice-runners]
 ---
@@ -29,7 +29,7 @@ La page du modèle 3.8 et le live-guide écrivent `INTERRUPTED` ; live-tools éc
 - → Le mode asynchrone n'est **pas exposé** : il exige un autre client (WebSocket direct ou SDK `@google/genai` / `google-genai` côté serveur).
 - `LiveServerToolCallCancellation` signale un appel annulé (par ex. après interruption) : abandonner le travail correspondant.
 
-**Usage chez nous** (opinion) : déclarer `delegate` en `NON_BLOCKING` quand modèle et SDK le permettent, puis `WHEN_IDLE` pour un résultat à annoncer, `SILENT` quand l'UI A2UI suffit, `INTERRUPT` pour les erreurs bloquantes.
+**Usage recommandé** (opinion) : déclarer `delegate` en `NON_BLOCKING` quand modèle et SDK le permettent, puis `WHEN_IDLE` pour un résultat à annoncer, `SILENT` quand l'UI A2UI suffit, `INTERRUPT` pour les erreurs bloquantes.
 
 ## ⚠️ Pièges
 - Toujours renseigner `id` dans `FunctionResponse` pour lier la réponse à son appel. Réponse jamais envoyée en mode synchrone = modèle muet.

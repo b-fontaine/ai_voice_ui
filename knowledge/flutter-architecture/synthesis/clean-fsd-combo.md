@@ -3,7 +3,7 @@ id: arch-clean-fsd-combo
 title: Combiner Clean Architecture et FSD (proposition)
 tags: [clean-architecture, fsd, synthesis, multi-agent]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://feature-sliced.design/docs/reference/layers, https://docs.flutter.dev/app-architecture/guide]
 links: [arch-fsd-layers, arch-clean-flutter-layers, arch-fsd-dart-mapping, arch-recommended-structure, arch-recommended-dependency-rules, proj-avw-genui-bridge]
 ---
@@ -15,7 +15,7 @@ links: [arch-fsd-layers, arch-clean-flutter-layers, arch-fsd-dart-mapping, arch-
 | Segment FSD | Contenu Clean |
 |---|---|
 | `ui/` | pages, widgets, `BlocBuilder` |
-| `model/state/` | Bloc/Cubit (= ViewModel), états `freezed` |
+| `model/state/` | Bloc (= ViewModel ; Cubit exclu, `bloc-no-cubit`), états `freezed` |
 | `model/domain/` | entités locales, interfaces de repository, use-cases si justifiés, failures |
 | `api/` | services (transport), DTO, mappers, implémentations des repositories |
 
@@ -29,7 +29,7 @@ On obtient le pont voix → GenUI d'ai_voice_widget (`proj-avw-genui-bridge`) sa
 
 **Correspondance Septeo :**
 - l'Interactor devient un use-case de `model/domain` ;
-- `VoiceAi` (l'orchestrateur du domaine) devient la feature `orchestrator`.
+- l'orchestrateur du domaine (`VoiceAi` dans ai_voice_widget, `proj-avw-overview`) devient une feature d'orchestration qui ne dépend que des ports.
 
 ⚠️ Pièges
 - Ne pas en faire trop : appliquer « pages first » (`arch-fsd-pages-first`) et ne pas créer de use-case « pass-through ».

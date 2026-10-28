@@ -3,7 +3,7 @@ id: ma-simplicity-first
 title: Workflows vs agents — commencer simple
 tags: [multi-agent, anthropic, design-principle]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://www.anthropic.com/engineering/building-effective-agents]
 links: [ma-workflow-patterns, ma-target-architecture]
 ---
@@ -17,7 +17,7 @@ Anthropic distingue les **workflows** (chemins de code prédéfinis qui orchestr
 - **Transparence** : rendre explicites les étapes de planification.
 - **ACI (agent-computer interface)** : soigner la doc des outils autant qu'une UI humaine (exemples, cas limites), tester l'usage réel, « poka-yoke » les paramètres.
 
-## Application à notre app
+## Application à un agent vocal + orchestrateur
 L'agent vocal n'a pas besoin d'être un agent autonome : son rôle est conversationnel. Le routage vers GenUI / MCP / A2A peut souvent être un **workflow** codé (router + outils) plutôt qu'un superviseur LLM libre.
 
 ⚠️ Pièges

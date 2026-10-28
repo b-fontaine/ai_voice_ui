@@ -3,7 +3,7 @@ id: test-bdd-gherkin-practices
 title: Bonnes pratiques d'écriture Gherkin
 tags: [bdd, gherkin, best-practice]
 status: sourced
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://cucumber.io/docs/bdd/better-gherkin/, https://pub.dev/packages/bdd_widget_test]
 links: [test-bdd-feature-syntax, test-bdd-widget-test, test-tdd-red-green-refactor]
 ---
@@ -23,7 +23,7 @@ Un scénario exprime une règle métier observable dans le langage du domaine. L
 - **Steps sans dépendance d'ordre caché :** chaque step doit pouvoir se relire seul.
 - **Tags :** `@wip`, `@slow`, `@e2e`, `@golden` pour filtrer en CI.
 
-## Pour le projet multi-agents
+## Pour une app voix + GenUI (multi-agents)
 - Les features se rédigent du point de vue utilisateur : « l'utilisateur demande, l'écran apparaît ».
 - On n'y nomme ni le modèle (gpt-live-1, gpt-realtime-1.5...), ni A2UI, ni le WebRTC : ces détails restent dans les fakes.
 

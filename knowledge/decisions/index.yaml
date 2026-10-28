@@ -2,10 +2,10 @@ domain: decisions
 description: Registre chronologique des décisions d'architecture et de technologie (ADR) ; archives brutes des panels listées dans _archive/index.yaml (ignorées par le lint)
 notes:
   - {id: adr-0001-initial-constraints, path: adr-0001-initial-constraints.md, summary: "2026-10-26 acceptée — Flutter, Clean+FSD, get_it/injectable, Bloc sans Cubit, TDD/BDD", tags: [adr, decision]}
-  - {id: adr-0002-orchestrator-backend, path: adr-0002-orchestrator-backend.md, summary: "2026-10-27 acceptée — orchestrateur côté backend dès la phase 1", tags: [adr, decision, orchestrator]}
+  - {id: adr-0002-orchestrator-backend, path: adr-0002-orchestrator-backend.md, summary: "2026-10-27 acceptée — orchestrateur côté backend dès le départ (relais SDP, aucun secret client)", tags: [adr, decision, orchestrator]}
   - {id: adr-0003-backend-go, path: adr-0003-backend-go.md, summary: "2026-10-27 acceptée puis reconfirmée — backend Go ; Rust/hybride/Python/TS/Dart écartés, historique complet", tags: [adr, decision, backend, go]}
   - {id: adr-0004-ds-visual-base-m3, path: adr-0004-ds-visual-base-m3.md, summary: "2026-10-28 acceptée — DS maison sur Material 3 via material_ui + conventions desktop ; kits par OS écartés", tags: [adr, decision, design-system]}
   - {id: adr-0005-ds-tokens-style-dictionary, path: adr-0005-ds-tokens-style-dictionary.md, summary: "2026-10-28 acceptée — tokens DTCG dans Git, Style Dictionary + format ThemeExtension custom", tags: [adr, decision, design-tokens]}
   - {id: adr-0006-ds-no-widgetbook-cloud, path: adr-0006-ds-no-widgetbook-cloud.md, summary: "2026-10-28 acceptée — pas de Widgetbook Cloud : goldens locaux + catalogue web statique", tags: [adr, decision, widgetbook]}
   - {id: adr-0007-ds-design-tool-claude-design, path: adr-0007-ds-design-tool-claude-design.md, summary: "2026-10-28 acceptée — Claude Design pour maquettes/prototypes ; DTCG reste source de vérité ; pas de Figma", tags: [adr, decision, claude-design]}
-  - {id: adr-0008-ds-widgetbook-4-beta, path: adr-0008-ds-widgetbook-4-beta.md, summary: "2026-10-28 acceptée (contre reco) — Widgetbook 4.0.0-beta.14 épinglé, démo de talk ; risques #2044/#1984/#1797", tags: [adr, decision, widgetbook]}
+  - {id: adr-0008-ds-widgetbook-4-beta, path: adr-0008-ds-widgetbook-4-beta.md, summary: "2026-10-28 acceptée (contre reco) — Widgetbook 4.0.0-beta.14 épinglé, adoption assumée d'une bêta ; risques #2044/#1984/#1797", tags: [adr, decision, widgetbook]}

@@ -3,7 +3,7 @@ id: ma-otel-genai-spans
 title: Observabilité — conventions sémantiques OpenTelemetry GenAI
 tags: [multi-agent, observability, opentelemetry, tracing]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-agent-spans.md, https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/, https://pub.dev/packages/opentelemetry]
 links: [ma-voice-agent-evals, ma-mcp-security, ma-target-architecture]
 ---
@@ -25,7 +25,7 @@ Les conventions GenAI ont **déménagé** dans le dépôt `open-telemetry/semant
 
 `gen_ai.tool.definitions` est en *opt-in*. Un modèle de spans MCP existe aussi dans le dépôt (`model/mcp/spans.yaml`).
 
-**Mapping chez nous (opinion) :**
+**Mapping recommandé pour un orchestrateur voix (opinion) :**
 - Une trace par session vocale : `gen_ai.conversation.id` = id de session GPT-Live ou Gemini.
 - Une délégation = `invoke_agent orchestrator`, qui contient :
   - `execute_tool` pour chaque appel MCP ou A2A ;

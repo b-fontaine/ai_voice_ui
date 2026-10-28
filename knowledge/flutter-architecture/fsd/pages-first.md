@@ -3,7 +3,7 @@ id: arch-fsd-pages-first
 title: FSD v2.1 — « pages first » plutôt que découpage précoce
 tags: [fsd, decomposition, v2.1]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://feature-sliced.design/docs/guides/migration/from-v2-0]
 links: [arch-fsd-layers, arch-official-use-cases]
 ---
@@ -18,7 +18,7 @@ links: [arch-fsd-layers, arch-official-use-cases]
   - `insignificant-slice` : une slice utilisée par une seule page ;
   - `excessive-slicing` : trop de slices dans une couche.
 
-**Conséquence pour nous (opinion) :**
+**Conséquence pour une app multi-agents (opinion) :**
 - Ne pas créer d'emblée 15 features.
 - Les capacités réellement partagées justifient des slices basses. C'est le cas des agents :
   - la session voix est utilisée par plusieurs écrans et par l'orchestrateur ;

@@ -9,7 +9,7 @@ links: [ds-widgetbook-versions, ds-widgetbook-cloud-multi-snapshot, ds-widgetboo
 ---
 # Les knobs modifient à chaud les paramètres d'un use case
 
-> Référence Widgetbook 3.x. Le projet utilise la 4.0 bêta ([[adr-0008-ds-widgetbook-4-beta]]) : voir [[ds-widgetbook-4-args-addons]].
+> Référence Widgetbook 3.x. Pour la 4.0 bêta, voir [[ds-widgetbook-4-args-addons]] (adoption assumée d'une bêta : [[adr-0008-ds-widgetbook-4-beta]]).
 
 On y accède par `context.knobs`, un getter qui renvoie un builder.
 - Chaque knob **exige un `label`**, unique au sein du use case.

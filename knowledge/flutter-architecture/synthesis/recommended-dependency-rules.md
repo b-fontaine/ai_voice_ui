@@ -3,17 +3,17 @@ id: arch-recommended-dependency-rules
 title: Graphe de dépendances autorisé et garde-fous CI
 tags: [architecture, imports, lint, ci, workspace]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://feature-sliced.design/docs/reference/layers, https://pub.dev/packages/import_lint, https://pub.dev/packages/dependency_validator]
 links: [arch-recommended-structure, arch-import-lint, arch-dependency-validator, arch-analyzer-plugins, arch-fsd-public-api]
 ---
 # Qui peut dépendre de qui
 
 ```
-assistant_app ──► features/* ──► entities ──► shared/core
+apps/<app>    ──► features/* ──► entities ──► shared/core
       │               │                       ▲
       └──► shared/design_system ◄─────────────┤ (ui seulement)
-features/voice_agent ──► shared/realtime_transport
+features/<voice_agent> ──► shared/realtime_transport
 features/X ─╳─► features/Y        (interdit : passer par les ports d'entities)
 entities ─╳─► flutter, dio, flutter_webrtc, firebase_ai, genui
 ```

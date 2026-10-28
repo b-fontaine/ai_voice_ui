@@ -3,9 +3,9 @@ id: test-pyramid-flutter
 title: Pyramide de tests Flutter — unit, widget, integration
 tags: [strategy, unit, widgets, integration]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/testing/overview]
-links: [test-tdd-red-green-refactor, test-integration-test, test-patrol, test-golden-alchemist]
+links: [test-tdd-red-green-refactor, test-integration-test, test-patrol, test-golden-alchemist, bloc-no-cubit]
 ---
 # Beaucoup de tests unitaires et de widgets, peu d'intégration
 
@@ -21,7 +21,7 @@ La doc Flutter (consultée le 2026-10-26 ; page mise à jour le 2026-05-05, Flut
 ## Répartition proposée (opinion)
 - **Unit (`test/`) :**
   - orchestrateur, parseurs d'événements realtime (OpenAI et Gemini)
-  - mapping vers A2UI, BLoC/Cubit
+  - mapping vers A2UI, Bloc (Cubit exclu, [[bloc-no-cubit]])
 - **Widget (`test/`) :**
   - écrans
   - rendu des surfaces GenUI à partir d'un message A2UI figé

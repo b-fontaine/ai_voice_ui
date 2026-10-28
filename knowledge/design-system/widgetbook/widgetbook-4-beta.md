@@ -1,17 +1,17 @@
 ---
 id: ds-widgetbook-4-beta
-title: Widgetbook 4.0 bêta — vue d'ensemble (adoptée par le projet)
+title: Widgetbook 4.0 bêta — vue d'ensemble
 tags: [widgetbook, migration, beta, accessibility, design-system]
 status: verified
 updated: 2026-10-28
 sources: [https://pub.dev/documentation/widgetbook/4.0.0-beta.9/widgetbook, https://pub.dev/packages/widgetbook/versions, https://pub.dev/api/packages/widgetbook, https://github.com/widgetbook/widgetbook/blob/v4/packages/widgetbook/CHANGELOG.md, https://docs.widgetbook.io/~v4/whats-new-in-v4, https://pub.dev/api/archives/widgetbook-4.0.0-beta.14.tar.gz]
-links: [adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-testing, ds-widgetbook-4-risks]
+links: [adr-0008-ds-widgetbook-4-beta, ds-widgetbook-versions, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-testing, ds-widgetbook-4-risks]
 ---
 # La 4.0 remplace UseCase/knobs par Component/Story/Scenario et des Args typés
 
 Informations datées du 2026-10-28 : la dernière préversion est `4.0.0-beta.14` (2026-09-11), la stable reste 3.25.0. Les `@UseCase` et `context.knobs` de la 3.x deviennent des stories (`_Story`) et des args typés (`_Args`).
 
-**Décision du projet :** la 4.0.0-beta.14 est adoptée dès maintenant et épinglée en version exacte ([[adr-0008-ds-widgetbook-4-beta]]). Le projet est une démo de talk Flutter GenUI, et le porteur assume cette avance de phase.
+**Adoption assumée d'une bêta :** [[adr-0008-ds-widgetbook-4-beta]] retient la 4.0.0-beta.14, épinglée en version exacte, malgré l'absence de stable. Règles et repli : [[ds-widgetbook-versions]].
 
 ## Ce qui change (détails dans les notes v4)
 - **Installation :** un seul package `widgetbook` (générateur et tests fusionnés depuis alpha.5) + `build_runner`. `runWidgetbook(Config(...))` remplace `Widgetbook.material` et `@App` → [[ds-widgetbook-4-setup]].
@@ -33,4 +33,4 @@ Aucun changement cassant après la beta.9. Les ruptures majeures datent de la be
 
 ## ⚠️ Pièges
 - Risques, cadence, issues ouvertes et erreurs du guide de migration IA : [[ds-widgetbook-4-risks]].
-- Les notes `ds-widgetbook-setup`, `-knobs`, `-addons`, `-api-history` et `-testing` décrivent la **3.x**. Elles restent une référence, mais ne s'appliquent pas au code du projet.
+- Les notes `ds-widgetbook-setup`, `-knobs`, `-addons`, `-api-history` et `-testing` décrivent la **3.x**. Elles restent une référence, mais ne s'appliquent pas à un code écrit en v4.

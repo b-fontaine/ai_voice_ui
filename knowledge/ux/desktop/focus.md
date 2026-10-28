@@ -3,7 +3,7 @@ id: ux-desktop-focus
 title: Focus clavier desktop — FocusNode, parcours et conventions Windows/Fluent
 tags: [desktop, focus, keyboard-navigation, accessibility, ux]
 status: verified
-updated: 2026-10-27
+updated: 2026-10-28
 sources: [https://docs.flutter.dev/ui/interactivity/focus, https://learn.microsoft.com/en-us/windows/apps/design/accessibility/keyboard-accessibility, https://learn.microsoft.com/en-us/windows/apps/design/input/guidelines-for-visualfeedback, https://fluent2.microsoft.design/accessibility]
 links: [ds-a11y-wcag-focus-target, ux-desktop-shortcuts, ux-desktop-pointer-hover, ds-a11y-flutter-signals]
 ---
@@ -25,8 +25,8 @@ Windows : le clavier doit être traité « as a primary interaction model, not a
 - Focus visuals « high visibility » : bordure extérieure 2 px + bordure intérieure 1 px, marge de 1 px autour du contrôle.
 - Fluent 2 : ordre de focus en **Z** (gauche → droite, puis haut → bas). Le focus ne doit pas être perdu à la fermeture d'une UI temporaire comme un dialog. Contraste ≥ 3:1 pour les composants interactifs et non textuels.
 
-## Application au projet (opinion)
-- Régions F6 de l'app : navigation, transcript voix, surface GenUI, saisie. Chaque région est un `FocusTraversalGroup`.
+## Application à une app voix + GenUI (opinion)
+- Régions F6 typiques : navigation, transcript voix, surface GenUI, saisie. Chaque région est un `FocusTraversalGroup`.
 - Une surface A2UI générée reste un groupe de focus. À sa reconstruction, le focus revient sur un nœud stable plutôt que d'être perdu ([[genui-multiple-surfaces]]).
 - L'anneau de focus du DS reprend le double contour 2 px + 1 px et vise les critères de [[ds-a11y-wcag-focus-target]].
 

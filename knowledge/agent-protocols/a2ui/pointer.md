@@ -3,7 +3,7 @@ id: proto-a2ui-pointer
 title: A2UI — format d'UI déclaratif (renvoi vers genui-*)
 tags: [a2ui, genui, ui, protocol]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://a2ui.org/, https://pub.dev/packages/genui, https://pub.dev/packages/genui_a2a, https://docs.flutter.dev/ai/genui/get-started]
 links: [proto-agui-overview, proto-a2a-message-parts-artifacts, proto-mcp-extensions, proj-avw-genui-bridge, proto-protocol-map, genui-overview, genui-a2ui-overview, genui-a2ui-messages, genui-a2a-connector, genui-a2ui-security]
 ---
@@ -30,5 +30,5 @@ A2UI (Agent-to-UI) est un **format** et non un transport. L'agent envoie du **JS
 - Fonctionne sur mobile et desktop sans WebView.
 
 ⚠️ **Pièges**
-- La garantie « pas d'injection d'UI » est affirmée par le projet lui-même : il reste à valider les données liées (data model) côté app.
+- La garantie « pas d'injection d'UI » est affirmée par le projet A2UI lui-même : il reste à valider les données liées (data model) côté app.
 - genui est en **alpha** et son API a déjà changé (voir domaine genui).

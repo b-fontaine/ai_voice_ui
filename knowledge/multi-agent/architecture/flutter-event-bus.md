@@ -1,15 +1,15 @@
 ---
 id: ma-flutter-event-bus
-title: État partagé et bus d'événements côté Flutter
-tags: [multi-agent, flutter, bloc, streams, decision]
+title: État partagé et bus d'événements côté Flutter (patron)
+tags: [multi-agent, flutter, bloc, streams, recommendation]
 status: opinion
-updated: 2026-10-26
+updated: 2026-10-28
 sources: [https://pub.dev/packages/flutter_bloc, https://pub.dev/packages/genui, https://github.com/flutter/genui/tree/main/packages/genui]
 links: [proj-avw-genui-bridge, proj-avw-risks, ma-target-architecture, di-get-it-scopes, test-realtime-fake-runner, bloc-emit-foreach, bloc-no-non-serializable-state, rt-provider-abstraction]
 ---
 # Un bus d'événements typé, un BLoC par préoccupation
 
-**Décision :** un `AgentEventBus` (domaine) expose un `Stream<AgentEvent>` broadcast. `AgentEvent` est une `sealed class` :
+**Patron :** un bus d'événements d'agents (domaine) expose un `Stream<AgentEvent>` broadcast. `AgentEvent` est une `sealed class`, par exemple :
 - `VoiceStateChanged(listening | speaking | thinking)`
 - `TranscriptDelta(role, text)`
 - `DelegationStarted(id)`, `DelegationProgress(id, msg)`, `DelegationCompleted(id)`
@@ -18,9 +18,9 @@ links: [proj-avw-genui-bridge, proj-avw-risks, ma-target-architecture, di-get-it
 **Producteurs :** le runner vocal, le client orchestrateur, le canal A2UI.
 **Consommateurs :** les BLoC de l'UI, l'observabilité, les tests.
 
-- `VoiceSessionBloc` gère l'état de session et du micro ; `ConversationBloc` gère la transcription.
-- Les `DelegationId` en vol permettent d'afficher « je regarde… » à l'écran.
-- **L'état GenUI reste hors du BLoC.** `SurfaceController` et `Conversation` de `genui` gèrent leur propre état non sérialisable. Le BLoC ne garde que la liste des `surfaceId` ; c'est la décision déjà prise dans [[proj-avw-genui-bridge]].
+- Un Bloc par préoccupation : par exemple un Bloc de session vocale (état de session, micro) et un Bloc de conversation (transcription).
+- Les identifiants de délégation en vol permettent d'afficher « je regarde… » à l'écran.
+- **L'état GenUI reste hors du BLoC.** `SurfaceController` et `Conversation` de `genui` gèrent leur propre état non sérialisable. Le BLoC ne garde que la liste des `surfaceId`, comme dans [[proj-avw-genui-bridge]].
 - Les actions utilisateur sur une surface (`onSubmit`) remontent à l'orchestrateur, pas au modèle vocal directement. Le modèle vocal en est informé par du contexte silencieux.
 
 **Implémentation :**

@@ -22,7 +22,7 @@ a2ui.org recommande qu'une app de production définisse **son propre catalogue**
 - On ne supprime pas : `deprecated: true` + `x-deprecated-reason`, et le renderer garde le support.
 - Un changement cassant donne une **version majeure dans l'URI du `catalogId`** (v1 → v2). Pendant la migration, le client annonce v1 et v2.
 
-## Règles du projet (opinion)
+## Règles recommandées (opinion)
 - Chaque `CatalogItem` **enveloppe un composant `Ds*`** du design system : il ne crée pas de style, il lit `ThemeData` et les `ThemeExtension` du DS via `itemContext.buildContext`.
 - Un item = une story Widgetbook v4 (`Meta(DsX.new)`), plus une surface A2UI en cache rejouée via `CachedSurface` ([[ds-widgetbook-4-genui]]).
 - Les `variant` exposés au LLM correspondent aux variantes nommées du composant DS ([[ds-component-api]]).
