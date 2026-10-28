@@ -38,6 +38,8 @@
   | `proto-` | protocoles agents |
   | `ma-` | orchestration multi-agents |
 | `adr-` | décisions (ADR) |
+| `ds-` | design system / Widgetbook |
+| `ux-` | UX desktop et UI générative |
 
 - **Décisions (ADR) :** une note `knowledge/decisions/adr-NNNN-<slug>.md` par décision technologique ou d'architecture. Le numéro est séquentiel et n'est jamais réutilisé. Une note contient :
   - les métadonnées : date, statut (proposée, acceptée, remplacée par adr-XXXX, abandonnée), décideur et part de l'assistant ;

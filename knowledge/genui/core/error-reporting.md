@@ -5,7 +5,7 @@ tags: [genui, a2ui, validation, errors]
 status: verified
 updated: 2026-10-26
 sources: [https://github.com/google/A2UI/blob/main/specification/v0_9_1/docs/a2ui_protocol.md, https://github.com/flutter/genui/blob/main/packages/genui/lib/src/engine/surface_controller.dart]
-links: [genui-user-actions, genui-a2ui-client-messages, genui-prompt-builder, proj-avw-genui-bridge]
+links: [genui-user-actions, genui-a2ui-client-messages, genui-prompt-builder, proj-avw-genui-bridge, ux-genui-errors-validation]
 ---
 # genui renvoie les erreurs au LLM pour qu'il se corrige (boucle prompt, génération, validation)
 

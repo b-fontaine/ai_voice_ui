@@ -1,0 +1,21 @@
+# Outils d'agents et IDE
+.omc/
+.playwright-mcp/
+.idea/
+.vscode/
+*.iml
+
+# Dart / Flutter
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+coverage/
+*.g.dart.tmp
+
+# Goldens : les échecs alchemist ne se committent pas
+**/failures/
+
+# Système
+.DS_Store

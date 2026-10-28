@@ -5,7 +5,7 @@ tags: [pattern, barge-in, interruption, vad, audio]
 status: sourced
 updated: 2026-10-26
 sources: [https://developers.openai.com/api/docs/guides/realtime-conversations, https://developers.openai.com/api/docs/guides/live-conversations.md, https://ai.google.dev/gemini-api/docs/live-guide]
-links: [rt-echo-cancellation, rt-gemini-audio-vad, rt-gpt-live-delegation, rt-openai-realtime-vs-live]
+links: [rt-echo-cancellation, rt-gemini-audio-vad, rt-gpt-live-delegation, rt-openai-realtime-vs-live, ux-voice-multimodal]
 ---
 # Barge-in : l'utilisateur coupe la parole à l'IA
 

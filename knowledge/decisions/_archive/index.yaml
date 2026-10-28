@@ -2,3 +2,5 @@
 archives:
   - {path: 2026-10-27-backend-stack-panel.md, decision: adr-0003-backend-go, summary: "Sorties intégrales du panel 5 stacks"}
   - {path: 2026-10-27-backend-rust-eval.md, decision: adr-0003-backend-go, summary: "Sorties intégrales de l'évaluation Rust"}
+  - {path: 2026-10-27-design-system-ux-research.md, decision: none, summary: "Recherche brute design system Flutter / Widgetbook / UX desktop et GenUI (2 passes vérifiées) ; source des notes ds-* et ux-*"}
+  - {path: 2026-10-28-widgetbook4-claude-design-research.md, decision: adr-0008-ds-widgetbook-4-beta, summary: "Recherche brute Widgetbook 4.0 bêta, Claude Design et publication web du catalogue ; sert aussi adr-0006 et adr-0007"}

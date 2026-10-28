@@ -1,0 +1,19 @@
+domain: ux
+description: UX desktop (clavier, focus, menus, survol, layouts adaptatifs) et UX de l'UI générative / IA / voix — infos datées 2026-10-27
+notes:
+  # desktop/
+  - {id: ux-desktop-adaptive-layout, path: desktop/adaptive-layout.md, summary: "Classes de taille de fenêtre, NavigationRail ≥600, MediaQuery.sizeOf, adaptive_scaffold discontinué, densité compacte, Scrollbar, SelectionArea", tags: [desktop, adaptive-layout, window-size-classes, visual-density, ux]}
+  - {id: ux-desktop-focus, path: desktop/focus.md, summary: "FocusNode, autofocus, traversal policies, highlightStrategy ; F6 régions, composite = 1 tab stop, focus visuals Windows, ordre Z Fluent", tags: [desktop, focus, keyboard-navigation, accessibility, ux]}
+  - {id: ux-desktop-menus, path: desktop/menus.md, summary: "MenuBar/MenuAnchor, PlatformMenuBar macOS seul, ContextMenuController, menu navigateur web ; règles menus Windows et Apple HIG", tags: [desktop, menus, context-menu, macos, ux]}
+  - {id: ux-desktop-platform-kits, path: desktop/platform-kits.md, summary: "fluent_ui 4.17.0 (mono-mainteneur), macos_ui 2.2.2 inactif ; opinion : DS maison + conventions plateforme plutôt qu'un kit par OS", tags: [desktop, fluent-ui, macos-ui, design-system, ux]}
+  - {id: ux-desktop-pointer-hover, path: desktop/pointer-hover.md, summary: "MouseRegion/curseurs, FocusableActionDetector, piège overlayColor transparent, Tooltip waitDuration 0 ms et règles tooltips Windows", tags: [desktop, pointer, hover, tooltip, ux]}
+  - {id: ux-desktop-shortcuts, path: desktop/shortcuts.md, summary: "Shortcuts/Actions/Intents, SingleActivator, portée focus, HardwareKeyboard ; accélérateurs Windows et raccourcis Apple HIG", tags: [desktop, keyboard-shortcuts, shortcuts-actions, accessibility, ux]}
+  - {id: ux-desktop-undo-dnd-windows, path: desktop/undo-dnd-windows.md, summary: "Undo/redo et drag & drop selon Apple HIG, super_drag_and_drop 0.9.1, API multi-fenêtres encore expérimentale sur main", tags: [desktop, undo-redo, drag-and-drop, multi-window, ux]}
+  # genui/
+  - {id: ux-genui-catalog-as-ds, path: genui/catalog-as-ds.md, summary: "Catalogue A2UI = reflet du DS : thème côté renderer, hints sémantiques (variant), CatalogItem enveloppant Ds*, versionnage comme API", tags: [genui, a2ui, catalog, design-system, theming]}
+  - {id: ux-genui-errors-validation, path: genui/errors-validation.md, summary: "VALIDATION_FAILED silencieux pour le LLM, checks sur les inputs, erreurs utilisateur en langage simple (Apple) et reprise de main (PAIR)", tags: [genui, a2ui, validation, errors, ux]}
+  - {id: ux-ai-hax-guidelines, path: genui/hax-guidelines.md, summary: "Les 18 guidelines Microsoft HAX (intitulés exacts), 4 phases, validation 49 praticiens / 20 produits", tags: [ai-ux, hax, guidelines, microsoft]}
+  - {id: ux-ai-human-in-the-loop, path: genui/human-in-the-loop.md, summary: "Confirmer avant toute action importante (Apple, HAX G16/G17) ; saisies locales au DataModel ; surface de confirmation du DS (opinion)", tags: [ai-ux, human-in-the-loop, confirmation, genui, safety]}
+  - {id: ux-genui-streaming-loading, path: genui/streaming-loading.md, summary: "Rendu progressif A2UI (root, updateComponents, JSONL) + pattern Cloudscape : 2 étapes, <1 s, libellés, Stop/Regenerate", tags: [genui, a2ui, streaming, loading-states, ux]}
+  - {id: ux-ai-trust-feedback, path: genui/trust-feedback.md, summary: "Confiance calibrée (PAIR), pas de score numérique, sources [1] (Cloudscape), Helpful/Not helpful, feedback volontaire, pas d'anthropomorphisme", tags: [ai-ux, trust, feedback, citations, explainability]}
+  - {id: ux-voice-multimodal, path: genui/voice-multimodal.md, summary: "Barge-in et earcons (Meta) ; voix + écran : état d'écoute visible, transcription affichée, l'écran complète la voix (opinion)", tags: [voice, multimodal, barge-in, genui, ux]}

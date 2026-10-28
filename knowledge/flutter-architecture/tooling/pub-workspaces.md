@@ -5,7 +5,7 @@ tags: [dart, pub, workspace, monorepo, melos]
 status: verified
 updated: 2026-10-26
 sources: [https://dart.dev/tools/pub/workspaces, https://pub.dev/packages/melos]
-links: [arch-fsd-dart-mapping, arch-dependency-validator, arch-recommended-structure, proj-avw-overview, proj-sk-overview, di-micro-packages]
+links: [arch-fsd-dart-mapping, arch-dependency-validator, arch-recommended-structure, proj-avw-overview, proj-sk-overview, di-micro-packages, ds-widgetbook-monorepo, ds-package-structure]
 ---
 # Une seule résolution de dépendances pour N packages
 

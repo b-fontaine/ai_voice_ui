@@ -57,6 +57,16 @@ domains:
     index: multi-agent/index.yaml
     description: "Orchestration multi-agents de l'app : architecture cible, placement des agents, patterns, latence, sécurité, observabilité, évaluations"
     keywords: [multi-agents, multi-agent, orchestrateur, backend, go, golang, rust, stack backend, sidecar, orchestrator, architecture cible, handoff, agent-as-tool, ADK, Agents SDK, workflow, routeur, router, bus d'événements, event bus, sécurité, security, prompt injection, guardrails, opentelemetry, observabilité, observability, évaluation, evals, versions]
+  - name: design-system
+    prefixes: [ds-]
+    index: design-system/index.yaml
+    description: "Design system Flutter et catalogue Widgetbook : Widgetbook 4.0 bêta (et 3.x en référence), Claude Design, design tokens (DTCG, Style Dictionary, ThemeExtension), couleurs M3, accessibilité WCAG, typo, espacements, motion, Atomic Design, gouvernance"
+    keywords: [design system, widgetbook, story, stories, scenario, args, testWidgetbook, claude design, maquette, prototype, use case, usecase, knobs, addon, catalogue de composants, storybook, golden, design tokens, tokens, dtcg, style dictionary, figma, theme, thème, ThemeData, ThemeExtension, ColorScheme, fromSeed, couleur, color, palette, harmonie, contraste, contrast, wcag, apca, accessibilité, accessibility, a11y, typographie, typography, TextTheme, espacement, spacing, grille, élévation, motion, animation, atomic design, atome, molécule, organisme, composant, component, material_ui, material 3, gouvernance, semver]
+  - name: ux
+    prefixes: [ux-]
+    index: ux/index.yaml
+    description: "UX : applications desktop (clavier, focus, raccourcis, menus, survol, layouts adaptatifs) et UI générative / IA (catalogue, streaming, erreurs, confirmation, confiance, voix + écran)"
+    keywords: [ux, ergonomie, desktop, bureau, clavier, keyboard, raccourci, shortcut, focus, tab, menu, menu contextuel, context menu, survol, hover, curseur, tooltip, densité, density, responsive, adaptatif, adaptive, breakpoint, fenêtre, window, drag and drop, undo, fluent, macos, hig, ux genui, ui générative, streaming, chargement, loading, confirmation, human-in-the-loop, confiance, trust, feedback, hax, pair, cloudscape, multimodal]
 
 entrypoints:
   - {id: proj-avw-overview, why: "Projet de référence : archi, DI, Bloc et dépendances du widget voix existant"}
@@ -121,4 +131,14 @@ tasks:
   - task: "Vérifier une version de package"
     notes: [ma-package-versions, bloc-packages-versions, di-setup-versions, perf-audio-packages, genui-overview, proto-rtc-flutter-packages, proto-a2a-dart-sdk, proto-mcp-dart-sdks]
   - task: "Prendre, contester ou consulter une décision technologique / d'architecture"
-    notes: [adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-options]
+    notes: [adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, ma-backend-stack-options]
+  - task: "Créer ou faire évoluer le design system (package, thème, tokens)"
+    notes: [adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0007-ds-design-tool-claude-design, ds-claude-design-workflow, ds-claude-design-tokens, ds-package-structure, ds-atomic-design, ds-component-api, ds-tokens-dtcg-format, ds-tokens-dtcg-theming, ds-tokens-style-dictionary, ds-tokens-figma-sources, ds-tokens-theme-extension, ds-color-m3-roles, ds-color-from-seed, ds-color-harmony, ds-color-dark-contrast, ds-typography, ds-spacing-shape-elevation, ds-motion, ds-material-ui-decoupling, ds-governance-versioning]
+  - task: "Ajouter un composant au design system et à son Widgetbook"
+    notes: [ds-component-api, ds-atomic-design, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target, ds-a11y-flutter-signals, test-golden-alchemist, ux-desktop-focus, ux-desktop-pointer-hover]
+  - task: "Mettre en place ou configurer Widgetbook (catalogue, Cloud, CI)"
+    notes: [adr-0008-ds-widgetbook-4-beta, adr-0006-ds-no-widgetbook-cloud, ds-widgetbook-4-beta, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-args-addons, ds-widgetbook-4-testing, ds-widgetbook-4-genui, ds-widgetbook-4-risks, ds-widgetbook-publish-web, ds-widgetbook-monorepo, ds-widgetbook-versions, arch-pub-workspaces]
+  - task: "Concevoir l'UX d'un écran desktop (clavier, menus, layout)"
+    notes: [ux-desktop-shortcuts, ux-desktop-focus, ux-desktop-pointer-hover, ux-desktop-menus, ux-desktop-adaptive-layout, ux-desktop-undo-dnd-windows, ux-desktop-platform-kits, ds-a11y-wcag-focus-target, perf-desktop-specifics]
+  - task: "Concevoir l'UX d'une surface GenUI ou d'une interaction IA / voix"
+    notes: [ux-genui-catalog-as-ds, ds-widgetbook-4-genui, ux-genui-streaming-loading, ux-genui-errors-validation, ux-ai-human-in-the-loop, ux-ai-trust-feedback, ux-ai-hax-guidelines, ux-voice-multimodal, genui-custom-catalog-item, genui-a2ui-security, genui-voice-bridge]
