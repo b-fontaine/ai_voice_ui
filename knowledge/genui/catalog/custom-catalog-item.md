@@ -5,7 +5,7 @@ tags: [genui, catalog, widgets, json-schema]
 status: verified
 updated: 2026-10-26
 sources: [https://docs.flutter.dev/ai/genui/get-started, https://github.com/flutter/genui/blob/main/packages/genui/lib/src/model/catalog_item.dart, https://github.com/flutter/genui/tree/main/packages/genui/skills]
-links: [genui-catalog-ids, genui-prompt-builder, genui-data-model, genui-user-actions, genui-test-catalog-items]
+links: [genui-catalog-ids, genui-prompt-builder, genui-data-model, genui-user-actions, genui-test-catalog-items, ux-genui-catalog-as-ds]
 ---
 # Un CatalogItem = nom + schéma JSON + widgetBuilder
 

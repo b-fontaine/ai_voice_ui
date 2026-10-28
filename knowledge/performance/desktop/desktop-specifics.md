@@ -9,7 +9,7 @@ sources:
   - https://flutter.dev/blog/whats-new-in-flutter-3-47
   - https://docs.flutter.dev/perf/app-size
   - https://pub.dev/packages/record
-links: [perf-impeller-status, perf-audio-packages, perf-profile-mode-devtools, rt-provider-abstraction]
+links: [perf-impeller-status, perf-audio-packages, perf-profile-mode-devtools, rt-provider-abstraction, ux-desktop-adaptive-layout]
 ---
 # Desktop : Impeller par défaut depuis 3.47, opt-out temporaire
 

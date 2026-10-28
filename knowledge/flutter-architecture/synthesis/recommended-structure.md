@@ -5,7 +5,7 @@ tags: [architecture, folder-structure, workspace, multi-agent, fsd, clean-archit
 status: opinion
 updated: 2026-10-26
 sources: [https://dart.dev/tools/pub/workspaces, https://docs.flutter.dev/app-architecture/case-study]
-links: [arch-clean-fsd-combo, arch-recommended-dependency-rules, arch-pub-workspaces, arch-compass-structure, proj-avw-overview, proj-sk-overview, di-micro-packages, bloc-no-cubit]
+links: [arch-clean-fsd-combo, arch-recommended-dependency-rules, arch-pub-workspaces, arch-compass-structure, proj-avw-overview, proj-sk-overview, di-micro-packages, bloc-no-cubit, ds-package-structure]
 ---
 # Workspace pub découpé selon FSD, slices internes en Clean
 
