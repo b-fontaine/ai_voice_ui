@@ -17,7 +17,7 @@
 - Faux backend `test/support/fake_backend.dart` (réutilisable T13, T14, T23), fixture `test/fixtures/session_act1.jsonl`, `pumpUntil` dans `test/support/pump_until.dart`. Non couverts par un scénario : 404 du WSS (`sessionClosed`) et `DELETE` en 504 (à couvrir en T13/T14/T16).
 
 ## TDD
-- [ ] T10 Flutter — `entities/session` : `SessionEvent` (dont `A2uiEnvelopeReceived`, `ChannelLost`), port `SessionEventSource` ; test que le `pubspec.yaml` de `backend_channel` ne déclare ni `session` ni feature · test d'abord : égalités, exhaustivité du `switch` sealed, test de dépendances
+- [x] T10 Flutter — `entities/session` : `SessionEvent` (dont `A2uiEnvelopeReceived`, `ChannelLost`), port `SessionEventSource` ; test que le `pubspec.yaml` de `backend_channel` ne déclare ni `session` ni feature · test d'abord : égalités, exhaustivité du `switch` sealed, test de dépendances
 - [ ] T11 Flutter — `shared/core` : `AppClock` et `A2uiDecoder` extrait du rejeu (le rejeu l'utilise) · test d'abord : `A2uiDecoderTest` (v0.9 valide, version erronée, corps invalide), tests du rejeu inchangés
 - [ ] T12 Flutter — `backend_channel` : `AppChannelEnvelope` (DTO + parse) · test d'abord : table (un cas par type du contrat, type inconnu, enveloppe illisible, `agent`/`task`, `a2ui` brut)
 - [ ] T13 Flutter — `backend_channel` : `AppChannel` abstrait et `WebSocketAppChannel` (`?session=`, hôte `127.0.0.1`, sans `Origin`, 404/421/1008, fermeture serveur = fin sans erreur, annulation = fermeture de la socket) · test d'abord : faux backend de T02
