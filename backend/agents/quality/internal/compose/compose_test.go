@@ -137,6 +137,7 @@ func TestSecondRequestSameContextUpdatesInPlace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.Remember("ctx") // l'exécuteur le fait après un `completed` émis
 	second, err := c.Compose(context.Background(), compose.Request{Text: "et maintenant ?", ContextID: "ctx"}, ds)
 	if err != nil {
 		t.Fatal(err)
@@ -153,7 +154,7 @@ func TestSecondRequestSameContextUpdatesInPlace(t *testing.T) {
 	}
 }
 
-func TestContextMemoryBounded(t *testing.T) {
+func TestRememberBounded(t *testing.T) {
 	c := compose.NewKpiComposer(testCatalog)
 	ds := load(t)
 	ask := func(id string) []string {
@@ -161,6 +162,7 @@ func TestContextMemoryBounded(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		c.Remember(id)
 		return kinds(r.Messages)
 	}
 	for i := 0; i < compose.MaxContexts+10; i++ {

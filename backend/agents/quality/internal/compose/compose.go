@@ -33,3 +33,12 @@ type Composition struct {
 type Composer interface {
 	Compose(ctx context.Context, req Request, ds dataset.Dataset) (Composition, error)
 }
+
+// Rememberer est implémenté par un composeur qui mémorise les contextes dont la
+// surface existe déjà chez le client. L'exécuteur appelle Remember UNIQUEMENT
+// après l'émission réussie de l'état `completed` : une tâche annulée, échouée ou
+// rejetée ne mémorise rien, et la demande suivante du même contexte recrée la
+// surface (`createSurface`).
+type Rememberer interface {
+	Remember(contextID string)
+}

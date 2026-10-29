@@ -84,6 +84,10 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			return
 		}
 		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCompleted, nil), nil)
+		// La surface est livrée : seulement maintenant le contexte est mémorisé.
+		if r, ok := e.composer.(compose.Rememberer); ok {
+			r.Remember(ec.ContextID)
+		}
 	}
 }
 
