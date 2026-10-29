@@ -14,6 +14,9 @@ services:
       VOICE_DELEGATION_TYPE: ${VOICE_DELEGATION_TYPE:-client}
       # Plafond de durée d'une session (valeur provisoire, à confirmer par le porteur (Q-68)).
       VOICE_MAX_SESSION: ${VOICE_MAX_SESSION:-30m}
+      # Attache du sideband en arrière-plan : tentatives et attente entre deux (SP-02 : 5 x 500 ms).
+      VOICE_ATTACH_ATTEMPTS: ${VOICE_ATTACH_ATTEMPTS:-5}
+      VOICE_ATTACH_DELAY: ${VOICE_ATTACH_DELAY:-500ms}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

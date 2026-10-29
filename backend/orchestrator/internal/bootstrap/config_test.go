@@ -175,3 +175,42 @@ func TestConfigFromEnv_MaxSession(t *testing.T) {
 		t.Fatalf("durée valide refusée : %v %v", err, cfg.MaxSession)
 	}
 }
+
+func TestConfigFromEnv_AttachDefaults(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AttachAttempts != 5 || cfg.AttachDelay != 500*time.Millisecond {
+		t.Fatalf("défauts attendus 5 et 500ms, obtenu %d et %v", cfg.AttachAttempts, cfg.AttachDelay)
+	}
+}
+
+func TestConfigFromEnv_AttachInvalid(t *testing.T) {
+	cases := []struct{ name, value string }{
+		{"VOICE_ATTACH_ATTEMPTS", "abc"},
+		{"VOICE_ATTACH_ATTEMPTS", "0"},
+		{"VOICE_ATTACH_ATTEMPTS", "-2"},
+		{"VOICE_ATTACH_DELAY", "abc"},
+		{"VOICE_ATTACH_DELAY", "500"},
+		{"VOICE_ATTACH_DELAY", "0s"},
+		{"VOICE_ATTACH_DELAY", "-1s"},
+	}
+	for _, c := range cases {
+		env := fullEnv()
+		env[c.name] = c.value
+		if _, err := load(env); err == nil || !strings.Contains(err.Error(), c.name) {
+			t.Errorf("%s=%q doit être refusée en nommant la variable : %v", c.name, c.value, err)
+		}
+	}
+}
+
+func TestConfigFromEnv_AttachValid(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_ATTACH_ATTEMPTS"] = "8"
+	env["VOICE_ATTACH_DELAY"] = "250ms"
+	cfg, err := load(env)
+	if err != nil || cfg.AttachAttempts != 8 || cfg.AttachDelay != 250*time.Millisecond {
+		t.Fatalf("valeurs valides refusées : %v %d %v", err, cfg.AttachAttempts, cfg.AttachDelay)
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -32,6 +33,12 @@ type Options struct {
 	// After fournit le minuteur du plafond (injectable pour les tests) ;
 	// nil : time.After.
 	After func(time.Duration) <-chan time.Time
+	// AttachAttempts borne le nombre de tentatives d'attache du sideband ;
+	// AttachDelay est l'attente entre deux tentatives. Tous deux > 0.
+	AttachAttempts int
+	AttachDelay    time.Duration
+	// Logger reçoit les échecs intermédiaires d'attache ; nil : slog.Default().
+	Logger *slog.Logger
 }
 
 func (o Options) validate() error {
@@ -44,6 +51,10 @@ func (o Options) validate() error {
 		return errors.New("voice: GuardTimeout doit être > 0")
 	case o.MaxSession < 0:
 		return errors.New("voice: MaxSession doit être >= 0")
+	case o.AttachAttempts <= 0:
+		return errors.New("voice: AttachAttempts doit être > 0")
+	case o.AttachDelay <= 0:
+		return errors.New("voice: AttachDelay doit être > 0")
 	}
 	return nil
 }
@@ -66,27 +77,45 @@ type Service struct {
 }
 
 type session struct {
-	id       string
-	sideband port.Sideband
-	meter    *level.Meter
-	start    time.Time
-	done     chan struct{} // fermé quand la supervision a terminé
-	abandon  chan struct{} // fermé pour interrompre la supervision (délai de garde)
+	id      string
+	meter   *level.Meter
+	start   time.Time
+	done    chan struct{} // fermé quand la supervision a terminé
+	abandon chan struct{} // fermé pour interrompre la supervision (délai de garde)
+
+	// cancelAttach annule les tentatives d'attache en cours (Close, Shutdown).
+	cancelAttach context.CancelFunc
 
 	mu        sync.Mutex
-	closing   bool   // fermeture demandée par nous (Close, Shutdown, plafond)
-	forcedWhy string // raison publiée à la place de celle du fournisseur
+	sideband  port.Sideband // nil tant que l'attache n'a pas abouti
+	closing   bool          // fermeture demandée par nous (Close, Shutdown, plafond)
+	forcedWhy string        // raison publiée à la place de celle du fournisseur
 }
 
 // markClosing enregistre que la fermeture vient de nous ; why, si non vide,
-// remplace la raison du fournisseur dans session.state.
-func (c *session) markClosing(why string) {
+// remplace la raison du fournisseur dans session.state. Elle renvoie le
+// sideband attaché, ou nil si la session est encore en phase « connecting »
+// (l'attache sera alors abandonnée : plus aucun sideband ne sera supervisé).
+func (c *session) markClosing(why string) port.Sideband {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.closing = true
 	if why != "" {
 		c.forcedWhy = why
 	}
+	return c.sideband
+}
+
+// setSideband enregistre le sideband attaché ; faux si une fermeture a été
+// demandée entre-temps (l'appelant doit alors le refermer).
+func (c *session) setSideband(sb port.Sideband) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closing {
+		return false
+	}
+	c.sideband = sb
+	return true
 }
 
 func (c *session) closeRequested() bool {
@@ -113,39 +142,92 @@ func NewService(live port.LiveProvider, sink port.Sink, clock port.Clock, opts O
 	if opts.After == nil {
 		opts.After = time.After
 	}
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
 	return &Service{live: live, sink: sink, clock: clock, opts: opts, sessions: map[string]*session{}}, nil
 }
 
-// Open crée la session, attache le sideband et démarre sa supervision.
+// Open crée la session, la publie en « connecting » et renvoie l'answer SDP
+// sans attendre : le sideband est attaché en arrière-plan (le client n'a pas
+// encore l'answer, la session WebRTC n'est donc pas établie), puis supervisé.
 func (s *Service) Open(ctx context.Context, offerSDP string) (Opened, error) {
 	ls, err := s.live.CreateSession(ctx, offerSDP)
 	if err != nil {
 		return Opened{}, fmt.Errorf("voice: création de session : %w", err)
 	}
-	sb, err := s.live.Sideband(ctx, ls.ID)
-	if err != nil {
-		// La session existe chez le fournisseur : sans raccrochage elle resterait facturée.
-		err = fmt.Errorf("voice: sideband de la session %s : %w", ls.ID, err)
-		if hErr := s.hangup(ctx, ls.ID); hErr != nil {
-			err = errors.Join(err, hErr)
-		}
-		return Opened{}, err
-	}
 	meter, err := level.NewMeter(s.opts.SampleRate, s.opts.WindowMs) // validé par NewService
 	if err != nil {
-		return Opened{}, err
+		// La session existe chez le fournisseur : sans raccrochage elle resterait facturée.
+		return Opened{}, errors.Join(err, s.hangup(ctx, ls.ID))
 	}
+	// Le contexte de la requête s'arrête avec la réponse HTTP : l'attache a le sien.
+	attachCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	sess := &session{
-		id: ls.ID, sideband: sb, meter: meter, start: s.clock.Now(),
-		done: make(chan struct{}), abandon: make(chan struct{}),
+		id: ls.ID, meter: meter, start: s.clock.Now(),
+		done: make(chan struct{}), abandon: make(chan struct{}), cancelAttach: cancel,
 	}
 	s.mu.Lock()
 	s.sessions[ls.ID] = sess
 	s.mu.Unlock()
 
-	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateActive})
-	go s.supervise(sess)
+	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateConnecting})
+	go s.run(attachCtx, sess)
 	return Opened{SessionID: ls.ID, AnswerSDP: ls.AnswerSDP}, nil
+}
+
+// run attache le sideband (tentatives bornées), publie « active » puis supervise.
+func (s *Service) run(ctx context.Context, sess *session) {
+	defer close(sess.done)
+	defer sess.cancelAttach()
+	sb, ok := s.attach(ctx, sess)
+	if !ok {
+		s.forget(sess)
+		return
+	}
+	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateActive})
+	s.supervise(sess, sb)
+}
+
+// attach tente Sideband jusqu'à AttachAttempts fois, AttachDelay entre deux
+// tentatives. Faux : la session est terminée (fermeture demandée ou échec
+// définitif, avec raccrochage et « closed/attach_failed »).
+func (s *Service) attach(ctx context.Context, sess *session) (port.Sideband, bool) {
+	for attempt := 1; ; attempt++ {
+		sb, err := s.live.Sideband(ctx, sess.id)
+		if err == nil {
+			if sess.setSideband(sb) {
+				return sb, true
+			}
+			// Fermeture demandée pendant l'attache : Close raccroche, on libère le sideband.
+			cctx, cancel := context.WithTimeout(context.Background(), s.opts.GuardTimeout)
+			_ = sb.Close(cctx)
+			cancel()
+			s.translate(sess, port.LiveEvent{Type: port.EventClosed})
+			return nil, false
+		}
+		if ctx.Err() != nil { // fermeture demandée : Close raccroche et attend la fin
+			s.translate(sess, port.LiveEvent{Type: port.EventClosed})
+			return nil, false
+		}
+		// L'erreur est déjà masquée par l'adaptateur : jamais la clé.
+		s.opts.Logger.Warn("attache du sideband", "session", sess.id, "attempt", attempt,
+			"max_attempts", s.opts.AttachAttempts, "error", err)
+		if attempt >= s.opts.AttachAttempts {
+			break
+		}
+		select {
+		case <-s.opts.After(s.opts.AttachDelay):
+		case <-ctx.Done():
+			s.translate(sess, port.LiveEvent{Type: port.EventClosed})
+			return nil, false
+		}
+	}
+	if err := s.hangup(context.Background(), sess.id); err != nil {
+		s.opts.Logger.Warn("raccrochage après échec d'attache", "session", sess.id, "error", err)
+	}
+	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateClosed, Reason: domain.ReasonAttachFailed})
+	return nil, false
 }
 
 // hangup raccroche la session chez le fournisseur, borné par GuardTimeout. Le
@@ -201,10 +283,13 @@ func (s *Service) Shutdown(ctx context.Context) error {
 // closeSession demande la fermeture puis attend sa confirmation ; le délai de
 // garde borne l'ensemble (appel à Sideband.Close compris).
 func (s *Service) closeSession(ctx context.Context, sess *session) error {
-	sess.markClosing("")
+	sb := sess.markClosing("")
 	gctx, cancel := context.WithTimeout(ctx, s.opts.GuardTimeout)
 	defer cancel()
-	closeErr := sess.sideband.Close(gctx)
+	if sb == nil {
+		return s.closeConnecting(ctx, gctx, sess)
+	}
+	closeErr := sb.Close(gctx)
 	select {
 	case <-sess.done:
 		if closeErr != nil {
@@ -221,12 +306,27 @@ func (s *Service) closeSession(ctx context.Context, sess *session) error {
 	}
 }
 
+// closeConnecting ferme une session dont le sideband n'est pas encore attaché :
+// annule l'attache puis raccroche chez le fournisseur (WebRTC possiblement établi).
+func (s *Service) closeConnecting(ctx, gctx context.Context, sess *session) error {
+	sess.cancelAttach()
+	hErr := s.hangup(ctx, sess.id)
+	select {
+	case <-sess.done:
+		return hErr
+	case <-gctx.Done():
+		if err := ctx.Err(); err != nil {
+			return errors.Join(err, hErr)
+		}
+		return errors.Join(fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id), hErr)
+	}
+}
+
 // supervise traduit les événements du fournisseur en messages applicatifs.
-func (s *Service) supervise(sess *session) {
-	defer close(sess.done)
+func (s *Service) supervise(sess *session, sb port.Sideband) {
 	closedSent := false
 	closedReason := ""
-	events := sess.sideband.Events()
+	events := sb.Events()
 	var maxSession <-chan time.Time
 	if s.opts.MaxSession > 0 {
 		maxSession = s.opts.After(s.opts.MaxSession)

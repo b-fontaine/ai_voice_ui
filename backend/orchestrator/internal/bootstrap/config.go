@@ -13,6 +13,9 @@ import (
 const (
 	defaultListenHost = "127.0.0.1"
 	defaultListenPort = 8080
+	// Valeurs de repli des tests et du bootstrap ; docker-compose.yaml les fixe aussi.
+	defaultAttachAttempts = 5
+	defaultAttachDelay    = 500 * time.Millisecond
 )
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.
@@ -27,6 +30,11 @@ type Config struct {
 	InstructionsFile string
 	// MaxSession plafonne la durée d'une session voix ; 0 : pas de plafond.
 	MaxSession time.Duration
+	// AttachAttempts et AttachDelay : tentatives d'attache du sideband et attente
+	// entre deux tentatives. Valeurs par défaut (5 et 500 ms) documentées ici
+	// seulement ; docker-compose.yaml les fixe aussi pour l'exécution.
+	AttachAttempts int
+	AttachDelay    time.Duration
 
 	apiKey string
 }
@@ -96,6 +104,22 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, errors.New("VOICE_MAX_SESSION doit être une durée positive ou nulle (par exemple 30m)")
 		}
 		cfg.MaxSession = d
+	}
+
+	cfg.AttachAttempts, cfg.AttachDelay = defaultAttachAttempts, defaultAttachDelay
+	if raw := strings.TrimSpace(getenv("VOICE_ATTACH_ATTEMPTS")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 {
+			return Config{}, errors.New("VOICE_ATTACH_ATTEMPTS doit être un entier >= 1")
+		}
+		cfg.AttachAttempts = n
+	}
+	if raw := strings.TrimSpace(getenv("VOICE_ATTACH_DELAY")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return Config{}, errors.New("VOICE_ATTACH_DELAY doit être une durée strictement positive (par exemple 500ms)")
+		}
+		cfg.AttachDelay = d
 	}
 
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))

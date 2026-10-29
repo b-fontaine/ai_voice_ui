@@ -18,8 +18,9 @@ const (
 
 // États d'une session voix.
 const (
-	StateActive = "active"
-	StateClosed = "closed"
+	StateConnecting = "connecting"
+	StateActive     = "active"
+	StateClosed     = "closed"
 )
 
 // Message est le contenu logique d'une enveloppe : le champ v (version) est
@@ -42,6 +43,10 @@ type Transcript struct {
 
 // ReasonMaxSession est la raison de clôture quand le plafond de durée est atteint.
 const ReasonMaxSession = "max_session"
+
+// ReasonAttachFailed est la raison de clôture quand le sideband n'a pu être
+// attaché après toutes les tentatives.
+const ReasonAttachFailed = "attach_failed"
 
 // SessionState est l'état du cycle de vie d'une session ; Reason (facultative)
 // explique une clôture.
