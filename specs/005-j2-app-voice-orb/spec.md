@@ -9,21 +9,22 @@
 
 ## Comportement attendu
 - **Démarrage** : écran avec orbe au repos (pulsation lente) et un bouton « Démarrer » ; canevas vide (FR-01, RG-01). La configuration (URL du backend) vient de l'environnement ; l'app ne lit **aucune** clé.
-- **Session** : « Démarrer » ouvre le WSS `GET /app`, crée l'offre WebRTC (micro unique, `getUserMedia`, data channel `oai-events` avant l'offre, collecte ICE complète), l'envoie à `POST /voice/sessions`, applique l'answer et mémorise `X-Session-Id`. « Arrêter » appelle `DELETE /voice/sessions/{id}`, puis libère pistes, data channel et connexion dans l'ordre ([rt-graceful-close]) ; la session est ensuite **redémarrable** (`stop` ≠ `dispose`).
+- **Session** : « Démarrer » crée l'offre WebRTC (micro unique, `getUserMedia`, data channel `oai-events` avant l'offre, collecte ICE complète), l'envoie à `POST /voice/sessions`, applique l'answer, puis ouvre le WSS `GET /app?session=<X-Session-Id>` (seuls les événements de la session courante sont rendus). « Arrêter » appelle `DELETE /voice/sessions/{id}`, puis libère pistes, data channel et connexion dans l'ordre ([rt-graceful-close]) ; la session est ensuite **redémarrable** (`stop` ≠ `dispose`).
 - **Orbe** : `orb.level` (5 Hz) alimente un `ValueListenable` ; un `Ticker` interpole à la cadence de l'écran ; aucun état Bloc ne porte le niveau (NFR-04). États J2 : repos (pulsation lente), parole (niveau au-dessus d'un seuil), réflexion (au moins un agent `working`).
 - **Transcription** : deux lignes (speaker, IA) dans la barre du haut, mises à jour par les `transcript` (FR-02).
 - **Canevas** : chaque `a2ui` de l'app-channel est décodé (A2UI v0.9) et appliqué par le `CanvasBloc` existant ; trois temps visibles (FR-04). Un message illisible est ignoré et consigné, jamais fatal.
 - **Panneau d'activité** : liste des agents vus avec leur état (`working`, `completed`, `failed`) et leur `label` (FR-03).
-- **Erreurs** : backend injoignable, 429, 502, WSS perdu → message d'état honnête dans la barre du haut, orbe au repos, canevas conservé, app vivante ; « Démarrer » reste utilisable.
+- **Erreurs** : backend injoignable, 429, 502, micro indisponible, délai ICE, fermeture décidée par le backend (`expired`, `max_session`, `remote_hangup`, `attach_failed`), WSS perdu → message d'état honnête dans la barre du haut, session et micro libérés, orbe au repos, agents `working` marqués interrompus, canevas conservé, app vivante ; « Démarrer » reste utilisable. Un WSS perdu ferme aussi la voix (`DELETE` au mieux) : pas de session facturée sans visuels.
+- **Sortie de l'app** : la fermeture de la fenêtre attend l'arrêt de la session (borné, ~8 s).
 - **Journal horodaté de l'app** : chaque `SessionEvent` reçu est horodaté à l'horloge de l'app (pdr-0038) et écrit en JSONL local si `GENESIS_APP_LOG` est fourni (base de NFR-01/02 et du rejeu).
 
 ## Scénarios (Gherkin)
 Automatisés dans `apps/genesis_canvas/test/acceptance/` (bdd_widget_test). Frontières simulées : serveur de test **réseau local** (`dart:io` HTTP + WebSocket, enveloppes issues du journal réel de 004) et `VoiceTransport` (WebRTC) factice. Le scénario S-01 de la fiche (`product/functional/features/voice-screen-generation.feature`) est couvert dans sa version J2 par V1.
 - V1 — une phrase → une surface : session active, le serveur de test émet `transcript`, `delegation`, `agent.activity working`, trois `a2ui`, `agent.activity completed` ; l'app affiche la phrase, la surface « 99,57 % » en trois temps et l'agent Qualité terminé.
-- V2 — l'orbe suit la voix : `orb.level` à 0,8 puis 0 ; le niveau lissé monte puis redescend, et l'orbe retourne au repos.
-- V3 — démarrer, arrêter, redémarrer : l'offre part vers le relais, l'answer est appliquée ; « Arrêter » envoie `DELETE`, libère le transport ; un second « Démarrer » ouvre une nouvelle session.
+- V2 — l'orbe suit la voix : `orb.level` à 0,1 (ordre de grandeur réel) puis 0 ; le niveau lissé monte puis redescend, et l'orbe retourne au repos.
+- V3 — démarrer, arrêter, redémarrer : l'offre part vers le relais, l'answer est appliquée ; « Arrêter » envoie `DELETE`, libère le transport ; un second « Démarrer » ouvre une nouvelle session avec un nouveau transport ; un double « Démarrer » n'ouvre qu'une session.
 - V4 — backend injoignable (et 429) : message honnête, orbe au repos, aucun plantage, nouvel essai possible.
-- V5 — WSS perdu en pleine session : message « connexion perdue », surfaces conservées.
+- V5 — WSS perdu en pleine session : message « connexion perdue », surfaces conservées, `DELETE` reçu par le faux backend, transport libéré. V5bis : `session.state closed` (`expired`) du backend → libération locale sans `DELETE`.
 - V6 — aucune clé : la configuration ne lit que l'URL du backend (test unitaire de `GenesisConfig`, et revue de code NFR-09).
 
 ## Critères d'acceptation

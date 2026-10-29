@@ -1,6 +1,6 @@
 # 005 — État
 
-- **Étape** : Revue du plan
+- **Étape** : Gherkin
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -11,10 +11,19 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-29 | Revue du plan | verdict À AMENDER (2 bloquants), A1-A8 intégrés dans spec/plan/tâches | — |
 | 2026-10-29 | Définir | spec, plan, tâches rédigés (lookup product + kb faits) ; aucune Q-xx bloquante | — |
 
 ## Revue d'architecte
-<!-- Verdict et R1…Rn ; cocher celles appliquées. -->
+**Revue du plan (mode PLAN, 2026-10-29) : À AMENDER, 2 bloquants — amendements A1-A8 intégrés dans `plan.md`, `tasks.md`, `spec.md`.**
+- [x] A1 bloquant — `shared` ne dépend pas d'`entities` : DTO et ports propres à `backend_channel`, `AppClock`/`A2uiDecoder` dans `shared/core`, conversion en `SessionEvent` dans `voice_session/api`
+- [x] A2 bloquant — `VoiceSession` machine à états unique, Blocs minces `droppable`, fabrique de transport
+- [x] A3 important — source vivante à durée de vie de la page, broadcast sans erreur, `ChannelLost`
+- [x] A4 important — WSS ouvert après le 200 avec `?session=`
+- [x] A5 important — `VoiceFailure` fermé, `closed` backend, WSS perdu, délai du `DELETE`
+- [x] A6 important — pas de scope get_it en J2, ordre de fermeture, `onExitRequested`, modules DI dans `app/di`
+- [x] A7 important — `OrbSmoother` pur, contrôleur UI, retombée, preuve NFR-04
+- [x] A8 important — transcription, sockets réels dans `testWidgets`, graphe `live` seul, versions figées (T01)
 
 ## Questions pour le porteur
 <!-- Q-xx créées : ce qui est bloqué, ce qui continue. -->
