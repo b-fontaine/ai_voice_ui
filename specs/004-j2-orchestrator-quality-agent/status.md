@@ -1,6 +1,6 @@
 # 004 — État
 
-- **Étape** : TDD
+- **Étape** : Revue
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : `backend/orchestrator/internal/{domain/message.go,port/port.go,port/agent.go,adapter/wire/wire.go,adapter/wire/wire_test.go,adapter/openailive/sideband.go,adapter/openailive/provider_test.go,app/voice/service_test.go,bootstrap/app_test.go}`, `plan.md`, `tasks.md`
@@ -39,3 +39,4 @@ Non vérifié par la revue : `offset_ms` sur la timeline des deltas en pratique 
 ## Questions pour le porteur
 Aucune.
 | 2026-10-29 | TDD | T17 : agent-quality dans le compose (réseau interne), CI en matrice, `backend/check-compose.sh`, instructions vocales | `tools/loop/gate.sh --full` |
+| 2026-10-29 | TDD terminé | T10-T17 faites ; acceptation A1-A4, B1-B7 vertes ; `gate.sh --full` vert sur arbre propre (21 contrôles, deux modules Go + compose + check-compose) | `.omc/state/loop/gates/20261029-213605-full.log` |

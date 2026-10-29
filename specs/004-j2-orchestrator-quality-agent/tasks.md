@@ -26,6 +26,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T17 Infra — Dockerfile de l'agent, compose (réseau interne, healthcheck, durcissement), CI en matrice, instructions vocales · test d'abord : script de contrôle du `docker compose config --format json` (échoue avant)
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
+- [x] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer (mode CODE) + refactorisations (par lots)
 - [ ] T92 Vérification : essai réel unique (budget), clôture, fusion, `publish.sh`, `fresh_session`
