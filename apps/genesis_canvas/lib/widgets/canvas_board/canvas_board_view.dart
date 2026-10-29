@@ -1,4 +1,4 @@
-import 'package:feature_canvas/api/canvas.dart' show CanvasBoard;
+import 'package:feature_canvas/feature_canvas.dart' show CanvasBoard;
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart' show SurfaceController;
 

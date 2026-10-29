@@ -1,4 +1,4 @@
-import 'package:feature_canvas/api/canvas.dart';
+import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
-import 'package:feature_canvas/api/canvas.dart'
+import 'package:feature_canvas/feature_canvas.dart'
     show CanvasBloc, CanvasSourceStatus, CanvasSourceSubscribed, CanvasState;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
