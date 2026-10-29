@@ -90,6 +90,32 @@ type session struct {
 	sideband  port.Sideband // nil tant que l'attache n'a pas abouti
 	closing   bool          // fermeture demandée par nous (Close, Shutdown, plafond)
 	forcedWhy string        // raison publiée à la place de celle du fournisseur
+	confirmed bool          // session.closed reçu du fournisseur
+	hungUp    bool          // Hangup déjà émis : un seul par session
+}
+
+// confirmClosed enregistre la réception de session.closed.
+func (c *session) confirmClosed() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.confirmed = true
+}
+
+func (c *session) isConfirmed() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.confirmed
+}
+
+// claimHangup réserve le raccrochage ; faux s'il a déjà été émis.
+func (c *session) claimHangup() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.hungUp {
+		return false
+	}
+	c.hungUp = true
+	return true
 }
 
 // markClosing enregistre que la fermeture vient de nous ; why, si non vide,
@@ -223,7 +249,7 @@ func (s *Service) attach(ctx context.Context, sess *session) (port.Sideband, boo
 			return nil, false
 		}
 	}
-	if err := s.hangup(context.Background(), sess.id); err != nil {
+	if err := s.hangupSession(context.Background(), sess); err != nil {
 		s.opts.Logger.Warn("raccrochage après échec d'attache", "session", sess.id, "error", err)
 	}
 	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateClosed, Reason: domain.ReasonAttachFailed})
@@ -240,6 +266,15 @@ func (s *Service) hangup(ctx context.Context, sessionID string) error {
 		return fmt.Errorf("voice: raccrochage de la session %s : %w", sessionID, err)
 	}
 	return nil
+}
+
+// hangupSession raccroche la session au plus une fois, tous chemins confondus
+// (fermeture non confirmée, coupure, session en connexion).
+func (s *Service) hangupSession(ctx context.Context, sess *session) error {
+	if !sess.claimHangup() {
+		return nil
+	}
+	return s.hangup(ctx, sess.id)
 }
 
 // Close ferme proprement une session : demande la fermeture, attend la
@@ -293,24 +328,35 @@ func (s *Service) closeSession(ctx context.Context, sess *session) error {
 	select {
 	case <-sess.done:
 		if closeErr != nil {
-			return fmt.Errorf("voice: fermeture de %s : %w", sess.id, closeErr)
+			err := fmt.Errorf("voice: fermeture de %s : %w", sess.id, closeErr)
+			return errors.Join(err, s.hangupUnconfirmed(ctx, sess))
 		}
-		return nil
+		return s.hangupUnconfirmed(ctx, sess)
 	case <-gctx.Done():
 		close(sess.abandon)
 		<-sess.done
+		hErr := s.hangupUnconfirmed(ctx, sess)
 		if err := ctx.Err(); err != nil {
-			return err
+			return errors.Join(err, hErr)
 		}
-		return fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id)
+		return errors.Join(fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id), hErr)
 	}
+}
+
+// hangupUnconfirmed raccroche si le fournisseur n'a pas confirmé la fermeture
+// (session.closed) : la session resterait sinon ouverte, donc facturée.
+func (s *Service) hangupUnconfirmed(ctx context.Context, sess *session) error {
+	if sess.isConfirmed() {
+		return nil
+	}
+	return s.hangupSession(ctx, sess)
 }
 
 // closeConnecting ferme une session dont le sideband n'est pas encore attaché :
 // annule l'attache puis raccroche chez le fournisseur (WebRTC possiblement établi).
 func (s *Service) closeConnecting(ctx, gctx context.Context, sess *session) error {
 	sess.cancelAttach()
-	hErr := s.hangup(ctx, sess.id)
+	hErr := s.hangupSession(ctx, sess)
 	select {
 	case <-sess.done:
 		return hErr
@@ -342,6 +388,7 @@ loop:
 				break loop
 			}
 			if ev.Type == port.EventClosed {
+				sess.confirmClosed()
 				closedSent = true
 				closedReason = ev.Reason
 			}
@@ -361,7 +408,7 @@ loop:
 	// Sideband tombé sans que nous l'ayons demandé : la session WebRTC peut
 	// continuer à être facturée. Les autres raisons sont déjà terminales.
 	if closedReason == port.ReasonConnectionLost && !sess.closeRequested() {
-		_ = s.hangup(context.Background(), sess.id)
+		_ = s.hangupSession(context.Background(), sess)
 	}
 }
 
