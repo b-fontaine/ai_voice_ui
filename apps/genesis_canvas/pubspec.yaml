@@ -8,8 +8,12 @@ environment:
 resolution: workspace
 
 dependencies:
+  bloc: 9.2.1
+  feature_canvas:
+    path: ../../packages/features/canvas
   flutter:
     sdk: flutter
+  flutter_bloc: 9.1.1
   genui: 0.10.4
 
 dev_dependencies:
