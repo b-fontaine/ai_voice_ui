@@ -271,3 +271,102 @@ func TestNewValidatesOptions(t *testing.T) {
 		t.Error("dossier invalide : erreur attendue")
 	}
 }
+
+// TestNewFailsOnUnwritableDir : un dossier en lecture seule fait échouer New
+// au démarrage plutôt que chaque écriture plus tard. Sous root (euid 0) les
+// droits POSIX sont ignorés : l'assertion n'est alors pas exécutée, la
+// condition est posée dans le test.
+func TestNewFailsOnUnwritableDir(t *testing.T) {
+	if os.Geteuid() != 0 {
+		dir := filepath.Join(t.TempDir(), "ro")
+		if err := os.Mkdir(dir, 0o500); err != nil {
+			t.Fatal(err)
+		}
+		_, err := New(Options{Dir: dir, Clock: &fakeClock{}, OnError: func(error) {}})
+		if err == nil {
+			t.Fatal("New doit échouer sur un dossier non inscriptible")
+		}
+		if strings.Contains(err.Error(), dir) {
+			t.Errorf("l'erreur ne doit pas contenir le chemin : %v", err)
+		}
+	}
+}
+
+func TestNewProbeLeavesNoFile(t *testing.T) {
+	dir := t.TempDir()
+	r, err := New(Options{Dir: dir, Clock: &fakeClock{}, OnError: func(error) {}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = r.Close()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("la sonde doit être supprimée, trouvé %d entrée(s)", len(entries))
+	}
+}
+
+type manualClock struct {
+	mu sync.Mutex
+	t  time.Time
+}
+
+func (c *manualClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.t
+}
+
+func (c *manualClock) advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
+}
+
+func TestOnErrorRateLimited(t *testing.T) {
+	dir := t.TempDir()
+	// Un dossier à la place du fichier : l'ouverture échoue, même sous root.
+	if err := os.Mkdir(filepath.Join(dir, "s1.jsonl"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	clock := &manualClock{t: time.UnixMilli(1_000)}
+	e := &errs{}
+	r, err := New(Options{Dir: dir, Clock: clock, OnError: e.add})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+
+	m := domain.Message{Type: "orb.level"}
+	for i := 0; i < 5; i++ {
+		r.Publish("s1", m)
+	}
+	if got := e.count(); got != 1 {
+		t.Fatalf("5 erreurs identiques dans la minute : 1 transmise attendue, obtenu %d", got)
+	}
+	// Un autre fichier n'est pas limité par le premier.
+	if err := os.Mkdir(filepath.Join(dir, "s2.jsonl"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	r.Publish("s2", m)
+	if got := e.count(); got != 2 {
+		t.Fatalf("autre fichier : 2 erreurs attendues, obtenu %d", got)
+	}
+	clock.advance(time.Minute)
+	r.Publish("s1", m)
+	if got := e.count(); got != 3 {
+		t.Fatalf("après une minute : 3 erreurs attendues, obtenu %d", got)
+	}
+	last := e.list[2].Error()
+	if !strings.Contains(last, "4 erreurs identiques supprimées") {
+		t.Errorf("compteur de suppressions absent : %q", last)
+	}
+	// Le compteur repart à zéro.
+	clock.advance(time.Minute)
+	r.Publish("s1", m)
+	if strings.Contains(e.list[3].Error(), "supprimées") {
+		t.Errorf("compteur non remis à zéro : %q", e.list[3])
+	}
+}

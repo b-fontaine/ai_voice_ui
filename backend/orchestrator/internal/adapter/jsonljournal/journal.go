@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
@@ -24,6 +25,9 @@ type Options struct {
 	// Clock fournit l'horodatage unix_ms de chaque ligne.
 	Clock port.Clock
 	// OnError reçoit les erreurs d'enregistrement ; Publish ne les remonte pas.
+	// Une erreur d'écriture identique pour un même fichier n'est transmise
+	// qu'une fois par minute (horloge Clock) ; le message suivant porte le
+	// nombre d'erreurs supprimées.
 	OnError func(error)
 }
 
@@ -36,6 +40,15 @@ type Recorder struct {
 	mu     sync.Mutex
 	files  map[string]*os.File
 	closed bool
+	limits map[string]*limit // limitation des erreurs d'écriture répétées
+}
+
+// errorInterval est le délai minimal entre deux transmissions d'une même erreur.
+const errorInterval = time.Minute
+
+type limit struct {
+	last       time.Time
+	suppressed int
 }
 
 var _ port.Sink = (*Recorder)(nil)
@@ -54,7 +67,29 @@ func New(opts Options) (*Recorder, error) {
 	if err := os.MkdirAll(opts.Dir, 0o700); err != nil {
 		return nil, fmt.Errorf("jsonljournal: dossier du journal : %w", err)
 	}
-	return &Recorder{opts: opts, files: map[string]*os.File{}}, nil
+	if err := probeWritable(opts.Dir); err != nil {
+		return nil, fmt.Errorf("jsonljournal: dossier du journal non inscriptible : %w", err)
+	}
+	return &Recorder{opts: opts, files: map[string]*os.File{}, limits: map[string]*limit{}}, nil
+}
+
+// probeWritable crée puis supprime un fichier temporaire (0600) dans dir. Le
+// chemin est retiré de l'erreur (os.PathError) : seule la cause est conservée.
+func probeWritable(dir string) error {
+	f, err := os.CreateTemp(dir, ".probe-*")
+	if err != nil {
+		var pe *os.PathError
+		if errors.As(err, &pe) {
+			return fmt.Errorf("sonde : %w", pe.Err)
+		}
+		return fmt.Errorf("sonde : %w", err)
+	}
+	name := f.Name()
+	_ = f.Close()
+	if err := os.Remove(name); err != nil {
+		return fmt.Errorf("sonde : %w", errors.New("suppression impossible"))
+	}
+	return nil
 }
 
 type line struct {
@@ -93,8 +128,29 @@ func (r *Recorder) Publish(sessionID string, m domain.Message) {
 		_, err = f.Write(b)
 	}
 	if err != nil {
-		r.opts.OnError(fmt.Errorf("jsonljournal: écriture : %w", err))
+		r.reportWriteError(sessionID, fmt.Errorf("jsonljournal: écriture : %w", err))
 	}
+}
+
+// reportWriteError transmet err à OnError au plus une fois par minute pour un
+// même fichier et un même message ; r.mu doit être tenu.
+func (r *Recorder) reportWriteError(sessionID string, err error) {
+	key := sessionID + "\x00" + err.Error()
+	now := r.opts.Clock.Now()
+	l, ok := r.limits[key]
+	if ok && now.Sub(l.last) < errorInterval {
+		l.suppressed++
+		return
+	}
+	if !ok {
+		l = &limit{}
+		r.limits[key] = l
+	}
+	if l.suppressed > 0 {
+		err = fmt.Errorf("%w (%d erreurs identiques supprimées)", err, l.suppressed)
+	}
+	l.last, l.suppressed = now, 0
+	r.opts.OnError(err)
 }
 
 // file renvoie le fichier de la session, ouvert à la demande en ajout.
