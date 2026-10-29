@@ -1,24 +1,24 @@
 ---
 id: pdr-0052-one-gpt-live-session-per-act-recommended
-title: "PDR-0052 — Une session GPT-Live par acte (proposition)"
+title: "PDR-0052 — Une session GPT-Live par acte"
 area: decisions
-status: proposed
+status: validated
 updated: 2026-10-29
 sources: [specs/002-sp-02-gpt-live-sdp-relay/notes-s1.md, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-webrtc-session]
 links: [p-rm-open-questions, p-rm-spikes, p-ar-stage-runtime, p-ar-backend, pdr-0004-mvp-three-acts, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0030-llm-budget-20-eur, rt-gpt-live-lifecycle, rt-gpt-live-webrtc-session, rt-gpt-live-overview]
 tags: [pdr, decision, voix, gpt-live, session, acte]
-decision_status: proposée
+decision_status: acceptée
 decided_on: 2026-10-29
-decided_by: "À décider par Benoît FONTAINE (porteur) ; proposition de l'assistant issue du spike SP-02"
+decided_by: "Benoît FONTAINE (porteur), conversation du 2026-10-29"
 scope: technique
 supersedes: []
 superseded_by: null
 ---
-# PDR-0052 — Une session GPT-Live par acte (proposition)
+# PDR-0052 — Une session GPT-Live par acte
 
-> **En bref.** **Proposée, non acquise** : tranche Q-53 si le porteur l'accepte. Une session par acte : la limite de 2 h ne gêne pas, mais le contexte pourrait atteindre ~94 % à 45 min dans le cas pessimiste mesuré. ⚠️ À confirmer sur un scénario réaliste.
+> **En bref.** Tranche Q-53. Une session par acte : la limite de 2 h ne gêne pas, mais le contexte pourrait atteindre ~94 % à 45 min dans le cas pessimiste mesuré. ⚠️ À confirmer sur un scénario réaliste.
 
-Part de l'assistant : recommandation seule ; Q-53 reste ouverte.
+Part de l'assistant : recommandation acceptée par le porteur.
 
 ## Contexte
 - Q-53 : une session par acte ou une seule pour toute la démo ? ([p-ar-stage-runtime](../architecture/stage-runtime.md)). Le talk dure 45 min ([pdr-0027](pdr-0027-talk-context-meetup-flutter-nantes.md)).
@@ -28,15 +28,15 @@ Part de l'assistant : recommandation seule ; Q-53 reste ouverte.
 
 ## Hypothèses
 - ✅ La limite de durée (2 h) dépasse largement le talk.
-- ⚠️ Hypothèse non confirmée : l'extrapolation pessimiste (parole continue) surestime l'usage réel d'un scénario de démo ; à mesurer sur un scénario complet → Q-53.
-- ⚠️ Hypothèse non confirmée : changer de session entre deux actes est imperceptible pour le public (~1 s de création, perte du contexte oral) → Q-53.
+- ⚠️ Hypothèse non confirmée : l'extrapolation pessimiste (parole continue) surestime l'usage réel d'un scénario de démo ; à mesurer sur un scénario complet (Q-53 tranchée ; voir « Réexaminer si »).
+- ⚠️ Hypothèse non confirmée : changer de session entre deux actes est imperceptible pour le public (~1 s de création, perte du contexte oral) ; à tester en répétition (Q-53 tranchée).
 
 ## Options
-1. **Une session par acte** (recommandée).
+1. **Une session par acte** (retenue).
 2. Une session unique pour toute la démo.
 
 ## Décision
-**Proposition (non acquise)** : ouvrir une nouvelle session à chaque acte ([pdr-0004](pdr-0004-mvp-three-acts.md)), l'état utile étant repris des instructions et de l'état de l'orchestrateur.
+**Décision** : ouvrir une nouvelle session à chaque acte ([pdr-0004](pdr-0004-mvp-three-acts.md)), l'état utile étant repris des instructions et de l'état de l'orchestrateur.
 
 ## Raisons
 - Garde le contexte loin du seuil de remplacement de 90 % en cas pessimiste.
@@ -48,7 +48,7 @@ Part de l'assistant : recommandation seule ; Q-53 reste ouverte.
 ## Conséquences
 - [p-ar-stage-runtime](../architecture/stage-runtime.md) : transitions d'acte = ouverture d'une session ; à tester en répétition.
 - [p-ar-backend](../architecture/backend.md) : `voice-session` doit pouvoir rouvrir une session sans intervention du speaker.
-- Décision attendue avant J3 (2/11).
+- Décision acquise le 2026-10-29, avant l'échéance de J3 (2/11).
 
 ## Réexaminer si
 - un scénario complet mesure un contexte < 90 % sur 45 min (la session unique redevient viable) ;
@@ -58,5 +58,6 @@ Part de l'assistant : recommandation seule ; Q-53 reste ouverte.
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-29 | Proposée, après SP-02 (aucune parole du porteur) | Assistant |
+| 2026-10-29 | Acceptée. Le porteur a répondu « Tes recommandations me conviennent. » (conversation du 2026-10-29), après que l'assistant lui a présenté un tableau récapitulant ses trois recommandations (Q-47 → pdr-0050, Q-43 → pdr-0051, Q-53 → pdr-0052). Tranche Q-53. | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

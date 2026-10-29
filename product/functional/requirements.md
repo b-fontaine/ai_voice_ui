@@ -75,4 +75,4 @@ La DoD exige que « les 9 scénarios de la section 4 » soient vérifiés ([p-fn
 ## Notes de traçabilité
 
 - Les 4 Should (FR-06, FR-12, FR-17, FR-18) peuvent glisser sans casser le MVP ; les Must non.
-- FR-13 à FR-19 dépendent du comportement d'interruption du fournisseur voix ([rt-barge-in]) et d'une annulation d'écho efficace ([rt-echo-cancellation]). Fournisseur : `gpt-live-1`, [pdr-0012-voice-provider-openai](../decisions/pdr-0012-voice-provider-openai.md) (acceptée le 2026-10-29).
+- FR-13 à FR-19 dépendent du comportement d'interruption du fournisseur voix ([rt-barge-in]) et d'une annulation d'écho efficace ([rt-echo-cancellation]). ⚠️ Hypothèse non confirmée : « l'IA se tait immédiatement » (FR-13) n'est pas établi à la sortie des haut-parleurs ; le porteur a perçu un décalage à l'essai réel (2026-10-29) → Q-67. Fournisseur : `gpt-live-1`, [pdr-0012-voice-provider-openai](../decisions/pdr-0012-voice-provider-openai.md) (acceptée le 2026-10-29).

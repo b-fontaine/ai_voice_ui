@@ -61,7 +61,7 @@ Flutter app ──HTTPS POST /voice/sessions (offre SDP)──► Kong ─► ag
 | Point | Remarque | Renvoi |
 |---|---|---|
 | Fournisseur voix | Les étapes 0 et 10 (Gemini) n'ont d'objet que si Gemini est retenu ; [pdr-0012](../decisions/pdr-0012-voice-provider-openai.md) propose OpenAI seul | Q-11 |
-| Mode de délégation | L'étape 4 fixe `delegation.type=client` ; `client` et `responses` mesurés en SP-02, choix ouvert (Q-47, [pdr-0050](../decisions/pdr-0050-gpt-live-client-delegation-recommended.md) proposée) | SP-02, Q-47 |
+| Mode de délégation | L'étape 4 fixe `delegation.type=client` ; mode `client` retenu, `responses` mesuré en SP-02 et écarté ([pdr-0050](../decisions/pdr-0050-gpt-live-client-delegation-recommended.md)) | Tranchée : Q-47 |
 | Version A2UI | L'étape 2 épingle v0.9, conforme à la décision | Tranchée : [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03) |
 | MCP | L'étape 9 suppose des outils métier Septeo ; aucun outil MCP n'est prévu pour la démo ([stack.md](../architecture/stack.md)) | [beyond.md](beyond.md) |
 | Observabilité | L'étape 12 suppose SigNoz | Q-55 tranchée : journal de session seul ([pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md)) |

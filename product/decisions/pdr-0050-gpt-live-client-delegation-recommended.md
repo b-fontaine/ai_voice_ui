@@ -1,24 +1,24 @@
 ---
 id: pdr-0050-gpt-live-client-delegation-recommended
-title: "PDR-0050 — Mode de délégation GPT-Live : `client` (proposition)"
+title: "PDR-0050 — Mode de délégation GPT-Live : `client`"
 area: decisions
-status: proposed
+status: validated
 updated: 2026-10-29
 sources: [specs/002-sp-02-gpt-live-sdp-relay/notes-s1.md, knowledge:rt-gpt-live-delegation, knowledge:rt-gpt-live-lifecycle]
 links: [p-rm-open-questions, p-rm-spikes, p-ar-backend, p-ar-agents-protocols, pdr-0012-voice-provider-openai, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0037-voice-brise-delegated-instructions, adr-0002-orchestrator-backend, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-gpt-live-webrtc-session, rt-gpt-live-sideband]
 tags: [pdr, decision, voix, gpt-live, delegation]
-decision_status: proposée
+decision_status: acceptée
 decided_on: 2026-10-29
-decided_by: "À décider par Benoît FONTAINE (porteur) ; proposition de l'assistant issue du spike SP-02"
+decided_by: "Benoît FONTAINE (porteur), conversation du 2026-10-29"
 scope: technique
 supersedes: []
 superseded_by: null
 ---
-# PDR-0050 — Mode de délégation GPT-Live : `client` (proposition)
+# PDR-0050 — Mode de délégation GPT-Live : `client`
 
-> **En bref.** **Proposée, non acquise** : tranche Q-47 si le porteur l'accepte. Le spike SP-02 (2026-10-29) a établi **trois** modes de délégation (`client`, `responses`, `decisions`), mesuré `client` et `responses`. L'assistant recommande `client` : l'orchestrateur du backend reçoit la demande et renvoie les vrais résultats des agents A2A.
+> **En bref.** Tranche Q-47. Le spike SP-02 (2026-10-29) a établi **trois** modes de délégation (`client`, `responses`, `decisions`), mesuré `client` et `responses`. Retenu : `client` : l'orchestrateur du backend reçoit la demande et renvoie les vrais résultats des agents A2A.
 
-Part de l'assistant : recommandation seule. Le choix entre options valables revient au porteur ; Q-47 reste ouverte.
+Part de l'assistant : recommandation acceptée par le porteur.
 
 ## Contexte
 - Q-47 ([p-rm-open-questions](../roadmap/open-questions.md)) : quel mode de délégation GPT-Live ? Son libellé d'origine (« `client` ou `decisions` ») était incomplet : la doc du SDK `openai-go/v3` définit trois modes (`client` par défaut, `responses`, `decisions`) ([rt-gpt-live-delegation], `notes-s1.md` § 2).
@@ -35,16 +35,16 @@ Détails : [rt-gpt-live-delegation], [rt-gpt-live-lifecycle], [rt-gpt-live-sideb
 
 ## Hypothèses
 - ✅ Les modes `client` et `responses` fonctionnent avec `gpt-live-1` (SP-02).
-- ⚠️ Hypothèse non confirmée : le mode `decisions` n'a pas été essayé ; rien n'établit qu'il ne conviendrait pas → [p-rm-open-questions](../roadmap/open-questions.md) (Q-47).
-- ⚠️ Hypothèse non confirmée : des instructions vocales ([pdr-0037](pdr-0037-voice-brise-delegated-instructions.md)) suffisent à faire déléguer le modèle à chaque demande utile en mode `client` (observé sur les essais de SP-02 seulement) → Q-47.
+- ⚠️ Hypothèse non confirmée : le mode `decisions` n'a pas été essayé ; rien n'établit qu'il ne conviendrait pas (non bloquant : Q-47 tranchée ; à vérifier si le besoin apparaît, voir « Réexaminer si »).
+- ⚠️ Hypothèse non confirmée : des instructions vocales ([pdr-0037](pdr-0037-voice-brise-delegated-instructions.md)) suffisent à faire déléguer le modèle à chaque demande utile en mode `client` (observé sur les essais de SP-02 seulement) ; à vérifier en J2 sur la chaîne réelle (Q-47 tranchée, voir « Réexaminer si »).
 
 ## Options
-1. **`client`** (recommandée) : le backend reçoit `delegation.created` en sideband, reconstruit la demande depuis les transcripts, délègue à l'orchestrateur, renvoie le commentary.
+1. **`client`** (retenue) : le backend reçoit `delegation.created` en sideband, reconstruit la demande depuis les transcripts, délègue à l'orchestrateur, renvoie le commentary.
 2. **`responses`** : un modèle de la famille Responses raisonne chez OpenAI ; seuls des outils `function`/`web_search` y sont déclarés.
 3. **`decisions`** : mode nouveau du SDK, non essayé.
 
 ## Décision
-**Proposition (non acquise)** : `voice.delegation_type = client`, injecté par configuration (jamais en dur, AGENTS.md § 2) et fixé à la création de session.
+**Décision** : `voice.delegation_type = client`, injecté par configuration (jamais en dur, AGENTS.md § 2) et fixé à la création de session.
 
 ## Raisons
 - L'orchestrateur maison planifie, route vers les agents A2A et renvoie des résultats réels ([pdr-0036](pdr-0036-real-a2a-agents-produce-a2ui.md)) ; seul `client` y mène directement.
@@ -58,7 +58,7 @@ Détails : [rt-gpt-live-delegation], [rt-gpt-live-lifecycle], [rt-gpt-live-sideb
 ## Conséquences
 - [p-ar-backend](../architecture/backend.md) : la délégation `client` reste le paramètre par défaut ; le texte de la demande se reconstruit depuis `session.input_transcript.delta`.
 - [p-ar-agents-protocols](../architecture/agents-protocols.md) : séquence de délégation inchangée.
-- J2 dépend de la décision (Q-47, avant le 31/10).
+- Décision acquise le 2026-10-29 : elle débloque J2 (Q-47 tranchée).
 
 ## Réexaminer si
 - les outils `function` en `responses` suffisent à appeler nos agents sans perte de contrôle ;
@@ -69,5 +69,6 @@ Détails : [rt-gpt-live-delegation], [rt-gpt-live-lifecycle], [rt-gpt-live-sideb
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-29 | Proposée, après SP-02 (aucune parole du porteur) | Assistant |
+| 2026-10-29 | Acceptée. Le porteur a répondu « Tes recommandations me conviennent. » (conversation du 2026-10-29), après que l'assistant lui a présenté un tableau récapitulant ses trois recommandations (Q-47 → pdr-0050, Q-43 → pdr-0051, Q-53 → pdr-0052). Tranche Q-47. | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

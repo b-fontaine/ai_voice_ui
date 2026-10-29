@@ -78,4 +78,4 @@ Chaque répétition produit un journal ; le script de mesure calcule les p90 ([p
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
 - **Rendu genui sous Linux** : ✅ confirmé par SP-10 le 2026-10-29 (en-têtes GStreamer requis).
-- **Durée d'une session** GPT-Live : `expires_at` = +2 h, contexte extrapolé ~94 % à 45 min en cas pessimiste (mesuré en SP-02, [rt-gpt-live-lifecycle]) ; une session par acte ou une seule → Q-53 ([pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md), proposée ; ⚠️ à confirmer sur un scénario réaliste).
+- **Durée d'une session** GPT-Live : `expires_at` = +2 h, contexte extrapolé ~94 % à 45 min en cas pessimiste (mesuré en SP-02, [rt-gpt-live-lifecycle]) ; une session par acte (Q-53 tranchée : [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md)) ; transitions d'acte = ouverture d'une session (~1 s), à tester en répétition ; ⚠️ Hypothèse non confirmée : l'usage réel du contexte sur un scénario complet reste à mesurer (réexamen prévu par la PDR).

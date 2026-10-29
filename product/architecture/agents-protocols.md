@@ -115,7 +115,7 @@ sequenceDiagram
   Note over App: aucune surface détruite (FR-15)
 ```
 
-⚠️ GPT-Live n'expose **aucun événement d'interruption** ([rt-barge-in], [rt-gpt-live-lifecycle]) : l'état « Interrompue » de l'orbe doit être **inféré** côté app. Méthode à valider par spike (voir Points ouverts). Mesuré en SP-02 (2026-10-29) : l'IA se tait dans le bloc de 200 ms du premier mot d'interruption (essai automatisé) ; essai réel dans un navigateur (AEC activée, enceintes du PC) : coupure nette, puis 60 s de parole continue sans auto-interruption ([rt-barge-in], [rt-gpt-live-lifecycle]) ; flutter_webrtc sous Linux et sono de la salle non testés. Le raccourci « silence » (FR-20) est le secours.
+⚠️ GPT-Live n'expose **aucun événement d'interruption** ([rt-barge-in], [rt-gpt-live-lifecycle]) : l'état « Interrompue » de l'orbe doit être **inféré** côté app. Méthode à valider par spike (voir Points ouverts). Mesuré en SP-02 (2026-10-29) : la voix de l'IA continue ~0,6 à 1,0 s après le premier son de l'interruption (horloge du relais, essai automatisé et essai réel ; corrigé le 2026-10-29, Q-67) ; essai réel dans un navigateur (AEC activée, enceintes du PC) : décalage perceptible signalé par le porteur, puis 60 s de parole continue sans auto-interruption ([rt-barge-in], [rt-gpt-live-lifecycle]) ; flutter_webrtc sous Linux et sono de la salle non testés. ⚠️ Hypothèse non confirmée : cette mesure portait sur la copie sideband côté serveur (sortie du modèle), pas sur ce qui sort des haut-parleurs ; le porteur a perçu un décalage entre son interruption et l'arrêt de la voix (2026-10-29), tampon de lecture suspecté mais non vérifié → Q-67 (FR-13, FR-19). Le raccourci « silence » (FR-20) est le secours.
 
 ## « Stop » / « annule » (FR-16)
 

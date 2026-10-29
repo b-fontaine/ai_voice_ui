@@ -10,7 +10,7 @@ tags: [qualite, tdd, bdd, gherkin, ci, nfr, mesure, observabilite]
 ---
 # Qualité, tests et mesure des NFR
 
-**En bref.** Les 9 scénarios Gherkin de la fiche (§4) sont écrits **avant** le code et exécutés en automatique avec `bdd_widget_test` (client) et Godog (backend). Le TDD part de ces scénarios (outside-in). On ne double que les frontières (voix, réseau, plateforme). Les NFR sont mesurés à partir du **journal de session** sur 10 répétitions, au p90 (fiche §8, Definition of Done).
+**En bref.** Les scénarios Gherkin de la fiche (§4 : 9, dont S-04 retiré, 8 actifs, [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) et [pdr-0049](../decisions/pdr-0049-sheet-gherkin-scenarios-only.md)) sont écrits **avant** le code et exécutés en automatique avec `bdd_widget_test` (client) et Godog (backend). Le TDD part de ces scénarios (outside-in). On ne double que les frontières (voix, réseau, plateforme). Les NFR sont mesurés à partir du **journal de session** sur 10 répétitions, au p90 (fiche §8, Definition of Done).
 
 > Statut : **draft**. Stratégie proposée par l'assistant sur la base des règles d'AGENTS.md §2.
 
@@ -18,7 +18,7 @@ tags: [qualite, tdd, bdd, gherkin, ci, nfr, mesure, observabilite]
 
 | Niveau | Outil | Ce qui est testé | Doublures | Source |
 |---|---|---|---|---|
-| Scénarios BDD client | `bdd_widget_test` 3.0.4 | les 9 scénarios de [voice-screen-generation.feature](../functional/features/voice-screen-generation.feature) et [barge-in.feature](../functional/features/barge-in.feature) | `FakeVoiceSession`, `FakeSessionEventSource` (rejoue un journal) | [test-bdd-widget-test], [test-bdd-app-running-fixture] |
+| Scénarios BDD client | `bdd_widget_test` 3.0.4 | les 8 scénarios actifs de [voice-screen-generation.feature](../functional/features/voice-screen-generation.feature) et [barge-in.feature](../functional/features/barge-in.feature) | `FakeVoiceSession`, `FakeSessionEventSource` (rejoue un journal) | [test-bdd-widget-test], [test-bdd-app-running-fixture] |
 | Blocs | `bloc_test` | transitions des 7 Blocs (orbe, transcript tronqué, phases de surface, rejeu) | fakes de ports | [test-bloc-test] |
 | Catalogue | tests de `CatalogItem` + Widgetbook `testWidgetbook` | schéma, état squelette, état neutre sur données incomplètes, a11y | — | [genui-test-surface-controller], [ds-widgetbook-4-testing] |
 | Goldens | `alchemist` | composants au thème de scène | — | [test-golden-alchemist] |
