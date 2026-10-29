@@ -302,13 +302,14 @@ def check_decisions(docs, index_lines):
         if "decided_by" in fm and not (isinstance(fm["decided_by"], str) and fm["decided_by"].strip()):
             err(f"{r} : decided_by vide (toujours indiquer qui décide ou doit décider)")
         cb = fm.get("constraint_basis")
-        constrained = isinstance(fm.get("decided_by"), str) and fm["decided_by"].startswith(CONSTRAINED_BY)
+        # décision contrainte (decided_by commence par le préfixe) ou PDR mixte (porteur + parties contraintes)
+        constrained = isinstance(fm.get("decided_by"), str) and CONSTRAINED_BY in fm["decided_by"]
         if "constraint_basis" in fm and not isinstance(cb, list):
             err(f"{r} : 'constraint_basis' doit être une liste d'ids")
         elif constrained and not cb:
-            err(f"{r} : décision contrainte sans constraint_basis (ids des faits et décisions qui imposent la réponse)")
+            err(f"{r} : décision contrainte (ou parties contraintes) sans constraint_basis (ids des faits et décisions qui imposent la réponse)")
         elif cb and not constrained:
-            warn(f"{r} : constraint_basis renseigné mais decided_by ne commence pas par « {CONSTRAINED_BY} »")
+            warn(f"{r} : constraint_basis renseigné mais decided_by ne mentionne pas « {CONSTRAINED_BY} »")
         if "scope" in fm and fm["scope"] not in PDR_SCOPES:
             err(f"{r} : scope invalide {fm['scope']!r} (attendu {' | '.join(sorted(PDR_SCOPES))})")
         sup = fm.get("supersedes")

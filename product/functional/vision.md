@@ -3,9 +3,9 @@ id: p-fn-vision
 title: Vision et problème
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1]
-links: [p-fn-personas-journey, p-fn-scope, p-fn-catalog, p-fn-screen, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0003-use-case-release-copilot, pdr-0010-pinned-experimental-versions, p-rm-open-questions, genui-overview, genui-a2ui-overview]
+links: [p-fn-personas-journey, p-fn-scope, p-fn-catalog, p-fn-screen, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0003-use-case-release-copilot, pdr-0010-pinned-experimental-versions, p-rm-open-questions, genui-overview, genui-a2ui-overview, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine]
 tags: [vision, produit, talk, release-copilot]
 ---
 # Genesis Canvas — vision et problème
@@ -40,18 +40,18 @@ Préparer la décision **go/no-go d'une release mobile** à partir des crashs, d
 | Élément | Valeur | Décision |
 |---|---|---|
 | Type de livrable | Démo de conférence, **pas** un produit de production | [pdr-0001](../decisions/pdr-0001-conference-demo-deliverable.md) |
-| Plateforme | Flutter desktop, macOS prioritaire, Windows en secours, projeté en 1920×1080 | [pdr-0002](../decisions/pdr-0002-desktop-platform.md) |
-| Durée cible de la démo | 8 à 10 min dans un talk de 40 min | ⚠️ Hypothèse non confirmée (écart E5 · Q-06, [p-rm-open-questions](../roadmap/open-questions.md)) |
+| Plateforme | Flutter desktop, macOS prioritaire, Windows en secours, projeté en 1920×1080 — **remplacé** : Linux, machine du porteur | [pdr-0002](../decisions/pdr-0002-desktop-platform.md), remplacée par [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md) |
+| Durée cible de la démo | 8 à 10 min dans un talk de 40 min — talk réel : 45 min, Meetup Flutter Nantes, 2026-11-12 | [pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md) (Q-06, Q-12) |
 | Statut des briques | GenUI et A2UI expérimentales : versions figées obligatoires | [pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md), [genui-overview], [genui-a2ui-overview] |
 
 ## Hypothèses à confirmer (fiche § 1)
 
-La fiche signale trois points non fixés, tous ouverts dans [p-rm-open-questions](../roadmap/open-questions.md) (écart E5) :
+La fiche signalait trois points non fixés (écart E5, [p-rm-open-questions](../roadmap/open-questions.md)) ; deux sont tranchés le 2026-10-29 :
 
 | Hypothèse | Statut |
 |---|---|
-| Durée du talk | ⚠️ Hypothèse non confirmée (Q-06) |
-| OS de la machine de démo | ⚠️ Hypothèse non confirmée (Q-07) |
+| Durée du talk | ✅ 45 min ([pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)) |
+| OS de la machine de démo | ✅ Linux ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)) |
 | Format du gabarit SDD du porteur | ⚠️ Hypothèse non confirmée (Q-09) ; la fiche suit une structure SDD générique (vision, personas, périmètre, exigences, BDD, NFR, architecture, risques) |
 
 ## Pour aller plus loin

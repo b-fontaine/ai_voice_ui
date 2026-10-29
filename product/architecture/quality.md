@@ -5,7 +5,7 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:test-tdd-red-green-refactor, knowledge:test-bdd-widget-test, knowledge:test-realtime-fake-runner, knowledge:ma-voice-agent-evals, knowledge:ma-otel-genai-spans]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock]
 tags: [qualite, tdd, bdd, gherkin, ci, nfr, mesure, observabilite]
 ---
 # Qualité, tests et mesure des NFR
@@ -38,29 +38,31 @@ Chaque scénario est étiqueté avec ses exigences (`@FR-01 @NFR-02`…) dans le
 
 | NFR | Mesure (fiche §5) | Instrumentation proposée |
 |---|---|---|
-| NFR-01 voix < 1 s | chronométré, 10 répétitions, p90 | fin de phrase (`end_ms` du transcript speaker) → 1er delta de transcript IA ; enregistrement audio de la salle pour contrôle |
+| NFR-01 voix < 1 s | chronométré, 10 répétitions, p90 | fin de phrase reçue par l'app → 1er delta de transcript IA reçu, sur l'horloge de l'app (pdr-0038) |
 | NFR-02 squelette < 1,5 s | horodatage du journal A2UI | `marker` fin de phrase → premier message de création de surface rendu (`createSurface`, A2UI v0.9) |
 | NFR-03 acte 1 < 8 s | horodatage du journal A2UI | `marker` fin de phrase → dernière mise à jour de données de la 4e surface (`updateDataModel`, A2UI v0.9) |
 | NFR-04 60 i/s | DevTools Performance | profil `--profile` pendant l'acte 1 ; orbe isolé sous `RepaintBoundary` ([perf-audio-visualizer-60hz], [perf-repaint-boundary]) |
 | NFR-05 lisibilité | vidéoprojecteur réel | tokens scène ≥ 24 px ; contraste AA vérifié par Widgetbook ([ds-a11y-wcag-contrast]) |
 | NFR-06 ≤ 6 surfaces | revue visuelle | assertion dans `CanvasBloc` ; aucun scénario de la fiche ne la couvre : scénario à ajouter si Q-63 le décide (la limite porte sur les surfaces : [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) |
-| NFR-07 secours < 2 s | Wi-Fi coupé | horodatage `FallbackRequested` → 1er événement rejoué |
+| ~~NFR-07 secours < 2 s~~ | retirée ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) | — |
 | NFR-08 déterminisme | snapshot des réponses d'agents | comparaison des Artifacts A2A par acte en CI |
 | NFR-09 aucune clé | revue de code | scan de secrets en CI sur l'app et les assets |
 | NFR-10 reproductibilité | build propre sur machine vierge | job CI « clean build » depuis `pubspec.lock` ([pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md)) |
-| NFR-11 coût | tableau de bord OpenAI | `usage.seconds` de `session.closed` journalisé par répétition |
-| NFR-12 raccourcis | checklist de répétition | test widget par raccourci |
+| NFR-11 coût | tableau de bord OpenAI | `usage.seconds` de `session.closed` journalisé par répétition ; plafond total 20 € ([pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md)) |
+| NFR-12 raccourcis | checklist de répétition | test widget par contrôle cliquable, et par raccourci s'il existe ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) |
 
 Script de répétition (proposition) : lit les 10 journaux, calcule p50/p90 et taille d'échantillon ([ma-voice-agent-evals]).
 
-## CI (proposition)
+## CI (GitHub Actions, [pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md))
+
+La CI est mise en place pour la montrer ; la démo tourne en debug sur le poste du porteur.
 
 1. `very_good_analysis` + `bloc_lint` (`prefer_bloc`, aucun Cubit) ([test-very-good-analysis], [bloc-no-cubit]).
 2. `build_runner` (injectable, freezed, bdd, widgetbook) puis `git diff --exit-code`.
 3. `flutter test --coverage` (unit, bloc, widget, BDD) ([test-coverage-ci]).
 4. `testWidgetbook` + goldens.
 5. Backend : `go test -race`, Godog, validation A2UI.
-6. Build desktop macOS (et Windows si le secours est confirmé) depuis le lockfile.
+6. Build desktop **Linux** depuis le lockfile, avec les dépendances système GStreamer (SP-10).
 
 ## Observabilité
 
@@ -70,7 +72,7 @@ Script de répétition (proposition) : lit les 10 journaux, calcule p50/p90 et t
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- **Point de départ des chronos** : fin de phrase vue par GPT-Live (`end_ms`) ou par l'app ; alignement des horloges client / serveur → Q-54.
+- **Point de départ des chronos** : tranché ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md), Q-54) : horloge monotone de l'app, sans alignement client / serveur.
 - **Observabilité en scène** : OTel + SigNoz, ou journal seul → Q-55.
-- **Plateforme de CI** pour le build macOS → Q-56.
-- **Tests sur vrai micro et sono** (WALK/RUN) : protocole de répétition et matériel → Q-57, Q-24.
+- **Plateforme de CI** : tranchée ([pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md), Q-56) : GitHub Actions, build Linux.
+- **Tests sur vrai micro et sono** (WALK/RUN) : matériel et répétitions gérés par le porteur, hors périmètre de l'assistant (Q-57, Q-24).

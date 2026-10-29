@@ -36,9 +36,12 @@ Fonctionnalité: Génération d'écran pilotée à la voix
     Et l'IA confirme à la voix
     Et le statut de la checklist passe à "Bloquée"
 
-  @S-04 @FR-10 @NFR-07
-  Scénario: Bascule en mode secours
-    Soit la connexion réseau est perdue
-    Quand j'appuie sur le raccourci de secours
-    Alors la session enregistrée est rejouée sur le canevas
-    Et un indicateur discret signale le mode rejeu
+  # S-04 RETIRÉ par pdr-0032-obs-video-fallback-a2ui-replay-act (2026-10-29) : le mode secours
+  # intégré à l'app disparaît (FR-10 et NFR-07 retirées) ; le secours est une vidéo OBS gérée
+  # par le porteur. Texte de la fiche § 4 conservé en commentaire, non exécuté :
+  # @S-04 @FR-10 @NFR-07
+  # Scénario: Bascule en mode secours
+  #   Soit la connexion réseau est perdue
+  #   Quand j'appuie sur le raccourci de secours
+  #   Alors la session enregistrée est rejouée sur le canevas
+  #   Et un indicateur discret signale le mode rejeu

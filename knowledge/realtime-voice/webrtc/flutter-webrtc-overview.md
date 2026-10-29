@@ -3,7 +3,7 @@ id: rt-flutter-webrtc-overview
 title: flutter_webrtc — version et support plateformes
 tags: [webrtc, flutter, packages, platforms]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-29
 sources: [https://pub.dev/packages/flutter_webrtc, https://pub.dev/documentation/flutter_webrtc/latest/flutter_webrtc/WebRTC-class.html, https://pub.dev/documentation/flutter_webrtc/latest/flutter_webrtc/WebRTC/initialize.html]
 links: [rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-flutter-webrtc-gpt-live-connect, rt-echo-cancellation, proto-rtc-flutter-packages, perf-audio-packages]
 ---
@@ -15,6 +15,8 @@ links: [rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-flutt
 - **Licence :** MIT.
 
 **Plateformes :** Android, iOS, macOS, Windows, Linux et Web. Audio/vidéo, data channels et Unified-Plan sont marqués supportés partout.
+
+**Observé le 2026-10-29 sur Linux x86_64** (Flutter 3.47.8, Impeller OpenGLES) : `flutter_webrtc` 1.6.3 compile, énumère les périphériques audio (`enumerateDevices`), capture le micro (`getUserMedia`, 1 piste audio) et produit une offre SDP Opus (`createOffer`).
 
 C'est donc la seule brique qui couvre **les six plateformes** pour GPT-Live. À l'inverse, `firebase_ai` ne couvre ni Windows ni Linux.
 

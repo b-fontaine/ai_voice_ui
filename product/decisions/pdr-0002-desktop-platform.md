@@ -2,19 +2,21 @@
 id: pdr-0002-desktop-platform
 title: "PDR-0002 — Flutter desktop, macOS prioritaire, Windows en secours, projection 1920×1080"
 area: decisions
-status: validated
-updated: 2026-10-28
+status: superseded
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p3, knowledge:genui-overview, knowledge:rt-provider-abstraction, knowledge:ux-desktop-shortcuts, knowledge:ds-widgetbook-4-spike]
-links: [p-fn-scope, p-fn-screen, p-fn-nfr, p-ar-frontend, p-ar-stage-runtime, p-ar-stack, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0012-voice-provider-openai, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, genui-overview, rt-provider-abstraction, ux-desktop-shortcuts, ds-widgetbook-4-spike]
+links: [pdr-0028-linux-demo-machine, p-fn-scope, p-fn-screen, p-fn-nfr, p-ar-frontend, p-ar-stage-runtime, p-ar-stack, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0012-voice-provider-openai, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, genui-overview, rt-provider-abstraction, ux-desktop-shortcuts, ds-widgetbook-4-spike]
 tags: [pdr, decision, platform, desktop, macos, windows]
-decision_status: acceptée
+decision_status: remplacée par pdr-0028-linux-demo-machine
 decided_on: 2026-10-28
 decided_by: "Benoît FONTAINE (porteur), via la fiche produit du 2026-10-28"
 scope: mixte
 supersedes: []
-superseded_by: null
+superseded_by: pdr-0028-linux-demo-machine
 ---
 # PDR-0002 — Plateforme : Flutter desktop
+
+> **Remplacée par [pdr-0028](pdr-0028-linux-demo-machine.md)** (2026-10-29) : la démo tourne sous Linux ; macOS et Windows ne sont plus des cibles. Le texte ci-dessous est conservé pour l'historique.
 
 > **En bref.** L'app tourne en Flutter desktop, sur macOS en priorité et Windows en secours, et elle est projetée en 1920×1080. Mobile et web sont hors périmètre. L'OS de la machine de démo n'est pas encore confirmé, et le secours Windows doit être vérifié pour genui et la voix.
 
@@ -63,5 +65,6 @@ Part de l'assistant : mise en forme ; les risques de plateforme viennent de la b
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1, § 3) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR, risques de plateforme ajoutés depuis knowledge | Assistant (mise en forme) |
+| 2026-10-29 | Remplacée par pdr-0028 : « La machine de démo sera celle-ci, une machine Linux » (conversation) | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

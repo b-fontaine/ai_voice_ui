@@ -2,19 +2,21 @@
 id: pdr-0006-replay-fallback-must
 title: "PDR-0006 — Enregistrement et rejeu de session : exigence Must et mode secours"
 area: decisions
-status: validated
-updated: 2026-10-28
+status: superseded
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, knowledge:ds-widgetbook-4-genui, knowledge:adr-0002-orchestrator-backend]
-links: [p-fn-requirements, p-fn-nfr, p-fn-screen, p-fn-risks-acceptance, p-ar-replay, p-ar-frontend, p-ar-stage-runtime, p-rm-backlog, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, adr-0002-orchestrator-backend, ds-widgetbook-4-genui]
+links: [pdr-0032-obs-video-fallback-a2ui-replay-act, p-fn-requirements, p-fn-nfr, p-fn-screen, p-fn-risks-acceptance, p-ar-replay, p-ar-frontend, p-ar-stage-runtime, p-rm-backlog, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, adr-0002-orchestrator-backend, ds-widgetbook-4-genui]
 tags: [pdr, decision, replay, fallback, resilience]
-decision_status: acceptée
+decision_status: remplacée par pdr-0032-obs-video-fallback-a2ui-replay-act
 decided_on: 2026-10-28
 decided_by: "Benoît FONTAINE (porteur), via la fiche produit du 2026-10-28"
 scope: mixte
 supersedes: []
-superseded_by: null
+superseded_by: pdr-0032-obs-video-fallback-a2ui-replay-act
 ---
 # PDR-0006 — Rejeu = exigence Must et mode secours
+
+> **Remplacée par [pdr-0032](pdr-0032-obs-video-fallback-a2ui-replay-act.md)** (2026-10-29) : le secours est une vidéo OBS gérée par le porteur ; FR-10 et NFR-07 sont retirés ; le rejeu (flux A2UI seul) reste Must et devient l'acte 4. Le texte ci-dessous est conservé pour l'historique.
 
 > **En bref.** Chaque génération est enregistrée et peut être rejouée de 0,25× à 2×. Le même mécanisme sert de mode secours, déclenché par un raccourci, en moins de 2 s et sans redémarrer l'app. Ce n'est pas un bonus : c'est la parade au risque réseau.
 
@@ -64,5 +66,6 @@ Le mode secours est signalé par un indicateur discret (état « Secours » de l
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 3, § 4, § 5, § 8) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
+| 2026-10-29 | Remplacée par pdr-0032 : « le mode de secours sera une vidéo enregistrée avec OBS Studio » ; « Flux A2UI seul » (conversation) | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

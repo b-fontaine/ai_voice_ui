@@ -3,9 +3,9 @@ id: pdr-0004-mvp-three-acts
 title: "PDR-0004 — MVP : 3 actes (créer, transformer, interagir), rejeu optionnel, hors-périmètre explicite"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p5]
-links: [p-fn-personas-journey, p-fn-scope, p-fn-requirements, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0003-use-case-release-copilot, pdr-0006-replay-fallback-must]
+links: [p-fn-personas-journey, p-fn-scope, p-fn-requirements, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0003-use-case-release-copilot, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
 tags: [pdr, decision, scope, mvp, acts]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -67,5 +67,6 @@ Source : fiche § 2 et § 4. L'interruption (FR-13…FR-20) est transverse aux a
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 2, § 3) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
+| 2026-10-29 | Reconfirmée sur deux points : pas d'acte « agent d'un autre éditeur » (Q-10 : « Non, l'intérêt n'est pas là », [pdr-0035](pdr-0035-no-third-party-agent.md)) ; l'acte 4 de rejeu du flux A2UI est inclus (Q-19 : « inclus le rejeu d'un Flux A2UI, ce sera utile pour la démo », [pdr-0032](pdr-0032-obs-video-fallback-a2ui-replay-act.md)) | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

@@ -3,9 +3,9 @@ id: p-fn-personas-journey
 title: Personas et parcours en 3 actes
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/design-example.pdf]
-links: [p-fn-vision, p-fn-scope, p-fn-requirements, p-fn-mockups, p-fn-dataset, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, p-rm-open-questions]
+links: [p-fn-vision, p-fn-scope, p-fn-requirements, p-fn-mockups, p-fn-dataset, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, p-rm-open-questions, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
 tags: [personas, parcours, actes, demo]
 ---
 # Personas et parcours de la démo
@@ -22,7 +22,7 @@ tags: [personas, parcours, actes, demo]
 
 Conséquences fonctionnelles directes :
 - friction « texte illisible » → NFR-05 (24 px, WCAG AA) ([p-fn-nfr](nfr.md)) ;
-- friction « stress du direct, réseau » → mode secours en un raccourci ([pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)) ;
+- friction « stress du direct, réseau » → mode secours en un raccourci ([pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)), remplacé par une vidéo de secours gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) ;
 - attente « où vivent les agents » → rail des agents et flux du protocole visibles ([p-fn-screen](screen.md)).
 
 ## Parcours en 3 actes (fiche § 2)
@@ -53,4 +53,4 @@ Les maquettes numérotent trois **étapes** (« 1 / 3 · VIDE », « 2 / 3 · CO
 
 ## Question ouverte (fiche § 3)
 
-Faut-il montrer un **agent d'un autre éditeur**, qui s'intègre sans adaptation ? C'est l'argument le plus fort de l'approche multi-agents, mais il ajoute un acte à la démo (écart E6 · Q-10, [p-rm-open-questions](../roadmap/open-questions.md)).
+Faut-il montrer un **agent d'un autre éditeur**, qui s'intègre sans adaptation ? C'est l'argument le plus fort de l'approche multi-agents, mais il ajoute un acte à la démo (écart E6 · Q-10, [p-rm-open-questions](../roadmap/open-questions.md)). Tranché : **non** ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md)).

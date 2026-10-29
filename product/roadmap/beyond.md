@@ -5,7 +5,7 @@ area: roadmap
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2-p3, product/sources/product-description.pdf#p12, product/roadmap/backend-production-plan.md, knowledge:proto-a2a-overview]
-links: [p-rm-roadmap, p-rm-open-questions, p-fn-scope, p-ar-overview, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0009-french-only, p-rm-backend-production-plan, ma-target-architecture, proto-a2a-overview, proto-a2a-agent-card, proto-mcp-overview, genui-a2ui-v1-rc, pdr-0018-a2ui-v09-genui-0-10-4]
+links: [p-rm-roadmap, p-rm-open-questions, p-fn-scope, p-ar-overview, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0009-french-only, p-rm-backend-production-plan, ma-target-architecture, proto-a2a-overview, proto-a2a-agent-card, proto-mcp-overview, genui-a2ui-v1-rc, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0035-no-third-party-agent]
 tags: [au-dela, hors-perimetre, evolutions, roadmap]
 ---
 # Au-delà du talk : pistes hors périmètre MVP
@@ -14,12 +14,12 @@ tags: [au-dela, hors-perimetre, evolutions, roadmap]
 
 | Piste | Ce que ça apporte | Ce que ça demande | Source / lien | Statut |
 |---|---|---|---|---|
-| **Agent tiers en A2A** | Montrer un agent d'un autre éditeur qui s'intègre sans adaptation : « l'argument le plus fort de l'approche multi-agents » | Un agent externe publiant une Agent Card ; contrat de catalogue partagé ; un acte de plus. Peut remonter dans le MVP si Q-10 est tranchée en ce sens | Fiche § 3 (question ouverte) ; [Q-10](open-questions.md) ; [proto-a2a-overview], [proto-a2a-agent-card] | Hors MVP, en attente de Q-10 |
+| **Agent tiers en A2A** | Montrer un agent d'un autre éditeur qui s'intègre sans adaptation : « l'argument le plus fort de l'approche multi-agents » | Un agent externe publiant une Agent Card ; contrat de catalogue partagé ; un acte de plus | Fiche § 3 ; [Q-10](open-questions.md) ; [proto-a2a-overview], [proto-a2a-agent-card] | Hors de la démo (« Non, l'intérêt n'est pas là », [pdr-0035](../decisions/pdr-0035-no-third-party-agent.md)) ; après le talk : à confirmer par le porteur |
 | **Vraies sources de données** | Crashlytics, App Store Connect, Google Play Console au lieu du jeu figé | Outils MCP ou agents A2A authentifiés (OAuth, secrets côté backend) ; fin du déterminisme de NFR-08 | Fiche § 3 « Hors périmètre » ; [proto-mcp-overview], [ma-mcp-security] | Hors MVP |
-| **Web et mobile** | Même démo dans un navigateur ou sur téléphone | Rendu A2UI web/mobile ; contraintes Wasm, audio et permissions par plateforme | Fiche § 3 « Mobile et web : desktop uniquement » ; [pdr-0002](../decisions/pdr-0002-desktop-platform.md) | Hors MVP |
+| **Web et mobile** | Même démo dans un navigateur ou sur téléphone | Rendu A2UI web/mobile ; contraintes Wasm, audio et permissions par plateforme | Fiche § 3 « Mobile et web : desktop uniquement » ; [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md) (remplace pdr-0002) | Hors MVP |
 | **Multi-utilisateur et persistance** | Plusieurs personnes sur un même tableau, historique au-delà de la session | Authentification, autorisation, stockage, tenants | Fiche § 3 « Hors périmètre » ; [p-rm-backend-production-plan](backend-production-plan.md) étapes 1, 4 | Hors MVP |
 | **Autres langues** | Talk en anglais ou démo bilingue | Voix, consignes, catalogue et données localisés | Fiche § 3 ; [pdr-0009](../decisions/pdr-0009-french-only.md) | Hors MVP |
-| **Ouvrir le code de la démo** | Les développeurs repartent avec un exemple GenUI + A2A complet | Retrait des dépendances internes, licence, dépôt publiable (cf. Q-27), nettoyage des secrets | [Q-27](open-questions.md) | Hors MVP, non décidé |
+| **Ouvrir le code de la démo** | Les développeurs repartent avec un exemple GenUI + A2A complet | Retrait des dépendances internes, licence, nettoyage des secrets ; si Q-27 confirme « ce dépôt », le code y vit déjà ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md)) | [Q-27](open-questions.md) | Hors MVP, non décidé |
 | **Réutilisation dans les projets Septeo** | Porter le patron voix → orchestrateur → A2UI dans les produits (successeur d'`ai_voice_widget`) | Reprise du plan backend complet : Keycloak, Kong, Temporal, MCP gateway, observabilité | [p-rm-backend-production-plan](backend-production-plan.md) étapes 9 à 12 ; [ma-target-architecture] ; `knowledge/projects/` | Hors MVP |
 | **Passage à A2UI v1.0** | RPC bidirectionnel, catalogues mélangeables, `userMessage` sur les actions | Support par genui ; migration des bindings (`@path`) | [genui-a2ui-v1-rc] ; condition de réexamen de [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) | Hors MVP, dépend de genui |
 

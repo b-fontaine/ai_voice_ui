@@ -3,9 +3,9 @@ id: pdr-0011-adopt-knowledge-adrs
 title: "PDR-0011 — Genesis Canvas applique les ADR génériques adr-0001 à adr-0008"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [knowledge/decisions/index.yaml, knowledge:adr-0001-initial-constraints, knowledge:adr-0002-orchestrator-backend, knowledge:adr-0003-backend-go, knowledge:adr-0004-ds-visual-base-m3, knowledge:adr-0005-ds-tokens-style-dictionary, knowledge:adr-0006-ds-no-widgetbook-cloud, knowledge:adr-0007-ds-design-tool-claude-design, knowledge:adr-0008-ds-widgetbook-4-beta, AGENTS.md]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-stack, p-ar-security, p-ar-quality, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0010-pinned-experimental-versions, adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-stack, p-ar-security, p-ar-quality, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0010-pinned-experimental-versions, adr-0001-initial-constraints, adr-0002-orchestrator-backend, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0033-optional-shortcuts-mouse-first, pdr-0036-real-a2a-agents-produce-a2ui]
 tags: [pdr, decision, adr, inheritance, architecture]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -68,5 +68,7 @@ Toute nouvelle ADR générique (`adr-0009`…) qui touche le produit doit être 
 |---|---|---|
 | 2026-10-26 → 2026-10-28 | ADR adr-0001 à adr-0008 acceptés dans knowledge/ | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Application au produit consignée en PDR | Assistant (mise en forme) |
+| 2026-10-29 | Reconfirmée ; frictions levées : dépôt d'accueil = ce dépôt et pas d'auth (`127.0.0.1`) ([pdr-0029](pdr-0029-local-docker-compose-hosting.md), Q-27, Q-48) ; agents A2A réels dès le MVP ([pdr-0036](pdr-0036-real-a2a-agents-produce-a2ui.md), Q-16) ; raccourcis facultatifs ([pdr-0033](pdr-0033-optional-shortcuts-mouse-first.md), Q-05) ; cible desktop Linux ([pdr-0028](pdr-0028-linux-demo-machine.md)) | Assistant, sur parole du porteur (conversation du 2026-10-29) |
+| 2026-10-29 | Correction de la ligne précédente : dépôt d'accueil (Q-27) et absence d'auth (Q-48) **non levés** ; rouverts comme recommandations de l'assistant à confirmer par le porteur (écart à AGENTS.md § 2) | Assistant |
 
 Archives des ADR : `knowledge/decisions/_archive/`.

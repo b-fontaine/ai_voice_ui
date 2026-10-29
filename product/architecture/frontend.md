@@ -5,12 +5,12 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf, knowledge:arch-recommended-structure, knowledge:arch-clean-fsd-combo, knowledge:genui-architecture, knowledge:ma-flutter-event-bus, knowledge:adr-0004-ds-visual-base-m3, knowledge:adr-0008-ds-widgetbook-4-beta]
-links: [p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-replay, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-catalog, p-fn-requirements, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, arch-recommended-structure, arch-clean-fsd-combo, arch-fsd-public-api, bloc-no-cubit, bloc-event-transformers, di-no-service-locator, di-get-it-scopes, ma-flutter-event-bus, genui-architecture, genui-multiple-surfaces, genui-user-actions, genui-conversation-events, genui-custom-catalog-item, genui-catalog-ids, rt-provider-abstraction, rt-graceful-close, rt-echo-cancellation, perf-audio-visualizer-60hz, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ds-package-structure, ds-widgetbook-4-genui, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, adr-0001-initial-constraints, arch-pub-workspaces, bloc-emit-foreach, di-micro-packages, di-setup-versions, genui-a2ui-security, genui-custom-llm-adapter, genui-overview, proj-avw-risks, test-mock-boundaries-only, arch-official-use-cases, arch-official-components, rt-openai-webrtc-package, rt-flutter-webrtc-gpt-live-connect, ds-widgetbook-monorepo, ux-desktop-platform-kits, ds-material-ui-decoupling, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, ux-desktop-focus, perf-web-initial-load, proj-avw-genui-bridge, arch-recommended-dependency-rules, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target]
+links: [p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-replay, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-catalog, p-fn-requirements, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, arch-recommended-structure, arch-clean-fsd-combo, arch-fsd-public-api, bloc-no-cubit, bloc-event-transformers, di-no-service-locator, di-get-it-scopes, ma-flutter-event-bus, genui-architecture, genui-multiple-surfaces, genui-user-actions, genui-conversation-events, genui-custom-catalog-item, genui-catalog-ids, rt-provider-abstraction, rt-graceful-close, rt-echo-cancellation, perf-audio-visualizer-60hz, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ds-package-structure, ds-widgetbook-4-genui, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, adr-0001-initial-constraints, arch-pub-workspaces, bloc-emit-foreach, di-micro-packages, di-setup-versions, genui-a2ui-security, genui-custom-llm-adapter, genui-overview, proj-avw-risks, test-mock-boundaries-only, arch-official-use-cases, arch-official-components, rt-openai-webrtc-package, rt-flutter-webrtc-gpt-live-connect, ds-widgetbook-monorepo, ux-desktop-platform-kits, ds-material-ui-decoupling, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, ux-desktop-focus, perf-web-initial-load, proj-avw-genui-bridge, arch-recommended-dependency-rules, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0028-linux-demo-machine, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, design-system]
 ---
 # Architecture de l'app Flutter desktop
 
-**En bref.** L'app est un écran unique en 6 zones ([p-fn-screen](../functional/screen.md)), découpé en slices FSD dont chacune suit Clean en interne ([arch-clean-fsd-combo]). Toutes les zones lisent **un seul flux d'événements de session**, fourni soit par le backend (direct), soit par le journal (rejeu) : le mode secours réutilise donc exactement le même rendu ([p-ar-replay](replay.md)).
+**En bref.** L'app est un écran unique en 6 zones ([p-fn-screen](../functional/screen.md)), découpé en slices FSD dont chacune suit Clean en interne ([arch-clean-fsd-combo]). Toutes les zones lisent **un seul flux d'événements de session**, fourni soit par le backend (direct), soit par le journal (rejeu) : le rejeu de l'acte 4 réutilise donc exactement le même rendu ([p-ar-replay](replay.md)).
 
 > Statut : **draft**. Tout ce qui suit est une **proposition** de l'assistant (noms de slices, Blocs, arborescence), à valider. Les règles non négociables viennent de AGENTS.md §2 et [adr-0001-initial-constraints].
 
@@ -37,13 +37,13 @@ tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, des
 | widgets | `agents_rail` | orchestrateur + agents, liaisons animées | FR-03 |
 | widgets | `protocol_panel` | flux A2UI, repliable, mise en évidence | FR-05 |
 | widgets | `catalog_shelf` | étagère des composants | FR-06 |
-| widgets | `replay_bar` | curseur, vitesse, indicateur secours | FR-09, FR-10 |
+| widgets | `replay_bar` | lecture, pause, vitesse (acte 4) | FR-09 |
 | features | `voice_session` | session voix (port + adaptateur GPT-Live WebRTC) | FR-02, FR-12, FR-13, FR-20 |
 | features | `canvas` | rendu GenUI, catalogue `genesis`, cycle de vie des surfaces, actions | FR-04, FR-07, FR-08, FR-16 |
 | features | `agent_activity` | état des agents à partir des événements d'orchestration | FR-03 |
 | features | `protocol_feed` | journal lisible des messages A2UI | FR-05 |
-| features | `replay` | journal de session, lecteur, bascule secours | FR-09, FR-10, NFR-07 |
-| features | `stage_controls` | intents clavier → events Bloc | FR-10, FR-11, FR-20, NFR-12 |
+| features | `replay` | journal du flux A2UI, lecteur (acte 4) | FR-09 |
+| features | `stage_controls` | contrôles cliquables et raccourcis facultatifs → events Bloc | FR-11, FR-20, NFR-12 |
 | entities | `session` | `SessionEvent` (sealed), port `SessionEventSource`, `TranscriptSegment` | — |
 | entities | `catalog` | descripteur pur Dart du catalogue (noms, ids) partagé par `canvas` et `catalog_shelf` | FR-06 |
 | shared | `core`, `backend_channel`, `realtime_transport`, `design_system` | Result, config, horloge ; client WSS app-channel ; WebRTC ; DS `Ds*` | — |
@@ -61,7 +61,7 @@ flowchart LR
   live -. écrit .-> jr[(journal)]
 ```
 
-`SessionEvent` (proposition) : `TranscriptDelta`, `OrbStateChanged`, `AgentActivity`, `A2uiMessageReceived(raw, parsed, seq, ts)`, `UserActionSent`, `SessionClosed`. La bascule secours remplace la source branchée sur le port ; les Blocs ne changent pas ([p-ar-replay](replay.md)).
+`SessionEvent` (proposition) : `TranscriptDelta`, `OrbStateChanged`, `AgentActivity`, `A2uiMessageReceived(raw, parsed, seq, ts)`, `UserActionSent`, `SessionClosed`. Le rejeu de l'acte 4 remplace la source branchée sur le port ; les Blocs ne changent pas ([p-ar-replay](replay.md)). Plus de bascule secours ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)).
 
 ## Blocs principaux (proposition)
 
@@ -104,7 +104,7 @@ flowchart LR
 ## Arborescence proposée
 
 ```
-apps/genesis_canvas/                 # app desktop (macOS, Windows)
+apps/genesis_canvas/                 # app desktop (Linux, pdr-0028)
   lib/app/{di,bootstrap,theme,shortcuts,config}/
   lib/pages/genesis_canvas/
   lib/widgets/{top_bar,canvas_board,agents_rail,protocol_panel,catalog_shelf,replay_bar}/
@@ -143,5 +143,5 @@ Passages propres au projet retirés des notes génériques (souvent antérieurs 
 - **Source du niveau audio** de l'orbe et de la forme d'onde sans seconde capture micro (statistiques WebRTC ou copie sideband) : non vérifié → Q-43.
 - **Mise en page du canevas** : tranchée, grille tenue par l'app, N surfaces ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md), Q-29).
 - **`catalogId`** définitif (la maquette affiche `genesis.release`, la convention recommande une URI versionnée, [genui-catalog-ids]) → Q-44.
-- **Support Windows de genui** : pub.dev ne liste pas Windows pour `genui` ni `genui_a2a` ([genui-overview]) ; le secours Windows de [pdr-0002](../decisions/pdr-0002-desktop-platform.md) est à vérifier par le spike SP-09 → Q-45.
-- **Raccourcis** : table définitive et modificateurs (touches nues vs `Cmd`/`Ctrl`), écart E5 → Q-05.
+- **genui sous Linux** : build exige les en-têtes GStreamer ; rendu confirmé par SP-10 le 2026-10-29 ([genui-overview], [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)). Q-45 (Windows) sans objet.
+- **Raccourcis** : tranché (Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) : facultatifs, toute action critique à la souris.

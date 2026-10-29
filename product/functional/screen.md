@@ -5,7 +5,7 @@ area: functional
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription]
+links: [p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -23,7 +23,7 @@ Un pointillé relie le message en cours dans le flux du protocole au composant q
 | **Rail des agents** | L'orchestrateur et les 3 agents spécialisés | Un agent s'allume quand il est sollicité, avec sa tâche ; une liaison animée montre la délégation | FR-03 |
 | **Flux du protocole** | Les messages d'interface envoyés par les agents | Replié par défaut, déplié à la demande ; le message en cours est mis en évidence et relié à son composant | FR-05 |
 | **Étagère du catalogue** | Les 6 composants disponibles ([pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) | Le composant choisi par l'agent s'allume au moment où il est utilisé | FR-06 |
-| **Rejeu** | Un curseur sur l'historique de la session | Rejoue la construction au ralenti ou en accéléré ; sert aussi de mode secours | FR-09, FR-10 |
+| **Rejeu** | Un curseur sur l'historique de la session | Rejoue la construction au ralenti ou en accéléré ; sert aussi de mode secours | FR-09, FR-10 — mode secours retiré ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) : la zone sert l'acte 4 (flux A2UI seul) |
 
 Libellés vus dans les maquettes : « AGENTS A2A » (rail), « FLUX A2UI · live » (flux), « CATALOGUE · n / 6 utilisés » (étagère), « CANEVAS · release-3-4 ». La zone Rejeu n'apparaît sur aucune maquette (écart E13 · Q-31, [p-fn-mockups](mockups.md)).
 
@@ -37,7 +37,7 @@ Libellés vus dans les maquettes : « AGENTS A2A » (rail), « FLUX A2UI · live
 | Parole | L'IA parle | L'orbe suit la voix de l'IA |
 | Interrompue | Le speaker vient de couper l'IA | Arrêt net, bref flash, retour à « Écoute » |
 | Micro coupé | Le speaker a coupé son micro | Orbe grisé barré |
-| Secours | Rejeu d'une session enregistrée | Indicateur discret dans un coin |
+| Secours | Rejeu d'une session enregistrée | Indicateur discret dans un coin — **retiré (pdr-0032)** |
 
 Transitions déduites de la fiche (synthèse de l'assistant, à relire) :
 
@@ -52,8 +52,9 @@ stateDiagram-v2
     Parole --> Repos : fin de réplique
     Repos --> MicroCoupe : touche M (FR-12)
     MicroCoupe --> Repos : touche M
-    Repos --> Secours : touche B (FR-10)
 ```
+
+L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) : le secours est une vidéo gérée par le porteur.
 
 ⚠️ Les maquettes affichent la pastille « EN ÉCOUTE » pendant la planification et la construction, là où la fiche prévoit « Réflexion » (écart E12 · Q-30). Repères : [ux-voice-multimodal], [rt-barge-in].
 
@@ -67,7 +68,7 @@ stateDiagram-v2
 
 ## Raccourcis clavier proposés (fiche § 6, p. 10)
 
-⚠️ **Hypothèse non confirmée** : la fiche les dit « proposés, à valider » (écart E5 · Q-05, [p-rm-open-questions](../roadmap/open-questions.md)).
+Tranché (E5 · Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) : les raccourcis sont **facultatifs**. Toute action critique a un contrôle cliquable ; un raccourci ne s'ajoute que s'il ne pose pas de problème (focus, conflit).
 
 | Touche | Action | Exigence |
 |---|---|---|
@@ -75,12 +76,12 @@ stateDiagram-v2
 | M | Couper ou rétablir le micro | FR-12 |
 | P | Déplier ou replier le flux du protocole | FR-05 (zone flux) |
 | R | Remettre le canevas à vide | FR-11 |
-| B | Basculer en mode secours | FR-10 |
-| ← / → | Reculer ou avancer dans le rejeu | FR-09 |
+| ~~B~~ | ~~Basculer en mode secours~~ | ~~FR-10~~ retirée (pdr-0032) |
+| ← / → | Reculer ou avancer dans le rejeu | FR-09 ; pas-à-pas : Q-52 ouverte (reco : aucun pas-à-pas imposé, à confirmer) |
 
-Points d'attention pour la validation (assistant, non décidés) :
+Points d'attention (assistant) :
 - Sur desktop, Espace active aussi le bouton qui a le focus (par exemple « Bloquer la release ») ; un raccourci Flutter ne se déclenche que dans le sous-arbre focalisé ([ux-desktop-shortcuts], [ux-desktop-focus]).
-- NFR-12 exige un raccourci pour **toutes** les actions critiques : la liste devra être revue en répétition ([p-fn-risks-acceptance](risks-acceptance.md)).
+- NFR-12 est assoupli (pdr-0033) : une action critique sans raccourci fiable reste faisable à la souris.
 
 ## Barre supérieure : transcription
 

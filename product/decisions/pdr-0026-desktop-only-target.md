@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p3]
-links: [p-rm-open-questions, p-fn-mockups, p-ar-overview, p-ar-frontend, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0011-adopt-knowledge-adrs, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, perf-web-initial-load]
+links: [pdr-0028-linux-demo-machine, p-rm-open-questions, p-fn-mockups, p-ar-overview, p-ar-frontend, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0011-adopt-knowledge-adrs, adr-0001-initial-constraints, adr-0004-ds-visual-base-m3, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, perf-web-initial-load]
 tags: [pdr, decision, platform, desktop, decision-contrainte]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -16,6 +16,8 @@ supersedes: []
 superseded_by: null
 ---
 # PDR-0026 — Desktop seul
+
+> **Partie OS remplacée par [pdr-0028](pdr-0028-linux-demo-machine.md)** (2026-10-29) : la démo tourne sous Linux ; « macOS en priorité, Windows en secours » ci-dessous n'est plus en vigueur. Seul « desktop seul, projection 1920×1080, mobile et web hors périmètre » reste en vigueur. Le texte ci-dessous est conservé pour l'historique.
 
 > **En bref.** Décision contrainte, tranche Q-64 (E22). Cible : **desktop seul**, macOS en priorité, Windows en secours, projection 1920×1080. Mobile et web hors périmètre. Les ADR hérités et notes `knowledge/` orientés web sont génériques et ne changent pas la cible.
 
@@ -57,5 +59,7 @@ Part de l'assistant : décision contrainte, prise sur délégation du porteur ; 
 |---|---|---|
 | 2026-10-28 | Q-64 ouverte lors du nettoyage de `knowledge/` | Assistant |
 | 2026-10-29 | Acceptée comme décision contrainte, sur délégation du porteur | Assistant |
+| 2026-10-29 | Bandeau ajouté : la partie OS (macOS/Windows) de la Décision est remplacée par pdr-0028 ; « desktop seul, 1920×1080 » reste en vigueur | Assistant |
+| 2026-10-29 | Reconfirmée : la cible desktop reste, mais l'OS devient Linux ([pdr-0028](pdr-0028-linux-demo-machine.md), qui remplace pdr-0002) ; macOS et Windows ne sont plus des cibles, Q-45 et SP-09 sans objet | Assistant, sur parole du porteur : « La machine de démo sera celle-ci, une machine Linux » |
 
 Pas d'archive brute.

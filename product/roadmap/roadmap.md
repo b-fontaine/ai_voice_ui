@@ -5,72 +5,101 @@ area: roadmap
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1-p12, product/sources/design-example.pdf#p1-p3, product/roadmap/backend-production-plan.md, knowledge:ds-widgetbook-4-spike, spikes/widgetbook4/README.md]
-links: [rt-ephemeral-keys, p-fn-business-rules, p-rm-backlog, p-rm-spikes, p-rm-open-questions, p-rm-beyond, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-ar-overview, p-ar-replay, p-ar-stage-runtime, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, p-rm-backend-production-plan, adr-0008-ds-widgetbook-4-beta, proto-stack-recommendation, adr-0002-orchestrator-backend, ma-target-architecture, ma-where-to-run-agents, p-ar-backend, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target]
-tags: [roadmap, jalons, mvp, talk, planification]
+links: [rt-ephemeral-keys, p-fn-business-rules, p-rm-backlog, p-rm-spikes, p-rm-open-questions, p-rm-beyond, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-ar-overview, p-ar-replay, p-ar-stage-runtime, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, p-rm-backend-production-plan, adr-0008-ds-widgetbook-4-beta, proto-stack-recommendation, adr-0002-orchestrator-backend, ma-target-architecture, ma-where-to-run-agents, p-ar-backend, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0034-app-name-release-copilot, pdr-0035-no-third-party-agent, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0037-voice-brise-delegated-instructions, pdr-0038-latency-measured-on-app-clock, pdr-0039-component-voice-interactions-via-fr07, pdr-0040-reference-dataset-adjusted-by-assistant]
+tags: [roadmap, jalons, mvp, talk, planification, calendrier, gel, coupe]
 ---
 # Roadmap : de la fiche produit au talk, puis au-delà
 
-**En bref.** Dix jalons, de J0 (cadrage, **en cours**, en attente de relecture du porteur) à J9 (le talk), puis une phase « Au-delà ». L'ordre suit la levée de risque : spikes d'abord, puis une chaîne bout en bout minimale, puis les 3 actes ([pdr-0004](../decisions/pdr-0004-mvp-three-acts.md)), le mode secours et le durcissement scénique. **Aucune date** : la date de la conférence et la durée du talk sont inconnues ([Q-06, Q-12](open-questions.md)). Les tailles sont relatives (S < M < L < XL).
+**En bref.** Replanification du 2026-10-29 sur la date réelle : talk de 45 min au Meetup Flutter Nantes le **jeudi 2026-11-12** ([pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)), soit **14 jours**. Les jalons J1 à J8 sont **datés** : 12 jours de construction (jeu. 29/10 → lun. 9/11), puis **2 jours de gel** (mar. 10/11 et mer. 11/11). Les spikes sont réduits au strict nécessaire (SP-10 en premier). Le calendrier, la capacité supposée et l'**ordre de coupe** sont des **propositions de l'assistant, à valider par le porteur** (Q-65). La logistique et les supports du talk (salle, son, répétitions, vidéo de secours) sont gérés par le porteur, hors périmètre de l'assistant ; slides : sur demande du porteur.
 
-## Point de départ (état du dépôt au 2026-10-28)
+## Point de départ (état du dépôt au 2026-10-29)
 
 | Élément | État | Source |
 |---|---|---|
-| Base `knowledge/` (faits vérifiés, ADR adr-0001 à adr-0008) | Présente | `knowledge/index.yaml` |
+| Base `knowledge/`, ADR adr-0001 à adr-0008, dossier `product/` (PDR 0001-0040) | Présents ; J0 en relecture par le porteur | `knowledge/index.yaml`, [decisions/](../decisions/index.yaml) |
 | Spike Widgetbook 4.0.0-beta.14 | Fait, vérifié | [ds-widgetbook-4-spike], `spikes/widgetbook4/` |
-| Fiche produit et 3 maquettes | Présentes | `product/sources/` |
-| Code applicatif (app Flutter, backend Go) | **Aucun** | `git log` |
+| Machine de démo Linux : `flutter_webrtc` 1.6.3 | ✅ vérifié le 2026-10-29 | [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md) |
+| Machine de démo Linux : `genui` 0.10.4 | ✅ rendu A2UI v0.9 confirmé le 2026-10-29 après installation de GStreamer (SP-10) | [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md) |
+| Code applicatif (app Flutter, backend Go, agents) | **Aucun** | `git log` |
 
-## Graphe de dépendances
+## Calendrier daté (proposition de l'assistant, à valider : Q-65)
 
-```mermaid
-flowchart LR
-  J0[J0 Cadrage et docs<br/>en cours] --> J1[J1 Spikes<br/>levée de risque]
-  J1 --> J2[J2 Walking skeleton<br/>voix → backend → 1 agent → 1 surface]
-  J2 --> J3[J3 Acte 1<br/>Créer]
-  J3 --> J4[J4 Acte 2<br/>Transformer]
-  J3 --> J5[J5 Acte 3<br/>Interagir]
-  J3 --> J6[J6 Enregistrement,<br/>rejeu, secours]
-  J4 --> J7[J7 Durcissement scène]
-  J5 --> J7
-  J6 --> J7
-  J7 --> J8[J8 Répétitions et DoD]
-  J8 --> J9[J9 Talk]
-  J9 --> AD[Au-delà]
-  Q[Questions bloquantes<br/>échéances du registre] -.-> J1
-  Q -.-> J2
-  Q -.-> J3
-```
+⚠️ Hypothèse non confirmée (Q-65) : le calendrier compte **tous les jours**, week-ends compris. En jours ouvrés seulement, il reste 8 jours avant le gel (29, 30/10, 2 au 6/11, 9/11), soit 4 de moins : appliquer d'emblée l'ordre de coupe jusqu'à C7 (gain estimé 3,5 à 4 j). Les fériés n'y changent rien : le 1/11 tombe un dimanche et le 11/11 est dans le gel.
 
-J4, J5 et J6 peuvent avancer en parallèle une fois l'acte 1 stable.
+| Jalon | Dates | Jours | Contenu resserré | Critère de sortie (point de contrôle le soir du dernier jour) |
+|---|---|---|---|---|
+| J1 Spikes réduits | jeu. 29/10 → ven. 30/10 | 2 | 29/10 : **SP-10** (+ SP-01). 30/10 : **SP-03** le matin, **SP-02 réduit** l'après-midi ; les autres spikes sont absorbés dans les jalons ([spikes.md](spikes.md)) | SP-10 ✅ ou décision MacBook du porteur le 30/10 ; SP-03 et SP-02 consignés ; Q-25, Q-39, Q-43, Q-46, Q-47 tranchables |
+| J2 Walking skeleton | sam. 31/10 → dim. 1/11 | 2 | 31/10 : relais SDP Go, orchestrateur, 1 agent A2A, `docker-compose.yaml`, app Linux + orbe + 1 surface. 1/11 : journal horodaté (horloge de l'app, [pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)), scénario BDD, CI minimale, `pubspec.lock` | « Une phrase → une surface » en réel et en BDD ; `docker compose up` démarre tout ; 1ʳᵉ mesure de latence (ex-SP-04) |
+| J3 Acte 1 « Créer » | lun. 2/11 → mer. 4/11 | 3 | Catalogue 6 composants + thème de scène (ex-SP-07), 3 agents réels producteurs d'A2UI ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md)), jeu de données ([pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md)), rail, panneau protocole, étagère, remise à vide, instructions vocales v1 ([pdr-0037](../decisions/pdr-0037-voice-brise-delegated-instructions.md)) | Scénario « Acte 1 » vert ; 4 surfaces < 8 s (indicatif) ; RG-08 et RG-10 démontrés |
+| J4 Acte 2 « Transformer » | jeu. 5/11 | 1 | Mutation sur place, filtre Android ([pdr-0024](../decisions/pdr-0024-act2-android-only.md)) | Scénario « Acte 2 » vert ; aucune surface recréée dans le journal |
+| J5 Acte 3 « Interagir » | ven. 6/11 | 1 | Clic → agent Livraison → vrai résultat → voix | Scénario « Acte 3 » vert ; vrai résultat d'outil dit à la voix |
+| J6 Rejeu A2UI (acte 4) | sam. 7/11 | 1 | Enregistrement du flux A2UI seul, lecture 0,25×-2× (ex-SP-05, [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) | Rejeu de l'acte 1 identique au direct, Wi-Fi coupé |
+| J7 Durcissement | dim. 8/11 → lun. 9/11 | 2 | Barge-in, « stop », AEC sous Linux avec enceinte (ex-SP-06), 60 i/s, lisibilité 24 px ; **fin du développement le 9/11 au soir** | 5 scénarios « Couper la parole » verts ; barge-in 10/10 sur enceinte ; DevTools 60 i/s |
+| J8 **Gel** et DoD | mar. 10/11 → mer. 11/11 | 2 | Correctifs bloquants seulement, aucune fonctionnalité ; p90 depuis les journaux ; CI verte ; bilan budget 20 € | DoD côté assistant cochée ; version figée remise au porteur le 11/11 au soir |
+| J9 Talk | jeu. 12/11 | — | Démo ; choix direct / vidéo : géré par le porteur | — |
 
-## Jalons
+Marge : les **2 jours de gel** (10-11/11) ; aucune marge entre J1 et J7. Tout glissement d'un jour se paie par une coupe (ci-dessous), jamais par le gel.
+
+## Jalons (contenu détaillé et dépendances)
 
 | Jalon | Taille | Objectif | Contenu | Exigences couvertes | Critère de sortie vérifiable | Dépend de | Risques principaux |
 |---|---|---|---|---|---|---|---|
-| **J0** Cadrage et docs (en cours) | S | Vision fonctionnelle et technique partagée | Base `knowledge/`, ADR 0001-0008, spike Widgetbook, dossier `product/`, PDR 0001-0012 | — | Dossier `product/` relu ; `product_lint.py` sans erreur ; questions ouvertes listées | — | Écarts fiche/maquettes non tranchés (E1-E6) |
-| **J1** Spikes | M | Lever les inconnues techniques avant d'écrire le produit | Spikes SP-01 à SP-07 et SP-09 (secours Windows) de [spikes.md](spikes.md) | Prépare NFR-01 à NFR-05, NFR-07, NFR-10 | Chaque spike a un résultat écrit (✅/❌/⚠️) ; faits nouveaux versés dans `knowledge/` (skill `kb-curate`) ; questions techniques tranchées ou reformulées | J0 ; Q-07, Q-45, Q-64 (levée → pdr-0026) | Versions expérimentales (genui, A2UI, `live` d'openai-go) ; résultat négatif qui remet en cause [pdr-0012](../decisions/pdr-0012-voice-provider-openai.md) |
-| **J2** Walking skeleton | L | Prouver la chaîne complète, au plus mince | App Flutter desktop vide + orbe ; session voix créée par relais SDP backend (Go), aucune clé dans l'app (pas de jeton éphémère pour GPT-Live : écart de vocabulaire avec NFR-09 noté dans [pdr-0012](../decisions/pdr-0012-voice-provider-openai.md), [rt-ephemeral-keys]) ; délégation → orchestrateur → 1 agent A2A → 1 surface A2UI rendue par GenUI ; journal horodaté ; versions figées | FR-01, FR-02 (partiel), FR-04 (1 surface), NFR-09, NFR-10 ; instrumentation NFR-01/02/11 | Scénario BDD « une phrase → une surface » vert en CI (fournisseurs simulés aux frontières) **et** en réel ; aucune clé longue durée dans l'app (revue) ; `pubspec.lock` committé | J1 ; Q-03 (levée → pdr-0018), Q-09, Q-11, Q-15, Q-16, Q-25, Q-27, Q-29 (levée → pdr-0015), Q-34 (levée → pdr-0022), Q-37, Q-39, Q-43, Q-46, Q-47, Q-48, Q-54, Q-55, Q-56, Q-63 tranchées | Latence de bout en bout ; intégration `genui_a2a` (SSE) ↔ `a2a-go` |
-| **J3** Acte 1 « Créer » | L | « Prépare la release 3.4 » construit le tableau | Orchestrateur + agents de l'acte 1 ; catalogue ; 4 surfaces ; rail des agents ; panneau protocole ; étagère du catalogue ; jeu de données figé ; raccourci de remise à vide ; refus à la voix d'une demande hors catalogue, avec alternative (RG-08) ; état neutre sur données incomplètes (RG-10) ; exemples d'écrans attendus fournis à l'IA (parade R6, [pdr-0023](../decisions/pdr-0023-example-guided-composition.md) ; forme des exemples : détail de conception) | FR-02, FR-03, FR-04, FR-05, FR-06, FR-11, NFR-02, NFR-03, NFR-06, NFR-08 | Scénario « Acte 1 » vert ; journal A2UI : 1er squelette < 1,5 s, 4 surfaces < 8 s (mesure indicative, p90 en J8) ; une demande hors catalogue est refusée à la voix avec une alternative (RG-08) ; un composant aux données incomplètes affiche un état neutre (RG-10) | J2 ; Q-01, Q-02, Q-04 (levée → pdr-0019), Q-08, Q-10, Q-17, Q-22, Q-23, Q-28 (levée → pdr-0020), Q-30, Q-31, Q-33 (levée → pdr-0021), Q-35, Q-38 (levée → pdr-0023), Q-44, Q-53, Q-59 (levée → pdr-0025), Q-60, Q-61 tranchées | Écran incohérent généré ; attente trop longue ; écarts E1/E2 tranchés (pdr-0013, pdr-0014) : Q-02, Q-60 levées |
-| **J4** Acte 2 « Transformer » | M | Les surfaces mutent sur place | Mise à jour des composants et du data model sans recréer ; filtre plateforme ; comparaison 3.3 ↔ 3.4 ; correction en cours de génération | FR-07, FR-17 | Scénarios « Acte 2 » et « Corriger la demande » verts ; aucune surface recréée dans le journal | J3 ; Q-20, Q-21, Q-32, Q-58 (levée → pdr-0024) | Retrait de surface vu dans la maquette 3 (Q-21) ; régénération complète par le LLM |
-| **J5** Acte 3 « Interagir » | M | Un clic repart vers l'agent, qui répond à la voix | Action utilisateur A2UI → orchestrateur → agent Livraison → vrai résultat → voix + mise à jour de la checklist | FR-08 | Scénario « Acte 3 » vert ; le résultat dit à la voix est le vrai résultat de l'outil ([ma-real-tool-results]) | J3 ; Q-49, Q-62 (tranchée → pdr-0016, levée) ; Q-20 (échéance J4, à trancher aussi avant J5 si J5 démarre d'abord) | Faux `{"status":"ok"}` ([proj-avw-risks]) ; focus clavier volé par le bouton (Q-05) |
-| **J6** Enregistrement, rejeu, secours | M | Rejouer une session sans réseau | Enregistrement de chaque session ; curseur 0,25×-2× ; raccourci de secours ; indicateur discret | FR-09, FR-10, NFR-07 | Scénario « Bascule en mode secours » vert ; bascule Wi-Fi coupé < 2 s, sans redémarrer l'app | J3 ; Q-18, Q-36, Q-50, Q-51, Q-52 | Rejeu non déterministe ; contenu de l'enregistrement mal défini (Q-18) |
-| **J7** Durcissement scène | L | Tenir en salle réelle | Barge-in, « stop », bruit court, faire-taire au clavier, micro coupé ; réglage AEC/sono ; thème de scène 24 px ; 60 i/s ; raccourcis ; script des phrases clés courtes et rodées par acte, avec réponses attendues (parade R5 de la fiche § 8) | FR-12 à FR-16, FR-18, FR-19, FR-20, NFR-01, NFR-04, NFR-05, NFR-12 | Les 5 scénarios « Couper la parole » verts ; barge-in 10/10 sono allumée ; DevTools 60 i/s ; lecture au projecteur ; checklist raccourcis complète | J4, J5, J6 ; Q-05, Q-26, Q-40, Q-41, Q-42, Q-57 | Auto-interruption par la sono ; interruptions intempestives ; texte illisible |
-| **J8** Répétitions et DoD | M | Atteindre la Definition of Done de la fiche § 8 | 10 répétitions consécutives (dont 2 sur réseau mobile) ; mesures p90 ; build sur machine vierge ; répétition générale devant ≥ 3 devs Flutter | NFR-11 (plafond) ; vérification de toutes les exigences | Les 8 critères de la DoD de [p-fn-risks-acceptance](../functional/risks-acceptance.md) cochés | J7 ; Q-06, Q-13, Q-14, Q-19, Q-24 | Machine de démo non disponible ; budget de répétitions (NFR-11) |
-| **J9** Talk | S | Dérouler les 3 actes en direct | Installation, test sono et projecteur sur place, démo | — | Métriques de succès de la fiche § 8 relevées (taux de réussite sans rejeu, nature des questions, feedback) | J8 ; Q-12 (échéance « au plus tôt ») | Réseau de la salle ; stress du direct |
-| **Au-delà** | — | Prolonger la démo | Voir [beyond.md](beyond.md) | Hors MVP | Chaque item fait l'objet d'un PDR avant tout travail | J9 | Dérive de périmètre avant le talk |
+| **J0** Cadrage et docs (en cours, relecture porteur en parallèle) | S | Vision partagée | Base `knowledge/`, spike Widgetbook, dossier `product/`, PDR 0001-0040 | — | `product_lint.py` sans erreur ; questions listées | — | Relecture qui rouvre une décision |
+| **J1** Spikes réduits — 29-30/10 | S | Lever les seules inconnues bloquantes | SP-10 (+ SP-01), SP-03, SP-02 réduit ; SP-04 à SP-07 absorbés dans J2, J3, J6, J7 ; SP-08 coupé (C1) ; SP-09 sans objet | Prépare NFR-01, NFR-10 | Chaque spike a un résultat écrit (✅/❌/⚠️) ; faits versés dans `knowledge/` | J0 ; aucune question ouverte ; levées : Q-07 (→ pdr-0028), Q-45 (sans objet → pdr-0028), Q-64 (→ pdr-0026) | SP-10 ❌ (MacBook) ; SP-03 ❌ (canal maison, Q-39) |
+| **J2** Walking skeleton — 31/10-1/11 | M | Prouver la chaîne complète, au plus mince | App Linux + orbe ; relais SDP backend Go, aucune clé dans l'app ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md), [rt-ephemeral-keys]) ; orchestrateur → 1 agent A2A → 1 surface ; compose ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md)) ; journal horodaté ; CI minimale ([pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md)) | FR-01, FR-02 (partiel), FR-04 (1 surface), NFR-09, NFR-10 ; instrumentation NFR-01/02/11 | Scénario « une phrase → une surface » vert en CI (fournisseurs simulés) et en réel ; aucune clé dans l'app ; `pubspec.lock` committé | J1 ; **ouvertes : Q-09, Q-25, Q-27, Q-39, Q-43, Q-46, Q-47, Q-48, Q-55, Q-63** ; levées : Q-03, Q-11, Q-15, Q-16, Q-29, Q-34, Q-37, Q-54, Q-56 | `genui_a2a` (A2A v0.3) ↔ `a2a-go` v2 (v1.0) |
+| **J3** Acte 1 « Créer » — 2-4/11 | L | « Prépare la release 3.4 » construit le tableau | 3 agents réels, chacun producteur de son A2UI ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md)) ; catalogue ; 4 surfaces ([pdr-0020](../decisions/pdr-0020-act1-four-surfaces.md)) ; rail ; panneau protocole ; étagère ; jeu de données ; remise à vide ; refus hors catalogue (RG-08) ; état neutre (RG-10) ; exemples d'écrans ([pdr-0023](../decisions/pdr-0023-example-guided-composition.md)) | FR-02, FR-03, FR-04, FR-05, FR-06, FR-11, NFR-02, NFR-03, NFR-06, NFR-08 | Scénario « Acte 1 » vert ; 1er squelette < 1,5 s, 4 surfaces < 8 s (indicatif, p90 en J8) ; RG-08 et RG-10 démontrés | J2 ; **ouvertes : Q-17, Q-22, Q-30, Q-31, Q-35, Q-44, Q-53** ; levées : Q-01, Q-02, Q-04, Q-08, Q-10, Q-23, Q-28, Q-33, Q-38, Q-59, Q-60, Q-61 | Latence de 3 agents LLM ; écran incohérent |
+| **J4** Acte 2 « Transformer » — 5/11 | M | Les surfaces mutent sur place | Mise à jour des composants et du data model ; filtre Android ; comparaison 3.3 ↔ 3.4 (coupable, C8) ; correction en cours (coupable, C7) | FR-07, FR-17 | Scénario « Acte 2 » vert (et « Corriger la demande » si non coupé) ; aucune surface recréée | J3 ; **ouvertes : Q-20, Q-21, Q-32** ; levée : Q-58 (→ pdr-0024) | Régénération complète par le LLM |
+| **J5** Acte 3 « Interagir » — 6/11 | M | Un clic repart vers l'agent, qui répond à la voix | Action A2UI → orchestrateur → agent Livraison → vrai résultat → voix + checklist | FR-08 | Scénario « Acte 3 » vert ; vrai résultat d'outil ([ma-real-tool-results]) | J3 ; **ouverte : Q-49** ; Q-20 (échéance J4) ; levée : Q-62 (→ pdr-0016) | Faux `{"status":"ok"}` ([proj-avw-risks]) |
+| **J6** Rejeu A2UI (acte 4) — 7/11 | S | Rejouer l'acte 1 au ralenti, sans réseau ni LLM | Enregistrement du flux A2UI seul ; lecture, pause, vitesse 0,25×-2× ; panneau protocole synchronisé ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) | FR-09 | Rejeu de l'acte 1 identique au direct, Wi-Fi coupé ; vitesse fonctionnelle | J3 ; **ouverte : Q-52** (pas-à-pas, reco : aucun, à confirmer) ; levées : Q-18, Q-36 (→ pdr-0032) ; sans objet : Q-50, Q-51 | Rejeu non déterministe |
+| **J7** Durcissement — 8-9/11 | M | Tenir en salle | Barge-in, « stop », faire-taire, micro coupé ; AEC Linux sur enceinte ; 60 i/s ; 24 px ; souris d'abord ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) ; instructions vocales réglées ([pdr-0037](../decisions/pdr-0037-voice-brise-delegated-instructions.md)) ; phrases de test des scénarios BDD par acte (parade R5 côté app ; script du speaker : sur demande du porteur) | FR-12 à FR-16, FR-18, FR-19, FR-20, NFR-01, NFR-04, NFR-05, NFR-12 | 5 scénarios « Couper la parole » verts ; barge-in 10/10 sur enceinte ; DevTools 60 i/s | J4, J5, J6 ; **ouvertes : Q-40, Q-41, Q-42** ; levées : Q-05 (→ pdr-0033), Q-26 (→ pdr-0037) ; Q-57 gérée par le porteur | Auto-interruption par la sono (test final : porteur) |
+| **J8** Gel et DoD — 10-11/11 | S | Figer une version sûre | Correctifs bloquants seulement ; p90 depuis les journaux ; CI verte ; bilan budget. Répétitions : gérées par le porteur, hors périmètre de l'assistant | NFR-11 (20 €, [pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md)) ; vérification de toutes les exigences | Critères DoD de [p-fn-risks-acceptance](../functional/risks-acceptance.md) côté assistant cochés (D4 retiré, pdr-0032) | J7 ; levées : Q-06 (→ pdr-0027), Q-13 (→ pdr-0030), Q-19 (→ pdr-0032) ; gérées par le porteur : Q-14, Q-24 | Correctif tardif qui casse la démo |
+| **J9** Talk — **jeu. 2026-11-12**, Meetup Flutter Nantes, 45 min | S | 3 actes en direct, puis le rejeu (acte 4) | Installation, son, choix direct / vidéo OBS : gérés par le porteur, hors périmètre de l'assistant ; slides : sur demande du porteur | — | Métriques de succès de la fiche § 8 | J8 ; levée : Q-12 (→ pdr-0027) | Réseau de la salle |
+| **Au-delà** | — | Prolonger la démo | Voir [beyond.md](beyond.md) | Hors MVP | Un PDR avant tout travail | J9 | Dérive de périmètre avant le talk |
+
+## Ordre de coupe (PROPOSITION de l'assistant, à valider par le porteur : Q-65)
+
+Du **moins** au **plus** essentiel. Déclencheur : un point de contrôle du calendrier manqué → couper dans l'ordre jusqu'à rattraper le retard. Les coupes C6 à C10 touchent des exigences de la fiche : elles passent par une PDR (`product-decide`) avant d'être appliquées.
+
+| Ordre | Coupe proposée | Gain estimé | Touche |
+|---|---|---|---|
+| C1 | SP-08 (Widgetbook × GenUI) et stories Widgetbook au-delà d'un état par composant | 0,5 j | outillage |
+| C2 | OTel + SigNoz : journal seul (Q-55) | 0,5 j | observabilité |
+| C3 | CI réduite à analyse + tests + build Linux (ni goldens ni `testWidgetbook`) | 0,5 j | [pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md) |
+| C4 | Pas de scénario Gherkin au-delà des 9 de la fiche (Q-63) ; revue visuelle | 0,5 j | Q-63 |
+| C5 | Raccourcis clavier : souris seule (déjà facultatifs, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) | 0,5 j | FR-11, FR-20, NFR-12 assouplies |
+| C6 | Should de J7 : FR-18 (bruit court) en simple réglage, FR-12 (couper le micro) retirée | 0,5 j | FR-12, FR-18 (Should) |
+| C7 | Should : FR-17 (correction en cours de génération) et FR-06 (étagère allumée, étagère statique) | 0,5-1 j | FR-06, FR-17 (Should) |
+| C8 | Acte 2 réduit au filtre Android, sans comparaison 3.3 ↔ 3.4 (Q-32) | 0,5 j | FR-07 (Must) gardée |
+| C9 | Rejeu réduit : lecture, pause, 0,5× et 1× seulement | 0,5 j | FR-09 (Must) partielle |
+| C10 | Acte 3 réduit : « Bloquer » seul, « Valider » affichée inactive ([pdr-0016](../decisions/pdr-0016-validate-release-action.md)) | 0,5 j | FR-08 (Must) gardée |
+
+**Jamais coupés** : acte 1 complet avec agents A2A réels, voix GPT-Live, barge-in et « stop » (FR-13, FR-16), aucune clé dans l'app (NFR-09), versions figées (NFR-10), rejeu de l'acte 1 sous une forme minimale.
+
+## Risques de délai
+
+| Id | Risque | Détecté au plus tard | Effet sur le calendrier | Parade |
+|---|---|---|---|---|
+| RD-1 | `genui` ne rend pas sous Linux malgré GStreamer (SP-10) | jeu. 29/10 soir | − 1 à 2 j (bascule MacBook) | Levé le 2026-10-29 (SP-10 ✅) |
+| RD-2 | `genui_a2a` (A2A v0.3) incompatible avec `a2a-go` v2 (v1.0) (SP-03) | ven. 30/10 midi | + 1 j | Couche `a2acompat` ou canal maison (Q-39) ; C1-C4 |
+| RD-3 | Questions ouvertes non tranchées à temps : 10 avant J2 (31/10), 7 avant J3 (2/11), 3 avant J4 (5/11) | 30/10, 1/11, 4/11 | jalon bloqué (règle 1) | Recommandations de l'assistant prêtes la veille de chaque échéance |
+| RD-4 | Capacité : 12 jours consécutifs supposés, week-ends compris (Q-65) | 29/10 | − 4 j si jours ouvrés seulement (8 au lieu de 12) | Couper C1 à C7 d'emblée |
+| RD-5 | Latence de 3 agents LLM réels au-delà de NFR-03 (8 s) | 1/11 (1ʳᵉ mesure J2) | + 0,5 à 1 j | LLM rapide (Q-17), exemples d'écrans ([pdr-0023](../decisions/pdr-0023-example-guided-composition.md)) ; réexamen de [pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md) |
+| RD-6 | Auto-interruption par l'enceinte découverte tard | 30/10 (essai sur enceinte en SP-02) | + 1 j en J7 | Essai précoce ; test sono final géré par le porteur |
+| RD-7 | Budget 20 € entamé par le développement | suivi quotidien du journal | arrêt des essais réels | Fournisseurs simulés en tests ; plafond `limits.budget` (proposition) |
+| RD-8 | Bogue bloquant d'une bêta (genui 0.10.4, Widgetbook 4) | n'importe quand | + 0,5 à 1 j | Versions figées ([pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md)) ; repli Widgetbook 3.25.0 |
 
 ## Règles de pilotage
 
-1. **Pas de jalon commencé avec une question bloquante ouverte.** La source de vérité est l'**échéance** de chaque question dans [open-questions.md](open-questions.md) (« Avant Jn ») ; la colonne « Dépend de » la reprend et `product_lint.py` vérifie que chaque question « Avant Jn » y figure. Elles se tranchent via le skill `product-decide`, qui crée un PDR.
-2. **TDD + BDD d'abord** : les scénarios Gherkin de [functional/features/](../functional/features/) sont écrits et rouges avant le code ([test-tdd-red-green-refactor], adr-0001 via [pdr-0011](../decisions/pdr-0011-adopt-knowledge-adrs.md)).
-3. **Mesurer tôt** : le journal A2UI horodaté existe dès J2, car NFR-02 et NFR-03 se mesurent avec lui (fiche § 5).
-4. **Le mode secours n'est pas un bonus** ([pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)) : J6 passe avant tout raffinement visuel.
-5. **Rien de l'Au-delà avant J9**, sauf décision explicite du porteur (cf. Q-10 pour l'agent tiers).
+1. **Pas de jalon commencé avec une question bloquante ouverte.** La source de vérité est l'**échéance** de chaque question dans [open-questions.md](open-questions.md) (« Avant Jn », avec sa date) ; la colonne « Dépend de » la reprend et `product_lint.py` le vérifie. Elles se tranchent via `product-decide`.
+2. **TDD + BDD d'abord** : les scénarios de [functional/features/](../functional/features/) sont écrits et rouges avant le code ([test-tdd-red-green-refactor], adr-0001 via [pdr-0011](../decisions/pdr-0011-adopt-knowledge-adrs.md)).
+3. **Mesurer tôt** : le journal A2UI horodaté existe dès J2 (fiche § 5).
+4. **Gel le 10/11** : après le lun. 9/11 au soir, aucune fonctionnalité ; un retard se règle par l'ordre de coupe, pas en entamant le gel.
+5. **Le rejeu reste Must** (FR-09, acte 4, [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) ; le secours vidéo est géré par le porteur, hors périmètre de l'assistant.
+6. **Rien de l'Au-delà avant J9**, sauf décision explicite du porteur (agent tiers écarté : pdr-0035).
 
 ## Correspondance avec le plan backend de production
 
-Le plan [p-rm-backend-production-plan](backend-production-plan.md) (statut `draft` ; ex-note `ma-backend-phase1-plan` de `knowledge/`, transférée le 2026-10-28) vise un produit Septeo (Keycloak, Kong, Temporal, MCP gateway). Pour la démo, seules les étapes 0 à 8 sont utiles en J1-J5 ; les étapes 9 à 12 relèvent de l'[Au-delà](beyond.md). Le périmètre exact du backend de démo reste ouvert (Q-15, Q-27).
+Le plan [p-rm-backend-production-plan](backend-production-plan.md) (statut `draft` ; ex-note `ma-backend-phase1-plan` de `knowledge/`, transférée le 2026-10-28) vise un produit Septeo (Keycloak, Kong, Temporal, MCP gateway). Il **n'est pas appliqué à la démo**, remplacée par un déploiement local `docker compose` ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md)). Ses étapes restent une référence technique ; les étapes 9 à 12 relèvent de l'[Au-delà](beyond.md).
 
 ## Phasage protocolaire d'origine
 
@@ -81,4 +110,4 @@ Origine : knowledge [proto-stack-recommendation] (ex-titre « Stack protocolaire
 - **Phase 2 : ouverture** : A2A vers des agents spécialisés (SDK officiel Python, Go ou Java en v1.0) ; AG-UI (`ag_ui`) si le canal doit transporter plus que de l'A2UI ; média vocal toujours en WebRTC direct.
 - **Critères de passage en phase 2** : plusieurs clients (web, mobile, desktop) partageant les agents ; secrets ou clés tierces hors de l'app ; tâches longues avec push (FCM) en arrière-plan.
 
-⚠️ Le produit utilise des agents A2A dès le MVP (fiche § 1, [p-ar-backend](../architecture/backend.md)) alors que ce phasage d'origine les plaçait en phase 2 ; agent d'un autre éditeur : Q-10 ; vrais serveurs A2A séparés : Q-16.
+Le produit utilise des agents A2A **réels** dès le MVP ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), fiche § 1), alors que ce phasage d'origine les plaçait en phase 2 ; pas d'agent d'un autre éditeur ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md)).

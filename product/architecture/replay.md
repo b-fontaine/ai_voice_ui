@@ -1,79 +1,69 @@
 ---
 id: p-ar-replay
-title: Journal de session, rejeu et mode secours
+title: Journal A2UI et rejeu (acte 4)
 area: architecture
 status: draft
 updated: 2026-10-29
-sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages, knowledge:ma-otel-genai-spans]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, rt-graceful-close, rt-transcription, ma-otel-genai-spans, ma-voice-agent-evals, pdr-0018-a2ui-v09-genui-0-10-4]
-tags: [rejeu, replay, journal, mode-secours, determinisme, resilience]
+sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
+tags: [rejeu, replay, journal, acte-4, determinisme]
 ---
-# Journal de session, rejeu et mode secours
+# Journal A2UI et rejeu (acte 4)
 
-**En bref.** Chaque session écrit un **journal horodaté** de tout ce qui atteint l'écran (transcript, états de l'orbe, activité des agents, messages A2UI bruts, actions). Le lecteur de rejeu réinjecte ce journal dans le **même port** `SessionEventSource` que le direct : le canevas se reconstruit à l'identique, sans réseau. C'est à la fois la fonction « Rejouer » (acte 4, FR-09) et le **mode secours** (FR-10, NFR-07), exigence Must ([pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)).
+**En bref.** Chaque session écrit un **journal horodaté du flux A2UI** : les messages v0.9 tels que reçus par l'app, et rien d'autre n'est rejoué (Q-18 : « Flux A2UI seul »). Ni voix, ni transcription, ni actions utilisateur. Seuls des marqueurs de mesure, non rejoués, s'y ajoutent (proposition de l'assistant, voir plus bas). Le lecteur réinjecte ce journal dans le **même port** `SessionEventSource` que le direct : le canevas se reconstruit à l'identique, de 0,25× à 2×, sans réseau ni LLM. C'est l'**acte 4** de la démo (FR-09, Must). Il n'y a **plus de mode secours intégré** : le secours est une vidéo OBS gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md), qui remplace [pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)).
 
-> Statut : **draft**. Conception proposée par l'assistant.
+> Statut : **draft**. Conception proposée par l'assistant ; périmètre décidé par le porteur (pdr-0032).
 
 ## Exigences portées
 
 | Exigence | Contrainte | Mécanisme |
 |---|---|---|
-| FR-09 | toute la génération enregistrée, rejouable de 0,25× à 2× | journal JSONL + horloge virtuelle à vitesse variable |
-| FR-10 | un raccourci bascule en mode secours | raccourci `B` (proposé, E5) → `FallbackRequested` |
-| NFR-07 | bascule < 2 s, sans redémarrer l'app | session de secours déjà chargée en mémoire ; changement de source, pas de redémarrage |
-| NFR-08 | données figées, seule la composition varie | jeu de données figé derrière les agents + snapshot de leurs réponses |
-| NFR-02, NFR-03 | mesure par « horodatage du journal A2UI » | horodatages monotones relatifs au début de session |
-| Acte 4 | rejeu au ralenti, synchronisé avec le JSON | le panneau protocole lit les mêmes entrées que le canevas |
+| FR-09 | génération enregistrée, rejouable de 0,25× à 2× | journal JSONL du flux A2UI + horloge virtuelle à vitesse variable |
+| Acte 4 | l'acte 1 repasse au ralenti, synchronisé avec le JSON (fiche § 2) | le panneau protocole lit les mêmes entrées que le canevas |
+| NFR-02, NFR-03 | mesure par « horodatage du journal A2UI » | horodatages monotones de l'app ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) |
+| NFR-08 | données figées, seule la composition varie | jeu figé derrière les agents + snapshot de leurs réponses |
+| ~~FR-10, NFR-07~~ | retirées par pdr-0032 | — |
 
 ## Format du journal (proposition)
 
-En-tête (1re ligne) : `schema`, version de l'app, `catalogId`, version A2UI (valeur de `a2ui.version`, `v0.9`, [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), version du jeu de données, date, profil (répétition / direct).
+En-tête (1re ligne) : `schema`, version de l'app, `catalogId`, version A2UI (`a2ui.version` = `v0.9`, [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), version du jeu de données, date.
 
 Une ligne JSON par événement :
 
 | Champ | Contenu |
 |---|---|
 | `seq` | numéro d'ordre strict (l'ordre A2UI est obligatoire, [genui-a2ui-messages]) |
-| `t_ms` | temps depuis le début de session (horloge monotone) |
-| `kind` | `transcript`, `orb`, `agent`, `a2ui`, `action`, `marker` |
-| `payload` | message A2UI **brut** tel que reçu, ou événement normalisé (`TranscriptSegment{role, text, startMs, final}`, [rt-transcription]) |
-| `corr` | `delegation_id`, révision de tâche, `surfaceId`, id de composant (sert au lien protocole ↔ composant, FR-05) |
+| `t_ms` | temps depuis le début de session, horloge monotone de l'app |
+| `kind` | `a2ui` (rejoué) ou `marker` (mesure, non rejoué) |
+| `payload` | message A2UI **brut** tel que reçu |
+| `corr` | agent émetteur, `surfaceId`, id de composant (lien protocole ↔ composant, FR-05) |
 
-Les `marker` balisent la fin de phrase du speaker et le début de chaque acte : ils servent au calcul de NFR-02/NFR-03.
+Les `marker` (proposition de l'assistant) balisent la fin de phrase du speaker et le début de chaque acte : ils servent au seul calcul de NFR-02 et NFR-03, le lecteur les ignore. Ils ne contiennent pas le texte de la phrase. Les actions utilisateur ne sont pas enregistrées : leurs effets arrivent déjà sous forme de messages A2UI des agents.
 
 ## Où enregistrer
 
 | Journal | Rôle | Proposition |
 |---|---|---|
-| Client | source du rejeu et du mode secours (doit marcher **sans réseau**) | **canonique** |
-| Backend (`session-recorder`) | mesure des latences côté serveur, diagnostic, snapshots d'agents | complémentaire |
+| Client | source du rejeu de l'acte 4 et de la mesure | **canonique** |
+| Backend (`session-recorder`) | diagnostic, snapshots des réponses d'agents | complémentaire |
+
+Le journal vit le temps de la session : pas de persistance au-delà (fiche § 3). Les fichiers des répétitions servent à la mesure ([p-ar-quality](quality.md)).
 
 ## Lecteur de rejeu
 
 ```mermaid
 stateDiagram-v2
   [*] --> Direct
-  Direct --> Secours: B (FallbackRequested)
-  Direct --> Rejeu: fin d'acte 1 + demande de rejeu
-  Rejeu --> Rejeu: vitesse 0,25×–2× / ←→ / seek
-  Secours --> Secours: ←→ / vitesse
-  Rejeu --> Direct: R (remise à vide) puis nouvelle session
-  Secours --> Direct: retour explicite (à définir)
+  Direct --> Rejeu: acte 4 (fin de l'acte 1 ou plus tard)
+  Rejeu --> Rejeu: lecture / pause / vitesse 0,25×–2× / seek
+  Rejeu --> Direct: remise à vide puis nouvelle demande
 ```
 
 - **Horloge virtuelle** : les événements sont réémis à `t_ms / vitesse`.
 - **Seek arrière** : l'A2UI est incrémental ; on remet le canevas à vide (nouvelle portée `SurfaceController`) puis on rejoue instantanément jusqu'à la position ([genui-multiple-surfaces]).
-- **←/→** : pas d'un événement A2UI (proposition), synchronisé avec la mise en évidence du panneau protocole.
-- **Indicateur discret** dans un coin en mode secours (fiche §6, état « Secours » de l'orbe).
-
-## Bascule en mode secours (< 2 s)
-
-1. `FallbackRequested` (raccourci).
-2. La session voix est **arrêtée** (`stop`, pas `dispose`) avec un timeout de garde, sans bloquer la bascule ([rt-graceful-close]).
-3. Le port `SessionEventSource` passe sur `ReplaySessionSource` avec la **session de référence** préchargée au démarrage.
-4. Le canevas est remis à vide puis rejoué ; l'indicateur « Secours » s'affiche.
-
-La session de référence est un journal de répétition **choisi et committé** (fixture), embarqué avec l'app. Cela suppose une persistance au-delà de la session, alors que la fiche l'exclut du périmètre (écart **E18**, [Q-36](../roadmap/open-questions.md) et [Q-50](../roadmap/open-questions.md)).
+- **Pilotage** : à la souris (lecture, pause, curseur de vitesse) ; raccourcis facultatifs ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)). Pas-à-pas ←/→ : Q-52 ouverte ; proposition de l'assistant : aucun pas-à-pas imposé.
+- Le panneau protocole met en évidence le message rejoué, synchronisé avec son composant.
+- Le rejeu ne touche pas à la session voix : il n'y a rien à dire pendant le rejeu, le speaker commente.
 
 ## Déterminisme
 
@@ -86,17 +76,14 @@ La session de référence est un journal de répétition **choisi et committé**
 | Usage | Comment | Source |
 |---|---|---|
 | Tests BDD et widget | fake de transport qui rejoue un journal (frontière réseau) | [test-mock-boundaries-only] |
-| Widgetbook | scénarios `CachedSurface` par payload A2UI enregistré : quelques messages A2UI réels en fixtures JSON versionnées, un scénario par payload, sans réseau ni LLM dans le catalogue (origine : knowledge [ds-widgetbook-4-genui], transféré le 2026-10-28 ; usage « démo du talk » : [frontend.md](frontend.md)) | [ds-widgetbook-4-genui] |
+| Widgetbook | scénarios `CachedSurface` par payload A2UI enregistré, en fixtures JSON versionnées, sans réseau ni LLM ([frontend.md](frontend.md)) | [ds-widgetbook-4-genui] |
 | Mesure des NFR | script qui calcule p90 sur 10 répétitions | [p-ar-quality](quality.md), [ma-voice-agent-evals] |
 
-## Données personnelles
+## Données personnelles et secrets
 
-Le journal contient le transcript du speaker, pas l'audio (par défaut, ne pas enregistrer l'audio : [ma-otel-genai-spans]). Pas de secret dans les payloads ([p-ar-security](security.md)).
+Le journal ne contient ni audio ni transcription (pdr-0032). Pas de secret dans les payloads A2UI ([p-ar-security](security.md)).
 
-## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
+## Hors périmètre de l'app
 
-- **Voix en rejeu** : rejeu muet commenté par le speaker, ou audio de l'IA enregistré et rejoué (nécessite une capture de la sortie et un format) → Q-18.
-- **Session de référence** : laquelle, enregistrée quand, rafraîchie à chaque changement de catalogue ou de jeu de données → Q-50, Q-36.
-- **Détection automatique** de perte réseau pour proposer la bascule, ou bascule uniquement manuelle (fiche : raccourci) → Q-51.
-- **Sortie du mode secours** et retour au direct pendant le talk → Q-51.
-- **Pas de ←/→** : un événement A2UI, une surface, ou un pas de temps → Q-52.
+- **Secours** : vidéo OBS enregistrée et lancée par le porteur ; décision direct / vidéo prise par lui sur place. Géré par le porteur, hors périmètre de l'assistant ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)).
+- Session de référence, bascule automatique, retour au direct : sans objet (Q-36, Q-50, Q-51).

@@ -3,9 +3,9 @@ id: pdr-0008-single-screen-show-the-making
 title: "PDR-0008 — Écran unique en 6 zones qui montre la fabrication de l'interface"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/design-example.pdf, knowledge:genui-a2ui-messages, knowledge:ux-genui-streaming-loading]
-links: [p-fn-screen, p-fn-mockups, p-fn-requirements, p-fn-nfr, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, genui-a2ui-messages, ux-genui-streaming-loading, genui-multiple-surfaces]
+links: [p-fn-screen, p-fn-mockups, p-fn-requirements, p-fn-nfr, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, genui-a2ui-messages, ux-genui-streaming-loading, genui-multiple-surfaces, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [pdr, decision, screen, layout, pedagogy]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -69,5 +69,6 @@ Détail des zones, états de l'orbe et modes d'interaction : [p-fn-screen](../fu
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1, § 6) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR ; écart E3 signalé | Assistant (mise en forme) |
+| 2026-10-29 | Reconfirmée ; la zone Rejeu ne porte plus le mode secours, elle sert l'acte 4 ([pdr-0032](pdr-0032-obs-video-fallback-a2ui-replay-act.md)) ; raccourcis facultatifs, actions à la souris ([pdr-0033](pdr-0033-optional-shortcuts-mouse-first.md), Q-05) | Assistant, sur parole du porteur (conversation du 2026-10-29) |
 
 Pas d'archive brute.

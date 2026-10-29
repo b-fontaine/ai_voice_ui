@@ -5,7 +5,7 @@ area: functional
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, knowledge:genui-a2ui-overview, knowledge:rt-barge-in]
-links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4]
+links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0032-obs-video-fallback-a2ui-replay-act]
 tags: [glossaire, vocabulaire]
 ---
 # Glossaire
@@ -31,7 +31,7 @@ tags: [glossaire, vocabulaire]
 | Terme | Définition | Source |
 |---|---|---|
 | **Canevas (génératif)** | Zone centrale qui affiche les surfaces générées ; vide au départ. | Fiche § 6 |
-| **Orbe (vocal)** | Indicateur animé de l'état de la conversation : Repos, Écoute, Réflexion, Parole, Interrompue, Micro coupé, Secours. | Fiche § 6 |
+| **Orbe (vocal)** | Indicateur animé de l'état de la conversation : Repos, Écoute, Réflexion, Parole, Interrompue, Micro coupé (~~Secours~~ : retiré, pdr-0032). | Fiche § 6 |
 | **Rail des agents** | Zone qui montre l'orchestrateur et les agents ; un agent s'allume quand il est sollicité. Libellé maquette : « AGENTS A2A ». | Fiche § 6 ; maquettes |
 | **Flux du protocole** | Zone qui liste les messages A2UI envoyés par les agents ; le message en cours est relié à son composant. Libellés : « panneau protocole », « panneau JSON », « FLUX A2UI ». | Fiche § 2, § 4, § 6 ; maquettes |
 | **Étagère du catalogue** | Zone qui montre les composants disponibles ; celui qu'utilise l'agent s'allume. | Fiche § 6 |
@@ -70,7 +70,7 @@ tags: [glossaire, vocabulaire]
 
 | Terme | Définition | Source |
 |---|---|---|
-| **Enregistrement** | Capture de toute la génération d'une session (contenu exact : Q-18). | FR-09 |
+| **Enregistrement** | Capture du flux A2UI d'une session (ni voix ni transcription : Q-18, [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)). | FR-09 |
 | **Rejeu** | Relecture d'une génération enregistrée, de 0,25× à 2×, avec un curseur. | FR-09, fiche § 6 |
-| **Mode secours** | Rejeu d'une session enregistrée déclenché par un raccourci quand le direct échoue ; indicateur discret. | FR-10, NFR-07 |
+| **Mode secours** | ~~Rejeu d'une session enregistrée déclenché par un raccourci quand le direct échoue ; indicateur discret.~~ Retiré (pdr-0032) : le secours est une vidéo OBS gérée par le porteur. | ~~FR-10, NFR-07~~ |
 | **Répétition** | Exécution complète de la démo hors scène, qui sert à mesurer les NFR et à valider la DoD. | Fiche § 5, § 8 |

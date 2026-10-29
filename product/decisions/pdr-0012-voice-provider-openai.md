@@ -1,20 +1,22 @@
 ---
 id: pdr-0012-voice-provider-openai
-title: "PDR-0012 — Fournisseur voix de la démo : OpenAI gpt-live-1 (proposée)"
+title: "PDR-0012 — Fournisseur voix de la démo : OpenAI gpt-live-1"
 area: decisions
-status: proposed
-updated: 2026-10-28
+status: validated
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p7, knowledge:rt-gpt-live-overview, knowledge:rt-provider-abstraction, knowledge:rt-ephemeral-keys, knowledge:rt-gemini-live-models, knowledge:rt-gemini-firebase-ai-dart, knowledge:adr-0003-backend-go]
 links: [p-fn-nfr, p-ar-frontend, p-ar-backend, p-ar-security, p-ar-stack, p-rm-spikes, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0009-french-only, pdr-0011-adopt-knowledge-adrs, rt-gpt-live-overview, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-provider-abstraction, rt-ephemeral-keys, rt-gemini-live-models, rt-gemini-firebase-ai-dart, rt-gemini-ephemeral-tokens, rt-barge-in, adr-0002-orchestrator-backend, adr-0003-backend-go]
-tags: [pdr, decision, voice, openai, gpt-live, gemini, proposed]
-decision_status: proposée
-decided_on: 2026-10-28
-decided_by: "En attente — Benoît FONTAINE (porteur) ; proposée par l'assistant"
+tags: [pdr, decision, voice, openai, gpt-live, gemini]
+decision_status: acceptée
+decided_on: 2026-10-29
+decided_by: "Benoît FONTAINE (porteur), conversation avec l'assistant du 2026-10-29"
 scope: technique
 supersedes: []
 superseded_by: null
 ---
-# PDR-0012 — Fournisseur voix : OpenAI `gpt-live-1` (proposée)
+# PDR-0012 — Fournisseur voix : OpenAI `gpt-live-1`
+
+> **Acceptée le 2026-10-29** par le porteur (Q-11 : « Je confirme »). Les mentions « proposée » ci-dessous décrivent l'état du 2026-10-28.
 
 > **En bref.** La fiche ne nomme pas le fournisseur voix, mais NFR-09 et NFR-11 parlent d'OpenAI. L'assistant propose de retenir `gpt-live-1` pour la démo, en gardant le port `VoiceSession` pour pouvoir basculer vers Gemini Live. **Décision attendue du porteur.** `decided_on` est la date de proposition.
 
@@ -65,6 +67,6 @@ Aucune option n'est écartée tant que le porteur n'a pas décidé. Points faibl
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-28 | Proposée, d'après NFR-09/NFR-11 et la base knowledge | Assistant |
-| — | Décision attendue | Benoît FONTAINE (porteur) |
+| 2026-10-29 | Acceptée, Q-11 : « Je confirme » (conversation) | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

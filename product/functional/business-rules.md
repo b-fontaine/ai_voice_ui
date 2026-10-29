@@ -5,7 +5,7 @@ area: functional
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines]
+links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -57,15 +57,15 @@ Repère technique : couper la voix n'annule pas d'elle-même les outils en cours
 | RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; ⚠️ écart E17 · Q-35 |
 | RG-30 | « Valider la release » se comporte comme « Bloquer la release » (RG-18, RG-28) : clic transmis à Livraison, confirmation vocale, statut de la checklist mis à jour (par exemple « Validée »). | § 7 (Barre d'actions) ; [pdr-0016](../decisions/pdr-0016-validate-release-action.md) (Q-62) |
 
-## Régie de scène et secours
+## Régie de scène et rejeu
 
 | RG | Règle | Source |
 |---|---|---|
-| RG-19 | Toute la génération est enregistrée et rejouable de 0,25× à 2×. | FR-09, § 6 (zone rejeu) |
-| RG-20 | Le mode secours rejoue une session enregistrée ; il s'active par un seul raccourci, en moins de 2 s, sans redémarrer l'app, et un indicateur discret le signale. | FR-10, NFR-07, S-04, § 8 |
-| RG-21 | Toute action critique a un raccourci clavier ; le clavier est réservé au speaker. | NFR-12, § 6 |
+| RG-19 | Toute la génération est enregistrée et rejouable de 0,25× à 2×. Seul le **flux A2UI** est enregistré (ni voix ni transcription) ; le rejeu est l'**acte 4** et n'appelle ni réseau ni LLM. | FR-09, § 6 (zone rejeu) ; [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) |
+| RG-20 | ~~Le mode secours rejoue une session enregistrée ; il s'active par un seul raccourci, en moins de 2 s, sans redémarrer l'app, et un indicateur discret le signale.~~ **Retirée (pdr-0032)** : le secours est une vidéo OBS gérée par le porteur. | ~~FR-10, NFR-07, S-04~~, § 8 ; [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) |
+| RG-21 | Toute action critique est faisable **à la souris** (contrôle visible) ; un raccourci clavier s'y ajoute s'il ne pose pas de problème ; le clavier est réservé au speaker. | NFR-12, § 6 ; assouplie par [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) |
 | RG-22 | Couper le micro (FR-12) ou faire taire l'IA au clavier (FR-20) **ne ferme pas** la session. | FR-12, FR-20, S-09 |
-| RG-23 | Un raccourci remet le canevas à l'état vide (retour à RG-01). | FR-11 |
+| RG-23 | Une commande (bouton, et raccourci s'il ne pose pas de problème) remet le canevas à l'état vide (retour à RG-01). | FR-11 ; [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) |
 
 ## Données et langue
 
@@ -82,7 +82,7 @@ Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème
 
 - RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21). Son critère iOS est sans portée : uniquement Android (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
 - RG-17 : tranché (E20 · Q-59, [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)) : répliques du speaker et de l'IA, réplique coupée tronquée ; la détection de l'interruption reste ouverte (Q-40).
-- Interactions vocales propres à chaque composant (fiche § 7 : détail d'un indicateur, autre période ou plateforme, filtre des crashs, avis d'une plateforme) : aucune règle ne les porte tant que leur place dans le MVP n'est pas décidée (Q-61).
+- Interactions vocales propres à chaque composant (fiche § 7) : tranché (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) : couvertes par FR-07 / RG-06 uniquement, sans règle dédiée.
 - RG-14 / RG-15 : modèle de surfaces tranché (E11 · Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : N surfaces dans une grille de l'app ([genui-multiple-surfaces]).
 
 Tous renvoient à [p-rm-open-questions](../roadmap/open-questions.md).

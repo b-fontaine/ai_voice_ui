@@ -3,9 +3,9 @@ id: pdr-0001-conference-demo-deliverable
 title: "PDR-0001 — Le livrable est une démo de conférence, pas un produit de production"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p11]
-links: [p-fn-vision, p-fn-scope, p-fn-risks-acceptance, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, adr-0008-ds-widgetbook-4-beta, adr-0002-orchestrator-backend]
+links: [p-fn-vision, p-fn-scope, p-fn-risks-acceptance, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, pdr-0004-mvp-three-acts, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, adr-0008-ds-widgetbook-4-beta, adr-0002-orchestrator-backend, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act]
 tags: [pdr, decision, scope, conference, demo]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -62,5 +62,6 @@ Le livrable est une **application de démonstration** dont le succès se mesure 
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
+| 2026-10-29 | Reconfirmée ; deux conséquences changent : le secours n'est plus un mode de l'app mais une vidéo gérée par le porteur ([pdr-0032](pdr-0032-obs-video-fallback-a2ui-replay-act.md)) ; l'écart JWT / pas d'auth est levé par le déploiement local sur `127.0.0.1` ([pdr-0029](pdr-0029-local-docker-compose-hosting.md)) | Assistant, sur parole du porteur : « C'est une démo, tout sera en local » |
 
 Pas d'archive brute.
