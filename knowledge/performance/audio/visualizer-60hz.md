@@ -7,7 +7,7 @@ updated: 2026-10-26
 sources:
   - https://api.flutter.dev/flutter/rendering/CustomPainter-class.html
   - https://api.flutter.dev/flutter/widgets/RepaintBoundary-class.html
-links: [perf-repaint-boundary, perf-bloc-scoped-rebuilds, perf-audio-isolates, proj-avw-voice-runners, bloc-no-non-serializable-state]
+links: [rt-gpt-live-output-level, perf-repaint-boundary, perf-bloc-scoped-rebuilds, perf-audio-isolates, proj-avw-voice-runners, bloc-no-non-serializable-state]
 ---
 # Le niveau audio va au painter, pas au state
 

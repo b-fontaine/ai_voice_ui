@@ -3,9 +3,9 @@ id: rt-gpt-live-sideband
 title: GPT-Live — contrôle serveur (sideband attach)
 tags: [openai, gpt-live, backend, websocket, tools, security, multi-agent]
 status: verified
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [https://developers.openai.com/api/docs/guides/voice-server-controls?api=live, https://developers.openai.com/api/docs/guides/voice-sip?api=live, https://developers.openai.com/api/docs/guides/voice-webrtc?api=live]
-links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-ephemeral-keys, ma-target-architecture, ma-where-to-run-agents]
+links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-output-level, rt-ephemeral-keys, ma-target-architecture, ma-where-to-run-agents]
 ---
 # GPT-Live : le client porte l'audio, le serveur porte la logique
 
@@ -24,7 +24,7 @@ Un serveur peut s'attacher à une session déjà créée en WebRTC (création pa
 
 **Ce que le serveur reçoit :**
 - les transcripts et les événements de délégation
-- une copie de l'audio (`session.input_audio.append` / `session.output_audio.delta`, en PCM16LE mono 24 kHz base64)
+- une copie de l'audio (`session.input_audio.append` / `session.output_audio.delta`, en PCM16LE mono 24 kHz base64) ; la sortie arrive en continu, en temps réel ([[rt-gpt-live-output-level]])
 - `session.closed`
 
 **Dans une architecture « agent vocal + orchestrateur backend »** (opinion) : l'orchestrateur attache le sideband et traite la délégation `client` ([[rt-gpt-live-delegation]]). Outils, autorisations, règles métier et credentials restent côté serveur ; le client (ex. Flutter) ne gère que l'audio et le rendu A2UI ([[ma-target-architecture]]).

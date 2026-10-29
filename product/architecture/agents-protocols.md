@@ -115,7 +115,7 @@ sequenceDiagram
   Note over App: aucune surface détruite (FR-15)
 ```
 
-⚠️ GPT-Live n'expose **aucun événement d'interruption** ([rt-barge-in], [rt-gpt-live-lifecycle]) : l'état « Interrompue » de l'orbe doit être **inféré** côté app. Méthode à valider par spike (voir Points ouverts). Le raccourci « silence » (FR-20) est le secours.
+⚠️ GPT-Live n'expose **aucun événement d'interruption** ([rt-barge-in], [rt-gpt-live-lifecycle]) : l'état « Interrompue » de l'orbe doit être **inféré** côté app. Méthode à valider par spike (voir Points ouverts). Mesuré en SP-02 (2026-10-29) : l'IA se tait dans le bloc de 200 ms du premier mot d'interruption (essai automatisé) ; essai réel dans un navigateur (AEC activée, enceintes du PC) : coupure nette, puis 60 s de parole continue sans auto-interruption ([rt-barge-in], [rt-gpt-live-lifecycle]) ; flutter_webrtc sous Linux et sono de la salle non testés. Le raccourci « silence » (FR-20) est le secours.
 
 ## « Stop » / « annule » (FR-16)
 

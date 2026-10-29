@@ -1,0 +1,13 @@
+# Binaires et audios : jamais versionnés
+*.ogg
+*.opus
+*.wav
+*.pcm
+*.mp3
+*.jsonl
+*.exe
+*.test
+relay/relay
+client/client
+tts/tts
+bin/

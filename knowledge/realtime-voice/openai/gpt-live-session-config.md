@@ -3,7 +3,7 @@ id: rt-gpt-live-session-config
 title: GPT-Live — configuration de session et voix
 tags: [openai, gpt-live, voices, config, french]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-29
 sources: [https://developers.openai.com/api/docs/guides/live-conversations.md]
 links: [rt-gpt-live-overview, rt-gpt-live-delegation]
 ---
@@ -18,10 +18,10 @@ Les champs de `session` sont fixés à la création. La plupart sont **immuables
 | `input` | Historique texte : ≤ 128 messages et 8 192 tokens. Rôles `developer`, `user`, `assistant`. |
 | `audio.output.voice` | `marin` par défaut. Immuable. |
 | `audio.format` | WebSocket uniquement. À omettre en WebRTC. |
-| `delegation.type` | `client` (par défaut si omis ou null) ou `responses`. Immuable. |
+| `delegation.type` | `client` (par défaut si omis ou null), `responses` ou `decisions`. Immuable ([[rt-gpt-live-delegation]]). |
 | `store` | `false` par défaut. `true` permet le fork. Incompatible avec ZDR. |
 
-**Voix FR (au 2026-10-26) :** `brise`, `sillage`.
+**Voix FR (au 2026-10-26) :** `brise`, `sillage`. Le champ voix est une chaîne libre côté SDK ; `brise` (français) a été acceptée en essai réel le 2026-10-29.
 
 Autres langues :
 - EN : quartz, ripple, vesper, willow, stone, gleam, meridian, beacon, delta, cinder

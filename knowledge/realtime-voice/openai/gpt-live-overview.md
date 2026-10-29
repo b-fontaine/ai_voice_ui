@@ -3,9 +3,9 @@ id: rt-gpt-live-overview
 title: GPT-Live (gpt-live-1) — fiche modèle
 tags: [openai, gpt-live, voice-to-voice, pricing, models]
 status: verified
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [https://developers.openai.com/api/docs/models/gpt-live-1, https://developers.openai.com/api/docs/guides/live.md]
-links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-openai-realtime-vs-live, rt-gpt-live-session-config]
+links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-openai-realtime-vs-live, rt-gpt-live-session-config, rt-gpt-live-delegation-latency, rt-gpt-live-output-level]
 ---
 # GPT-Live (`gpt-live-1`)
 
@@ -17,7 +17,7 @@ Infos relevées le 2026-10-26 :
 - **Endpoint :** uniquement Live, `v1/live/sessions`. Pas de Realtime, Chat Completions ni Responses.
 - **Fonctionnalités :** streaming et function calling. Pas de structured outputs.
 - **Prix :** 0,05 $ par minute, facturé à la seconde. Le backend (modèle et outils) est facturé à part.
-- **WebRTC :** 15 s sont facturées dès l'initialisation, puis créditées sur la durée réelle.
+- **WebRTC :** 15 s sont facturées dès l'initialisation, puis créditées sur la durée réelle (15 s minimum par session, constaté le 2026-10-29).
 - **Sessions concurrentes :** 50 (Build), 300 (Launch), 500 (Grow). Pas de free tier.
 - **Knowledge cutoff :** 2025-07-31.
 
@@ -35,4 +35,5 @@ Cette séparation correspond naturellement au couple « agent vocal + orchestrat
 
 ## ⚠️ Pièges
 - `gpt-live-1` **n'est pas** un modèle Realtime : `wss://…/v1/realtime?model=gpt-live-1` ne fonctionne pas. Voir [[rt-openai-realtime-vs-live]].
-- La doc ne donne pas de valeur pour la durée maximale d'une session (raison de clôture `expired`).
+- Durée maximale d'une session : non documentée, mais mesurée le 2026-10-29 : `session.expires_at` = +7199 s, soit **2 h** ([[rt-gpt-live-lifecycle]]).
+- Délégation : trois modes (`client` par défaut, `responses`, `decisions`) ([[rt-gpt-live-delegation]]).

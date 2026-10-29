@@ -1,7 +1,7 @@
 # Index racine de la base de connaissances (zettelkasten). Lire en premier.
 # Procédure : tasks → ids ; sinon keywords → domaine → index du domaine → notes ; suivre links sur 1 niveau.
 version: 1
-updated: 2026-10-28
+updated: 2026-10-29
 conventions: _conventions.md
 tags_index: tags.yaml
 lint: python3 -I knowledge/_tools/kb_lint.py
@@ -87,13 +87,13 @@ entrypoints:
 
 tasks:
   - task: "Implémenter une session voix OpenAI (GPT-Live / WebRTC)"
-    notes: [rt-gpt-live-overview, rt-openai-realtime-vs-live, rt-gpt-live-webrtc-session, rt-flutter-webrtc-gpt-live-connect, rt-gpt-live-session-config, rt-gpt-live-lifecycle, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-ephemeral-keys, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-echo-cancellation, rt-graceful-close, proj-avw-voice-runners, proj-avw-risks]
+    notes: [rt-gpt-live-overview, rt-openai-realtime-vs-live, rt-gpt-live-webrtc-session, rt-flutter-webrtc-gpt-live-connect, rt-gpt-live-session-config, rt-gpt-live-lifecycle, rt-gpt-live-delegation, rt-gpt-live-delegation-latency, rt-gpt-live-sideband, rt-gpt-live-output-level, rt-barge-in, rt-ephemeral-keys, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-echo-cancellation, rt-graceful-close, proj-avw-voice-runners, proj-avw-risks]
   - task: "Implémenter une session voix Gemini Live"
     notes: [rt-gemini-live-models, rt-gemini-38-migration, rt-gemini-firebase-ai-dart, rt-gemini-audio-vad, rt-gemini-function-calling, rt-gemini-session-limits, rt-gemini-ephemeral-tokens, perf-audio-latency, perf-audio-packages, rt-echo-cancellation, proj-avw-voice-runners, proj-avw-risks]
   - task: "Abstraire un fournisseur voix (runner / VoiceSession)"
     notes: [rt-provider-abstraction, rt-transcription, rt-barge-in, rt-graceful-close, di-named-implementations, di-dispose-method, test-realtime-fake-runner, proj-avw-voice-runners, proj-avw-risks]
   - task: "Exposer un outil à l'agent vocal / déléguer à l'orchestrateur"
-    notes: [rt-tool-calling-voice, rt-gpt-live-delegation, rt-gemini-function-calling, ma-target-architecture, ma-real-tool-results, ma-filler-acknowledgements, ma-realtime-handoff-limits, ma-guardrails, rt-latency]
+    notes: [rt-tool-calling-voice, rt-gpt-live-delegation, rt-gpt-live-delegation-latency, rt-gemini-function-calling, ma-target-architecture, ma-real-tool-results, ma-filler-acknowledgements, ma-realtime-handoff-limits, ma-guardrails, rt-latency]
   - task: "Ajouter un Bloc"
     notes: [bloc-no-cubit, bloc-sealed-freezed, bloc-state-modeling, bloc-naming, bloc-event-transformers, bloc-emit-foreach, bloc-no-non-serializable-state, bloc-providers-selector, perf-bloc-scoped-rebuilds, di-registration-annotations, di-no-service-locator, test-bloc-test]
   - task: "Enregistrer une dépendance (get_it / injectable)"
