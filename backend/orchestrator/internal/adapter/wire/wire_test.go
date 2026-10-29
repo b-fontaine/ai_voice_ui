@@ -24,6 +24,7 @@ func TestWireDataCoversAllPayloads(t *testing.T) {
 		{"Usage", domain.Usage{Seconds: 1.5, ContextRatio: 0.1}, `{"seconds":1.5,"context_ratio":0.1}`},
 		{"A2UI", domain.A2UI{Message: map[string]any{"version": "v0.9"}}, `{"version":"v0.9"}`},
 		{"AgentActivity", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking}, `{"agent":"Qualité","task":"t1","state":"working"}`},
+		{"AgentActivityLabel", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}, `{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}`},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

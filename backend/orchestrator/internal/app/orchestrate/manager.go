@@ -41,11 +41,41 @@ type Runner interface {
 	Run(ctx context.Context, d Delegation)
 }
 
+// RunnerFactory construit le Runner d'une session. Il reçoit l'identifiant de
+// la session, son instant d'ouverture et la voix de la session. Si le Runner
+// produit implémente `Close()`, le gestionnaire l'appelle à la fermeture de la
+// session, une fois les exécutions terminées.
+type RunnerFactory func(sessionID string, start time.Time, reply port.VoiceReply) Runner
+
 // Phrases sont les commentaires honnêtes injectés (jamais codés en dur).
 type Phrases struct {
 	Generic   string // accusé immédiat, sans contenu
 	QueueFull string // file pleine : la demande n'est pas traitée
 	NoRequest string // demande vide : aucun agent contacté
+	Failure   string // échec de l'agent : aucun chiffre
+	NoAgent   string // aucun agent configuré
+	// ResultTemplate contient un seul `%s`, remplacé par le résumé de l'agent
+	// (donnée non fiable, nettoyée et bornée).
+	ResultTemplate string
+}
+
+// validate vérifie que chaque phrase est renseignée et que le gabarit de
+// résultat contient exactement un `%s` et aucun autre verbe de formatage
+// (`%%` reste admis).
+func (p Phrases) validate() error {
+	for name, v := range map[string]string{
+		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
+		"Failure": p.Failure, "NoAgent": p.NoAgent, "ResultTemplate": p.ResultTemplate,
+	} {
+		if strings.TrimSpace(v) == "" {
+			return fmt.Errorf("orchestrate : phrase %s requise", name)
+		}
+	}
+	if strings.Count(p.ResultTemplate, "%s") != 1 ||
+		strings.Contains(strings.ReplaceAll(strings.ReplaceAll(p.ResultTemplate, "%%", ""), "%s", ""), "%") {
+		return errors.New("orchestrate : ResultTemplate doit contenir un seul %s et aucun autre verbe")
+	}
+	return nil
 }
 
 // Options règle le gestionnaire ; toutes les valeurs sont obligatoires.
@@ -59,7 +89,7 @@ type Options struct {
 
 // Manager implémente port.Delegations.
 type Manager struct {
-	runner  Runner
+	factory RunnerFactory
 	phrases Phrases
 	opts    Options
 }
@@ -67,12 +97,13 @@ type Manager struct {
 var _ port.Delegations = (*Manager)(nil)
 
 // NewManager valide sa configuration.
-func NewManager(runner Runner, phrases Phrases, opts Options) (*Manager, error) {
+func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager, error) {
+	if err := phrases.validate(); err != nil {
+		return nil, err
+	}
 	switch {
-	case runner == nil:
-		return nil, errors.New("orchestrate : runner manquant")
-	case strings.TrimSpace(phrases.Generic) == "" || strings.TrimSpace(phrases.QueueFull) == "" || strings.TrimSpace(phrases.NoRequest) == "":
-		return nil, errors.New("orchestrate : phrases Generic, QueueFull et NoRequest requises")
+	case factory == nil:
+		return nil, errors.New("orchestrate : fabrique de runners manquante")
 	case opts.QueueDepth <= 0:
 		return nil, fmt.Errorf("orchestrate : QueueDepth doit être > 0 (%d)", opts.QueueDepth)
 	case opts.AgentTimeout <= 0:
@@ -84,15 +115,16 @@ func NewManager(runner Runner, phrases Phrases, opts Options) (*Manager, error) 
 	case opts.Logger == nil:
 		return nil, errors.New("orchestrate : logger manquant")
 	}
-	return &Manager{runner: runner, phrases: phrases, opts: opts}, nil
+	return &Manager{factory: factory, phrases: phrases, opts: opts}, nil
 }
 
-// Open démarre la gestion d'une session ; start n'est pas utilisé pour
-// l'instant par le gestionnaire (les offsets viennent du fournisseur).
-func (m *Manager) Open(sessionID string, _ time.Time, reply port.VoiceReply) port.SessionDelegations {
+// Open démarre la gestion d'une session et construit son Runner par la
+// fabrique (start sert aux horodatages relatifs du Runner).
+func (m *Manager) Open(sessionID string, start time.Time, reply port.VoiceReply) port.SessionDelegations {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	s := &session{
 		m:       m,
+		runner:  m.factory(sessionID, start, reply),
 		id:      sessionID,
 		reply:   reply,
 		log:     m.opts.Logger.With("session", sessionID),
@@ -111,6 +143,7 @@ func (m *Manager) Open(sessionID string, _ time.Time, reply port.VoiceReply) por
 
 type session struct {
 	m      *Manager
+	runner Runner
 	id     string
 	reply  port.VoiceReply
 	log    *slog.Logger
@@ -247,7 +280,7 @@ func (s *session) run(d Delegation) {
 			s.log.Error("panique du runner", "delegation", d.ID, "panic", r)
 		}
 	}()
-	s.m.runner.Run(ctx, d)
+	s.runner.Run(ctx, d)
 }
 
 // Close annule le travail en cours puis attend, au plus GuardTimeout (ou
@@ -261,6 +294,9 @@ func (s *session) Close(ctx context.Context) {
 	s.drain.Do(func() {
 		go func() {
 			s.wg.Wait()
+			if c, ok := s.runner.(interface{ Close() }); ok {
+				c.Close()
+			}
 			close(s.drained)
 		}()
 	})

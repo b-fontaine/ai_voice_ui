@@ -307,8 +307,10 @@ func encode(sessionID string, m domain.Message) ([]byte, error) {
 		Type    string `json:"type"`
 		Session string `json:"session"`
 		TMs     int64  `json:"t_ms"`
+		Agent   string `json:"agent,omitempty"`
+		Task    string `json:"task,omitempty"`
 		Data    any    `json:"data"`
-	}{envelopeVersion, m.Type, sessionID, m.TMs, wire.WireData(m.Data)})
+	}{envelopeVersion, m.Type, sessionID, m.TMs, m.Agent, m.Task, wire.WireData(m.Data)})
 }
 
 // subscribers et sessionCount servent aux tests.

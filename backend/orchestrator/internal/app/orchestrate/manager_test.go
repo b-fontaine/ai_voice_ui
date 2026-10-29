@@ -17,7 +17,15 @@ import (
 
 const wait = 3 * time.Second
 
-var testPhrases = Phrases{Generic: "G", QueueFull: "Q", NoRequest: "N"}
+var testPhrases = Phrases{
+	Generic: "G", QueueFull: "Q", NoRequest: "N",
+	Failure: "F", NoAgent: "A", ResultTemplate: "R:%s",
+}
+
+// factoryOf renvoie une fabrique qui produit toujours le même Runner.
+func factoryOf(r Runner) RunnerFactory {
+	return func(string, time.Time, port.VoiceReply) Runner { return r }
+}
 
 type commentary struct{ ID, Text string }
 
@@ -111,7 +119,7 @@ func testOptions() Options {
 
 func open(t *testing.T, r Runner, opts Options, reply port.VoiceReply) port.SessionDelegations {
 	t.Helper()
-	m, err := NewManager(r, testPhrases, opts)
+	m, err := NewManager(factoryOf(r), testPhrases, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,15 +148,33 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 	for i, mutate := range bad {
 		o := testOptions()
 		mutate(&o)
-		if _, err := NewManager(r, testPhrases, o); err == nil {
+		if _, err := NewManager(factoryOf(r), testPhrases, o); err == nil {
 			t.Fatalf("cas %d : option invalide acceptée", i)
 		}
 	}
 	if _, err := NewManager(nil, testPhrases, testOptions()); err == nil {
-		t.Fatal("runner nil accepté")
+		t.Fatal("fabrique nil acceptée")
 	}
-	for _, p := range []Phrases{{"", "q", "n"}, {"g", " ", "n"}, {"g", "q", ""}} {
-		if _, err := NewManager(r, p, testOptions()); err == nil {
+	full := testPhrases
+	ok := full
+	ok.ResultTemplate = "Résultat à 100 %% : %s"
+	if _, err := NewManager(factoryOf(r), ok, testOptions()); err != nil {
+		t.Fatalf("gabarit avec pourcentage échappé refusé : %v", err)
+	}
+	blank := func(mut func(*Phrases)) Phrases { p := full; mut(&p); return p }
+	for _, p := range []Phrases{
+		blank(func(p *Phrases) { p.Generic = "" }),
+		blank(func(p *Phrases) { p.QueueFull = " " }),
+		blank(func(p *Phrases) { p.NoRequest = "" }),
+		blank(func(p *Phrases) { p.Failure = "" }),
+		blank(func(p *Phrases) { p.NoAgent = "\n" }),
+		blank(func(p *Phrases) { p.ResultTemplate = "" }),
+		blank(func(p *Phrases) { p.ResultTemplate = "sans verbe" }),
+		blank(func(p *Phrases) { p.ResultTemplate = "%s et %s" }),
+		blank(func(p *Phrases) { p.ResultTemplate = "%d" }),
+		blank(func(p *Phrases) { p.ResultTemplate = "100 % de %s" }),
+	} {
+		if _, err := NewManager(factoryOf(r), p, testOptions()); err == nil {
 			t.Fatalf("phrases %+v acceptées", p)
 		}
 	}
@@ -350,7 +376,7 @@ func TestCloseCancelsInflightDelegation(t *testing.T) {
 		cause <- context.Cause(ctx)
 	})
 	reply := newFakeReply()
-	m, _ := NewManager(r, testPhrases, testOptions())
+	m, _ := NewManager(factoryOf(r), testPhrases, testOptions())
 	s := m.Open("sess", time.Now(), reply)
 	say(s, "x", 0)
 	s.Delegate("d1", 10)
@@ -383,7 +409,7 @@ func TestCloseIdempotentAndBounded(t *testing.T) {
 	defer close(stop)
 	o := testOptions()
 	o.GuardTimeout = 100 * time.Millisecond
-	m, _ := NewManager(r, testPhrases, o)
+	m, _ := NewManager(factoryOf(r), testPhrases, o)
 	s := m.Open("sess", time.Now(), newFakeReply())
 	say(s, "x", 0)
 	s.Delegate("d1", 10)
@@ -402,7 +428,7 @@ func TestCloseHonoursContext(t *testing.T) {
 	defer close(stop)
 	o := testOptions()
 	o.GuardTimeout = 10 * time.Second
-	m, _ := NewManager(r, testPhrases, o)
+	m, _ := NewManager(factoryOf(r), testPhrases, o)
 	s := m.Open("sess", time.Now(), newFakeReply())
 	say(s, "x", 0)
 	s.Delegate("d1", 10)
@@ -442,7 +468,7 @@ func TestNoGoroutineLeak(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		r := newRunner(func(ctx context.Context, d Delegation) { <-ctx.Done() })
 		reply := newFakeReply()
-		m, _ := NewManager(r, testPhrases, testOptions())
+		m, _ := NewManager(factoryOf(r), testPhrases, testOptions())
 		s := m.Open("sess", time.Now(), reply)
 		say(s, "x", 0)
 		s.Delegate("d1", 10)
@@ -459,4 +485,88 @@ func TestNoGoroutineLeak(t *testing.T) {
 	if n := runtime.NumGoroutine(); n > before {
 		t.Fatalf("%d goroutines avant, %d après", before, n)
 	}
+}
+
+// closableRunner mémorise l'ordre de fin des exécutions et de Close.
+type closableRunner struct {
+	*fakeRunner
+	mu     sync.Mutex
+	events []string
+}
+
+func (c *closableRunner) record(e string) {
+	c.mu.Lock()
+	c.events = append(c.events, e)
+	c.mu.Unlock()
+}
+
+func (c *closableRunner) Close() { c.record("close") }
+
+func (c *closableRunner) snapshot() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]string(nil), c.events...)
+}
+
+func TestFactoryCalledPerSessionWithIdentity(t *testing.T) {
+	type call struct {
+		id    string
+		start time.Time
+		reply port.VoiceReply
+	}
+	var mu sync.Mutex
+	var calls []call
+	m, err := NewManager(func(id string, start time.Time, reply port.VoiceReply) Runner {
+		mu.Lock()
+		calls = append(calls, call{id, start, reply})
+		mu.Unlock()
+		return newRunner(nil)
+	}, testPhrases, testOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	r1, r2 := newFakeReply(), newFakeReply()
+	t1, t2 := time.Unix(100, 0), time.Unix(200, 0)
+	s1 := m.Open("s1", t1, r1)
+	s2 := m.Open("s2", t2, r2)
+	defer s1.Close(context.Background())
+	defer s2.Close(context.Background())
+	mu.Lock()
+	defer mu.Unlock()
+	if len(calls) != 2 {
+		t.Fatalf("%d appels de la fabrique, attendu 2 (un par session)", len(calls))
+	}
+	if calls[0].id != "s1" || !calls[0].start.Equal(t1) || calls[0].reply != port.VoiceReply(r1) {
+		t.Fatalf("session 1 : %+v", calls[0])
+	}
+	if calls[1].id != "s2" || !calls[1].start.Equal(t2) || calls[1].reply != port.VoiceReply(r2) {
+		t.Fatalf("session 2 : %+v", calls[1])
+	}
+}
+
+func TestRunnerCloseCalledAfterExecutionsEnd(t *testing.T) {
+	cr := &closableRunner{fakeRunner: newRunner(nil)}
+	cr.run = func(ctx context.Context, d Delegation) {
+		<-ctx.Done()
+		time.Sleep(50 * time.Millisecond) // une fin lente ne doit pas être dépassée par Close
+		cr.record("run-end")
+	}
+	m, _ := NewManager(factoryOf(cr), testPhrases, testOptions())
+	s := m.Open("sess", time.Now(), newFakeReply())
+	say(s, "x", 0)
+	s.Delegate("d1", 10)
+	cr.nextStarted(t)
+	s.Close(context.Background())
+	s.Close(context.Background())
+	got := cr.snapshot()
+	if len(got) != 2 || got[0] != "run-end" || got[1] != "close" {
+		t.Fatalf("ordre = %v, attendu [run-end close]", got)
+	}
+}
+
+func TestRunnerWithoutCloseIsAccepted(t *testing.T) {
+	r := newRunner(nil) // *fakeRunner n'a pas de Close
+	m, _ := NewManager(factoryOf(r), testPhrases, testOptions())
+	s := m.Open("sess", time.Now(), newFakeReply())
+	s.Close(context.Background())
 }

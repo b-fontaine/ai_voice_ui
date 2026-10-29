@@ -32,7 +32,12 @@ const (
 type Message struct {
 	Type string
 	TMs  int64 // millisecondes écoulées depuis l'ouverture de la session
-	Data Payload
+	// Agent et Task attribuent un message `a2ui` à l'agent et à la tâche qui
+	// l'ont produit (premier niveau de l'enveloppe, omis si vides). Agent vaut
+	// "orchestrateur" pour une compensation émise par l'orchestrateur.
+	Agent string
+	Task  string
+	Data  Payload
 }
 
 // Payload est la charge utile d'un message. Interface fermée : seuls les types
@@ -79,8 +84,9 @@ type A2UI struct{ Message map[string]any }
 
 // AgentActivity décrit l'avancement d'une tâche d'agent : Agent est le nom de
 // sa carte, Task l'identifiant de la tâche, State l'un des états Activity*,
-// Detail un complément facultatif (cause d'un échec, par exemple).
-type AgentActivity struct{ Agent, Task, State, Detail string }
+// Detail un complément facultatif (cause d'un échec, par exemple) et Label le
+// nom du skill de la carte de l'agent (facultatif).
+type AgentActivity struct{ Agent, Task, State, Label, Detail string }
 
 func (A2UI) isPayload()          {}
 func (AgentActivity) isPayload() {}

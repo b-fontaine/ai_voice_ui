@@ -319,6 +319,36 @@ func TestEnvelopeShape(t *testing.T) {
 		{domain.Message{Type: domain.TypeSessionState, TMs: 0, Data: domain.SessionState{State: "active"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":0,"data":{"state":"active"}}`},
 		{domain.Message{Type: domain.TypeSessionState, TMs: 5, Data: domain.SessionState{State: "closed", Reason: "max_session"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":5,"data":{"state":"closed","reason":"max_session"}}`},
 		{domain.Message{Type: domain.TypeUsage, TMs: 900, Data: domain.Usage{Seconds: 1.5, ContextRatio: 0.1}}, `{"v":1,"type":"usage","session":"s1","t_ms":900,"data":{"seconds":1.5,"context_ratio":0.1}}`},
+		{domain.Message{Type: domain.TypeAgentActivity, TMs: 10, Data: domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}}, `{"v":1,"type":"agent.activity","session":"s1","t_ms":10,"data":{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}}`},
+	}
+	for _, tc := range cases {
+		h.Publish("s1", tc.msg)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_, b, err := c.Read(ctx)
+		cancel()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b) != tc.want {
+			t.Fatalf("enveloppe %s, attendu %s", b, tc.want)
+		}
+	}
+}
+
+// TestWireA2UIAttribution : l'enveloppe a2ui porte agent et task au premier
+// niveau (omis quand ils sont vides), data restant le message A2UI brut.
+func TestWireA2UIAttribution(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
+	c := dial(t, srv, "s1")
+	waitSubs(t, h, "s1", 1)
+	cases := []struct {
+		msg  domain.Message
+		want string
+	}{
+		{domain.Message{Type: domain.TypeA2UI, TMs: 5, Agent: "Qualité", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":5,"agent":"Qualité","task":"t1","data":{"version":"v0.9"}}`},
+		{domain.Message{Type: domain.TypeA2UI, TMs: 6, Agent: "orchestrateur", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":6,"agent":"orchestrateur","task":"t1","data":{"version":"v0.9"}}`},
+		{domain.Message{Type: domain.TypeA2UI, TMs: 7, Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":7,"data":{"version":"v0.9"}}`},
 	}
 	for _, tc := range cases {
 		h.Publish("s1", tc.msg)

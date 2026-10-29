@@ -95,6 +95,8 @@ type line struct {
 	Session string          `json:"session"`
 	TMs     int64           `json:"t_ms"`
 	Type    string          `json:"type"`
+	Agent   string          `json:"agent,omitempty"`
+	Task    string          `json:"task,omitempty"`
 	Data    json.RawMessage `json:"data"`
 }
 
@@ -110,7 +112,7 @@ func (r *Recorder) Publish(sessionID string, m domain.Message) {
 		r.opts.OnError(fmt.Errorf("jsonljournal: données non sérialisables (%s) : %w", m.Type, err))
 		return
 	}
-	b, err := json.Marshal(line{r.opts.Clock.Now().UnixMilli(), sessionID, m.TMs, m.Type, data})
+	b, err := json.Marshal(line{r.opts.Clock.Now().UnixMilli(), sessionID, m.TMs, m.Type, m.Agent, m.Task, data})
 	if err != nil {
 		r.opts.OnError(fmt.Errorf("jsonljournal: sérialisation : %w", err))
 		return

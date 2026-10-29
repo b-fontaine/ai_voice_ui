@@ -42,8 +42,9 @@ func WireData(d domain.Payload) any {
 			Agent  string `json:"agent"`
 			Task   string `json:"task"`
 			State  string `json:"state"`
+			Label  string `json:"label,omitempty"`
 			Detail string `json:"detail,omitempty"`
-		}{v.Agent, v.Task, v.State, v.Detail}
+		}{v.Agent, v.Task, v.State, v.Label, v.Detail}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil
