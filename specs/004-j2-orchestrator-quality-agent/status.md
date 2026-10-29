@@ -1,7 +1,7 @@
 # 004 — État
 
-- **Étape** : Gherkin
-- **Tentatives** : 1/3
+- **Étape** : TDD
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : `backend/orchestrator/acceptance/{fake_live,fake_delegating_live,orchestrate_helpers,orchestrate_surface,orchestrate_failure,orchestrate_invalid_a2ui}_test.go`, `backend/orchestrator/go.{mod,sum}`, `backend/agents/quality/{go.mod,go.sum,doc.go,acceptance/agent_test.go}`, `plan.md`, `spec.md`, `tasks.md`
 - **Branche** : feat/004-j2-orchestrator-quality-agent
