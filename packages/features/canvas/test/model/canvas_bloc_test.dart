@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:feature_canvas/api/canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart'
@@ -128,4 +130,56 @@ void main() {
       expect(controller.activeSurfaceIds, isEmpty);
     },
   );
+
+  group('CanvasSourceSubscribed', () {
+    test('flux terminé : playing puis completed, messages appliqués', () async {
+      final source = StreamController<Map<String, dynamic>>();
+      final states = await statesAfter(bloc, (b) async {
+        b.add(CanvasSourceSubscribed(source.stream));
+        await Future<void>.delayed(Duration.zero);
+        source.add(createSurface('s'));
+        await source.close();
+        await Future<void>.delayed(Duration.zero);
+      });
+
+      expect(states.map((s) => s.sourceStatus), <CanvasSourceStatus>[
+        CanvasSourceStatus.playing,
+        CanvasSourceStatus.playing,
+        CanvasSourceStatus.completed,
+      ]);
+      expect(states.last.surfaceIds, <String>['s']);
+    });
+
+    test('erreur du flux : failed avec le message', () async {
+      final source = StreamController<Map<String, dynamic>>();
+      final states = await statesAfter(bloc, (b) async {
+        b.add(CanvasSourceSubscribed(source.stream));
+        await Future<void>.delayed(Duration.zero);
+        source.addError(StateError('boum'));
+        await source.close();
+        await Future<void>.delayed(Duration.zero);
+      });
+
+      expect(states.last.sourceStatus, CanvasSourceStatus.failed);
+      expect(states.last.sourceError, contains('boum'));
+      expect(
+        states.map((s) => s.sourceStatus),
+        isNot(contains(CanvasSourceStatus.completed)),
+      );
+    });
+
+    test("close() pendant le flux annule l'abonnement", () async {
+      var cancelled = false;
+      final source = StreamController<Map<String, dynamic>>(
+        onCancel: () => cancelled = true,
+      );
+      bloc.add(CanvasSourceSubscribed(source.stream));
+      await Future<void>.delayed(Duration.zero);
+
+      await bloc.close();
+
+      expect(cancelled, isTrue);
+      expect(bloc.state.sourceStatus, CanvasSourceStatus.playing);
+    });
+  });
 }

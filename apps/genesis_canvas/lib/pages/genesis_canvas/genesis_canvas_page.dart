@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:feature_canvas/api/canvas.dart'
-    show A2uiMessageReceived, CanvasBloc;
+    show CanvasBloc, CanvasSourceStatus, CanvasSourceSubscribed, CanvasState;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart'
@@ -61,23 +61,35 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
   void initState() {
     super.initState();
     final scenario = widget.config.scenario;
-    if (scenario != null) unawaited(_playScenario(scenario));
+    if (scenario != null) {
+      _bloc.add(
+        CanvasSourceSubscribed(
+          ScenarioPlayer(
+            bundle: widget.assetBundle,
+            delay: widget.replayDelay,
+          ).messages(scenario),
+        ),
+      );
+    }
   }
 
-  Future<void> _playScenario(String scenario) async {
-    try {
-      await ScenarioPlayer(
-        bundle: widget.assetBundle,
-        onMessage: (message) => _bloc.add(A2uiMessageReceived(message)),
-        delay: widget.replayDelay,
-      ).play(scenario);
-    } on Object catch (error) {
-      widget.errorSink.writeln('Rejeu "$scenario" impossible : $error');
-      if (_snapshot.isActive) widget.exitHandler(1);
-      return;
+  void _onSourceChanged(BuildContext context, CanvasState state) {
+    switch (state.sourceStatus) {
+      case CanvasSourceStatus.completed:
+        if (_snapshot.isActive) unawaited(_captureWhenSettled());
+      case CanvasSourceStatus.failed:
+        widget.errorSink.writeln(
+          'Rejeu "${widget.config.scenario}" impossible : ${state.sourceError}',
+        );
+        if (_snapshot.isActive) widget.exitHandler(1);
+      case CanvasSourceStatus.none:
+      case CanvasSourceStatus.playing:
+        break;
     }
-    if (!_snapshot.isActive) return;
-    // Laisse le Bloc traiter ses events et genui construire la surface.
+  }
+
+  Future<void> _captureWhenSettled() async {
+    // Laisse genui construire la surface avant la capture.
     for (var i = 0; i < 2; i++) {
       WidgetsBinding.instance.scheduleFrame();
       await WidgetsBinding.instance.endOfFrame;
@@ -87,23 +99,28 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
 
   @override
   void dispose() {
-    _bloc.close();
-    _controller.dispose();
+    // Le Bloc se ferme (annule le flux de rejeu) avant de libérer le moteur.
+    unawaited(_bloc.close().whenComplete(_controller.dispose));
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => BlocProvider<CanvasBloc>.value(
     value: _bloc,
-    child: RepaintBoundary(
-      key: _boundaryKey,
-      child: ColoredBox(
-        color: const Color(0xFF0B0B14),
-        child: Column(
-          children: <Widget>[
-            const Padding(padding: EdgeInsets.all(16), child: VoiceOrb()),
-            Expanded(child: CanvasBoardView(controller: _controller)),
-          ],
+    child: BlocListener<CanvasBloc, CanvasState>(
+      listenWhen: (previous, current) =>
+          previous.sourceStatus != current.sourceStatus,
+      listener: _onSourceChanged,
+      child: RepaintBoundary(
+        key: _boundaryKey,
+        child: ColoredBox(
+          color: const Color(0xFF0B0B14),
+          child: Column(
+            children: <Widget>[
+              const Padding(padding: EdgeInsets.all(16), child: VoiceOrb()),
+              Expanded(child: CanvasBoardView(controller: _controller)),
+            ],
+          ),
         ),
       ),
     ),

@@ -14,15 +14,17 @@ import 'canvas_state.dart';
 /// un `updateComponents` ne doit jamais dépasser son `createSurface`.
 class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   CanvasBloc(this._controller) : super(const CanvasState.empty()) {
-    // Un seul handler `sequential` pour tous les types d'events : le
-    // transformer s'applique par `on<E>`, donc des handlers distincts
-    // s'exécuteraient en concurrence et l'ordre entre types serait perdu.
-    on<CanvasEvent>(_onEvent, transformer: sequential());
+    // Un seul handler `sequential` pour toutes les commandes : le transformer
+    // s'applique par `on<E>`, donc des handlers distincts s'exécuteraient en
+    // concurrence et l'ordre entre types serait perdu.
+    on<CanvasCommand>(_onCommand, transformer: sequential());
+    // Une nouvelle source remplace la précédente (annulation de l'abonnement).
+    on<CanvasSourceSubscribed>(_onSourceSubscribed, transformer: restartable());
   }
 
   final SurfaceController _controller;
 
-  void _onEvent(CanvasEvent event, Emitter<CanvasState> emit) {
+  void _onCommand(CanvasCommand event, Emitter<CanvasState> emit) {
     switch (event) {
       case SurfaceAdded(:final surfaceId):
         emit(state.withSurface(surfaceId));
@@ -34,6 +36,35 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         _onReset(emit);
       case A2uiMessageReceived():
         _onMessage(event, emit);
+    }
+  }
+
+  Future<void> _onSourceSubscribed(
+    CanvasSourceSubscribed event,
+    Emitter<CanvasState> emit,
+  ) async {
+    emit(state.withSource(CanvasSourceStatus.playing));
+    var failed = false;
+    void fail(Object error) {
+      if (failed) return;
+      failed = true;
+      emit(state.withSource(CanvasSourceStatus.failed, error: '$error'));
+    }
+
+    await emit.onEach<Map<String, dynamic>>(
+      event.messages,
+      onData: (message) {
+        if (failed) return;
+        try {
+          _onMessage(A2uiMessageReceived(message), emit);
+        } on Object catch (error) {
+          fail(error);
+        }
+      },
+      onError: (Object error, StackTrace _) => fail(error),
+    );
+    if (!emit.isDone && !failed) {
+      emit(state.withSource(CanvasSourceStatus.completed));
     }
   }
 

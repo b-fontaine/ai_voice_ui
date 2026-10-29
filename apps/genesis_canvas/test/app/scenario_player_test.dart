@@ -35,15 +35,13 @@ void main() {
         final bundle = _FakeBundle(<String, String>{
           'assets/replays/demo.jsonl': _jsonl,
         });
-        final received = <Map<String, dynamic>>[];
         final delays = <Duration>[];
         final player = ScenarioPlayer(
           bundle: bundle,
-          onMessage: received.add,
           delay: (d) async => delays.add(d),
         );
 
-        await player.play('demo');
+        final received = await player.messages('demo').toList();
 
         expect(bundle.requested, <String>['assets/replays/demo.jsonl']);
         expect(
@@ -58,12 +56,9 @@ void main() {
     );
 
     test('scénario inconnu : l\'erreur remonte', () async {
-      final player = ScenarioPlayer(
-        bundle: _FakeBundle(<String, String>{}),
-        onMessage: (_) {},
-      );
+      final player = ScenarioPlayer(bundle: _FakeBundle(<String, String>{}));
 
-      expect(player.play('absent'), throwsA(isA<FlutterError>()));
+      expect(player.messages('absent').toList(), throwsA(isA<FlutterError>()));
     });
 
     test('ligne invalide : A2uiReplayFormatException', () async {
@@ -71,10 +66,12 @@ void main() {
         bundle: _FakeBundle(<String, String>{
           'assets/replays/mauvais.jsonl': 'pas du json',
         }),
-        onMessage: (_) {},
       );
 
-      expect(player.play('mauvais'), throwsA(isA<A2uiReplayFormatException>()));
+      expect(
+        player.messages('mauvais').toList(),
+        throwsA(isA<A2uiReplayFormatException>()),
+      );
     });
   });
 }
