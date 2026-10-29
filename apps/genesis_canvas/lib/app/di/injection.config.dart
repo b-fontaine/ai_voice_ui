@@ -10,8 +10,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:feature_agent_activity/feature_agent_activity.dart' as _i6;
+import 'package:feature_voice_session/feature_voice_session.dart' as _i679;
+import 'package:genesis_canvas/app/config/genesis_config.dart' as _i32;
+import 'package:genesis_canvas/app/di/app_module.dart' as _i580;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:shared_backend_channel/shared_backend_channel.dart' as _i769;
+import 'package:shared_core/shared_core.dart' as _i464;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -19,7 +25,35 @@ extension GetItInjectableX on _i174.GetIt {
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
   }) {
-    _i526.GetItHelper(this, environment, environmentFilter);
+    final gh = _i526.GetItHelper(this, environment, environmentFilter);
+    final appModule = _$AppModule();
+    gh.factory<_i679.TranscriptBloc>(() => appModule.transcriptBloc());
+    gh.factory<_i6.AgentActivityBloc>(() => appModule.agentActivityBloc());
+    gh.lazySingleton<_i464.AppClock>(() => appModule.clock());
+    gh.lazySingleton<_i679.WebRtcPlatform>(() => appModule.webRtcPlatform());
+    gh.lazySingleton<_i769.VoiceRelay>(
+      () => appModule.voiceRelay(gh<_i32.GenesisConfig>()),
+    );
+    gh.lazySingleton<_i769.AppChannel>(
+      () => appModule.appChannel(gh<_i32.GenesisConfig>()),
+    );
+    gh.factory<_i679.VoiceSession>(
+      () => appModule.voiceSession(
+        gh<_i580.VoiceTransportFactory>(),
+        gh<_i769.VoiceRelay>(),
+        gh<_i769.AppChannel>(),
+        gh<_i580.EnvelopeLogFactory>(),
+        gh<_i32.GenesisConfig>(),
+      ),
+    );
+    gh.factory<_i679.LiveSessionEventSource>(
+      () => appModule.liveSessionEventSource(gh<_i679.VoiceSession>()),
+    );
+    gh.factory<_i679.VoiceSessionBloc>(
+      () => appModule.voiceSessionBloc(gh<_i679.VoiceSession>()),
+    );
     return this;
   }
 }
+
+class _$AppModule extends _i580.AppModule {}

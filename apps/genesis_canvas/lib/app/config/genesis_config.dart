@@ -1,15 +1,56 @@
+/// Erreur de configuration de lancement. Le message nomme la variable
+/// d'environnement fautive, jamais sa valeur (elle pourrait être sensible).
+class GenesisConfigException implements Exception {
+  const GenesisConfigException(this.message);
+
+  /// Message en français, affiché sur stderr par `main`.
+  final String message;
+
+  @override
+  String toString() => 'GenesisConfigException: $message';
+}
+
 /// Configuration de lancement de l'app, lue une fois dans `main()` puis
 /// injectée par constructeur jusqu'à la page.
+///
+/// Aucune clé d'API ici : la clé OpenAI reste côté backend (AGENTS.md § 2).
 class GenesisConfig {
-  const GenesisConfig({this.scenario, this.snapshotPath});
+  const GenesisConfig({
+    this.scenario,
+    this.snapshotPath,
+    Uri? backendUrl,
+    this.appLogPath,
+    this.relayCreateTimeout = const Duration(seconds: 20),
+    this.relayDeleteTimeout = const Duration(seconds: 7),
+    this.sessionCloseTimeout = const Duration(seconds: 8),
+    this.exitCloseTimeout = const Duration(seconds: 8),
+    this.iceTimeout = const Duration(seconds: 10),
+    this.orbSilenceTimeout = const Duration(milliseconds: 600),
+    this.orbAttack = const Duration(milliseconds: 80),
+    this.orbRelease = const Duration(milliseconds: 250),
+    this.orbSpeakingThreshold = 0.03,
+    // Un paramètre nommé ne peut pas être un formel privé.
+    // ignore: prefer_initializing_formals
+  }) : _backendUrl = backendUrl;
 
   /// Construit la configuration à partir d'un environnement (en prod
-  /// `Platform.environment`). Une variable absente ou vide vaut `null`.
+  /// `Platform.environment`). Une variable absente ou vide vaut `null`
+  /// (ou la valeur par défaut). Les constantes (délais, orbe) ne sont pas
+  /// lues dans l'environnement.
+  ///
+  /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` est invalide.
   factory GenesisConfig.fromEnvironment(Map<String, String> environment) =>
       GenesisConfig(
         scenario: _read(environment, 'GENESIS_SCENARIO'),
         snapshotPath: _read(environment, 'GENESIS_SNAPSHOT'),
+        backendUrl: _readBackendUrl(environment),
+        appLogPath: _read(environment, 'GENESIS_APP_LOG'),
       );
+
+  static const String _backendUrlVariable = 'GENESIS_BACKEND_URL';
+
+  /// URL du backend local par défaut.
+  static final Uri defaultBackendUrl = Uri.parse('http://127.0.0.1:8080');
 
   /// Nom du rejeu `assets/replays/<scenario>.jsonl` ; `null` : canevas vide.
   final String? scenario;
@@ -17,8 +58,68 @@ class GenesisConfig {
   /// Chemin du PNG à écrire à la fin du rejeu ; `null` : pas de capture.
   final String? snapshotPath;
 
+  // `Uri` n'a pas de constructeur const : la valeur par défaut est portée
+  // par le getter, ce qui garde `const GenesisConfig()` possible.
+  final Uri? _backendUrl;
+
+  /// URL de base du backend (`GENESIS_BACKEND_URL`).
+  Uri get backendUrl => _backendUrl ?? defaultBackendUrl;
+
+  /// Chemin du journal des enveloppes (`GENESIS_APP_LOG`) ; `null` : inactif.
+  final String? appLogPath;
+
+  /// Délai maximal du `POST` d'offre au relais.
+  final Duration relayCreateTimeout;
+
+  /// Délai maximal du `DELETE` au relais.
+  final Duration relayDeleteTimeout;
+
+  /// Délai maximal de fermeture d'une session voix.
+  final Duration sessionCloseTimeout;
+
+  /// Délai maximal de fermeture de la session à la sortie de l'app.
+  final Duration exitCloseTimeout;
+
+  /// Délai maximal de collecte des candidats ICE.
+  final Duration iceTimeout;
+
+  /// Silence au-delà duquel l'orbe retombe au repos.
+  final Duration orbSilenceTimeout;
+
+  /// Temps de montée du lissage de l'orbe.
+  final Duration orbAttack;
+
+  /// Temps de descente du lissage de l'orbe.
+  final Duration orbRelease;
+
+  /// Niveau lissé à partir duquel l'orbe est dite « parle ».
+  final double orbSpeakingThreshold;
+
   static String? _read(Map<String, String> environment, String name) {
     final value = environment[name]?.trim();
     return (value == null || value.isEmpty) ? null : value;
   }
+
+  static Uri? _readBackendUrl(Map<String, String> environment) {
+    final raw = _read(environment, _backendUrlVariable);
+    if (raw == null) return null;
+    final Uri uri;
+    try {
+      uri = Uri.parse(raw);
+    } on FormatException {
+      throw _invalidBackendUrl();
+    }
+    final validScheme = uri.scheme == 'http' || uri.scheme == 'https';
+    if (!validScheme || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+      throw _invalidBackendUrl();
+    }
+    return uri;
+  }
+
+  static GenesisConfigException _invalidBackendUrl() =>
+      const GenesisConfigException(
+        'La variable $_backendUrlVariable est invalide : une URL http ou '
+        'https avec un hôte et sans identifiants est attendue '
+        '(par exemple http://127.0.0.1:8080).',
+      );
 }
