@@ -19,7 +19,7 @@ const wait = 3 * time.Second
 
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
-	Failure: "F", NoAgent: "A", ResultTemplate: "R:%s",
+	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", ResultTemplate: "R:%s",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -167,6 +167,8 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.QueueFull = " " }),
 		blank(func(p *Phrases) { p.NoRequest = "" }),
 		blank(func(p *Phrases) { p.Failure = "" }),
+		blank(func(p *Phrases) { p.FailureRejected = "" }),
+		blank(func(p *Phrases) { p.NoSummary = " " }),
 		blank(func(p *Phrases) { p.NoAgent = "\n" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "sans verbe" }),
@@ -569,4 +571,27 @@ func TestRunnerWithoutCloseIsAccepted(t *testing.T) {
 	m, _ := NewManager(factoryOf(r), testPhrases, testOptions())
 	s := m.Open("sess", time.Now(), newFakeReply())
 	s.Close(context.Background())
+}
+
+func TestPhrasesValidateRejectsTooLongTemplate(t *testing.T) {
+	long := strings.Repeat("a", MaxCommentaryRunes+1)
+	for name, mut := range map[string]func(*Phrases){
+		"Generic trop long":   func(p *Phrases) { p.Generic = long },
+		"Failure trop long":   func(p *Phrases) { p.Failure = long },
+		"NoSummary trop long": func(p *Phrases) { p.NoSummary = long },
+		"gabarit + résumé > borne": func(p *Phrases) {
+			p.ResultTemplate = strings.Repeat("a", MaxCommentaryRunes-maxSummaryRunes+1) + "%s"
+		},
+	} {
+		p := testPhrases
+		mut(&p)
+		if err := p.Validate(); err == nil {
+			t.Errorf("%s : accepté", name)
+		}
+	}
+	p := testPhrases
+	p.ResultTemplate = strings.Repeat("a", MaxCommentaryRunes-maxSummaryRunes) + "%s"
+	if err := p.Validate(); err != nil {
+		t.Fatalf("gabarit à la borne refusé : %v", err)
+	}
 }

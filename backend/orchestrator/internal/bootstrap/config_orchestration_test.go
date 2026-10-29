@@ -1,11 +1,15 @@
 package bootstrap
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/openailive"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
 )
 
 func orchEnv() map[string]string {
@@ -141,7 +145,7 @@ func TestConfig_EmbeddedPhrasesByDefault(t *testing.T) {
 	if err := p.Validate(); err != nil {
 		t.Fatalf("phrases embarquées invalides : %v", err)
 	}
-	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent} {
+	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent} {
 		if strings.ContainsAny(v, "0123456789%") {
 			t.Fatalf("%s ne doit contenir ni chiffre ni « %% » : %q", name, v)
 		}
@@ -157,7 +161,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"generic":"g","failure":"f","queue_full":"q","no_request":"n","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -167,7 +171,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := cfg.Phrases
-	if p.Generic != "g" || p.Failure != "f" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.ResultTemplate != "r %s" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.ResultTemplate != "r %s" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -176,11 +180,11 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
 		"json cassé":       `{"generic": "` + secret,
-		"champ inconnu":    `{"generic":"g","failure":"f","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"generic":"","failure":"f","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"generic":"g","failure":"f","queue_full":"q","no_request":"n","result_template":"%s"}`,
-		"deux %s":          `{"generic":"g","failure":"f","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"generic":"g","failure":"f","queue_full":"q","no_request":"n","no_agent":"a","result_template":"` + secret + `"}`,
+		"champ inconnu":    `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","result_template":"%s"}`,
+		"deux %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -197,5 +201,36 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	env["VOICE_PHRASES_FILE"] = filepath.Join(t.TempDir(), "absent.json")
 	if _, err := load(env); err == nil || !strings.Contains(err.Error(), "VOICE_PHRASES_FILE") {
 		t.Fatalf("fichier absent : %v", err)
+	}
+}
+
+func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
+	for key, absent := range map[string]string{
+		"failure_rejected": `"failure_rejected":"fr",`,
+		"no_summary":       `"no_summary":"ns",`,
+	} {
+		env := fullEnv()
+		env["VOICE_PHRASES_FILE"] = writePhrases(t, strings.Replace(customPhrases, absent, "", 1))
+		_, err := load(env)
+		if err == nil || !strings.Contains(err.Error(), key) {
+			t.Fatalf("%s absente : erreur nommant la clé attendue, obtenu %v", key, err)
+		}
+	}
+}
+
+func TestPhrasesBoundMatchesVoiceAdapter(t *testing.T) {
+	if orchestrate.MaxCommentaryRunes != openailive.MaxCommentaryRunes {
+		t.Fatalf("borne des commentaires : orchestrate=%d, openailive=%d", orchestrate.MaxCommentaryRunes, openailive.MaxCommentaryRunes)
+	}
+}
+
+func TestFinalCommentaryQuotesSummary(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := fmt.Sprintf(cfg.Phrases.ResultTemplate, "RÉSUMÉ")
+	if !strings.Contains(got, "« RÉSUMÉ »") {
+		t.Fatalf("le résumé doit être encadré de « » : %q", got)
 	}
 }

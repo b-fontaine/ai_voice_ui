@@ -29,12 +29,14 @@ const (
 // pipePhrases : phrases propres aux tests du pipeline (jamais celles du code
 // de production, qui n'en contient aucune).
 var pipePhrases = Phrases{
-	Generic:        "Je regarde ça tout de suite.",
-	QueueFull:      "Une demande est déjà en cours.",
-	NoRequest:      "Je n'ai pas compris la demande.",
-	Failure:        "L'agent n'a pas pu répondre, je n'ai aucun résultat à donner.",
-	NoAgent:        "Aucun agent n'est disponible pour le moment.",
-	ResultTemplate: "Voici ce que l'agent rapporte : %s",
+	Generic:         "Je regarde ça tout de suite.",
+	QueueFull:       "Une demande est déjà en cours.",
+	NoRequest:       "Je n'ai pas compris la demande.",
+	Failure:         "L'agent n'a pas pu répondre, je n'ai aucun résultat à donner.",
+	FailureRejected: "Cette demande n'est pas prise en charge pour l'instant.",
+	NoSummary:       "Le résultat est affiché.",
+	NoAgent:         "Aucun agent n'est disponible pour le moment.",
+	ResultTemplate:  "Voici ce que l'agent rapporte : %s",
 }
 
 type fixedClock struct{ t time.Time }
@@ -432,7 +434,7 @@ func TestActivityPublishedOnSubmitted(t *testing.T) {
 func TestAgentFails(t *testing.T) {
 	for name, steps := range map[string][]step{
 		"UpdateFailed puis erreur": append([]step{submitted("t1")}, failedSteps(&port.AgentError{Kind: port.AgentFailed, Reason: "tâche échouée"})...),
-		"erreur seule":             {submitted("t1"), {err: &port.AgentError{Kind: port.AgentRejected, Reason: "demande refusée"}}},
+		"erreur seule":             {submitted("t1"), {err: &port.AgentError{Kind: port.AgentFailed, Reason: "refus interne"}}},
 		"flux sans état final":     {submitted("t1"), textStep("99,57 %")},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -899,5 +901,49 @@ func TestTwoAgentsOneFinalCommentary(t *testing.T) {
 	}
 	if strings.Index(texts[1], "Alpha") > strings.Index(texts[1], "Beta") {
 		t.Fatalf("résumés dans le désordre : %q", texts[1])
+	}
+}
+
+func TestCompletedWithoutSummarySaysNoSummary(t *testing.T) {
+	for name, steps := range map[string][]step{
+		"aucun texte":          {submitted("t1"), completedStep()},
+		"texte blanc":          {submitted("t1"), textStep(" \n\t "), completedStep()},
+		"caractères de format": {submitted("t1"), textStep("\u200b\u202e"), completedStep()},
+	} {
+		t.Run(name, func(t *testing.T) {
+			e := newEnv(t, newAgent(agentQuality, steps...))
+			e.p.Run(context.Background(), e.delegation(t))
+			want := []string{pipePhrases.Generic, pipePhrases.NoSummary}
+			if !reflect.DeepEqual(e.texts(), want) {
+				t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
+			}
+			if hasDigitOrPercent(pipePhrases.NoSummary) {
+				t.Fatal("no_summary ne doit contenir aucun chiffre")
+			}
+		})
+	}
+}
+
+func TestFailurePhraseMatchesCause(t *testing.T) {
+	for name, tc := range map[string]struct {
+		err  error
+		want string
+	}{
+		"rejet":        {&port.AgentError{Kind: port.AgentRejected, Reason: "refusée"}, pipePhrases.FailureRejected},
+		"échec agent":  {&port.AgentError{Kind: port.AgentFailed, Reason: "x"}, pipePhrases.Failure},
+		"injoignable":  {&port.AgentError{Kind: port.AgentUnreachable, Reason: "x"}, pipePhrases.Failure},
+		"erreur brute": {errors.New("boum"), pipePhrases.Failure},
+	} {
+		t.Run(name, func(t *testing.T) {
+			e := newEnv(t, newAgent(agentQuality, submitted("t1"), step{err: tc.err}))
+			e.p.Run(context.Background(), e.delegation(t))
+			if want := []string{pipePhrases.Generic, tc.want}; !reflect.DeepEqual(e.texts(), want) {
+				t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
+			}
+			// le détail de l'activité reste dans l'ensemble fermé
+			if got := e.sink.snapshot(); len(got) != 2 || activityOf(t, got[1]).Detail != DetailAgentFailed && activityOf(t, got[1]).Detail != DetailUnreachable {
+				t.Fatalf("messages = %q", describeAll(got))
+			}
+		})
 	}
 }

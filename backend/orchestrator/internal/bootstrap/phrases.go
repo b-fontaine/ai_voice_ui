@@ -18,12 +18,14 @@ var defaultPhrases []byte
 
 // phrasesFile est le format JSON du fichier de phrases.
 type phrasesFile struct {
-	Generic        string `json:"generic"`
-	Failure        string `json:"failure"`
-	QueueFull      string `json:"queue_full"`
-	NoRequest      string `json:"no_request"`
-	NoAgent        string `json:"no_agent"`
-	ResultTemplate string `json:"result_template"`
+	Generic         string `json:"generic"`
+	Failure         string `json:"failure"`
+	FailureRejected string `json:"failure_rejected"`
+	NoSummary       string `json:"no_summary"`
+	QueueFull       string `json:"queue_full"`
+	NoRequest       string `json:"no_request"`
+	NoAgent         string `json:"no_agent"`
+	ResultTemplate  string `json:"result_template"`
 }
 
 // loadPhrases lit le fichier de phrases (ou les phrases embarquées si path est
@@ -40,14 +42,19 @@ func loadPhrases(path string) (orchestrate.Phrases, error) {
 	dec.DisallowUnknownFields()
 	var f phrasesFile
 	if err := dec.Decode(&f); err != nil {
-		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, queue_full, no_request, no_agent, result_template attendu)")
+		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, failure_rejected, no_summary, queue_full, no_request, no_agent, result_template attendu)")
 	}
 	p := orchestrate.Phrases{
-		Generic: f.Generic, Failure: f.Failure, QueueFull: f.QueueFull,
+		Generic: f.Generic, Failure: f.Failure, FailureRejected: f.FailureRejected, NoSummary: f.NoSummary, QueueFull: f.QueueFull,
 		NoRequest: f.NoRequest, NoAgent: f.NoAgent, ResultTemplate: f.ResultTemplate,
 	}
+	for key, v := range map[string]string{"failure_rejected": f.FailureRejected, "no_summary": f.NoSummary} {
+		if v == "" {
+			return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : clé " + key + " requise")
+		}
+	}
 	if err := p.Validate(); err != nil {
-		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : phrases invalides (toutes non vides, result_template avec un seul %s)")
+		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : phrases invalides (toutes non vides et d'au plus 1 000 runes, result_template avec un seul %s et résumé compris sous 1 000 runes)")
 	}
 	return p, nil
 }

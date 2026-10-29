@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -52,28 +53,46 @@ type Phrases struct {
 	Generic   string // accusé immédiat, sans contenu
 	QueueFull string // file pleine : la demande n'est pas traitée
 	NoRequest string // demande vide : aucun agent contacté
-	Failure   string // échec de l'agent : aucun chiffre
+	Failure   string // échec de l'agent, neutre sur la cause : aucun chiffre
 	NoAgent   string // aucun agent configuré
+	// FailureRejected est dite quand l'agent a refusé la demande (nature
+	// AgentRejected) : aucun chiffre.
+	FailureRejected string
+	// NoSummary est dite quand la tâche est terminée avec une surface valide
+	// mais sans résumé exploitable : vraie, sans chiffre.
+	NoSummary string
 	// ResultTemplate contient un seul `%s`, remplacé par le résumé de l'agent
 	// (donnée non fiable, nettoyée et bornée).
 	ResultTemplate string
 }
 
-// Validate vérifie que chaque phrase est renseignée et que le gabarit de
-// résultat contient exactement un `%s` et aucun autre verbe de formatage
-// (`%%` reste admis).
+// MaxCommentaryRunes est la borne d'un commentaire vocal. Elle duplique celle
+// de l'adaptateur de voix (sans l'importer) ; bootstrap teste l'égalité.
+const MaxCommentaryRunes = 1000
+
+// Validate vérifie que chaque phrase est renseignée et tient dans
+// MaxCommentaryRunes, que le gabarit de résultat contient exactement un `%s`
+// et aucun autre verbe de formatage (`%%` reste admis), et qu'une fois le
+// résumé borné inséré il tient encore dans MaxCommentaryRunes.
 func (p Phrases) Validate() error {
 	for name, v := range map[string]string{
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
-		"Failure": p.Failure, "NoAgent": p.NoAgent, "ResultTemplate": p.ResultTemplate,
+		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
+		"NoAgent": p.NoAgent, "ResultTemplate": p.ResultTemplate,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)
+		}
+		if n := utf8.RuneCountInString(v); n > MaxCommentaryRunes {
+			return fmt.Errorf("orchestrate : phrase %s trop longue (%d runes, maximum %d)", name, n, MaxCommentaryRunes)
 		}
 	}
 	if strings.Count(p.ResultTemplate, "%s") != 1 ||
 		strings.Contains(strings.ReplaceAll(strings.ReplaceAll(p.ResultTemplate, "%%", ""), "%s", ""), "%") {
 		return errors.New("orchestrate : ResultTemplate doit contenir un seul %s et aucun autre verbe")
+	}
+	if n := utf8.RuneCountInString(p.ResultTemplate) - 2 + maxSummaryRunes; n > MaxCommentaryRunes {
+		return fmt.Errorf("orchestrate : ResultTemplate trop long (%d runes avec un résumé de %d, maximum %d)", n, maxSummaryRunes, MaxCommentaryRunes)
 	}
 	return nil
 }

@@ -140,8 +140,8 @@ func (s *sideband) close(ctx context.Context) error {
 	}
 }
 
-// maxCommentaryRunes borne le texte d'un commentaire (A8).
-const maxCommentaryRunes = 1000
+// MaxCommentaryRunes borne le texte d'un commentaire (A8).
+const MaxCommentaryRunes = 1000
 
 // AppendCommentary envoie session.commentary.append puis attend l'acquittement
 // (session.commentary.appended ou error portant le même client_event_id) au
@@ -151,8 +151,8 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 	if text == "" {
 		return errors.New("commentaire vocal vide")
 	}
-	if n := utf8.RuneCountInString(text); n > maxCommentaryRunes {
-		return fmt.Errorf("commentaire vocal trop long (%d runes, maximum %d)", n, maxCommentaryRunes)
+	if n := utf8.RuneCountInString(text); n > MaxCommentaryRunes {
+		return fmt.Errorf("commentaire vocal trop long (%d runes, maximum %d)", n, MaxCommentaryRunes)
 	}
 	select {
 	case <-s.done:

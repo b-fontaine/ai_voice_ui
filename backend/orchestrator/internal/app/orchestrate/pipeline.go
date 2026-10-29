@@ -88,6 +88,9 @@ type agentResult struct {
 	index   int // position de l'agent dans Agents : ordre stable des résumés
 	ok      bool
 	summary string
+	// rejected : l'agent a refusé la demande (nature AgentRejected), hors
+	// délai et fermeture de session.
+	rejected bool
 }
 
 // NewPipeline valide ses dépendances.
@@ -144,9 +147,12 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	}
 
 	succeeded := make([]*agentResult, n)
+	rejections := 0
 	add := func(r agentResult) {
 		if r.ok {
 			succeeded[r.index] = &r
+		} else if r.rejected {
+			rejections++
 		}
 	}
 	got := 0
@@ -174,6 +180,7 @@ collect:
 		p.seal()
 		return
 	}
+	allRejected := rejections == n
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
@@ -184,7 +191,11 @@ collect:
 		}
 	}
 	if len(oks) == 0 {
-		p.say(ctx, d.ID, p.deps.Phrases.Failure)
+		failure := p.deps.Phrases.Failure
+		if allRejected {
+			failure = p.deps.Phrases.FailureRejected
+		}
+		p.say(ctx, d.ID, failure)
 		return
 	}
 	var parts []string
@@ -195,7 +206,8 @@ collect:
 		}
 	}
 	if len(parts) == 0 {
-		p.log.Info("résumé vide : aucun commentaire final", "delegation", d.ID)
+		p.log.Info("résumé vide : commentaire « sans résumé »", "delegation", d.ID)
+		p.say(ctx, d.ID, p.deps.Phrases.NoSummary)
 		return
 	}
 	p.say(ctx, d.ID, fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " ")))
@@ -261,7 +273,7 @@ func sanitizeSummary(s string, limit int) string {
 	for _, r := range s {
 		switch {
 		case unicode.Is(unicode.Cf, r):
-		case unicode.IsControl(r) || r == ' ' || r == ' ':
+		case unicode.IsControl(r) || r == '\u2028' || r == '\u2029':
 			b.WriteByte(' ')
 		default:
 			b.WriteRune(r)
@@ -303,7 +315,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegatio
 	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.deps.SessionID}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
-			return agentResult{}
+			return agentResult{rejected: isRejected(ctx, err)}
 		}
 		switch u.Kind {
 		case port.UpdateSubmitted:
@@ -327,7 +339,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegatio
 				err = errProtocol
 			}
 			p.fail(ctx, ts, err)
-			return agentResult{}
+			return agentResult{rejected: isRejected(ctx, err)}
 		default:
 			p.fail(ctx, ts, errProtocol)
 			return agentResult{}
@@ -504,4 +516,14 @@ func detailFor(ctx context.Context, err error) string {
 		}
 	}
 	return DetailAgentFailed
+}
+
+// isRejected indique que l'agent a refusé la demande ; la cause du contexte
+// (session fermée, délai) prime, comme pour le détail.
+func isRejected(ctx context.Context, err error) bool {
+	if context.Cause(ctx) != nil {
+		return false
+	}
+	var ae *port.AgentError
+	return errors.As(err, &ae) && ae.Kind == port.AgentRejected
 }
