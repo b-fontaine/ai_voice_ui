@@ -56,4 +56,4 @@
 **Non vérifié par le relecteur** : capture réelle sous Xvfb (T91 à venir ; le contraste de R4 est déduit du code genui) ; que genui signale un composant hors catalogue via `reportError` ; `injectable_generator` avec `build_runner` 2.16.2 ; le rejeu tourne aussi en release si `GENESIS_SCENARIO` est défini (spec : « en mode debug » — la capture seule est réservée au debug ; cohérent avec pdr-0032 acte 4, à noter).
 
 ## Questions pour le porteur
-- **Q-66** : reporter `app/di` (get_it + injectable) à la première fonctionnalité qui a besoin des environnements `live`/`replay`/`test` ? (échéance avant J3 ; non bloquante)
+- **Q-66** : reporter `app/di` (get_it + injectable) à J2 ? → **tranchée par le porteur le 2026-10-29 : [pdr-0044](../../product/decisions/pdr-0044-di-deferred-to-j2.md)** (« ok pour Q-66, reporte jusqu'en J2 »).

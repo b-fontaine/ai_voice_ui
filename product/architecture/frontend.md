@@ -83,7 +83,7 @@ flowchart LR
 
 - `get_it` 9.3 + `injectable` 3.0 ([di-setup-versions]) ; un module par package, composé dans `app/di` ([di-micro-packages]).
 - Environnements proposés : `live` (backend réel), `replay` (journal seul, sans réseau), `test` (fakes aux frontières, [test-mock-boundaries-only]).
-- ⚠️ `app/di` (get_it + injectable) n'est pas encore introduit : la fonctionnalité `specs/000-loop-harness` n'a aucun service à environnement, tout est injecté par constructeur depuis `GenesisCanvasApp` (racine de composition) ; report à valider par le porteur, voir `Q-66` ([open-questions.md](../roadmap/open-questions.md)).
+- `app/di` (get_it + injectable) n'est pas encore introduit : la fonctionnalité `specs/000-loop-harness` n'a aucun service à environnement, tout est injecté par constructeur depuis `GenesisCanvasApp` (racine de composition) ; il arrive en J2 avec le premier service réel ([pdr-0044](../decisions/pdr-0044-di-deferred-to-j2.md), Q-66 tranchée).
 - Portée get_it **par session** pour `VoiceSession`, transport genui et bus d'événements, recréée à chaque session et à chaque remise à vide ([di-get-it-scopes], [ma-flutter-event-bus]).
 
 ## Rendu GenUI
