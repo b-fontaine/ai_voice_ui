@@ -78,7 +78,9 @@ func run(logger *slog.Logger) error {
 	select {
 	case err = <-serveErr:
 		if !errors.Is(err, http.ErrServerClosed) {
-			_ = app.Close(context.Background())
+			failCtx, failCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+			defer failCancel()
+			_ = app.Close(failCtx)
 			return err
 		}
 	case <-ctx.Done():

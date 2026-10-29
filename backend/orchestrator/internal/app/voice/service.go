@@ -125,33 +125,38 @@ func (s *Service) Shutdown(ctx context.Context) error {
 	s.sessions = map[string]*session{}
 	s.mu.Unlock()
 
-	var errs []error
-	for _, sess := range all {
-		if err := s.closeSession(ctx, sess); err != nil {
-			errs = append(errs, err)
-		}
+	errs := make([]error, len(all))
+	var wg sync.WaitGroup
+	for i, sess := range all {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs[i] = s.closeSession(ctx, sess)
+		}()
 	}
+	wg.Wait()
 	return errors.Join(errs...)
 }
 
+// closeSession demande la fermeture puis attend sa confirmation ; le délai de
+// garde borne l'ensemble (appel à Sideband.Close compris).
 func (s *Service) closeSession(ctx context.Context, sess *session) error {
-	closeErr := sess.sideband.Close(ctx)
-	timer := time.NewTimer(s.opts.GuardTimeout)
-	defer timer.Stop()
+	gctx, cancel := context.WithTimeout(ctx, s.opts.GuardTimeout)
+	defer cancel()
+	closeErr := sess.sideband.Close(gctx)
 	select {
 	case <-sess.done:
 		if closeErr != nil {
 			return fmt.Errorf("voice: fermeture de %s : %w", sess.id, closeErr)
 		}
 		return nil
-	case <-timer.C:
+	case <-gctx.Done():
 		close(sess.abandon)
 		<-sess.done
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		return fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id)
-	case <-ctx.Done():
-		close(sess.abandon)
-		<-sess.done
-		return ctx.Err()
 	}
 }
 

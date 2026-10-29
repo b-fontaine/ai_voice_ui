@@ -329,6 +329,98 @@ func TestCloseGuardTimeout(t *testing.T) {
 	waitGoroutines(t, before)
 }
 
+// blockingSideband imite openailive : Close attend la fin de son contexte.
+type blockingSideband struct{ events chan port.LiveEvent }
+
+func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
+
+func (b *blockingSideband) Close(ctx context.Context) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+type blockingLive struct {
+	mu sync.Mutex
+	n  int
+}
+
+func (l *blockingLive) CreateSession(context.Context, string) (port.LiveSession, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.n++
+	return port.LiveSession{ID: "blk_" + string(rune('0'+l.n)), AnswerSDP: "a"}, nil
+}
+
+func (l *blockingLive) Sideband(context.Context, string) (port.Sideband, error) {
+	return &blockingSideband{events: make(chan port.LiveEvent)}, nil
+}
+
+func newBlockingService(t *testing.T, guard time.Duration) *Service {
+	t.Helper()
+	svc, err := NewService(&blockingLive{}, &testSink{}, newTestClock(),
+		Options{SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: guard})
+	if err != nil {
+		t.Fatalf("NewService: %v", err)
+	}
+	return svc
+}
+
+func TestCloseGuardTimeoutWithBlockingSideband(t *testing.T) {
+	const guard = 100 * time.Millisecond
+	svc := newBlockingService(t, guard)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	type res struct {
+		err error
+		d   time.Duration
+	}
+	out := make(chan res, 1)
+	go func() {
+		start := time.Now()
+		err := svc.Close(context.Background(), opened.SessionID)
+		out <- res{err, time.Since(start)}
+	}()
+	select {
+	case r := <-out:
+		if !errors.Is(r.err, ErrCloseTimeout) {
+			t.Fatalf("ErrCloseTimeout attendu, obtenu %v", r.err)
+		}
+		if r.d < guard || r.d > guard+waitLimit/2 {
+			t.Fatalf("durée %v hors bornes", r.d)
+		}
+	case <-time.After(waitLimit):
+		t.Fatal("Close bloqué : le délai de garde ne s'applique pas à Sideband.Close")
+	}
+	waitGoroutines(t, before)
+}
+
+func TestShutdownParallelGuard(t *testing.T) {
+	const guard = 200 * time.Millisecond
+	svc := newBlockingService(t, guard)
+	for i := 0; i < 2; i++ {
+		if _, err := svc.Open(context.Background(), "o"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := make(chan error, 1)
+	start := time.Now()
+	go func() { out <- svc.Shutdown(context.Background()) }()
+	select {
+	case err := <-out:
+		if !errors.Is(err, ErrCloseTimeout) {
+			t.Fatalf("ErrCloseTimeout attendu, obtenu %v", err)
+		}
+		if d := time.Since(start); d < guard || d >= 2*guard {
+			t.Fatalf("durée %v : attendu ≈ un seul délai de garde (%v)", d, guard)
+		}
+	case <-time.After(waitLimit):
+		t.Fatal("Shutdown bloqué")
+	}
+}
+
 func TestShutdownClosesAll(t *testing.T) {
 	live := &testLive{autoClose: true}
 	svc, sink, _ := newTestService(t, live)

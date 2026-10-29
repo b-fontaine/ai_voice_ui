@@ -22,7 +22,8 @@ type LiveProvider interface {
 }
 
 // Sideband est le canal d'événements d'une session. Events est fermé après
-// l'événement EventClosed ; Close demande la fermeture de la session.
+// l'événement EventClosed ; Close demande la fermeture de la session et
+// bloque jusqu'à la confirmation de fermeture ou la fin de ctx.
 type Sideband interface {
 	Events() <-chan LiveEvent
 	Close(ctx context.Context) error
