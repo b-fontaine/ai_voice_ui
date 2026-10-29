@@ -18,6 +18,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T17 Infra — `backend/Dockerfile`, `docker-compose.yaml`, `.github/workflows/ci.yaml` minimal · test d'abord : `docker compose config` en échec (fichier absent)
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
+- [x] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer + refactorisations
 - [ ] T92 Vérification : essai réel unique (budget), `docker compose config` ; clôture, fusion, `publish.sh`

@@ -1,6 +1,6 @@
 # 003 — État
 
-- **Étape** : TDD
+- **Étape** : Revue
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (T17) : backend/orchestrator/{Dockerfile,.dockerignore,config/voice-instructions.fr.md,cmd/orchestrator/main.go,internal/bootstrap/{healthcheck.go,healthcheck_test.go}}, docker-compose.yaml, .github/workflows/ci.yaml, plan.md, tasks.md, status.md
@@ -21,6 +21,7 @@
 | 2026-10-29 | TDD | T15 : journal `jsonljournal` (`New`, `Publish`, `Close`) ; `domain.WireData`/`DataJSON` extraits de `wsapp` (noms de champs communs) ; rouge `undefined: Recorder`/`domain.DataJSON`, vert sous `-race -count=3` ; id de session validé, permissions 0600/0700 | .omc/state/loop/gates/20261029-182732-unit-go.log |
 | 2026-10-29 | TDD | T16 : `httpapi` (routes, 415/413/429/502, DELETE, `/healthz`, journal d'accès), `fanout`, `bootstrap.New`/`App.Close`, `cmd/orchestrator` ; `JOURNAL_DIR` rendu facultatif dans `ConfigFromEnv` ; correctif d'ordre de fermeture `done`/`events` dans `openailive` (test T13 intermittent) ; A1-A3 verts, `-race -count=3` vert | .omc/state/loop/gates/20261029-183319-full.log |
 | 2026-10-29 | TDD | T17 : Dockerfile distroless non-root, `docker-compose.yaml` (127.0.0.1, read_only, cap_drop), CI minimale, sous-commande `healthcheck` (`bootstrap.HealthcheckURL`) ; rouge `docker compose config` sans fichier + `undefined: HealthcheckURL`, vert ; image construite, refuse de démarrer sans `VOICE_MODEL` ; YAML de la CI non validé par actionlint (absent) | .omc/state/loop/gates/20261029-183809-unit-go.log |
+| 2026-10-29 | TDD terminé | T10-T17 faites ; `gate.sh --full` vert sur arbre propre (18 contrôles, acceptation A1-A3 comprise) ; aucune clé dans les fichiers du dépôt (comptage) | `.omc/state/loop/gates/20261029-183838-full.log` |
 
 ## Revue d'architecte
 
