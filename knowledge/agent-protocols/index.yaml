@@ -5,6 +5,7 @@ notes:
   - {id: proto-a2a-agent-card, path: a2a/agent-card.md, summary: "Agent Card /.well-known/agent-card.json, supportedInterfaces, capabilities, signatures", tags: [a2a, discovery]}
   - {id: proto-a2a-bindings, path: a2a/bindings.md, summary: "JSON-RPC (SendMessage…), gRPC, REST (/message:send…)", tags: [a2a, transport]}
   - {id: proto-a2a-dart-sdk, path: a2a/dart-sdk.md, summary: "Pas de SDK Dart officiel; a2a 4.3.1 cible v0.3; genui_a2a 0.10.1", tags: [a2a, dart]}
+  - {id: proto-a2a-go-v03-compat, path: a2a/go-v03-compat.md, summary: "a2a-go v2 face à genui_a2a (A2A v0.3) : handler a2av0, carte, pièges gob", tags: [a2a, go, compat]}
   - {id: proto-a2a-message-parts-artifacts, path: a2a/message-parts-artifacts.md, summary: "Message/Part unifié (text|raw|url|data)/Artifact en v1.0", tags: [a2a, data-model]}
   - {id: proto-a2a-overview, path: a2a/overview.md, summary: "A2A v1.0.0, Linux Foundation/AAIF, SDK officiels (pas Dart), ruptures vs v0.3", tags: [a2a, governance]}
   - {id: proto-a2a-security, path: a2a/security.md, summary: "securitySchemes (API key, HTTP, OAuth2, OIDC, mTLS), AUTH_REQUIRED", tags: [a2a, auth]}

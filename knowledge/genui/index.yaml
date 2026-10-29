@@ -29,5 +29,6 @@ notes:
   - {id: genui-migration-from-0-7, path: migration/from-0-7-content-generators.md, summary: "Table de correspondance 0.6/0.7 (ContentGenerator, GenUiConversation) -> 0.10", tags: [genui, migration]}
   - {id: genui-migration-0-10, path: migration/to-0-10.md, summary: "Ruptures 0.10 (types a2ui_core, store supprimé) et changelog jusqu'à 0.10.6", tags: [genui, migration]}
   # testing/
+  - {id: genui-test-a2a-roundtrip, path: testing/a2a-roundtrip-test.md, summary: "genui_a2a contre un vrai agent dans testWidgets : HttpOverrides, runAsync, Timer de 15 s", tags: [genui, a2a, testing]}
   - {id: genui-test-catalog-items, path: testing/catalog-item-widget-tests.md, summary: "Widget test d'un CatalogItem via catalog.buildWidget, validation exampleData, DebugCatalogView", tags: [genui, testing]}
   - {id: genui-test-surface-controller, path: testing/surface-controller-tests.md, summary: "Rendu bout en bout : messages A2UI scriptés -> SurfaceController -> Surface, Transport factice", tags: [genui, testing]}

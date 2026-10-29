@@ -1,6 +1,6 @@
 domain: decisions
 description: "Registre de TOUTES les décisions qui gouvernent Genesis Canvas : décisions produit (pdr-*, propres au produit, fonctionnelles ou techniques) dans docs, et ADR génériques de knowledge/ appliqués au produit dans inherited. Créer ou modifier une décision : skill product-decide, gabarit _template.md (exclu du lint)."
-next_id: pdr-0045
+next_id: pdr-0046
 docs:
   - {id: pdr-0001-conference-demo-deliverable, path: pdr-0001-conference-demo-deliverable.md, summary: "2026-10-28 acceptée — livrable = démo de conférence, pas un produit de production ; pas d'auth, de multi-utilisateur ni de persistance", tags: [pdr, scope, conference, demo], decision_status: acceptée}
   - {id: pdr-0002-desktop-platform, path: pdr-0002-desktop-platform.md, summary: "2026-10-28 remplacée par pdr-0028-linux-demo-machine — Flutter desktop, macOS prioritaire, Windows en secours, projection 1920×1080 ; mobile et web écartés", tags: [pdr, platform, desktop, macos, windows], decision_status: remplacée par pdr-0028-linux-demo-machine}
@@ -46,6 +46,7 @@ docs:
   - {id: pdr-0042-calendar-and-cut-order-validated, path: pdr-0042-calendar-and-cut-order-validated.md, summary: "2026-10-29 acceptée — calendrier daté accepté (dev jusqu'au 9/11, gel 10-11/11, talk 12/11), coupes C1 à C5 appliquées sans redemander, C6 à C10 au cas par cas (tranche Q-65)", tags: [pdr, calendrier, coupe, roadmap], decision_status: acceptée}
   - {id: pdr-0043-light-spec-kit-sdd-template, path: pdr-0043-light-spec-kit-sdd-template.md, summary: "2026-10-29 acceptée — gabarit SDD Spec Kit léger : specs/NNN-<slug>/ par fonctionnalité, renvoie à product/ sans recopier (tranche Q-09)", tags: [pdr, sdd, specs, boucle], decision_status: acceptée}
   - {id: pdr-0044-di-deferred-to-j2, path: pdr-0044-di-deferred-to-j2.md, summary: "2026-10-29 acceptée — get_it + injectable introduits en J2 avec le premier service, pas dans 000 (tranche Q-66)", tags: [pdr, di], decision_status: acceptée}
+  - {id: pdr-0045-app-backend-channel-wss-recommended, path: pdr-0045-app-backend-channel-wss-recommended.md, summary: "2026-10-29 proposée — canal app ↔ backend : WSS app-channel maison recommandé, genui_a2a compatible (SP-03) mais écarté pour l'app (Q-39)", tags: [pdr, canal, a2a], decision_status: proposée}
 inherited:
   - {id: adr-0001-initial-constraints, path: ../../knowledge/decisions/adr-0001-initial-constraints.md, summary: "2026-10-26 acceptée — Flutter, Clean+FSD, get_it/injectable, Bloc sans Cubit, TDD/BDD", applies: "Architecture front (barrels, DI par constructeur, Bloc sealed/freezed), BDD bdd_widget_test depuis les .feature de la fiche, mocks aux frontières ; cible web/mobile de l'ADR restreinte au desktop Linux (pdr-0026, pdr-0028)"}
   - {id: adr-0002-orchestrator-backend, path: ../../knowledge/decisions/adr-0002-orchestrator-backend.md, summary: "2026-10-27 acceptée — orchestrateur côté backend dès la phase 1", applies: "Orchestrateur et agents A2A côté backend ; l'app ne porte que audio/WebRTC, rendu A2UI et outils locaux sans secret (NFR-09) ; journal de rejeu (flux A2UI) côté app pour l'acte 4 (pdr-0032)"}

@@ -1,0 +1,7 @@
+# Binaires du spike
+agent/sp03agent
+client/.dart_tool/
+client/build/
+client/.flutter-plugins*
+client/pubspec.lock
+client/*.png
