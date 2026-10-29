@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      bdd_widget_test|featureBuilder:
+        options:
+          # Remplace les imports par défaut (material_ui n'est pas une dépendance de l'app).
+          customHeaders:
+            - "import 'package:flutter_test/flutter_test.dart';"

@@ -1,0 +1,32 @@
+name: genesis_canvas
+description: Genesis Canvas, démo de conférence Flutter desktop (Release Copilot).
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  a2ui_core: 0.1.1
+  feature_canvas:
+    path: ../../packages/features/canvas
+  flutter:
+    sdk: flutter
+  flutter_bloc: 9.1.1
+  genui: 0.10.4
+  shared_core:
+    path: ../../packages/shared/core
+
+dev_dependencies:
+  bdd_widget_test: 3.0.4
+  build_runner: 2.16.2
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/replays/

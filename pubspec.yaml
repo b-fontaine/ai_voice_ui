@@ -1,0 +1,12 @@
+name: genesis_canvas_workspace
+description: Workspace pub racine de Genesis Canvas (une seule résolution de dépendances).
+publish_to: none
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+
+workspace:
+  - apps/genesis_canvas
+  - packages/features/canvas
+  - packages/shared/core

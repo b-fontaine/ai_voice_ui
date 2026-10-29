@@ -1,0 +1,3 @@
+{"t_ms": 0, "message": {"version": "v0.9", "createSurface": {"surfaceId": "quality", "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json", "sendDataModel": true}}}
+{"t_ms": 50, "message": {"version": "v0.9", "updateComponents": {"surfaceId": "quality", "components": [{"id": "root", "component": "Column", "children": ["title", "value"]}, {"id": "title", "component": "Text", "text": "Sessions sans crash", "variant": "h3"}, {"id": "value", "component": "Text", "text": {"path": "/crashFree"}}]}}}
+{"t_ms": 100, "message": {"version": "v0.9", "updateDataModel": {"surfaceId": "quality", "path": "/crashFree", "value": "99,57 %"}}}
