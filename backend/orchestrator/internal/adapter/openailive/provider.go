@@ -21,7 +21,11 @@ import (
 // de gpt-live : PCM16 mono 24 kHz [rt-gpt-live-output-level].
 const OutputSampleRate = 24000
 
-const delegationClient = "client"
+const (
+	delegationClient    = "client"
+	delegationResponses = "responses"
+	delegationDecisions = "decisions"
+)
 
 // Options configure l'adaptateur. Aucune valeur par défaut n'est codée en dur,
 // sauf BaseURL vide (défaut du SDK).
@@ -50,6 +54,7 @@ type Provider struct {
 	model        string
 	voice        string
 	instructions string
+	delegation   live.MediaSessionConfigDelegationUnionParam
 }
 
 var _ port.LiveProvider = (*Provider)(nil)
@@ -62,16 +67,27 @@ func (p *Provider) String() string {
 // GoString garantit que %#v ne révèle pas la clé.
 func (p *Provider) GoString() string { return p.String() }
 
-// New construit l'adaptateur. Les délégations « responses » et « decisions »
-// ne sont pas prises en charge au MVP.
-func New(opts Options) (*Provider, error) {
-	switch opts.DelegationType {
+// delegationParam construit le paramètre de délégation de la session. Les
+// délégations « responses » et « decisions » ne sont pas prises en charge au MVP.
+func delegationParam(kind string) (live.MediaSessionConfigDelegationUnionParam, error) {
+	switch kind {
 	case delegationClient:
-	case "responses", "decisions":
-		return nil, fmt.Errorf("délégation %q non prise en charge au MVP, pdr-0050", opts.DelegationType)
+		d := live.NewClientDelegationParam()
+		return live.MediaSessionConfigDelegationUnionParam{OfClient: &d}, nil
+	case delegationResponses, delegationDecisions:
+		return live.MediaSessionConfigDelegationUnionParam{},
+			fmt.Errorf("délégation %q non prise en charge au MVP, pdr-0050", kind)
 	default:
-		return nil, fmt.Errorf("type de délégation %q inconnu (seul %q est pris en charge, pdr-0050)",
-			opts.DelegationType, delegationClient)
+		return live.MediaSessionConfigDelegationUnionParam{},
+			fmt.Errorf("type de délégation %q inconnu (seul %q est pris en charge, pdr-0050)", kind, delegationClient)
+	}
+}
+
+// New construit l'adaptateur ; il est le seul validateur du type de délégation.
+func New(opts Options) (*Provider, error) {
+	delegation, err := delegationParam(opts.DelegationType)
+	if err != nil {
+		return nil, err
 	}
 	if opts.APIKey == "" {
 		return nil, errors.New("clé API du fournisseur voix manquante")
@@ -89,6 +105,7 @@ func New(opts Options) (*Provider, error) {
 		model:        opts.Model,
 		voice:        opts.Voice,
 		instructions: opts.Instructions,
+		delegation:   delegation,
 	}, nil
 }
 
@@ -99,8 +116,7 @@ func (p *Provider) CreateSession(ctx context.Context, offerSDP string) (port.Liv
 		cfg.Instructions = param.NewOpt(p.instructions)
 	}
 	cfg.Audio.Output.Voice.OfString = param.NewOpt(p.voice)
-	d := live.NewClientDelegationParam()
-	cfg.Delegation.OfClient = &d
+	cfg.Delegation = p.delegation
 
 	res, err := p.client.Live.New(ctx, live.LiveNewParams{
 		Session:   cfg,

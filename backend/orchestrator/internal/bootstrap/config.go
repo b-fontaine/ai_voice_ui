@@ -93,12 +93,6 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		*r.dst = v
 	}
 
-	switch cfg.DelegationType {
-	case "client", "responses", "decisions":
-	default:
-		return Config{}, errors.New("VOICE_DELEGATION_TYPE doit valoir client, responses ou decisions")
-	}
-
 	cfg.ListenPort = defaultListenPort
 	if raw := strings.TrimSpace(getenv("LISTEN_PORT")); raw != "" {
 		p, err := strconv.Atoi(raw)

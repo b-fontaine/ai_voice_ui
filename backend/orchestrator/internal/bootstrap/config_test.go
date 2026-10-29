@@ -77,19 +77,21 @@ func TestConfigFromEnv_MissingVariable(t *testing.T) {
 	}
 }
 
+// ConfigFromEnv ne valide pas la valeur : openailive est le seul validateur.
 func TestConfigFromEnv_DelegationType(t *testing.T) {
-	for _, ok := range []string{"client", "responses", "decisions"} {
+	for _, v := range []string{"client", "responses", "decisions", "autre"} {
 		env := fullEnv()
-		env["VOICE_DELEGATION_TYPE"] = ok
-		if _, err := load(env); err != nil {
-			t.Fatalf("%s doit être accepté : %v", ok, err)
+		env["VOICE_DELEGATION_TYPE"] = v
+		cfg, err := load(env)
+		if err != nil || cfg.DelegationType != v {
+			t.Fatalf("%s doit être transmis tel quel : %v", v, err)
 		}
 	}
 	env := fullEnv()
-	env["VOICE_DELEGATION_TYPE"] = "autre"
+	env["VOICE_DELEGATION_TYPE"] = "  "
 	_, err := load(env)
 	if err == nil || !strings.Contains(err.Error(), "VOICE_DELEGATION_TYPE") {
-		t.Fatalf("type invalide doit échouer en nommant la variable : %v", err)
+		t.Fatalf("valeur vide doit échouer en nommant la variable : %v", err)
 	}
 }
 

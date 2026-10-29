@@ -165,6 +165,32 @@ func TestCreateSessionContract(t *testing.T) {
 	}
 }
 
+func TestCreateSessionUsesConfiguredDelegation(t *testing.T) {
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"session":{"id":"live_abc"},"transport":{"type":"webrtc","sdp":"v=0 answer"}}`))
+	}))
+	defer srv.Close()
+
+	o := testOptions(srv.URL)
+	o.DelegationType = "client"
+	p, err := openailive.New(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.CreateSession(ctxT(t), "v=0 offer"); err != nil {
+		t.Fatal(err)
+	}
+	session, _ := body["session"].(map[string]any)
+	deleg, _ := session["delegation"].(map[string]any)
+	if deleg["type"] != o.DelegationType {
+		t.Fatalf("delegation reçue = %v, configurée %q", session["delegation"], o.DelegationType)
+	}
+}
+
 func TestCreateSessionErrorHidesKey(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
