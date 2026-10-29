@@ -7,7 +7,7 @@ Format : `- [ ] Txx <pile> — <tâche> · test d'abord : <test qui doit échoue
 
 ## TDD
 - [x] T10 Flutter — workspace pub racine, `apps/genesis_canvas` (Linux), versions exactes · test d'abord : test de widget « l'app démarre et affiche l'orbe » (H-01)
-- [ ] T11 Flutter — `A2uiReplaySource` (lecture JSONL, délais, messages v0.9) · test d'abord : test unitaire sur une fixture de 3 lignes
+- [x] T11 Flutter — `A2uiReplaySource` (lecture JSONL, délais, messages v0.9) · test d'abord : test unitaire sur une fixture de 3 lignes
 - [ ] T12 Flutter — `CanvasBloc` + `CanvasBoard` (messages → `SurfaceController` → surface affichée) · test d'abord : bloc_test + test de widget (H-02)
 - [ ] T13 Flutter — `SnapshotService` + configuration `GENESIS_SCENARIO` / `GENESIS_SNAPSHOT` injectée · test d'abord : test de widget qui vérifie qu'un PNG non vide est produit (H-03)
 - [ ] T14 Flutter — fixture `act1-replay.jsonl` alignée sur `product/functional/dataset.md` · test d'abord : H-02 avec les valeurs du jeu

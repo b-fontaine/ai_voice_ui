@@ -7,3 +7,4 @@ environment:
 
 workspace:
   - apps/genesis_canvas
+  - packages/shared/core
