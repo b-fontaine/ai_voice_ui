@@ -1,7 +1,7 @@
 import 'dart:io' as io;
 
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
 import 'package:shared_core/shared_core.dart'
     show ExitHandler, ReplayDelay, SnapshotService;
@@ -38,23 +38,29 @@ class GenesisCanvasApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final sink = errorSink ?? io.stderr;
     final scenario = config.scenario;
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: GenesisCanvasPage(
-        catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
-        replay: scenario == null
-            ? null
-            : ScenarioPlayer(
-                bundle: assetBundle ?? rootBundle,
-                delay: replayDelay,
-              ).messages(scenario),
-        snapshotFactory: (exitHandler) => SnapshotService(
-          path: config.snapshotPath,
-          exitHandler: exitHandler,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(brightness: Brightness.dark),
+      // `Material` transparent : fournit le style de texte du thème (sinon
+      // repli rouge souligné) sans changer le fond de la page.
+      home: Material(
+        type: MaterialType.transparency,
+        child: GenesisCanvasPage(
+          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          replay: scenario == null
+              ? null
+              : ScenarioPlayer(
+                  bundle: assetBundle ?? rootBundle,
+                  delay: replayDelay,
+                ).messages(scenario),
+          snapshotFactory: (exitHandler) => SnapshotService(
+            path: config.snapshotPath,
+            exitHandler: exitHandler,
+            errorSink: sink,
+          ),
+          exitHandler: exitHandler ?? io.exit,
           errorSink: sink,
         ),
-        exitHandler: exitHandler ?? io.exit,
-        errorSink: sink,
       ),
     );
   }
