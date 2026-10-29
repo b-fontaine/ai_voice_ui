@@ -10,16 +10,18 @@ notes:
   - {id: rt-gemini-live-models, path: gemini/gemini-live-models.md, summary: "3.8 Live recommandé ; Firebase AI Logic ne liste que 3.1 preview / 2.5", tags: [gemini, models, firebase-ai-logic]}
   - {id: rt-gemini-session-limits, path: gemini/gemini-session-limits.md, summary: "15 min audio / ~10 min connexion, resumption 2 h, compression, GoAway", tags: [gemini, session-resumption, context-compression]}
   # openai/
-  - {id: rt-gpt-live-delegation, path: openai/gpt-live-delegation.md, summary: "Délégation responses vs client (fixée à la création), événements, retour d'outils, accusés, append ≤ 500 tokens", tags: [openai, gpt-live, tools, delegation]}
-  - {id: rt-gpt-live-lifecycle, path: openai/gpt-live-lifecycle.md, summary: "Événements client/serveur GPT-Live, session.started→session.close→session.closed", tags: [openai, gpt-live, events, lifecycle]}
+  - {id: rt-gpt-live-delegation, path: openai/gpt-live-delegation.md, summary: "3 modes (client par défaut, responses, decisions), événements, modèles, retour d'outils, accusés, append ≤ 500 tokens", tags: [openai, gpt-live, tools, delegation]}
+  - {id: rt-gpt-live-delegation-latency, path: openai/gpt-live-delegation-latency.md, summary: "Délégation mesurée (2026-10-29) : délais client/responses, paraphrase du commentary, délégation seulement si les instructions le demandent", tags: [openai, gpt-live, delegation, latency, measurement]}
+  - {id: rt-gpt-live-lifecycle, path: openai/gpt-live-lifecycle.md, summary: "Événements client/serveur GPT-Live, expires_at +2 h, usage.updated, fenêtre de contexte", tags: [openai, gpt-live, events, lifecycle]}
+  - {id: rt-gpt-live-output-level, path: openai/gpt-live-output-level.md, summary: "Niveau audio de sortie sans second micro : sideband PCM16 24 kHz en blocs de 200 ms (RMS), taille des paquets RTP", tags: [openai, gpt-live, audio, level, sideband]}
   - {id: rt-gpt-live-overview, path: openai/gpt-live-overview.md, summary: "Fiche gpt-live-1 : endpoints, prix 0,05 $/min, limites, transports", tags: [openai, gpt-live, models, pricing]}
   - {id: rt-gpt-live-session-config, path: openai/gpt-live-session-config.md, summary: "Champs de session immuables, voix (FR : brise, sillage), historique input", tags: [openai, gpt-live, voices, config]}
   - {id: rt-gpt-live-sideband, path: openai/gpt-live-sideband.md, summary: "Attache serveur wss /v1/live/sessions/{id}/attach : orchestrateur backend, un seul propriétaire des résultats", tags: [openai, gpt-live, backend, tools]}
-  - {id: rt-gpt-live-webrtc-session, path: openai/gpt-live-webrtc-session.md, summary: "POST /v1/live/sessions via relais SDP backend, data channel oai-events", tags: [openai, gpt-live, webrtc, sdp, security]}
+  - {id: rt-gpt-live-webrtc-session, path: openai/gpt-live-webrtc-session.md, summary: "POST /v1/live/sessions via relais SDP backend (SDK Go vérifié), data channel oai-events, durée 2 h", tags: [openai, gpt-live, webrtc, sdp, security]}
   - {id: rt-openai-realtime-vs-live, path: openai/openai-realtime-vs-live.md, summary: "Différences API Realtime (gpt-realtime-2.1, client_secrets) vs GPT-Live", tags: [openai, realtime-api, comparison]}
   - {id: rt-openai-webrtc-package, path: openai/openai-webrtc-package.md, summary: "openai_webrtc 0.5.0 : communautaire, Realtime seulement, à ne pas utiliser", tags: [openai, packages, flutter]}
   # patterns/
-  - {id: rt-barge-in, path: patterns/barge-in.md, summary: "Interruption : signaux par fournisseur, vider le buffer, AEC", tags: [pattern, barge-in, vad]}
+  - {id: rt-barge-in, path: patterns/barge-in.md, summary: "Interruption : signaux par fournisseur, mesures GPT-Live (coupure en 200 ms), vider le buffer, AEC", tags: [pattern, barge-in, vad]}
   - {id: rt-ephemeral-keys, path: patterns/ephemeral-keys.md, summary: "Auth client par fournisseur (relais SDP, client_secrets, auth_tokens, App Check) + règles internes de jetons", tags: [security, auth, backend]}
   - {id: rt-graceful-close, path: patterns/graceful-close.md, summary: "Ordre de fermeture, stop vs dispose, timeouts", tags: [pattern, lifecycle, dispose]}
   - {id: rt-latency, path: patterns/latency.md, summary: "Leviers de latence perçue (transport, VAD, outils non bloquants)", tags: [pattern, latency, performance]}

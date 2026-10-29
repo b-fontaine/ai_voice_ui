@@ -5,7 +5,7 @@ tags: [pattern, latency, performance, ux]
 status: opinion
 updated: 2026-10-26
 sources: [https://developers.openai.com/api/docs/guides/voice-latency-cost?api=live, https://developers.openai.com/api/docs/guides/realtime-webrtc-warp, https://pub.dev/documentation/flutter_webrtc/latest/flutter_webrtc/WebRTC/initialize.html, https://developers.openai.com/api/docs/guides/live-delegation.md, https://ai.google.dev/gemini-api/docs/live-guide]
-links: [rt-tool-calling-voice, rt-gemini-audio-vad, rt-gpt-live-delegation, ma-filler-acknowledgements, perf-audio-latency, rt-gemini-function-calling]
+links: [rt-gpt-live-delegation-latency, rt-tool-calling-voice, rt-gemini-audio-vad, rt-gpt-live-delegation, ma-filler-acknowledgements, perf-audio-latency, rt-gemini-function-calling]
 ---
 # Réduire la latence perçue d'un agent vocal
 

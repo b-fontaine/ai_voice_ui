@@ -256,6 +256,7 @@ func main() {
 	r := &relay{client: openai.NewClient(), secret: key, start: time.Now(), logF: f}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/session", r.handleSession)
 	mux.HandleFunc("/close", r.handleClose)
 	srv := &http.Server{Addr: fmt.Sprintf("127.0.0.1:%d", *port), Handler: mux}

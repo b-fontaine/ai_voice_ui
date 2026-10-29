@@ -3,7 +3,7 @@ id: rt-ephemeral-keys
 title: Ne jamais exposer la clé — relais SDP, client secrets, jetons éphémères
 tags: [security, auth, ephemeral-token, openai, gemini, firebase, backend, multi-agent]
 status: verified
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [https://developers.openai.com/api/docs/guides/voice-webrtc?api=live, https://ai.google.dev/gemini-api/docs/ephemeral-tokens, https://firebase.google.com/docs/ai-logic/live-api?hl=en, https://openai.github.io/openai-agents-js/guides/voice-agents/build/, https://pydantic.dev/docs/ai/api/realtime/openai_live/]
 links: [rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gemini-ephemeral-tokens, rt-openai-realtime-vs-live, ma-where-to-run-agents, ma-mcp-security, proto-a2a-security, proj-avw-risks]
 ---
@@ -13,7 +13,7 @@ links: [rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gemini-ephemeral-to
 
 | Fournisseur / API | Mécanisme documenté (au 2026-10-26) |
 |---|---|
-| OpenAI GPT-Live | **Relais SDP backend** uniquement : le backend appelle `/v1/live/sessions` avec la clé. Aucun client secret documenté (Pydantic AI : `create_client_secret` lève toujours une erreur pour Live — source secondaire). |
+| OpenAI GPT-Live | **Relais SDP backend** uniquement : le backend appelle `/v1/live/sessions` avec la clé (vérifié le 2026-10-29 : un client sans aucune clé ouvre une session via le relais). Aucun client secret documenté (Pydantic AI : `create_client_secret` lève toujours une erreur pour Live — source secondaire). |
 | OpenAI Realtime | Relais SDP (`/v1/realtime/calls`) **ou** clé éphémère (`POST /v1/realtime/client_secrets`, champ `value`). Les credentials MCP hébergés vont dans ce payload serveur, jamais dans le client. |
 | Gemini API directe | Jetons éphémères `v1beta/auth_tokens` (`uses` 1, `expireTime` 30 min, `newSessionExpireTime` 1 min), Live API seulement ([[rt-gemini-ephemeral-tokens]]). |
 | Firebase AI Logic | Pas de clé Gemini dans l'app : config Firebase et **App Check** (obligatoire dès le 2026-11-02). |

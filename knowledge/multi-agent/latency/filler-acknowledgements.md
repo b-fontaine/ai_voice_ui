@@ -5,7 +5,7 @@ tags: [multi-agent, latency, realtime-voice, gpt-live, ux]
 status: verified
 updated: 2026-10-26
 sources: [https://developers.openai.com/api/docs/guides/live-delegation, https://developers.openai.com/api/docs/guides/live-prompting, https://openai.github.io/openai-agents-js/guides/voice-agents/build/]
-links: [rt-gpt-live-delegation, rt-gemini-function-calling, ma-real-tool-results, rt-latency]
+links: [rt-gpt-live-delegation-latency, rt-gpt-live-delegation, rt-gemini-function-calling, ma-real-tool-results, rt-latency]
 ---
 # Combler l'attente sans mentir
 

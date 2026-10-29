@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>SP-02 — essai voix (AEC navigateur)</title>
+<style>
+body{font:16px system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;background:#0b0b14;color:#e8e8f0}
+button{font:inherit;padding:.6rem 1.2rem;margin-right:.5rem;border-radius:.4rem;border:0;cursor:pointer}
+#go{background:#7c5cff;color:#fff}#stop{background:#444;color:#fff}
+#st{margin:1rem 0;color:#9aa}#log{white-space:pre-wrap;background:#14141f;padding:1rem;border-radius:.5rem;min-height:12rem}
+.u{color:#8fd}.a{color:#fd8}small{color:#889}
+</style></head><body>
+<h1>SP-02 — essai voix</h1>
+<p><small>Page locale du spike : le micro est capté par le navigateur (annulation d'écho activée), aucune clé ici. Parle français.</small></p>
+<p><b>Protocole.</b> 1) Démarrer. 2) Dis : « Raconte-moi en détail, étape par étape, comment se prépare une release mobile. » 3) <b>Pendant que l'IA parle, coupe-la</b> en disant « Stop, attends ». 4) Redemande une réponse longue puis <b>ne dis rien</b> pendant 15 secondes, enceinte à volume normal : l'IA doit finir sa phrase sans s'interrompre toute seule. 5) Arrêter.</p>
+<button id="go">Démarrer</button><button id="stop" disabled>Arrêter</button>
+<div id="st">inactif</div><div id="log"></div><audio id="out" autoplay></audio>
+<script>
+const $=id=>document.getElementById(id);let pc,dc,stream,t0;
+const now=()=>((performance.now()-t0)/1000).toFixed(1).padStart(5)+" s ";
+function add(c,t){const d=document.createElement("span");d.className=c;d.textContent=t;$("log").appendChild(d);}
+function status(s){$("st").textContent=s}
+$("go").onclick=async()=>{
+  $("go").disabled=true;$("log").textContent="";t0=performance.now();
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const s=stream.getAudioTracks()[0].getSettings();
+    status("micro : echoCancellation="+s.echoCancellation+" noiseSuppression="+s.noiseSuppression+" autoGainControl="+s.autoGainControl);
+    pc=new RTCPeerConnection();
+    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+    pc.ontrack=e=>{$("out").srcObject=e.streams[0]};
+    pc.onconnectionstatechange=()=>status("connexion : "+pc.connectionState);
+    dc=pc.createDataChannel("oai-events");
+    let lastU="",lastA="";
+    dc.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(_){return}
+      if(m.type==="session.input_transcript.delta"){add("u",(lastU!=="u"?"\n"+now()+"toi : ":"")+m.delta);lastU="u";lastA="";}
+      else if(m.type==="session.output_transcript.delta"){add("a",(lastA!=="a"?"\n"+now()+"IA  : ":"")+m.delta);lastA="a";lastU="";}
+      else if(m.type==="session.started"){add("",now()+"session ouverte\n")}
+      else if(m.type==="session.closed"){add("",now()+"\nsession fermée ("+m.reason+")\n")}
+      else if(m.type==="error"){add("",now()+"\nerreur : "+JSON.stringify(m.error)+"\n")}};
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+    await new Promise(r=>{if(pc.iceGatheringState==="complete")return r();pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==="complete")r()};setTimeout(r,10000)});
+    const r=await fetch("/session",{method:"POST",body:JSON.stringify({sdp:pc.localDescription.sdp,delegation:"client",
+      instructions:"Tu es un assistant vocal. Réponds toujours en français. Quand on te demande une explication, réponds de façon détaillée, en au moins dix phrases."})});
+    if(!r.ok){throw new Error("relais : "+r.status+" "+(await r.text()).slice(0,200))}
+    const j=await r.json();await pc.setRemoteDescription({type:"answer",sdp:j.sdp});
+    $("stop").disabled=false;
+  }catch(e){status("échec : "+e.message);$("go").disabled=false}
+};
+$("stop").onclick=async()=>{$("stop").disabled=true;try{await fetch("/close",{method:"POST"})}catch(_){}
+  if(pc)pc.close();if(stream)stream.getTracks().forEach(t=>t.stop());status("arrêté");$("go").disabled=false};
+</script></body></html>

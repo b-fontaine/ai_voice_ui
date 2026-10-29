@@ -92,7 +92,7 @@ Du **moins** au **plus** essentiel. Déclencheur : un point de contrôle du cale
 | RD-3 | Questions ouvertes non tranchées à temps : 2 avant J2 (31/10 : Q-43, Q-47), 7 avant J3 (2/11), 3 avant J4 (5/11) | 30/10, 1/11, 4/11 | jalon bloqué (règle 1) | Recommandations de l'assistant prêtes la veille de chaque échéance |
 | RD-4 | Capacité : 12 jours consécutifs supposés, week-ends compris (Q-65) | 29/10 | − 4 j si jours ouvrés seulement (8 au lieu de 12) | Couper C1 à C7 d'emblée |
 | RD-5 | Latence de 3 agents LLM réels au-delà de NFR-03 (8 s) | 1/11 (1ʳᵉ mesure J2) | + 0,5 à 1 j | LLM rapide (Q-17), exemples d'écrans ([pdr-0023](../decisions/pdr-0023-example-guided-composition.md)) ; réexamen de [pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md) |
-| RD-6 | Auto-interruption par l'enceinte découverte tard | 30/10 (essai sur enceinte en SP-02) | + 1 j en J7 | Essai précoce ; test sono final géré par le porteur |
+| RD-6 | Auto-interruption par l'enceinte découverte tard | 30/10 (essai sur enceinte en SP-02) | + 1 j en J7 | Essai précoce fait le 2026-10-29 (SP-02) : aucune auto-interruption observée sur 60 s dans le navigateur (AEC activée, enceintes du PC) ; limites : `flutter_webrtc` sous Linux et sono de la salle non testés (SP-06 en J7, test sono géré par le porteur) |
 | RD-7 | Budget 20 € entamé par le développement | suivi quotidien du journal | arrêt des essais réels | Fournisseurs simulés en tests ; plafond `limits.budget` (proposition) |
 | RD-8 | Bogue bloquant d'une bêta (genui 0.10.4, Widgetbook 4) | n'importe quand | + 0,5 à 1 j | Versions figées ([pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md)) ; repli Widgetbook 3.25.0 |
 

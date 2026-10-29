@@ -7,11 +7,12 @@
 |---|---|---|---|---|---|
 | 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | Terminée, publiée (`b9db83c`) | 2026-10-29 |
 | 001 | SP-03 : A2A en Go ↔ `genui_a2a` (spike) | EP-03 | J1 | Terminée ✅, publiée (`529219a`) | 2026-10-29 |
-| 002 | SP-02 : session GPT-Live par relais SDP (spike réduit) | EP-02 | J1 | Expérimenter | 2026-10-29 |
+| 002 | SP-02 : session GPT-Live par relais SDP (spike réduit) | EP-02 | J1 | Clôture ⚠️ (résultat partiel) | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-29 | 002 (SP-02) : essais réels faits (6 sessions, 0,26 €) et consignés ; résultat ⚠️ partiel (barge-in et absence d'auto-interruption OK en navigateur ; AEC flutter_webrtc sous Linux, sono de la salle et scénario complet restent à faire) ; PDR **proposées** pdr-0050 (Q-47), pdr-0051 (Q-43), pdr-0052 (Q-53) à décider par le porteur avant J2 (31/10) ; J2 attend Q-43 et Q-47. |
 | 2026-10-29 | 002 (SP-02) : étape Définir faite ; clé disponible (`loop.local.env`, exportée), porteur présent, TTS OpenAI pour les phrases de test ; Q-25, Q-39, Q-46, Q-55, Q-63 tranchées (pdr-0045 acceptée, pdr-0046 à pdr-0049), J2 n'attend plus que Q-43 et Q-47 (issues de SP-02). |
 | 2026-10-29 | **En attente du porteur** — rien de faisable par la boucle. SP-02 (GPT-Live réel) : pas de `OPENAI_API_KEY` dans l'environnement de la boucle (clé attendue côté backend, `.env` non versionné, pdr-0041) et essai de barge-in sur enceinte à faire avec le porteur. J2 (walking skeleton) : questions ouvertes **Q-25** (version de Flutter : 3.47.8 déjà figée par 000, reco assistant 3.47.8), **Q-39** (canal app ↔ backend : pdr-0045 proposée, reco WSS maison), **Q-43** (niveau audio de l'orbe), **Q-46** (versions Go et autres : Go 1.27.3 résout `a2a-go/v2` v2.7.0), **Q-47** (mode de délégation GPT-Live, à établir par SP-02), **Q-55**, **Q-63**. Réveil horaire ; reprise dès qu'une réponse ou la clé est disponible. |
 | 2026-10-29 | 001 (SP-03) : consigné et clôturé (knowledge, spikes.md, stack) ; **Q-39 reste ouverte** (pdr-0045 proposée, à décider par le porteur avant J2). |
