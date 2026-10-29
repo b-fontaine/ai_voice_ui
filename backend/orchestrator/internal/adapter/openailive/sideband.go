@@ -56,12 +56,12 @@ func (s *sideband) run(ctx context.Context) {
 		raw, err := s.conn.RecvRaw(ctx)
 		if err != nil {
 			// Fin de connexion inattendue (ou abandon) : on signale la clôture.
-			s.emit(ctx, port.LiveEvent{Type: port.EventClosed})
+			s.emit(ctx, port.LiveEvent{Type: port.EventClosed, Reason: port.ReasonConnectionLost})
 			return
 		}
 		ev, ok, closed := translate(raw)
 		if closed {
-			s.emit(ctx, port.LiveEvent{Type: port.EventClosed})
+			s.emit(ctx, ev)
 			return
 		}
 		if ok && !s.emit(ctx, ev) {
@@ -111,9 +111,10 @@ func (s *sideband) close(ctx context.Context) error {
 }
 
 type frame struct {
-	Type  string `json:"type"`
-	Delta string `json:"delta"`
-	Usage struct {
+	Type   string `json:"type"`
+	Delta  string `json:"delta"`
+	Reason string `json:"reason"`
+	Usage  struct {
 		Seconds float64 `json:"seconds"`
 	} `json:"usage"`
 	ContextWindow struct {
@@ -122,7 +123,8 @@ type frame struct {
 }
 
 // translate décode une trame. ok=false : trame ignorée (inconnue, ou
-// délégation, traitée en fonctionnalité 004). closed=true : session.closed.
+// délégation, traitée en fonctionnalité 004). closed=true : session.closed,
+// ev est alors l'EventClosed portant la raison du fournisseur.
 func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 	var f frame
 	if err := json.Unmarshal(raw, &f); err != nil {
@@ -146,7 +148,7 @@ func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 			ContextRatio: f.ContextWindow.UsageRatio,
 		}, true, false
 	case "session.closed":
-		return ev, false, true
+		return port.LiveEvent{Type: port.EventClosed, Reason: f.Reason}, false, true
 	}
 	return ev, false, false
 }

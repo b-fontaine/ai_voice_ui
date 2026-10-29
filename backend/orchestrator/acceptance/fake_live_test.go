@@ -31,6 +31,7 @@ type fakeLive struct {
 
 	mu       sync.Mutex
 	offers   []string
+	hangups  []string
 	sideband *fakeSideband
 }
 
@@ -59,6 +60,14 @@ func (f *fakeLive) Sideband(_ context.Context, sessionID string) (port.Sideband,
 	f.sideband = sb
 	go sb.run()
 	return sb, nil
+}
+
+// Hangup enregistre les raccrochages demandés au fournisseur simulé.
+func (f *fakeLive) Hangup(_ context.Context, sessionID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.hangups = append(f.hangups, sessionID)
+	return nil
 }
 
 type fakeSideband struct {

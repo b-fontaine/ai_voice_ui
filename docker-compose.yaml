@@ -12,6 +12,8 @@ services:
       VOICE_MODEL: ${VOICE_MODEL:-gpt-live-1}
       VOICE_VOICE: ${VOICE_VOICE:-brise}
       VOICE_DELEGATION_TYPE: ${VOICE_DELEGATION_TYPE:-client}
+      # Plafond de durée d'une session (valeur provisoire, à confirmer par le porteur (Q-68)).
+      VOICE_MAX_SESSION: ${VOICE_MAX_SESSION:-30m}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

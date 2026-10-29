@@ -19,7 +19,16 @@ type LiveSession struct {
 type LiveProvider interface {
 	CreateSession(ctx context.Context, offerSDP string) (LiveSession, error)
 	Sideband(ctx context.Context, sessionID string) (Sideband, error)
+	// Hangup termine la session chez le fournisseur (arrête la facturation) ;
+	// à appeler quand le sideband n'a pas pu être ouvert ou s'est coupé sans
+	// session.closed.
+	Hangup(ctx context.Context, sessionID string) error
 }
+
+// ReasonConnectionLost est la raison d'un EventClosed produit par une coupure
+// du flux sans session.closed : la session peut rester ouverte (et facturée)
+// chez le fournisseur.
+const ReasonConnectionLost = "connection_lost"
 
 // Sideband est le canal d'événements d'une session. Events est fermé après
 // l'événement EventClosed ; Close demande la fermeture de la session et
@@ -48,6 +57,7 @@ type LiveEvent struct {
 	PCM          []byte // PCM16 little-endian mono (EventOutputAudio)
 	Seconds      float64
 	ContextRatio float64
+	Reason       string // raison de clôture (EventClosed) : celle de session.closed, ou ReasonConnectionLost
 }
 
 // Clock fournit l'heure courante (injectable pour les tests).

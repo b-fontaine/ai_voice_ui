@@ -118,6 +118,15 @@ func (p *Provider) Sideband(ctx context.Context, sessionID string) (port.Sideban
 	return newSideband(conn, p), nil
 }
 
+// Hangup termine la session chez le fournisseur ; l'erreur ne contient jamais
+// la clé API.
+func (p *Provider) Hangup(ctx context.Context, sessionID string) error {
+	if err := p.client.Live.Sessions.Hangup(ctx, sessionID); err != nil {
+		return p.wrap("raccrochage de la session voix", err)
+	}
+	return nil
+}
+
 // redactedError porte un message sans la clé ; seules les erreurs de contexte
 // restent détectables par errors.Is.
 type redactedError struct {

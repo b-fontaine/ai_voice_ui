@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -24,6 +25,8 @@ type Config struct {
 	ListenPort       int
 	JournalDir       string
 	InstructionsFile string
+	// MaxSession plafonne la durée d'une session voix ; 0 : pas de plafond.
+	MaxSession time.Duration
 
 	apiKey string
 }
@@ -85,6 +88,14 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	}
 	if !isLoopback(cfg.ListenHost) && getenv("LISTEN_ALLOW_NON_LOOPBACK") != "1" {
 		return Config{}, fmt.Errorf("LISTEN_HOST %q n'est pas une adresse loopback ; définir LISTEN_ALLOW_NON_LOOPBACK=1 pour l'autoriser", cfg.ListenHost)
+	}
+
+	if raw := strings.TrimSpace(getenv("VOICE_MAX_SESSION")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d < 0 {
+			return Config{}, errors.New("VOICE_MAX_SESSION doit être une durée positive ou nulle (par exemple 30m)")
+		}
+		cfg.MaxSession = d
 	}
 
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))

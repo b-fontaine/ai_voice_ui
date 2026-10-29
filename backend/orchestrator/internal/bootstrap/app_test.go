@@ -39,6 +39,8 @@ func (l *stubLive) CreateSession(context.Context, string) (port.LiveSession, err
 	return port.LiveSession{ID: "sess-1", AnswerSDP: "v=0\r\nanswer\r\n"}, nil
 }
 
+func (l *stubLive) Hangup(context.Context, string) error { return nil }
+
 func (l *stubLive) Sideband(context.Context, string) (port.Sideband, error) { return l.sb, nil }
 
 func testConfig(t *testing.T) Config {

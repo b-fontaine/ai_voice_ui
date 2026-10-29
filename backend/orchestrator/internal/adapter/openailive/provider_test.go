@@ -347,3 +347,70 @@ func TestNewRejectsUnsupportedDelegation(t *testing.T) {
 		t.Fatal("délégation inconnue acceptée")
 	}
 }
+
+func TestSidebandClosedCarriesReason(t *testing.T) {
+	for _, reason := range []string{"close_requested", "expired", "remote_hangup", "content"} {
+		srv := newSidebandServer(t, []string{
+			`{"type":"session.closed","event_id":"1","reason":"` + reason + `"}`,
+		}, false, false)
+		p, _ := openailive.New(testOptions(srv.URL))
+		sb, err := p.Sideband(ctxT(t), "live_abc")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if e := nextEvent(t, sb.Events()); e.Type != port.EventClosed || e.Reason != reason {
+			t.Fatalf("raison %q : e = %+v", reason, e)
+		}
+	}
+}
+
+func TestSidebandDisconnectReasonConnectionLost(t *testing.T) {
+	srv := newSidebandServer(t, nil, true, false)
+	p, _ := openailive.New(testOptions(srv.URL))
+	sb, err := p.Sideband(ctxT(t), "live_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e := nextEvent(t, sb.Events()); e.Type != port.EventClosed || e.Reason != "connection_lost" {
+		t.Fatalf("e = %+v", e)
+	}
+}
+
+func TestHangup(t *testing.T) {
+	var mu sync.Mutex
+	var method, path, auth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		method, path, auth = r.Method, r.URL.Path, r.Header.Get("Authorization")
+		mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+	p, _ := openailive.New(testOptions(srv.URL))
+	if err := p.Hangup(ctxT(t), "live_abc"); err != nil {
+		t.Fatalf("Hangup: %v", err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if method != http.MethodPost || path != "/live/sessions/live_abc/hangup" || auth != "Bearer "+testKey {
+		t.Fatalf("requête : %s %s auth=%q", method, path, auth)
+	}
+}
+
+func TestHangupErrorDoesNotLeakKey(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Un serveur fautif qui renvoie la clé reçue dans son message d'erreur.
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = io.WriteString(w, `{"error":{"message":"bad key `+strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")+`"}}`)
+	}))
+	defer srv.Close()
+	p, _ := openailive.New(testOptions(srv.URL))
+	err := p.Hangup(ctxT(t), "live_abc")
+	if err == nil {
+		t.Fatal("erreur attendue")
+	}
+	if strings.Contains(err.Error(), testKey) {
+		t.Fatalf("l'erreur révèle la clé : %v", err)
+	}
+}

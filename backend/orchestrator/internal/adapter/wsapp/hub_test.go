@@ -314,6 +314,7 @@ func TestEnvelopeShape(t *testing.T) {
 		{domain.Message{Type: domain.TypeOrbLevel, TMs: 200, Data: domain.OrbLevel{Level: 0.25}}, `{"v":1,"type":"orb.level","t_ms":200,"data":{"level":0.25}}`},
 		{domain.Message{Type: domain.TypeTranscript, TMs: 300, Data: domain.Transcript{Role: "user", Text: "bonjour", Final: true}}, `{"v":1,"type":"transcript","t_ms":300,"data":{"role":"user","text":"bonjour","final":true}}`},
 		{domain.Message{Type: domain.TypeSessionState, TMs: 0, Data: domain.SessionState{State: "active"}}, `{"v":1,"type":"session.state","t_ms":0,"data":{"state":"active"}}`},
+		{domain.Message{Type: domain.TypeSessionState, TMs: 5, Data: domain.SessionState{State: "closed", Reason: "max_session"}}, `{"v":1,"type":"session.state","t_ms":5,"data":{"state":"closed","reason":"max_session"}}`},
 		{domain.Message{Type: domain.TypeUsage, TMs: 900, Data: domain.Usage{Seconds: 1.5, ContextRatio: 0.1}}, `{"v":1,"type":"usage","t_ms":900,"data":{"seconds":1.5,"context_ratio":0.1}}`},
 	}
 	for _, tc := range cases {

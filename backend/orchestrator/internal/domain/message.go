@@ -40,8 +40,12 @@ type Transcript struct {
 	Final bool
 }
 
-// SessionState est l'état du cycle de vie d'une session.
-type SessionState struct{ State string }
+// ReasonMaxSession est la raison de clôture quand le plafond de durée est atteint.
+const ReasonMaxSession = "max_session"
+
+// SessionState est l'état du cycle de vie d'une session ; Reason (facultative)
+// explique une clôture.
+type SessionState struct{ State, Reason string }
 
 // Usage est la consommation de la session.
 type Usage struct{ Seconds, ContextRatio float64 }

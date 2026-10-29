@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 const secretKey = "sk-test-SECRET-do-not-leak-1234"
@@ -151,5 +152,26 @@ func TestConfig_NoKeyLeak(t *testing.T) {
 	}
 	if !strings.Contains(cfg.String(), "model-x") {
 		t.Fatalf("String() doit afficher le modèle : %s", cfg.String())
+	}
+}
+
+func TestConfigFromEnv_MaxSession(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil || cfg.MaxSession != 0 {
+		t.Fatalf("VOICE_MAX_SESSION absente = pas de plafond : %v %v", err, cfg.MaxSession)
+	}
+	for _, bad := range []string{"abc", "30", "-5m"} {
+		env := fullEnv()
+		env["VOICE_MAX_SESSION"] = bad
+		_, err := load(env)
+		if err == nil || !strings.Contains(err.Error(), "VOICE_MAX_SESSION") {
+			t.Fatalf("durée %q doit être refusée en nommant la variable : %v", bad, err)
+		}
+	}
+	env := fullEnv()
+	env["VOICE_MAX_SESSION"] = "30m"
+	cfg, err = load(env)
+	if err != nil || cfg.MaxSession != 30*time.Minute {
+		t.Fatalf("durée valide refusée : %v %v", err, cfg.MaxSession)
 	}
 }

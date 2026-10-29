@@ -19,8 +19,9 @@ func WireData(d any) any {
 		}{v.Role, v.Text, v.Final}
 	case SessionState:
 		return struct {
-			State string `json:"state"`
-		}{v.State}
+			State  string `json:"state"`
+			Reason string `json:"reason,omitempty"`
+		}{v.State, v.Reason}
 	case Usage:
 		return struct {
 			Seconds      float64 `json:"seconds"`

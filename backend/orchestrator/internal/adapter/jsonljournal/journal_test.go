@@ -107,6 +107,7 @@ func TestDataFieldNamesMatchEnvelope(t *testing.T) {
 		{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.25}},
 		{Type: domain.TypeTranscript, Data: domain.Transcript{Role: domain.RoleUser, Text: "a", Final: true}},
 		{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateActive}},
+		{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateClosed, Reason: "remote_hangup"}},
 		{Type: domain.TypeUsage, Data: domain.Usage{Seconds: 3, ContextRatio: 0.1}},
 	}
 	for _, m := range msgs {
@@ -128,7 +129,7 @@ func TestDataFieldNamesMatchEnvelope(t *testing.T) {
 			t.Errorf("%s : data = %s, attendu %s", m.Type, l.Data, want)
 		}
 	}
-	for _, key := range []string{`"level"`, `"role"`, `"state"`, `"context_ratio"`} {
+	for _, key := range []string{`"level"`, `"role"`, `"state"`, `"context_ratio"`, `"reason":"remote_hangup"`} {
 		if !strings.Contains(strings.Join(lines, "\n"), key) {
 			t.Errorf("clé %s absente", key)
 		}

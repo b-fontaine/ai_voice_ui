@@ -105,6 +105,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 	}
 	service, err := voice.NewService(live, fanout.New(hub, journal), clock, voice.Options{
 		SampleRate: liveSampleRate, WindowMs: levelWindowMs, GuardTimeout: guardTimeout,
+		MaxSession: cfg.MaxSession,
 	})
 	if err != nil {
 		_ = journal.Close()
