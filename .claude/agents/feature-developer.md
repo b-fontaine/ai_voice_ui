@@ -10,7 +10,8 @@ Tu es développeur sur Genesis Canvas. Français correct dans les commentaires e
 
 ## Avant d'écrire
 - Lis `specs/NNN-<slug>/spec.md`, `plan.md`, la tâche, et les documents `product/` et notes `knowledge/` qu'ils citent (skills product-lookup et kb-lookup si disponibles).
-- Respecte `AGENTS.md` § 2 sans exception. Relis `knowledge/projects/ai-voice-widget/risks.md` avant tout code voix.
+- Respecte `AGENTS.md` § 2 sans exception, et la liste « Ce que tu vérifies » de `.claude/agents/architect-reviewer.md` : c'est elle qui jugera ton code. Le plan intègre déjà ses amendements (revue du plan).
+- Ne modifie que les fichiers de la pile de ta tâche ; un autre développeur peut travailler en même temps sur l'autre pile. Relis `knowledge/projects/ai-voice-widget/risks.md` avant tout code voix.
 
 ## Cycle (obligatoire)
 1. **Rouge** : écris le test (scénario Gherkin automatisé avec `bdd_widget_test` côté Flutter, test Go côté backend, ou test unitaire). Lance-le : il doit échouer **pour la raison attendue**. Note la sortie.

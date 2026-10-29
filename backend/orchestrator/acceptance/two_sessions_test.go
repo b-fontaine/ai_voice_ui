@@ -21,6 +21,8 @@ type sessionEnvelope struct {
 	Type    string          `json:"type"`
 	Session string          `json:"session"`
 	TMs     int64           `json:"t_ms"`
+	Agent   string          `json:"agent"` // a2ui : auteur du message (nom de la carte, ou « orchestrateur »)
+	Task    string          `json:"task"`  // a2ui : identifiant de tâche A2A
 	Data    json.RawMessage `json:"data"`
 }
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Lance (ou relance) la session de boucle dans tmux, DANS LE WORKTREE DE BOUCLE.
+#   start-loop.sh          reprend la conversation de la boucle (ou la crée)
+#   start-loop.sh --fresh  archive l'identifiant et démarre une conversation neuve
 # - La session a un identifiant fixe ($STATE/session_id) : un redémarrage reprend toujours
 #   CETTE conversation (--resume <id>), jamais celle du porteur.
 # - La consigne /loop est passée en argument : rien n'est tapé dans l'interface.
@@ -14,6 +16,12 @@ if tmux has-session -t "$LOOP_TMUX_SESSION" 2>/dev/null; then
   echo "La session tmux $LOOP_TMUX_SESSION tourne déjà (tmux attach -t $LOOP_TMUX_SESSION)."; exit 1
 fi
 rm -f "$STATE/STOP" "$STATE/paused_until"
+# --fresh : nouvelle conversation (contexte vide), par exemple après chaque fonctionnalité publiée.
+if [ "${1:-}" = "--fresh" ] && [ -s "$STATE/session_id" ]; then
+  echo "$(date -Iseconds) $(cat "$STATE/session_id")" >> "$STATE/session_ids.log"
+  rm -f "$STATE/session_id"
+fi
+rm -f "$STATE/fresh_session"
 
 sed "s#@ROOT@#$LOOP_ROOT#g" "$LOOP_ROOT/tools/loop/settings.loop.template.json" > "$STATE/settings.json"
 DELEGATE="$(jq -r '.statusLine.command // empty' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" 2>/dev/null || true)"

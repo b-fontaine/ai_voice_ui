@@ -8,6 +8,13 @@ const (
 	TypeTranscript   = "transcript"
 	TypeSessionState = "session.state"
 	TypeUsage        = "usage"
+	// TypeA2UI porte un message A2UI v0.9 validé ; TypeAgentActivity signale
+	// l'état d'une tâche confiée à un agent distant.
+	TypeA2UI          = "a2ui"
+	TypeAgentActivity = "agent.activity"
+	// TypeDelegation signale la création d'une délégation par le modèle vocal :
+	// il rend NFR-02 mesurable (offset du fournisseur, t_ms de réception).
+	TypeDelegation = "delegation"
 )
 
 // Rôles d'un transcript.
@@ -28,7 +35,12 @@ const (
 type Message struct {
 	Type string
 	TMs  int64 // millisecondes écoulées depuis l'ouverture de la session
-	Data Payload
+	// Agent et Task attribuent un message `a2ui` à l'agent et à la tâche qui
+	// l'ont produit (premier niveau de l'enveloppe, omis si vides). Agent vaut
+	// "orchestrateur" pour une compensation émise par l'orchestrateur.
+	Agent string
+	Task  string
+	Data  Payload
 }
 
 // Payload est la charge utile d'un message. Interface fermée : seuls les types
@@ -62,7 +74,44 @@ type SessionState struct{ State, Reason string }
 // Usage est la consommation de la session.
 type Usage struct{ Seconds, ContextRatio float64 }
 
-func (OrbLevel) isPayload()     {}
-func (Transcript) isPayload()   {}
-func (SessionState) isPayload() {}
-func (Usage) isPayload()        {}
+// États d'une activité d'agent (agent.activity).
+const (
+	ActivityWorking   = "working"
+	ActivityCompleted = "completed"
+	ActivityFailed    = "failed"
+)
+
+// OpDeleteSurface est l'opération A2UI qui retire une surface.
+const OpDeleteSurface = "deleteSurface"
+
+// A2UI est un message A2UI v0.9 (une seule opération) transmis tel quel à
+// l'application : il est lui-même l'objet `data` de l'enveloppe. Op (createSurface,
+// updateComponents, updateDataModel, deleteSurface) et SurfaceID sont renseignés
+// par l'émetteur, qui les connaît déjà : le hub ne relit pas Message. Ils ne
+// sont pas sérialisés.
+type A2UI struct {
+	Message   map[string]any
+	Op        string
+	SurfaceID string
+}
+
+// AgentActivity décrit l'avancement d'une tâche d'agent : Agent est le nom de
+// sa carte, Task l'identifiant de la tâche, State l'un des états Activity*,
+// Detail un complément facultatif (cause d'un échec, par exemple) et Label le
+// nom du skill de la carte de l'agent (facultatif).
+type AgentActivity struct{ Agent, Task, State, Label, Detail string }
+
+// Delegation est la création d'une délégation : ID est l'identifiant du
+// fournisseur, OffsetMs l'instant qu'il rapporte (ms depuis le début de la session).
+type Delegation struct {
+	ID       string
+	OffsetMs int64
+}
+
+func (A2UI) isPayload()          {}
+func (Delegation) isPayload()    {}
+func (AgentActivity) isPayload() {}
+func (OrbLevel) isPayload()      {}
+func (Transcript) isPayload()    {}
+func (SessionState) isPayload()  {}
+func (Usage) isPayload()         {}

@@ -1,0 +1,28 @@
+{
+  "app": "Release Copilot",
+  "crashFreeThresholdPct": 99.5,
+  "riskMarginPt": 0.1,
+  "rows": [
+    {"day": "J1", "platform": "iOS", "version": "3.4", "sessions": 9800, "crashes": 22},
+    {"day": "J1", "platform": "Android", "version": "3.4", "sessions": 12000, "crashes": 36},
+    {"day": "J1", "platform": "Android", "version": "3.3", "sessions": 41200, "crashes": 125},
+    {"day": "J2", "platform": "iOS", "version": "3.4", "sessions": 10100, "crashes": 20},
+    {"day": "J2", "platform": "Android", "version": "3.4", "sessions": 13500, "crashes": 45},
+    {"day": "J2", "platform": "Android", "version": "3.3", "sessions": 40800, "crashes": 116},
+    {"day": "J3", "platform": "iOS", "version": "3.4", "sessions": 10400, "crashes": 22},
+    {"day": "J3", "platform": "Android", "version": "3.4", "sessions": 15000, "crashes": 60},
+    {"day": "J3", "platform": "Android", "version": "3.3", "sessions": 40500, "crashes": 118},
+    {"day": "J4", "platform": "iOS", "version": "3.4", "sessions": 10600, "crashes": 20},
+    {"day": "J4", "platform": "Android", "version": "3.4", "sessions": 17000, "crashes": 85},
+    {"day": "J4", "platform": "Android", "version": "3.3", "sessions": 40900, "crashes": 112},
+    {"day": "J5", "platform": "iOS", "version": "3.4", "sessions": 10900, "crashes": 23},
+    {"day": "J5", "platform": "Android", "version": "3.4", "sessions": 19000, "crashes": 118},
+    {"day": "J5", "platform": "Android", "version": "3.3", "sessions": 41300, "crashes": 126},
+    {"day": "J6", "platform": "iOS", "version": "3.4", "sessions": 11200, "crashes": 22},
+    {"day": "J6", "platform": "Android", "version": "3.4", "sessions": 21000, "crashes": 153},
+    {"day": "J6", "platform": "Android", "version": "3.3", "sessions": 40600, "crashes": 116},
+    {"day": "J7", "platform": "iOS", "version": "3.4", "sessions": 11500, "crashes": 22},
+    {"day": "J7", "platform": "Android", "version": "3.4", "sessions": 23500, "crashes": 197},
+    {"day": "J7", "platform": "Android", "version": "3.3", "sessions": 40700, "crashes": 117}
+  ]
+}

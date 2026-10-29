@@ -10,11 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/a2aclient"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/httpapi"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/jsonljournal"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/openailive"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/wsapp"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/fanout"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -27,7 +30,25 @@ const (
 	// Paramètres du canal WSS de l'application et de l'API HTTP.
 	hubBacklog    = 50       // derniers messages (hors orb.level) rejoués à la connexion
 	hubSendBuffer = 64       // file d'envoi par abonné avant fermeture 1008
+	hubRetained   = 512      // messages a2ui et agent.activity retenus par session (rejoués à la connexion)
 	maxOfferBytes = 64 << 10 // une offre SDP fait quelques Kio
+
+	// delegationsCloseTimeout borne la fermeture des délégations d'une session
+	// (annulation des tâches d'agents : CancelTask a2aclient 1 s, plus l'attente
+	// du travail en cours), en plus de VOICE_CLOSE_GUARD.
+	delegationsCloseTimeout = 2 * time.Second
+
+	// Orchestration des agents (constantes d'infrastructure, pas de la politique).
+	agentConnectTimeout   = 3 * time.Second // lecture de la carte d'agent et connexion
+	defaultAgentTimeout   = 8 * time.Second // AGENT_TIMEOUT absent (sans agent) : le gestionnaire exige > 0
+	delegationQueueDepth  = 2               // délégations en attente par session, hors celle en cours
+	delegationSeenCap     = 64              // identifiants de délégation mémorisés par session
+	a2uiMaxMessageBytes   = 64 << 10        // taille maximale d'un message A2UI
+	a2uiMaxDepth          = 16              // profondeur JSON maximale d'un message A2UI
+	a2uiMaxComponents     = 100             // composants par updateComponents
+	a2uiMaxSurfaces       = 6               // surfaces ouvertes par session (pdr-0019)
+	a2uiMaxSurfaceWidgets = 200             // composants cumulés par surface
+	a2uiMaxTaskMessages   = 64              // messages A2UI par tâche
 )
 
 // Deps regroupe les dépendances remplaçables (tests, simulation).
@@ -77,12 +98,13 @@ func New(cfg Config, deps Deps) (*App, error) {
 	live := deps.Live
 	if live == nil {
 		var err error
-		if live, err = newOpenAI(cfg); err != nil {
+		if live, err = newOpenAI(cfg, logger); err != nil {
 			return nil, err
 		}
 	}
+	// hub, journal et fanout sont créés avant les délégations : le pipeline publie par le fanout.
 
-	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer, WriteTimeout: cfg.WriteTimeout})
+	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer, WriteTimeout: cfg.WriteTimeout, RetainedMax: hubRetained})
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +115,19 @@ func New(cfg Config, deps Deps) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	service, err := voice.NewService(live, fanout.New(hub, journal), clock, voice.Options{
+	sink := fanout.New(hub, journal)
+	delegations, err := newDelegations(cfg, sink, clock, logger)
+	if err != nil {
+		_ = journal.Close()
+		return nil, err
+	}
+	service, err := voice.NewService(live, sink, clock, voice.Options{
 		SampleRate: openailive.OutputSampleRate, WindowMs: levelWindowMs, GuardTimeout: cfg.CloseGuard,
-		MaxSession:     cfg.MaxSession,
-		AttachAttempts: cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
-		Logger: logger,
+		MaxSession:              cfg.MaxSession,
+		DelegationsCloseTimeout: delegationsCloseTimeout,
+		AttachAttempts:          cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
+		Delegations: delegations,
+		Logger:      logger,
 	})
 	if err != nil {
 		_ = journal.Close()
@@ -115,7 +145,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 	return &App{handler: handler, service: service, hub: hub, journal: journal}, nil
 }
 
-func newOpenAI(cfg Config) (port.LiveProvider, error) {
+func newOpenAI(cfg Config, logger *slog.Logger) (port.LiveProvider, error) {
 	var instructions string
 	if cfg.InstructionsFile != "" {
 		raw, err := os.ReadFile(cfg.InstructionsFile)
@@ -127,6 +157,50 @@ func newOpenAI(cfg Config) (port.LiveProvider, error) {
 	return openailive.New(openailive.Options{
 		APIKey: cfg.APIKey(), Model: cfg.Model, Voice: cfg.Voice,
 		DelegationType: cfg.DelegationType, Instructions: instructions,
+		AppendAckTimeout: cfg.AppendAckTimeout, AcknowledgementDelayMs: cfg.AckDelayMs,
+		Logger: logger,
+	})
+}
+
+// newDelegations assemble le gestionnaire de délégations : clients A2A (aucune
+// connexion ici : la carte est lue à la délégation), validateur A2UI partagé,
+// et, par session, un registre de surfaces et un pipeline.
+func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.Logger) (*orchestrate.Manager, error) {
+	agents := make([]port.RemoteAgent, 0, len(cfg.Agents))
+	for _, cardURL := range cfg.Agents {
+		a, err := a2aclient.New(a2aclient.Options{CardURL: cardURL, Timeout: agentConnectTimeout, Logger: logger})
+		if err != nil {
+			return nil, fmt.Errorf("bootstrap: agent A2A : %w", err)
+		}
+		agents = append(agents, a)
+	}
+	var validator *a2ui.Validator
+	if len(agents) > 0 {
+		var err error
+		validator, err = a2ui.NewValidator(a2ui.Options{
+			CatalogID: cfg.A2UICatalogID, Components: cfg.A2UIComponents,
+			MaxMessageBytes: a2uiMaxMessageBytes, MaxDepth: a2uiMaxDepth, MaxComponentsPerUpdate: a2uiMaxComponents,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)
+		}
+	}
+	agentTimeout := cfg.AgentTimeout
+	if agentTimeout <= 0 {
+		agentTimeout = defaultAgentTimeout
+	}
+	// Toute la configuration du pipeline est validée ici, une seule fois.
+	factory, err := orchestrate.NewPipelineFactory(orchestrate.PipelineConfig{
+		Clock: clock, Sink: sink, Agents: agents, Validator: validator,
+		Limits:  a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages},
+		Phrases: cfg.Phrases, Logger: logger,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("bootstrap: pipeline d'orchestration : %w", err)
+	}
+	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
+		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
+		SeenCap: delegationSeenCap, Logger: logger,
 	})
 }
 

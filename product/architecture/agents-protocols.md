@@ -4,15 +4,15 @@ title: Agents, protocoles et séquences des actes
 area: architecture
 status: draft
 updated: 2026-10-29
-sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p5, product/sources/design-example.pdf, knowledge:proto-protocol-map, knowledge:rt-gpt-live-delegation, knowledge:rt-barge-in, knowledge:genui-a2ui-messages, knowledge:genui-a2a-connector, specs/003-j2-voice-relay-backend/plan.md]
-links: [pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-graceful-close, p-ar-security, proto-a2a-bindings, proto-a2a-dart-sdk, ma-backend-sdk-go, p-ar-overview, p-ar-backend, p-ar-frontend, p-ar-replay, p-fn-requirements, p-fn-mockups, p-fn-catalog, p-fn-personas-journey, p-rm-open-questions, p-rm-spikes, pdr-0004-mvp-three-acts, pdr-0012-voice-provider-openai, proto-protocol-map, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-streaming-push, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-barge-in, rt-transcription, genui-a2ui-messages, genui-a2ui-overview, genui-a2ui-transports, genui-user-actions, genui-a2a-connector, ma-real-tool-results, ma-filler-acknowledgements, ma-backend-stack-recommendation, ma-target-architecture, rt-ephemeral-keys, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0026-desktop-only-target, pdr-0035-no-third-party-agent, pdr-0036-real-a2a-agents-produce-a2ui]
+sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p5, product/sources/design-example.pdf, knowledge:proto-protocol-map, knowledge:rt-gpt-live-delegation, knowledge:rt-barge-in, knowledge:genui-a2ui-messages, knowledge:genui-a2a-connector, specs/003-j2-voice-relay-backend/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md]
+links: [p-ar-app-channel-contract, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-graceful-close, p-ar-security, proto-a2a-bindings, proto-a2a-dart-sdk, ma-backend-sdk-go, p-ar-overview, p-ar-backend, p-ar-frontend, p-ar-replay, p-fn-requirements, p-fn-mockups, p-fn-catalog, p-fn-personas-journey, p-rm-open-questions, p-rm-spikes, pdr-0004-mvp-three-acts, pdr-0012-voice-provider-openai, proto-protocol-map, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-streaming-push, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-barge-in, rt-transcription, genui-a2ui-messages, genui-a2ui-overview, genui-a2ui-transports, genui-user-actions, genui-a2a-connector, ma-real-tool-results, ma-filler-acknowledgements, ma-backend-stack-recommendation, ma-target-architecture, rt-ephemeral-keys, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0026-desktop-only-target, pdr-0035-no-third-party-agent, pdr-0036-real-a2a-agents-produce-a2ui]
 tags: [protocoles, a2a, a2ui, webrtc, sideband, sequence, barge-in, actes]
 ---
 # Agents, protocoles et séquences des actes
 
 **En bref.** La voix circule en WebRTC entre l'app et GPT-Live ; le backend écoute la même session en sideband et reçoit la délégation ; il délègue aux agents en A2A ; l'UI revient à l'app en messages A2UI sur un canal séparé (proposé : WSS maison ; alternative `genui_a2a`, ouvert → Q-39), et les clics repartent par le même canal. Ce document donne les séquences des 3 actes ([pdr-0004](../decisions/pdr-0004-mvp-three-acts.md)), de l'interruption et de « Stop ».
 
-> Statut : **draft**. Le contrat app-channel / API v1 est **implémenté** (fonctionnalité 003, § « Contrat v1 implémenté »). Les séquences sont la proposition de l'assistant, construites sur les faits de la base `knowledge/`. Version A2UI : v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)). Producteur de l'A2UI : chaque agent A2A, l'orchestrateur valide et relaie ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-37). Choix encore ouvert : canal app ↔ backend (Q-39).
+> Statut : **draft**. Le contrat app-channel / API v1 est **implémenté** (fonctionnalités 003 et 004, [p-ar-app-channel-contract](app-channel-contract.md)). Les séquences sont la proposition de l'assistant, construites sur les faits de la base `knowledge/`. Version A2UI : v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)). Producteur de l'A2UI : chaque agent A2A, l'orchestrateur valide et relaie ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-37). Choix encore ouvert : canal app ↔ backend (Q-39).
 
 ## Qui parle à qui, avec quoi
 
@@ -25,7 +25,7 @@ tags: [protocoles, a2a, a2ui, webrtc, sideband, sequence, barge-in, actes]
 | Backend → app | **WSS app-channel** maison ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md)) | messages **A2UI** v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), activité des agents, transcript, état orbe | [ma-backend-stack-recommendation] |
 | App → backend | **WSS app-channel** | actions utilisateur typées (`UiInteractionPart`) | [genui-user-actions] |
 
-Règles : l'A2UI ne passe **jamais** par le canal de la session voix ([genui-a2ui-transports]) ; le JSON A2UI n'est jamais lu à voix haute ([ma-target-architecture]). Le canal est un **WSS maison** ; `genui_a2a` (A2A + SSE) n'entre pas dans la stack de l'app ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), acceptée, Q-39). Pour mémoire, compatibilité vérifiée en SP-03 (2026-10-29) : `genui_a2a` appelle `message/stream` (A2A v0.3) ; `a2a-go` v2 doit monter le handler `a2acompat/a2av0` (le handler natif v1.0 répond `-32009`) ([proto-a2a-go-v03-compat], [genui-a2a-connector]).
+Règles : l'A2UI ne passe **jamais** par le canal de la session voix ([genui-a2ui-transports]) ; le JSON A2UI n'est jamais lu à voix haute ([ma-target-architecture]). Le canal est un **WSS maison** ; `genui_a2a` (A2A + SSE) n'entre pas dans la stack de l'app ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), acceptée, Q-39) ; le panneau protocole (FR-05) lit les messages bruts de l'app-channel. Pour mémoire, compatibilité vérifiée en SP-03 (2026-10-29) : `genui_a2a` appelle `message/stream` (A2A v0.3) ; `a2a-go` v2 doit monter le handler `a2acompat/a2av0` (le handler natif v1.0 répond `-32009`) ([proto-a2a-go-v03-compat], [genui-a2a-connector]).
 
 ## Acte 1 — Créer (FR-01 à FR-06)
 
@@ -37,24 +37,23 @@ sequenceDiagram
   participant O as Orchestrateur
   participant Ag as Agents A2A
   S->>L: « Prépare la release 3.4 » (WebRTC)
-  L-->>O: input_transcript.delta (sideband)
-  O-->>App: transcript (app-channel) → barre supérieure (FR-02)
+  L-->>O: input_transcript.delta (sideband) → transcript à l'app (FR-02)
   L-->>O: session.delegation.created
-  O->>O: plan : N tâches (E1)
-  O-->>App: activité agents → rail (FR-03)
-  O-->>App: createSurface + composants squelette (FR-04, NFR-02 < 1,5 s)
-  O->>L: commentary.append « je lance l'analyse… » (NFR-01, RG-04)
-  par en parallèle
-    O->>Ag: SendStreamingMessage (Qualité)
-    O->>Ag: SendStreamingMessage (Voix du client)
-    O->>Ag: SendStreamingMessage (Livraison)
+  O-->>App: delegation {id, offset_ms}
+  O->>L: commentary.append générique « je lance l'analyse… » (NFR-01, RG-04)
+  par en parallèle, un agent par tâche du plan (E1)
+    O->>Ag: SendStreamingMessage (Qualité, Voix du client, Livraison)
   end
-  Ag-->>O: Artifacts (données figées)
-  O->>O: A2UI validé contre le catalogue
-  O-->>App: updateComponents puis updateDataModel (FR-04, FR-05, FR-06)
-  O->>L: commentary.append (vrai résumé)
+  Ag-->>O: submitted → agent.activity working (rail, FR-03)
+  Ag-->>O: message A2UI : createSurface + squelette (NFR-02 < 1,5 s)
+  O-->>App: a2ui validé puis relayé tel quel (FR-04, FR-05, FR-06)
+  Ag-->>O: updateComponents, updateDataModel, résumé, completed
+  O-->>App: a2ui relayés puis agent.activity completed
+  O->>L: commentary.append (vrai résumé de l'agent)
   Note over App: 4 surfaces complètes < 8 s (NFR-03)
 ```
+
+Le squelette et les données viennent **de l'agent** ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md)) : l'orchestrateur valide et relaie sans recomposer, et n'émet lui-même que des `deleteSurface` de compensation. **Conséquence** : NFR-02 (1er squelette < 1,5 s) dépend de la latence du premier message de l'agent (avec un LLM de composition : Q-17).
 
 ## Acte 2 — Transformer (FR-07)
 
@@ -72,7 +71,6 @@ sequenceDiagram
   Ag-->>O: Artifacts
   O-->>App: updateDataModel / updateComponents sur les surfaceId existants
   Note over App: les surfaces mutent sur place (FR-07, RG-06)
-  Note over O,App: ⚠️ retrait ou ajout de surface : écart E8, ouvert (Q-21)
   O->>L: commentary.append (résumé réel)
 ```
 
@@ -106,8 +104,7 @@ sequenceDiagram
   participant L as GPT-Live
   participant O as Orchestrateur
   L-->>S: parole de l'IA
-  S->>L: le speaker parle
-  L->>L: le modèle full-duplex se tait
+  S->>L: le speaker parle (le modèle full-duplex se tait)
   App->>App: détection locale (niveau piste distante + transcript) → orbe « interrompue » puis « écoute »
   App->>App: réplique IA tronquée à end_ms joué (FR-19)
   L-->>O: input_transcript.delta (nouvelle consigne)
@@ -129,39 +126,15 @@ sequenceDiagram
   S->>L: « Stop »
   L-->>O: transcript « stop »
   O->>Ag: CancelTask sur les tâches en vol
-  O-->>App: deleteSurface des surfaces inachevées
-  Note over App: surfaces complètes conservées
+  O-->>App: deleteSurface des surfaces inachevées (les complètes restent)
   O->>L: commentary.append (annulation confirmée)
 ```
 
 Interrompre la parole **n'annule pas** le travail backend : l'orchestrateur annule explicitement, confirme, puis seulement annonce ([rt-gpt-live-delegation]). Le mode de détection de « stop » reste ouvert (Q-42) ; le raccourci « silence » ne coupe que la voix.
 
-## Contrat v1 implémenté (fonctionnalité 003)
+## Contrat v1 implémenté (fonctionnalités 003 et 004)
 
-Contrat réellement livré par `specs/003-j2-voice-relay-backend/` (plan.md § Contrats), vérifié en réel le 2026-10-29. Il sera **consolidé** par les fonctionnalités 004 (A2UI, agents, `delegation.created`) et 005 (app voix + orbe). Ancrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md) (WSS maison), [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md) (niveau d'orbe), [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md) (une session par acte) ; exigences FR-02, FR-13, FR-19, NFR-01.
-
-| Route | Rôle | Réponses |
-|---|---|---|
-| `POST /voice/sessions` | corps `application/sdp` (offre) → answer SDP + en-tête `X-Session-Id` | 200 ; 400 corps vide ou illisible ; 413 trop gros ; 415 pas `application/sdp` ; 429 + `Retry-After` ; 502 `{error}` opaque |
-| `DELETE /voice/sessions/{id}` | fermeture propre ([rt-graceful-close]) | 204 ; 404 inconnue ; 504 fermeture non confirmée à temps ; 502 sinon |
-| `GET /healthz` | sonde du conteneur | 200 `ok` |
-| `GET /app` (WSS) | toutes les sessions, y compris futures ; `?session=<id>` = filtre facultatif | 400 identifiant invalide ; 404 identifiant inconnu ; 1008 abonné trop lent |
-
-Toutes les routes : 421 `{error}` si l'en-tête `Host` n'est pas autorisé (anti DNS rebinding). Identifiant de session : `[A-Za-z0-9_-]{1,128}`. Erreurs en JSON `{error}`, jamais de détail du fournisseur ni de clé.
-
-**Enveloppe** : `{v:1, type, session, t_ms, data}` (`session` = id de la session voix ; `t_ms` en ms, temps du fournisseur pour les transcripts).
-
-| `type` | `data` | Cadence / note |
-|---|---|---|
-| `orb.level` | `{level}` 0..1 | 5 Hz, RMS PCM16 24 kHz par blocs de 200 ms ([pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md), [rt-gpt-live-output-level]) |
-| `transcript` | `{role: user\|ai, text, start_ms, end_ms}` | pas de `final` : GPT-Live n'émet pas de fin de tour ([rt-gpt-live-lifecycle]) ; temps nécessaire à FR-19 |
-| `session.state` | `{state, reason?}` | `connecting` (publié avant l'answer), `active` (sideband attaché), `closed` |
-| `usage` | `{seconds, context_ratio}` | issu de `usage.updated` du sideband ([rt-gpt-live-sideband]) |
-
-- **Raisons de `closed`** : du fournisseur, `close_requested`, `expired`, `remote_hangup`, `content` ([rt-gpt-live-lifecycle]) ; du backend, `connection_lost` (coupure du sideband, avec raccrochage), `max_session` (plafond `VOICE_MAX_SESSION`, Q-68), `attach_failed` (sideband non attaché après `VOICE_ATTACH_ATTEMPTS` essais, avec raccrochage).
-- **Backlog** : à la connexion, rejeu des derniers messages (hors `orb.level`) dans l'ordre global de publication, sans doublon avec le direct ; une session est oubliée une fois `closed` publié.
-- **Journal** : `<JOURNAL_DIR>/<session>.jsonl`, un fichier par session, une ligne = enveloppe sans `v` + `unix_ms` (`{unix_ms, session, t_ms, type, data}`), mêmes noms de champs que l'app-channel ; base du journal horodaté ([p-ar-replay](replay.md)).
-- **Non couvert** (004) : A2UI, activité des agents, `session.delegation.created` (ignoré sans erreur), actions utilisateur typées. Variables d'environnement : [p-ar-backend](backend.md) § Configuration injectée ; sécurité : [p-ar-security](security.md).
+Contrat réellement livré par `specs/003-j2-voice-relay-backend/` et `specs/004-j2-orchestrator-quality-agent/` (plan.md § Contrats et amendements), vérifié en réel le 2026-10-29. Détail dans [p-ar-app-channel-contract](app-channel-contract.md) : routes, enveloppe (`agent`, `task`), types `a2ui`, `agent.activity` (`detail` fermé), `delegation`, rétention du hub (512 messages), ordre garanti, politique d'échec (compensation `deleteSurface`), file par session (profondeur 2), validateur A2UI. À consolider avec 005 (app voix + orbe). Ancrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md), [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md) ; exigences FR-02, FR-03, FR-04, FR-13, FR-19, NFR-01, NFR-02.
 
 ## Écarts entre sources (laissés ouverts)
 
@@ -172,6 +145,5 @@ Effets techniques des écarts de [p-fn-mockups](../functional/mockups.md) (E1 à
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- ~~Canal app ↔ backend~~ : tranché, WSS maison ; `genui_a2a` hors stack de l'app ; le panneau protocole (FR-05) accède aux messages bruts de l'app-channel ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), Q-39).
 - **Inférence de l'interruption** pour FR-19 sans événement GPT-Live → Q-40. **Bruits courts** (FR-18, RG-16) : aucun réglage de détection de tour documenté pour GPT-Live ; à mesurer → Q-41.
 - **Détection de « Stop »** : mot-clé sur transcript côté orchestrateur, ou décision du modèle → Q-42. **Agents A2A réels**, processus séparés : tranché ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-16) ; pas d'agent d'un autre éditeur ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md), Q-10).

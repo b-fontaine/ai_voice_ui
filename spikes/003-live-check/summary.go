@@ -13,6 +13,8 @@ type envelope struct {
 	Type    string          `json:"type"`
 	Session string          `json:"session"`
 	TMs     int64           `json:"t_ms"`
+	Agent   string          `json:"agent,omitempty"`
+	Task    string          `json:"task,omitempty"`
 	Data    json.RawMessage `json:"data"`
 }
 

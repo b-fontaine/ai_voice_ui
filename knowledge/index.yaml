@@ -111,7 +111,7 @@ tasks:
   - task: "Brancher un outil MCP"
     notes: [proto-mcp-overview, proto-mcp-primitives, proto-mcp-transports, proto-mcp-authorization, proto-mcp-elicitation, proto-mcp-deprecations, proto-mcp-dart-sdks, ma-mcp-security, ma-prompt-injection-tools, rt-tool-calling-voice]
   - task: "Intégrer un agent distant A2A"
-    notes: [proto-a2a-overview, proto-a2a-agent-card, proto-a2a-task-lifecycle, proto-a2a-message-parts-artifacts, proto-a2a-streaming-push, proto-a2a-bindings, proto-a2a-security, proto-a2a-dart-sdk, proto-a2a-go-v03-compat, genui-a2a-connector, genui-test-a2a-roundtrip]
+    notes: [proto-a2a-overview, proto-a2a-agent-card, proto-a2a-task-lifecycle, proto-a2a-message-parts-artifacts, proto-a2a-streaming-push, proto-a2a-bindings, proto-a2a-security, proto-a2a-dart-sdk, proto-a2a-go-v03-compat, proto-a2a-go-executor-lifecycle, genui-a2a-connector, genui-test-a2a-roundtrip]
   - task: "Choisir un protocole ou un transport (AG-UI, WebSocket, SSE, WebRTC)"
     notes: [proto-protocol-map, proto-stack-recommendation, proto-rtc-transport-choice, proto-rtc-flutter-packages, proto-rtc-webtransport, proto-agui-overview, genui-a2ui-transports]
   - task: "Créer une feature / structurer le code"

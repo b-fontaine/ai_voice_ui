@@ -5,6 +5,7 @@
 #   1. STOP présent                            -> sort ;
 #   2. pause en cours (quota lissé, limite atteinte) -> attend ;
 #   3. session absente, ou pause longue terminée (paused_until dépassé) -> relance ;
+#      fonctionnalité publiée (fresh_session) -> relance avec une conversation neuve ;
 #   4. aucune activité (hook PostToolUse) depuis LOOP_STALE_S ET écran inactif -> relance.
 # --once : un seul passage (tests).
 set -u
@@ -16,10 +17,10 @@ pane_busy() {   # vrai si un tour est en cours, une boîte de dialogue ou une at
   tmux capture-pane -p -t "$LOOP_TMUX_SESSION" 2>/dev/null | tail -n 15 \
     | grep -qiE 'esc to (interrupt|cancel)|enter to confirm|continuing automatically|limit reached|do you want|❯ *[0-9]\.'
 }
-restart() {
-  slog "relance : $1"
+restart() {   # restart <raison> [--fresh]
+  slog "relance : $1${2:+ ($2)}"
   tmux kill-session -t "$LOOP_TMUX_SESSION" 2>/dev/null || true
-  "$LOOP_ROOT/tools/loop/start-loop.sh" >> "$STATE/supervisor.log" 2>&1 || slog "échec de relance"
+  "$LOOP_ROOT/tools/loop/start-loop.sh" ${2:-} >> "$STATE/supervisor.log" 2>&1 || slog "échec de relance"
 }
 pause_until() {   # max(pause demandée par la boucle, remise à zéro après une limite atteinte)
   local now=$1 until hb limited reset w_used
@@ -45,6 +46,8 @@ while true; do
     slog "pause jusqu'à $(date -d @"$until" '+%F %T')"
   elif ! tmux has-session -t "$LOOP_TMUX_SESSION" 2>/dev/null; then
     restart "session absente"
+  elif [ -f "$STATE/fresh_session" ] && ! pane_busy; then
+    restart "fonctionnalité publiée : conversation neuve" --fresh
   elif [ -f "$STATE/paused_until" ] && ! pane_busy; then
     restart "fin de la pause longue"   # la boucle s'était arrêtée en écrivant paused_until
   else

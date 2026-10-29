@@ -7,7 +7,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/live"
@@ -36,6 +38,16 @@ type Options struct {
 	Voice          string
 	DelegationType string // seul « client » est pris en charge
 	Instructions   string
+
+	// AppendAckTimeout borne l'attente de l'acquittement d'un commentaire
+	// vocal (VOICE_APPEND_ACK_TIMEOUT) ; obligatoire, strictement positif.
+	AppendAckTimeout time.Duration
+	// AcknowledgementDelayMs (VOICE_ACK_DELAY_MS) : délai avant l'accusé vocal
+	// automatique du fournisseur (`delegation.acknowledgement_delay_ms`). nil :
+	// non envoyé (valeur par défaut du fournisseur) ; sinon >= 0.
+	AcknowledgementDelayMs *int64
+	// Logger reçoit les journaux de l'adaptateur ; nil : slog.Default().
+	Logger *slog.Logger
 }
 
 // String décrit les options sans jamais exposer la clé.
@@ -55,6 +67,8 @@ type Provider struct {
 	voice        string
 	instructions string
 	delegation   live.MediaSessionConfigDelegationUnionParam
+	ackTimeout   time.Duration
+	log          *slog.Logger
 }
 
 var _ port.LiveProvider = (*Provider)(nil)
@@ -89,11 +103,25 @@ func New(opts Options) (*Provider, error) {
 	if err != nil {
 		return nil, err
 	}
+	if opts.AcknowledgementDelayMs != nil {
+		if *opts.AcknowledgementDelayMs < 0 {
+			return nil, errors.New("délai de l'accusé automatique (AcknowledgementDelayMs) doit être >= 0")
+		}
+		// Seule la délégation « client » est prise en charge (delegationParam).
+		delegation.OfClient.AcknowledgementDelayMs = param.NewOpt(*opts.AcknowledgementDelayMs)
+	}
 	if opts.APIKey == "" {
 		return nil, errors.New("clé API du fournisseur voix manquante")
 	}
 	if opts.Model == "" || opts.Voice == "" {
 		return nil, errors.New("modèle et voix du fournisseur voix obligatoires")
+	}
+	if opts.AppendAckTimeout <= 0 {
+		return nil, errors.New("délai d'acquittement des commentaires vocaux (AppendAckTimeout) obligatoire et > 0")
+	}
+	logger := opts.Logger
+	if logger == nil {
+		logger = slog.Default()
 	}
 	reqOpts := []option.RequestOption{option.WithAPIKey(opts.APIKey)}
 	if opts.BaseURL != "" {
@@ -106,6 +134,8 @@ func New(opts Options) (*Provider, error) {
 		voice:        opts.Voice,
 		instructions: opts.Instructions,
 		delegation:   delegation,
+		ackTimeout:   opts.AppendAckTimeout,
+		log:          logger,
 	}, nil
 }
 

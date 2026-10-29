@@ -394,3 +394,60 @@ func TestJournalLineHasSession(t *testing.T) {
 		t.Fatalf("data = %s", l.Data)
 	}
 }
+
+// TestJournalLineCarriesAttribution : le journal contient les mêmes champs
+// que l'enveloppe (agent, task au premier niveau ; label dans data).
+func TestJournalLineCarriesAttribution(t *testing.T) {
+	dir := t.TempDir()
+	r, _ := newRecorder(t, dir)
+	r.Publish("s1", domain.Message{Type: domain.TypeA2UI, TMs: 3, Agent: "orchestrateur", Task: "t9", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}})
+	r.Publish("s1", domain.Message{Type: domain.TypeAgentActivity, TMs: 4, Agent: "Qualité", Task: "t9", Data: domain.AgentActivity{Agent: "Qualité", Task: "t9", State: domain.ActivityWorking, Label: "KPI"}})
+	r.Publish("s1", domain.Message{Type: domain.TypeUsage, TMs: 5, Data: domain.Usage{Seconds: 1}})
+	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
+	if len(lines) != 3 {
+		t.Fatalf("lignes = %d", len(lines))
+	}
+	var first, second, third map[string]any
+	for i, dst := range []*map[string]any{&first, &second, &third} {
+		if err := json.Unmarshal([]byte(lines[i]), dst); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if first["agent"] != "orchestrateur" || first["task"] != "t9" {
+		t.Fatalf("a2ui : agent/task absents du journal : %s", lines[0])
+	}
+	if second["agent"] != "Qualité" || second["task"] != "t9" {
+		t.Fatalf("agent.activity : agent/task absents du journal : %s", lines[1])
+	}
+	if data, _ := second["data"].(map[string]any); data["label"] != "KPI" {
+		t.Fatalf("label absent de data : %s", lines[1])
+	}
+	if _, has := third["agent"]; has {
+		t.Fatalf("agent doit être omis quand il est vide : %s", lines[2])
+	}
+	if _, has := third["task"]; has {
+		t.Fatalf("task doit être omis quand il est vide : %s", lines[2])
+	}
+}
+
+// TestJournalRecordsDelegation : le message delegation est journalisé avec son offset (NFR-02).
+func TestJournalRecordsDelegation(t *testing.T) {
+	dir := t.TempDir()
+	r, _ := newRecorder(t, dir)
+	r.Publish("s1", domain.Message{Type: domain.TypeDelegation, TMs: 12, Data: domain.Delegation{ID: "d1", OffsetMs: 4200}})
+	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
+	if len(lines) != 1 {
+		t.Fatalf("lignes = %d", len(lines))
+	}
+	var l struct {
+		Type string         `json:"type"`
+		TMs  int64          `json:"t_ms"`
+		Data map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(lines[0]), &l); err != nil {
+		t.Fatal(err)
+	}
+	if l.Type != "delegation" || l.TMs != 12 || l.Data["id"] != "d1" || l.Data["offset_ms"] != float64(4200) {
+		t.Fatalf("ligne = %s", lines[0])
+	}
+}

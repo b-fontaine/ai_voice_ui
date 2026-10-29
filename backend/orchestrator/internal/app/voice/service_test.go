@@ -24,6 +24,8 @@ const (
 
 	testAttachAttempts = 5
 	testAttachDelay    = 500 * time.Millisecond
+
+	testDelegationsClose = 100 * time.Millisecond
 )
 
 // noWait remplace Options.After : les attentes ne dorment pas, elles sont comptées.
@@ -121,11 +123,15 @@ type testSideband struct {
 	closeCall chan struct{}
 	once      sync.Once
 	autoClose bool // émet closed à l'appel de Close
+	// confirmDelay retarde la confirmation (session.closed) après Close.
+	confirmDelay time.Duration
 }
 
 func newTestSideband(autoClose bool) *testSideband {
 	return &testSideband{events: make(chan port.LiveEvent, 64), closeCall: make(chan struct{}), autoClose: autoClose}
 }
+
+func (s *testSideband) AppendCommentary(context.Context, string, string) error { return nil }
 
 func (s *testSideband) Events() <-chan port.LiveEvent { return s.events }
 
@@ -134,6 +140,7 @@ func (s *testSideband) Close(context.Context) error {
 		close(s.closeCall)
 		if s.autoClose {
 			go func() {
+				time.Sleep(s.confirmDelay)
 				s.events <- port.LiveEvent{Type: port.EventClosed}
 				close(s.events)
 			}()
@@ -148,6 +155,7 @@ type testLive struct {
 	failFirst    int           // nombre de tentatives qui échouent avant le succès
 	sidebandGate chan struct{} // si non nil : Sideband bloque jusqu'à sa fermeture ou à l'annulation du contexte
 	autoClose    bool
+	confirmDelay time.Duration // délai entre Close et session.closed (autoClose)
 	sessions     int
 
 	smu      sync.Mutex
@@ -202,6 +210,7 @@ func (l *testLive) Sideband(ctx context.Context, _ string) (port.Sideband, error
 		return nil, fmt.Errorf("tentative %d refusée", n)
 	}
 	sb := newTestSideband(l.autoClose)
+	sb.confirmDelay = l.confirmDelay
 	l.smu.Lock()
 	l.sb = sb
 	l.smu.Unlock()
@@ -241,7 +250,8 @@ func testOptions() Options {
 	return Options{
 		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
 		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
-		After: (&waitRecorder{}).after, // attentes instantanées par défaut
+		DelegationsCloseTimeout: testDelegationsClose,
+		After:                   (&waitRecorder{}).after, // attentes instantanées par défaut
 	}
 }
 
@@ -260,12 +270,18 @@ func pcmBlock(ms int, value int16) []byte {
 func TestNewServiceValidatesOptions(t *testing.T) {
 	att := func(o Options) Options {
 		o.AttachAttempts, o.AttachDelay = testAttachAttempts, testAttachDelay
+		o.DelegationsCloseTimeout = testDelegationsClose
 		return o
 	}
 	cases := map[string]Options{
 		"sample rate": att(Options{WindowMs: 200, GuardTimeout: time.Second}),
 		"window":      att(Options{SampleRate: 24000, GuardTimeout: time.Second}),
 		"guard":       att(Options{SampleRate: 24000, WindowMs: 200}),
+		"delegations close": func() Options {
+			o := att(Options{SampleRate: 24000, WindowMs: 200, GuardTimeout: time.Second})
+			o.DelegationsCloseTimeout = 0
+			return o
+		}(),
 	}
 	for name, opts := range cases {
 		if _, err := NewService(&testLive{}, &testSink{}, newTestClock(), opts); err == nil {
@@ -457,6 +473,8 @@ func TestCloseGuardTimeout(t *testing.T) {
 
 // blockingSideband imite openailive : Close attend la fin de son contexte.
 type blockingSideband struct{ events chan port.LiveEvent }
+
+func (s *blockingSideband) AppendCommentary(context.Context, string, string) error { return nil }
 
 func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
 
@@ -891,8 +909,9 @@ func TestMaxSessionClosesSession(t *testing.T) {
 	svc, err := NewService(live, sink, clock, Options{
 		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
 		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
-		MaxSession: 30 * time.Minute,
-		After:      func(d time.Duration) <-chan time.Time { asked = d; return fire },
+		DelegationsCloseTimeout: testDelegationsClose,
+		MaxSession:              30 * time.Minute,
+		After:                   func(d time.Duration) <-chan time.Time { asked = d; return fire },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -923,7 +942,8 @@ func TestMaxSessionZeroMeansNoCap(t *testing.T) {
 	svc, err := NewService(live, &testSink{}, newTestClock(), Options{
 		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
 		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
-		After: func(time.Duration) <-chan time.Time { called = true; return nil },
+		DelegationsCloseTimeout: testDelegationsClose,
+		After:                   func(time.Duration) <-chan time.Time { called = true; return nil },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -942,7 +962,7 @@ func TestMaxSessionZeroMeansNoCap(t *testing.T) {
 func TestNewServiceRejectsNegativeMaxSession(t *testing.T) {
 	_, err := NewService(&testLive{}, &testSink{}, newTestClock(),
 		Options{SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: time.Second, MaxSession: -time.Second,
-			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay})
+			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay, DelegationsCloseTimeout: testDelegationsClose})
 	if err == nil {
 		t.Fatal("MaxSession négatif doit être refusé")
 	}
@@ -968,7 +988,7 @@ func TestNewServiceValidatesMeterParams(t *testing.T) {
 	// Fenêtre de moins d'un échantillon : level.NewMeter échouerait dans Open.
 	_, err := NewService(&testLive{}, &testSink{}, newTestClock(),
 		Options{SampleRate: 1, WindowMs: 1, GuardTimeout: time.Second,
-			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay})
+			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay, DelegationsCloseTimeout: testDelegationsClose})
 	if err == nil {
 		t.Fatal("NewService doit refuser des paramètres que level.NewMeter rejette")
 	}
@@ -1162,3 +1182,5 @@ func TestCloseTimeoutHangupErrorJoined(t *testing.T) {
 		t.Fatalf("ErrCloseTimeout et l'erreur de Hangup attendus, obtenu %v", err)
 	}
 }
+
+func (s *failingSideband) AppendCommentary(context.Context, string, string) error { return nil }

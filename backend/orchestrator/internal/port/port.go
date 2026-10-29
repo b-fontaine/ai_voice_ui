@@ -36,6 +36,11 @@ const ReasonConnectionLost = "connection_lost"
 type Sideband interface {
 	Events() <-chan LiveEvent
 	Close(ctx context.Context) error
+	// AppendCommentary fait dire à la voix, pour la délégation delegationID,
+	// un commentaire que le modèle peut paraphraser. Le contenu (≤ 500 tokens)
+	// est de la responsabilité de l'appelant. Le retour nil n'est que
+	// l'acquittement (`…appended`) : ce n'est pas la diction.
+	AppendCommentary(ctx context.Context, delegationID, text string) error
 }
 
 // EventType identifie la nature d'un LiveEvent.
@@ -47,6 +52,8 @@ const (
 	EventOutputAudio
 	EventUsageUpdated
 	EventClosed
+	// EventDelegationCreated : le modèle délègue ; DelegationID l'identifie.
+	EventDelegationCreated
 )
 
 // LiveEvent est un événement du fournisseur, déjà décodé.
@@ -58,6 +65,8 @@ type LiveEvent struct {
 	PCM          []byte // PCM16 little-endian mono (EventOutputAudio)
 	Seconds      float64
 	ContextRatio float64
+	DelegationID string // identifiant de la délégation (EventDelegationCreated)
+	OffsetMs     int64  // position de la délégation sur la timeline de la session (ms, EventDelegationCreated)
 	Reason       string // raison de clôture (EventClosed) : celle de session.closed, ou ReasonConnectionLost
 }
 

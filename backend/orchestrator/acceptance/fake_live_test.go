@@ -110,6 +110,11 @@ func (s *fakeSideband) finish() {
 	close(s.events)
 }
 
+// AppendCommentary : A1-A4 ne délèguent jamais, le double
+// historique les accepte sans rien enregistrer (voir fakeDelegatingLive pour
+// le double qui enregistre).
+func (s *fakeSideband) AppendCommentary(_ context.Context, _, _ string) error { return nil }
+
 // Close demande la fermeture ; le sideband émet alors « closed ».
 func (s *fakeSideband) Close(_ context.Context) error {
 	s.once.Do(func() { close(s.closed) })

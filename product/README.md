@@ -26,7 +26,7 @@ tags: [meta, readme, entree, carte]
 |---|---|
 | **Porteur** (relire, décider) | [questions ouvertes](roadmap/open-questions.md) → [maquettes (illustration) et différences](functional/mockups.md) → [décisions](decisions/index.yaml) → [roadmap](roadmap/roadmap.md) |
 | **Dev Flutter** | [vision](functional/vision.md) → [écran](functional/screen.md) → [exigences](functional/requirements.md) et [scénarios](functional/features/) → [catalogue](functional/catalog.md) → [frontend](architecture/frontend.md) → [qualité](architecture/quality.md) |
-| **Dev backend (Go)** | [vue d'ensemble](architecture/overview.md) → [backend](architecture/backend.md) → [agents et protocoles](architecture/agents-protocols.md) → [sécurité](architecture/security.md) → [rejeu](architecture/replay.md) → [jeu de données](functional/dataset.md) |
+| **Dev backend (Go)** | [vue d'ensemble](architecture/overview.md) → [backend](architecture/backend.md) → [agents et protocoles](architecture/agents-protocols.md) → [contrat de l'app-channel](architecture/app-channel-contract.md) → [sécurité](architecture/security.md) → [rejeu](architecture/replay.md) → [jeu de données](functional/dataset.md) |
 | **Agent IA** | [`index.yaml`](index.yaml) (section `tasks`) → documents listés → leurs `links` sur un niveau ; skill `product-lookup` sous Claude Code ; procédure manuelle dans `AGENTS.md` § 1 bis |
 
 ## Carte des documents
@@ -37,7 +37,7 @@ tags: [meta, readme, entree, carte]
 | | [exigences FR](functional/requirements.md), [NFR](functional/nfr.md), [règles RG](functional/business-rules.md), [scénarios Gherkin](functional/features/) | Que doit faire le produit, et comment le vérifie-t-on ? |
 | | [écran](functional/screen.md), [catalogue](functional/catalog.md), [jeu de données](functional/dataset.md), [maquettes](functional/mockups.md), [glossaire](functional/glossary.md) | À quoi ressemble-t-il, avec quels composants et quelles données ? |
 | | [risques, plan B, DoD](functional/risks-acceptance.md) | Qu'est-ce qui peut rater sur scène, et quand est-ce « fini » ? |
-| [architecture/](architecture/index.yaml) | [vue d'ensemble](architecture/overview.md), [frontend](architecture/frontend.md), [backend](architecture/backend.md), [agents et protocoles](architecture/agents-protocols.md) | Comment est-il construit, qui parle à qui ? |
+| [architecture/](architecture/index.yaml) | [vue d'ensemble](architecture/overview.md), [frontend](architecture/frontend.md), [backend](architecture/backend.md), [agents et protocoles](architecture/agents-protocols.md), [contrat de l'app-channel](architecture/app-channel-contract.md) | Comment est-il construit, qui parle à qui ? |
 | | [stack](architecture/stack.md), [rejeu](architecture/replay.md), [sécurité](architecture/security.md), [qualité](architecture/quality.md), [scène](architecture/stage-runtime.md) | Avec quelles versions, comment tient-il sans réseau, comment le teste-t-on et le joue-t-on en salle ? |
 | [roadmap/](roadmap/index.yaml) | [roadmap](roadmap/roadmap.md), [backlog](roadmap/backlog.md), [spikes](roadmap/spikes.md), [questions ouvertes](roadmap/open-questions.md), [au-delà](roadmap/beyond.md), [plan backend de production](roadmap/backend-production-plan.md) | Dans quel ordre le construire, que reste-t-il à décider, que faire après le talk ? |
 | [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0043`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
@@ -71,6 +71,7 @@ Règle en vigueur ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-moc
 | Q-25, Q-39, Q-46, Q-55, Q-63 tranchées par le porteur le 2026-10-29 (pdr-0046, pdr-0045, pdr-0047, pdr-0048, pdr-0049) | Fixent les versions, le canal app ↔ backend, l'observabilité et la couverture Gherkin |
 | Q-17 — LLM des agents | Bloque J3 |
 | Q-43, Q-47, Q-53 tranchées par le porteur le 2026-10-29 (pdr-0051, pdr-0050, pdr-0052) ; Q-67 — délai d'arrêt de la voix après interruption (avant J7) ; Q-68 — plafond de durée par session GPT-Live (avant J7) | Fixent l'orbe, la délégation GPT-Live et les sessions ; Q-67 conditionne FR-13 |
+| Q-69 — surface partielle d'un agent en échec : retirer ou laisser en état neutre (avant J3 si possible) ; Q-70 — le canevas survit-il à la session voix (pdr-0052 vs FR-07, avant J4) | Fixent la politique d'échec visible sur scène (RG-10 vs RG-14) et l'acte 2 « modifier en place » |
 
 ## Contribuer
 

@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
 )
 
 const (
@@ -22,6 +25,8 @@ const (
 	defaultCloseGuard        = 5 * time.Second
 	defaultSessionRateBurst  = 5
 	defaultSessionRateWindow = 10 * time.Second
+	// Attente d'acquittement d'un commentaire vocal (VOICE_APPEND_ACK_TIMEOUT).
+	defaultAppendAckTimeout = 2 * time.Second
 )
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.
@@ -57,6 +62,25 @@ type Config struct {
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
 	AllowedHosts []string
+
+	// Agents : URL des cartes d'agent A2A (AGENTS, séparées par des virgules,
+	// http ou https). Vide : l'orchestrateur démarre et répond « aucun agent ».
+	Agents []string
+	// A2UICatalogID, A2UIComponents et AgentTimeout (A2UI_CATALOG_ID,
+	// A2UI_COMPONENTS, AGENT_TIMEOUT) sont obligatoires si Agents est non vide.
+	// AgentTimeout vaut 0 quand il est absent (le câblage applique alors une
+	// valeur technique).
+	A2UICatalogID  string
+	A2UIComponents []string
+	AgentTimeout   time.Duration
+	// AppendAckTimeout : attente de l'acquittement d'un commentaire vocal
+	// (VOICE_APPEND_ACK_TIMEOUT) ; défaut 2 s, documenté ici.
+	AppendAckTimeout time.Duration
+	// AckDelayMs (VOICE_ACK_DELAY_MS, entier >= 0) : délai de l'accusé vocal
+	// automatique du fournisseur ; nil : non envoyé.
+	AckDelayMs *int64
+	// Phrases : commentaires vocaux (VOICE_PHRASES_FILE, sinon fichier embarqué).
+	Phrases orchestrate.Phrases
 
 	apiKey string
 }
@@ -177,6 +201,10 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		}
 	}
 
+	if err := parseOrchestration(getenv, &cfg); err != nil {
+		return Config{}, err
+	}
+
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))
 	cfg.InstructionsFile = strings.TrimSpace(getenv("VOICE_INSTRUCTIONS_FILE"))
 	return cfg, nil
@@ -203,4 +231,70 @@ func isLoopback(host string) bool {
 	}
 	ip := net.ParseIP(h)
 	return ip != nil && ip.IsLoopback()
+}
+
+// splitList découpe une liste séparée par des virgules (éléments rognés, vides ignorés).
+func splitList(raw string) []string {
+	var out []string
+	for _, v := range strings.Split(raw, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// parseOrchestration lit les variables des agents, des commentaires vocaux et
+// du délai d'acquittement. Les erreurs nomment la variable sans en afficher la valeur.
+func parseOrchestration(getenv func(string) string, cfg *Config) error {
+	cfg.Agents = splitList(getenv("AGENTS"))
+	for _, a := range cfg.Agents {
+		u, err := url.Parse(a)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			return errors.New("AGENTS doit être une liste d'URL de carte http ou https séparées par des virgules")
+		}
+	}
+
+	cfg.A2UICatalogID = strings.TrimSpace(getenv("A2UI_CATALOG_ID"))
+	cfg.A2UIComponents = splitList(getenv("A2UI_COMPONENTS"))
+	if raw := strings.TrimSpace(getenv("AGENT_TIMEOUT")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return errors.New("AGENT_TIMEOUT doit être une durée strictement positive (par exemple 8s)")
+		}
+		cfg.AgentTimeout = d
+	}
+	if len(cfg.Agents) > 0 {
+		switch {
+		case cfg.A2UICatalogID == "":
+			return errors.New("variable d'environnement A2UI_CATALOG_ID obligatoire quand AGENTS est renseigné")
+		case len(cfg.A2UIComponents) == 0:
+			return errors.New("variable d'environnement A2UI_COMPONENTS obligatoire quand AGENTS est renseigné (liste séparée par des virgules)")
+		case cfg.AgentTimeout == 0:
+			return errors.New("variable d'environnement AGENT_TIMEOUT obligatoire quand AGENTS est renseigné")
+		}
+	}
+
+	cfg.AppendAckTimeout = defaultAppendAckTimeout
+	if raw := strings.TrimSpace(getenv("VOICE_APPEND_ACK_TIMEOUT")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return errors.New("VOICE_APPEND_ACK_TIMEOUT doit être une durée strictement positive (par exemple 2s)")
+		}
+		cfg.AppendAckTimeout = d
+	}
+	if raw := strings.TrimSpace(getenv("VOICE_ACK_DELAY_MS")); raw != "" {
+		n, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || n < 0 {
+			return errors.New("VOICE_ACK_DELAY_MS doit être un entier >= 0 (millisecondes)")
+		}
+		cfg.AckDelayMs = &n
+	}
+
+	phrases, err := loadPhrases(strings.TrimSpace(getenv("VOICE_PHRASES_FILE")))
+	if err != nil {
+		return err
+	}
+	cfg.Phrases = phrases
+	return nil
 }

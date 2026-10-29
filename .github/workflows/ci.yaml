@@ -9,20 +9,28 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [backend/orchestrator, backend/agents/quality]
     defaults:
       run:
-        working-directory: backend/orchestrator
+        working-directory: ${{ matrix.module }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/orchestrator/go.mod
+          go-version-file: ${{ matrix.module }}/go.mod
       - run: test -z "$(gofmt -l .)"
       - run: go vet ./...
       - run: go vet -tags acceptance ./...
       - run: go test -race ./...
       - run: go test -race -tags acceptance ./...
       - run: docker build .
+      - name: Contrôle statique du compose (sans .env, sans secret)
+        if: matrix.module == 'backend/orchestrator'
+        working-directory: .
+        run: bash backend/check-compose.sh
   app:
     runs-on: ubuntu-latest
     steps:

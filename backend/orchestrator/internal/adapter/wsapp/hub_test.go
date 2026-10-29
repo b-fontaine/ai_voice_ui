@@ -20,7 +20,10 @@ import (
 
 var _ port.Sink = (*Hub)(nil)
 
-const testWriteTimeout = 2 * time.Second
+const (
+	testWriteTimeout = 2 * time.Second
+	testRetained     = 512
+)
 
 type env struct {
 	V       int             `json:"v"`
@@ -116,7 +119,7 @@ func waitSubs(t *testing.T, h *Hub, session string, n int) {
 }
 
 func TestNewHubValidatesOptions(t *testing.T) {
-	for _, o := range []Options{{Backlog: 0, SendBuffer: 1, WriteTimeout: testWriteTimeout}, {Backlog: 1, SendBuffer: 0, WriteTimeout: testWriteTimeout}, {Backlog: -1, SendBuffer: 1, WriteTimeout: testWriteTimeout}} {
+	for _, o := range []Options{{Backlog: 0, SendBuffer: 1, WriteTimeout: testWriteTimeout, RetainedMax: testRetained}, {Backlog: 1, SendBuffer: 0, WriteTimeout: testWriteTimeout, RetainedMax: testRetained}, {Backlog: -1, SendBuffer: 1, WriteTimeout: testWriteTimeout, RetainedMax: testRetained}} {
 		if _, err := NewHub(o); err == nil {
 			t.Errorf("NewHub(%+v) devrait échouer", o)
 		}
@@ -124,7 +127,7 @@ func TestNewHubValidatesOptions(t *testing.T) {
 }
 
 func TestHubBroadcast(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	a, b := dial(t, srv, "s1"), dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 2)
@@ -141,7 +144,7 @@ func TestHubBroadcast(t *testing.T) {
 }
 
 func TestHubBacklogExcludesLevels(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 2, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 2, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	h.Publish("s1", transcript(1))
 	h.Publish("s1", domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.5}})
 	h.Publish("s1", transcript(2))
@@ -159,7 +162,7 @@ func TestHubBacklogExcludesLevels(t *testing.T) {
 }
 
 func TestHubNoDuplicateBetweenBacklogAndLive(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	const total = 300
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -184,7 +187,7 @@ func TestHubNoDuplicateBetweenBacklogAndLive(t *testing.T) {
 }
 
 func TestHubSessionIsolation(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "a")
 	know(h, "b")
 	a, b := dial(t, srv, "a"), dial(t, srv, "b")
@@ -201,7 +204,7 @@ func TestHubSessionIsolation(t *testing.T) {
 }
 
 func TestHubSlowSubscriberDropped(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 2, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 2, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	slow, fast := dial(t, srv, "s1"), dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 2)
@@ -251,7 +254,7 @@ func TestHubSlowSubscriberDropped(t *testing.T) {
 }
 
 func TestHubForgetsClosedSession(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
@@ -279,7 +282,7 @@ func TestHubForgetsClosedSession(t *testing.T) {
 }
 
 func TestHubCloseClosesSubscribers(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	know(h, "s2")
 	a, b := dial(t, srv, "s1"), dial(t, srv, "s2")
@@ -306,7 +309,7 @@ func TestHubCloseClosesSubscribers(t *testing.T) {
 }
 
 func TestEnvelopeShape(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
@@ -319,6 +322,38 @@ func TestEnvelopeShape(t *testing.T) {
 		{domain.Message{Type: domain.TypeSessionState, TMs: 0, Data: domain.SessionState{State: "active"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":0,"data":{"state":"active"}}`},
 		{domain.Message{Type: domain.TypeSessionState, TMs: 5, Data: domain.SessionState{State: "closed", Reason: "max_session"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":5,"data":{"state":"closed","reason":"max_session"}}`},
 		{domain.Message{Type: domain.TypeUsage, TMs: 900, Data: domain.Usage{Seconds: 1.5, ContextRatio: 0.1}}, `{"v":1,"type":"usage","session":"s1","t_ms":900,"data":{"seconds":1.5,"context_ratio":0.1}}`},
+		{domain.Message{Type: domain.TypeAgentActivity, TMs: 10, Data: domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}}, `{"v":1,"type":"agent.activity","session":"s1","t_ms":10,"data":{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}}`},
+	}
+	for _, tc := range cases {
+		h.Publish("s1", tc.msg)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_, b, err := c.Read(ctx)
+		cancel()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b) != tc.want {
+			t.Fatalf("enveloppe %s, attendu %s", b, tc.want)
+		}
+	}
+}
+
+// TestWireA2UIAttribution : l'enveloppe a2ui porte agent et task au premier
+// niveau (omis quand ils sont vides), data restant le message A2UI brut.
+func TestWireA2UIAttribution(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	know(h, "s1")
+	c := dial(t, srv, "s1")
+	waitSubs(t, h, "s1", 1)
+	cases := []struct {
+		msg  domain.Message
+		want string
+	}{
+		{domain.Message{Type: domain.TypeA2UI, TMs: 5, Agent: "Qualité", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":5,"agent":"Qualité","task":"t1","data":{"version":"v0.9"}}`},
+		{domain.Message{Type: domain.TypeA2UI, TMs: 6, Agent: "orchestrateur", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":6,"agent":"orchestrateur","task":"t1","data":{"version":"v0.9"}}`},
+		{domain.Message{Type: domain.TypeAgentActivity, TMs: 8, Agent: "Qualité", Task: "t1", Data: domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking}}, `{"v":1,"type":"agent.activity","session":"s1","t_ms":8,"agent":"Qualité","task":"t1","data":{"agent":"Qualité","task":"t1","state":"working"}}`},
+		{domain.Message{Type: domain.TypeDelegation, TMs: 9, Data: domain.Delegation{ID: "d1", OffsetMs: 12}}, `{"v":1,"type":"delegation","session":"s1","t_ms":9,"data":{"id":"d1","offset_ms":12}}`},
+		{domain.Message{Type: domain.TypeA2UI, TMs: 7, Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":7,"data":{"version":"v0.9"}}`},
 	}
 	for _, tc := range cases {
 		h.Publish("s1", tc.msg)
@@ -348,7 +383,7 @@ func waitAll(t *testing.T, h *Hub, n int) {
 }
 
 func TestHubAllSessionsSubscriber(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	all := dial(t, srv, "") // sans paramètre session
 	waitAll(t, h, 1)
 	// Les sessions s'ouvrent après la connexion de l'abonné.
@@ -364,7 +399,7 @@ func TestHubAllSessionsSubscriber(t *testing.T) {
 }
 
 func TestHubSessionFilter(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	h.Publish("a", transcript(1))
 	h.Publish("b", transcript(2))
 	onlyB := dial(t, srv, "b")
@@ -380,7 +415,7 @@ func TestHubSessionFilter(t *testing.T) {
 }
 
 func TestHubBacklogAllSessionsOrdered(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	h.Publish("a", transcript(1))
 	h.Publish("b", transcript(2))
 	h.Publish("a", domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.5}})
@@ -401,7 +436,7 @@ func closedMsg() domain.Message {
 }
 
 func TestHubAllSessionsDoesNotLeakSessions(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 64, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 64, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	all := dial(t, srv, "")
 	waitAll(t, h, 1)
 	for i := 0; i < 20; i++ {
@@ -418,7 +453,7 @@ func TestHubAllSessionsDoesNotLeakSessions(t *testing.T) {
 }
 
 func TestHubClosedSessionKeptForFilteredSubscriber(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
@@ -439,7 +474,7 @@ func TestHubClosedSessionKeptForFilteredSubscriber(t *testing.T) {
 
 func TestNewHubValidatesWriteTimeout(t *testing.T) {
 	for _, d := range []time.Duration{0, -time.Second} {
-		if _, err := NewHub(Options{Backlog: 1, SendBuffer: 1, WriteTimeout: d}); err == nil {
+		if _, err := NewHub(Options{Backlog: 1, SendBuffer: 1, WriteTimeout: d, RetainedMax: testRetained}); err == nil {
 			t.Errorf("NewHub avec WriteTimeout=%v devrait échouer", d)
 		}
 	}
@@ -460,7 +495,7 @@ func rawGet(t *testing.T, srv *httptest.Server, query string) (int, string) {
 }
 
 func TestHubUnknownSession404(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	code, body := rawGet(t, srv, "?session=inconnue")
 	if code != http.StatusNotFound || !strings.Contains(body, `"error"`) {
 		t.Fatalf("statut %d corps %q, attendu 404 JSON", code, body)
@@ -471,7 +506,7 @@ func TestHubUnknownSession404(t *testing.T) {
 }
 
 func TestHubInvalidSessionID400(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	for _, q := range []string{"..%2Fx", "x%2F..%2Fy", strings.Repeat("a", 129), "a%20b", "a.b", "%C3%A9"} {
 		code, body := rawGet(t, srv, "?session="+q)
 		if code != http.StatusBadRequest || !strings.Contains(body, `"error"`) {
@@ -485,7 +520,7 @@ func TestHubInvalidSessionID400(t *testing.T) {
 
 func TestHubStalledWriterTimesOut(t *testing.T) {
 	const writeTimeout = 300 * time.Millisecond
-	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 1000, WriteTimeout: writeTimeout})
+	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 1000, WriteTimeout: writeTimeout, RetainedMax: testRetained})
 	know(h, "s1")
 	_ = dial(t, srv, "s1") // ne lit jamais
 	waitSubs(t, h, "s1", 1)
@@ -511,5 +546,243 @@ func TestHubStalledWriterTimesOut(t *testing.T) {
 	}
 	if d := time.Since(t0); d > 500*time.Millisecond {
 		t.Fatalf("Close a pris %v", d)
+	}
+}
+
+// --- T15e : rétention séparée des surfaces et de l'activité des agents (A4) ---
+
+func a2uiMsg(i int64, op, surface string) domain.Message {
+	return domain.Message{Type: domain.TypeA2UI, TMs: i, Agent: "Qualité", Task: "t1", Data: domain.A2UI{Message: map[string]any{
+		"version": "v0.9", op: map[string]any{"surfaceId": surface},
+	}, Op: op, SurfaceID: surface}}
+}
+
+func activityMsg(i int64, task string) domain.Message {
+	return domain.Message{Type: domain.TypeAgentActivity, TMs: i, Data: domain.AgentActivity{Agent: "Qualité", Task: task, State: domain.ActivityWorking}}
+}
+
+// a2uiOp renvoie l'opération et la surface d'une enveloppe a2ui reçue.
+func a2uiOp(t *testing.T, e env) (op, surface string) {
+	t.Helper()
+	var d map[string]json.RawMessage
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		t.Fatal(err)
+	}
+	for k, v := range d {
+		if k == "version" {
+			continue
+		}
+		var body struct {
+			SurfaceID string `json:"surfaceId"`
+		}
+		if err := json.Unmarshal(v, &body); err != nil {
+			t.Fatal(err)
+		}
+		return k, body.SurfaceID
+	}
+	t.Fatalf("aucune opération dans %s", e.Data)
+	return "", ""
+}
+
+func TestNewHubValidatesRetainedMax(t *testing.T) {
+	for _, n := range []int{0, -1} {
+		if _, err := NewHub(Options{Backlog: 1, SendBuffer: 1, WriteTimeout: testWriteTimeout, RetainedMax: n}); err == nil {
+			t.Errorf("NewHub avec RetainedMax=%d devrait échouer", n)
+		}
+	}
+}
+
+func TestLateSubscriberGetsSurfaceAfterManyTranscripts(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	ops := []string{"createSurface", "updateComponents", "updateDataModel"}
+	for i, op := range ops {
+		h.Publish("s1", a2uiMsg(int64(i), op, "kpi"))
+	}
+	for i := 0; i < 200; i++ {
+		h.Publish("s1", transcript(i))
+	}
+	for _, id := range []string{"s1", ""} { // abonné filtré, puis « toutes sessions »
+		c := dial(t, srv, id)
+		for _, want := range ops {
+			e := read(t, c)
+			if op, surface := a2uiOp(t, e); e.Type != domain.TypeA2UI || op != want || surface != "kpi" {
+				t.Fatalf("abonné %q : reçu %s %s, attendu a2ui %s", id, e.Type, e.Data, want)
+			}
+		}
+		for i := 150; i < 200; i++ { // le backlog ordinaire garde les 50 derniers
+			if got := textOf(t, read(t, c)); got != fmt.Sprint(i) {
+				t.Fatalf("abonné %q : transcript %q, attendu %d", id, got, i)
+			}
+		}
+	}
+}
+
+func TestDeleteSurfaceForgetsItsMessages(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	h.Publish("s1", a2uiMsg(1, "createSurface", "old"))
+	h.Publish("s1", a2uiMsg(2, "createSurface", "keep"))
+	h.Publish("s1", a2uiMsg(3, "updateComponents", "old"))
+	h.Publish("s1", activityMsg(4, "t1"))
+	h.Publish("s1", a2uiMsg(5, "updateDataModel", "keep"))
+	h.Publish("s1", a2uiMsg(6, "deleteSurface", "old"))
+	c := dial(t, srv, "s1")
+	want := []struct{ typ, op, surface string }{
+		{domain.TypeA2UI, "createSurface", "keep"},
+		{domain.TypeAgentActivity, "", ""},
+		{domain.TypeA2UI, "updateDataModel", "keep"},
+	}
+	for _, w := range want {
+		e := read(t, c)
+		if e.Type != w.typ {
+			t.Fatalf("reçu %s %s, attendu %s", e.Type, e.Data, w.typ)
+		}
+		if w.typ == domain.TypeA2UI {
+			if op, surface := a2uiOp(t, e); op != w.op || surface != w.surface {
+				t.Fatalf("reçu %s sur %s, attendu %s sur %s", op, surface, w.op, w.surface)
+			}
+		}
+	}
+	// Rien d'autre (ni la surface supprimée, ni son deleteSurface) : un message direct arrive juste après.
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", transcript(99))
+	if e := read(t, c); e.Type != domain.TypeTranscript || textOf(t, e) != "99" {
+		t.Fatalf("message inattendu avant le direct : %s %s", e.Type, e.Data)
+	}
+	// Une surface recréée sous le même identifiant est de nouveau retenue.
+	h.Publish("s1", a2uiMsg(7, "createSurface", "old"))
+	read(t, c)
+	c2 := dial(t, srv, "s1")
+	var seen []string
+	for i := 0; i < 5; i++ {
+		e := read(t, c2)
+		if e.Type == domain.TypeA2UI {
+			op, surface := a2uiOp(t, e)
+			seen = append(seen, op+":"+surface)
+		}
+	}
+	if got := strings.Join(seen, ","); got != "createSurface:keep,updateDataModel:keep,createSurface:old" {
+		t.Fatalf("surfaces rejouées = %s", got)
+	}
+}
+
+func TestRetentionBounded(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: 3})
+	for i := 1; i <= 5; i++ {
+		h.Publish("s1", a2uiMsg(int64(i), "createSurface", fmt.Sprintf("surf%d", i)))
+	}
+	c := dial(t, srv, "s1")
+	for _, want := range []string{"surf3", "surf4", "surf5"} {
+		e := read(t, c)
+		if _, surface := a2uiOp(t, e); surface != want {
+			t.Fatalf("surface %s, attendu %s (le plus ancien est évincé)", surface, want)
+		}
+	}
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", transcript(1))
+	if e := read(t, c); e.Type != domain.TypeTranscript {
+		t.Fatalf("reçu %s %s : seules 3 surfaces devaient être rejouées", e.Type, e.Data)
+	}
+}
+
+// R9 : sous pression, l'éviction retire d'abord les agent.activity, puis les
+// mises à jour les plus anciennes, jamais le createSurface d'une surface vivante.
+func TestRetentionKeepsCreateSurfaceUnderPressure(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: 4})
+	h.Publish("s1", a2uiMsg(0, "createSurface", "kpi"))
+	h.Publish("s1", activityMsg(1, "t1"))
+	for i := int64(2); i < 12; i++ {
+		h.Publish("s1", a2uiMsg(i, "updateComponents", "kpi"))
+	}
+	c := dial(t, srv, "s1")
+	var ops []string
+	for i := 0; i < 4; i++ {
+		e := read(t, c)
+		if e.Type != domain.TypeA2UI {
+			t.Fatalf("reçu %s : l'agent.activity devait être évincé en premier", e.Type)
+		}
+		op, _ := a2uiOp(t, e)
+		ops = append(ops, op)
+	}
+	if got := strings.Join(ops, ","); got != "createSurface,updateComponents,updateComponents,updateComponents" {
+		t.Fatalf("rejeu = %s", got)
+	}
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", transcript(1))
+	if e := read(t, c); e.Type != domain.TypeTranscript {
+		t.Fatalf("reçu %s %s : le rejeu ne devait pas dépasser RetainedMax", e.Type, e.Data)
+	}
+}
+
+// Une surface supprimée libère son createSurface ; une fois seules des
+// surfaces vivantes restent (impossible au-delà de 6 par le registre), le
+// plus ancien createSurface est évincé en dernier recours (TestRetentionBounded).
+func TestRetentionEvictsActivityBeforeUpdates(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: 3})
+	h.Publish("s1", a2uiMsg(0, "createSurface", "kpi"))
+	h.Publish("s1", a2uiMsg(1, "updateComponents", "kpi"))
+	h.Publish("s1", activityMsg(2, "t1"))
+	h.Publish("s1", a2uiMsg(3, "updateDataModel", "kpi")) // dépasse : l'activité part avant l'update
+	c := dial(t, srv, "s1")
+	var seen []string
+	for i := 0; i < 3; i++ {
+		e := read(t, c)
+		op, _ := a2uiOp(t, e)
+		seen = append(seen, e.Type+":"+op)
+	}
+	if got := strings.Join(seen, ","); got != "a2ui:createSurface,a2ui:updateComponents,a2ui:updateDataModel" {
+		t.Fatalf("rejeu = %s", got)
+	}
+}
+
+func TestReplayMergedInPublishOrder(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	msgs := []domain.Message{
+		{Type: domain.TypeSessionState, TMs: 1, Data: domain.SessionState{State: domain.StateActive}},
+		a2uiMsg(2, "createSurface", "kpi"),
+		transcript(3),
+		{Type: domain.TypeOrbLevel, TMs: 4, Data: domain.OrbLevel{Level: 0.5}},
+		activityMsg(5, "t1"),
+		{Type: domain.TypeUsage, TMs: 6, Data: domain.Usage{Seconds: 1}},
+		a2uiMsg(7, "updateDataModel", "kpi"),
+		transcript(8),
+	}
+	for _, m := range msgs {
+		h.Publish("s1", m)
+	}
+	for _, id := range []string{"s1", ""} {
+		c := dial(t, srv, id)
+		for _, want := range []int64{1, 2, 3, 5, 6, 7, 8} { // sans orb.level
+			if got := read(t, c).TMs; got != want {
+				t.Fatalf("abonné %q : t_ms %d, attendu %d", id, got, want)
+			}
+		}
+	}
+}
+
+func TestNoDuplicateBetweenReplayAndLive(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000, WriteTimeout: testWriteTimeout, RetainedMax: 1000})
+	const total = 400
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < total; i++ {
+			if i%2 == 0 {
+				h.Publish("s1", a2uiMsg(int64(i), "updateDataModel", "kpi"))
+			} else {
+				h.Publish("s1", transcript(i))
+			}
+			if i%10 == 0 {
+				time.Sleep(time.Millisecond)
+			}
+		}
+	}()
+	time.Sleep(20 * time.Millisecond)
+	c := dial(t, srv, "s1")
+	wg.Wait()
+	for i := 0; i < total; i++ {
+		if got := read(t, c).TMs; got != int64(i) {
+			t.Fatalf("position %d : t_ms %d", i, got)
+		}
 	}
 }

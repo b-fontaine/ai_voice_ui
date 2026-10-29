@@ -31,4 +31,5 @@ links: [proto-a2a-go-v03-compat, ma-backend-sdk-landscape, ma-backend-stack-reco
 ⚠️ Pièges
 - Planchers réels : **Go ≥ 1.26.10** et **OTel ≥ v1.47** dès qu'on importe adk/v2.
 - MVS : si ADK tire openai-go v3.82, épingler explicitement ≥ v3.86 pour les contrôles de délégation.
+- **Sideband : un seul envoi à la fois.** `SidebandConnection.Send*` renvoie `pending send limit exceeded` si deux envois se chevauchent : sérialiser les envois par un mutex (vérifié le 2026-10-29, `v3.90.0`) ; l'acquittement `…appended` se lit dans la boucle de réception.
 - Dates divergentes entre fact-checks sur l'arrivée du sideband typé (2026-09-10 #912 ou 2026-10-17 #1088) : traiter le package `live` comme jeune.
