@@ -21,6 +21,9 @@
 - `port.LiveEvent{Type EventType; Text string; Final bool; PCM []byte; Seconds, ContextRatio float64}` ; `EventType` : `EventInputTranscriptDelta`, `EventOutputTranscriptDelta`, `EventOutputAudio`, `EventUsageUpdated`, `EventClosed`.
 - `bootstrap.Config{Model, Voice, DelegationType, ListenHost string; ListenPort int; JournalDir string}` (+ `String()` sans clé) ; `Deps{Live, Clock, JournalDir}` ; `New`, `App.Handler()`, `App.Close(ctx)`, `ConfigFromEnv(getenv)` ; `LISTEN_ALLOW_NON_LOOPBACK=1` lève le refus.
 - Un `orb.level` par bloc `EventOutputAudio` de 200 ms (= 5 Hz de signal) ; l'horloge ne sert qu'à `t_ms` et au journal.
+- `domain.Message{Type string; TMs int64; Data any}` : contenu logique de l'enveloppe v1 (sans `v`) ; données typées `OrbLevel`, `Transcript`, `SessionState`, `Usage` ; constantes `TypeOrbLevel`, `TypeTranscript`, `TypeSessionState`, `TypeUsage`.
+- `port.Sink` : `Publish(sessionID string, m domain.Message)` ; le hub WSS (T14) l'implémente.
+- `voice.Options{SampleRate, WindowMs int; GuardTimeout time.Duration}` : injectées, toutes > 0 (sinon `NewService` échoue) ; `Service.Open/Close/Shutdown` ; `Close` renvoie `ErrCloseTimeout` si la fermeture n'est pas confirmée à temps.
 
 ## Références
 - `product/architecture/backend.md` (modules `voice-session`, `sideband-supervisor`, `app-channel`, `session-recorder`), `security.md` § contrat de relais, `agents-protocols.md`.
