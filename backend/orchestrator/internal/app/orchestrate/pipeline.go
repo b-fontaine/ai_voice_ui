@@ -35,9 +35,9 @@ const (
 	// maxRawSummaryRunes borne le résumé concaténé des textes de l'agent,
 	// avant nettoyage.
 	maxRawSummaryRunes = 4000
-	// commentaryCap borne l'envoi d'un commentaire après un délai dépassé : le
-	// contexte de la délégation est alors annulé, mais la voix doit recevoir
-	// l'échec honnête.
+	// commentaryCap borne l'envoi d'un commentaire, y compris après un délai
+	// dépassé (l'échéance de l'agent n'est pas celle de la session) ; la
+	// fermeture de la session l'interrompt.
 	commentaryCap = 10 * time.Second
 )
 
@@ -74,6 +74,9 @@ type Pipeline struct {
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
 	inflight []*taskState
+	// renewals : nombre de compensations par agent (identité stable), pour
+	// renouveler le ContextID après le retrait de ses surfaces.
+	renewals map[string]int
 	wg       sync.WaitGroup
 }
 
@@ -86,15 +89,10 @@ type taskState struct {
 	label  string
 	taskID string
 	done   bool
-}
-
-type agentResult struct {
-	index   int // position de l'agent dans Agents : ordre stable des résumés
-	ok      bool
-	summary string
-	// rejected : l'agent a refusé la demande (nature AgentRejected), hors
-	// délai et fermeture de session.
-	rejected bool
+	// Issue, consignée sous mu au moment de `completed`/`failed`.
+	ok       bool
+	summary  string
+	rejected bool // l'agent a refusé la demande (hors délai et fermeture)
 }
 
 // NewPipeline valide ses dépendances.
@@ -124,7 +122,7 @@ func NewPipeline(d PipelineDeps) (*Pipeline, error) {
 		}
 	}
 	d.Agents = append([]port.RemoteAgent(nil), d.Agents...)
-	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID)}, nil
+	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}, nil
 }
 
 // Run exécute une délégation. Il rend la main quand tous les agents ont fini
@@ -138,47 +136,41 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		return
 	}
 
+	// ctx est le contexte de SESSION ; l'échéance de l'agent ne borne que le
+	// travail de l'agent.
+	agentCtx, cancelAgents := d.agentContext(ctx)
+	defer cancelAgents()
+
 	n := len(p.deps.Agents)
-	results := make(chan agentResult, n)
+	tasks := make([]*taskState, n)
+	for i, a := range p.deps.Agents {
+		tasks[i] = &taskState{agent: a.Name(), owner: a.ID()}
+	}
+	finished := make(chan struct{}, n)
 	p.wg.Add(n)
 	for i, a := range p.deps.Agents {
 		go func() {
 			defer p.wg.Done()
-			r := p.runAgent(ctx, a, d)
-			r.index = i
-			results <- r
+			p.runAgent(agentCtx, a, tasks[i], d)
+			finished <- struct{}{}
 		}()
 	}
 
-	succeeded := make([]*agentResult, n)
-	rejections := 0
-	add := func(r agentResult) {
-		if r.ok {
-			succeeded[r.index] = &r
-		} else if r.rejected {
-			rejections++
-		}
-	}
+	// Le canal ne sert qu'à attendre la fin des goroutines : l'issue de chaque
+	// tâche est lue dans son taskState, consignée sous le verrou au moment de
+	// `completed`/`failed`.
 	got := 0
 collect:
 	for got < n {
 		select {
-		case r := <-results:
+		case <-finished:
 			got++
-			add(r)
-		case <-ctx.Done():
-			p.failInflight(ctx)
-			for {
-				select {
-				case r := <-results:
-					add(r)
-					continue
-				default:
-				}
-				break collect
-			}
+		case <-agentCtx.Done():
+			p.failInflight(agentCtx)
+			break collect
 		}
 	}
+	succeeded, rejections := p.outcomes(tasks)
 
 	if sessionClosed(ctx) {
 		p.seal()
@@ -188,12 +180,7 @@ collect:
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
-	var oks []string
-	for _, r := range succeeded {
-		if r != nil {
-			oks = append(oks, r.summary)
-		}
-	}
+	oks := succeeded
 	if len(oks) == 0 {
 		failure := p.deps.Phrases.Failure
 		if allRejected {
@@ -259,11 +246,8 @@ func (p *Pipeline) waitGeneric(ctx context.Context, d Delegation) bool {
 
 // say envoie un commentaire, une seule fois : l'échec est journalisé.
 func (p *Pipeline) say(ctx context.Context, delegationID, text string) {
-	if errors.Is(context.Cause(ctx), ErrAgentTimeout) {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.WithoutCancel(ctx), commentaryCap)
-		defer cancel()
-	}
+	ctx, cancel := context.WithTimeout(ctx, commentaryCap)
+	defer cancel()
 	if err := p.deps.Reply.AppendCommentary(ctx, delegationID, text); err != nil {
 		p.log.Warn("commentaire non transmis", "delegation", delegationID, "err", err)
 	}
@@ -290,49 +274,79 @@ func sanitizeSummary(s string, limit int) string {
 	return strings.TrimSpace(string(runes))
 }
 
-// runAgent suit une tâche d'agent de la carte à l'état final.
-func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegation) agentResult {
-	ts := &taskState{agent: a.Name(), owner: a.ID()}
+// runAgent suit une tâche d'agent de la carte à l'état final ; l'issue est
+// consignée dans ts.
+func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskState, d Delegation) {
 	if !p.track(ts) {
-		return agentResult{}
+		return
 	}
 
 	var summary string
-	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.deps.SessionID}) {
+	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.contextFor(ts.owner)}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
-			return agentResult{rejected: isRejected(ctx, err)}
+			return
 		}
 		switch u.Kind {
 		case port.UpdateSubmitted:
 			if !p.begin(ts, u) {
-				return agentResult{}
+				return
 			}
 		case port.UpdateA2UI:
 			if !p.relay(ts, u.A2UI) {
-				return agentResult{}
+				return
 			}
 		case port.UpdateText:
 			summary = appendSummary(summary, u.Text)
 		case port.UpdateCompleted:
-			if !p.complete(ts) {
-				return agentResult{}
-			}
-			return agentResult{ok: true, summary: summary}
+			p.complete(ts, summary)
+			return
 		case port.UpdateFailed:
 			err := u.Err
 			if err == nil {
 				err = errProtocol
 			}
 			p.fail(ctx, ts, err)
-			return agentResult{rejected: isRejected(ctx, err)}
+			return
 		default:
 			p.fail(ctx, ts, errProtocol)
-			return agentResult{}
+			return
 		}
 	}
 	p.fail(ctx, ts, errNoFinalState)
-	return agentResult{}
+}
+
+// contextFor donne le ContextID à envoyer à un agent : l'identifiant de session,
+// renouvelé (`session#n`) après une compensation de ses surfaces, pour que
+// l'agent ne croie pas à une surface retirée.
+func (p *Pipeline) contextFor(owner string) string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if n := p.renewals[owner]; n > 0 {
+		return fmt.Sprintf("%s#%d", p.deps.SessionID, n)
+	}
+	return p.deps.SessionID
+}
+
+// outcomes lit les issues sous le verrou : une tâche encore ouverte (jamais
+// suivie, agent sourd) est close sans publication, pour qu'elle ne puisse plus
+// contredire le commentaire. Les résumés suivent l'ordre des agents.
+func (p *Pipeline) outcomes(tasks []*taskState) (summaries []string, rejections int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, ts := range tasks {
+		if !ts.done {
+			ts.done = true
+			p.untrackLocked(ts)
+		}
+		switch {
+		case ts.ok:
+			summaries = append(summaries, ts.summary)
+		case ts.rejected:
+			rejections++
+		}
+	}
+	return summaries, rejections
 }
 
 // appendSummary concatène les textes successifs (séparés par une espace),
@@ -410,7 +424,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 }
 
 // complete vérifie que les surfaces sont complètes, puis publie `completed`.
-func (p *Pipeline) complete(ts *taskState) bool {
+func (p *Pipeline) complete(ts *taskState, summary string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if ts.done || p.closed {
@@ -426,6 +440,7 @@ func (p *Pipeline) complete(ts *taskState) bool {
 		return false
 	}
 	ts.done = true
+	ts.ok, ts.summary = true, summary
 	p.untrackLocked(ts)
 	p.deps.Registry.Forget(ts.taskID)
 	p.publishActivityLocked(ts, domain.ActivityCompleted, "")
@@ -436,6 +451,9 @@ func (p *Pipeline) complete(ts *taskState) bool {
 func (p *Pipeline) fail(ctx context.Context, ts *taskState, err error) {
 	detail := detailFor(ctx, err)
 	p.mu.Lock()
+	if !ts.done {
+		ts.rejected = isRejected(ctx, err)
+	}
 	p.failLocked(ts, detail)
 	p.mu.Unlock()
 	p.log.Warn("tâche d'agent en échec", "agent", ts.agent, "task", ts.taskID, "detail", detail, "err", err)
@@ -461,7 +479,11 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 	ts.done = true
 	p.untrackLocked(ts)
 	if ts.taskID != "" {
-		for _, m := range p.deps.Registry.Compensation(ts.taskID) {
+		compensation := p.deps.Registry.Compensation(ts.taskID)
+		if len(compensation) > 0 {
+			p.renewals[ts.owner]++
+		}
+		for _, m := range compensation {
 			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID, domain.A2UI{Message: m})
 		}
 		p.deps.Registry.Forget(ts.taskID)

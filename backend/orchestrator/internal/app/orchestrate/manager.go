@@ -33,11 +33,25 @@ type Delegation struct {
 	// GenericDone est fermé quand l'envoi du commentaire générique est
 	// terminé, réussi ou non : le commentaire final peut alors partir.
 	GenericDone <-chan struct{}
+	// Timeout est l'échéance du travail des agents (0 : aucune). Le Runner la
+	// dérive de SON contexte de session par agentContext ; elle ne borne ni les
+	// commentaires ni la fermeture de la session.
+	Timeout time.Duration
 }
 
-// Runner exécute le pipeline d'une délégation. Run doit rendre la main quand
-// ctx est annulé ; context.Cause(ctx) vaut alors ErrSessionClosed ou
-// ErrAgentTimeout.
+// agentContext borne le travail de l'agent : échéance Timeout (cause
+// ErrAgentTimeout) sous le contexte de session (cause ErrSessionClosed).
+func (d Delegation) agentContext(session context.Context) (context.Context, context.CancelFunc) {
+	if d.Timeout <= 0 {
+		return context.WithCancel(session)
+	}
+	return context.WithTimeoutCause(session, d.Timeout, ErrAgentTimeout)
+}
+
+// Runner exécute le pipeline d'une délégation. ctx est le contexte de SESSION :
+// Run doit rendre la main quand il est annulé (cause ErrSessionClosed) ou
+// quand l'échéance d.Timeout des agents est dépassée (cause ErrAgentTimeout du
+// contexte dérivé par le Runner).
 type Runner interface {
 	Run(ctx context.Context, d Delegation)
 }
@@ -292,14 +306,13 @@ func (s *session) run(d Delegation) {
 	if s.ctx.Err() != nil {
 		return
 	}
-	ctx, cancel := context.WithTimeoutCause(s.ctx, s.m.opts.AgentTimeout, ErrAgentTimeout)
-	defer cancel()
+	d.Timeout = s.m.opts.AgentTimeout
 	defer func() {
 		if r := recover(); r != nil {
 			s.log.Error("panique du runner", "delegation", d.ID, "panic", r)
 		}
 	}()
-	s.runner.Run(ctx, d)
+	s.runner.Run(s.ctx, d)
 }
 
 // Close annule le travail en cours puis attend, au plus GuardTimeout (ou

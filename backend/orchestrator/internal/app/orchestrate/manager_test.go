@@ -353,8 +353,13 @@ func TestGenericDoneClosedEvenOnAppendError(t *testing.T) {
 func TestAgentTimeoutCancelsAndCause(t *testing.T) {
 	cause := make(chan error, 1)
 	r := newRunner(func(ctx context.Context, d Delegation) {
-		<-ctx.Done()
-		cause <- context.Cause(ctx)
+		if d.Timeout != 50*time.Millisecond {
+			t.Errorf("Timeout = %s, attendu l'échéance configurée", d.Timeout)
+		}
+		actx, cancel := d.agentContext(ctx)
+		defer cancel()
+		<-actx.Done()
+		cause <- context.Cause(actx)
 	})
 	o := testOptions()
 	o.AgentTimeout = 50 * time.Millisecond

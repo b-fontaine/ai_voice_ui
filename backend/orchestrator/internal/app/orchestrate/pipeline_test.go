@@ -634,9 +634,9 @@ func TestTimeoutDetail(t *testing.T) {
 		yield(port.AgentUpdate{}, &port.AgentError{Kind: port.AgentCanceled, Reason: "contexte annulé"})
 	}
 	e := newEnv(t, agent)
-	ctx, cancel := context.WithTimeoutCause(context.Background(), 80*time.Millisecond, ErrAgentTimeout)
-	defer cancel()
-	e.p.Run(ctx, e.delegation(t))
+	d := e.delegation(t)
+	d.Timeout = 80 * time.Millisecond
+	e.p.Run(context.Background(), d)
 
 	expectSeq(t, e.sink.snapshot(),
 		"activity:working", "a2ui:createSurface@"+agentQuality,
@@ -824,9 +824,9 @@ func TestPipelineNoGoroutineLeak(t *testing.T) {
 			}
 		}
 		e := newEnv(t, ok, ko, stuck)
-		ctx, cancel := context.WithTimeoutCause(context.Background(), 60*time.Millisecond, ErrAgentTimeout)
-		e.p.Run(ctx, e.delegation(t))
-		cancel()
+		d := e.delegation(t)
+		d.Timeout = 60 * time.Millisecond
+		e.p.Run(context.Background(), d)
 		e.p.Close()
 	}
 	deadline := time.Now().Add(wait)
@@ -1052,5 +1052,166 @@ func TestSummaryConcatenatesTextParts(t *testing.T) {
 	e.p.Run(context.Background(), e.delegation(t))
 	if n := utf8.RuneCountInString(strings.TrimPrefix(e.texts()[1], "Voici ce que l'agent rapporte : ")); n != 600 {
 		t.Fatalf("résumé de %d runes, attendu 600 (borné)", n)
+	}
+}
+
+// Un `completed` publié ne peut pas être contredit par la voix, même si le
+// délai expire juste après (R5) : l'agent émet `completed` puis reste bloqué
+// jusqu'à l'annulation.
+func TestCompletionRacingTimeoutKeepsVoiceConsistent(t *testing.T) {
+	agent := newAgent(agentQuality)
+	agent.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
+		for _, s := range []step{submitted("t1"), a2uiStep(createMsg("quality")), a2uiStep(rootMsg("quality")),
+			textStep("Le KPI est à 99,57 %."), completedStep()} {
+			if !yield(s.u, s.err) {
+				break
+			}
+		}
+		<-ctx.Done() // le résultat n'est pas encore rendu à Run
+		time.Sleep(30 * time.Millisecond)
+	}
+	e := newEnv(t, agent)
+	d := e.delegation(t)
+	d.Timeout = 80 * time.Millisecond
+	e.p.Run(context.Background(), d)
+
+	msgs := e.sink.snapshot()
+	var completed, failed int
+	for _, m := range msgs {
+		if a, ok := m.Data.(domain.AgentActivity); ok {
+			switch a.State {
+			case domain.ActivityCompleted:
+				completed++
+			case domain.ActivityFailed:
+				failed++
+			}
+		}
+	}
+	if completed != 1 || failed != 0 {
+		t.Fatalf("activités = %q", describeAll(msgs))
+	}
+	texts := e.texts()
+	if len(texts) != 2 || texts[0] != pipePhrases.Generic || texts[1] == pipePhrases.Failure ||
+		!strings.Contains(texts[1], "99,57") {
+		t.Fatalf("commentaires = %q, la voix doit rapporter la tâche terminée", texts)
+	}
+}
+
+// failingThenOKAgent : premier appel en échec après `createSurface` (donc
+// compensé), appels suivants terminés normalement.
+func failingThenOKAgent(failFirst bool) *fakeAgent {
+	agent := newAgent(agentQuality)
+	var calls atomic.Int32
+	agent.script = func(_ context.Context, yield func(port.AgentUpdate, error) bool) {
+		first := calls.Add(1) == 1
+		steps := []step{submitted("t" + string(rune('0'+calls.Load())))}
+		switch {
+		case first && failFirst:
+			steps = append(steps, a2uiStep(createMsg("quality")))
+			steps = append(steps, failedSteps(errors.New("boum"))...)
+		case first:
+			steps = append(steps, failedSteps(errors.New("boum"))...)
+		default:
+			steps = append(steps, a2uiStep(createMsg("quality")), a2uiStep(rootMsg("quality")), textStep("ok"), completedStep())
+		}
+		for _, s := range steps {
+			if !yield(s.u, s.err) {
+				return
+			}
+		}
+	}
+	return agent
+}
+
+func TestContextRenewedAfterCompensation(t *testing.T) {
+	agent := failingThenOKAgent(true)
+	e := newEnv(t, agent)
+	e.p.Run(context.Background(), e.delegation(t))
+	e.p.Run(context.Background(), e.delegation(t))
+	reqs := agent.sent()
+	if len(reqs) != 2 {
+		t.Fatalf("%d requêtes", len(reqs))
+	}
+	if reqs[0].ContextID != testSession {
+		t.Fatalf("1re requête : ContextID = %q", reqs[0].ContextID)
+	}
+	if reqs[1].ContextID == reqs[0].ContextID || !strings.HasPrefix(reqs[1].ContextID, testSession+"#") {
+		t.Fatalf("2e requête : ContextID = %q, attendu un identifiant renouvelé", reqs[1].ContextID)
+	}
+}
+
+func TestContextStableWithoutCompensation(t *testing.T) {
+	agent := failingThenOKAgent(false)
+	e := newEnv(t, agent)
+	e.p.Run(context.Background(), e.delegation(t))
+	e.p.Run(context.Background(), e.delegation(t))
+	for i, r := range agent.sent() {
+		if r.ContextID != testSession {
+			t.Fatalf("requête %d : ContextID = %q", i, r.ContextID)
+		}
+	}
+}
+
+// slowReply : AppendCommentary ne rend la main qu'à l'annulation de son contexte.
+type slowReply struct {
+	entered  chan string
+	canceled chan struct{}
+	mu       sync.Mutex
+	said     []string
+}
+
+func (r *slowReply) AppendCommentary(ctx context.Context, _ string, text string) error {
+	if text != pipePhrases.Generic {
+		r.entered <- text
+		select {
+		case <-ctx.Done():
+			close(r.canceled)
+			return context.Cause(ctx)
+		case <-time.After(wait):
+		}
+	}
+	r.mu.Lock()
+	r.said = append(r.said, text)
+	r.mu.Unlock()
+	return nil
+}
+
+func TestTimeoutFailureCommentaryAbortedOnSessionClose(t *testing.T) {
+	agent := newAgent(agentQuality)
+	agent.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
+		if yield(submitted("t1").u, nil) {
+			<-ctx.Done()
+			yield(port.AgentUpdate{}, &port.AgentError{Kind: port.AgentCanceled})
+		}
+	}
+	e := newEnv(t, agent)
+	reply := &slowReply{entered: make(chan string, 1), canceled: make(chan struct{})}
+	e.p.deps.Reply = reply
+	gen := make(chan struct{})
+	close(gen)
+	sessionCtx, closeSession := context.WithCancelCause(context.Background())
+	defer closeSession(nil)
+	d := Delegation{ID: "d1", Request: "x", GenericDone: gen, Timeout: 40 * time.Millisecond}
+	done := runAsync(e.p, sessionCtx, d)
+
+	select {
+	case text := <-reply.entered:
+		if text != pipePhrases.Failure {
+			t.Fatalf("commentaire = %q", text)
+		}
+	case <-time.After(wait):
+		t.Fatal("aucun commentaire d'échec après le délai")
+	}
+	closeSession(ErrSessionClosed)
+	select {
+	case <-reply.canceled:
+	case <-time.After(time.Second):
+		t.Fatal("l'envoi n'est pas interrompu par la fermeture de la session")
+	}
+	awaitDone(t, done)
+	reply.mu.Lock()
+	defer reply.mu.Unlock()
+	if len(reply.said) != 0 {
+		t.Fatalf("commentaire dit après la fermeture : %q", reply.said)
 	}
 }
