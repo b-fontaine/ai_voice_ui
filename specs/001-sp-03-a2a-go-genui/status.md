@@ -1,10 +1,10 @@
 # 001 — État
 
-- **Étape** : Définir
+- **Étape** : Expérimenter (spike : Définir → Expérimenter → Consigner → Clôture)
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
-- **Branche** : feat/001-<slug>
+- **Branche** : feat/001-sp-03-a2a-go-genui
 - **Backlog** : EP-03 (spike SP-03)
 - **Mis à jour** : 2026-10-29 15:20
 
