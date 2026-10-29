@@ -136,6 +136,18 @@ func say(s port.SessionDelegations, text string, start int64) {
 	s.Transcript(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: text, StartMs: start})
 }
 
+func TestNewManagerNilLoggerUsesDefault(t *testing.T) {
+	o := testOptions()
+	o.Logger = nil
+	m, err := NewManager(factoryOf(newRunner(nil)), testPhrases, o)
+	if err != nil {
+		t.Fatalf("Logger nil refusé : %v", err)
+	}
+	if m.opts.Logger == nil {
+		t.Fatal("slog.Default() attendu")
+	}
+}
+
 func TestNewManagerValidatesOptions(t *testing.T) {
 	r := newRunner(nil)
 	bad := []func(*Options){
@@ -143,7 +155,6 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		func(o *Options) { o.AgentTimeout = 0 },
 		func(o *Options) { o.GuardTimeout = 0 },
 		func(o *Options) { o.SeenCap = 0 },
-		func(o *Options) { o.Logger = nil },
 	}
 	for i, mutate := range bad {
 		o := testOptions()

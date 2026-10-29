@@ -27,6 +27,11 @@ type Options struct {
 	SampleRate   int           // Hz du PCM16 reçu
 	WindowMs     int           // durée d'une fenêtre de niveau, en ms
 	GuardTimeout time.Duration // attente maximale de la confirmation de fermeture
+	// DelegationsCloseTimeout borne la fermeture des délégations d'une session
+	// (annulation du travail des agents, SessionDelegations.Close), après la
+	// confirmation du fournisseur : elle s'ajoute à GuardTimeout pour l'attente
+	// de Close et n'en est pas prélevée. > 0.
+	DelegationsCloseTimeout time.Duration
 	// MaxSession plafonne la durée d'une session ; 0 : pas de plafond. Au-delà,
 	// la session est fermée proprement avec la raison « max_session ».
 	MaxSession time.Duration
@@ -52,6 +57,8 @@ func (o Options) validate() error {
 		return errors.New("voice: WindowMs doit être > 0")
 	case o.GuardTimeout <= 0:
 		return errors.New("voice: GuardTimeout doit être > 0")
+	case o.DelegationsCloseTimeout <= 0:
+		return errors.New("voice: DelegationsCloseTimeout doit être > 0")
 	case o.MaxSession < 0:
 		return errors.New("voice: MaxSession doit être >= 0")
 	case o.AttachAttempts <= 0:
@@ -80,11 +87,14 @@ type Service struct {
 }
 
 type session struct {
-	id      string
-	meter   *level.Meter
-	start   time.Time
-	done    chan struct{} // fermé quand la supervision a terminé
-	abandon chan struct{} // fermé pour interrompre la supervision (délai de garde)
+	id    string
+	meter *level.Meter
+	start time.Time
+	done  chan struct{} // fermé quand la supervision a terminé
+	// confirmedCh est fermé à la réception de session.closed (avant la fermeture
+	// des délégations) ; Close sait ainsi que le fournisseur a confirmé.
+	confirmedCh chan struct{}
+	abandon     chan struct{} // fermé pour interrompre la supervision (délai de garde)
 
 	// cancelAttach annule les tentatives d'attache en cours (Close, Shutdown).
 	cancelAttach context.CancelFunc
@@ -101,7 +111,10 @@ type session struct {
 func (c *session) confirmClosed() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.confirmed = true
+	if !c.confirmed {
+		c.confirmed = true
+		close(c.confirmedCh)
+	}
 }
 
 func (c *session) isConfirmed() bool {
@@ -194,7 +207,7 @@ func (s *Service) Open(ctx context.Context, offerSDP string) (Opened, error) {
 	attachCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	sess := &session{
 		id: ls.ID, meter: meter, start: s.clock.Now(),
-		done: make(chan struct{}), abandon: make(chan struct{}), cancelAttach: cancel,
+		done: make(chan struct{}), confirmedCh: make(chan struct{}), abandon: make(chan struct{}), cancelAttach: cancel,
 	}
 	s.mu.Lock()
 	s.sessions[ls.ID] = sess
@@ -323,8 +336,11 @@ func (s *Service) Shutdown(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// closeSession demande la fermeture puis attend sa confirmation ; le délai de
-// garde borne l'ensemble (appel à Sideband.Close compris).
+// closeSession demande la fermeture puis attend sa confirmation : le délai de
+// garde borne la confirmation du fournisseur (appel à Sideband.Close compris).
+// Une fois la confirmation reçue, la fermeture des délégations dispose de son
+// budget propre (DelegationsCloseTimeout) : un CancelTask lent ne transforme
+// pas une fermeture confirmée en ErrCloseTimeout.
 func (s *Service) closeSession(ctx context.Context, sess *session) error {
 	sb := sess.markClosing("")
 	gctx, cancel := context.WithTimeout(ctx, s.opts.GuardTimeout)
@@ -332,23 +348,42 @@ func (s *Service) closeSession(ctx context.Context, sess *session) error {
 	if sb == nil {
 		return s.closeConnecting(ctx, gctx, sess)
 	}
+	// dctx : fin de l'attente de sess.done, une fois la fermeture confirmée.
+	dctx, dcancel := context.WithTimeout(ctx, s.opts.GuardTimeout+s.opts.DelegationsCloseTimeout)
+	defer dcancel()
 	closeErr := sb.Close(gctx)
 	select {
 	case <-sess.done:
-		if closeErr != nil {
-			err := fmt.Errorf("voice: fermeture de %s : %w", sess.id, closeErr)
-			return errors.Join(err, s.hangupUnconfirmed(ctx, sess))
+		return s.closed(ctx, sess, closeErr)
+	case <-sess.confirmedCh:
+		select {
+		case <-sess.done:
+			return s.closed(ctx, sess, closeErr)
+		case <-dctx.Done():
 		}
-		return s.hangupUnconfirmed(ctx, sess)
 	case <-gctx.Done():
-		close(sess.abandon)
-		<-sess.done
-		hErr := s.hangupUnconfirmed(ctx, sess)
-		if err := ctx.Err(); err != nil {
-			return errors.Join(err, hErr)
-		}
-		return errors.Join(fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id), hErr)
 	}
+	return s.closeTimedOut(ctx, sess)
+}
+
+// closed termine la fermeture d'une supervision achevée.
+func (s *Service) closed(ctx context.Context, sess *session, closeErr error) error {
+	if closeErr != nil {
+		err := fmt.Errorf("voice: fermeture de %s : %w", sess.id, closeErr)
+		return errors.Join(err, s.hangupUnconfirmed(ctx, sess))
+	}
+	return s.hangupUnconfirmed(ctx, sess)
+}
+
+// closeTimedOut interrompt la supervision qui n'a pas terminé dans le délai.
+func (s *Service) closeTimedOut(ctx context.Context, sess *session) error {
+	close(sess.abandon)
+	<-sess.done
+	hErr := s.hangupUnconfirmed(ctx, sess)
+	if err := ctx.Err(); err != nil {
+		return errors.Join(err, hErr)
+	}
+	return errors.Join(fmt.Errorf("%w : %s", ErrCloseTimeout, sess.id), hErr)
 }
 
 // hangupUnconfirmed raccroche si le fournisseur n'a pas confirmé la fermeture
@@ -402,7 +437,7 @@ loop:
 				sess.confirmClosed()
 				closedSent = true
 				closedReason = ev.Reason
-				fw.shutdown(s.opts.GuardTimeout)
+				fw.shutdown(s.opts.DelegationsCloseTimeout)
 			}
 			s.translate(sess, ev)
 			switch ev.Type {
@@ -420,7 +455,7 @@ loop:
 		if sess.closeRequested() {
 			closedReason = ""
 		}
-		fw.shutdown(s.opts.GuardTimeout)
+		fw.shutdown(s.opts.DelegationsCloseTimeout)
 		s.translate(sess, port.LiveEvent{Type: port.EventClosed, Reason: closedReason})
 	}
 	s.forget(sess)

@@ -56,10 +56,10 @@ type PipelineDeps struct {
 	Sink      port.Sink
 	Reply     port.VoiceReply
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
-	Validator *a2ui.Validator
-	Registry  *a2ui.Registry // propre à la session
+	Validator *a2ui.Validator    // nil permis sans agent
+	Registry  *a2ui.Registry     // propre à la session ; nil permis sans agent
 	Phrases   Phrases
-	Logger    *slog.Logger
+	Logger    *slog.Logger // nil : slog.Default()
 }
 
 // Pipeline orchestre les délégations d'une session : appel des agents,
@@ -95,34 +95,94 @@ type taskState struct {
 	rejected bool // l'agent a refusé la demande (hors délai et fermeture)
 }
 
-// NewPipeline valide ses dépendances.
+// NewPipeline valide ses dépendances. Validator et Registry ne sont exigés que
+// si Agents n'est pas vide (sans agent, ils ne servent jamais) ; Logger nil :
+// slog.Default().
 func NewPipeline(d PipelineDeps) (*Pipeline, error) {
 	switch {
 	case d.SessionID == "":
 		return nil, errors.New("orchestrate : identifiant de session manquant")
-	case d.Clock == nil:
-		return nil, errors.New("orchestrate : horloge manquante")
-	case d.Sink == nil:
-		return nil, errors.New("orchestrate : sink manquant")
 	case d.Reply == nil:
 		return nil, errors.New("orchestrate : voix manquante")
-	case d.Validator == nil:
-		return nil, errors.New("orchestrate : validateur A2UI manquant")
-	case d.Registry == nil:
+	case len(d.Agents) > 0 && d.Registry == nil:
 		return nil, errors.New("orchestrate : registre de surfaces manquant")
-	case d.Logger == nil:
-		return nil, errors.New("orchestrate : logger manquant")
+	}
+	if err := d.validateShared(); err != nil {
+		return nil, err
+	}
+	return newPipeline(d), nil
+}
+
+// validateShared vérifie ce qui ne dépend pas de la session : horloge, sink,
+// phrases, agents et validateur (exigé seulement s'il y a des agents).
+func (d PipelineDeps) validateShared() error {
+	switch {
+	case d.Clock == nil:
+		return errors.New("orchestrate : horloge manquante")
+	case d.Sink == nil:
+		return errors.New("orchestrate : sink manquant")
+	case len(d.Agents) > 0 && d.Validator == nil:
+		return errors.New("orchestrate : validateur A2UI manquant")
 	}
 	if err := d.Phrases.Validate(); err != nil {
-		return nil, err
+		return err
 	}
 	for _, a := range d.Agents {
 		if a == nil {
-			return nil, errors.New("orchestrate : agent nil")
+			return errors.New("orchestrate : agent nil")
 		}
 	}
+	return nil
+}
+
+// newPipeline construit le pipeline de dépendances déjà validées.
+func newPipeline(d PipelineDeps) *Pipeline {
+	if d.Logger == nil {
+		d.Logger = slog.Default()
+	}
 	d.Agents = append([]port.RemoteAgent(nil), d.Agents...)
-	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}, nil
+	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}
+}
+
+// PipelineConfig est la configuration partagée par les pipelines de toutes les
+// sessions ; NewPipelineFactory la valide une seule fois, au démarrage.
+type PipelineConfig struct {
+	Clock     port.Clock
+	Sink      port.Sink
+	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
+	Validator *a2ui.Validator    // exigé si Agents n'est pas vide
+	Limits    a2ui.Limits        // limites du registre de chaque session
+	Phrases   Phrases
+	Logger    *slog.Logger // nil : slog.Default()
+}
+
+// NewPipelineFactory valide la configuration puis renvoie la fabrique de
+// runners des sessions : elle ne peut plus échouer ensuite (un registre de
+// surfaces neuf par session, limites déjà validées).
+func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
+	deps := PipelineDeps{
+		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Validator: cfg.Validator,
+		Phrases: cfg.Phrases, Logger: cfg.Logger,
+	}
+	if err := deps.validateShared(); err != nil {
+		return nil, err
+	}
+	if _, err := a2ui.NewRegistry(cfg.Limits); err != nil && len(cfg.Agents) > 0 {
+		return nil, err
+	}
+	withRegistry := len(cfg.Agents) > 0
+	return func(sessionID string, start time.Time, reply port.VoiceReply) Runner {
+		d := deps
+		d.SessionID, d.Start, d.Reply = sessionID, start, reply
+		if withRegistry {
+			reg, err := a2ui.NewRegistry(cfg.Limits)
+			if err != nil {
+				panic("orchestrate : limites A2UI validées au démarrage : " + err.Error()) // inatteignable
+			}
+			d.Registry = reg
+		}
+		return newPipeline(d)
+	}, nil
 }
 
 // Run exécute une délégation. Il rend la main quand tous les agents ont fini
@@ -419,7 +479,8 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 		p.log.Warn("message A2UI refusé", "agent", ts.agent, "task", ts.taskID, "err", err)
 		return false
 	}
-	p.publishLocked(domain.TypeA2UI, ts.agent, ts.taskID, domain.A2UI{Message: msg})
+	p.publishLocked(domain.TypeA2UI, ts.agent, ts.taskID,
+		domain.A2UI{Message: msg, Op: string(op.Kind), SurfaceID: op.SurfaceID})
 	return true
 }
 
@@ -484,11 +545,20 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 			p.renewals[ts.owner]++
 		}
 		for _, m := range compensation {
-			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID, domain.A2UI{Message: m})
+			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
+				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 		}
 		p.deps.Registry.Forget(ts.taskID)
 	}
 	p.publishActivityLocked(ts, domain.ActivityFailed, detail)
+}
+
+// deletedSurface extrait la surface d'un message de compensation `deleteSurface`
+// construit par le registre.
+func deletedSurface(m map[string]any) string {
+	body, _ := m[domain.OpDeleteSurface].(map[string]any)
+	id, _ := body["surfaceId"].(string)
+	return id
 }
 
 func (p *Pipeline) untrackLocked(ts *taskState) {

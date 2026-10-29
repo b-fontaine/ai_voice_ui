@@ -81,9 +81,19 @@ const (
 	ActivityFailed    = "failed"
 )
 
+// OpDeleteSurface est l'opération A2UI qui retire une surface.
+const OpDeleteSurface = "deleteSurface"
+
 // A2UI est un message A2UI v0.9 (une seule opération) transmis tel quel à
-// l'application : il est lui-même l'objet `data` de l'enveloppe.
-type A2UI struct{ Message map[string]any }
+// l'application : il est lui-même l'objet `data` de l'enveloppe. Op (createSurface,
+// updateComponents, updateDataModel, deleteSurface) et SurfaceID sont renseignés
+// par l'émetteur, qui les connaît déjà : le hub ne relit pas Message. Ils ne
+// sont pas sérialisés.
+type A2UI struct {
+	Message   map[string]any
+	Op        string
+	SurfaceID string
+}
 
 // AgentActivity décrit l'avancement d'une tâche d'agent : Agent est le nom de
 // sa carte, Task l'identifiant de la tâche, State l'un des états Activity*,

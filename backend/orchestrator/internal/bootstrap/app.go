@@ -33,6 +33,11 @@ const (
 	hubRetained   = 512      // messages a2ui et agent.activity retenus par session (rejoués à la connexion)
 	maxOfferBytes = 64 << 10 // une offre SDP fait quelques Kio
 
+	// delegationsCloseTimeout borne la fermeture des délégations d'une session
+	// (annulation des tâches d'agents : CancelTask a2aclient 1 s, plus l'attente
+	// du travail en cours), en plus de VOICE_CLOSE_GUARD.
+	delegationsCloseTimeout = 2 * time.Second
+
 	// Orchestration des agents (constantes d'infrastructure, pas de la politique).
 	agentConnectTimeout   = 3 * time.Second // lecture de la carte d'agent et connexion
 	defaultAgentTimeout   = 8 * time.Second // AGENT_TIMEOUT absent (sans agent) : le gestionnaire exige > 0
@@ -118,8 +123,9 @@ func New(cfg Config, deps Deps) (*App, error) {
 	}
 	service, err := voice.NewService(live, sink, clock, voice.Options{
 		SampleRate: openailive.OutputSampleRate, WindowMs: levelWindowMs, GuardTimeout: cfg.CloseGuard,
-		MaxSession:     cfg.MaxSession,
-		AttachAttempts: cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
+		MaxSession:              cfg.MaxSession,
+		DelegationsCloseTimeout: delegationsCloseTimeout,
+		AttachAttempts:          cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
 		Delegations: delegations,
 		Logger:      logger,
 	})
@@ -179,55 +185,23 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)
 		}
 	}
-	limits := a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages}
-	// Valide les limites une fois, au démarrage ; la fabrique ne peut plus échouer.
-	if _, err := a2ui.NewRegistry(limits); err != nil {
-		return nil, fmt.Errorf("bootstrap: registre A2UI : %w", err)
-	}
-	if validator == nil {
-		// Sans agent le validateur n'est jamais appelé, mais le pipeline l'exige.
-		var err error
-		if validator, err = a2ui.NewValidator(a2ui.Options{
-			CatalogID: "unused", Components: []string{"unused"},
-			MaxMessageBytes: a2uiMaxMessageBytes, MaxDepth: a2uiMaxDepth, MaxComponentsPerUpdate: a2uiMaxComponents,
-		}); err != nil {
-			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)
-		}
-	}
 	agentTimeout := cfg.AgentTimeout
 	if agentTimeout <= 0 {
 		agentTimeout = defaultAgentTimeout
 	}
-	factory := func(sessionID string, start time.Time, reply port.VoiceReply) orchestrate.Runner {
-		registry, err := a2ui.NewRegistry(limits)
-		if err != nil {
-			return failedRunner{err: err, log: logger}
-		}
-		p, err := orchestrate.NewPipeline(orchestrate.PipelineDeps{
-			SessionID: sessionID, Start: start, Clock: clock, Sink: sink, Reply: reply,
-			Agents: agents, Validator: validator, Registry: registry, Phrases: cfg.Phrases, Logger: logger,
-		})
-		if err != nil {
-			return failedRunner{err: err, log: logger}
-		}
-		return p
+	// Toute la configuration du pipeline est validée ici, une seule fois.
+	factory, err := orchestrate.NewPipelineFactory(orchestrate.PipelineConfig{
+		Clock: clock, Sink: sink, Agents: agents, Validator: validator,
+		Limits:  a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages},
+		Phrases: cfg.Phrases, Logger: logger,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("bootstrap: pipeline d'orchestration : %w", err)
 	}
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger,
 	})
-}
-
-// failedRunner remplace un pipeline qui n'a pas pu être construit (jamais en
-// pratique : les dépendances sont validées au démarrage) ; il journalise et ne
-// fait rien, sans jamais inventer de résultat.
-type failedRunner struct {
-	err error
-	log *slog.Logger
-}
-
-func (r failedRunner) Run(_ context.Context, d orchestrate.Delegation) {
-	r.log.Error("pipeline d'orchestration indisponible", "delegation", d.ID, "error", r.err)
 }
 
 // Handler renvoie le gestionnaire HTTP de l'application.

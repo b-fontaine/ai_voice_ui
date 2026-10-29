@@ -117,7 +117,7 @@ type Options struct {
 	AgentTimeout time.Duration // borne de toute la tâche d'une délégation
 	GuardTimeout time.Duration // attente maximale de Close
 	SeenCap      int           // identifiants de délégation mémorisés
-	Logger       *slog.Logger
+	Logger       *slog.Logger  // nil : slog.Default()
 }
 
 // Manager implémente port.Delegations.
@@ -145,8 +145,9 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 		return nil, fmt.Errorf("orchestrate : GuardTimeout doit être > 0 (%s)", opts.GuardTimeout)
 	case opts.SeenCap <= 0:
 		return nil, fmt.Errorf("orchestrate : SeenCap doit être > 0 (%d)", opts.SeenCap)
-	case opts.Logger == nil:
-		return nil, errors.New("orchestrate : logger manquant")
+	}
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
 	}
 	return &Manager{factory: factory, phrases: phrases, opts: opts}, nil
 }

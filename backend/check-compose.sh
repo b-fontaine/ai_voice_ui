@@ -50,6 +50,10 @@ for port in orch.get("ports") or []:
 env = orch.get("environment") or {}
 check(str(env.get("AGENTS", "")).startswith("http://agent-quality:8090/"),
       "orchestrator : AGENTS doit pointer vers http://agent-quality:8090/")
+# R6(d) : une seule valeur de catalogue A2UI, partagée (ancre YAML) par orchestrator et agent-quality.
+agent_env = agent.get("environment") or {}
+check(bool(env.get("A2UI_CATALOG_ID")) and env.get("A2UI_CATALOG_ID") == agent_env.get("A2UI_CATALOG_ID"),
+      "A2UI_CATALOG_ID doit etre identique (ancre) pour orchestrator et agent-quality")
 dep = (orch.get("depends_on") or {}).get("agent-quality") or {}
 check(dep.get("condition") == "service_healthy",
       "orchestrator : depends_on agent-quality service_healthy requis")

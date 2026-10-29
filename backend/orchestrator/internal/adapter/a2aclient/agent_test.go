@@ -702,3 +702,10 @@ func (d *idRewriter) Write(p []byte) (int, error) {
 }
 
 func (d *idRewriter) Flush() { d.ResponseWriter.(http.Flusher).Flush() }
+
+// Convention commune (R6c) : un Logger nil est remplacé par slog.Default().
+func TestNewNilLoggerUsesDefault(t *testing.T) {
+	if _, err := a2aclient.New(a2aclient.Options{CardURL: "http://agent.test/card", Timeout: time.Second}); err != nil {
+		t.Fatalf("Logger nil refusé : %v", err)
+	}
+}

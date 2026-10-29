@@ -797,3 +797,12 @@ func TestEmptyDelegationIDIgnored(t *testing.T) {
 		t.Fatalf("Warn attendu, journal = %q", out)
 	}
 }
+
+// Convention commune (R6c) : un Logger nil est remplacé par slog.Default().
+func TestNewNilLoggerUsesDefault(t *testing.T) {
+	o := testOptions("http://127.0.0.1:1")
+	o.Logger = nil
+	if _, err := openailive.New(o); err != nil {
+		t.Fatalf("Logger nil refusé : %v", err)
+	}
+}

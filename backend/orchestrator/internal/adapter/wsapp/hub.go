@@ -56,7 +56,17 @@ type entry struct {
 	seq     uint64
 	payload []byte
 	surface string // surfaceId d'un message a2ui (vide sinon)
+	kind    retainKind
 }
+
+// retainKind classe un message retenu pour l'ordre d'éviction.
+type retainKind int
+
+const (
+	kindActivity retainKind = iota // agent.activity : évincé en premier
+	kindUpdate                     // updateComponents, updateDataModel (et opération inconnue)
+	kindCreate                     // createSurface : conservé tant que la surface vit
+)
 
 type session struct {
 	backlog  []entry // transcripts, session.state, usage… (borné par Options.Backlog)
@@ -132,47 +142,48 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 // pour qu'un abonné tardif reçoive toujours la surface avant ses mises à jour.
 // Un deleteSurface fait oublier tous les messages retenus de la surface et n'est
 // pas retenu lui-même : un abonné tardif ne reconstruit jamais une surface
-// supprimée. h.mu doit être tenu.
+// supprimée. Au-delà de RetainedMax, l'éviction retire d'abord les
+// agent.activity les plus anciens, puis les mises à jour les plus anciennes ;
+// le createSurface d'une surface vivante n'est évincé qu'en dernier recours,
+// quand il ne reste que des createSurface (plus de RetainedMax surfaces
+// vivantes : impossible tant que RetainedMax dépasse le plafond de surfaces du
+// registre, 6 ; la mémoire reste bornée dans tous les cas). h.mu doit être tenu.
 func (h *Hub) retain(s *session, e entry, m domain.Message) {
-	if m.Type == domain.TypeA2UI {
-		op, surface := a2uiOperation(m)
-		if op == deleteSurface {
+	e.kind = kindActivity
+	if a, ok := m.Data.(domain.A2UI); ok {
+		if a.Op == domain.OpDeleteSurface {
 			kept := s.retained[:0:0]
 			for _, r := range s.retained {
-				if r.surface != surface {
+				if r.surface != a.SurfaceID {
 					kept = append(kept, r)
 				}
 			}
 			s.retained = kept
 			return
 		}
-		e.surface = surface
+		e.surface = a.SurfaceID
+		e.kind = kindUpdate
+		if a.Op == "createSurface" {
+			e.kind = kindCreate
+		}
 	}
 	s.retained = append(s.retained, e)
-	if over := len(s.retained) - h.opts.RetainedMax; over > 0 {
-		s.retained = append([]entry(nil), s.retained[over:]...)
+	for len(s.retained) > h.opts.RetainedMax {
+		s.retained = evictOne(s.retained)
 	}
 }
 
-const deleteSurface = "deleteSurface"
-
-// a2uiOperation extrait l'opération et la surface d'un message A2UI (une seule
-// opération par message) ; vides si le message n'a pas cette forme.
-func a2uiOperation(m domain.Message) (op, surface string) {
-	a, ok := m.Data.(domain.A2UI)
-	if !ok {
-		return "", ""
-	}
-	for k, v := range a.Message {
-		if k == "version" {
-			continue
+// evictOne retire une entrée de retained (non vide) selon l'ordre d'éviction :
+// la plus ancienne de la classe la plus évinçable.
+func evictOne(retained []entry) []entry {
+	for _, k := range []retainKind{kindActivity, kindUpdate, kindCreate} {
+		for i, r := range retained {
+			if r.kind == k {
+				return append(retained[:i:i], retained[i+1:]...)
+			}
 		}
-		if body, ok := v.(map[string]any); ok {
-			surface, _ = body["surfaceId"].(string)
-		}
-		return k, surface
 	}
-	return "", ""
+	return retained[1:] // inatteignable : toute entrée a une classe
 }
 
 // replay renvoie les messages à rejouer de s dans l'ordre de publication :

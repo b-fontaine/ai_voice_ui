@@ -554,7 +554,7 @@ func TestHubStalledWriterTimesOut(t *testing.T) {
 func a2uiMsg(i int64, op, surface string) domain.Message {
 	return domain.Message{Type: domain.TypeA2UI, TMs: i, Agent: "Qualité", Task: "t1", Data: domain.A2UI{Message: map[string]any{
 		"version": "v0.9", op: map[string]any{"surfaceId": surface},
-	}}}
+	}, Op: op, SurfaceID: surface}}
 }
 
 func activityMsg(i int64, task string) domain.Message {
@@ -681,6 +681,56 @@ func TestRetentionBounded(t *testing.T) {
 	h.Publish("s1", transcript(1))
 	if e := read(t, c); e.Type != domain.TypeTranscript {
 		t.Fatalf("reçu %s %s : seules 3 surfaces devaient être rejouées", e.Type, e.Data)
+	}
+}
+
+// R9 : sous pression, l'éviction retire d'abord les agent.activity, puis les
+// mises à jour les plus anciennes, jamais le createSurface d'une surface vivante.
+func TestRetentionKeepsCreateSurfaceUnderPressure(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: 4})
+	h.Publish("s1", a2uiMsg(0, "createSurface", "kpi"))
+	h.Publish("s1", activityMsg(1, "t1"))
+	for i := int64(2); i < 12; i++ {
+		h.Publish("s1", a2uiMsg(i, "updateComponents", "kpi"))
+	}
+	c := dial(t, srv, "s1")
+	var ops []string
+	for i := 0; i < 4; i++ {
+		e := read(t, c)
+		if e.Type != domain.TypeA2UI {
+			t.Fatalf("reçu %s : l'agent.activity devait être évincé en premier", e.Type)
+		}
+		op, _ := a2uiOp(t, e)
+		ops = append(ops, op)
+	}
+	if got := strings.Join(ops, ","); got != "createSurface,updateComponents,updateComponents,updateComponents" {
+		t.Fatalf("rejeu = %s", got)
+	}
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", transcript(1))
+	if e := read(t, c); e.Type != domain.TypeTranscript {
+		t.Fatalf("reçu %s %s : le rejeu ne devait pas dépasser RetainedMax", e.Type, e.Data)
+	}
+}
+
+// Une surface supprimée libère son createSurface ; une fois seules des
+// surfaces vivantes restent (impossible au-delà de 6 par le registre), le
+// plus ancien createSurface est évincé en dernier recours (TestRetentionBounded).
+func TestRetentionEvictsActivityBeforeUpdates(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: 3})
+	h.Publish("s1", a2uiMsg(0, "createSurface", "kpi"))
+	h.Publish("s1", a2uiMsg(1, "updateComponents", "kpi"))
+	h.Publish("s1", activityMsg(2, "t1"))
+	h.Publish("s1", a2uiMsg(3, "updateDataModel", "kpi")) // dépasse : l'activité part avant l'update
+	c := dial(t, srv, "s1")
+	var seen []string
+	for i := 0; i < 3; i++ {
+		e := read(t, c)
+		op, _ := a2uiOp(t, e)
+		seen = append(seen, e.Type+":"+op)
+	}
+	if got := strings.Join(seen, ","); got != "a2ui:createSurface,a2ui:updateComponents,a2ui:updateDataModel" {
+		t.Fatalf("rejeu = %s", got)
 	}
 }
 

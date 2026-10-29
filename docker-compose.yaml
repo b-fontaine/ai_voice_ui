@@ -4,6 +4,10 @@
 # Les valeurs VOICE_* ci-dessous sont des défauts de configuration, surchargeables par `.env`.
 # Un service par agent A2A (ici `agent-quality` ; J3 ajoutera les autres). Les agents
 # vivent sur le réseau interne `agents` : aucun port publié, aucune sortie réseau, aucun secret.
+# Identifiant du catalogue A2UI : une seule valeur, partagée par l'orchestrateur
+# (liste blanche) et l'agent (createSurface).
+x-a2ui-catalog: &a2ui_catalog ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+
 services:
   orchestrator:
     build:
@@ -14,7 +18,7 @@ services:
     environment:
       # Agents A2A joignables (réseau interne `agents`) et catalogue A2UI, partagé avec l'agent.
       AGENTS: http://agent-quality:8090/.well-known/agent-card.json
-      A2UI_CATALOG_ID: ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+      A2UI_CATALOG_ID: *a2ui_catalog
       A2UI_COMPONENTS: ${A2UI_COMPONENTS:-Column,Text}
       # Délai maximal d'une délégation à un agent (NFR-03) et d'acquittement d'un commentaire vocal.
       AGENT_TIMEOUT: ${AGENT_TIMEOUT:-8s}
@@ -67,7 +71,7 @@ services:
       AGENT_LISTEN_ADDR: 0.0.0.0:8090
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-quality:8090
-      A2UI_CATALOG_ID: ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+      A2UI_CATALOG_ID: *a2ui_catalog
     networks: [agents]
     healthcheck:
       test: ["CMD", "/agent-quality", "healthcheck"]

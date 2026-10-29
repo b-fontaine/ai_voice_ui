@@ -339,6 +339,7 @@ func TestNewPipelineValidatesDeps(t *testing.T) {
 	reg, _ := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1})
 	base := PipelineDeps{
 		SessionID: "s", Start: time.Now(), Clock: fixedClock{}, Sink: &recSink{}, Reply: newFakeReply(),
+		Agents:    []port.RemoteAgent{newAgent("A")}, // validateur et registre requis dès qu'il y a un agent
 		Validator: val, Registry: reg, Phrases: pipePhrases, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 	if _, err := NewPipeline(base); err != nil {
@@ -351,7 +352,6 @@ func TestNewPipelineValidatesDeps(t *testing.T) {
 		"voix":       func(d *PipelineDeps) { d.Reply = nil },
 		"validateur": func(d *PipelineDeps) { d.Validator = nil },
 		"registre":   func(d *PipelineDeps) { d.Registry = nil },
-		"logger":     func(d *PipelineDeps) { d.Logger = nil },
 		"phrases":    func(d *PipelineDeps) { d.Phrases.Failure = "" },
 		"agent nil":  func(d *PipelineDeps) { d.Agents = []port.RemoteAgent{nil} },
 	}
@@ -361,6 +361,86 @@ func TestNewPipelineValidatesDeps(t *testing.T) {
 		if _, err := NewPipeline(d); err == nil {
 			t.Errorf("%s : dépendance invalide acceptée", name)
 		}
+	}
+}
+
+// Sans agent, le pipeline n'appelle ni validateur ni registre : aucun faux
+// validateur n'est nécessaire (R6b). Logger nil : slog.Default() (R6c).
+func TestNewPipelineWithoutAgentsNeedsNoValidator(t *testing.T) {
+	deps := PipelineDeps{
+		SessionID: "s", Start: time.Now(), Clock: fixedClock{}, Sink: &recSink{}, Reply: newFakeReply(),
+		Phrases: pipePhrases, // ni Validator, ni Registry, ni Logger
+	}
+	p, err := NewPipeline(deps)
+	if err != nil {
+		t.Fatalf("pipeline sans agent refusé : %v", err)
+	}
+	if p.log == nil {
+		t.Fatal("Logger nil : slog.Default() attendu")
+	}
+	gen := make(chan struct{})
+	close(gen)
+	p.Run(context.Background(), Delegation{ID: "d1", GenericDone: gen})
+	if got := deps.Reply.(*fakeReply).got; len(got) != 1 || got[0].Text != pipePhrases.NoAgent {
+		t.Fatalf("commentaires = %+v", got)
+	}
+	deps.Agents = []port.RemoteAgent{newAgent("A")}
+	if _, err := NewPipeline(deps); err == nil {
+		t.Fatal("un agent sans validateur doit être refusé")
+	}
+}
+
+func TestNewPipelineFactoryValidatesOnce(t *testing.T) {
+	val, _ := a2ui.NewValidator(a2ui.Options{CatalogID: "c", Components: []string{"Text"}, MaxMessageBytes: 10, MaxDepth: 2, MaxComponentsPerUpdate: 1})
+	good := PipelineConfig{
+		Clock: fixedClock{}, Sink: &recSink{}, Phrases: pipePhrases,
+		Agents: []port.RemoteAgent{newAgent("A")}, Validator: val,
+		Limits: a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1},
+	}
+	f, err := NewPipelineFactory(good) // Logger nil : slog.Default()
+	if err != nil {
+		t.Fatalf("configuration valide refusée : %v", err)
+	}
+	r := f("s", time.Now(), newFakeReply())
+	if p, ok := r.(*Pipeline); !ok || p.log == nil {
+		t.Fatalf("runner = %#v", r)
+	}
+	bad := map[string]func(*PipelineConfig){
+		"horloge":    func(c *PipelineConfig) { c.Clock = nil },
+		"sink":       func(c *PipelineConfig) { c.Sink = nil },
+		"phrases":    func(c *PipelineConfig) { c.Phrases.Failure = "" },
+		"validateur": func(c *PipelineConfig) { c.Validator = nil },
+		"limites":    func(c *PipelineConfig) { c.Limits = a2ui.Limits{} },
+		"agent nil":  func(c *PipelineConfig) { c.Agents = []port.RemoteAgent{nil} },
+	}
+	for name, mutate := range bad {
+		c := good
+		mutate(&c)
+		if _, err := NewPipelineFactory(c); err == nil {
+			t.Errorf("%s : configuration invalide acceptée", name)
+		}
+	}
+	// Sans agent : ni validateur ni limites de registre exigés.
+	if _, err := NewPipelineFactory(PipelineConfig{Clock: fixedClock{}, Sink: &recSink{}, Phrases: pipePhrases}); err != nil {
+		t.Fatalf("configuration sans agent refusée : %v", err)
+	}
+}
+
+// R9 : Op et SurfaceID sont renseignés par le pipeline (relais et compensation).
+func TestA2UIMessagesCarryOpAndSurface(t *testing.T) {
+	agent := newAgent(agentQuality, submitted("t1"),
+		a2uiStep(createMsg("quality")), a2uiStep(rootMsg("quality")), a2uiStep(buttonMsg("quality")))
+	e := newEnv(t, agent)
+	e.p.Run(context.Background(), e.delegation(t))
+	var got [][2]string
+	for _, m := range e.sink.snapshot() {
+		if a, ok := m.Data.(domain.A2UI); ok {
+			got = append(got, [2]string{a.Op, a.SurfaceID})
+		}
+	}
+	want := [][2]string{{"createSurface", "quality"}, {"updateComponents", "quality"}, {"deleteSurface", "quality"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("(Op, SurfaceID) = %v, attendu %v", got, want)
 	}
 }
 

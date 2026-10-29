@@ -416,3 +416,31 @@ func TestForwarderNeverDropsDelegation(t *testing.T) {
 		t.Fatalf("file non bornée : %d transcripts livrés", len(g.texts))
 	}
 }
+
+// R7(a) : le fournisseur confirme la fermeture dans le délai de garde, mais le
+// CancelTask de l'agent est lent : la vidange des délégations a son propre
+// budget (DelegationsCloseTimeout), la fermeture n'est pas un 504.
+func TestDeleteWithSlowAgentCancelReturns204(t *testing.T) {
+	live := &testLive{autoClose: true, confirmDelay: time.Second} // confirmation à 1 s
+	svc, sink, _, fd := newDelegationService(t, live, func(o *Options) {
+		o.GuardTimeout = 2 * time.Second
+		o.DelegationsCloseTimeout = 2 * time.Second
+	})
+	fd.sess.closeDelay = 1500 * time.Millisecond // CancelTask lent : 1 s + 1,5 s > garde de 2 s
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	if err := svc.Close(context.Background(), opened.SessionID); err != nil {
+		t.Fatalf("Close = %v, nil attendu (fermeture confirmée, 204)", err)
+	}
+	fd.sess.mu.Lock()
+	defer fd.sess.mu.Unlock()
+	if !fd.sess.closeDone {
+		t.Fatal("Close est revenu avant la fin de SessionDelegations.Close")
+	}
+	if got := live.hangupCalls(); len(got) != 0 {
+		t.Fatalf("raccrochage inattendu après une fermeture confirmée : %v", got)
+	}
+}
