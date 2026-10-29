@@ -13,6 +13,15 @@ enum PostMode {
 
   /// 502 `{error}` opaque.
   badGateway,
+
+  /// 415 (type de contenu refusé).
+  unsupportedMediaType,
+
+  /// 200 avec answer, mais sans en-tête `X-Session-Id`.
+  missingSessionId,
+
+  /// 200 avec `X-Session-Id` et une answer de plus de 128 Kio.
+  oversizedAnswer,
 }
 
 /// Faux backend de Genesis Canvas : un vrai serveur `dart:io` (HTTP et
@@ -69,6 +78,16 @@ class FakeBackend {
   // Injection.
   PostMode postMode = PostMode.ok;
   int retryAfterSeconds = 30;
+
+  /// Valeur brute de `Retry-After` (prioritaire sur [retryAfterSeconds]),
+  /// par exemple illisible ; `null` : [retryAfterSeconds].
+  String? retryAfterRaw;
+
+  /// `false` : la réponse 429 n'a pas d'en-tête `Retry-After`.
+  bool sendRetryAfter = true;
+
+  /// Délai avant toute réponse à `POST` (simule un relais qui ne répond pas).
+  Duration postDelay = Duration.zero;
 
   /// Statut de `DELETE` pour une session connue ; `null` : 204 (404 si la
   /// session est inconnue).
@@ -275,9 +294,15 @@ class FakeBackend {
     final response = request.response;
     final contentType = request.headers.contentType?.mimeType;
     final body = await utf8.decoder.bind(request).join();
+    if (postDelay > Duration.zero) await Future<void>.delayed(postDelay);
     switch (postMode) {
       case PostMode.rateLimited:
-        response.headers.set('Retry-After', '$retryAfterSeconds');
+        if (sendRetryAfter) {
+          response.headers.set(
+            'Retry-After',
+            retryAfterRaw ?? '$retryAfterSeconds',
+          );
+        }
         _record('relay POST 429');
         return _json(response, HttpStatus.tooManyRequests, <String, Object?>{
           'error': 'rate limited',
@@ -287,7 +312,16 @@ class FakeBackend {
         return _json(response, HttpStatus.badGateway, <String, Object?>{
           'error': 'upstream',
         });
+      case PostMode.unsupportedMediaType:
+        _record('relay POST 415');
+        return _json(
+          response,
+          HttpStatus.unsupportedMediaType,
+          <String, Object?>{'error': 'content-type'},
+        );
       case PostMode.ok:
+      case PostMode.missingSessionId:
+      case PostMode.oversizedAnswer:
         break;
     }
     if (contentType != 'application/sdp') {
@@ -311,9 +345,15 @@ class FakeBackend {
     emit(id, 'session.state', <String, Object?>{'state': 'active'});
     response
       ..statusCode = HttpStatus.ok
-      ..headers.contentType = ContentType('application', 'sdp')
-      ..headers.set('X-Session-Id', id)
-      ..write(answerSdp);
+      ..headers.contentType = ContentType('application', 'sdp');
+    if (postMode != PostMode.missingSessionId) {
+      response.headers.set('X-Session-Id', id);
+    }
+    response.write(
+      postMode == PostMode.oversizedAnswer
+          ? '$answerSdp${'a=x\r\n' * (130 * 1024 ~/ 5)}'
+          : answerSdp,
+    );
     await response.close();
   }
 

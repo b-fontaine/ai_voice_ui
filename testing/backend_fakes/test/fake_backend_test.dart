@@ -75,6 +75,49 @@ void main() {
     expect(backend.sessions, isEmpty);
   });
 
+  test('POST : modes 415, sans X-Session-Id, answer trop grosse', () async {
+    backend.postMode = PostMode.unsupportedMediaType;
+    final unsupported = await post('v=0');
+    expect(unsupported.statusCode, 415);
+    await read(unsupported);
+
+    backend.postMode = PostMode.missingSessionId;
+    final missing = await post('v=0');
+    expect(missing.statusCode, 200);
+    expect(missing.headers.value('X-Session-Id'), isNull);
+    expect(await read(missing), FakeBackend.answerSdp);
+
+    backend.postMode = PostMode.oversizedAnswer;
+    final big = await post('v=0');
+    expect(big.statusCode, 200);
+    expect(big.headers.value('X-Session-Id'), 'sess-2');
+    expect((await read(big)).length, greaterThan(128 * 1024));
+  });
+
+  test('POST : Retry-After brut ou absent, et délai injectable', () async {
+    backend
+      ..postMode = PostMode.rateLimited
+      ..retryAfterRaw = 'soon';
+    final raw = await post('v=0');
+    expect(raw.headers.value('Retry-After'), 'soon');
+    await read(raw);
+
+    backend
+      ..retryAfterRaw = null
+      ..sendRetryAfter = false;
+    final none = await post('v=0');
+    expect(none.statusCode, 429);
+    expect(none.headers.value('Retry-After'), isNull);
+    await read(none);
+
+    backend
+      ..postMode = PostMode.ok
+      ..postDelay = const Duration(milliseconds: 150);
+    final watch = Stopwatch()..start();
+    await read(await post('v=0'));
+    expect(watch.elapsedMilliseconds, greaterThanOrEqualTo(140));
+  });
+
   test('DELETE : 204 si connue, 404 si inconnue, statut injectable', () async {
     await read(await post('v=0'));
 

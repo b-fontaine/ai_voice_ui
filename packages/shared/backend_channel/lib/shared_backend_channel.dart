@@ -10,3 +10,6 @@ export 'src/app_channel_envelope.dart'
         AppChannelTypes,
         maxEnvelopeLength;
 export 'src/web_socket_app_channel.dart' show WebSocketAppChannel;
+export 'src/http_voice_relay.dart' show HttpVoiceRelay;
+export 'src/voice_relay.dart'
+    show RelayAnswer, RelayFailure, RelayFailureKind, VoiceRelay;
