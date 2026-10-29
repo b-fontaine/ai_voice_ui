@@ -42,6 +42,9 @@ if want flutter; then
     d="$(dirname "$p")"
     if grep -q '^ *build_runner:' "$p"; then
       step "build_runner ($d)" bash -c "cd '$d' && dart run build_runner build --delete-conflicting-outputs >/dev/null"
+      # Les tests générés par bdd_widget_test ne sont pas formatés : on les formate ici,
+      # pour que le contrôle de format ne porte que sur le code écrit à la main.
+      [ -d "$d/test/acceptance" ] && (cd "$d" && dart format test/acceptance >/dev/null)
     fi
     fmt_targets=(lib); [ -d "$d/test" ] && fmt_targets+=(test)
     step "dart format ($d)"     bash -c "cd '$d' && dart format --output=none --set-exit-if-changed ${fmt_targets[*]}"
