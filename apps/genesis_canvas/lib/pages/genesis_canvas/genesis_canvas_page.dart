@@ -60,6 +60,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
   final GlobalKey _boundaryKey = GlobalKey();
+  // Provisoire : l'orbe est câblée à la source vivante par T23.
+  final ValueNotifier<double> _orbLevel = ValueNotifier<double>(0);
   late final EngineErrorWatcher _engineErrors = EngineErrorWatcher(
     onSubmit: _controller.onSubmit,
     errorSink: widget.errorSink,
@@ -129,6 +131,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
         _controller.dispose();
       }),
     );
+    _orbLevel.dispose();
     super.dispose();
   }
 
@@ -145,7 +148,15 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
           color: const Color(0xFF0B0B14),
           child: Column(
             children: <Widget>[
-              const Padding(padding: EdgeInsets.all(16), child: VoiceOrb()),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                // Provisoire (T23) : l'orbe pulse sans fin, ce qui empêcherait
+                // `pumpAndSettle` des tests de page ; T23 câble la vraie barre.
+                child: TickerMode(
+                  enabled: false,
+                  child: VoiceOrb(level: _orbLevel),
+                ),
+              ),
               Expanded(
                 child: CanvasBoard(
                   key: const Key('canvas-board'),
