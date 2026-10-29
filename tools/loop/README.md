@@ -4,7 +4,7 @@ Fait avancer Genesis Canvas fonctionnalité par fonctionnalité jusqu'au talk du
 
 ## Cycle (une itération = une étape d'une fonctionnalité)
 ```
-Définir (specs/NNN) → Gherkin rouge → TDD tâche par tâche (gate --unit) → Revue d'architecte (Opus)
+Définir (specs/NNN) → Revue du plan (Opus) → Gherkin rouge → TDD tâche par tâche (gate --unit) → Revue d'architecte (Opus)
       ↑                                                                            ↓
   Clôture : état, roadmap, décisions, fusion, publish.sh  ←  Vérification (gate --full + capture)  ←  Refactorisation
 ```
@@ -25,13 +25,15 @@ Détail : `.claude/skills/dev-loop/SKILL.md`. Gabarits et état : `specs/`.
 | Refactorisation | `refactorer` | Sonnet 5.5 | medium |
 | Revue d'architecture | `architect-reviewer` | Opus 5.5 | high |
 
-Ultracode désactivé. Workflows multi-agents seulement sur besoin réel. Un seul sous-agent qui écrit à la fois.
+Ultracode désactivé ; jamais le modèle Fable (son compteur pèse sur la semaine). Workflows multi-agents seulement sur besoin réel. Deux sous-agents en parallèle au plus, sur des piles différentes (Go / Flutter).
+
+Accélérations du 2026-10-29 : revue du **plan** par l'architecte avant le TDD ; refactorisations **par lots** avec une seule porte complète ; jusqu'à 3 étapes enchaînées par itération ; Go et Flutter en parallèle.
 
 ## Garde-fous
 | Risque | Mécanisme |
 |---|---|
 | Quota 5 h | `quota-check.sh` : pause à 90 % jusqu'à la remise à zéro |
-| Quota hebdomadaire | lissage : la boucle consomme au plus 80 % de la semaine, au rythme du temps écoulé (+10 points), plafond 85 % ; le reste est pour le porteur |
+| Quota hebdomadaire | lissage : la boucle consomme au plus 90 % de la semaine, au rythme du temps écoulé (+10 points), plafond 95 % (choix du porteur, 2026-10-29) ; le reste est pour lui |
 | Pause longue | > 1 h : la boucle s'arrête (`paused_until`) ; le superviseur la relance à l'heure |
 | Limite atteinte malgré tout | Claude Code attend seul la remise à zéro ; hook `StopFailure` → `rate_limited_at` ; le superviseur n'intervient pas avant |
 | Plantage, session tuée | `supervisor.sh` relance (`--resume <id>`) ; il ne tape jamais dans la session, et ne relance pas une session occupée |
