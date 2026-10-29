@@ -463,3 +463,24 @@ func TestHangupErrorDoesNotLeakKey(t *testing.T) {
 		t.Fatalf("l'erreur révèle la clé : %v", err)
 	}
 }
+
+// TestAppendNotYetImplemented consigne le comportement défini de l'échafaudage
+// de T10 : les retours vocaux ne sont pas encore câblés et le disent (T11).
+func TestAppendNotYetImplemented(t *testing.T) {
+	srv := newSidebandServer(t, nil, false, true)
+	p, _ := openailive.New(testOptions(srv.URL))
+	sb, err := p.Sideband(ctxT(t), "live_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sb.AppendCommentary(ctxT(t), "d1", "texte"); err == nil || !strings.Contains(err.Error(), "non implémenté") {
+		t.Errorf("AppendCommentary err = %v", err)
+	}
+	if err := sb.AppendThinking(ctxT(t), "d1", "texte"); err == nil || !strings.Contains(err.Error(), "non implémenté") {
+		t.Errorf("AppendThinking err = %v", err)
+	}
+	if cmds := srv.commands(); len(cmds) != 0 {
+		t.Errorf("aucune commande attendue, reçu %v", cmds)
+	}
+	_ = sb.Close(ctxT(t))
+}

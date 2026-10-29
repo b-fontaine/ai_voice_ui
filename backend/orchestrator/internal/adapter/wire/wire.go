@@ -34,6 +34,16 @@ func WireData(d domain.Payload) any {
 			Seconds      float64 `json:"seconds"`
 			ContextRatio float64 `json:"context_ratio"`
 		}{v.Seconds, v.ContextRatio}
+	case domain.A2UI:
+		// Le message A2UI est l'objet data lui-même, sans enrobage.
+		return v.Message
+	case domain.AgentActivity:
+		return struct {
+			Agent  string `json:"agent"`
+			Task   string `json:"task"`
+			State  string `json:"state"`
+			Detail string `json:"detail,omitempty"`
+		}{v.Agent, v.Task, v.State, v.Detail}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil

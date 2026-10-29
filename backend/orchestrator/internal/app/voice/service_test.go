@@ -127,6 +127,9 @@ func newTestSideband(autoClose bool) *testSideband {
 	return &testSideband{events: make(chan port.LiveEvent, 64), closeCall: make(chan struct{}), autoClose: autoClose}
 }
 
+func (s *testSideband) AppendCommentary(context.Context, string, string) error { return nil }
+func (s *testSideband) AppendThinking(context.Context, string, string) error   { return nil }
+
 func (s *testSideband) Events() <-chan port.LiveEvent { return s.events }
 
 func (s *testSideband) Close(context.Context) error {
@@ -457,6 +460,9 @@ func TestCloseGuardTimeout(t *testing.T) {
 
 // blockingSideband imite openailive : Close attend la fin de son contexte.
 type blockingSideband struct{ events chan port.LiveEvent }
+
+func (s *blockingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+func (s *blockingSideband) AppendThinking(context.Context, string, string) error   { return nil }
 
 func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
 
@@ -1162,3 +1168,6 @@ func TestCloseTimeoutHangupErrorJoined(t *testing.T) {
 		t.Fatalf("ErrCloseTimeout et l'erreur de Hangup attendus, obtenu %v", err)
 	}
 }
+
+func (s *failingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+func (s *failingSideband) AppendThinking(context.Context, string, string) error   { return nil }

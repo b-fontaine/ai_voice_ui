@@ -8,6 +8,10 @@ const (
 	TypeTranscript   = "transcript"
 	TypeSessionState = "session.state"
 	TypeUsage        = "usage"
+	// TypeA2UI porte un message A2UI v0.9 validé ; TypeAgentActivity signale
+	// l'état d'une tâche confiée à un agent distant.
+	TypeA2UI          = "a2ui"
+	TypeAgentActivity = "agent.activity"
 )
 
 // Rôles d'un transcript.
@@ -62,7 +66,25 @@ type SessionState struct{ State, Reason string }
 // Usage est la consommation de la session.
 type Usage struct{ Seconds, ContextRatio float64 }
 
-func (OrbLevel) isPayload()     {}
-func (Transcript) isPayload()   {}
-func (SessionState) isPayload() {}
-func (Usage) isPayload()        {}
+// États d'une activité d'agent (agent.activity).
+const (
+	ActivityWorking   = "working"
+	ActivityCompleted = "completed"
+	ActivityFailed    = "failed"
+)
+
+// A2UI est un message A2UI v0.9 (une seule opération) transmis tel quel à
+// l'application : il est lui-même l'objet `data` de l'enveloppe.
+type A2UI struct{ Message map[string]any }
+
+// AgentActivity décrit l'avancement d'une tâche d'agent : Agent est le nom de
+// sa carte, Task l'identifiant de la tâche, State l'un des états Activity*,
+// Detail un complément facultatif (cause d'un échec, par exemple).
+type AgentActivity struct{ Agent, Task, State, Detail string }
+
+func (A2UI) isPayload()          {}
+func (AgentActivity) isPayload() {}
+func (OrbLevel) isPayload()      {}
+func (Transcript) isPayload()    {}
+func (SessionState) isPayload()  {}
+func (Usage) isPayload()         {}

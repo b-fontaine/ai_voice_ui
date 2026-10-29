@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"sync"
 
 	"github.com/openai/openai-go/v3/live"
@@ -109,6 +110,18 @@ func (s *sideband) close(ctx context.Context) error {
 		return s.p.wrap("attente de session.closed", ctx.Err())
 	}
 }
+
+// AppendCommentary est un échafaudage : le retour vocal est câblé en T11.
+func (s *sideband) AppendCommentary(context.Context, string, string) error {
+	return errNotImplemented
+}
+
+// AppendThinking est un échafaudage : le retour vocal est câblé en T11.
+func (s *sideband) AppendThinking(context.Context, string, string) error {
+	return errNotImplemented
+}
+
+var errNotImplemented = errors.New("openailive: non implémenté (T11)")
 
 type frame struct {
 	Type    string `json:"type"`

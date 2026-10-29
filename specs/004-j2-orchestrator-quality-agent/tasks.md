@@ -9,7 +9,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] B4 Go — l'agent Qualité (module `backend/agents/quality`) : carte, flux A2UI + résumé, requête hors périmètre refusée · test d'abord : le paquet `internal/agent` n'existe pas (échec de compilation)
 
 ## TDD
-- [ ] T10 Go — domaine et ports : `a2ui`, `agent.activity`, `EventDelegationCreated`, `AppendCommentary` / `AppendThinking`, `RemoteAgent` · test d'abord : `TestWireA2UIAndActivity`
+- [x] T10 Go — domaine et ports : `a2ui`, `agent.activity`, `EventDelegationCreated`, `AppendCommentary` / `AppendThinking`, `RemoteAgent` · test d'abord : `TestWireA2UIAndActivity`
 - [ ] T11 Go — `openailive` : `delegation.created`, `commentary.append` / `thinking.append` (`event_id` unique, ≤ 500 tokens) · test d'abord : `TestTranslateDelegationCreated`, `TestAppendCommentary`
 - [ ] T12 Go — validateur A2UI v0.9 · test d'abord : `TestValidateRejects…` (table), `TestValidateAcceptsReplayAct1`
 - [ ] T13 Go — module `backend/agents/quality` : jeu figé, exécuteur déterministe, serveur A2A natif + carte · test d'abord : `TestExecutorProducesKpiSurface`, `TestAgentCard`, test de bout en bout contre un client `a2a-go`
