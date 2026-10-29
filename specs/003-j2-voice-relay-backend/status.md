@@ -1,7 +1,7 @@
 # 003 — État
 
-- **Étape** : Gherkin
-- **Tentatives** : 1/3
+- **Étape** : TDD
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : backend/orchestrator/{go.mod,go.sum,doc.go}, backend/orchestrator/acceptance/{fake_live,helpers,session_relay,app_channel,config}_test.go, plan.md, tasks.md, status.md (T01-T03)
 - **Branche** : feat/003-j2-voice-relay-backend
