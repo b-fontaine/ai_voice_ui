@@ -21,6 +21,7 @@ const (
 type appended struct {
 	DelegationID string
 	Text         string
+	At           time.Time // instant de réception (horloge réelle), pour vérifier l'ordre et les délais
 }
 
 // fakeDelegatingLive simule GPT-Live en mode de délégation `client` : une fois
@@ -34,6 +35,24 @@ type fakeDelegatingLive struct {
 	commentary  []appended
 	thinking    []appended
 	commentSeen chan struct{} // signalé à chaque nouveau commentaire
+	script      []port.LiveEvent
+	afterClose  []appended // commentaires reçus après Close du sideband
+}
+
+// SetScript remplace la séquence d'événements émise par le sideband une fois
+// libéré (avant Release). Sans appel, la séquence par défaut est : la phrase
+// « Prépare la release 3.4 » puis delegation.created (deleg_1).
+func (f *fakeDelegatingLive) SetScript(events ...port.LiveEvent) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.script = append([]port.LiveEvent(nil), events...)
+}
+
+// CommentariesAfterClose renvoie les commentaires reçus après la fermeture du sideband.
+func (f *fakeDelegatingLive) CommentariesAfterClose() []appended {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]appended(nil), f.afterClose...)
 }
 
 func newFakeDelegatingLive(clock *fakeClock) *fakeDelegatingLive {
@@ -85,6 +104,7 @@ type fakeDelegatingSideband struct {
 	events chan port.LiveEvent
 	closed chan struct{}
 	once   sync.Once
+	isShut bool // Close a été appelé (protégé par live.mu)
 }
 
 func (s *fakeDelegatingSideband) Events() <-chan port.LiveEvent { return s.events }
@@ -97,8 +117,18 @@ func (s *fakeDelegatingSideband) run() {
 		s.finish()
 		return
 	}
-	s.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: delegatedUtterance, StartMs: 0, EndMs: 1500}
-	s.events <- port.LiveEvent{Type: port.EventDelegationCreated, DelegationID: delegationID}
+	s.live.mu.Lock()
+	script := s.live.script
+	s.live.mu.Unlock()
+	if script == nil {
+		script = []port.LiveEvent{
+			{Type: port.EventInputTranscriptDelta, Text: delegatedUtterance, StartMs: 0, EndMs: 1500},
+			{Type: port.EventDelegationCreated, DelegationID: delegationID, OffsetMs: 1500},
+		}
+	}
+	for _, ev := range script {
+		s.events <- ev
+	}
 	<-s.closed
 	s.finish()
 }
@@ -110,7 +140,11 @@ func (s *fakeDelegatingSideband) finish() {
 
 func (s *fakeDelegatingSideband) AppendCommentary(_ context.Context, delegationID, text string) error {
 	s.live.mu.Lock()
-	s.live.commentary = append(s.live.commentary, appended{DelegationID: delegationID, Text: text})
+	a := appended{DelegationID: delegationID, Text: text, At: time.Now()}
+	s.live.commentary = append(s.live.commentary, a)
+	if s.isShut {
+		s.live.afterClose = append(s.live.afterClose, a)
+	}
 	s.live.mu.Unlock()
 	select {
 	case s.live.commentSeen <- struct{}{}:
@@ -127,6 +161,9 @@ func (s *fakeDelegatingSideband) AppendThinking(_ context.Context, delegationID,
 }
 
 func (s *fakeDelegatingSideband) Close(_ context.Context) error {
+	s.live.mu.Lock()
+	s.isShut = true
+	s.live.mu.Unlock()
 	s.once.Do(func() { close(s.closed) })
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 )
 
-// B1 — Une phrase → une surface.
+// B1 — Une phrase → une surface (renforcé par la revue du plan, A7).
 //
 // Étant donné une session ouverte (POST /voice/sessions) dont le sideband simulé,
 // une fois libéré (Release), émet la transcription « Prépare la release 3.4 » puis
@@ -28,7 +28,11 @@ import (
 // et le sideband simulé a reçu, via AppendCommentary(deleg_1, …), un premier
 // commentaire générique AVANT la libération de la barrière (sans « 99,57 »), puis
 // un commentaire fondé sur le résultat de l'agent qui contient « 99,57 % » ;
-// la demande reçue par l'agent est reconstruite de la transcription (« release 3.4 »).
+// la demande reçue par l'agent est reconstruite de la transcription (« release 3.4 ») ;
+// agent.activity working n'est publié qu'après que l'agent a enregistré la demande et émis
+// « submitted » : son `task` est l'identifiant de tâche A2A (le même dans completed) et il
+// porte `label` (nom du skill de la carte) ; chaque enveloppe a2ui porte `agent` (nom de
+// la carte) et `task` en premier niveau, `data` restant le message A2UI brut.
 func TestB1_OnePhraseOneSurface(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -59,6 +63,16 @@ func TestB1_OnePhraseOneSurface(t *testing.T) {
 	}
 	if first.V != 1 || first.Session != sess {
 		t.Fatalf("enveloppe de agent.activity = {v:%d session:%q}, attendu {1 %q}", first.V, first.Session, sess)
+	}
+
+	if working.Label != "Qualité" {
+		t.Fatalf("agent.activity working : label = %q, attendu le nom du skill de la carte %q", working.Label, "Qualité")
+	}
+	// working suit « submitted » : l'agent a déjà enregistré la demande et créé la tâche A2A.
+	tasks := agent.Tasks()
+	if len(agent.Requests()) != 1 || len(tasks) != 1 || working.Task != tasks[0] {
+		t.Fatalf("working publié hors de la réception de submitted : task=%q, tâches de l'agent=%q, demandes=%q",
+			working.Task, tasks, agent.Requests())
 	}
 
 	// 2. Commentaire générique immédiat (RG-04), avant que l'agent ait répondu.
@@ -96,6 +110,9 @@ func TestB1_OnePhraseOneSurface(t *testing.T) {
 		if env.V != 1 || env.Session != sess {
 			t.Fatalf("enveloppe a2ui = {v:%d session:%q}, attendu {1 %q}", env.V, env.Session, sess)
 		}
+		if env.Agent != testAgentName || env.Task != working.Task {
+			t.Fatalf("enveloppe a2ui = {agent:%q task:%q}, attendu {%q %q}", env.Agent, env.Task, testAgentName, working.Task)
+		}
 		var got map[string]any
 		if err := json.Unmarshal(env.Data, &got); err != nil {
 			t.Fatalf("data a2ui illisible %s : %v", env.Data, err)
@@ -116,8 +133,8 @@ func TestB1_OnePhraseOneSurface(t *testing.T) {
 
 	// 6. Fin de l'activité de l'agent.
 	done := decodeActivity(t, feed.nextDomain(t, 5*time.Second))
-	if done.Agent != testAgentName || done.State != "completed" {
-		t.Fatalf("dernier message = %+v, attendu agent.activity{agent:%q, state:completed}", done, testAgentName)
+	if done.Agent != testAgentName || done.State != "completed" || done.Task != working.Task {
+		t.Fatalf("dernier message = %+v, attendu agent.activity{agent:%q, task:%q, state:completed}", done, testAgentName, working.Task)
 	}
 	if feed.missingTMs.Load() {
 		t.Fatalf("une enveloppe a2ui ou agent.activity n'a pas de champ t_ms")

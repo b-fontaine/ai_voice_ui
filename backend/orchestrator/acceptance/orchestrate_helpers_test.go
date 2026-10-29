@@ -39,6 +39,24 @@ const (
 // (variables d'environnement lues par bootstrap.ConfigFromEnv).
 func startDelegatingApp(t *testing.T, agentCardURLs ...string) (srv *httptest.Server, live *fakeDelegatingLive) {
 	t.Helper()
+	return startDelegatingAppWith(t, agentCardURLs)
+}
+
+// appOption modifie la configuration d'environnement de startDelegatingAppWith.
+type appOption func(env map[string]string)
+
+// withEnv surcharge (ou ajoute) des variables d'environnement de l'application.
+func withEnv(overrides map[string]string) appOption {
+	return func(env map[string]string) {
+		for k, v := range overrides {
+			env[k] = v
+		}
+	}
+}
+
+// startDelegatingAppWith comme startDelegatingApp, avec des options fonctionnelles.
+func startDelegatingAppWith(t *testing.T, agentCardURLs []string, opts ...appOption) (srv *httptest.Server, live *fakeDelegatingLive) {
+	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -53,7 +71,11 @@ func startDelegatingApp(t *testing.T, agentCardURLs ...string) (srv *httptest.Se
 		"ALLOWED_HOSTS":         ln.Addr().String(),
 		"AGENTS":                strings.Join(agentCardURLs, ","),
 		"A2UI_CATALOG_ID":       testCatalogID,
+		"A2UI_COMPONENTS":       "Column,Text", // liste blanche des composants A2UI relayés
 		"AGENT_TIMEOUT":         "5s",
+	}
+	for _, opt := range opts {
+		opt(env)
 	}
 	cfg, err := bootstrap.ConfigFromEnv(func(k string) string { return env[k] })
 	if err != nil {
@@ -152,6 +174,7 @@ func (f *appFeed) nextDomain(t *testing.T, timeout time.Duration) sessionEnvelop
 type activity struct {
 	Agent  string `json:"agent"`
 	Task   string `json:"task"`
+	Label  string `json:"label"`
 	State  string `json:"state"`
 	Detail string `json:"detail"`
 }
@@ -210,6 +233,53 @@ type testAgent struct {
 	*httptest.Server
 	mu       sync.Mutex
 	requests []string // texte des demandes reçues
+	tasks    []string // identifiants de tâche A2A créés (ordre de réception)
+
+	inflight    int           // exécutions en cours
+	maxInflight int           // maximum d'exécutions simultanées observé
+	canceled    chan struct{} // fermé quand le contexte d'une exécution est annulé ou que CancelTask arrive
+	cancelOnce  sync.Once
+	cancelCalls atomic.Int32 // nombre de CancelTask reçus
+}
+
+// Tasks renvoie les identifiants de tâche A2A créés par l'agent.
+func (a *testAgent) Tasks() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return append([]string(nil), a.tasks...)
+}
+
+// MaxConcurrent renvoie le plus grand nombre d'exécutions simultanées observé.
+func (a *testAgent) MaxConcurrent() int {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.maxInflight
+}
+
+// WaitCanceled attend que le contexte d'une exécution soit annulé (client parti,
+// délai) ou qu'un CancelTask arrive ; renvoie false au délai.
+func (a *testAgent) WaitCanceled(timeout time.Duration) bool {
+	select {
+	case <-a.canceled:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
+}
+
+func (a *testAgent) markCanceled() { a.cancelOnce.Do(func() { close(a.canceled) }) }
+
+// testExecutor est l'exécuteur de l'agent de test : Execute déroule le script,
+// Cancel enregistre la demande d'annulation (CancelTask) puis passe à « canceled ».
+type testExecutor struct {
+	a2asrv.AgentExecutorFunc
+	agent *testAgent
+}
+
+func (e testExecutor) Cancel(ctx context.Context, ec *a2asrv.ExecutorContext) iter.Seq2[a2a.Event, error] {
+	e.agent.cancelCalls.Add(1)
+	e.agent.markCanceled()
+	return e.AgentExecutorFunc.Cancel(ctx, ec)
 }
 
 // CardURL est l'URL de la carte d'agent, valeur attendue dans AGENTS.
@@ -228,9 +298,18 @@ type agentScript func(ctx context.Context, ec *a2asrv.ExecutorContext, emit func
 
 func startTestAgent(t *testing.T, script agentScript) *testAgent {
 	t.Helper()
-	agent := &testAgent{}
-	exec := a2asrv.AgentExecutorFunc(func(ctx context.Context, ec *a2asrv.ExecutorContext) iter.Seq2[a2a.Event, error] {
+	agent := &testAgent{canceled: make(chan struct{})}
+	run := a2asrv.AgentExecutorFunc(func(ctx context.Context, ec *a2asrv.ExecutorContext) iter.Seq2[a2a.Event, error] {
 		return func(yield func(a2a.Event, error) bool) {
+			finished := make(chan struct{})
+			defer close(finished)
+			go func() {
+				select {
+				case <-ctx.Done():
+					agent.markCanceled() // annulé avant la fin de l'exécution
+				case <-finished:
+				}
+			}()
 			var text []string
 			if ec.Message != nil {
 				for _, p := range ec.Message.Parts {
@@ -239,14 +318,24 @@ func startTestAgent(t *testing.T, script agentScript) *testAgent {
 			}
 			agent.mu.Lock()
 			agent.requests = append(agent.requests, strings.Join(text, " "))
+			if ec.StoredTask == nil {
+				agent.tasks = append(agent.tasks, string(ec.TaskID))
+			}
+			agent.inflight++
+			agent.maxInflight = max(agent.maxInflight, agent.inflight)
 			agent.mu.Unlock()
+			defer func() {
+				agent.mu.Lock()
+				agent.inflight--
+				agent.mu.Unlock()
+			}()
 			if ec.StoredTask == nil && !yield(a2a.NewSubmittedTask(ec, ec.Message), nil) {
 				return
 			}
 			script(ctx, ec, func(e a2a.Event) bool { return yield(e, nil) })
 		}
 	})
-	handler := a2asrv.NewHandler(exec)
+	handler := a2asrv.NewHandler(testExecutor{AgentExecutorFunc: run, agent: agent})
 	var card atomic.Pointer[a2a.AgentCard]
 	mux := http.NewServeMux()
 	mux.Handle("POST /{$}", a2asrv.NewJSONRPCHandler(handler))
