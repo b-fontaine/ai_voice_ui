@@ -1,7 +1,7 @@
 # 003 — État
 
 - **Étape** : TDD
-- **Tentatives** : 1/3
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (T10) : backend/orchestrator/internal/bootstrap/{config.go,config_test.go}, backend/orchestrator/doc.go (supprimé), tasks.md, status.md
 - **Branche** : feat/003-j2-voice-relay-backend
