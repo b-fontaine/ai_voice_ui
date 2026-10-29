@@ -27,6 +27,7 @@ const (
 	// Paramètres du canal WSS de l'application et de l'API HTTP.
 	hubBacklog    = 50       // derniers messages (hors orb.level) rejoués à la connexion
 	hubSendBuffer = 64       // file d'envoi par abonné avant fermeture 1008
+	hubRetained   = 512      // messages a2ui et agent.activity retenus par session (rejoués à la connexion)
 	maxOfferBytes = 64 << 10 // une offre SDP fait quelques Kio
 )
 
@@ -82,7 +83,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		}
 	}
 
-	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer, WriteTimeout: cfg.WriteTimeout})
+	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer, WriteTimeout: cfg.WriteTimeout, RetainedMax: hubRetained})
 	if err != nil {
 		return nil, err
 	}

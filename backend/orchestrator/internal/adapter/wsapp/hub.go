@@ -32,6 +32,10 @@ type Options struct {
 	// WriteTimeout borne chaque écriture vers un client ; au-delà, l'abonné est
 	// jugé bloqué, sa connexion est coupée et son gestionnaire libéré.
 	WriteTimeout time.Duration
+	// RetainedMax borne, par session, les messages a2ui et agent.activity
+	// retenus à part du Backlog (les transcripts ne les évincent pas) et rejoués
+	// à la connexion ; le plus ancien est évincé en premier.
+	RetainedMax int
 }
 
 const envelopeVersion = 1
@@ -51,12 +55,14 @@ type Hub struct {
 type entry struct {
 	seq     uint64
 	payload []byte
+	surface string // surfaceId d'un message a2ui (vide sinon)
 }
 
 type session struct {
-	backlog []entry
-	subs    map[*subscriber]struct{}
-	closed  bool // session.state{closed} publié
+	backlog  []entry // transcripts, session.state, usage… (borné par Options.Backlog)
+	retained []entry // a2ui et agent.activity (borné par Options.RetainedMax)
+	subs     map[*subscriber]struct{}
+	closed   bool // session.state{closed} publié
 }
 
 type subscriber struct {
@@ -74,8 +80,8 @@ type closeReason struct {
 
 // NewHub valide les options et crée un hub.
 func NewHub(opts Options) (*Hub, error) {
-	if opts.Backlog <= 0 || opts.SendBuffer <= 0 || opts.WriteTimeout <= 0 {
-		return nil, errors.New("wsapp: Backlog, SendBuffer et WriteTimeout doivent être > 0")
+	if opts.Backlog <= 0 || opts.SendBuffer <= 0 || opts.WriteTimeout <= 0 || opts.RetainedMax <= 0 {
+		return nil, errors.New("wsapp: Backlog, SendBuffer, WriteTimeout et RetainedMax doivent être > 0")
 	}
 	return &Hub{opts: opts, sessions: map[string]*session{}, all: map[*subscriber]struct{}{}}, nil
 }
@@ -100,8 +106,12 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 	}
 	s := h.session(sessionID)
 	h.seq++
-	if m.Type != domain.TypeOrbLevel {
-		s.backlog = append(s.backlog, entry{h.seq, payload})
+	switch m.Type {
+	case domain.TypeOrbLevel: // jamais rejoué
+	case domain.TypeA2UI, domain.TypeAgentActivity:
+		h.retain(s, entry{seq: h.seq, payload: payload}, m)
+	default:
+		s.backlog = append(s.backlog, entry{seq: h.seq, payload: payload})
 		if over := len(s.backlog) - h.opts.Backlog; over > 0 {
 			s.backlog = append([]entry(nil), s.backlog[over:]...)
 		}
@@ -116,6 +126,62 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 		s.closed = true
 		h.collect(sessionID, s)
 	}
+}
+
+// retain conserve un message a2ui ou agent.activity à part du backlog ordinaire,
+// pour qu'un abonné tardif reçoive toujours la surface avant ses mises à jour.
+// Un deleteSurface fait oublier tous les messages retenus de la surface et n'est
+// pas retenu lui-même : un abonné tardif ne reconstruit jamais une surface
+// supprimée. h.mu doit être tenu.
+func (h *Hub) retain(s *session, e entry, m domain.Message) {
+	if m.Type == domain.TypeA2UI {
+		op, surface := a2uiOperation(m)
+		if op == deleteSurface {
+			kept := s.retained[:0:0]
+			for _, r := range s.retained {
+				if r.surface != surface {
+					kept = append(kept, r)
+				}
+			}
+			s.retained = kept
+			return
+		}
+		e.surface = surface
+	}
+	s.retained = append(s.retained, e)
+	if over := len(s.retained) - h.opts.RetainedMax; over > 0 {
+		s.retained = append([]entry(nil), s.retained[over:]...)
+	}
+}
+
+const deleteSurface = "deleteSurface"
+
+// a2uiOperation extrait l'opération et la surface d'un message A2UI (une seule
+// opération par message) ; vides si le message n'a pas cette forme.
+func a2uiOperation(m domain.Message) (op, surface string) {
+	a, ok := m.Data.(domain.A2UI)
+	if !ok {
+		return "", ""
+	}
+	for k, v := range a.Message {
+		if k == "version" {
+			continue
+		}
+		if body, ok := v.(map[string]any); ok {
+			surface, _ = body["surfaceId"].(string)
+		}
+		return k, surface
+	}
+	return "", ""
+}
+
+// replay renvoie les messages à rejouer de s dans l'ordre de publication :
+// backlog ordinaire et messages retenus fusionnés.
+func replay(s *session) []entry {
+	out := make([]entry, 0, len(s.backlog)+len(s.retained))
+	out = append(out, s.backlog...)
+	out = append(out, s.retained...)
+	return out
 }
 
 // deliver met payload dans la file de sub ; si elle est pleine, sub est
@@ -187,26 +253,26 @@ func (h *Hub) subscribe(id string) (*subscriber, subscribeStatus) {
 	if h.closed {
 		return nil, statusClosed
 	}
-	var replay []entry
+	var replayed []entry
 	var known *session
 	if id != "" {
 		var ok bool
 		if known, ok = h.sessions[id]; !ok {
 			return nil, statusUnknown // aucune entrée créée pour un identifiant inconnu
 		}
-		replay = known.backlog
+		replayed = replay(known)
 	} else {
 		for _, s := range h.sessions {
-			replay = append(replay, s.backlog...)
+			replayed = append(replayed, replay(s)...)
 		}
-		sort.Slice(replay, func(i, j int) bool { return replay[i].seq < replay[j].seq })
 	}
+	sort.Slice(replayed, func(i, j int) bool { return replayed[i].seq < replayed[j].seq })
 	sub := &subscriber{
 		session: id,
-		out:     make(chan []byte, len(replay)+h.opts.SendBuffer),
+		out:     make(chan []byte, len(replayed)+h.opts.SendBuffer),
 		done:    make(chan struct{}),
 	}
-	for _, e := range replay {
+	for _, e := range replayed {
 		sub.out <- e.payload
 	}
 	if known != nil {
