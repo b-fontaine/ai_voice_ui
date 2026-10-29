@@ -11,14 +11,15 @@ import 'package:feature_canvas/feature_canvas.dart'
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
-import 'package:shared_core/shared_core.dart' show ExitHandler, SnapshotService;
+import 'package:shared_core/shared_core.dart' show ExitHandler;
 
 import '../../widgets/top_bar/top_bar.dart';
+import 'capture_service.dart';
 import 'engine_error_watcher.dart';
 
 /// Fabrique du service de capture : la page lui fournit la fonction de sortie
 /// finale (code ajusté par les erreurs du moteur).
-typedef SnapshotFactory = SnapshotService Function(ExitHandler exitHandler);
+typedef SnapshotFactory = CaptureService Function(ExitHandler exitHandler);
 
 /// Page unique : orbe en haut, canevas dessous.
 ///
@@ -63,7 +64,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
     onSubmit: _controller.onSubmit,
     errorSink: widget.errorSink,
   );
-  late final SnapshotService _snapshot = widget.snapshotFactory(
+  late final CaptureService _snapshot = widget.snapshotFactory(
     // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
     (code) =>
         widget.exitHandler(code == 0 && _engineErrors.count > 0 ? 1 : code),

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_core/shared_core.dart';
+import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 
 const _pngSignature = <int>[137, 80, 78, 71, 13, 10, 26, 10];
 

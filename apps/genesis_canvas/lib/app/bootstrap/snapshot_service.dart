@@ -4,16 +4,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_core/shared_core.dart' show ExitHandler;
 
-/// Fonction de sortie du processus (frontière plateforme, `exit` en prod).
-typedef ExitHandler = void Function(int code);
+import '../../pages/genesis_canvas/genesis_canvas.dart' show CaptureService;
 
 /// Capture le rendu d'un `RepaintBoundary` en PNG, puis fait sortir l'app.
 ///
 /// Outil de la boucle de développement : actif seulement en debug **et** si un
 /// chemin est fourni (variable `GENESIS_SNAPSHOT`). Succès : `exitHandler(0)` ;
 /// échec : message sur [errorSink] puis `exitHandler(1)`.
-class SnapshotService {
+class SnapshotService implements CaptureService {
   SnapshotService({
     required this.path,
     required this.exitHandler,
@@ -33,11 +33,13 @@ class SnapshotService {
   final bool debugMode;
   final double pixelRatio;
 
+  @override
   bool get isActive => debugMode && (path?.trim().isNotEmpty ?? false);
 
   /// Capture le `RepaintBoundary` désigné par [boundaryKey] puis sort.
   ///
   /// Ne fait rien si le service est inactif.
+  @override
   Future<void> captureAndExit(GlobalKey boundaryKey) async {
     if (!isActive) return;
     try {

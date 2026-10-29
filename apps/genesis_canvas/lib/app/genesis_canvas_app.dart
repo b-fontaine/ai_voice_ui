@@ -3,10 +3,10 @@ import 'dart:io' as io;
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
-import 'package:shared_core/shared_core.dart'
-    show ExitHandler, ReplayDelay, SnapshotService;
+import 'package:shared_core/shared_core.dart' show ExitHandler, ReplayDelay;
 
 import '../pages/genesis_canvas/genesis_canvas.dart';
+import 'bootstrap/snapshot_service.dart';
 import 'config/genesis_config.dart';
 import 'scenario/scenario_player.dart';
 
