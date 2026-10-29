@@ -53,6 +53,10 @@ type Config struct {
 	// SessionRateWindow : intervalle de recharge d'un jeton de création
 	// (SESSION_RATE_WINDOW) ; défaut 10 s.
 	SessionRateWindow time.Duration
+	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
+	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
+	// (liste séparée par des virgules) en ajoute.
+	AllowedHosts []string
 
 	apiKey string
 }
@@ -163,6 +167,14 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, errors.New("SESSION_RATE_WINDOW doit être une durée strictement positive (par exemple 10s)")
 		}
 		cfg.SessionRateWindow = d
+	}
+
+	portStr := strconv.Itoa(cfg.ListenPort)
+	cfg.AllowedHosts = []string{"127.0.0.1:" + portStr, "localhost:" + portStr, "[::1]:" + portStr}
+	for _, h := range strings.Split(getenv("ALLOWED_HOSTS"), ",") {
+		if h = strings.TrimSpace(h); h != "" {
+			cfg.AllowedHosts = append(cfg.AllowedHosts, h)
+		}
 	}
 
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))

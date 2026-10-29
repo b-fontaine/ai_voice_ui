@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -288,4 +289,55 @@ func TestConfigFromEnv_RehearsalValid(t *testing.T) {
 	if err != nil || cfg.CloseGuard != 1500*time.Millisecond || cfg.SessionRateBurst != 2 || cfg.SessionRateWindow != 30*time.Second {
 		t.Fatalf("valeurs valides refusées : %v %v %d %v", err, cfg.CloseGuard, cfg.SessionRateBurst, cfg.SessionRateWindow)
 	}
+}
+
+func TestAllowedHostsFromConfig(t *testing.T) {
+	defaults := []string{"127.0.0.1:8080", "localhost:8080", "[::1]:8080"}
+	cases := []struct {
+		name   string
+		extra  string
+		port   string
+		expect []string
+	}{
+		{"vide", "", "", defaults},
+		{"espaces seuls", "  ", "", defaults},
+		{"ajouts", " orchestrator.local:8080, ,demo.example ", "", append(append([]string{}, defaults...), "orchestrator.local:8080", "demo.example")},
+		{"port configuré", "", "9090", []string{"127.0.0.1:9090", "localhost:9090", "[::1]:9090"}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			env := fullEnv()
+			env["ALLOWED_HOSTS"] = c.extra
+			if c.port != "" {
+				env["LISTEN_PORT"] = c.port
+			}
+			cfg, err := load(env)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(cfg.AllowedHosts, c.expect) {
+				t.Errorf("AllowedHosts = %q, attendu %q", cfg.AllowedHosts, c.expect)
+			}
+		})
+	}
+}
+
+func TestHealthcheckHostIsAllowed(t *testing.T) {
+	env := fullEnv()
+	env["LISTEN_PORT"] = "9090"
+	cfg, err := load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	url, err := HealthcheckURL(func(k string) string { return env[k] })
+	if err != nil {
+		t.Fatal(err)
+	}
+	host := strings.TrimSuffix(strings.TrimPrefix(url, "http://"), "/healthz")
+	for _, h := range cfg.AllowedHosts {
+		if h == host {
+			return
+		}
+	}
+	t.Fatalf("l'hôte du healthcheck %q n'est pas autorisé : %q", host, cfg.AllowedHosts)
 }

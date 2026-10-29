@@ -88,6 +88,7 @@ func newFixture(t *testing.T, mutate func(*Options)) fixture {
 		RateBurst:    2,
 		RateWindow:   10 * time.Second,
 		MaxBodyBytes: 64,
+		AllowedHosts: []string{"example.com"},
 	}
 	if mutate != nil {
 		mutate(&opts)
@@ -118,12 +119,14 @@ func TestNewHandler_RejectsInvalidOptions(t *testing.T) {
 		"RateBurst":    func(o *Options) { o.RateBurst = 0 },
 		"RateWindow":   func(o *Options) { o.RateWindow = 0 },
 		"MaxBodyBytes": func(o *Options) { o.MaxBodyBytes = 0 },
+		"AllowedHosts": func(o *Options) { o.AllowedHosts = nil },
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
 			opts := Options{
 				Sessions: &fakeSessions{}, App: http.NotFoundHandler(), Clock: &fakeClock{},
 				Logger: slog.Default(), RateBurst: 1, RateWindow: time.Second, MaxBodyBytes: 1,
+				AllowedHosts: []string{"example.com"},
 			}
 			mutate(&opts)
 			if _, err := NewHandler(opts); err == nil {
@@ -311,5 +314,51 @@ func TestAccessLog_DeleteSessionID(t *testing.T) {
 	f.do(http.MethodDelete, "/voice/sessions/sess-9", "", "")
 	if !strings.Contains(f.logs.String(), "session=sess-9") {
 		t.Fatalf("identifiant de session absent :\n%s", f.logs.String())
+	}
+}
+
+func hostRequest(method, target, host string) *http.Request {
+	req := httptest.NewRequest(method, target, strings.NewReader(""))
+	req.Host = host
+	return req
+}
+
+func TestRejectsForeignHost(t *testing.T) {
+	f := newFixture(t, func(o *Options) { o.AllowedHosts = []string{"127.0.0.1:8080"} })
+	for _, c := range []struct{ method, path string }{
+		{http.MethodPost, "/voice/sessions"}, {http.MethodGet, "/app"}, {http.MethodGet, "/healthz"},
+	} {
+		rec := httptest.NewRecorder()
+		f.h.ServeHTTP(rec, hostRequest(c.method, c.path, "evil.example"))
+		if rec.Code != http.StatusMisdirectedRequest {
+			t.Errorf("%s %s : %d, attendu 421", c.method, c.path, rec.Code)
+		}
+		if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+			t.Errorf("%s : Content-Type = %q", c.path, ct)
+		}
+		if strings.Contains(rec.Body.String(), "evil.example") || strings.Contains(rec.Body.String(), "127.0.0.1") {
+			t.Errorf("%s : le corps divulgue un hôte : %s", c.path, rec.Body)
+		}
+	}
+	if len(f.sess.offers) != 0 {
+		t.Error("une session a été ouverte malgré l'hôte refusé")
+	}
+}
+
+func TestAcceptsAllowedHosts(t *testing.T) {
+	f := newFixture(t, func(o *Options) {
+		o.AllowedHosts = []string{"127.0.0.1:8080", "localhost:8080", "[::1]:8080"}
+	})
+	for _, host := range []string{"127.0.0.1:8080", "localhost:8080", "[::1]:8080", "LOCALHOST:8080"} {
+		rec := httptest.NewRecorder()
+		f.h.ServeHTTP(rec, hostRequest(http.MethodGet, "/healthz", host))
+		if rec.Code != http.StatusOK {
+			t.Errorf("Host %q : %d, attendu 200", host, rec.Code)
+		}
+	}
+	rec := httptest.NewRecorder()
+	f.h.ServeHTTP(rec, hostRequest(http.MethodGet, "/healthz", "127.0.0.1:9999"))
+	if rec.Code != http.StatusMisdirectedRequest {
+		t.Errorf("autre port : %d, attendu 421", rec.Code)
 	}
 }

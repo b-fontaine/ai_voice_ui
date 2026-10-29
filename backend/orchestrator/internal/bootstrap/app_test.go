@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -52,6 +53,26 @@ func testConfig(t *testing.T) Config {
 	cfg.DelegationType = "client"
 	cfg.JournalDir = ""
 	return cfg
+}
+
+// listenLoopback réserve un port éphémère et autorise son hôte dans cfg
+// (AllowedHosts) ; le serveur de test doit ensuite écouter sur ce listener.
+func listenLoopback(t *testing.T, cfg *Config) net.Listener {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.AllowedHosts = append(cfg.AllowedHosts, ln.Addr().String())
+	return ln
+}
+
+func serveOn(ln net.Listener, h http.Handler) *httptest.Server {
+	srv := httptest.NewUnstartedServer(h)
+	srv.Listener.Close()
+	srv.Listener = ln
+	srv.Start()
+	return srv
 }
 
 func newStubLive() *stubLive {
@@ -126,11 +147,13 @@ func TestNew_InstructionsFileUnreadable(t *testing.T) {
 
 func TestApp_HealthzAndCloseShutsSessionsDown(t *testing.T) {
 	live := newStubLive()
-	app, err := New(testConfig(t), Deps{Live: live, JournalDir: t.TempDir()})
+	cfg := testConfig(t)
+	ln := listenLoopback(t, &cfg)
+	app, err := New(cfg, Deps{Live: live, JournalDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	srv := httptest.NewServer(app.Handler())
+	srv := serveOn(ln, app.Handler())
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/healthz")
@@ -174,12 +197,13 @@ func TestNew_SessionRateBurstFromConfig(t *testing.T) {
 	cfg := testConfig(t)
 	cfg.SessionRateBurst = 1
 	cfg.SessionRateWindow = time.Hour
+	ln := listenLoopback(t, &cfg)
 	app, err := New(cfg, Deps{Live: newStubLive(), JournalDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 	defer app.Close(context.Background())
-	srv := httptest.NewServer(app.Handler())
+	srv := serveOn(ln, app.Handler())
 	defer srv.Close()
 
 	if got := postOffer(t, srv.URL).StatusCode; got != http.StatusOK {
@@ -212,12 +236,13 @@ func (l *silentLive) Sideband(context.Context, string) (port.Sideband, error) {
 func TestNew_CloseGuardFromConfig(t *testing.T) {
 	cfg := testConfig(t)
 	cfg.CloseGuard = 150 * time.Millisecond
+	ln := listenLoopback(t, &cfg)
 	live := &silentLive{sb: &silentSideband{events: make(chan port.LiveEvent, 1), attached: make(chan struct{})}}
 	app, err := New(cfg, Deps{Live: live, JournalDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	srv := httptest.NewServer(app.Handler())
+	srv := serveOn(ln, app.Handler())
 	defer srv.Close()
 	defer app.Close(context.Background())
 

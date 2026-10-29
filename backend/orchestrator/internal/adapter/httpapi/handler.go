@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
@@ -42,6 +43,10 @@ type Options struct {
 	RateWindow time.Duration
 	// MaxBodyBytes borne la taille de l'offre SDP.
 	MaxBodyBytes int64
+	// AllowedHosts liste les valeurs acceptées de l'en-tête Host (hôte:port),
+	// comparées sans tenir compte de la casse ; toute autre reçoit 421. Protège
+	// contre le DNS rebinding.
+	AllowedHosts []string
 }
 
 func (o Options) validate() error {
@@ -60,6 +65,8 @@ func (o Options) validate() error {
 		return errors.New("httpapi: RateWindow doit être > 0")
 	case o.MaxBodyBytes <= 0:
 		return errors.New("httpapi: MaxBodyBytes doit être > 0")
+	case len(o.AllowedHosts) == 0:
+		return errors.New("httpapi: AllowedHosts est requis")
 	}
 	return nil
 }
@@ -83,7 +90,23 @@ func NewHandler(opts Options) (http.Handler, error) {
 		_, _ = io.WriteString(w, "ok\n")
 	})
 	mux.Handle("GET /app", opts.App)
-	return a.accessLog(mux), nil
+	return a.accessLog(a.hostGuard(mux)), nil
+}
+
+// hostGuard refuse (421, sans détail) toute requête dont l'en-tête Host n'est
+// pas autorisé, sur toutes les routes.
+func (a *api) hostGuard(next http.Handler) http.Handler {
+	allowed := make(map[string]struct{}, len(a.opts.AllowedHosts))
+	for _, h := range a.opts.AllowedHosts {
+		allowed[strings.ToLower(h)] = struct{}{}
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := allowed[strings.ToLower(r.Host)]; !ok {
+			writeError(w, http.StatusMisdirectedRequest, "hôte non autorisé")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *api) createSession(w http.ResponseWriter, r *http.Request) {

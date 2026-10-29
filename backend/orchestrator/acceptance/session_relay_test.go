@@ -5,6 +5,7 @@ package acceptance
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,7 +21,9 @@ import (
 // et un X-Session-Id, et la clé n'apparaît ni dans la réponse, ni dans les en-têtes,
 // ni dans le journal, ni dans les messages du canal WSS (NFR-09).
 func TestA1_SessionRelayNeverLeaksKey(t *testing.T) {
-	srv, live, app, journalDir := startApp(t)
+	logs := &syncBuffer{}
+	logger := slog.New(slog.NewTextHandler(logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	srv, live, app, journalDir := startAppWithLogger(t, logger)
 
 	resp, err := http.Post(srv.URL+"/voice/sessions", "application/sdp", strings.NewReader("v=0\r\ns=offer\r\n"))
 	if err != nil {
@@ -84,6 +87,10 @@ func TestA1_SessionRelayNeverLeaksKey(t *testing.T) {
 		}
 		assertNoKey(t, "journal "+e.Name(), string(data))
 	}
+	if logs.String() == "" {
+		t.Fatal("aucun log slog capturé : la vérification serait vide")
+	}
+	assertNoKey(t, "logs slog", logs.String())
 }
 
 func assertNoKey(t *testing.T, where, content string) {
