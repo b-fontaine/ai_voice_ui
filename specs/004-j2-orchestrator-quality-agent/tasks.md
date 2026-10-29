@@ -15,7 +15,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T12a Go — validateur A2UI sans état (A3) · test d'abord : `TestValidateRejects…` (table), `TestValidateAcceptsReplayAct1`, `TestValidateAcceptsProgressiveChildren`
 - [x] T12b Go — registre de surfaces par session et contrôle de fin de tâche (A3) · test d'abord : `TestRegistry…`, `TestCompletionRequiresRootAndResolvedRefs`
 - [x] T13a Go (module agent) — jeu de données brut embarqué + KPI pondéré + port `Composer` (A11) · test d'abord : `TestKpiComputedFromRows`, `TestDatasetMatchesProductSheet`, `TestScopeTable`
-- [ ] T13b Go (module agent) — serveur A2A natif, carte, mémoire par contexte, durcissement HTTP, `/agent healthcheck` (A11) · test d'abord : `TestSecondRequestSameContextUpdatesInPlace`, `TestOversizedBodyRejected`, `TestWrongHostRejected` + B4
+- [x] T13b Go (module agent) — serveur A2A natif, carte, mémoire par contexte, durcissement HTTP, `/agent healthcheck` (A11) · test d'abord : `TestSecondRequestSameContextUpdatesInPlace`, `TestOversizedBodyRejected`, `TestWrongHostRejected` + B4
 - [ ] T14 Go — adaptateur `a2aclient` et port `RemoteAgent` en `iter.Seq2` (A10) · test d'abord : `TestSendMapsStates`, `TestCancelOnContextSendsCancelTask`, `TestCardInterfaceOriginMismatchRejected`, `TestFileSchemeRejected`
 - [ ] T15a Go — fenêtre de transcript et reconstruction de la demande (A9) · test d'abord : `TestRequestRebuiltFromTranscript` (table)
 - [ ] T15b Go — file par session, doublons, annulation, délai, fermeture ordonnée (A1, A2, A6) · test d'abord : `TestSecondDelegationQueuedThenServed`, `TestQueueFullHonestCommentary`, `TestDuplicateDelegationIgnored`, `TestAgentTimeoutCancelsAndFails`, `TestCloseCancelsInflightDelegation`
