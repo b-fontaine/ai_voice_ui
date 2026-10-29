@@ -1,6 +1,6 @@
 # 004 — État
 
-- **Étape** : Vérification
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : `backend/orchestrator/internal/{domain/message.go,port/port.go,port/agent.go,adapter/wire/wire.go,adapter/wire/wire_test.go,adapter/openailive/sideband.go,adapter/openailive/provider_test.go,app/voice/service_test.go,bootstrap/app_test.go}`, `plan.md`, `tasks.md`
@@ -53,7 +53,8 @@ Non vérifié par la revue : présence et timeline réelles de `offset_ms` (à r
 
 
 ## Questions pour le porteur
-Aucune.
+- **Q-69** (avant J3, 2/11 si possible) : retirer ou laisser en état neutre la surface partielle d'un agent en échec ; comportement provisoire = retirer (reco).
+- **Q-70** (avant J4, 5/11) : le canevas survit-il à la session voix (pdr-0052 vs FR-07) ; reco : registre de canevas côté backend. Aucune ne bloque 005 ni J3 pour le moment.
 | 2026-10-29 | TDD | T17 : agent-quality dans le compose (réseau interne), CI en matrice, `backend/check-compose.sh`, instructions vocales | `tools/loop/gate.sh --full` |
 | 2026-10-29 | TDD terminé | T10-T17 faites ; acceptation A1-A4, B1-B7 vertes ; `gate.sh --full` vert sur arbre propre (21 contrôles, deux modules Go + compose + check-compose) | `.omc/state/loop/gates/20261029-213605-full.log` |
 | 2026-10-29 | Revue | architect-reviewer (mode CODE) : À REFACTORISER (0 bloquante, 5 importantes, 5 mineures), regroupées en 6 lots (rapport collé ci-dessous) | — |
@@ -66,3 +67,4 @@ Aucune.
 | 2026-10-29 | Refactorisation terminée | R1-R10 appliquées en 6 lots (L1-L6, 0 bloquante) ; `gate.sh --full` vert sur arbre propre (21 contrôles) + `check-compose.sh` OK | `.omc/state/loop/gates/20261029-221749-full.log` |
 | 2026-10-29 | Vérification : outil de contrôle | `spikes/003-live-check` gagne `-scenario surface` (critères a-i, mesures NFR-02/NFR-03, avertissement `offset_ms`) ; tests purs `surface_test.go` rouge (`undefined: surfaceSummary`) puis vert, `voice` inchangé ; pas encore lancé contre l’API | `spikes/003-live-check` (`go vet`, `go test` verts) |
 | 2026-10-29 | Vérification (essai réel unique) | `docker compose up --build` (orchestrateur + agent-quality, réseau interne, `.env` du porteur non lu) + `spikes/003-live-check -scenario surface` : POST 200, DELETE 204 ; `active` 1 566 ms après le POST ; `delegation` reçue avec `offset_ms` = 7000 (présent, timeline de session) ; `agent.activity working` puis `completed` ; 3 `a2ui` dans l'ordre createSurface, updateComponents, updateDataModel ; transcript user « Bonjour. Peux-tu me dire où en est la release 3.4 » (demande comprise) ; l'IA dit « Je m'en occupe, un instant. Voici ce que je constate : « Sessions sans crash : 99,57 % sur 7 jours, seuil 99,50 %, à risque (marge 0,07 pt). » » (générique puis résultat fondé sur l'agent) ; délais locaux delegation → working/premier a2ui/completed : 3 ms (agent déterministe, NFR-02/03 tenus) ; 286 messages identiques pour l'abonné filtré et global ; 286 lignes dans le journal du volume ; clé absente des logs des deux services et du journal client ; VERDICT OK ; coût 0,04 € (budget 0,33 €/12 €) | résumé du client (scratchpad `live-check-004.out`), `specs/openai-spend.tsv` |
+| 2026-10-29 | Clôture | `product/` propagé (contrat v1 étendu dans `app-channel-contract.md`, `backend.md` règle 2 corrigée selon pdr-0036, `security.md`, Q-69 et Q-70, backlog, roadmap) ; KB : `proto-a2a-go-executor-lifecycle` + faits sur `offset_ms`, commentaire dit guillemets compris, envois sideband sérialisés ; lints produit et KB à 0 erreur ; fusion dans `loop` et `publish.sh` | — |

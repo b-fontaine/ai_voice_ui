@@ -39,6 +39,7 @@ Sans `response.create`, le backend ne reprend pas. Résultat manquant → `tool_
   - `session.commentary.append` : à dire (le modèle peut paraphraser) ;
   - `session.thinking.append` : contexte silencieux ;
   - `session.instructions.append` : consignes globales (`delegation_id: null`).
+- **Vérifié le 2026-10-29 (essai réel, mode `client`) :** `session.delegation.created` porte bien `offset_ms` (7 000 pour une phrase terminée vers 7 s : même timeline de session que les `start_ms`/`end_ms` des transcripts) ; un `commentary.append` est dit presque mot pour mot, **guillemets compris** (« Voici ce que je constate : « … » ») ; un premier commentaire générique, puis le commentaire fondé sur le résultat, sont dits dans cet ordre.
 - Chacun est acquitté par `…appended` : l'accusé confirme l'injection, pas la diction.
 - `delegation.acknowledgement_delay_ms` (ex. 800) règle l'accusé vocal automatique. Tout `thinking.append` ou `commentary.append` (même à `content` vide) annule **tous** les accusés en attente de la session ([[ma-filler-acknowledgements]]).
 
