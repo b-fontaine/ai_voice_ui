@@ -14,7 +14,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T11 Go — `openailive` (A8) : `delegation.created` avec `offset_ms`, `AppendCommentary` avec acquittement, `event_id`, erreur sans retry, rejet > 1 000 runes, suppression de `AppendThinking` et de l'échafaudage · test d'abord : `TestTranslateDelegationCreated`, `TestAppendCommentaryWaitsAck`, `TestAppendCommentaryErrorEvent`, `TestAppendAfterClosedFails`
 - [x] T12a Go — validateur A2UI sans état (A3) · test d'abord : `TestValidateRejects…` (table), `TestValidateAcceptsReplayAct1`, `TestValidateAcceptsProgressiveChildren`
 - [x] T12b Go — registre de surfaces par session et contrôle de fin de tâche (A3) · test d'abord : `TestRegistry…`, `TestCompletionRequiresRootAndResolvedRefs`
-- [ ] T13a Go (module agent) — jeu de données brut embarqué + KPI pondéré + port `Composer` (A11) · test d'abord : `TestKpiComputedFromRows`, `TestDatasetMatchesProductSheet`, `TestScopeTable`
+- [x] T13a Go (module agent) — jeu de données brut embarqué + KPI pondéré + port `Composer` (A11) · test d'abord : `TestKpiComputedFromRows`, `TestDatasetMatchesProductSheet`, `TestScopeTable`
 - [ ] T13b Go (module agent) — serveur A2A natif, carte, mémoire par contexte, durcissement HTTP, `/agent healthcheck` (A11) · test d'abord : `TestSecondRequestSameContextUpdatesInPlace`, `TestOversizedBodyRejected`, `TestWrongHostRejected` + B4
 - [ ] T14 Go — adaptateur `a2aclient` et port `RemoteAgent` en `iter.Seq2` (A10) · test d'abord : `TestSendMapsStates`, `TestCancelOnContextSendsCancelTask`, `TestCardInterfaceOriginMismatchRejected`, `TestFileSchemeRejected`
 - [ ] T15a Go — fenêtre de transcript et reconstruction de la demande (A9) · test d'abord : `TestRequestRebuiltFromTranscript` (table)

@@ -1,8 +1,8 @@
 # 004 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T13b
 - **Fichiers touchés** (tâche en cours) : `backend/orchestrator/internal/{domain/message.go,port/port.go,port/agent.go,adapter/wire/wire.go,adapter/wire/wire_test.go,adapter/openailive/sideband.go,adapter/openailive/provider_test.go,app/voice/service_test.go,bootstrap/app_test.go}`, `plan.md`, `tasks.md`
 - **Branche** : feat/004-j2-orchestrator-quality-agent
 - **Backlog** : EP-03, EP-02
@@ -19,6 +19,7 @@
 | 2026-10-29 | TDD T11 | `openailive` : `delegation.created` + `offset_ms`, `AppendCommentary` acquitté (A8), `AppendThinking` retiré ; rouge (`unknown field AppendAckTimeout`, `e.OffsetMs undefined`) puis vert, `-race -count=3` | `.omc/state/loop/gates/20261029-204406-unit-go.log` (vert) |
 | 2026-10-29 | TDD T12a | paquet `app/a2ui` : `Validator` sans état (A3) ; rouge (paquet sans fichier non-test, puis `declared and not used` corrigé) puis vert, `-race -count=3` | `.omc/state/loop/gates/20261029-204658-unit-go.log` (vert) |
 | 2026-10-29 | TDD T12b | `Registry` par session (A3 avec état), `Complete`, `Compensation`, `Forget` ; rouge (`undefined: a2ui.Registry`) puis vert, `-race -count=3` | `.omc/state/loop/gates/20261029-204830-unit-go.log` (vert) |
+| 2026-10-29 | TDD T13a | module agent : `internal/dataset` (lignes brutes embarquées, KPI pondéré 99,57 %, statut dérivé) et `internal/compose` (port `Composer`, `KpiComposer`, périmètre, mémoire bornée) ; rouge (`no non-test Go files in internal/dataset`, `…/compose`) puis vert, `-race -count=3` | `.omc/state/loop/gates/20261029-205128-unit-go.log` (vert) |
 
 ## Revue du plan (architect-reviewer, mode PLAN, 2026-10-29)
 Verdict : **CONFORME SOUS RÉSERVE** — 4 points bloquants (A1 branchement voix→orchestrateur et cycle de vie ; A2 délégations qui se recouvrent ; A3 validateur A2UI faux sur le rendu progressif et sans liste blanche de composants ; A4 backlog du hub qui perd `createSurface`), A5-A12 importants, A13 mineur. Tous intégrés dans `plan.md` (§ Amendements A1-A13) et `tasks.md` (T04, T11-T17 redécoupées).
