@@ -18,6 +18,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/wire"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 )
 
@@ -307,7 +308,7 @@ func encode(sessionID string, m domain.Message) ([]byte, error) {
 		Session string `json:"session"`
 		TMs     int64  `json:"t_ms"`
 		Data    any    `json:"data"`
-	}{envelopeVersion, m.Type, sessionID, m.TMs, domain.WireData(m.Data)})
+	}{envelopeVersion, m.Type, sessionID, m.TMs, wire.WireData(m.Data)})
 }
 
 // subscribers et sessionCount servent aux tests.

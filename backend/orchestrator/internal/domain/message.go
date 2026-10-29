@@ -28,8 +28,12 @@ const (
 type Message struct {
 	Type string
 	TMs  int64 // millisecondes écoulées depuis l'ouverture de la session
-	Data any
+	Data Payload
 }
+
+// Payload est la charge utile d'un message. Interface fermée : seuls les types
+// de ce paquet l'implémentent, la compilation refuse tout autre type.
+type Payload interface{ isPayload() }
 
 // OrbLevel est le niveau sonore (0..1) de la voix de l'IA.
 type OrbLevel struct{ Level float64 }
@@ -57,3 +61,8 @@ type SessionState struct{ State, Reason string }
 
 // Usage est la consommation de la session.
 type Usage struct{ Seconds, ContextRatio float64 }
+
+func (OrbLevel) isPayload()     {}
+func (Transcript) isPayload()   {}
+func (SessionState) isPayload() {}
+func (Usage) isPayload()        {}

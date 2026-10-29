@@ -460,7 +460,7 @@ func (s *Service) translate(sess *session, ev port.LiveEvent) {
 	}
 }
 
-func (s *Service) publish(sess *session, typ string, data any) {
+func (s *Service) publish(sess *session, typ string, data domain.Payload) {
 	s.sink.Publish(sess.id, domain.Message{
 		Type: typ,
 		TMs:  s.clock.Now().Sub(sess.start).Milliseconds(),

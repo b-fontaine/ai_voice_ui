@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/wire"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 )
 
@@ -115,7 +116,7 @@ func TestDataFieldNamesMatchEnvelope(t *testing.T) {
 	}
 	lines := readLines(t, filepath.Join(dir, "s.jsonl"))
 	for i, m := range msgs {
-		want, err := domain.DataJSON(m)
+		want, err := wire.DataJSON(m)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/adapter/wire"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -104,7 +105,7 @@ func (r *Recorder) Publish(sessionID string, m domain.Message) {
 		r.opts.OnError(errors.New("jsonljournal: identifiant de session refusé"))
 		return
 	}
-	data, err := domain.DataJSON(m)
+	data, err := wire.DataJSON(m)
 	if err != nil {
 		r.opts.OnError(fmt.Errorf("jsonljournal: données non sérialisables (%s) : %w", m.Type, err))
 		return
