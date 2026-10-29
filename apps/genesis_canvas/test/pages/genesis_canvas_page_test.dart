@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genesis_canvas/app/config/genesis_config.dart';
+import 'package:genesis_canvas/app/scenario/scenario_player.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
+import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:shared_core/shared_core.dart' show SnapshotService;
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
@@ -49,7 +51,12 @@ void main() {
     addTearDown(() => dir.deleteSync(recursive: true));
   });
 
-  Future<void> launch(WidgetTester tester, String jsonl) async {
+  Future<void> launch(
+    WidgetTester tester,
+    String? jsonl, {
+    bool capture = true,
+    String scenario = 'demo',
+  }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -57,13 +64,17 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
-          config: GenesisConfig(
-            scenario: 'demo',
-            snapshotPath: '${dir.path}/out.png',
+          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          replay: ScenarioPlayer(
+            bundle: _FakeBundle(<String, String>{
+              'assets/replays/demo.jsonl': ?jsonl,
+            }),
+          ).messages(scenario),
+          snapshotFactory: (exitHandler) => SnapshotService(
+            path: capture ? '${dir.path}/out.png' : null,
+            exitHandler: exitHandler,
+            errorSink: errors,
           ),
-          assetBundle: _FakeBundle(<String, String>{
-            'assets/replays/demo.jsonl': jsonl,
-          }),
           exitHandler: exitCodes.add,
           errorSink: errors,
         ),
@@ -97,6 +108,39 @@ void main() {
     await launch(tester, _valid);
 
     expect(exitCodes, <int>[0]);
+    expect(errors.toString(), isEmpty);
+  });
+
+  testWidgets('scénario absent avec capture : message et sortie 1', (
+    tester,
+  ) async {
+    await launch(tester, null);
+
+    expect(exitCodes, <int>[1]);
+    expect(errors.toString(), contains('impossible'));
+  });
+
+  testWidgets('scénario absent sans capture : message, aucune sortie', (
+    tester,
+  ) async {
+    await launch(tester, null, capture: false);
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
+    await tester.pump();
+
+    expect(exitCodes, isEmpty);
+    expect(errors.toString(), contains('impossible'));
+  });
+
+  testWidgets('rejeu valide sans capture : aucune sortie', (tester) async {
+    await launch(tester, _valid, capture: false);
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
+    await tester.pump();
+
+    expect(exitCodes, isEmpty);
     expect(errors.toString(), isEmpty);
   });
 }

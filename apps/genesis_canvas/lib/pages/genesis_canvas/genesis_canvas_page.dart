@@ -1,46 +1,49 @@
 import 'dart:async';
 
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:feature_canvas/api/canvas.dart'
     show CanvasBloc, CanvasSourceStatus, CanvasSourceSubscribed, CanvasState;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:genui/genui.dart'
-    show BasicCatalogItems, Catalog, SurfaceController;
-import 'package:shared_core/shared_core.dart'
-    show ExitHandler, ReplayDelay, SnapshotService;
+import 'package:genui/genui.dart' show Catalog, SurfaceController;
+import 'package:shared_core/shared_core.dart' show ExitHandler, SnapshotService;
 
-import '../../app/config/genesis_config.dart';
-import '../../app/scenario/scenario_player.dart';
 import '../../widgets/canvas_board/canvas_board.dart';
 import '../../widgets/top_bar/top_bar.dart';
 import 'engine_error_watcher.dart';
 
+/// Fabrique du service de capture : la page lui fournit la fonction de sortie
+/// finale (code ajusté par les erreurs du moteur).
+typedef SnapshotFactory = SnapshotService Function(ExitHandler exitHandler);
+
 /// Page unique : orbe en haut, canevas dessous.
 ///
-/// Racine de composition : elle crée le moteur genui (catalogue de base) et le
-/// `CanvasBloc`, qu'elle injecte par constructeur, puis les libère.
+/// Racine de composition du moteur : elle crée le moteur genui (avec les
+/// catalogues reçus) et le `CanvasBloc`, qu'elle injecte par constructeur,
+/// puis les libère. Elle ne connaît ni la configuration ni les assets : la
+/// couche `app` lui fournit le flux de rejeu et la fabrique de capture.
 ///
-/// Si la configuration nomme un scénario, elle le rejoue dans le Bloc ; à la
-/// fin du rejeu, elle déclenche la capture PNG si un chemin est configuré.
+/// Si un flux de rejeu est fourni, elle le rejoue dans le Bloc ; à la fin du
+/// rejeu, elle déclenche la capture PNG si le service est actif.
 class GenesisCanvasPage extends StatefulWidget {
   const GenesisCanvasPage({
     super.key,
-    required this.config,
-    required this.assetBundle,
+    required this.catalogs,
+    required this.snapshotFactory,
     required this.exitHandler,
     required this.errorSink,
-    this.replayDelay,
+    this.replay,
   });
 
-  final GenesisConfig config;
-  final AssetBundle assetBundle;
+  final List<Catalog> catalogs;
+  final SnapshotFactory snapshotFactory;
   final ExitHandler exitHandler;
 
   /// Destination des erreurs de rejeu et de capture (`stderr` en prod).
   final StringSink errorSink;
 
-  /// Attente entre deux messages du rejeu ; `null` : délai réel.
-  final ReplayDelay? replayDelay;
+  /// Messages A2UI à rejouer ; `null` : canevas vide.
+  final Stream<A2uiMessage>? replay;
 
   @override
   State<GenesisCanvasPage> createState() => _GenesisCanvasPageState();
@@ -48,7 +51,7 @@ class GenesisCanvasPage extends StatefulWidget {
 
 class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
   late final SurfaceController _controller = SurfaceController(
-    catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+    catalogs: widget.catalogs,
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
   final GlobalKey _boundaryKey = GlobalKey();
@@ -56,12 +59,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
     onSubmit: _controller.onSubmit,
     errorSink: widget.errorSink,
   );
-  late final SnapshotService _snapshot = SnapshotService(
-    path: widget.config.snapshotPath,
+  late final SnapshotService _snapshot = widget.snapshotFactory(
     // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
-    exitHandler: (code) =>
+    (code) =>
         widget.exitHandler(code == 0 && _engineErrors.count > 0 ? 1 : code),
-    errorSink: widget.errorSink,
   );
 
   @override
@@ -69,17 +70,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
     super.initState();
     // Écoute dès la création : le moteur ne rejoue pas les erreurs passées.
     _engineErrors;
-    final scenario = widget.config.scenario;
-    if (scenario != null) {
-      _bloc.add(
-        CanvasSourceSubscribed(
-          ScenarioPlayer(
-            bundle: widget.assetBundle,
-            delay: widget.replayDelay,
-          ).messages(scenario),
-        ),
-      );
-    }
+    final replay = widget.replay;
+    if (replay != null) _bloc.add(CanvasSourceSubscribed(replay));
   }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
@@ -87,9 +79,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
       case CanvasSourceStatus.completed:
         if (_snapshot.isActive) unawaited(_captureWhenSettled());
       case CanvasSourceStatus.failed:
-        widget.errorSink.writeln(
-          'Rejeu "${widget.config.scenario}" impossible : ${state.sourceError}',
-        );
+        widget.errorSink.writeln('Rejeu impossible : ${state.sourceError}');
         if (_snapshot.isActive) widget.exitHandler(1);
       case CanvasSourceStatus.none:
       case CanvasSourceStatus.playing:

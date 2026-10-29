@@ -10,5 +10,5 @@ export 'app/app.dart' show GenesisCanvasApp;
 /// Point d'entrée de l'application.
 void main() {
   final config = GenesisConfig.fromEnvironment(Platform.environment);
-  runApp(GenesisCanvasApp.fromConfig(config));
+  runApp(GenesisCanvasApp(config: config));
 }
