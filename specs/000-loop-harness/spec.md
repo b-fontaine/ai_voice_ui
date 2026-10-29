@@ -16,7 +16,7 @@ Scénarios propres à l'outillage, à ajouter dans `apps/genesis_canvas/test/acc
 ## Critères d'acceptation
 - [ ] H-01 à H-03 automatisés et verts (`gate.sh --full`)
 - [ ] `tools/loop/app-smoke.sh` produit une capture lisible sous Xvfb (ou `UNAVAILABLE` si Xvfb manque)
-- [ ] Workspace pub racine, versions exactes (`genui: 0.10.4`, `genui_a2a: 0.10.1`), `pubspec.lock` committé
+- [ ] Workspace pub racine, versions exactes (`genui: 0.10.4` ; `genui_a2a: 0.10.1` est ajouté avec la fonctionnalité A2A, qui l'utilise — amendé le 2026-10-29 après la revue), `pubspec.lock` committé
 - [ ] Aucun `getIt` hors racine de composition ; Bloc pour l'état du canevas (pas de Cubit)
 - [ ] Revue d'architecte : CONFORME
 
