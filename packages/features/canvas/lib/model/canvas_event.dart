@@ -1,7 +1,5 @@
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 
-import 'canvas_state.dart';
-
 /// Événements du `CanvasBloc`.
 sealed class CanvasEvent {
   const CanvasEvent();
@@ -17,25 +15,6 @@ sealed class CanvasCommand extends CanvasEvent {
 final class CanvasSourceSubscribed extends CanvasEvent {
   const CanvasSourceSubscribed(this.messages);
   final Stream<A2uiMessage> messages;
-}
-
-/// Une surface est apparue (phase squelette).
-final class SurfaceAdded extends CanvasCommand {
-  const SurfaceAdded(this.surfaceId);
-  final String surfaceId;
-}
-
-/// Une surface a progressé vers [phase].
-final class SurfacePhaseChanged extends CanvasCommand {
-  const SurfacePhaseChanged(this.surfaceId, this.phase);
-  final String surfaceId;
-  final SurfacePhase phase;
-}
-
-/// Une surface a disparu.
-final class SurfaceRemoved extends CanvasCommand {
-  const SurfaceRemoved(this.surfaceId);
-  final String surfaceId;
 }
 
 /// Remise à vide du canevas (toutes les surfaces sont supprimées du moteur).

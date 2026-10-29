@@ -26,12 +26,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
   void _onCommand(CanvasCommand event, Emitter<CanvasState> emit) {
     switch (event) {
-      case SurfaceAdded(:final surfaceId):
-        emit(state.withSurface(surfaceId));
-      case SurfacePhaseChanged(:final surfaceId, :final phase):
-        emit(state.withPhase(surfaceId, phase));
-      case SurfaceRemoved(:final surfaceId):
-        emit(state.withoutSurface(surfaceId));
       case CanvasResetRequested():
         _onReset(emit);
       case A2uiMessageReceived():

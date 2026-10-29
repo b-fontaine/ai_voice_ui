@@ -5,10 +5,7 @@ export '../model/canvas_event.dart'
         CanvasCommand,
         CanvasEvent,
         CanvasResetRequested,
-        CanvasSourceSubscribed,
-        SurfaceAdded,
-        SurfacePhaseChanged,
-        SurfaceRemoved;
+        CanvasSourceSubscribed;
 export '../model/canvas_state.dart'
     show CanvasSourceStatus, CanvasState, SurfacePhase;
 export '../ui/canvas_board.dart' show CanvasBoard;

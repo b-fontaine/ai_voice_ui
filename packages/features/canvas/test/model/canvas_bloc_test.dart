@@ -26,63 +26,6 @@ void main() {
     await bloc.close();
   });
 
-  test(
-    "SurfaceAdded ajoute une surface en phase squelette, dans l'ordre",
-    () async {
-      final states = await statesAfter(bloc, (b) {
-        b
-          ..add(const SurfaceAdded('a'))
-          ..add(const SurfaceAdded('b'));
-      });
-
-      expect(states.map((s) => s.surfaceIds), <List<String>>[
-        <String>['a'],
-        <String>['a', 'b'],
-      ]);
-      expect(states.last.phaseOf('a'), SurfacePhase.skeleton);
-      expect(states.last.phaseOf('b'), SurfacePhase.skeleton);
-    },
-  );
-
-  test('SurfacePhaseChanged fait avancer la phase de la surface', () async {
-    final states = await statesAfter(bloc, (b) {
-      b
-        ..add(const SurfaceAdded('a'))
-        ..add(const SurfacePhaseChanged('a', SurfacePhase.data));
-    });
-
-    expect(states.map((s) => s.phaseOf('a')), <SurfacePhase>[
-      SurfacePhase.skeleton,
-      SurfacePhase.data,
-    ]);
-  });
-
-  test('SurfacePhaseChanged ne fait pas reculer la phase et ignore une surface inconnue', () async {
-    final states = await statesAfter(bloc, (b) {
-      b
-        ..add(const SurfaceAdded('a'))
-        ..add(const SurfacePhaseChanged('a', SurfacePhase.data))
-        ..add(const SurfacePhaseChanged('a', SurfacePhase.components))
-        ..add(const SurfacePhaseChanged('zzz', SurfacePhase.data));
-    });
-
-    expect(states.map((s) => s.phaseOf('a')), <SurfacePhase>[
-      SurfacePhase.skeleton,
-      SurfacePhase.data,
-    ]);
-  });
-
-  test('SurfaceRemoved retire la surface', () async {
-    final states = await statesAfter(bloc, (b) {
-      b
-        ..add(const SurfaceAdded('a'))
-        ..add(const SurfaceAdded('b'))
-        ..add(const SurfaceRemoved('a'));
-    });
-
-    expect(states.last.surfaceIds, <String>['b']);
-  });
-
   test('A2uiMessageReceived applique createSurface, updateComponents puis updateDataModel', () async {
     final states = await statesAfter(bloc, (b) {
       b
