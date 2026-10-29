@@ -14,7 +14,6 @@
 | 2026-10-29 | Définir | `spec.md`, `plan.md`, `tasks.md` rédigés (J2 découpé en 003 backend, 004 orchestrateur + agent A2A + surface, 005 app voix + orbe) | — |
 | 2026-10-29 | Gherkin | T01-T03 : tests d'acceptation A1-A3 (build tag `acceptance`) ; rouge attendu : `no required module provides package .../internal/bootstrap` ; compilent contre une implémentation vide (vérifié hors dépôt) ; `doc.go` ajouté pour que go vet/test trouvent un paquet | .omc/state/loop/gates/20261029-180339-unit-go.log |
 | 2026-10-29 | TDD | T10 : `bootstrap.ConfigFromEnv` + `Config` (clé privée, `String`/`GoString` masqués) ; rouge `undefined: Config`, vert ensuite ; `doc.go` supprimé (le paquet `bootstrap` suffit) | .omc/state/loop/gates/20261029-180700-unit-go.log |
-
 | 2026-10-29 | TDD | T11 : `level.RMS` + `level.Meter` (5 niveaux/s, blocs 7 o à 300 ms identiques) ; rouge `undefined: RMS`, vert ensuite | .omc/state/loop/gates/20261029-181002-unit-go.log |
 
 ## Revue d'architecte
