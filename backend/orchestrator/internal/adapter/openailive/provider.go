@@ -42,6 +42,10 @@ type Options struct {
 	// AppendAckTimeout borne l'attente de l'acquittement d'un commentaire
 	// vocal (VOICE_APPEND_ACK_TIMEOUT) ; obligatoire, strictement positif.
 	AppendAckTimeout time.Duration
+	// AcknowledgementDelayMs (VOICE_ACK_DELAY_MS) : délai avant l'accusé vocal
+	// automatique du fournisseur (`delegation.acknowledgement_delay_ms`). nil :
+	// non envoyé (valeur par défaut du fournisseur) ; sinon >= 0.
+	AcknowledgementDelayMs *int64
 	// Logger reçoit les journaux de l'adaptateur ; nil : slog.Default().
 	Logger *slog.Logger
 }
@@ -98,6 +102,13 @@ func New(opts Options) (*Provider, error) {
 	delegation, err := delegationParam(opts.DelegationType)
 	if err != nil {
 		return nil, err
+	}
+	if opts.AcknowledgementDelayMs != nil {
+		if *opts.AcknowledgementDelayMs < 0 {
+			return nil, errors.New("délai de l'accusé automatique (AcknowledgementDelayMs) doit être >= 0")
+		}
+		// Seule la délégation « client » est prise en charge (delegationParam).
+		delegation.OfClient.AcknowledgementDelayMs = param.NewOpt(*opts.AcknowledgementDelayMs)
 	}
 	if opts.APIKey == "" {
 		return nil, errors.New("clé API du fournisseur voix manquante")

@@ -108,7 +108,7 @@ func NewPipeline(d PipelineDeps) (*Pipeline, error) {
 	case d.Logger == nil:
 		return nil, errors.New("orchestrate : logger manquant")
 	}
-	if err := d.Phrases.validate(); err != nil {
+	if err := d.Phrases.Validate(); err != nil {
 		return nil, err
 	}
 	for _, a := range d.Agents {

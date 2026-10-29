@@ -706,3 +706,55 @@ func TestOptionsValidateAppendAckTimeout(t *testing.T) {
 		}
 	}
 }
+
+// createSessionBody renvoie le corps JSON envoyé à la création de session.
+func createSessionBody(t *testing.T, o openailive.Options) map[string]any {
+	t.Helper()
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"session":{"id":"live_abc"},"transport":{"type":"webrtc","sdp":"v=0 answer"}}`))
+	}))
+	defer srv.Close()
+	o.BaseURL = srv.URL
+	p, err := openailive.New(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.CreateSession(ctxT(t), "v=0 offer"); err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
+func TestCreateSessionSendsConfiguredAcknowledgementDelay(t *testing.T) {
+	for _, ms := range []int64{0, 1500} {
+		o := testOptions("")
+		o.AcknowledgementDelayMs = &ms
+		session, _ := createSessionBody(t, o)["session"].(map[string]any)
+		deleg, _ := session["delegation"].(map[string]any)
+		got, present := deleg["acknowledgement_delay_ms"]
+		if !present || got != float64(ms) {
+			t.Fatalf("acknowledgement_delay_ms = %v (présent=%v), attendu %d", got, present, ms)
+		}
+	}
+}
+
+func TestCreateSessionOmitsAcknowledgementDelayWhenUnset(t *testing.T) {
+	session, _ := createSessionBody(t, testOptions(""))["session"].(map[string]any)
+	deleg, _ := session["delegation"].(map[string]any)
+	if _, present := deleg["acknowledgement_delay_ms"]; present {
+		t.Fatalf("acknowledgement_delay_ms ne doit pas être envoyé : %v", deleg)
+	}
+}
+
+func TestNewRejectsNegativeAcknowledgementDelay(t *testing.T) {
+	ms := int64(-1)
+	o := testOptions("")
+	o.AcknowledgementDelayMs = &ms
+	if _, err := openailive.New(o); err == nil {
+		t.Fatal("un délai négatif doit être refusé")
+	}
+}

@@ -59,10 +59,10 @@ type Phrases struct {
 	ResultTemplate string
 }
 
-// validate vérifie que chaque phrase est renseignée et que le gabarit de
+// Validate vérifie que chaque phrase est renseignée et que le gabarit de
 // résultat contient exactement un `%s` et aucun autre verbe de formatage
 // (`%%` reste admis).
-func (p Phrases) validate() error {
+func (p Phrases) Validate() error {
 	for name, v := range map[string]string{
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
 		"Failure": p.Failure, "NoAgent": p.NoAgent, "ResultTemplate": p.ResultTemplate,
@@ -98,7 +98,7 @@ var _ port.Delegations = (*Manager)(nil)
 
 // NewManager valide sa configuration.
 func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager, error) {
-	if err := phrases.validate(); err != nil {
+	if err := phrases.Validate(); err != nil {
 		return nil, err
 	}
 	switch {

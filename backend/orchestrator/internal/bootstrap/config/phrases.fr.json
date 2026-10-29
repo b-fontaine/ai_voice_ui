@@ -1,0 +1,8 @@
+{
+  "generic": "Je regarde ça, un instant.",
+  "failure": "Je n'ai pas pu récupérer cette information, l'agent est indisponible.",
+  "queue_full": "Je termine d'abord la demande en cours.",
+  "no_request": "Je n'ai pas bien saisi la demande, pouvez-vous répéter ?",
+  "no_agent": "Aucun agent n'est disponible pour le moment.",
+  "result_template": "Voici ce que je constate : %s"
+}
