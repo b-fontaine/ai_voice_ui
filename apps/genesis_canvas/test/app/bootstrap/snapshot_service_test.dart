@@ -60,7 +60,7 @@ void main() {
       expect(errors.toString(), isEmpty);
     });
 
-    testWidgets('chemin inscriptible : message sur stderr et sortie 1', (
+    testWidgets('chemin non inscriptible : message sur stderr et sortie 1', (
       tester,
     ) async {
       await pumpBoundary(tester);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
-import 'package:genesis_canvas/main.dart';
+import 'package:genesis_canvas/app/app.dart';
 import 'package:genui/genui.dart' show Surface;
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.

@@ -25,9 +25,6 @@ class ScenarioPlayer {
     final lines = Stream<String>.fromIterable(
       const LineSplitter().convert(text),
     );
-    final source = delay == null
-        ? A2uiReplaySource(lines: lines)
-        : A2uiReplaySource(lines: lines, delay: delay!);
-    yield* source.messages();
+    yield* A2uiReplaySource(lines: lines, delay: delay).messages();
   }
 }

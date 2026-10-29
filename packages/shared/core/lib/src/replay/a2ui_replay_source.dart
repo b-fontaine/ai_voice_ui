@@ -25,7 +25,8 @@ class A2uiReplayFormatException implements Exception {
 /// Les messages sont émis dans l'ordre, après avoir attendu l'écart entre
 /// leur `t_ms` et celui du message précédent.
 class A2uiReplaySource {
-  A2uiReplaySource({required this.lines, this.delay = _realDelay});
+  A2uiReplaySource({required this.lines, ReplayDelay? delay})
+    : delay = delay ?? _realDelay;
 
   /// Lignes JSONL à rejouer.
   final Stream<String> lines;

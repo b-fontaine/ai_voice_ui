@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genesis_canvas/main.dart';
+import 'package:genesis_canvas/app/app.dart';
 
 void main() {
   testWidgets("l'app démarre et affiche l'orbe et le canevas vide", (

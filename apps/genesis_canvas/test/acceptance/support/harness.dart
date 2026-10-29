@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
-import 'package:genesis_canvas/main.dart';
+import 'package:genesis_canvas/app/app.dart';
 
 /// État partagé entre les étapes d'un scénario de l'outillage de boucle.
 ///
