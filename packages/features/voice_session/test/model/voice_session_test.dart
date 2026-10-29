@@ -5,163 +5,12 @@ import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 
-/// Faux transport : frontière WebRTC. Chaque appel est journalisé.
-class _FakeTransport implements VoiceTransport {
-  _FakeTransport(this.index, this._events);
-
-  final int index;
-  final List<String> _events;
-  Future<String> Function()? offerHook;
-  Future<void> Function(String sdp)? answerHook;
-
-  void _log(String call) => _events.add('t$index.$call');
-
-  @override
-  Future<String> createOfferSdp() async {
-    _log('createOfferSdp');
-    return offerHook != null ? offerHook!() : 'offer-$index';
-  }
-
-  @override
-  Future<void> applyAnswer(String sdp) async {
-    _log('applyAnswer');
-    await answerHook?.call(sdp);
-  }
-
-  @override
-  Future<void> stop() async => _log('stop');
-
-  @override
-  Future<void> dispose() async => _log('dispose');
-}
-
-class _FakeRelay implements VoiceRelay {
-  _FakeRelay(this._events);
-
-  final List<String> _events;
-  int _count = 0;
-  final List<String> offers = <String>[];
-  Future<RelayAnswer> Function(String offer)? createHook;
-  Future<void> Function(String id)? deleteHook;
-
-  @override
-  Future<RelayAnswer> createSession(String offerSdp) async {
-    _events.add('relay.create');
-    offers.add(offerSdp);
-    _count++;
-    if (createHook != null) return createHook!(offerSdp);
-    return RelayAnswer(answerSdp: 'answer-$_count', sessionId: 's$_count');
-  }
-
-  @override
-  Future<void> deleteSession(String sessionId) async {
-    _events.add('relay.delete($sessionId)');
-    await deleteHook?.call(sessionId);
-  }
-}
-
-class _FakeChannel implements AppChannel {
-  _FakeChannel(this._events);
-
-  final List<String> _events;
-  final List<StreamController<AppChannelEnvelope>> controllers =
-      <StreamController<AppChannelEnvelope>>[];
-  Stream<AppChannelEnvelope> Function(String id)? streamBuilder;
-  int cancelCount = 0;
-
-  StreamController<AppChannelEnvelope> get last => controllers.last;
-
-  @override
-  Stream<AppChannelEnvelope> open(String sessionId) {
-    _events.add('channel.open($sessionId)');
-    if (streamBuilder != null) return streamBuilder!(sessionId);
-    final controller = StreamController<AppChannelEnvelope>(
-      onCancel: () => cancelCount++,
-    );
-    controllers.add(controller);
-    return controller.stream;
-  }
-}
-
-/// Flux dont l'annulation est sans effet : simule un événement tardif d'une
-/// ancienne connexion qui parviendrait quand même à la session.
-class _LeakyStream extends Stream<AppChannelEnvelope> {
-  void Function()? onDone;
-
-  @override
-  StreamSubscription<AppChannelEnvelope> listen(
-    void Function(AppChannelEnvelope event)? onData, {
-    Function? onError,
-    void Function()? onDone,
-    bool? cancelOnError,
-  }) {
-    this.onDone = onDone;
-    return _LeakySubscription();
-  }
-}
-
-class _LeakySubscription implements StreamSubscription<AppChannelEnvelope> {
-  @override
-  Future<void> cancel() async {}
-  @override
-  void onData(void Function(AppChannelEnvelope data)? handleData) {}
-  @override
-  void onError(Function? handleError) {}
-  @override
-  void onDone(void Function()? handleDone) {}
-  @override
-  void pause([Future<void>? resumeSignal]) {}
-  @override
-  void resume() {}
-  @override
-  bool get isPaused => false;
-  @override
-  Future<E> asFuture<E>([E? futureValue]) => Completer<E>().future;
-}
-
-AppChannelEnvelope _envelope(
-  String type,
-  Map<String, Object?> data, {
-  String session = 's1',
-}) => AppChannelEnvelope(
-  version: 1,
-  type: type,
-  session: session,
-  tMs: 10,
-  data: data,
-);
-
-class _Harness {
-  _Harness({Duration closeTimeout = const Duration(seconds: 2), this.logPath}) {
-    relay = _FakeRelay(events);
-    channel = _FakeChannel(events);
-    session = VoiceSession(
-      transportFactory: () {
-        final transport = _FakeTransport(transports.length + 1, events);
-        transports.add(transport);
-        onNewTransport?.call(transport);
-        return transport;
-      },
-      relay: relay,
-      channel: channel,
-      logFactory: () => EnvelopeLog(path: logPath, nowUnixMs: () => 1000),
-      closeTimeout: closeTimeout,
-    );
-  }
-
-  final String? logPath;
-  final List<String> events = <String>[];
-  final List<_FakeTransport> transports = <_FakeTransport>[];
-  void Function(_FakeTransport transport)? onNewTransport;
-  late final _FakeRelay relay;
-  late final _FakeChannel channel;
-  late final VoiceSession session;
-}
+import '../support/voice_fakes.dart';
 
 void main() {
   group('VoiceSession', () {
     test('démarrage nominal : ordre des appels puis Active', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
 
       expect(h.events, <String>[
@@ -175,7 +24,7 @@ void main() {
     });
 
     test('double start : un seul transport, une seule offre', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       final offer = Completer<String>();
       h.onNewTransport = (t) => t.offerHook = () => offer.future;
 
@@ -194,7 +43,7 @@ void main() {
     test(
       'stop pendant createOfferSdp : aucun POST, transport libéré',
       () async {
-        final h = _Harness();
+        final h = VoiceHarness();
         final offer = Completer<String>();
         h.onNewTransport = (t) => t.offerHook = () => offer.future;
 
@@ -215,7 +64,7 @@ void main() {
     );
 
     test('stop pendant le POST : DELETE au retour, transport libéré', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       final post = Completer<RelayAnswer>();
       h.relay.createHook = (_) => post.future;
 
@@ -240,7 +89,7 @@ void main() {
     test(
       'stop pendant applyAnswer : DELETE puis libération, pas de canal',
       () async {
-        final h = _Harness();
+        final h = VoiceHarness();
         final answer = Completer<void>();
         h.onNewTransport = (t) => t.answerHook = (_) => answer.future;
 
@@ -263,7 +112,7 @@ void main() {
     );
 
     test('POST 429 : RateLimited avec retryAfter, aucun DELETE', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       h.relay.createHook = (_) async => throw const RelayFailure(
         RelayFailureKind.rateLimited,
         retryAfter: Duration(seconds: 30),
@@ -291,7 +140,7 @@ void main() {
         RelayFailureKind.timeout: const BackendUnreachable(),
       };
       for (final entry in expected.entries) {
-        final h = _Harness();
+        final h = VoiceHarness();
         h.relay.createHook = (_) async => throw RelayFailure(entry.key);
         await h.session.start();
 
@@ -306,7 +155,7 @@ void main() {
     });
 
     test('createOfferSdp refusé : aucun POST, MicUnavailable', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       h.onNewTransport = (t) => t.offerHook = () async =>
           throw const VoiceTransportException(
             VoiceTransportFailure.micUnavailable,
@@ -318,7 +167,7 @@ void main() {
     });
 
     test('ICE trop longue : IceTimeout', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       h.onNewTransport = (t) => t.offerHook = () async =>
           throw const VoiceTransportException(VoiceTransportFailure.iceTimeout);
       await h.session.start();
@@ -328,7 +177,7 @@ void main() {
     });
 
     test('applyAnswer échoue après le 200 : DELETE puis libération', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       h.onNewTransport = (t) =>
           t.answerHook = (_) async =>
               throw const VoiceTransportException(VoiceTransportFailure.failed);
@@ -346,7 +195,7 @@ void main() {
     });
 
     test('canal 404 : SessionClosed sans DELETE', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       h.channel.last.addError(
         const AppChannelFailure(AppChannelFailureKind.sessionNotFound),
@@ -359,7 +208,7 @@ void main() {
     });
 
     test('canal injoignable : DELETE puis ConnectionLost', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       h.channel.last.addError(
         const AppChannelFailure(AppChannelFailureKind.unreachable),
@@ -377,10 +226,10 @@ void main() {
     test(
       'session.state closed : aucun DELETE, SessionClosed(reason)',
       () async {
-        final h = _Harness();
+        final h = VoiceHarness();
         await h.session.start();
         h.channel.last.add(
-          _envelope('session.state', <String, Object?>{
+          envelopeOf('session.state', <String, Object?>{
             'state': 'closed',
             'reason': 'expired',
           }),
@@ -395,10 +244,10 @@ void main() {
     );
 
     test('session.state closed d\'une autre session : ignoré', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       h.channel.last.add(
-        _envelope('session.state', <String, Object?>{
+        envelopeOf('session.state', <String, Object?>{
           'state': 'closed',
         }, session: 'autre'),
       );
@@ -409,7 +258,7 @@ void main() {
     });
 
     test('coupure du flux : DELETE puis ConnectionLost', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       await h.channel.last.close();
       await pumpEventQueue();
@@ -430,7 +279,7 @@ void main() {
           RelayFailureKind.sessionNotFound,
           RelayFailureKind.unreachable,
         ]) {
-          final h = _Harness();
+          final h = VoiceHarness();
           h.relay.deleteHook = (_) async => throw RelayFailure(kind);
           await h.session.start();
           await h.session.stop();
@@ -446,7 +295,7 @@ void main() {
     );
 
     test('DELETE sans réponse : borné par closeTimeout', () async {
-      final h = _Harness(closeTimeout: const Duration(milliseconds: 50));
+      final h = VoiceHarness(closeTimeout: const Duration(milliseconds: 50));
       h.relay.deleteHook = (_) => Completer<void>().future;
       await h.session.start();
       await h.session.stop();
@@ -458,7 +307,7 @@ void main() {
     test(
       'redémarrage après stop : nouveau transport, offre distincte',
       () async {
-        final h = _Harness();
+        final h = VoiceHarness();
         await h.session.start();
         await h.session.stop();
         await h.session.start();
@@ -471,7 +320,7 @@ void main() {
     );
 
     test('redémarrage après Failed : nouveau transport', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       h.relay.createHook = (_) async =>
           throw const RelayFailure(RelayFailureKind.relayFailed);
       await h.session.start();
@@ -488,8 +337,8 @@ void main() {
     test(
       'onDone tardif de la session 1 pendant le démarrage de la 2',
       () async {
-        final h = _Harness();
-        final leaky = _LeakyStream();
+        final h = VoiceHarness();
+        final leaky = LeakyStream();
         h.channel.streamBuilder = (_) => leaky;
         await h.session.start();
         await h.session.stop();
@@ -514,14 +363,14 @@ void main() {
     );
 
     test('enveloppes de l\'ancienne session ignorées', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       final received = <AppChannelEnvelope>[];
       h.session.envelopes.listen(received.add);
       await h.session.start();
       final old = h.channel.last;
       await h.session.stop();
       await h.session.start();
-      old.add(_envelope('transcript', <String, Object?>{'text': 'vieux'}));
+      old.add(envelopeOf('transcript', <String, Object?>{'text': 'vieux'}));
       await pumpEventQueue();
 
       expect(received, isEmpty);
@@ -529,7 +378,7 @@ void main() {
     });
 
     test('dispose pendant Active libère tout, ordre exact', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       await h.session.dispose();
 
@@ -548,7 +397,7 @@ void main() {
     });
 
     test('stop concurrent : idempotent', () async {
-      final h = _Harness();
+      final h = VoiceHarness();
       await h.session.start();
       await Future.wait(<Future<void>>[h.session.stop(), h.session.stop()]);
       await h.session.stop();
@@ -562,7 +411,7 @@ void main() {
     test(
       'status rejoue le statut courant et n\'émet jamais d\'erreur',
       () async {
-        final h = _Harness();
+        final h = VoiceHarness();
         final seen = <VoiceSessionStatus>[];
         var errors = 0;
         h.session.status.listen(seen.add, onError: (_) => errors++);
@@ -593,12 +442,12 @@ void main() {
     test('envelopes : diffusées et écrites dans le journal', () async {
       final dir = Directory.systemTemp.createTempSync('voice_session_test');
       addTearDown(() => dir.deleteSync(recursive: true));
-      final h = _Harness(logPath: '${dir.path}/session.jsonl');
+      final h = VoiceHarness(logPath: '${dir.path}/session.jsonl');
       final received = <AppChannelEnvelope>[];
       h.session.envelopes.listen(received.add);
       await h.session.start();
       h.channel.last.add(
-        _envelope('transcript', <String, Object?>{'text': 'a'}),
+        envelopeOf('transcript', <String, Object?>{'text': 'a'}),
       );
       await pumpEventQueue();
       await h.session.stop();
