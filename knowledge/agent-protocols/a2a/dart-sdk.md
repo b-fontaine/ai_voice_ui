@@ -5,7 +5,7 @@ tags: [a2a, dart, flutter, sdk, pub.dev]
 status: verified
 updated: 2026-10-26
 sources: [https://pub.dev/packages/a2a, https://pub.dev/packages/genui_a2a, https://a2a-protocol.org/latest/]
-links: [proto-a2a-overview, proto-a2ui-pointer, proto-stack-recommendation, genui-a2a-connector]
+links: [proto-a2a-go-v03-compat, proto-a2a-overview, proto-a2ui-pointer, proto-stack-recommendation, genui-a2a-connector]
 ---
 # A2A en Dart : pas de SDK officiel, deux options partielles
 

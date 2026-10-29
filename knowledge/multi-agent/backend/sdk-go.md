@@ -5,7 +5,7 @@ tags: [backend, go, sdk, gpt-live, gemini, mcp, a2a, a2ui, temporal]
 status: verified
 updated: 2026-10-27
 sources: [https://github.com/openai/openai-go/blob/main/live/api.md, https://github.com/openai/openai-go/blob/main/live/live_sideband_websocket.go, https://github.com/openai/openai-go/releases, https://github.com/googleapis/go-genai/blob/main/tokens.go, https://github.com/modelcontextprotocol/go-sdk/releases, https://github.com/a2aproject/a2a-go, https://github.com/google/adk-go/blob/main/go.mod, https://github.com/temporalio/ai-integrations/tree/main/go/googleadk, https://github.com/temporalio/sdk-go/releases, https://github.com/firebase/genkit/tree/main/go/plugins/a2ui/exp, https://github.com/google/jsonschema-go]
-links: [ma-backend-sdk-landscape, ma-backend-stack-recommendation, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gemini-ephemeral-tokens, proto-mcp-overview, proto-a2a-overview]
+links: [proto-a2a-go-v03-compat, ma-backend-sdk-landscape, ma-backend-stack-recommendation, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gemini-ephemeral-tokens, proto-mcp-overview, proto-a2a-overview]
 ---
 # Écosystème Go (vérifié dans le code le 2026-10-27)
 
@@ -20,7 +20,7 @@ links: [ma-backend-sdk-landscape, ma-backend-stack-recommendation, rt-gpt-live-s
 
 **MCP — `modelcontextprotocol/go-sdk` v1.8.0** : 2026-07-28 complet depuis v1.7.0 (`server/discover`, `input_required`, repli `initialize`). `ClientCredentialsHandler` depuis v1.6.0 ; OAuth client marqué expérimental.
 
-**A2A — `github.com/a2aproject/a2a-go/v2` v2.7.0 (2026-10-21, `go 1.26.0`)** : spec v1.0, bindings gRPC / REST / JSON-RPC, compat v0.3 via `a2acompat`.
+**A2A — `github.com/a2aproject/a2a-go/v2` v2.7.0 (2026-10-21, `go 1.26.0`)** : spec v1.0, bindings gRPC / REST / JSON-RPC, compat v0.3 via `a2acompat/a2av0` (vérifié le 2026-10-29 face à `genui_a2a` : [[proto-a2a-go-v03-compat]]).
 
 **ADK Go — `google.golang.org/adk/v2` v2.6.0 (2026-10-13, `go 1.26.10`)** : `openaimodel`, `RunLive`, mcptoolset, `server/adka2a/v2`. Le go.mod tire openai-go **v3.82.0**, otel **v1.47.0**, a2a-go v0.3.15 **et** v2.6.0. Ligne v1.9.0 maintenue en parallèle.
 
