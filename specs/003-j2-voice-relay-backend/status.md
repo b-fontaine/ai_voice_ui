@@ -1,6 +1,6 @@
 # 003 — État
 
-- **Étape** : Refactorisation
+- **Étape** : Vérification
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (T17) : backend/orchestrator/{Dockerfile,.dockerignore,config/voice-instructions.fr.md,cmd/orchestrator/main.go,internal/bootstrap/{healthcheck.go,healthcheck_test.go}}, docker-compose.yaml, .github/workflows/ci.yaml, plan.md, tasks.md, status.md
@@ -35,6 +35,7 @@
 | 2026-10-29 | Refactor | R8 : `Hub.Forget` et `Meter.Reset` supprimés avec leurs tests (aucun appelant, `grep` et `go vet` y compris `-tags acceptance`) ; `parseListenPort` partagé avec `HealthcheckURL` ; commentaire HTML retiré de `voice-instructions.fr.md`, note dans `config/README.md` ; rouge initial : `undefined: parseListenPort` (`TestHealthcheckURLInvalidPort`) ; vert sous `-race -count=3` | .omc/state/loop/gates/20261029-193952-full.log |
 | 2026-10-29 | Refactor | R9 : `domain.Payload` (interface fermée, `isPayload()`) pour `Message.Data` ; `WireData`/`DataJSON` déplacés dans `internal/adapter/wire` (importé par `wsapp` et `jsonljournal`, `domain` = stdlib seule, `app/*` sans `adapter/wire`, vérifié par `go list -deps`) ; rouge initial : `no non-test Go files in .../adapter/wire` (`TestWireDataCoversAllPayloads`), vert sous `-race -count=3` et `-tags acceptance` ; contrat de sortie inchangé | .omc/state/loop/gates/20261029-194501-full.log |
 | 2026-10-29 | Refactor | R10 : `httpapi.Options.AllowedHosts` (requis) + contrôle de `Host` sur toutes les routes (421 JSON opaque), construit par `bootstrap.Config.AllowedHosts` (`127.0.0.1`/`localhost`/`[::1]` + `:<port>`, plus `ALLOWED_HOSTS` facultative) ; A1 vérifie aussi les logs slog (`startAppWithLogger`, serveur de test sur listener autorisé) ; `golang:1.27.3` et `distroless/static-debian12:nonroot` figées par digest, `docker build` OK ; rouge initial : tests ne compilant pas (`AllowedHosts` indéfini), puis 421 sur les tests bootstrap existants jusqu'à l'autorisation de leur hôte | .omc/state/loop/gates/20261029-194827-full.log |
+| 2026-10-29 | Refactorisation terminée | R1-R12 appliquées (R1 bloquante levée) ; `gate.sh --full` vert sur arbre propre | voir ligne suivante |
 
 ## Revue d'architecte
 Verdict (architect-reviewer, 2026-10-29) : **BLOQUANT** (R1) ; conforme sous réserve de R2 à R5 une fois R1 corrigé. Conforme : dépendances hexagonales, injection par constructeur, aucune fuite de clé, journal sans traversée de chemin, origine WebSocket par défaut, compose durci, `Publish` non bloquant, niveau RMS 5 Hz, aucun skip/TODO.
