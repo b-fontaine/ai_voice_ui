@@ -6,10 +6,12 @@
 | NNN | Fonctionnalité | Backlog | Jalon | Étape | Mise à jour |
 |---|---|---|---|---|---|
 | 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | Terminée, publiée (`b9db83c`) | 2026-10-29 |
+| 001 | SP-03 : A2A en Go ↔ `genui_a2a` (spike) | EP-03 | J1 | Expérimenter | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-29 | 001 (SP-03) : étape Définir faite (spec, plan, tâches) ; branche feat/001-sp-03-a2a-go-genui. |
 | 2026-10-29 | 000 : publiée sur `origin/main` (`b9db83c`, `publish.sh` code 0, gate --full vert après fusion de `origin/main`). |
 | 2026-10-29 | 000 : clôture — docs produit à jour (frontend.md, roadmap, backlog) ; fusion dans `loop` et publication par `publish.sh`. |
 | 2026-10-29 | 000 : refactorisation terminée (R1 à R10, gate --full vert à `7a52729`) ; passage à la Vérification (gate + capture app-smoke). |
