@@ -14,7 +14,7 @@ slog() { echo "$(date '+%F %T') superviseur : $*" | tee -a "$STATE/supervisor.lo
 
 pane_busy() {   # vrai si un tour est en cours, une boîte de dialogue ou une attente de quota s'affiche
   tmux capture-pane -p -t "$LOOP_TMUX_SESSION" 2>/dev/null | tail -n 15 \
-    | grep -qiE 'esc to (interrupt|cancel)|continuing automatically|limit reached|do you want|❯ *[0-9]\.'
+    | grep -qiE 'esc to (interrupt|cancel)|enter to confirm|continuing automatically|limit reached|do you want|❯ *[0-9]\.'
 }
 restart() {
   slog "relance : $1"
