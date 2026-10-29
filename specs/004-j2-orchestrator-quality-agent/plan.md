@@ -24,6 +24,8 @@
   - **T14** `port.AgentCard.Label` = nom du premier skill (libellé de `agent.activity`).
   - **T14** `port.AgentError{Kind, Reason}` (type `*AgentError`), natures fermées `AgentUnreachable`, `AgentTimeout`, `AgentRejected`, `AgentFailed`, `AgentCanceled`, `AgentProtocol` ; message sans URL ni contenu brut.
   - **T14** `a2aclient.Options{CardURL string; Timeout time.Duration; HTTPClient *http.Client; Logger *slog.Logger}` et `a2aclient.New(Options) (*Agent, error)` ; `Agent` : `Card`, `Send`, `LastName`, `FallbackName`.
+- **Déploiement local (T17)** : service compose `agent-quality` (aucun port publié, sans `env_file`, durci) sur le réseau `agents` `internal: true` ; l'orchestrateur est sur `default` et `agents` et dépend de sa santé.
+- **CI (T17)** : job `backend` en matrice sur les deux modules ; `backend/check-compose.sh` contrôle le compose sans `.env` (`--no-env-resolution`).
   - **T15a** `orchestrate.RequestWindow` (`NewRequestWindow`, `Add(port.LiveEvent)`, `Take(offsetMs int64) (request string, late int)`, `Len`) : demande = concaténation des deltas d'entrée de `StartMs` < offset, trimée, ≤ 1 000 runes (fin gardée) ; tampon ≤ 4 096 runes ; deltas tardifs écartés et comptés.
   - **T15b** `port.VoiceReply`, `port.Delegations`, `port.SessionDelegations` (A1) ; `orchestrate.NewManager(Runner, Phrases{Generic, QueueFull, NoRequest}, Options{QueueDepth, AgentTimeout, GuardTimeout, SeenCap, Logger})` implémente `port.Delegations`.
   - **T15b** `Runner.Run(ctx, Delegation{ID, Request, OffsetMs, GenericDone})` : une exécution à la fois par session ; `context.Cause(ctx)` vaut `ErrSessionClosed` ou `ErrAgentTimeout` ; `Close` borné par `GuardTimeout`, idempotent, aucun commentaire ensuite.

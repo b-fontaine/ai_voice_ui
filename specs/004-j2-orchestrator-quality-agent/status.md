@@ -38,3 +38,4 @@ Non vérifié par la revue : `offset_ms` sur la timeline des deltas en pratique 
 
 ## Questions pour le porteur
 Aucune.
+| 2026-10-29 | TDD | T17 : agent-quality dans le compose (réseau interne), CI en matrice, `backend/check-compose.sh`, instructions vocales | `tools/loop/gate.sh --full` |

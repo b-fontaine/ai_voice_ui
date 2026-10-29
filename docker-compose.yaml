@@ -2,13 +2,23 @@
 # Usage : `docker compose up --build`, après avoir créé `.env`.
 # `.env` est requis (clé OPENAI_API_KEY) et ne doit JAMAIS être commité.
 # Les valeurs VOICE_* ci-dessous sont des défauts de configuration, surchargeables par `.env`.
-# Les agents A2A viendront ici, un service par agent (fonctionnalité 004).
+# Un service par agent A2A (ici `agent-quality` ; J3 ajoutera les autres). Les agents
+# vivent sur le réseau interne `agents` : aucun port publié, aucune sortie réseau, aucun secret.
 services:
   orchestrator:
     build:
       context: backend/orchestrator
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
+      # Agents A2A joignables (réseau interne `agents`) et catalogue A2UI, partagé avec l'agent.
+      AGENTS: http://agent-quality:8090/.well-known/agent-card.json
+      A2UI_CATALOG_ID: ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+      A2UI_COMPONENTS: ${A2UI_COMPONENTS:-Column,Text}
+      # Délai maximal d'une délégation à un agent (NFR-03) et d'acquittement d'un commentaire vocal.
+      AGENT_TIMEOUT: ${AGENT_TIMEOUT:-8s}
+      VOICE_APPEND_ACK_TIMEOUT: ${VOICE_APPEND_ACK_TIMEOUT:-2s}
       VOICE_MODEL: ${VOICE_MODEL:-gpt-live-1}
       VOICE_VOICE: ${VOICE_VOICE:-brise}
       VOICE_DELEGATION_TYPE: ${VOICE_DELEGATION_TYPE:-client}
@@ -31,6 +41,10 @@ services:
       VOICE_INSTRUCTIONS_FILE: /etc/genesis/voice-instructions.fr.md
     ports:
       - "127.0.0.1:8080:8080"
+    networks: [default, agents]
+    depends_on:
+      agent-quality:
+        condition: service_healthy
     volumes:
       - journal:/var/lib/genesis/journal
       - ./backend/orchestrator/config/voice-instructions.fr.md:/etc/genesis/voice-instructions.fr.md:ro
@@ -44,6 +58,31 @@ services:
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
+
+  agent-quality:
+    build:
+      context: backend/agents/quality
+    # Pas de env_file : l'agent n'a pas besoin de la clé OpenAI. Aucun port publié.
+    environment:
+      AGENT_LISTEN_ADDR: 0.0.0.0:8090
+      AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
+      AGENT_PUBLIC_URL: http://agent-quality:8090
+      A2UI_CATALOG_ID: ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+    networks: [agents]
+    healthcheck:
+      test: ["CMD", "/agent-quality", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  agents:
+    internal: true
 
 volumes:
   journal:

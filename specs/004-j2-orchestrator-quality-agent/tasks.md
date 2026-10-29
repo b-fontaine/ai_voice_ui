@@ -23,7 +23,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T15d Go — branchement dans `voice.supervise` (port `Delegations`, `Close` avant `closed`, non bloquant) (A1) · test d'abord : `TestSuperviseForwardsDelegationWithoutBlocking`, `TestAppCloseWaitsDelegations`
 - [x] T15e Go — rétention séparée du hub pour `a2ui`/`agent.activity` (A4) et attribution `agent`/`task` de l'enveloppe (A7) · test d'abord : `TestLateSubscriberGetsSurfaceAfterManyTranscripts`, `TestWireA2UIAttribution`
 - [x] T16 Go — `bootstrap` : configuration (`AGENTS`, `A2UI_CATALOG_ID`, `A2UI_COMPONENTS`, `AGENT_TIMEOUT`, `VOICE_APPEND_ACK_TIMEOUT`, `VOICE_ACK_DELAY_MS`, fichier de phrases), ordre de `App.Close` · test d'abord : cas de config, `TestNewWiresOrchestrator`
-- [ ] T17 Infra — Dockerfile de l'agent, compose (réseau interne, healthcheck, durcissement), CI en matrice, instructions vocales · test d'abord : script de contrôle du `docker compose config --format json` (échoue avant)
+- [x] T17 Infra — Dockerfile de l'agent, compose (réseau interne, healthcheck, durcissement), CI en matrice, instructions vocales · test d'abord : script de contrôle du `docker compose config --format json` (échoue avant)
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
