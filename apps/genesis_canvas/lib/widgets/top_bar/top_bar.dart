@@ -23,10 +23,15 @@ class TopBar extends StatelessWidget {
     super.key,
     required this.orbLevel,
     this.speakingThreshold = 0.03,
+    this.startEnabled = true,
   });
 
   final ValueListenable<double> orbLevel;
   final double speakingThreshold;
+
+  /// `false` : « Démarrer » reste affiché mais désactivé (mode scénario, où
+  /// la source vivante n'est pas branchée).
+  final bool startEnabled;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -48,7 +53,7 @@ class TopBar extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(child: _Details(status: status)),
             const SizedBox(width: 16),
-            _SessionButton(status: status),
+            _SessionButton(status: status, startEnabled: startEnabled),
           ],
         ),
       ),
@@ -120,16 +125,20 @@ class _TranscriptLine extends StatelessWidget {
 }
 
 class _SessionButton extends StatelessWidget {
-  const _SessionButton({required this.status});
+  const _SessionButton({required this.status, required this.startEnabled});
 
   final VoiceSessionStatus status;
+  final bool startEnabled;
 
   @override
   Widget build(BuildContext context) => switch (status) {
     Idle() || Failed() => FilledButton(
       key: const Key('start-button'),
-      onPressed: () =>
-          context.read<VoiceSessionBloc>().add(const VoiceSessionStarted()),
+      onPressed: startEnabled
+          ? () => context.read<VoiceSessionBloc>().add(
+              const VoiceSessionStarted(),
+            )
+          : null,
       child: const Text('Démarrer'),
     ),
     Connecting() || Active() => FilledButton(

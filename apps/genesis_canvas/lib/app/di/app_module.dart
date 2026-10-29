@@ -47,6 +47,11 @@ abstract class AppModule {
 
   // Factories : une nouvelle instance par résolution (la page résout une
   // fois ; ces objets portent l'état d'une page et sont fermés avec elle).
+  //
+  // `LiveSessionEventSource` et `VoiceSessionBloc` ne sont volontairement PAS
+  // dans le graphe : résolus séparément, ils recevraient chacun leur propre
+  // `VoiceSession`. La page (racine de composition) les construit avec
+  // l'unique session qu'elle a résolue.
 
   @injectable
   VoiceSession voiceSession(
@@ -62,14 +67,6 @@ abstract class AppModule {
     logFactory: logFactory,
     closeTimeout: config.sessionCloseTimeout,
   );
-
-  @injectable
-  LiveSessionEventSource liveSessionEventSource(VoiceSession session) =>
-      LiveSessionEventSource(session);
-
-  @injectable
-  VoiceSessionBloc voiceSessionBloc(VoiceSession session) =>
-      VoiceSessionBloc(session);
 
   @injectable
   TranscriptBloc transcriptBloc() => TranscriptBloc();

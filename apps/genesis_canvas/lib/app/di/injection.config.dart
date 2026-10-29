@@ -46,12 +46,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i32.GenesisConfig>(),
       ),
     );
-    gh.factory<_i679.LiveSessionEventSource>(
-      () => appModule.liveSessionEventSource(gh<_i679.VoiceSession>()),
-    );
-    gh.factory<_i679.VoiceSessionBloc>(
-      () => appModule.voiceSessionBloc(gh<_i679.VoiceSession>()),
-    );
     return this;
   }
 }

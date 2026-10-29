@@ -6,9 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
+import 'package:genesis_canvas/app/config/genesis_config.dart';
+import 'package:genesis_canvas/app/di/injection.dart';
 import 'package:genesis_canvas/app/scenario/scenario_player.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:get_it/get_it.dart';
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
@@ -46,6 +49,14 @@ void main() {
   late StringBuffer errors;
   late Directory dir;
 
+  /// Graphe réel de l'app (aucune E/S à la résolution), propre à chaque test.
+  GetIt newGetIt() {
+    final getIt = GetIt.asNewInstance();
+    configureDependencies(getIt, config: const GenesisConfig());
+    addTearDown(getIt.reset);
+    return getIt;
+  }
+
   setUp(() {
     exitCodes = <int>[];
     errors = StringBuffer();
@@ -67,6 +78,7 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
+          getIt: newGetIt(),
           catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
           replay: withReplay
               ? ScenarioPlayer(
@@ -172,6 +184,7 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
+          getIt: newGetIt(),
           catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
           replay: messages.stream,
           snapshotFactory: (exitHandler) => SnapshotService(

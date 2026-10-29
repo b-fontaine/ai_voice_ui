@@ -37,7 +37,7 @@
 - [x] T20 Flutter — `agent_activity` : `AgentActivityBloc` (`working` → `completed`, `failed` avec `detail`, deux agents, `interrompu` en fin de session) · test d'abord : séquences d'événements
 - [x] T21 Flutter — `app/di` : modules injectable, graphe `live` seul (aucun fake dans `lib/`), `GenesisConfig` étendu (URL validée, journal, constantes d'orbe, délai de `DELETE`, aucune clé) · test d'abord : résolution complète du graphe sans entrée-sortie, `GenesisConfigTest` (V6 : `OPENAI_API_KEY` présente dans l'environnement de test, aucun champ ne la porte)
 - [x] T22 Flutter — widgets `top_bar` (orbe peint, transcription, bouton, messages de `VoiceFailure`) et `agents_rail` · test d'abord : widget tests (repos, parole, réflexion seulement si session active et agent actif, échec) ; **preuve NFR-04** : 60 images avec un niveau qui varie, aucun `build` de `TopBar` ni de la page (compteur de builds)
-- [ ] T23 Flutter — page `genesis_canvas` et `app/lifecycle` : câblage source → Blocs (abonnement avant connexion, sous-flux canevas dérivé une fois), `GENESIS_SCENARIO` désactive la source vivante et « Démarrer », ordre de fermeture, `AppLifecycleListener(onExitRequested)` borné · test d'abord : test de page avec le faux backend (V1), ordre de fermeture observé, `loop_harness.feature` toujours vert
+- [x] T23 Flutter — page `genesis_canvas` et `app/lifecycle` : câblage source → Blocs (abonnement avant connexion, sous-flux canevas dérivé une fois), `GENESIS_SCENARIO` désactive la source vivante et « Démarrer », ordre de fermeture, `AppLifecycleListener(onExitRequested)` borné · test d'abord : test de page avec le faux backend (V1), ordre de fermeture observé, `loop_harness.feature` toujours vert
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert

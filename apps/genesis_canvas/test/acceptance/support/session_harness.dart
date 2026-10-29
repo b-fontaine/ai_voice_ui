@@ -50,6 +50,20 @@ class SessionHarness {
     // Le démontage peut lancer une fermeture de session (DELETE) : on laisse
     // la boucle réelle la terminer avant de couper le serveur.
     await tester.pumpWidget(const SizedBox());
+    // La fermeture de la page est une chaîne asynchrone qui alterne E/S
+    // réelles (DELETE, fermeture du WSS) et continuations dans la zone
+    // FakeAsync : on la fait avancer par petits pas AVANT d'écouler le temps
+    // simulé, sans quoi ses délais bornés (8 s simulées) expireraient avant la
+    // réponse du serveur.
+    final session = backend.lastSessionId;
+    await pumpUntil(
+      tester,
+      () =>
+          transports.created.every((t) => t.isReleased) &&
+          (session == null || backend.appClientCount(session) == 0),
+      timeout: wait,
+      reason: 'la fermeture de la page ne libère pas le transport ni le WSS',
+    );
     await settleReal(tester);
     // Timers armés dans la zone FakeAsync (délais, ticker) : on les écoule.
     await tester.pump(const Duration(seconds: 20));
@@ -122,8 +136,12 @@ class SessionHarness {
     bool Function(Map<String, Object?> envelope) where,
   ) async {
     final session = backend.lastSessionId!;
-    final envelopes = (await FakeBackend.fixtureEnvelopes(session))
-        .where(where);
+    // Lecture de fichier : E/S réelle, donc hors de la zone FakeAsync (sinon
+    // l'attente ne se termine jamais).
+    final all = (await tester.runAsync(
+      () => FakeBackend.fixtureEnvelopes(session),
+    ))!;
+    final envelopes = all.where(where).toList();
     assert(envelopes.isNotEmpty, 'aucune enveloppe de la fixture retenue');
     for (final envelope in envelopes) {
       await onServer(tester, () async => backend.emitEnvelope(envelope));

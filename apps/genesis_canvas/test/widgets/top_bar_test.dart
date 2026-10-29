@@ -6,6 +6,7 @@ import 'package:entity_session/entity_session.dart'
     show AgentActivityState;
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
+import 'package:flutter/material.dart' show FilledButton;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -124,6 +125,21 @@ void main() {
         expect(rig.voice.received, <Matcher>[isA<VoiceSessionStopped>()]);
       });
     }
+
+    testWidgets('startEnabled false : Démarrer désactivé, rien envoyé', (
+      tester,
+    ) async {
+      await rig.pump(
+        tester,
+        bar: TopBar(orbLevel: rig.level, startEnabled: false),
+      );
+
+      expect(find.byKey(_start), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.byKey(_start)).onPressed, isNull);
+      await tester.tap(find.byKey(_start), warnIfMissed: false);
+      await tester.pump();
+      expect(rig.voice.received, isEmpty);
+    });
 
     testWidgets('Stopping : Arrêter désactivé', (tester) async {
       await rig.pump(tester);

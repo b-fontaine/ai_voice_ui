@@ -52,8 +52,6 @@ void main() {
     expect(getIt<VoiceTransport Function()>()(), isA<FlutterWebRtcTransport>());
     expect(getIt<EnvelopeLog Function()>()(), isA<EnvelopeLog>());
     final session = getIt<VoiceSession>();
-    expect(getIt<LiveSessionEventSource>(), isNotNull);
-    expect(getIt<VoiceSessionBloc>(), isNotNull);
     expect(getIt<TranscriptBloc>(), isNotNull);
     expect(getIt<AgentActivityBloc>(), isNotNull);
     expect(session, isNotNull);
@@ -82,13 +80,16 @@ void main() {
     expect(getIt<VoiceRelay>(), same(getIt<VoiceRelay>()));
     expect(getIt<AppChannel>(), same(getIt<AppChannel>()));
     expect(getIt<VoiceSession>(), isNot(same(getIt<VoiceSession>())));
-    expect(getIt<VoiceSessionBloc>(), isNot(same(getIt<VoiceSessionBloc>())));
     expect(getIt<TranscriptBloc>(), isNot(same(getIt<TranscriptBloc>())));
     expect(getIt<AgentActivityBloc>(), isNot(same(getIt<AgentActivityBloc>())));
-    expect(
-      getIt<LiveSessionEventSource>(),
-      isNot(same(getIt<LiveSessionEventSource>())),
-    );
+  });
+
+  test('la source et le Bloc de session sont construits par la page, '
+      'pas par le graphe (une seule VoiceSession)', () {
+    final getIt = build();
+
+    expect(getIt.isRegistered<LiveSessionEventSource>(), isFalse);
+    expect(getIt.isRegistered<VoiceSessionBloc>(), isFalse);
   });
 
   test('VoiceTransport Function() renvoie des transports distincts', () {
