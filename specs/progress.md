@@ -9,7 +9,7 @@
 | 001 | SP-03 : A2A en Go ↔ `genui_a2a` (spike) | EP-03 | J1 | Terminée ✅, publiée (`529219a`) | 2026-10-29 |
 | 002 | SP-02 : session GPT-Live par relais SDP (spike réduit) | EP-02 | J1 | Terminée ⚠️ (résultat partiel), publiée (`82465d5`) | 2026-10-29 |
 | 003 | J2 : backend squelette (relais SDP, sideband, app-channel, compose, CI) | EP-01, EP-02 | J2 | Terminée ✅, publiée (`c193434`) | 2026-10-29 |
-| 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Refactorisation | 2026-10-29 |
+| 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Vérification | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
