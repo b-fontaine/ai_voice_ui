@@ -8,7 +8,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T03 Go — A3 : configuration injectée, refus d'une adresse non loopback · test d'abord : idem
 
 ## TDD
-- [ ] T10 Go — `go.mod` (Go 1.27.3) + `Config` depuis l'environnement, `String()` sans secret · test d'abord : `TestConfigFromEnv`
+- [x] T10 Go — `go.mod` (Go 1.27.3) + `Config` depuis l'environnement, `String()` sans secret · test d'abord : `TestConfigFromEnv`
 - [ ] T11 Go — niveau : RMS PCM16 24 kHz par bloc, agrégation 5 Hz, bornes 0..1 · test d'abord : `TestRMS`, `TestFiveHz`
 - [ ] T12 Go — ports + service `voice.Open` (offre → answer, sideband attaché, `Close` propre avec délai de garde) · test d'abord : `TestOpenAttachesSideband`, `TestCloseWaitsClosed`
 - [ ] T13 Go — adaptateur `openailive` (httptest rejouant des trames de SP-02) · test d'abord : `TestCreateSessionContract`, `TestSidebandEvents`
