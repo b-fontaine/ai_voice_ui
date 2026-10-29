@@ -1,5 +1,6 @@
 # Outils d'agents et IDE
 .omc/
+tools/loop/loop.local.env
 .playwright-mcp/
 .idea/
 .vscode/

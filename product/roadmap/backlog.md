@@ -5,7 +5,7 @@ area: roadmap
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3-p7, product/sources/product-description.pdf#p11-p12]
-links: [pdr-0027-talk-context-meetup-flutter-nantes, p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0029-local-docker-compose-hosting, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0037-voice-brise-delegated-instructions, pdr-0040-reference-dataset-adjusted-by-assistant]
+links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0042-calendar-and-cut-order-validated, pdr-0043-light-spec-kit-sdd-template, pdr-0027-talk-context-meetup-flutter-nantes, p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0029-local-docker-compose-hosting, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0037-voice-brise-delegated-instructions, pdr-0040-reference-dataset-adjusted-by-assistant]
 tags: [backlog, epics, moscow, couverture, exigences]
 ---
 # Backlog : epics → exigences → jalons
@@ -33,10 +33,12 @@ Questions encore ouvertes qui conditionnent les epics : EP-03 (Q-17), EP-04 (Q-2
 
 | Livrable | Epic | Jalon | Décision |
 |---|---|---|---|
-| `docker-compose.yaml` (backend Go + un service par agent, choix de conception ; ports sur `127.0.0.1` si Q-48 confirmée ; `.env` non commité) | EP-01 | J2 | [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) |
+| `docker-compose.yaml` (backend Go + un service par agent, choix de conception ; ports sur `127.0.0.1`, [pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md) ; `.env` non commité) | EP-01 | J2 | [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) |
 | CI GitHub Actions (tests, build Linux ; minimale en J2, réductible : coupe C3) | EP-01 | J2 | [pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md) |
 | Texte des instructions vocales (français, répliques courtes, commentaire pendant la construction) | EP-02 | J3, réglage J7 | [pdr-0037](../decisions/pdr-0037-voice-brise-delegated-instructions.md) |
 | Valeurs du jeu de référence dans `dataset.md` | EP-09 | J3 | [pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md) |
+
+Mode de développement : boucle autonome (`tools/loop/README.md`), un dossier `specs/NNN-<slug>/` par fonctionnalité ([pdr-0043](../decisions/pdr-0043-light-spec-kit-sdd-template.md)) ; première fonctionnalité `specs/000-loop-harness`, puis SP-03, SP-02, J2 ([roadmap](roadmap.md)).
 
 Slides et supports du talk : uniquement sur demande explicite du porteur ([pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)).
 

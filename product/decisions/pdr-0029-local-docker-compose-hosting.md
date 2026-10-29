@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [conversation porteur 2026-10-29, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, knowledge:rt-ephemeral-keys, knowledge:adr-0003-backend-go]
-links: [pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0028-linux-demo-machine, pdr-0031-github-actions-ci-linux, pdr-0036-real-a2a-agents-produce-a2ui, p-ar-backend, p-ar-security, p-ar-overview, p-ar-stage-runtime, p-rm-backend-production-plan, p-rm-beyond, p-rm-roadmap, p-rm-open-questions, adr-0002-orchestrator-backend, adr-0003-backend-go, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, rt-ephemeral-keys, proj-sk-backend]
+links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0028-linux-demo-machine, pdr-0031-github-actions-ci-linux, pdr-0036-real-a2a-agents-produce-a2ui, p-ar-backend, p-ar-security, p-ar-overview, p-ar-stage-runtime, p-rm-backend-production-plan, p-rm-beyond, p-rm-roadmap, p-rm-open-questions, adr-0002-orchestrator-backend, adr-0003-backend-go, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, rt-ephemeral-keys, proj-sk-backend]
 tags: [pdr, decision, hebergement, docker, local, securite]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -17,7 +17,7 @@ superseded_by: null
 ---
 # PDR-0029 — Hébergement local de la démo
 
-> **En bref.** Tout tourne **en local** sur la machine de démo. Un `docker-compose.yaml`, rédigé par l'assistant, lance le backend Go et les agents A2A. L'app Flutter desktop tourne **en debug** sur la machine, hors conteneur. La clé OpenAI reste côté backend, dans une variable d'environnement non commitée. Tranche Q-15 (porteur). Le dépôt du code (Q-27) et la protection de la route de relais (Q-48) restent **ouverts** : recommandations de l'assistant, à confirmer par le porteur.
+> **En bref.** Tout tourne **en local** sur la machine de démo. Un `docker-compose.yaml`, rédigé par l'assistant, lance le backend Go et les agents A2A. L'app Flutter desktop tourne **en debug** sur la machine, hors conteneur. La clé OpenAI reste côté backend, dans une variable d'environnement non commitée. Tranche Q-15 (porteur). Le dépôt du code (Q-27) et la protection de la route de relais (Q-48) étaient ouverts ; ils sont confirmés par [pdr-0041](pdr-0041-backend-in-this-repo-local-no-auth.md).
 
 Part de l'assistant : consignation de l'arbitrage du porteur (local, docker, debug) ; décisions contraintes sur les points qui en découlent (voir « Parties contraintes ») ; recommandations, non décidées, sur Q-27 et Q-48.
 
@@ -79,6 +79,7 @@ Une seule réponse est correcte au vu de l'arbitrage du porteur et des décision
 |---|---|---|
 | 2026-10-29 | Acceptée : « tout sera en local sur un docker (via un docker-compose.yaml que tu rédigeras) » ; « je pensais lancer le projet en debug sur mon poste » (conversation) | Benoît FONTAINE (porteur) |
 | 2026-10-29 | Parties contraintes consignées (app hors conteneur, un processus par agent, clé côté backend) | Assistant (décision contrainte) |
+| 2026-10-29 | Q-27 et Q-48 confirmées par le porteur : voir [pdr-0041](pdr-0041-backend-in-this-repo-local-no-auth.md) (sans réécriture de la présente décision) | Assistant |
 | 2026-10-29 | Revue : Q-27 (dépôt) et Q-48 (pas d'auth, `127.0.0.1`) retirées des parties contraintes et rouvertes (écart avec AGENTS.md § 2, parole du porteur muette) ; « un conteneur par agent » requalifié en choix de conception de l'assistant | Assistant |
 
 Pas d'archive brute.

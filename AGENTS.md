@@ -63,7 +63,9 @@ Sous Claude Code, les skills `product-lookup` (lire), `product-curate` (écrire)
 - **État :** `flutter_bloc` en **Bloc uniquement, Cubit interdit**. Events et states sont des `sealed`/`freezed`. Les flux passent par `emit.forEach`/`onEach`. Choisir un transformer de concurrence explicite.
 - **Tests :** TDD (rouge → vert → refactor). Les comportements utilisateur sont décrits en BDD avec `bdd_widget_test` (fichiers `.feature`) **avant** l'implémentation. On ne mocke qu'aux frontières (runners voix, réseau, plateforme).
 - **Orchestrateur :** il tourne **côté backend dès le départ** (décision du 2026-10-27). L'app Flutter ne porte que l'audio et WebRTC, le rendu A2UI et les outils locaux sans secret. Voir `adr-0002-orchestrator-backend` ; architecture du produit : `product/architecture/overview.md` (patrons génériques : `ma-target-architecture`, `ma-where-to-run-agents`).
-- **Backend :** écrit **en Go** (décision du 2026-10-27), dans un module `backend/agent_orchestrator` du `septeo_saaster_kit`, en architecture hexagonale. Les fournisseurs (Live, A2UI) sont isolés derrière des ports. Les JWT sont vérifiés par JWKS (jamais `ParseUnverified`) et les origines CORS sont restreintes. Voir `adr-0003-backend-go` ; architecture du produit : `product/architecture/backend.md` ; plan de construction : `product/roadmap/backend-production-plan.md` (patron générique : `ma-backend-stack-recommendation`).
+- **Backend :** écrit **en Go** (décision du 2026-10-27), en architecture hexagonale. Les fournisseurs (Live, A2UI) sont isolés derrière des ports. Voir `adr-0003-backend-go` ; architecture du produit : `product/architecture/backend.md`.
+  - **Pour Genesis Canvas (démo, pdr-0029 et pdr-0041)** : le backend vit **dans ce dépôt**, sous `backend/`, et tourne **en local** via `docker-compose.yaml` (un conteneur pour l'orchestrateur, un par agent A2A). Les services n'écoutent que sur `127.0.0.1`, **sans authentification utilisateur** ; la clé OpenAI reste côté backend, dans un `.env` non versionné. Le plan de production (`product/roadmap/backend-production-plan.md`, saaster kit, JWT par JWKS) ne s'applique pas à la démo.
+  - **Si le backend est un jour exposé hors de la machine** : JWT vérifiés par JWKS (jamais `ParseUnverified`) et origines CORS restreintes (patron générique : `ma-backend-stack-recommendation`).
 - **Sécurité :** aucune clé API longue durée côté client. Utiliser des sessions ou jetons éphémères créés par un backend.
 - **Voix :**
   - une seule source de capture micro ;
@@ -101,3 +103,10 @@ Sous Claude Code, les skills `product-lookup` (lire), `product-curate` (écrire)
 - **Contrôle :** lancer `python3 -I knowledge/_tools/kb_lint.py`, qui doit sortir sans erreur.
 - **Refactoring périodique :** environ tous les 10 ajouts, fusionner les doublons, scinder les notes trop longues et revoir `entrypoints`/`tasks`. Sous Claude Code : skill `kb-curate`.
 - **Documentation produit :** même discipline pour `product/` (voir § 1 bis et `product/_conventions.md`) ; contrôle par `python3 -I product/_tools/product_lint.py`.
+
+## 6. Développement : spécifications et boucle autonome
+
+- **Une fonctionnalité = un dossier `specs/NNN-<slug>/`** (`spec.md`, `plan.md`, `tasks.md`, `status.md`), selon le gabarit SDD léger retenu par le porteur (pdr-0043). Il renvoie aux exigences de `product/` au lieu de les recopier. Avancement global : `specs/progress.md`.
+- **Tests d'acceptation** : Flutter dans `test/acceptance/` (bdd_widget_test), Go avec le build tag `acceptance`. Porte de qualité unique : `tools/loop/gate.sh --unit <pile>` pendant une tâche TDD, `tools/loop/gate.sh --full` avant toute fusion ou publication.
+- **Boucle autonome** : décrite dans `tools/loop/README.md` et `.claude/skills/dev-loop/SKILL.md`. Elle tourne dans un worktree séparé (`../ai_voice_ui-loop`, branche `loop`) et ne publie sur `main` que par `tools/loop/publish.sh`. Un agent qui n'est pas la boucle ne modifie pas ce worktree.
+

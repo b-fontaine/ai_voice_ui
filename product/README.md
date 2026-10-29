@@ -5,7 +5,7 @@ area: meta
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, AGENTS.md]
-links: [p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui]
+links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0042-calendar-and-cut-order-validated, pdr-0043-light-spec-kit-sdd-template, p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui]
 tags: [meta, readme, entree, carte]
 ---
 # Genesis Canvas — documentation produit
@@ -40,19 +40,19 @@ tags: [meta, readme, entree, carte]
 | [architecture/](architecture/index.yaml) | [vue d'ensemble](architecture/overview.md), [frontend](architecture/frontend.md), [backend](architecture/backend.md), [agents et protocoles](architecture/agents-protocols.md) | Comment est-il construit, qui parle à qui ? |
 | | [stack](architecture/stack.md), [rejeu](architecture/replay.md), [sécurité](architecture/security.md), [qualité](architecture/quality.md), [scène](architecture/stage-runtime.md) | Avec quelles versions, comment tient-il sans réseau, comment le teste-t-on et le joue-t-on en salle ? |
 | [roadmap/](roadmap/index.yaml) | [roadmap](roadmap/roadmap.md), [backlog](roadmap/backlog.md), [spikes](roadmap/spikes.md), [questions ouvertes](roadmap/open-questions.md), [au-delà](roadmap/beyond.md), [plan backend de production](roadmap/backend-production-plan.md) | Dans quel ordre le construire, que reste-t-il à décider, que faire après le talk ? |
-| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0040`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
+| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0043`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
 | méta | [conventions](_conventions.md), [sources](sources/README.md), [`index.yaml`](index.yaml) | Comment écrire ici, d'où viennent les faits ? |
 
 ## État au 2026-10-29
 
 | Élément | État |
 |---|---|
-| Jalon | **J0 Cadrage et docs** en relecture par le porteur ; calendrier daté proposé : J1 29/10 → J7 9/11, gel 10-11/11, talk 12/11 ([roadmap](roadmap/roadmap.md), Q-65) ; aucun code applicatif |
+| Jalon | **J0 Cadrage et docs** en relecture par le porteur ; calendrier daté validé (pdr-0042) : J1 29/10 → J7 9/11, gel 10-11/11, talk 12/11 ([roadmap](roadmap/roadmap.md)) ; développement par la boucle autonome (`tools/loop/`, fonctionnalités dans `specs/NNN-*`, [pdr-0043](decisions/pdr-0043-light-spec-kit-sdd-template.md)) ; aucun code applicatif encore |
 | Sources | fiche produit validée + 3 maquettes ([sources](sources/README.md)) |
 | Talk | 45 min, Meetup Flutter Nantes, **2026-11-12**, enregistré ; logistique et supports gérés par le porteur ([pdr-0027](decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)) |
 | Spikes | SP-00 Widgetbook 4 fait ; J1 réduit (29-30/10) : SP-10 genui sur Linux d'abord, SP-01, SP-03, SP-02 réduit ; SP-04 à SP-07 absorbés dans les jalons ; SP-09 sans objet ([spikes](roadmap/spikes.md)) |
-| Décisions | 40 PDR : 38 acceptées (dont 9 décisions contraintes : pdr-0018 à pdr-0026), 2 remplacées (pdr-0002 → pdr-0028, pdr-0006 → pdr-0032), aucune proposée ; 8 ADR hérités ([index](decisions/index.yaml)) |
-| Questions | 65 au registre : 39 closes (33 tranchées, 3 sans objet, 3 gérées par le porteur), 26 ouvertes ; 22 écarts entre sources, dont E1, E2, E3, E4, E10, E11, E15, E16, E19, E20, E21 et E22 tranchés (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
+| Décisions | 43 PDR : 41 acceptées (dont 9 décisions contraintes : pdr-0018 à pdr-0026), 2 remplacées (pdr-0002 → pdr-0028, pdr-0006 → pdr-0032), aucune proposée ; 8 ADR hérités ([index](decisions/index.yaml)) |
+| Questions | 65 au registre : 43 closes (37 tranchées, 3 sans objet, 3 gérées par le porteur), 22 ouvertes ; 22 écarts entre sources, dont E1, E2, E3, E4, E10, E11, E15, E16, E19, E20, E21 et E22 tranchés (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
 
 ## Décisions clés
 
@@ -66,8 +66,6 @@ Règle en vigueur ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-moc
 |---|---|
 | Q-01, Q-02, Q-29, Q-60, Q-62 tranchées par le porteur (pdr-0013 à pdr-0016) ; décisions contraintes : Q-03 (pdr-0018, A2UI v0.9), Q-04 (pdr-0019, limite = surfaces), Q-28 (pdr-0020, acte 1 = 4 surfaces), Q-33 (pdr-0021), Q-34 (pdr-0022, steps sans chiffre), Q-38 (pdr-0023, composition guidée par exemples), Q-58 (pdr-0024, acte 2 Android seul), Q-59 (pdr-0025, répliques speaker + IA), Q-64 (pdr-0026, desktop seul) | Fixaient le contenu des actes 1 à 3 |
 | Réponses du porteur du 2026-10-29 : Q-05, Q-06, Q-07, Q-08, Q-10, Q-11, Q-12, Q-13, Q-15, Q-16, Q-18, Q-19, Q-23, Q-26, Q-36, Q-37, Q-54, Q-56, Q-61 (pdr-0012 acceptée, pdr-0027 à pdr-0040) ; Q-45, Q-50, Q-51 sans objet ; Q-14, Q-24, Q-57 gérées par le porteur | Fixent le calendrier, la plateforme, l'hébergement et le backend |
-| Q-09 — gabarit SDD (le porteur attend une explication des impacts) | Bloque J2 |
-| Q-27, Q-48 — dépôt du backend, authentification de la route de relais (recos : ce dépôt ; `127.0.0.1` sans auth ; écarts à AGENTS.md § 2, à confirmer) | Bloquent J2 |
 | Q-52 — pas-à-pas du rejeu (reco : aucun, à confirmer) | Bloque J6 |
 | SP-10 — genui sous Linux : ✅ confirmé le 2026-10-29 | Plus de risque plateforme connu ([pdr-0028](decisions/pdr-0028-linux-demo-machine.md)) |
 | Q-17, Q-39 — LLM des agents, canal app ↔ backend | Bloquent J2 / J3 |

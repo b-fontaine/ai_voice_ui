@@ -46,6 +46,8 @@ entrypoints:
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
+  - task: "Développer une fonctionnalité via la boucle autonome (specs/NNN-*)"
+    docs: [p-rm-roadmap, p-rm-backlog, pdr-0043-light-spec-kit-sdd-template, pdr-0042-calendar-and-cut-order-validated, pdr-0041-backend-in-this-repo-local-no-auth]
   - task: "Lancer la démo en local (docker compose, app Flutter en debug sous Linux, CI)"
     docs: [pdr-0029-local-docker-compose-hosting, pdr-0028-linux-demo-machine, pdr-0031-github-actions-ci-linux, p-ar-backend, p-ar-security, p-ar-stage-runtime, p-ar-quality]
     knowledge: [rt-flutter-webrtc-overview, genui-overview, rt-ephemeral-keys]
@@ -112,4 +114,4 @@ requirement_index:
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-10 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0040": decisions/index.yaml
+  "pdr-0001..pdr-0043": decisions/index.yaml

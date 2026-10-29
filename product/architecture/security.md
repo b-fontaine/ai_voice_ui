@@ -40,7 +40,7 @@ Origine : knowledge [rt-ephemeral-keys] (ex-section « Recommandation pour notre
 - Un jeton = une API : le jeton vocal ne sert jamais à appeler un LLM texte.
 - Les secrets MCP et A2A ne quittent jamais l'orchestrateur.
 
-## Authentification : recommandation, à confirmer (Q-48)
+## Authentification : option A décidée (Q-48, pdr-0041)
 
 La fiche exclut « authentification utilisateur, multi-utilisateur » du périmètre (§3). AGENTS.md impose pourtant des JWT vérifiés par JWKS côté backend. Il ne s'agit pas d'authentifier le public mais de **protéger la route de relais** qui consomme le budget OpenAI.
 
@@ -50,7 +50,7 @@ La fiche exclut « authentification utilisateur, multi-utilisateur » du périm�
 | B. Jeton court de l'opérateur | connexion de l'opérateur avant le talk (Authorization Code + PKCE), jeton court | nécessite un IdP joignable |
 | C. Secret statique dans l'app | — | **interdit** : clé longue durée côté client (AGENTS.md §2) |
 
-**Option A recommandée par l'assistant** (Q-48, ouverte) : tout est local ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md)), aucune surface n'est exposée sur le réseau de la salle, et la fiche exclut l'authentification utilisateur. Elle s'écarte de la règle JWT par JWKS d'AGENTS.md § 2 : le porteur doit confirmer avant qu'elle devienne une décision.
+**Option A décidée par le porteur le 2026-10-29** ([pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md)) : tout est local ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md)), aucune surface n'est exposée sur le réseau de la salle, et la fiche exclut l'authentification utilisateur. Elle écarte la règle JWT par JWKS d'AGENTS.md § 2 pour la démo (AGENTS.md mis à jour).
 
 ## Coût (NFR-11)
 

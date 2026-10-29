@@ -92,7 +92,7 @@ Agents : noms métier de la fiche, nombre libre, sélection visible par l'orches
 
 | Où | Quoi |
 |---|---|
-| `docker compose` (dépôt : Q-27, reco « ce dépôt ») | orchestrateur Go ; un conteneur par agent A2A (choix de conception) ; ports publiés sur `127.0.0.1` (Q-48, reco à confirmer) ; clé OpenAI en `.env` non commité |
+| `docker compose` (dépôt : ce dépôt, `backend/`, [pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md)) | orchestrateur Go ; un conteneur par agent A2A (choix de conception) ; ports publiés sur `127.0.0.1` ([pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md)) ; clé OpenAI en `.env` non commité |
 | Machine Linux, hors conteneur | app Flutter desktop lancée en debug ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)) |
 | Réseau | seuls GPT-Live et le LLM texte sortent de la machine |
 
@@ -118,7 +118,7 @@ Agents : noms métier de la fiche, nombre libre, sélection visible par l'orches
 | NFR-03 acte 1 < 8 s | Orchestrateur (appels A2A parallèles) ; agents ; validation A2UI ; app-channel | Parallélisme, routage déterministe ([ma-target-architecture] pièges) | [backend](backend.md) |
 | ~~NFR-07 secours < 2 s~~ | retirée ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) ; FR-09 : journal client et lecteur de rejeu, sans réseau | — | [replay](replay.md) |
 | NFR-08 déterminisme | Jeu de données figé derrière les agents ; snapshots des réponses d'agents | Les agents lisent des fixtures, jamais de vraies sources | [replay](replay.md), [quality](quality.md) |
-| NFR-09 aucune clé | Relais SDP backend ; clé en `.env` côté backend ; services sur `127.0.0.1` (Q-48, reco à confirmer) | [rt-ephemeral-keys], [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) | [security](security.md) |
+| NFR-09 aucune clé | Relais SDP backend ; clé en `.env` côté backend ; services sur `127.0.0.1` (pdr-0041) | [rt-ephemeral-keys], [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) | [security](security.md) |
 
 Tension NFR-01 / NFR-02 (fiche §5, « point délicat ») : la voix comble l'attente par des commentaires génériques, jamais par une hypothèse de résultat ([ma-filler-acknowledgements], [ma-real-tool-results]).
 

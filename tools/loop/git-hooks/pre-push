@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Hook pre-push du worktree de boucle (core.hooksPath en configuration --worktree : le dépôt
+# du porteur n'est pas concerné). Refuse toute publication d'un commit qui n'a pas passé
+# tools/loop/gate.sh --full sur un arbre propre.
+set -u
+. "$(git rev-parse --show-toplevel)/tools/loop/lib.sh"
+green="$(cat "$STATE/last_green_sha" 2>/dev/null || true)"
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = 0000000000000000000000000000000000000000 ] && continue
+  if [ "$local_sha" != "$green" ]; then
+    echo "pre-push : $local_sha n'a pas passé gate.sh --full (dernier vert : ${green:-aucun})." >&2
+    exit 1
+  fi
+done
+exit 0

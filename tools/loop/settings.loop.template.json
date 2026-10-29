@@ -1,0 +1,72 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash @ROOT@/tools/loop/quota-statusline.sh"
+  },
+  "hooks": {
+    "PostToolUse": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "bash @ROOT@/tools/loop/hooks/heartbeat.sh" } ] }
+    ],
+    "StopFailure": [
+      { "matcher": "rate_limit", "hooks": [ { "type": "command", "command": "bash @ROOT@/tools/loop/hooks/stop-failure.sh" } ] }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(@ROOT@/tools/loop/quota-check.sh*)",
+      "Bash(@ROOT@/tools/loop/gate.sh*)",
+      "Bash(@ROOT@/tools/loop/verify.sh*)",
+      "Bash(@ROOT@/tools/loop/app-smoke.sh*)",
+      "Bash(@ROOT@/tools/loop/openai-budget.sh*)",
+      "Bash(@ROOT@/tools/loop/publish.sh)",
+      "Bash(flutter *)",
+      "Bash(dart *)",
+      "Bash(go *)",
+      "Bash(gofmt *)",
+      "Bash(docker compose *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(git switch *)",
+      "Bash(git branch*)",
+      "Bash(git merge --no-ff feat/*)",
+      "Bash(git add -- *)",
+      "Bash(git commit -m *)",
+      "Bash(git commit -F *)"
+    ],
+    "deny": [
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .*)",
+      "Bash(git add -u*)",
+      "Bash(git add -- .)",
+      "Bash(git add -- ./)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "Bash(git commit --amend*)",
+      "Bash(git commit *--no-verify*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git rebase*)",
+      "Bash(git reset*)",
+      "Bash(git restore .*)",
+      "Bash(git checkout -- .*)",
+      "Bash(git checkout .*)",
+      "Bash(git clean*)",
+      "Bash(git stash*)",
+      "Bash(git config*)",
+      "Edit(@ROOT@/.claude/**)",
+      "Write(@ROOT@/.claude/**)",
+      "Edit(@ROOT@/tools/loop/**)",
+      "Write(@ROOT@/tools/loop/**)",
+      "Edit(@ROOT@/AGENTS.md)",
+      "Write(@ROOT@/AGENTS.md)",
+      "Edit(@ROOT@/CLAUDE.md)",
+      "Write(@ROOT@/CLAUDE.md)",
+      "Read(@ROOT@/**/.env)",
+      "Read(@ROOT@/.env)"
+    ]
+  }
+}
