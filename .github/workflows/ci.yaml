@@ -1,0 +1,40 @@
+# CI minimale (pdr-0031) : aucun secret, aucune clé, le backend n'est jamais lancé.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/orchestrator/go.mod
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go vet -tags acceptance ./...
+      - run: go test -race ./...
+      - run: go test -race -tags acceptance ./...
+      - run: docker build .
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+      - name: Analyse et tests de chaque paquet Flutter
+        run: |
+          set -e
+          for p in $(find apps packages testing -name pubspec.yaml -not -path '*/.dart_tool/*' -not -path '*/build/*' 2>/dev/null | sort); do
+            d="$(dirname "$p")"
+            (cd "$d" && flutter pub get && { ! grep -q '^ *build_runner:' pubspec.yaml || dart run build_runner build --delete-conflicting-outputs; } && flutter analyze --fatal-infos && { [ ! -d test ] || flutter test; })
+          done

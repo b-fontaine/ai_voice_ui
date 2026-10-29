@@ -58,7 +58,7 @@ flowchart TB
     journal[Journal de session<br/>+ lecteur de rejeu]
     ui --- voice & render & journal
   end
-  subgraph Backend["Backend agent_orchestrator (Go)"]
+  subgraph Backend["Backend orchestrator (Go)"]
     vs[voice-session<br/>relais SDP]
     sb[sideband-supervisor]
     orch[orchestrateur<br/>routeur + planification]

@@ -5,7 +5,7 @@ tags: [openai, gpt-live, backend, websocket, tools, security, multi-agent]
 status: verified
 updated: 2026-10-29
 sources: [https://developers.openai.com/api/docs/guides/voice-server-controls?api=live, https://developers.openai.com/api/docs/guides/voice-sip?api=live, https://developers.openai.com/api/docs/guides/voice-webrtc?api=live]
-links: [rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-output-level, rt-ephemeral-keys, ma-target-architecture, ma-where-to-run-agents]
+links: [ma-backend-sdk-go, rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-output-level, rt-ephemeral-keys, ma-target-architecture, ma-where-to-run-agents]
 ---
 # GPT-Live : le client porte l'audio, le serveur porte la logique
 
@@ -31,5 +31,7 @@ Un serveur peut s'attacher à une session déjà créée en WebRTC (création pa
 
 ## ⚠️ Pièges
 - Pour terminer : `session.close`, attendre `session.closed`, puis fermer le WebSocket. Il existe aussi `POST /v1/live/sessions/{session_id}/hangup` (sans corps, documenté dans le guide SIP ; raison de clôture `close_requested`).
+- **Moment de l'attache (vérifié le 2026-10-29, un essai) :** `Live.Sideband.Connect` a réussi dès la 1ʳᵉ tentative, ~0,6 s après `Live.New`, **avant** que le client ait reçu l'answer SDP : l'attache ne demande pas un WebRTC établi. Garder tout de même une attache en arrière-plan avec tentatives bornées (le relais du spike en faisait 5 × 500 ms), pour ne pas retarder l'answer ni échouer sur un cas non observé.
+- Une session créée dont le sideband n'a pas pu s'attacher reste facturée tant qu'elle n'est pas raccrochée : appeler `Hangup` ([[ma-backend-sdk-go]], `client.Live.Sessions.Hangup`) aussi quand le sideband se coupe sans `session.closed`.
 - Client et serveur peuvent tous deux répondre à un appel d'outil ou injecter du contexte : désigner **un seul** propriétaire par appel et par mise à jour, sinon doublons rejetés ou action exécutée deux fois.
 - `wss://…/v1/realtime?call_id=…` est le sideband de l'**ancienne** API Realtime, pas celui de GPT-Live.
