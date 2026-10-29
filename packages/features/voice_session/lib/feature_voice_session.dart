@@ -3,6 +3,7 @@ library;
 
 export 'src/api/live_session_event_source.dart' show LiveSessionEventSource;
 export 'src/api/session_event_converter.dart' show SessionEventConverter;
+export 'src/model/orb_smoother.dart' show OrbSmoother;
 export 'src/model/transcript_bloc.dart'
     show
         TranscriptBloc,
@@ -31,3 +32,4 @@ export 'src/model/voice_session_status.dart'
     show Active, Connecting, Failed, Idle, Stopping, VoiceSessionStatus;
 export 'src/model/voice_transport.dart'
     show VoiceTransport, VoiceTransportException, VoiceTransportFailure;
+export 'src/ui/orb_level_controller.dart' show OrbLevelController;
