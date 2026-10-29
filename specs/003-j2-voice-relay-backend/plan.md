@@ -26,6 +26,9 @@
 - `voice.Options{SampleRate, WindowMs int; GuardTimeout time.Duration}` : injectées, toutes > 0 (sinon `NewService` échoue) ; `Service.Open/Close/Shutdown` ; `Close` renvoie `ErrCloseTimeout` si la fermeture n'est pas confirmée à temps.
 - `openailive.Options{APIKey, BaseURL, Model, Voice, DelegationType, Instructions string}` : `BaseURL` vide = défaut du SDK ; seule la délégation `client` est acceptée (`responses`/`decisions` : erreur à `New`, pdr-0050) ; `String()` masque la clé.
 - `openailive` ignore sans erreur tout événement sideband hors transcripts, audio, usage et `session.closed` (dont `session.delegation.created`, fonctionnalité 004) ; une coupure inattendue produit `EventClosed` puis ferme le canal.
+- `wsapp.Options{Backlog, SendBuffer int}` : injectées, toutes > 0 (sinon `NewHub` échoue) ; `Hub` = `port.Sink` + `http.Handler` ; `Forget(id)` et `Close(ctx)` (1001).
+- Backlog : à la connexion, rejeu des `Backlog` derniers messages publiés, `orb.level` exclu, sans doublon ni perte avant le direct.
+- Abonné lent : file bornée par `SendBuffer` ; en cas de débordement la connexion est fermée en 1008 (« trop lent ») sans bloquer `Publish`.
 
 ## Références
 - `product/architecture/backend.md` (modules `voice-session`, `sideband-supervisor`, `app-channel`, `session-recorder`), `security.md` § contrat de relais, `agents-protocols.md`.
