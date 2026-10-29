@@ -24,6 +24,8 @@
 - `domain.Message{Type string; TMs int64; Data any}` : contenu logique de l'enveloppe v1 (sans `v`) ; données typées `OrbLevel`, `Transcript`, `SessionState`, `Usage` ; constantes `TypeOrbLevel`, `TypeTranscript`, `TypeSessionState`, `TypeUsage`.
 - `port.Sink` : `Publish(sessionID string, m domain.Message)` ; le hub WSS (T14) l'implémente.
 - `voice.Options{SampleRate, WindowMs int; GuardTimeout time.Duration}` : injectées, toutes > 0 (sinon `NewService` échoue) ; `Service.Open/Close/Shutdown` ; `Close` renvoie `ErrCloseTimeout` si la fermeture n'est pas confirmée à temps.
+- `openailive.Options{APIKey, BaseURL, Model, Voice, DelegationType, Instructions string}` : `BaseURL` vide = défaut du SDK ; seule la délégation `client` est acceptée (`responses`/`decisions` : erreur à `New`, pdr-0050) ; `String()` masque la clé.
+- `openailive` ignore sans erreur tout événement sideband hors transcripts, audio, usage et `session.closed` (dont `session.delegation.created`, fonctionnalité 004) ; une coupure inattendue produit `EventClosed` puis ferme le canal.
 
 ## Références
 - `product/architecture/backend.md` (modules `voice-session`, `sideband-supervisor`, `app-channel`, `session-recorder`), `security.md` § contrat de relais, `agents-protocols.md`.
