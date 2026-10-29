@@ -70,7 +70,7 @@ Règle en vigueur ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-moc
 | SP-10 — genui sous Linux : ✅ confirmé le 2026-10-29 | Plus de risque plateforme connu ([pdr-0028](decisions/pdr-0028-linux-demo-machine.md)) |
 | Q-25, Q-39, Q-46, Q-55, Q-63 tranchées par le porteur le 2026-10-29 (pdr-0046, pdr-0045, pdr-0047, pdr-0048, pdr-0049) | Fixent les versions, le canal app ↔ backend, l'observabilité et la couverture Gherkin |
 | Q-17 — LLM des agents | Bloque J3 |
-| Q-43, Q-47, Q-53 tranchées par le porteur le 2026-10-29 (pdr-0051, pdr-0050, pdr-0052) ; Q-67 — délai d'arrêt de la voix après interruption (avant J7) | Fixent l'orbe, la délégation GPT-Live et les sessions ; Q-67 conditionne FR-13 |
+| Q-43, Q-47, Q-53 tranchées par le porteur le 2026-10-29 (pdr-0051, pdr-0050, pdr-0052) ; Q-67 — délai d'arrêt de la voix après interruption (avant J7) ; Q-68 — plafond de durée par session GPT-Live (avant J7) | Fixent l'orbe, la délégation GPT-Live et les sessions ; Q-67 conditionne FR-13 |
 
 ## Contribuer
 

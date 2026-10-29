@@ -1,0 +1,5 @@
+# Journaux et binaire : jamais versionnés
+*.jsonl
+live-check
+*.ogg
+*.opus

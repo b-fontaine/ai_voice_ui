@@ -1,0 +1,1164 @@
+package voice
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"runtime"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
+)
+
+const (
+	testSampleRate = 24000
+	testWindowMs   = 200
+	testGuard      = 150 * time.Millisecond
+	waitLimit      = 2 * time.Second
+
+	testAttachAttempts = 5
+	testAttachDelay    = 500 * time.Millisecond
+)
+
+// noWait remplace Options.After : les attentes ne dorment pas, elles sont comptées.
+type waitRecorder struct {
+	mu     sync.Mutex
+	delays []time.Duration
+}
+
+func (w *waitRecorder) after(d time.Duration) <-chan time.Time {
+	w.mu.Lock()
+	w.delays = append(w.delays, d)
+	w.mu.Unlock()
+	ch := make(chan time.Time, 1)
+	ch <- time.Time{}
+	return ch
+}
+
+func (w *waitRecorder) calls() []time.Duration {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return append([]time.Duration(nil), w.delays...)
+}
+
+// --- doubles de test (frontières : fournisseur, horloge, diffusion) ---
+
+type testClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func newTestClock() *testClock {
+	return &testClock{now: time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)}
+}
+
+func (c *testClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *testClock) Advance(d time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(d)
+}
+
+type published struct {
+	SessionID string
+	Msg       domain.Message
+}
+
+type testSink struct {
+	mu   sync.Mutex
+	msgs []published
+}
+
+func (s *testSink) Publish(sessionID string, m domain.Message) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.msgs = append(s.msgs, published{sessionID, m})
+}
+
+func (s *testSink) snapshot() []published {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]published(nil), s.msgs...)
+}
+
+func (s *testSink) ofType(t string) []domain.Message {
+	var out []domain.Message
+	for _, p := range s.snapshot() {
+		if p.Msg.Type == t {
+			out = append(out, p.Msg)
+		}
+	}
+	return out
+}
+
+// waitCount attend qu'il y ait au moins n messages du type donné.
+func (s *testSink) waitCount(t *testing.T, typ string, n int) []domain.Message {
+	t.Helper()
+	deadline := time.Now().Add(waitLimit)
+	for time.Now().Before(deadline) {
+		if got := s.ofType(typ); len(got) >= n {
+			return got
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatalf("attendu %d message(s) %q, obtenu %d", n, typ, len(s.ofType(typ)))
+	return nil
+}
+
+type testSideband struct {
+	events    chan port.LiveEvent
+	closeCall chan struct{}
+	once      sync.Once
+	autoClose bool // émet closed à l'appel de Close
+}
+
+func newTestSideband(autoClose bool) *testSideband {
+	return &testSideband{events: make(chan port.LiveEvent, 64), closeCall: make(chan struct{}), autoClose: autoClose}
+}
+
+func (s *testSideband) Events() <-chan port.LiveEvent { return s.events }
+
+func (s *testSideband) Close(context.Context) error {
+	s.once.Do(func() {
+		close(s.closeCall)
+		if s.autoClose {
+			go func() {
+				s.events <- port.LiveEvent{Type: port.EventClosed}
+				close(s.events)
+			}()
+		}
+	})
+	return nil
+}
+
+type testLive struct {
+	createErr    error
+	sidebandErr  error         // erreur permanente
+	failFirst    int           // nombre de tentatives qui échouent avant le succès
+	sidebandGate chan struct{} // si non nil : Sideband bloque jusqu'à sa fermeture ou à l'annulation du contexte
+	autoClose    bool
+	sessions     int
+
+	smu      sync.Mutex
+	sb       *testSideband
+	attempts int
+
+	hmu         sync.Mutex
+	hangupErr   error
+	hangups     []string
+	hangupHasDL []bool // le contexte du raccrochage était-il borné ?
+}
+
+func (l *testLive) Hangup(ctx context.Context, id string) error {
+	l.hmu.Lock()
+	defer l.hmu.Unlock()
+	l.hangups = append(l.hangups, id)
+	_, hasDL := ctx.Deadline()
+	l.hangupHasDL = append(l.hangupHasDL, hasDL)
+	return l.hangupErr
+}
+
+func (l *testLive) hangupCalls() []string {
+	l.hmu.Lock()
+	defer l.hmu.Unlock()
+	return append([]string(nil), l.hangups...)
+}
+
+func (l *testLive) CreateSession(_ context.Context, offer string) (port.LiveSession, error) {
+	if l.createErr != nil {
+		return port.LiveSession{}, l.createErr
+	}
+	l.sessions++
+	return port.LiveSession{ID: "sess_" + string(rune('0'+l.sessions)), AnswerSDP: "answer:" + offer}, nil
+}
+
+func (l *testLive) Sideband(ctx context.Context, _ string) (port.Sideband, error) {
+	l.smu.Lock()
+	l.attempts++
+	n := l.attempts
+	l.smu.Unlock()
+	if l.sidebandGate != nil {
+		select {
+		case <-l.sidebandGate:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	if l.sidebandErr != nil {
+		return nil, l.sidebandErr
+	}
+	if n <= l.failFirst {
+		return nil, fmt.Errorf("tentative %d refusée", n)
+	}
+	sb := newTestSideband(l.autoClose)
+	l.smu.Lock()
+	l.sb = sb
+	l.smu.Unlock()
+	return sb, nil
+}
+
+func (l *testLive) attached() *testSideband {
+	l.smu.Lock()
+	defer l.smu.Unlock()
+	return l.sb
+}
+
+func (l *testLive) attachAttempts() int {
+	l.smu.Lock()
+	defer l.smu.Unlock()
+	return l.attempts
+}
+
+// waitAttached attend l'attache du sideband (en arrière-plan depuis R11).
+func (l *testLive) waitAttached(t *testing.T) *testSideband {
+	t.Helper()
+	waitFor(t, func() bool { return l.attached() != nil })
+	return l.attached()
+}
+
+func newTestService(t *testing.T, live *testLive) (*Service, *testSink, *testClock) {
+	t.Helper()
+	sink, clock := &testSink{}, newTestClock()
+	svc, err := NewService(live, sink, clock, testOptions())
+	if err != nil {
+		t.Fatalf("NewService: %v", err)
+	}
+	return svc, sink, clock
+}
+
+func testOptions() Options {
+	return Options{
+		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
+		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
+		After: (&waitRecorder{}).after, // attentes instantanées par défaut
+	}
+}
+
+func pcmBlock(ms int, value int16) []byte {
+	n := testSampleRate * ms / 1000
+	out := make([]byte, 2*n)
+	for i := 0; i < n; i++ {
+		out[2*i] = byte(uint16(value))
+		out[2*i+1] = byte(uint16(value) >> 8)
+	}
+	return out
+}
+
+// --- tests ---
+
+func TestNewServiceValidatesOptions(t *testing.T) {
+	att := func(o Options) Options {
+		o.AttachAttempts, o.AttachDelay = testAttachAttempts, testAttachDelay
+		return o
+	}
+	cases := map[string]Options{
+		"sample rate": att(Options{WindowMs: 200, GuardTimeout: time.Second}),
+		"window":      att(Options{SampleRate: 24000, GuardTimeout: time.Second}),
+		"guard":       att(Options{SampleRate: 24000, WindowMs: 200}),
+	}
+	for name, opts := range cases {
+		if _, err := NewService(&testLive{}, &testSink{}, newTestClock(), opts); err == nil {
+			t.Errorf("%s: erreur attendue", name)
+		}
+	}
+}
+
+func TestNewServiceValidatesAttachOptions(t *testing.T) {
+	cases := map[string]func(*Options){
+		"attempts zéro":    func(o *Options) { o.AttachAttempts = 0 },
+		"attempts négatif": func(o *Options) { o.AttachAttempts = -1 },
+		"delay zéro":       func(o *Options) { o.AttachDelay = 0 },
+		"delay négatif":    func(o *Options) { o.AttachDelay = -time.Second },
+	}
+	for name, mutate := range cases {
+		opts := testOptions()
+		mutate(&opts)
+		if _, err := NewService(&testLive{}, &testSink{}, newTestClock(), opts); err == nil {
+			t.Errorf("%s : erreur attendue", name)
+		}
+	}
+	if _, err := NewService(&testLive{}, &testSink{}, newTestClock(), testOptions()); err != nil {
+		t.Fatalf("options valides refusées : %v", err)
+	}
+}
+
+func TestOpenAttachesSideband(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _ := newTestService(t, live)
+	opened, err := svc.Open(context.Background(), "offer")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if opened.SessionID != "sess_1" || opened.AnswerSDP != "answer:offer" {
+		t.Fatalf("Opened = %+v", opened)
+	}
+	live.waitAttached(t) // l'attache se fait en arrière-plan
+	sink.waitState(t, domain.StateActive, 1)
+	states := sink.ofType(domain.TypeSessionState)
+	if len(states) != 2 || states[0].Data != (domain.SessionState{State: "connecting"}) ||
+		states[1].Data != (domain.SessionState{State: "active"}) {
+		t.Fatalf("connecting puis active attendus, obtenu %+v", states)
+	}
+	if got := live.attachAttempts(); got != 1 {
+		t.Fatalf("une seule tentative attendue, obtenu %d", got)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+}
+
+func TestOpenCreateFails(t *testing.T) {
+	boom := errors.New("boom")
+	live := &testLive{createErr: boom}
+	svc, sink, _ := newTestService(t, live)
+	if _, err := svc.Open(context.Background(), "offer"); !errors.Is(err, boom) {
+		t.Fatalf("erreur attendue boom, obtenu %v", err)
+	}
+	if live.attached() != nil || len(sink.snapshot()) != 0 {
+		t.Fatal("rien ne doit être ouvert ni publié")
+	}
+}
+
+func TestOpenSidebandFailsNoLeak(t *testing.T) {
+	live := &testLive{sidebandErr: errors.New("sideband down")}
+	svc, sink, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	if _, err := svc.Open(context.Background(), "offer"); err != nil {
+		t.Fatalf("Open ne doit plus échouer sur l'attache : %v", err)
+	}
+	sink.waitState(t, domain.StateClosed, 1)
+	waitGoroutines(t, before)
+	svc.mu.Lock()
+	n := len(svc.sessions)
+	svc.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("session non oubliée : %d", n)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+}
+
+func TestEventsTranslated(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _ := newTestService(t, live)
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	sb := live.waitAttached(t)
+	sb.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "bonjour", StartMs: 100, EndMs: 900}
+	sb.events <- port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: "salut", StartMs: 1000, EndMs: 1500}
+	for i := 0; i < 5; i++ {
+		sb.events <- port.LiveEvent{Type: port.EventOutputAudio, PCM: pcmBlock(200, 16384)}
+	}
+	sb.events <- port.LiveEvent{Type: port.EventUsageUpdated, Seconds: 1, ContextRatio: 0.25}
+
+	tr := sink.waitCount(t, domain.TypeTranscript, 2)
+	if tr[0].Data != (domain.Transcript{Role: "user", Text: "bonjour", StartMs: 100, EndMs: 900}) {
+		t.Errorf("transcript 0 = %+v", tr[0].Data)
+	}
+	if tr[1].Data != (domain.Transcript{Role: "ai", Text: "salut", StartMs: 1000, EndMs: 1500}) {
+		t.Errorf("transcript 1 = %+v", tr[1].Data)
+	}
+	levels := sink.waitCount(t, domain.TypeOrbLevel, 5)
+	if len(levels) != 5 {
+		t.Fatalf("5 orb.level attendus, obtenu %d", len(levels))
+	}
+	for _, m := range levels {
+		if l := m.Data.(domain.OrbLevel).Level; l < 0.49 || l > 0.51 {
+			t.Errorf("niveau %v, attendu 0.5", l)
+		}
+	}
+	us := sink.waitCount(t, domain.TypeUsage, 1)
+	if us[0].Data != (domain.Usage{Seconds: 1, ContextRatio: 0.25}) {
+		t.Errorf("usage = %+v", us[0].Data)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := sink.ofType(domain.TypeSessionState); got[len(got)-1].Data != (domain.SessionState{State: "closed"}) {
+		t.Errorf("dernier état = %+v", got[len(got)-1].Data)
+	}
+}
+
+func TestTMsFromClock(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, clock := newTestService(t, live)
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(1500 * time.Millisecond)
+	live.waitAttached(t).events <- port.LiveEvent{Type: port.EventUsageUpdated, Seconds: 1}
+	us := sink.waitCount(t, domain.TypeUsage, 1)
+	if us[0].TMs != 1500 {
+		t.Fatalf("t_ms = %d, attendu 1500", us[0].TMs)
+	}
+	_ = svc.Shutdown(context.Background())
+}
+
+func TestCloseWaitsClosed(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	if err := svc.Close(context.Background(), opened.SessionID); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	// Close ne retourne qu'après « closed » : le message est déjà publié.
+	got := sink.ofType(domain.TypeSessionState)
+	if len(got) != 3 || got[2].Data != (domain.SessionState{State: "closed"}) {
+		t.Fatalf("états = %+v", got)
+	}
+	select {
+	case <-live.attached().closeCall:
+	default:
+		t.Fatal("Sideband.Close non appelé")
+	}
+	if err := svc.Close(context.Background(), opened.SessionID); err == nil {
+		t.Fatal("session inconnue après fermeture : erreur attendue")
+	}
+	waitGoroutines(t, before)
+}
+
+func TestCloseGuardTimeout(t *testing.T) {
+	live := &testLive{autoClose: false}
+	svc, _, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	live.waitAttached(t)
+	start := time.Now()
+	err = svc.Close(context.Background(), opened.SessionID)
+	if !errors.Is(err, ErrCloseTimeout) {
+		t.Fatalf("ErrCloseTimeout attendu, obtenu %v", err)
+	}
+	if d := time.Since(start); d < testGuard || d > waitLimit {
+		t.Fatalf("durée %v hors bornes", d)
+	}
+	waitGoroutines(t, before)
+}
+
+// blockingSideband imite openailive : Close attend la fin de son contexte.
+type blockingSideband struct{ events chan port.LiveEvent }
+
+func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
+
+func (b *blockingSideband) Close(ctx context.Context) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+type blockingLive struct {
+	mu sync.Mutex
+	n  int
+}
+
+func (l *blockingLive) CreateSession(context.Context, string) (port.LiveSession, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.n++
+	return port.LiveSession{ID: "blk_" + string(rune('0'+l.n)), AnswerSDP: "a"}, nil
+}
+
+func (l *blockingLive) Hangup(context.Context, string) error { return nil }
+
+func (l *blockingLive) Sideband(context.Context, string) (port.Sideband, error) {
+	return &blockingSideband{events: make(chan port.LiveEvent)}, nil
+}
+
+func newBlockingService(t *testing.T, guard time.Duration) (*Service, *testSink) {
+	t.Helper()
+	opts := testOptions()
+	opts.GuardTimeout = guard
+	sink := &testSink{}
+	svc, err := NewService(&blockingLive{}, sink, newTestClock(), opts)
+	if err != nil {
+		t.Fatalf("NewService: %v", err)
+	}
+	return svc, sink
+}
+
+func TestCloseGuardTimeoutWithBlockingSideband(t *testing.T) {
+	const guard = 100 * time.Millisecond
+	svc, sink := newBlockingService(t, guard)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	type res struct {
+		err error
+		d   time.Duration
+	}
+	out := make(chan res, 1)
+	go func() {
+		start := time.Now()
+		err := svc.Close(context.Background(), opened.SessionID)
+		out <- res{err, time.Since(start)}
+	}()
+	select {
+	case r := <-out:
+		if !errors.Is(r.err, ErrCloseTimeout) {
+			t.Fatalf("ErrCloseTimeout attendu, obtenu %v", r.err)
+		}
+		if r.d < guard || r.d > guard+waitLimit/2 {
+			t.Fatalf("durée %v hors bornes", r.d)
+		}
+	case <-time.After(waitLimit):
+		t.Fatal("Close bloqué : le délai de garde ne s'applique pas à Sideband.Close")
+	}
+	waitGoroutines(t, before)
+}
+
+func TestShutdownParallelGuard(t *testing.T) {
+	const guard = 200 * time.Millisecond
+	svc, sink := newBlockingService(t, guard)
+	for i := 0; i < 2; i++ {
+		if _, err := svc.Open(context.Background(), "o"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sink.waitState(t, domain.StateActive, 2)
+	out := make(chan error, 1)
+	start := time.Now()
+	go func() { out <- svc.Shutdown(context.Background()) }()
+	select {
+	case err := <-out:
+		if !errors.Is(err, ErrCloseTimeout) {
+			t.Fatalf("ErrCloseTimeout attendu, obtenu %v", err)
+		}
+		if d := time.Since(start); d < guard || d >= 2*guard {
+			t.Fatalf("durée %v : attendu ≈ un seul délai de garde (%v)", d, guard)
+		}
+	case <-time.After(waitLimit):
+		t.Fatal("Shutdown bloqué")
+	}
+}
+
+func TestShutdownClosesAll(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	for i := 0; i < 3; i++ {
+		if _, err := svc.Open(context.Background(), "o"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sink.waitState(t, domain.StateActive, 3)
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+	closed := 0
+	for _, m := range sink.ofType(domain.TypeSessionState) {
+		if m.Data == (domain.SessionState{State: "closed"}) {
+			closed++
+		}
+	}
+	if closed != 3 {
+		t.Fatalf("3 sessions fermées attendues, obtenu %d", closed)
+	}
+	waitGoroutines(t, before)
+}
+
+// waitState attend la publication d'un session.state portant l'état donné.
+func (s *testSink) waitState(t *testing.T, state string, n int) {
+	t.Helper()
+	waitFor(t, func() bool {
+		count := 0
+		for _, m := range s.ofType(domain.TypeSessionState) {
+			if m.Data.(domain.SessionState).State == state {
+				count++
+			}
+		}
+		return count >= n
+	})
+}
+
+func waitGoroutines(t *testing.T, max int) {
+	t.Helper()
+	deadline := time.Now().Add(waitLimit)
+	for time.Now().Before(deadline) {
+		if runtime.NumGoroutine() <= max {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("fuite de goroutines : %d > %d", runtime.NumGoroutine(), max)
+}
+
+func TestOpenSidebandFailsHangsUp(t *testing.T) {
+	live := &testLive{sidebandErr: errors.New("sideband down")}
+	svc, sink, _ := newTestService(t, live)
+	// Contexte de requête annulé après Open : le raccrochage doit tout de même partir, borné.
+	ctx, cancel := context.WithCancel(context.Background())
+	if _, err := svc.Open(ctx, "offer"); err != nil {
+		t.Fatal(err)
+	}
+	cancel()
+	sink.waitState(t, domain.StateClosed, 1)
+	if got := live.hangupCalls(); len(got) != 1 || got[0] != "sess_1" {
+		t.Fatalf("raccrochages = %v", got)
+	}
+	if !live.hangupHasDL[0] {
+		t.Fatal("le raccrochage doit être borné par GuardTimeout")
+	}
+}
+
+func TestOpenReturnsBeforeAttach(t *testing.T) {
+	gate := make(chan struct{})
+	live := &testLive{autoClose: true, sidebandGate: gate}
+	svc, sink, _ := newTestService(t, live)
+	done := make(chan Opened, 1)
+	go func() {
+		o, err := svc.Open(context.Background(), "offer")
+		if err != nil {
+			t.Error(err)
+		}
+		done <- o
+	}()
+	select {
+	case o := <-done:
+		if o.SessionID != "sess_1" || o.AnswerSDP != "answer:offer" {
+			t.Fatalf("Opened = %+v", o)
+		}
+	case <-time.After(waitLimit):
+		t.Fatal("Open bloqué par l'attache du sideband")
+	}
+	states := sink.ofType(domain.TypeSessionState)
+	if len(states) != 1 || states[0].Data != (domain.SessionState{State: "connecting"}) {
+		t.Fatalf("connecting seul attendu avant l'attache, obtenu %+v", states)
+	}
+	close(gate)
+	sink.waitState(t, domain.StateActive, 1)
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAttachRetriesThenSucceeds(t *testing.T) {
+	live := &testLive{autoClose: true, failFirst: 3}
+	var logs bytes.Buffer
+	waits := &waitRecorder{}
+	opts := testOptions()
+	opts.After = waits.after
+	opts.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	sink, clock := &testSink{}, newTestClock()
+	svc, err := NewService(live, sink, clock, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	states := sink.ofType(domain.TypeSessionState)
+	if len(states) != 2 || states[0].Data != (domain.SessionState{State: "connecting"}) ||
+		states[1].Data != (domain.SessionState{State: "active"}) {
+		t.Fatalf("connecting puis active attendus, obtenu %+v", states)
+	}
+	got := waits.calls()
+	if len(got) != 3 {
+		t.Fatalf("3 attentes attendues, obtenu %v", got)
+	}
+	for _, d := range got {
+		if d != testAttachDelay {
+			t.Fatalf("attente %v, attendu %v", d, testAttachDelay)
+		}
+	}
+	if n := live.attachAttempts(); n != 4 {
+		t.Fatalf("4 tentatives attendues, obtenu %d", n)
+	}
+	if len(live.hangupCalls()) != 0 {
+		t.Fatal("aucun raccrochage attendu")
+	}
+	out := logs.String()
+	if strings.Count(out, "level=WARN") != 3 || !strings.Contains(out, "attempt=1") ||
+		!strings.Contains(out, "attempt=3") || !strings.Contains(out, "tentative 1 refusée") {
+		t.Fatalf("3 avertissements numérotés attendus, journal :\n%s", out)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAttachFirstTryNeverWaits(t *testing.T) {
+	live := &testLive{autoClose: true}
+	waits := &waitRecorder{}
+	opts := testOptions()
+	opts.After = waits.after
+	sink := &testSink{}
+	svc, err := NewService(live, sink, newTestClock(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	if got := waits.calls(); len(got) != 0 {
+		t.Fatalf("aucune attente attendue, obtenu %v", got)
+	}
+	_ = svc.Shutdown(context.Background())
+}
+
+func TestAttachFailsHangsUp(t *testing.T) {
+	live := &testLive{sidebandErr: errors.New("sideband down")}
+	waits := &waitRecorder{}
+	opts := testOptions()
+	opts.After = waits.after
+	sink := &testSink{}
+	svc, err := NewService(live, sink, newTestClock(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateClosed, 1)
+	if st := waitClosedState(t, sink); st != (domain.SessionState{State: "closed", Reason: "attach_failed"}) {
+		t.Fatalf("état = %+v", st)
+	}
+	if got := live.hangupCalls(); len(got) != 1 || got[0] != opened.SessionID || !live.hangupHasDL[0] {
+		t.Fatalf("un raccrochage borné attendu, obtenu %v", got)
+	}
+	if n := live.attachAttempts(); n != testAttachAttempts {
+		t.Fatalf("%d tentatives attendues, obtenu %d", testAttachAttempts, n)
+	}
+	if n := len(waits.calls()); n != testAttachAttempts-1 {
+		t.Fatalf("%d attentes attendues, obtenu %d", testAttachAttempts-1, n)
+	}
+	if err := svc.Close(context.Background(), opened.SessionID); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("session oubliée attendue, obtenu %v", err)
+	}
+}
+
+func TestAttachFailsHangupErrorIsLogged(t *testing.T) {
+	var logs bytes.Buffer
+	live := &testLive{sidebandErr: errors.New("sideband down"), hangupErr: errors.New("hangup down")}
+	opts := testOptions()
+	opts.After = (&waitRecorder{}).after
+	opts.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	sink := &testSink{}
+	svc, err := NewService(live, sink, newTestClock(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateClosed, 1)
+	if !strings.Contains(logs.String(), "hangup down") {
+		t.Fatalf("échec du raccrochage non journalisé :\n%s", logs.String())
+	}
+}
+
+func TestCloseDuringConnecting(t *testing.T) {
+	gate := make(chan struct{}) // jamais ouvert : seule l'annulation libère Sideband
+	live := &testLive{sidebandGate: gate}
+	svc, sink, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, func() bool { return live.attachAttempts() == 1 })
+	if err := svc.Close(context.Background(), opened.SessionID); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if got := live.hangupCalls(); len(got) != 1 || got[0] != opened.SessionID {
+		t.Fatalf("raccrochage attendu, obtenu %v", got)
+	}
+	if st := waitClosedState(t, sink); st != (domain.SessionState{State: "closed"}) {
+		t.Fatalf("état = %+v", st)
+	}
+	if live.attached() != nil {
+		t.Fatal("aucun sideband ne doit rester attaché")
+	}
+	if err := svc.Close(context.Background(), opened.SessionID); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("session oubliée attendue, obtenu %v", err)
+	}
+	waitGoroutines(t, before)
+}
+
+func TestShutdownDuringConnecting(t *testing.T) {
+	live := &testLive{sidebandGate: make(chan struct{})}
+	svc, sink, _ := newTestService(t, live)
+	before := runtime.NumGoroutine()
+	for i := 0; i < 2; i++ {
+		if _, err := svc.Open(context.Background(), "o"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	waitFor(t, func() bool { return live.attachAttempts() == 2 })
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown: %v", err)
+	}
+	if got := live.hangupCalls(); len(got) != 2 {
+		t.Fatalf("2 raccrochages attendus, obtenu %v", got)
+	}
+	sink.waitState(t, domain.StateClosed, 2)
+	waitGoroutines(t, before)
+}
+
+func TestUnexpectedDisconnectHangsUp(t *testing.T) {
+	live := &testLive{}
+	svc, sink, _ := newTestService(t, live)
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	live.waitAttached(t).events <- port.LiveEvent{Type: port.EventClosed, Reason: port.ReasonConnectionLost}
+	close(live.waitAttached(t).events)
+	st := waitClosedState(t, sink)
+	if st != (domain.SessionState{State: "closed", Reason: "connection_lost"}) {
+		t.Fatalf("état = %+v", st)
+	}
+	waitFor(t, func() bool { return len(live.hangupCalls()) == 1 })
+	if got := live.hangupCalls(); got[0] != opened.SessionID {
+		t.Fatalf("raccrochages = %v", got)
+	}
+}
+
+func TestUnexpectedDisconnectWithoutClosedEventHangsUp(t *testing.T) {
+	live := &testLive{}
+	svc, _, _ := newTestService(t, live)
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	close(live.waitAttached(t).events) // flux terminé sans aucun EventClosed
+	waitFor(t, func() bool { return len(live.hangupCalls()) == 1 })
+}
+
+func TestRemoteCloseDoesNotHangUp(t *testing.T) {
+	for _, reason := range []string{"close_requested", "expired", "remote_hangup", "content"} {
+		live := &testLive{}
+		svc, sink, _ := newTestService(t, live)
+		if _, err := svc.Open(context.Background(), "o"); err != nil {
+			t.Fatal(err)
+		}
+		live.waitAttached(t).events <- port.LiveEvent{Type: port.EventClosed, Reason: reason}
+		close(live.waitAttached(t).events)
+		if st := waitClosedState(t, sink); st != (domain.SessionState{State: "closed", Reason: reason}) {
+			t.Fatalf("%s : état = %+v", reason, st)
+		}
+		waitFor(t, func() bool { svc.mu.Lock(); defer svc.mu.Unlock(); return len(svc.sessions) == 0 })
+		if got := live.hangupCalls(); len(got) != 0 {
+			t.Fatalf("%s : raccrochage inattendu %v", reason, got)
+		}
+	}
+}
+
+func TestRequestedCloseDoesNotHangUp(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _ := newTestService(t, live)
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	if err := svc.Close(context.Background(), opened.SessionID); err != nil {
+		t.Fatal(err)
+	}
+	if got := live.hangupCalls(); len(got) != 0 {
+		t.Fatalf("raccrochage inattendu %v", got)
+	}
+}
+
+func TestMaxSessionClosesSession(t *testing.T) {
+	live := &testLive{autoClose: true}
+	sink, clock := &testSink{}, newTestClock()
+	fire := make(chan time.Time)
+	var asked time.Duration
+	svc, err := NewService(live, sink, clock, Options{
+		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
+		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
+		MaxSession: 30 * time.Minute,
+		After:      func(d time.Duration) <-chan time.Time { asked = d; return fire },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	fire <- time.Time{}
+	if st := waitClosedState(t, sink); st != (domain.SessionState{State: "closed", Reason: "max_session"}) {
+		t.Fatalf("état = %+v", st)
+	}
+	select {
+	case <-live.attached().closeCall:
+	default:
+		t.Fatal("fermeture propre non demandée au sideband")
+	}
+	if asked != 30*time.Minute {
+		t.Fatalf("minuteur = %v", asked)
+	}
+	if got := live.hangupCalls(); len(got) != 0 {
+		t.Fatalf("raccrochage inattendu %v", got)
+	}
+}
+
+func TestMaxSessionZeroMeansNoCap(t *testing.T) {
+	live := &testLive{autoClose: true}
+	called := false
+	svc, err := NewService(live, &testSink{}, newTestClock(), Options{
+		SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: testGuard,
+		AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay,
+		After: func(time.Duration) <-chan time.Time { called = true; return nil },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if called {
+		t.Fatal("aucun minuteur sans plafond")
+	}
+}
+
+func TestNewServiceRejectsNegativeMaxSession(t *testing.T) {
+	_, err := NewService(&testLive{}, &testSink{}, newTestClock(),
+		Options{SampleRate: testSampleRate, WindowMs: testWindowMs, GuardTimeout: time.Second, MaxSession: -time.Second,
+			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay})
+	if err == nil {
+		t.Fatal("MaxSession négatif doit être refusé")
+	}
+}
+
+func TestSessionForgottenAfterRemoteClose(t *testing.T) {
+	live := &testLive{}
+	svc, sink, _ := newTestService(t, live)
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	live.waitAttached(t).events <- port.LiveEvent{Type: port.EventClosed, Reason: "remote_hangup"}
+	close(live.waitAttached(t).events)
+	waitClosedState(t, sink)
+	waitFor(t, func() bool { svc.mu.Lock(); defer svc.mu.Unlock(); return len(svc.sessions) == 0 })
+	if err := svc.Close(context.Background(), opened.SessionID); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("ErrUnknownSession attendu, obtenu %v", err)
+	}
+}
+
+func TestNewServiceValidatesMeterParams(t *testing.T) {
+	// Fenêtre de moins d'un échantillon : level.NewMeter échouerait dans Open.
+	_, err := NewService(&testLive{}, &testSink{}, newTestClock(),
+		Options{SampleRate: 1, WindowMs: 1, GuardTimeout: time.Second,
+			AttachAttempts: testAttachAttempts, AttachDelay: testAttachDelay})
+	if err == nil {
+		t.Fatal("NewService doit refuser des paramètres que level.NewMeter rejette")
+	}
+}
+
+func waitClosedState(t *testing.T, sink *testSink) domain.SessionState {
+	t.Helper()
+	deadline := time.Now().Add(waitLimit)
+	for time.Now().Before(deadline) {
+		for _, m := range sink.ofType(domain.TypeSessionState) {
+			if st := m.Data.(domain.SessionState); st.State == domain.StateClosed {
+				return st
+			}
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("session.state closed non publié")
+	return domain.SessionState{}
+}
+
+func waitFor(t *testing.T, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(waitLimit)
+	for time.Now().Before(deadline) {
+		if cond() {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("condition non atteinte")
+}
+
+// --- R12 : raccrochage après dépassement du délai de garde ---
+
+// sidebandLive est un testLive dont le sideband est fourni par le test.
+type sidebandLive struct {
+	testLive
+	make func() port.Sideband
+}
+
+func (l *sidebandLive) Sideband(context.Context, string) (port.Sideband, error) {
+	return l.make(), nil
+}
+
+// failingSideband échoue à la fermeture ; confirm : il publie d'abord closed.
+type failingSideband struct {
+	events  chan port.LiveEvent
+	confirm bool
+	err     error
+}
+
+func (f *failingSideband) Events() <-chan port.LiveEvent { return f.events }
+
+func (f *failingSideband) Close(context.Context) error {
+	if f.confirm {
+		f.events <- port.LiveEvent{Type: port.EventClosed}
+	}
+	close(f.events)
+	return f.err
+}
+
+func newHangupService(t *testing.T, live *sidebandLive) (*Service, *testSink) {
+	t.Helper()
+	sink := &testSink{}
+	svc, err := NewService(live, sink, newTestClock(), testOptions())
+	if err != nil {
+		t.Fatalf("NewService: %v", err)
+	}
+	return svc, sink
+}
+
+func blockingSidebandLive() *sidebandLive {
+	return &sidebandLive{make: func() port.Sideband {
+		return &blockingSideband{events: make(chan port.LiveEvent)}
+	}}
+}
+
+func TestCloseTimeoutHangsUp(t *testing.T) {
+	live := blockingSidebandLive()
+	svc, sink := newHangupService(t, live)
+	before := runtime.NumGoroutine()
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	err = svc.Close(context.Background(), opened.SessionID)
+	if !errors.Is(err, ErrCloseTimeout) {
+		t.Fatalf("ErrCloseTimeout attendu, obtenu %v", err)
+	}
+	if got := live.hangupCalls(); len(got) != 1 || got[0] != opened.SessionID || !live.hangupHasDL[0] {
+		t.Fatalf("un raccrochage borné attendu, obtenu %v", got)
+	}
+	waitGoroutines(t, before)
+}
+
+func TestCloseErrorHangsUp(t *testing.T) {
+	closeErr := errors.New("close down")
+	live := &sidebandLive{make: func() port.Sideband {
+		return &failingSideband{events: make(chan port.LiveEvent, 1), err: closeErr}
+	}}
+	svc, sink := newHangupService(t, live)
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	err = svc.Close(context.Background(), opened.SessionID)
+	if !errors.Is(err, closeErr) {
+		t.Fatalf("erreur de Close attendue, obtenu %v", err)
+	}
+	if got := live.hangupCalls(); len(got) != 1 || got[0] != opened.SessionID {
+		t.Fatalf("un raccrochage attendu, obtenu %v", got)
+	}
+}
+
+func TestCloseConfirmedDoesNotHangUp(t *testing.T) {
+	for name, mk := range map[string]func() port.Sideband{
+		"ok": func() port.Sideband { return newTestSideband(true) },
+		"erreur de Close mais closed reçu": func() port.Sideband {
+			return &failingSideband{events: make(chan port.LiveEvent, 1), confirm: true, err: errors.New("late")}
+		},
+	} {
+		live := &sidebandLive{make: mk}
+		svc, sink := newHangupService(t, live)
+		opened, err := svc.Open(context.Background(), "o")
+		if err != nil {
+			t.Fatal(err)
+		}
+		sink.waitState(t, domain.StateActive, 1)
+		_ = svc.Close(context.Background(), opened.SessionID)
+		if got := live.hangupCalls(); len(got) != 0 {
+			t.Fatalf("%s : raccrochage inattendu %v", name, got)
+		}
+	}
+}
+
+func TestHangupAtMostOncePerSession(t *testing.T) {
+	t.Run("délai de garde puis Shutdown", func(t *testing.T) {
+		live := blockingSidebandLive()
+		svc, sink := newHangupService(t, live)
+		opened, err := svc.Open(context.Background(), "o")
+		if err != nil {
+			t.Fatal(err)
+		}
+		sink.waitState(t, domain.StateActive, 1)
+		if err := svc.Close(context.Background(), opened.SessionID); !errors.Is(err, ErrCloseTimeout) {
+			t.Fatalf("ErrCloseTimeout attendu, obtenu %v", err)
+		}
+		_ = svc.Shutdown(context.Background())
+		if got := live.hangupCalls(); len(got) != 1 {
+			t.Fatalf("un seul raccrochage attendu, obtenu %v", got)
+		}
+	})
+	t.Run("connection_lost puis Close", func(t *testing.T) {
+		live := &testLive{}
+		svc, _, _ := newTestService(t, live)
+		opened, err := svc.Open(context.Background(), "o")
+		if err != nil {
+			t.Fatal(err)
+		}
+		sb := live.waitAttached(t)
+		svc.mu.Lock()
+		sess := svc.sessions[opened.SessionID]
+		svc.mu.Unlock()
+		sb.events <- port.LiveEvent{Type: port.EventClosed, Reason: port.ReasonConnectionLost}
+		close(sb.events)
+		waitFor(t, func() bool { return len(live.hangupCalls()) == 1 })
+		_ = svc.Close(context.Background(), opened.SessionID)
+		if err := svc.closeSession(context.Background(), sess); err != nil {
+			t.Logf("closeSession après coupure : %v", err)
+		}
+		if got := live.hangupCalls(); len(got) != 1 {
+			t.Fatalf("un seul raccrochage attendu, obtenu %v", got)
+		}
+	})
+}
+
+func TestCloseTimeoutHangupErrorJoined(t *testing.T) {
+	hangErr := errors.New("hangup down")
+	live := blockingSidebandLive()
+	live.hangupErr = hangErr
+	svc, sink := newHangupService(t, live)
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	err = svc.Close(context.Background(), opened.SessionID)
+	if !errors.Is(err, ErrCloseTimeout) || !errors.Is(err, hangErr) {
+		t.Fatalf("ErrCloseTimeout et l'erreur de Hangup attendus, obtenu %v", err)
+	}
+}

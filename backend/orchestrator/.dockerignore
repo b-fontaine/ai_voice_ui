@@ -1,0 +1,9 @@
+acceptance
+**/*_test.go
+*.log
+*.jsonl
+journal
+.env
+.env.*
+Dockerfile
+.dockerignore
