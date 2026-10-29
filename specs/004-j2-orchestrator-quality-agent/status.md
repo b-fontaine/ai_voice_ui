@@ -14,8 +14,14 @@
 | 2026-10-29 | Définir | `spec.md`, `plan.md`, `tasks.md` rédigés | — |
 | 2026-10-29 | Gherkin | T01-T03 + B4 : scénarios B1-B4 écrits ; rouge attendu : orchestrateur `undefined: port.EventDelegationCreated`, `unknown field DelegationID in struct literal of type port.LiveEvent` ; agent `no required module provides package …/quality/internal/agent` ; testé contre des implémentations temporaires hors dépôt (B4 vert, harnais A2A validé) | `.omc/state/loop/gates/20261029-201544-unit-go.log` (vert) |
 | 2026-10-29 | TDD T10 | domaine `a2ui`/`agent.activity`, ports `EventDelegationCreated`, `AppendCommentary`/`AppendThinking`, `RemoteAgent` ; rouge (`undefined: domain.A2UI`, `sb.AppendCommentary undefined`) puis vert ; `go vet -tags acceptance` compile désormais | `.omc/state/loop/gates/20261029-202100-unit-go.log` (vert) |
+| 2026-10-29 | Revue du plan | architect-reviewer (mode PLAN) : CONFORME SOUS RÉSERVE, A1-A13 intégrés dans plan.md et tasks.md ; skill dev-loop mis à jour par le porteur (revue du plan, lots, étapes enchaînées, conversation neuve) | — |
 
-## Revue d'architecte
+## Revue du plan (architect-reviewer, mode PLAN, 2026-10-29)
+Verdict : **CONFORME SOUS RÉSERVE** — 4 points bloquants (A1 branchement voix→orchestrateur et cycle de vie ; A2 délégations qui se recouvrent ; A3 validateur A2UI faux sur le rendu progressif et sans liste blanche de composants ; A4 backlog du hub qui perd `createSurface`), A5-A12 importants, A13 mineur. Tous intégrés dans `plan.md` (§ Amendements A1-A13) et `tasks.md` (T04, T11-T17 redécoupées).
+Conflits avec une décision, traités sans les trancher : (1) `backend.md` règle 2 et le diagramme de l'acte 1 de `agents-protocols.md` montrent l'orchestrateur qui émet `createSurface`, contre pdr-0036 → le plan suit pdr-0036, documentation à corriger à la clôture ; (2) RG-10 (état neutre) vs compensation `deleteSurface` (A5) → comportement provisoire = retirer, **Q-69** au porteur ; (3) pdr-0052 (une session par acte) vs FR-07 (acte 2 modifie en place l'acte 1) → portée par session en J2, **Q-70** au porteur avant J4.
+Non vérifié par la revue : `offset_ms` sur la timeline des deltas en pratique ; `client_event_id` de l'événement `error` ; annulation du contexte de l'exécuteur par `a2asrv` ; `env_file required: false` ; défaut de `acknowledgement_delay_ms` en mode `client`.
+
+## Revue d'architecte (code)
 
 ## Questions pour le porteur
 Aucune.
