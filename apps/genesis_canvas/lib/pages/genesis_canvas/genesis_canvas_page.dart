@@ -13,6 +13,7 @@ import '../../app/config/genesis_config.dart';
 import '../../app/scenario/scenario_player.dart';
 import '../../widgets/canvas_board/canvas_board.dart';
 import '../../widgets/top_bar/top_bar.dart';
+import 'engine_error_watcher.dart';
 
 /// Page unique : orbe en haut, canevas dessous.
 ///
@@ -51,15 +52,23 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
   final GlobalKey _boundaryKey = GlobalKey();
+  late final EngineErrorWatcher _engineErrors = EngineErrorWatcher(
+    onSubmit: _controller.onSubmit,
+    errorSink: widget.errorSink,
+  );
   late final SnapshotService _snapshot = SnapshotService(
     path: widget.config.snapshotPath,
-    exitHandler: widget.exitHandler,
+    // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
+    exitHandler: (code) =>
+        widget.exitHandler(code == 0 && _engineErrors.count > 0 ? 1 : code),
     errorSink: widget.errorSink,
   );
 
   @override
   void initState() {
     super.initState();
+    // Écoute dès la création : le moteur ne rejoue pas les erreurs passées.
+    _engineErrors;
     final scenario = widget.config.scenario;
     if (scenario != null) {
       _bloc.add(
@@ -100,7 +109,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
   @override
   void dispose() {
     // Le Bloc se ferme (annule le flux de rejeu) avant de libérer le moteur.
-    unawaited(_bloc.close().whenComplete(_controller.dispose));
+    unawaited(
+      _bloc.close().whenComplete(() async {
+        await _engineErrors.dispose();
+        _controller.dispose();
+      }),
+    );
     super.dispose();
   }
 

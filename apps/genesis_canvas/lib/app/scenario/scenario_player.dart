@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:flutter/services.dart' show AssetBundle;
 import 'package:shared_core/shared_core.dart';
 
@@ -16,7 +17,7 @@ class ScenarioPlayer {
   /// Flux des messages de [scenario], paresseux : la lecture démarre à
   /// l'abonnement et s'arrête à l'annulation. Les erreurs de lecture
   /// (asset absent, ligne invalide) sont des erreurs du flux.
-  Stream<Map<String, dynamic>> messages(String scenario) async* {
+  Stream<A2uiMessage> messages(String scenario) async* {
     final text = await bundle.loadString(
       'assets/replays/$scenario.jsonl',
       cache: false,

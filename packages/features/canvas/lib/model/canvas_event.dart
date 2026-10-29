@@ -1,3 +1,5 @@
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+
 import 'canvas_state.dart';
 
 /// Événements du `CanvasBloc`.
@@ -10,11 +12,11 @@ sealed class CanvasCommand extends CanvasEvent {
   const CanvasCommand();
 }
 
-/// Souscription à une source de messages A2UI (forme JSON) : le Bloc consomme
+/// Souscription à une source de messages A2UI décodés : le Bloc consomme
 /// le flux, l'annule à la fermeture ou si une nouvelle source arrive.
 final class CanvasSourceSubscribed extends CanvasEvent {
   const CanvasSourceSubscribed(this.messages);
-  final Stream<Map<String, dynamic>> messages;
+  final Stream<A2uiMessage> messages;
 }
 
 /// Une surface est apparue (phase squelette).
@@ -41,10 +43,10 @@ final class CanvasResetRequested extends CanvasCommand {
   const CanvasResetRequested();
 }
 
-/// Un message A2UI v0.9 (forme JSON) à appliquer au moteur genui.
+/// Un message A2UI v0.9 décodé à appliquer au moteur genui.
 ///
 /// Le Bloc déduit les changements de surface et de phase du type du message.
 final class A2uiMessageReceived extends CanvasCommand {
   const A2uiMessageReceived(this.message);
-  final Map<String, dynamic> message;
+  final A2uiMessage message;
 }

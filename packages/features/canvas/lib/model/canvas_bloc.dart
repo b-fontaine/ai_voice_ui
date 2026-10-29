@@ -51,7 +51,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       emit(state.withSource(CanvasSourceStatus.failed, error: '$error'));
     }
 
-    await emit.onEach<Map<String, dynamic>>(
+    await emit.onEach<a2ui.A2uiMessage>(
       event.messages,
       onData: (message) {
         if (failed) return;
@@ -69,7 +69,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   }
 
   void _onMessage(A2uiMessageReceived event, Emitter<CanvasState> emit) {
-    final a2ui.A2uiMessage message = a2ui.A2uiMessage.fromJson(event.message);
+    final a2ui.A2uiMessage message = event.message;
     _controller.handleMessage(message);
     emit(switch (message) {
       a2ui.CreateSurfaceMessage(:final surfaceId) => state.withSurface(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:feature_canvas/api/canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart'
@@ -133,7 +134,7 @@ void main() {
 
   group('CanvasSourceSubscribed', () {
     test('flux terminé : playing puis completed, messages appliqués', () async {
-      final source = StreamController<Map<String, dynamic>>();
+      final source = StreamController<A2uiMessage>();
       final states = await statesAfter(bloc, (b) async {
         b.add(CanvasSourceSubscribed(source.stream));
         await Future<void>.delayed(Duration.zero);
@@ -151,7 +152,7 @@ void main() {
     });
 
     test('erreur du flux : failed avec le message', () async {
-      final source = StreamController<Map<String, dynamic>>();
+      final source = StreamController<A2uiMessage>();
       final states = await statesAfter(bloc, (b) async {
         b.add(CanvasSourceSubscribed(source.stream));
         await Future<void>.delayed(Duration.zero);
@@ -170,7 +171,7 @@ void main() {
 
     test("close() pendant le flux annule l'abonnement", () async {
       var cancelled = false;
-      final source = StreamController<Map<String, dynamic>>(
+      final source = StreamController<A2uiMessage>(
         onCancel: () => cancelled = true,
       );
       bloc.add(CanvasSourceSubscribed(source.stream));

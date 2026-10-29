@@ -21,8 +21,8 @@ class _FakeBundle extends CachingAssetBundle {
 }
 
 const _jsonl = '''
-{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1"}}}
-{"t_ms": 200, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1"}}}
+{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"c"}}}
+{"t_ms": 200, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[]}}}
 
 {"t_ms": 500, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s1"}}}
 ''';
@@ -45,7 +45,9 @@ void main() {
 
         expect(bundle.requested, <String>['assets/replays/demo.jsonl']);
         expect(
-          received.map((m) => m.keys.toSet().difference({'version'}).single),
+          received.map(
+            (m) => m.toJson().keys.toSet().difference({'version'}).single,
+          ),
           <String>['createSurface', 'updateComponents', 'updateDataModel'],
         );
         expect(delays, const <Duration>[

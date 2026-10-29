@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage, A2uiValidationError;
+
 /// Attente injectable entre deux messages (remplaçable dans les tests).
 typedef ReplayDelay = Future<void> Function(Duration duration);
 
-/// Ligne de rejeu invalide : JSON illisible, version inattendue, `t_ms`
-/// absent ou décroissant, message absent.
+/// Ligne de rejeu invalide : JSON illisible, `t_ms` absent ou décroissant,
+/// message absent ou refusé par le décodeur A2UI v0.9 (version, corps).
 class A2uiReplayFormatException implements Exception {
   const A2uiReplayFormatException(this.lineNumber, this.message);
 
@@ -25,8 +27,6 @@ class A2uiReplayFormatException implements Exception {
 class A2uiReplaySource {
   A2uiReplaySource({required this.lines, this.delay = _realDelay});
 
-  static const _version = 'v0.9';
-
   /// Lignes JSONL à rejouer.
   final Stream<String> lines;
 
@@ -37,7 +37,7 @@ class A2uiReplaySource {
       Future<void>.delayed(duration);
 
   /// Flux des messages décodés, à consommer une seule fois.
-  Stream<Map<String, dynamic>> messages() async* {
+  Stream<A2uiMessage> messages() async* {
     var lineNumber = 0;
     var previousMs = 0;
     await for (final raw in lines) {
@@ -57,10 +57,7 @@ class A2uiReplaySource {
     }
   }
 
-  static ({int tMs, Map<String, dynamic> message}) _parse(
-    String raw,
-    int lineNumber,
-  ) {
+  static ({int tMs, A2uiMessage message}) _parse(String raw, int lineNumber) {
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);
@@ -84,12 +81,15 @@ class A2uiReplaySource {
     if (message is! Map<String, dynamic>) {
       throw A2uiReplayFormatException(lineNumber, 'message manquant');
     }
-    if (message['version'] != _version) {
+    try {
+      return (tMs: tMs, message: A2uiMessage.fromJson(message));
+    } on A2uiValidationError catch (e) {
+      throw A2uiReplayFormatException(lineNumber, e.message);
+    } on TypeError catch (e) {
       throw A2uiReplayFormatException(
         lineNumber,
-        'version "${message['version']}" au lieu de "$_version"',
+        'corps de message A2UI mal formé : $e',
       );
     }
-    return (tMs: tMs, message: message);
   }
 }

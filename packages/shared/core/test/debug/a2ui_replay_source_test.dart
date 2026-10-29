@@ -2,9 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_core/shared_core.dart';
 
 const _createSurface =
-    '{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1"}}}';
+    '{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"c"}}}';
 const _updateComponents =
-    '{"t_ms": 300, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1"}}}';
+    '{"t_ms": 300, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[]}}}';
 const _updateDataModel =
     '{"t_ms": 1000, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s1"}}}';
 
@@ -29,12 +29,15 @@ void main() {
 
       final messages = await source.messages().toList();
 
-      expect(messages.map((m) => m.keys.toSet().difference({'version'})), [
-        {'createSurface'},
-        {'updateComponents'},
-        {'updateDataModel'},
-      ]);
-      expect(messages.every((m) => m['version'] == 'v0.9'), isTrue);
+      expect(
+        messages.map((m) => m.toJson().keys.toSet().difference({'version'})),
+        [
+          {'createSurface'},
+          {'updateComponents'},
+          {'updateDataModel'},
+        ],
+      );
+      expect(messages.every((m) => m.version == 'v0.9'), isTrue);
     });
 
     test('attend l\'écart relatif entre deux t_ms', () async {
@@ -83,6 +86,41 @@ void main() {
             (e) => e.message,
             'message',
             contains('v0.9'),
+          ),
+        ),
+      );
+    });
+
+    test('rejette une ligne à deux corps avec le numéro de ligne', () {
+      final source = build([
+        _createSurface,
+        '{"t_ms": 10, "message": {"version":"v0.9",'
+            '"createSurface":{"surfaceId":"s1","catalogId":"c"},'
+            '"updateComponents":{"surfaceId":"s1","components":[]}}}',
+      ]);
+
+      expect(
+        source.messages().toList(),
+        throwsA(
+          isA<A2uiReplayFormatException>()
+              .having((e) => e.lineNumber, 'lineNumber', 2)
+              .having((e) => e.message, 'message', contains('exactly one')),
+        ),
+      );
+    });
+
+    test('rejette un corps mal formé avec le numéro de ligne', () {
+      final source = build([
+        '{"t_ms": 0, "message": {"version":"v0.9","createSurface":{}}}',
+      ]);
+
+      expect(
+        source.messages().toList(),
+        throwsA(
+          isA<A2uiReplayFormatException>().having(
+            (e) => e.lineNumber,
+            'lineNumber',
+            1,
           ),
         ),
       );
