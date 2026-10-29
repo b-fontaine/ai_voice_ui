@@ -1,7 +1,18 @@
-// Client de contrôle réel jetable de la fonctionnalité 003 : joue le rôle de l'app (WebRTC +
+// Client de contrôle réel jetable (fonctionnalités 003 et 004) : joue le rôle de l'app (WebRTC +
 // app-channel WSS) contre le backend local, puis imprime un résumé et un verdict. Il ne contient
 // aucune clé ; le secret éventuel à chercher dans les sorties est lu dans CHECK_SECRET et n'est
 // jamais affiché ni journalisé.
+//
+// Deux scénarios (-scenario) :
+//
+//	voice    (défaut) contrôle de 003 : session, transcripts, orb.level, usage, fermeture.
+//	surface  contrôle de 004 : delegation, agent.activity, trois messages a2ui (surface « quality »),
+//	         mesures NFR-02/NFR-03 ; la question audio (-file1) doit demander l'état de la release.
+//
+// Exemples (CHECK_SECRET = clé à chercher dans les sorties, lue dans l'environnement) :
+//
+//	go run . -file1 question.ogg                                   # voice
+//	go run . -scenario surface -file1 question.ogg -duration 45s   # surface
 package main
 
 import (
@@ -128,7 +139,7 @@ func (c *collector) run(ctx context.Context, conn *websocket.Conn, j *journal, s
 		c.msgs = append(c.msgs, r)
 		c.mu.Unlock()
 		j.write(map[string]any{"type": "ws.envelope", "sub": c.name, "v": env.V, "msg_type": env.Type,
-			"session": env.Session, "t_ms": env.TMs, "data": env.Data})
+			"session": env.Session, "t_ms": env.TMs, "agent": env.Agent, "task": env.Task, "data": env.Data})
 		if env.Type == "session.state" && (sessionID == "" || env.Session == sessionID) {
 			if st, _ := stateOf(r); st == "closed" {
 				c.once.Do(func() { close(c.closed) })
@@ -164,7 +175,11 @@ func main() {
 	duration := flag.Duration("duration", 30*time.Second, "durée d'observation après file1")
 	logPath := flag.String("log", "live-check.jsonl", "journal JSONL")
 	stun := flag.String("stun", "", "serveur STUN optionnel")
+	scenario := flag.String("scenario", "voice", "scénario évalué : voice (003) ou surface (004)")
 	flag.Parse()
+	if *scenario != "voice" && *scenario != "surface" {
+		log.Fatalf("-scenario inconnu %q (voice ou surface)", *scenario)
+	}
 	if *file1 == "" {
 		log.Fatal("-file1 requis")
 	}
@@ -265,9 +280,17 @@ func main() {
 
 	finish := func(c1, c2 *collector) {
 		obs.Filtered, obs.Global = c1.snapshot(), c2.snapshot()
-		s := summarize(obs)
-		fmt.Print(s.render())
-		if len(s.Failed) > 0 {
+		var failed []string
+		if *scenario == "surface" {
+			s := summarizeSurface(obs)
+			fmt.Print(s.render())
+			failed = s.Failed
+		} else {
+			s := summarize(obs)
+			fmt.Print(s.render())
+			failed = s.Failed
+		}
+		if len(failed) > 0 {
 			os.Exit(1)
 		}
 	}
