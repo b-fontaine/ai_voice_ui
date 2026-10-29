@@ -42,7 +42,7 @@ entrypoints:
   - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
   - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
   - {id: p-rm-roadmap, why: "jalons J0-J9 datés, dépendances, ordre de coupe"}
-  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-67)"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-68)"}
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
@@ -109,7 +109,7 @@ requirement_index:
   "RG-01..RG-30": p-fn-business-rules
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-67 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-68 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog

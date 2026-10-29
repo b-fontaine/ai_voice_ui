@@ -1,6 +1,6 @@
 # 003 — État
 
-- **Étape** : Vérification
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (T17) : backend/orchestrator/{Dockerfile,.dockerignore,config/voice-instructions.fr.md,cmd/orchestrator/main.go,internal/bootstrap/{healthcheck.go,healthcheck_test.go}}, docker-compose.yaml, .github/workflows/ci.yaml, plan.md, tasks.md, status.md
@@ -38,6 +38,7 @@
 | 2026-10-29 | Refactorisation terminée | R1-R12 appliquées (R1 bloquante levée) ; `gate.sh --full` vert sur arbre propre | voir ligne suivante |
 | 2026-10-29 | Vérification | Client jetable de contrôle réel `spikes/003-live-check/` (POST SDP brut, deux abonnés WSS filtré et global, DELETE, résumé et verdict (a)-(i) sans secret) ; `go vet` et `go test` verts, non lancé contre l'API | .omc/state/loop/gates/20261029-195407-full.log |
 | 2026-10-29 | Vérification (essai réel unique) | `docker compose up --build` (`.env` du porteur, non lu) + `spikes/003-live-check` : POST 200, DELETE 204 ; `connecting`→`active` en 1 819 ms après le POST (1ʳᵉ tentative d'attache réussie, ~0,6 s) ; 156 `orb.level` à 5,07 msg/s pendant la parole (max 0,145) ; transcripts user « Bonjour, peux-tu me dire où en est la release 3.4 » et ai (réponse brève en français) ; `usage` 28 s, contexte 1,5 % ; fermeture `close_requested` ; abonnés filtré et global = 196 messages chacun ; 196 lignes dans `/var/lib/genesis/journal/<session>.jsonl` du volume (propriétaire 65532, 0600) ; clé absente des logs du conteneur et du journal client ; Host `evil.example` → 421 ; VERDICT OK ; coût 0,03 € (budget 0,29 €/12 €) | résumé du client (`.omc` hors dépôt : scratchpad `live-check.out`), `specs/openai-spend.tsv` |
+| 2026-10-29 | Clôture | `product/` propagé (contrat v1 de l'app-channel dans agents-protocols.md, backend.md aligné sur `backend/orchestrator`, security.md, Q-68, backlog, roadmap J2) ; note KB `rt-gpt-live-sideband` complétée ; lints produit et KB à 0 erreur ; fusion dans `loop` et `publish.sh` | — |
 
 ## Revue d'architecte
 Verdict (architect-reviewer, 2026-10-29) : **BLOQUANT** (R1) ; conforme sous réserve de R2 à R5 une fois R1 corrigé. Conforme : dépendances hexagonales, injection par constructeur, aucune fuite de clé, journal sans traversée de chemin, origine WebSocket par défaut, compose durci, `Publish` non bloquant, niveau RMS 5 Hz, aucun skip/TODO.
