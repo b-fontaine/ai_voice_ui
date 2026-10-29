@@ -20,3 +20,4 @@ coverage/
 
 # Système
 .DS_Store
+.env
