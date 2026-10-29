@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +58,7 @@ void main() {
     String? jsonl, {
     bool capture = true,
     String scenario = 'demo',
+    bool withReplay = true,
   }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
@@ -65,11 +68,13 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
           catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
-          replay: ScenarioPlayer(
-            bundle: _FakeBundle(<String, String>{
-              'assets/replays/demo.jsonl': ?jsonl,
-            }),
-          ).messages(scenario),
+          replay: withReplay
+              ? ScenarioPlayer(
+                  bundle: _FakeBundle(<String, String>{
+                    'assets/replays/demo.jsonl': ?jsonl,
+                  }),
+                ).messages(scenario)
+              : null,
           snapshotFactory: (exitHandler) => SnapshotService(
             path: capture ? '${dir.path}/out.png' : null,
             exitHandler: exitHandler,
@@ -142,5 +147,58 @@ void main() {
 
     expect(exitCodes, isEmpty);
     expect(errors.toString(), isEmpty);
+  });
+
+  testWidgets('capture active sans scénario : PNG non vide et sortie 0', (
+    tester,
+  ) async {
+    await launch(tester, null, withReplay: false);
+
+    expect(exitCodes, <int>[0]);
+    expect(errors.toString(), isEmpty);
+    final png = File('${dir.path}/out.png');
+    expect(png.existsSync(), isTrue);
+    expect(png.lengthSync(), greaterThan(0));
+  });
+
+  testWidgets('page démontée avant la capture : message et sortie 1', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final messages = StreamController<A2uiMessage>();
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: GenesisCanvasPage(
+          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          replay: messages.stream,
+          snapshotFactory: (exitHandler) => SnapshotService(
+            path: '${dir.path}/out.png',
+            exitHandler: exitHandler,
+            errorSink: errors,
+          ),
+          exitHandler: exitCodes.add,
+          errorSink: errors,
+        ),
+      ),
+    );
+    unawaited(messages.close());
+    // Laisse le statut `completed` arriver, puis démonte avant la fin de
+    // l'attente de stabilisation.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (exitCodes.isEmpty && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+    });
+
+    expect(exitCodes, <int>[1]);
+    expect(errors.toString(), contains('démontée'));
   });
 }

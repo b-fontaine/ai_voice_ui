@@ -71,7 +71,14 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
     // Écoute dès la création : le moteur ne rejoue pas les erreurs passées.
     _engineErrors;
     final replay = widget.replay;
-    if (replay != null) _bloc.add(CanvasSourceSubscribed(replay));
+    if (replay != null) {
+      _bloc.add(CanvasSourceSubscribed(replay));
+    } else if (_snapshot.isActive) {
+      // Sans scénario : capture du canevas vide après la première frame.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(_captureWhenSettled()),
+      );
+    }
   }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
@@ -87,13 +94,25 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
     }
   }
 
+  /// Nombre maximal de frames attendues avant la capture.
+  static const int _maxSettleFrames = 10;
+
   Future<void> _captureWhenSettled() async {
-    // Laisse genui construire la surface avant la capture.
-    for (var i = 0; i < 2; i++) {
-      WidgetsBinding.instance.scheduleFrame();
-      await WidgetsBinding.instance.endOfFrame;
+    // Au moins une frame (genui construit la surface), puis tant qu'une frame
+    // reste programmée (validation asynchrone), dans la limite du plafond.
+    final binding = WidgetsBinding.instance;
+    var frames = 0;
+    do {
+      binding.scheduleFrame();
+      await binding.endOfFrame;
+      frames++;
+    } while (frames < _maxSettleFrames && binding.hasScheduledFrame);
+    if (!mounted) {
+      widget.errorSink.writeln('Capture impossible : page démontée.');
+      widget.exitHandler(1);
+      return;
     }
-    if (mounted) await _snapshot.captureAndExit(_boundaryKey);
+    await _snapshot.captureAndExit(_boundaryKey);
   }
 
   @override
