@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
@@ -17,6 +19,8 @@ import (
 )
 
 var _ port.Sink = (*Hub)(nil)
+
+const testWriteTimeout = 2 * time.Second
 
 type env struct {
 	V       int             `json:"v"`
@@ -40,6 +44,15 @@ func newTestHub(t *testing.T, opts Options) (*Hub, *httptest.Server) {
 		_ = h.Close(ctx)
 	})
 	return h, srv
+}
+
+// know déclare des sessions au hub sans rien ajouter à leur backlog (un
+// orb.level n'y est pas conservé) : un abonné filtré ne peut se connecter
+// qu'à une session connue.
+func know(h *Hub, ids ...string) {
+	for _, id := range ids {
+		h.Publish(id, domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0}})
+	}
 }
 
 func dial(t *testing.T, srv *httptest.Server, session string) *websocket.Conn {
@@ -103,7 +116,7 @@ func waitSubs(t *testing.T, h *Hub, session string, n int) {
 }
 
 func TestNewHubValidatesOptions(t *testing.T) {
-	for _, o := range []Options{{Backlog: 0, SendBuffer: 1}, {Backlog: 1, SendBuffer: 0}, {Backlog: -1, SendBuffer: 1}} {
+	for _, o := range []Options{{Backlog: 0, SendBuffer: 1, WriteTimeout: testWriteTimeout}, {Backlog: 1, SendBuffer: 0, WriteTimeout: testWriteTimeout}, {Backlog: -1, SendBuffer: 1, WriteTimeout: testWriteTimeout}} {
 		if _, err := NewHub(o); err == nil {
 			t.Errorf("NewHub(%+v) devrait échouer", o)
 		}
@@ -111,7 +124,8 @@ func TestNewHubValidatesOptions(t *testing.T) {
 }
 
 func TestHubBroadcast(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
 	a, b := dial(t, srv, "s1"), dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 2)
 	for i := 1; i <= 3; i++ {
@@ -127,7 +141,7 @@ func TestHubBroadcast(t *testing.T) {
 }
 
 func TestHubBacklogExcludesLevels(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 2, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 2, SendBuffer: 16, WriteTimeout: testWriteTimeout})
 	h.Publish("s1", transcript(1))
 	h.Publish("s1", domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.5}})
 	h.Publish("s1", transcript(2))
@@ -145,7 +159,7 @@ func TestHubBacklogExcludesLevels(t *testing.T) {
 }
 
 func TestHubNoDuplicateBetweenBacklogAndLive(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000})
+	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000, WriteTimeout: testWriteTimeout})
 	const total = 300
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -170,7 +184,9 @@ func TestHubNoDuplicateBetweenBacklogAndLive(t *testing.T) {
 }
 
 func TestHubSessionIsolation(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	know(h, "a")
+	know(h, "b")
 	a, b := dial(t, srv, "a"), dial(t, srv, "b")
 	waitSubs(t, h, "a", 1)
 	waitSubs(t, h, "b", 1)
@@ -185,7 +201,8 @@ func TestHubSessionIsolation(t *testing.T) {
 }
 
 func TestHubSlowSubscriberDropped(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 2})
+	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 2, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
 	slow, fast := dial(t, srv, "s1"), dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 2)
 
@@ -234,7 +251,8 @@ func TestHubSlowSubscriberDropped(t *testing.T) {
 }
 
 func TestHubForgetsClosedSession(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
 	h.Publish("s1", domain.Message{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateClosed}})
@@ -271,7 +289,9 @@ func TestHubForgetsClosedSession(t *testing.T) {
 }
 
 func TestHubCloseClosesSubscribers(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5})
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
+	know(h, "s2")
 	a, b := dial(t, srv, "s1"), dial(t, srv, "s2")
 	waitSubs(t, h, "s1", 1)
 	waitSubs(t, h, "s2", 1)
@@ -296,7 +316,8 @@ func TestHubCloseClosesSubscribers(t *testing.T) {
 }
 
 func TestEnvelopeShape(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 10, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
 	cases := []struct {
@@ -337,7 +358,7 @@ func waitAll(t *testing.T, h *Hub, n int) {
 }
 
 func TestHubAllSessionsSubscriber(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
 	all := dial(t, srv, "") // sans paramètre session
 	waitAll(t, h, 1)
 	// Les sessions s'ouvrent après la connexion de l'abonné.
@@ -353,7 +374,7 @@ func TestHubAllSessionsSubscriber(t *testing.T) {
 }
 
 func TestHubSessionFilter(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
 	h.Publish("a", transcript(1))
 	h.Publish("b", transcript(2))
 	onlyB := dial(t, srv, "b")
@@ -369,7 +390,7 @@ func TestHubSessionFilter(t *testing.T) {
 }
 
 func TestHubBacklogAllSessionsOrdered(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
 	h.Publish("a", transcript(1))
 	h.Publish("b", transcript(2))
 	h.Publish("a", domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.5}})
@@ -390,7 +411,7 @@ func closedMsg() domain.Message {
 }
 
 func TestHubAllSessionsDoesNotLeakSessions(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 64})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 64, WriteTimeout: testWriteTimeout})
 	all := dial(t, srv, "")
 	waitAll(t, h, 1)
 	for i := 0; i < 20; i++ {
@@ -407,7 +428,8 @@ func TestHubAllSessionsDoesNotLeakSessions(t *testing.T) {
 }
 
 func TestHubClosedSessionKeptForFilteredSubscriber(t *testing.T) {
-	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16, WriteTimeout: testWriteTimeout})
+	know(h, "s1")
 	c := dial(t, srv, "s1")
 	waitSubs(t, h, "s1", 1)
 	h.Publish("s1", closedMsg())
@@ -422,5 +444,91 @@ func TestHubClosedSessionKeptForFilteredSubscriber(t *testing.T) {
 	}
 	if n := h.sessionCount(); n != 0 {
 		t.Fatalf("%d sessions retenues, attendu 0", n)
+	}
+}
+
+func TestNewHubValidatesWriteTimeout(t *testing.T) {
+	for _, d := range []time.Duration{0, -time.Second} {
+		if _, err := NewHub(Options{Backlog: 1, SendBuffer: 1, WriteTimeout: d}); err == nil {
+			t.Errorf("NewHub avec WriteTimeout=%v devrait échouer", d)
+		}
+	}
+}
+
+func rawGet(t *testing.T, srv *httptest.Server, query string) (int, string) {
+	t.Helper()
+	resp, err := http.Get(srv.URL + "/app" + query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Errorf("Content-Type %q, attendu JSON", ct)
+	}
+	return resp.StatusCode, string(b)
+}
+
+func TestHubUnknownSession404(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	code, body := rawGet(t, srv, "?session=inconnue")
+	if code != http.StatusNotFound || !strings.Contains(body, `"error"`) {
+		t.Fatalf("statut %d corps %q, attendu 404 JSON", code, body)
+	}
+	if n := h.sessionCount(); n != 0 {
+		t.Fatalf("%d entrées créées, attendu 0", n)
+	}
+	// Session connue puis oubliée : 404 aussi.
+	h.Publish("s1", transcript(1))
+	h.Forget("s1")
+	if code, _ := rawGet(t, srv, "?session=s1"); code != http.StatusNotFound {
+		t.Fatalf("session oubliée : statut %d, attendu 404", code)
+	}
+	if n := h.sessionCount(); n != 0 {
+		t.Fatalf("%d entrées créées, attendu 0", n)
+	}
+}
+
+func TestHubInvalidSessionID400(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5, WriteTimeout: testWriteTimeout})
+	for _, q := range []string{"..%2Fx", "x%2F..%2Fy", strings.Repeat("a", 129), "a%20b", "a.b", "%C3%A9"} {
+		code, body := rawGet(t, srv, "?session="+q)
+		if code != http.StatusBadRequest || !strings.Contains(body, `"error"`) {
+			t.Errorf("session=%q : statut %d corps %q, attendu 400 JSON", q, code, body)
+		}
+	}
+	if n := h.sessionCount(); n != 0 {
+		t.Fatalf("%d entrées créées, attendu 0", n)
+	}
+}
+
+func TestHubStalledWriterTimesOut(t *testing.T) {
+	const writeTimeout = 300 * time.Millisecond
+	h, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 1000, WriteTimeout: writeTimeout})
+	know(h, "s1")
+	_ = dial(t, srv, "s1") // ne lit jamais
+	waitSubs(t, h, "s1", 1)
+
+	big := strings.Repeat("x", 256<<10)
+	start := time.Now()
+	for i := 0; i < 200; i++ { // ~50 Mio : sature les tampons TCP
+		h.Publish("s1", domain.Message{Type: domain.TypeTranscript, Data: domain.Transcript{Role: domain.RoleAI, Text: big}})
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for h.subscribers("s1") != 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if n := h.subscribers("s1"); n != 0 {
+		t.Fatalf("gestionnaire toujours bloqué (%d abonnés) après %v", n, time.Since(start))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	t0 := time.Now()
+	if err := h.Close(ctx); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if d := time.Since(t0); d > 500*time.Millisecond {
+		t.Fatalf("Close a pris %v", d)
 	}
 }

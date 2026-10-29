@@ -9,9 +9,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/coder/websocket"
 
@@ -25,6 +28,9 @@ type Options struct {
 	// SendBuffer est la taille de la file d'envoi par abonné, au-delà de laquelle
 	// l'abonné est jugé trop lent et déconnecté.
 	SendBuffer int
+	// WriteTimeout borne chaque écriture vers un client ; au-delà, l'abonné est
+	// jugé bloqué, sa connexion est coupée et son gestionnaire libéré.
+	WriteTimeout time.Duration
 }
 
 const envelopeVersion = 1
@@ -67,8 +73,8 @@ type closeReason struct {
 
 // NewHub valide les options et crée un hub.
 func NewHub(opts Options) (*Hub, error) {
-	if opts.Backlog <= 0 || opts.SendBuffer <= 0 {
-		return nil, errors.New("wsapp: Backlog et SendBuffer doivent être > 0")
+	if opts.Backlog <= 0 || opts.SendBuffer <= 0 || opts.WriteTimeout <= 0 {
+		return nil, errors.New("wsapp: Backlog, SendBuffer et WriteTimeout doivent être > 0")
 	}
 	return &Hub{opts: opts, sessions: map[string]*session{}, all: map[*subscriber]struct{}{}}, nil
 }
@@ -185,18 +191,23 @@ func (h *Hub) collect(id string, s *session) {
 	}
 }
 
-// subscribe enregistre un abonné (filtré sur id, ou toutes sessions si id est
-// vide) et lui pré-charge le backlog, atomiquement vis-à-vis de Publish : aucun
+// subscribe enregistre un abonné (filtré sur id, qui doit être une session
+// connue du hub, ou toutes sessions si id est vide) et lui pré-charge le backlog, atomiquement vis-à-vis de Publish : aucun
 // doublon ni perte entre rejeu et direct.
-func (h *Hub) subscribe(id string) (*subscriber, bool) {
+func (h *Hub) subscribe(id string) (*subscriber, subscribeStatus) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.closed {
-		return nil, false
+		return nil, statusClosed
 	}
 	var replay []entry
+	var known *session
 	if id != "" {
-		replay = h.session(id).backlog
+		var ok bool
+		if known, ok = h.sessions[id]; !ok {
+			return nil, statusUnknown // aucune entrée créée pour un identifiant inconnu
+		}
+		replay = known.backlog
 	} else {
 		for _, s := range h.sessions {
 			replay = append(replay, s.backlog...)
@@ -211,14 +222,22 @@ func (h *Hub) subscribe(id string) (*subscriber, bool) {
 	for _, e := range replay {
 		sub.out <- e.payload
 	}
-	if id != "" {
-		h.session(id).subs[sub] = struct{}{}
+	if known != nil {
+		known.subs[sub] = struct{}{}
 	} else {
 		h.all[sub] = struct{}{}
 	}
 	h.handlers.Add(1)
-	return sub, true
+	return sub, statusOK
 }
+
+type subscribeStatus int
+
+const (
+	statusOK subscribeStatus = iota
+	statusClosed
+	statusUnknown
+)
 
 func (h *Hub) unsubscribe(sub *subscriber) {
 	h.mu.Lock()
@@ -235,12 +254,24 @@ func (h *Hub) unsubscribe(sub *subscriber) {
 // ServeHTTP gère `GET /app[?session=<id>]`.
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("session")
-	conn, err := websocket.Accept(w, r, nil)
-	if err != nil {
+	if id != "" && !domain.ValidSessionID(id) {
+		writeError(w, http.StatusBadRequest, "identifiant de session invalide")
 		return
 	}
-	sub, ok := h.subscribe(id)
-	if !ok {
+	// L'abonnement précède l'upgrade pour répondre 404 en HTTP clair.
+	sub, status := h.subscribe(id)
+	if status == statusUnknown {
+		writeError(w, http.StatusNotFound, "session inconnue")
+		return
+	}
+	conn, err := websocket.Accept(w, r, nil)
+	if err != nil {
+		if status == statusOK {
+			h.unsubscribe(sub)
+		}
+		return
+	}
+	if status == statusClosed {
 		_ = conn.Close(websocket.StatusGoingAway, "arrêt du serveur")
 		return
 	}
@@ -263,12 +294,23 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			_ = conn.CloseNow()
 			return
 		case payload := <-sub.out:
-			if err := conn.Write(ctx, websocket.MessageText, payload); err != nil {
+			wctx, cancel := context.WithTimeout(ctx, h.opts.WriteTimeout)
+			err := conn.Write(wctx, websocket.MessageText, payload)
+			cancel()
+			if err != nil {
+				// Client bloqué ou parti : une fermeture polie (1008) attendrait
+				// lui aussi le client ; on coupe la connexion.
 				_ = conn.CloseNow()
 				return
 			}
 		}
 	}
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = io.WriteString(w, `{"error":`+strconv.Quote(msg)+`}`+"\n")
 }
 
 // encode sérialise m en enveloppe v1.

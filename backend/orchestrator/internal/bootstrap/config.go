@@ -16,6 +16,8 @@ const (
 	// Valeurs de repli des tests et du bootstrap ; docker-compose.yaml les fixe aussi.
 	defaultAttachAttempts = 5
 	defaultAttachDelay    = 500 * time.Millisecond
+	// Délai d'écriture vers un abonné du canal /app (WS_WRITE_TIMEOUT).
+	defaultWriteTimeout = 5 * time.Second
 )
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.
@@ -35,6 +37,9 @@ type Config struct {
 	// seulement ; docker-compose.yaml les fixe aussi pour l'exécution.
 	AttachAttempts int
 	AttachDelay    time.Duration
+	// WriteTimeout borne chaque écriture vers un client du canal /app ; défaut 5 s
+	// (documenté ici ; docker-compose.yaml le fixe aussi).
+	WriteTimeout time.Duration
 
 	apiKey string
 }
@@ -120,6 +125,15 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, errors.New("VOICE_ATTACH_DELAY doit être une durée strictement positive (par exemple 500ms)")
 		}
 		cfg.AttachDelay = d
+	}
+
+	cfg.WriteTimeout = defaultWriteTimeout
+	if raw := strings.TrimSpace(getenv("WS_WRITE_TIMEOUT")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return Config{}, errors.New("WS_WRITE_TIMEOUT doit être une durée strictement positive (par exemple 5s)")
+		}
+		cfg.WriteTimeout = d
 	}
 
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))

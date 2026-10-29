@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sync"
 	"time"
 
@@ -30,8 +29,6 @@ type Options struct {
 	// nombre d'erreurs supprimées.
 	OnError func(error)
 }
-
-var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 
 // Recorder écrit les messages publiés dans des fichiers JSONL par session.
 type Recorder struct {
@@ -103,7 +100,7 @@ type line struct {
 // Publish ajoute une ligne au journal de la session. Il ne panique ni ne
 // bloque : toute erreur est transmise à OnError.
 func (r *Recorder) Publish(sessionID string, m domain.Message) {
-	if !sessionIDPattern.MatchString(sessionID) {
+	if !domain.ValidSessionID(sessionID) {
 		r.opts.OnError(errors.New("jsonljournal: identifiant de session refusé"))
 		return
 	}

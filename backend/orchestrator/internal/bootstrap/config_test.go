@@ -214,3 +214,32 @@ func TestConfigFromEnv_AttachValid(t *testing.T) {
 		t.Fatalf("valeurs valides refusées : %v %d %v", err, cfg.AttachAttempts, cfg.AttachDelay)
 	}
 }
+
+func TestConfigFromEnv_WriteTimeoutDefault(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.WriteTimeout != 5*time.Second {
+		t.Fatalf("défaut attendu 5s, obtenu %v", cfg.WriteTimeout)
+	}
+}
+
+func TestConfigFromEnv_WriteTimeoutInvalid(t *testing.T) {
+	for _, v := range []string{"abc", "5", "0s", "-1s"} {
+		env := fullEnv()
+		env["WS_WRITE_TIMEOUT"] = v
+		if _, err := load(env); err == nil || !strings.Contains(err.Error(), "WS_WRITE_TIMEOUT") {
+			t.Errorf("WS_WRITE_TIMEOUT=%q doit être refusée en nommant la variable : %v", v, err)
+		}
+	}
+}
+
+func TestConfigFromEnv_WriteTimeoutValid(t *testing.T) {
+	env := fullEnv()
+	env["WS_WRITE_TIMEOUT"] = "750ms"
+	cfg, err := load(env)
+	if err != nil || cfg.WriteTimeout != 750*time.Millisecond {
+		t.Fatalf("valeur valide refusée : %v %v", err, cfg.WriteTimeout)
+	}
+}

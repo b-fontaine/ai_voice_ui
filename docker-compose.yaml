@@ -17,6 +17,8 @@ services:
       # Attache du sideband en arrière-plan : tentatives et attente entre deux (SP-02 : 5 x 500 ms).
       VOICE_ATTACH_ATTEMPTS: ${VOICE_ATTACH_ATTEMPTS:-5}
       VOICE_ATTACH_DELAY: ${VOICE_ATTACH_DELAY:-500ms}
+      # Délai maximal d'une écriture vers un client du canal /app (client bloqué : connexion coupée).
+      WS_WRITE_TIMEOUT: ${WS_WRITE_TIMEOUT:-5s}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

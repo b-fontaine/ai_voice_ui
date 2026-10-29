@@ -92,7 +92,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		}
 	}
 
-	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer})
+	hub, err := wsapp.NewHub(wsapp.Options{Backlog: hubBacklog, SendBuffer: hubSendBuffer, WriteTimeout: cfg.WriteTimeout})
 	if err != nil {
 		return nil, err
 	}
