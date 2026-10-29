@@ -28,6 +28,8 @@ func testOptions(baseURL string) openailive.Options {
 		Voice:          "voice-test",
 		DelegationType: "client",
 		Instructions:   "consignes de test",
+
+		AppendAckTimeout: 2 * time.Second,
 	}
 }
 
@@ -282,7 +284,7 @@ func TestTranslateTranscriptTimes(t *testing.T) {
 
 func TestSidebandIgnoresUnknown(t *testing.T) {
 	srv := newSidebandServer(t, []string{
-		`{"type":"session.delegation.created","event_id":"1","delegation":{"id":"d1"}}`,
+		`{"type":"session.thinking.appended","event_id":"1"}`,
 		`{"type":"future.live.event","marker":42}`,
 		`{"type":"session.started","event_id":"2"}`,
 		`{"type":"session.output_audio.delta","event_id":"3","delta":"!!pas-du-base64!!"}`,
@@ -464,23 +466,243 @@ func TestHangupErrorDoesNotLeakKey(t *testing.T) {
 	}
 }
 
-// TestAppendNotYetImplemented consigne le comportement défini de l'échafaudage
-// de T10 : les retours vocaux ne sont pas encore câblés et le disent (T11).
-func TestAppendNotYetImplemented(t *testing.T) {
-	srv := newSidebandServer(t, nil, false, true)
-	p, _ := openailive.New(testOptions(srv.URL))
+// reactiveServer répond aux commandes du client : reply reçoit la commande
+// décodée et renvoie les trames à envoyer en retour.
+type reactiveServer struct {
+	*httptest.Server
+	mu   sync.Mutex
+	cmds []map[string]any
+}
+
+func (s *reactiveServer) commands() []map[string]any {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]map[string]any(nil), s.cmds...)
+}
+
+func newReactiveServer(t *testing.T, first []string, reply func(cmd map[string]any) []string) *reactiveServer {
+	t.Helper()
+	s := &reactiveServer{}
+	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer c.CloseNow()
+		for _, f := range first {
+			if err := c.Write(r.Context(), websocket.MessageText, []byte(f)); err != nil {
+				return
+			}
+		}
+		for {
+			_, data, err := c.Read(r.Context())
+			if err != nil {
+				return
+			}
+			var cmd map[string]any
+			_ = json.Unmarshal(data, &cmd)
+			s.mu.Lock()
+			s.cmds = append(s.cmds, cmd)
+			s.mu.Unlock()
+			if reply == nil {
+				continue
+			}
+			for _, f := range reply(cmd) {
+				if err := c.Write(r.Context(), websocket.MessageText, []byte(f)); err != nil {
+					return
+				}
+			}
+		}
+	}))
+	t.Cleanup(s.Close)
+	return s
+}
+
+func ackFor(cmd map[string]any) []string {
+	id, _ := cmd["event_id"].(string)
+	return []string{`{"type":"session.commentary.appended","event_id":"srv","start_ms":1,"end_ms":2,"client_event_id":"` + id + `"}`}
+}
+
+func openSideband(t *testing.T, opts openailive.Options) port.Sideband {
+	t.Helper()
+	p, err := openailive.New(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
 	sb, err := p.Sideband(ctxT(t), "live_abc")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sb.AppendCommentary(ctxT(t), "d1", "texte"); err == nil || !strings.Contains(err.Error(), "non implémenté") {
-		t.Errorf("AppendCommentary err = %v", err)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		_ = sb.Close(ctx)
+	})
+	return sb
+}
+
+func TestTranslateDelegationCreated(t *testing.T) {
+	srv := newSidebandServer(t, []string{
+		`{"type":"session.delegation.created","event_id":"e1","offset_ms":4200,"delegation":{"id":"dlg_1","target":"client","type":"delegation"}}`,
+		`{"type":"session.input_transcript.delta","event_id":"e2","delta":"bonjour","start_ms":100,"end_ms":900}`,
+	}, false, false)
+	sb := openSideband(t, testOptions(srv.URL))
+	e := nextEvent(t, sb.Events())
+	if e.Type != port.EventDelegationCreated || e.DelegationID != "dlg_1" || e.OffsetMs != 4200 || e.Text != "" {
+		t.Fatalf("événement = %+v", e)
 	}
-	if err := sb.AppendThinking(ctxT(t), "d1", "texte"); err == nil || !strings.Contains(err.Error(), "non implémenté") {
-		t.Errorf("AppendThinking err = %v", err)
+	e = nextEvent(t, sb.Events())
+	if e.Type != port.EventInputTranscriptDelta || e.Text != "bonjour" || e.StartMs != 100 || e.EndMs != 900 {
+		t.Fatalf("transcript = %+v", e)
+	}
+}
+
+func TestAppendCommentaryWaitsAck(t *testing.T) {
+	srv := newReactiveServer(t, nil, ackFor)
+	sb := openSideband(t, testOptions(srv.URL))
+	if err := sb.AppendCommentary(ctxT(t), "dlg_1", "Je regarde, un instant."); err != nil {
+		t.Fatalf("AppendCommentary: %v", err)
+	}
+	cmds := srv.commands()
+	if len(cmds) != 1 {
+		t.Fatalf("commandes = %v", cmds)
+	}
+	c := cmds[0]
+	if c["type"] != "session.commentary.append" || c["delegation_id"] != "dlg_1" ||
+		c["content"] != "Je regarde, un instant." || c["event_id"] != "gc-dlg_1-1" {
+		t.Fatalf("commande = %v", c)
+	}
+}
+
+func TestAppendCommentaryTimeoutNoRetry(t *testing.T) {
+	srv := newReactiveServer(t, nil, nil) // jamais d'acquittement
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 100 * time.Millisecond
+	sb := openSideband(t, opts)
+	err := sb.AppendCommentary(ctxT(t), "dlg_1", "texte")
+	if err == nil {
+		t.Fatal("erreur attendue faute d'acquittement")
+	}
+	time.Sleep(300 * time.Millisecond)
+	if n := len(srv.commands()); n != 1 {
+		t.Fatalf("%d commandes envoyées, une seule attendue (aucune nouvelle tentative)", n)
+	}
+}
+
+func TestAppendCommentaryErrorEvent(t *testing.T) {
+	srv := newReactiveServer(t, nil, func(cmd map[string]any) []string {
+		id, _ := cmd["event_id"].(string)
+		return []string{`{"type":"error","event_id":"srv","client_event_id":"` + id +
+			`","error":{"type":"invalid_request_error","code":"bad","message":"refusé pour ` + testKey + `"}}`}
+	})
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 3 * time.Second
+	sb := openSideband(t, opts)
+	start := time.Now()
+	err := sb.AppendCommentary(ctxT(t), "dlg_1", "texte")
+	if err == nil {
+		t.Fatal("erreur attendue")
+	}
+	if time.Since(start) > time.Second {
+		t.Fatal("l'erreur fournisseur doit répondre sans attendre le délai")
+	}
+	if strings.Contains(err.Error(), testKey) {
+		t.Fatalf("l'erreur révèle la clé : %v", err)
+	}
+	if !strings.Contains(err.Error(), "bad") {
+		t.Fatalf("l'erreur doit porter le code fournisseur : %v", err)
+	}
+}
+
+func TestAppendAfterClosedFails(t *testing.T) {
+	srv := newSidebandServer(t, []string{`{"type":"session.closed","event_id":"e","reason":"close_requested"}`}, false, false)
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 5 * time.Second
+	sb := openSideband(t, opts)
+	expectClosed := nextEvent(t, sb.Events())
+	if expectClosed.Type != port.EventClosed {
+		t.Fatalf("événement = %+v", expectClosed)
+	}
+	expectClosedChannel(t, sb.Events())
+	start := time.Now()
+	if err := sb.AppendCommentary(ctxT(t), "dlg_1", "texte"); err == nil {
+		t.Fatal("erreur attendue après la fin de la session")
+	}
+	if time.Since(start) > time.Second {
+		t.Fatal("l'échec doit être immédiat")
 	}
 	if cmds := srv.commands(); len(cmds) != 0 {
-		t.Errorf("aucune commande attendue, reçu %v", cmds)
+		t.Fatalf("aucune commande attendue, reçu %v", cmds)
 	}
-	_ = sb.Close(ctxT(t))
+}
+
+func TestAppendCommentaryRejectsEmptyAndOversized(t *testing.T) {
+	srv := newReactiveServer(t, nil, ackFor)
+	sb := openSideband(t, testOptions(srv.URL))
+	if err := sb.AppendCommentary(ctxT(t), "dlg_1", ""); err == nil {
+		t.Error("texte vide accepté")
+	}
+	if err := sb.AppendCommentary(ctxT(t), "dlg_1", strings.Repeat("é", 1001)); err == nil {
+		t.Error("texte de 1001 runes accepté")
+	}
+	if cmds := srv.commands(); len(cmds) != 0 {
+		t.Fatalf("aucun appel réseau attendu, reçu %v", cmds)
+	}
+	// 1000 runes multi-octets : la limite se compte en runes, pas en octets.
+	if err := sb.AppendCommentary(ctxT(t), "dlg_1", strings.Repeat("é", 1000)); err != nil {
+		t.Errorf("1000 runes refusées : %v", err)
+	}
+}
+
+func TestAppendCommentaryConcurrent(t *testing.T) {
+	srv := newReactiveServer(t, nil, ackFor)
+	sb := openSideband(t, testOptions(srv.URL))
+	const n = 20
+	var wg sync.WaitGroup
+	errs := make(chan error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs <- sb.AppendCommentary(ctxT(t), "dlg_1", "texte")
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Errorf("AppendCommentary: %v", err)
+		}
+	}
+}
+
+func TestEventIDsUnique(t *testing.T) {
+	srv := newReactiveServer(t, nil, ackFor)
+	sb := openSideband(t, testOptions(srv.URL))
+	for i := 0; i < 5; i++ {
+		if err := sb.AppendCommentary(ctxT(t), "dlg_1", "texte"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	seen := map[string]bool{}
+	for _, c := range srv.commands() {
+		id, _ := c["event_id"].(string)
+		if !strings.HasPrefix(id, "gc-dlg_1-") || seen[id] {
+			t.Fatalf("event_id invalide ou répété : %q", id)
+		}
+		seen[id] = true
+	}
+	if len(seen) != 5 {
+		t.Fatalf("%d identifiants distincts, 5 attendus", len(seen))
+	}
+}
+
+func TestOptionsValidateAppendAckTimeout(t *testing.T) {
+	for _, d := range []time.Duration{0, -time.Second} {
+		opts := testOptions("http://127.0.0.1:1")
+		opts.AppendAckTimeout = d
+		if _, err := openailive.New(opts); err == nil {
+			t.Errorf("AppendAckTimeout = %v accepté", d)
+		}
+	}
 }

@@ -41,9 +41,6 @@ type Sideband interface {
 	// est de la responsabilité de l'appelant. Le retour nil n'est que
 	// l'acquittement (`…appended`) : ce n'est pas la diction.
 	AppendCommentary(ctx context.Context, delegationID, text string) error
-	// AppendThinking ajoute une réflexion au contexte de la délégation
-	// delegationID ; mêmes règles de contenu et d'acquittement.
-	AppendThinking(ctx context.Context, delegationID, text string) error
 }
 
 // EventType identifie la nature d'un LiveEvent.
@@ -69,6 +66,7 @@ type LiveEvent struct {
 	Seconds      float64
 	ContextRatio float64
 	DelegationID string // identifiant de la délégation (EventDelegationCreated)
+	OffsetMs     int64  // position de la délégation sur la timeline de la session (ms, EventDelegationCreated)
 	Reason       string // raison de clôture (EventClosed) : celle de session.closed, ou ReasonConnectionLost
 }
 

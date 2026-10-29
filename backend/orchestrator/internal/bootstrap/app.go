@@ -127,6 +127,7 @@ func newOpenAI(cfg Config) (port.LiveProvider, error) {
 	return openailive.New(openailive.Options{
 		APIKey: cfg.APIKey(), Model: cfg.Model, Voice: cfg.Voice,
 		DelegationType: cfg.DelegationType, Instructions: instructions,
+		AppendAckTimeout: defaultAppendAckTimeout,
 	})
 }
 

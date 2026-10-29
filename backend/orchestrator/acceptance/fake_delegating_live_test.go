@@ -153,13 +153,6 @@ func (s *fakeDelegatingSideband) AppendCommentary(_ context.Context, delegationI
 	return nil
 }
 
-func (s *fakeDelegatingSideband) AppendThinking(_ context.Context, delegationID, text string) error {
-	s.live.mu.Lock()
-	defer s.live.mu.Unlock()
-	s.live.thinking = append(s.live.thinking, appended{DelegationID: delegationID, Text: text})
-	return nil
-}
-
 func (s *fakeDelegatingSideband) Close(_ context.Context) error {
 	s.live.mu.Lock()
 	s.isShut = true

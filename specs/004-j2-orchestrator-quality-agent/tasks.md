@@ -11,7 +11,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## TDD
 - [x] T10 Go — domaine et ports (`a2ui`, `agent.activity`, `EventDelegationCreated`, `RemoteAgent` en canal, `Append*`) — à amender en T11/T14 (A8 : retirer `AppendThinking` ; A10 : `iter.Seq2`, `TaskID`, `UpdateSubmitted`)
-- [ ] T11 Go — `openailive` (A8) : `delegation.created` avec `offset_ms`, `AppendCommentary` avec acquittement, `event_id`, erreur sans retry, rejet > 1 000 runes, suppression de `AppendThinking` et de l'échafaudage · test d'abord : `TestTranslateDelegationCreated`, `TestAppendCommentaryWaitsAck`, `TestAppendCommentaryErrorEvent`, `TestAppendAfterClosedFails`
+- [x] T11 Go — `openailive` (A8) : `delegation.created` avec `offset_ms`, `AppendCommentary` avec acquittement, `event_id`, erreur sans retry, rejet > 1 000 runes, suppression de `AppendThinking` et de l'échafaudage · test d'abord : `TestTranslateDelegationCreated`, `TestAppendCommentaryWaitsAck`, `TestAppendCommentaryErrorEvent`, `TestAppendAfterClosedFails`
 - [ ] T12a Go — validateur A2UI sans état (A3) · test d'abord : `TestValidateRejects…` (table), `TestValidateAcceptsReplayAct1`, `TestValidateAcceptsProgressiveChildren`
 - [ ] T12b Go — registre de surfaces par session et contrôle de fin de tâche (A3) · test d'abord : `TestRegistry…`, `TestCompletionRequiresRootAndResolvedRefs`
 - [ ] T13a Go (module agent) — jeu de données brut embarqué + KPI pondéré + port `Composer` (A11) · test d'abord : `TestKpiComputedFromRows`, `TestDatasetMatchesProductSheet`, `TestScopeTable`

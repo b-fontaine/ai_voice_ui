@@ -22,6 +22,9 @@ const (
 	defaultCloseGuard        = 5 * time.Second
 	defaultSessionRateBurst  = 5
 	defaultSessionRateWindow = 10 * time.Second
+	// Attente d'acquittement d'un commentaire vocal ; provisoire, T16 la lit
+	// depuis VOICE_APPEND_ACK_TIMEOUT.
+	defaultAppendAckTimeout = 2 * time.Second
 )
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.

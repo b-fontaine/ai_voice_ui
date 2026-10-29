@@ -22,7 +22,6 @@ type stubSideband struct {
 }
 
 func (s *stubSideband) AppendCommentary(context.Context, string, string) error { return nil }
-func (s *stubSideband) AppendThinking(context.Context, string, string) error   { return nil }
 
 func (s *stubSideband) Events() <-chan port.LiveEvent { return s.events }
 
@@ -224,7 +223,6 @@ type silentSideband struct {
 }
 
 func (s *silentSideband) AppendCommentary(context.Context, string, string) error { return nil }
-func (s *silentSideband) AppendThinking(context.Context, string, string) error   { return nil }
 
 func (s *silentSideband) Events() <-chan port.LiveEvent { return s.events }
 func (s *silentSideband) Close(context.Context) error   { return nil }

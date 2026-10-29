@@ -5,7 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
+	"unicode/utf8"
 
 	"github.com/openai/openai-go/v3/live"
 	"github.com/openai/openai-go/v3/packages/param"
@@ -23,6 +28,11 @@ type sideband struct {
 	done   chan struct{} // fermé quand la boucle de lecture est terminée
 	cancel context.CancelFunc
 
+	seq     atomic.Int64
+	sendMu  sync.Mutex // sérialise les envois de commentaires
+	mu      sync.Mutex // protège pending
+	pending map[string]chan error
+
 	closeOnce sync.Once
 	closeErr  error
 }
@@ -37,6 +47,8 @@ func newSideband(conn *live.SidebandConnection, p *Provider) *sideband {
 		events: make(chan port.LiveEvent, eventBuffer),
 		done:   make(chan struct{}),
 		cancel: cancel,
+
+		pending: make(map[string]chan error),
 	}
 	go s.run(loopCtx)
 	return s
@@ -60,6 +72,7 @@ func (s *sideband) run(ctx context.Context) {
 			s.emit(ctx, port.LiveEvent{Type: port.EventClosed, Reason: port.ReasonConnectionLost})
 			return
 		}
+		s.route(raw)
 		ev, ok, closed := translate(raw)
 		if closed {
 			s.emit(ctx, ev)
@@ -68,6 +81,22 @@ func (s *sideband) run(ctx context.Context) {
 		if ok && !s.emit(ctx, ev) {
 			return
 		}
+	}
+}
+
+// route livre les acquittements et erreurs de commandes aux appelants en attente.
+func (s *sideband) route(raw []byte) {
+	var f frame
+	if json.Unmarshal(raw, &f) != nil || f.ClientEventID == "" {
+		return
+	}
+	switch f.Type {
+	case "session.commentary.appended":
+		s.resolve(f.ClientEventID, nil)
+	case "error":
+		msg := strings.ReplaceAll(f.Error.Message, s.p.secret, "[masquée]")
+		s.resolve(f.ClientEventID, fmt.Errorf("commentaire vocal refusé par le fournisseur (code %q, type %q) : %s",
+			f.Error.Code, f.Error.Type, msg))
 	}
 }
 
@@ -111,20 +140,90 @@ func (s *sideband) close(ctx context.Context) error {
 	}
 }
 
-// AppendCommentary est un échafaudage : le retour vocal est câblé en T11.
-func (s *sideband) AppendCommentary(context.Context, string, string) error {
-	return errNotImplemented
+// maxCommentaryRunes borne le texte d'un commentaire (A8).
+const maxCommentaryRunes = 1000
+
+// AppendCommentary envoie session.commentary.append puis attend l'acquittement
+// (session.commentary.appended ou error portant le même client_event_id) au
+// plus Options.AppendAckTimeout. Jamais de nouvelle tentative : un renvoi
+// ferait dire la phrase deux fois.
+func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text string) error {
+	if text == "" {
+		return errors.New("commentaire vocal vide")
+	}
+	if n := utf8.RuneCountInString(text); n > maxCommentaryRunes {
+		return fmt.Errorf("commentaire vocal trop long (%d runes, maximum %d)", n, maxCommentaryRunes)
+	}
+	select {
+	case <-s.done:
+		return errors.New("commentaire vocal impossible : la session voix est terminée")
+	default:
+	}
+
+	eventID := fmt.Sprintf("gc-%s-%d", delegationID, s.seq.Add(1))
+	ack := make(chan error, 1)
+	s.mu.Lock()
+	s.pending[eventID] = ack
+	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		delete(s.pending, eventID)
+		s.mu.Unlock()
+	}()
+
+	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, delegationID)
+	ev.OfSessionCommentaryAppend.EventID = param.NewOpt(eventID)
+	s.sendMu.Lock() // le SDK refuse les envois concurrents en file
+	err := s.conn.Send(ctx, ev)
+	s.sendMu.Unlock()
+	if err != nil {
+		return s.p.wrap("envoi de session.commentary.append", err)
+	}
+	s.p.log.Debug("commentaire vocal envoyé", "event_id", eventID, "runes", utf8.RuneCountInString(text))
+
+	timer := time.NewTimer(s.p.ackTimeout)
+	defer timer.Stop()
+	select {
+	case err := <-ack:
+		return err
+	case <-s.done:
+		return errors.New("commentaire vocal non acquitté : la session voix s'est terminée")
+	case <-timer.C:
+		s.p.log.Warn("commentaire vocal non acquitté", "event_id", eventID, "delai", s.p.ackTimeout)
+		return fmt.Errorf("commentaire vocal non acquitté en %s", s.p.ackTimeout)
+	case <-ctx.Done():
+		return s.p.wrap("attente de l'acquittement du commentaire", ctx.Err())
+	}
 }
 
-// AppendThinking est un échafaudage : le retour vocal est câblé en T11.
-func (s *sideband) AppendThinking(context.Context, string, string) error {
-	return errNotImplemented
+// resolve livre l'acquittement (err nil) ou l'erreur d'une commande en attente.
+func (s *sideband) resolve(clientEventID string, err error) {
+	if clientEventID == "" {
+		return
+	}
+	s.mu.Lock()
+	ch, ok := s.pending[clientEventID]
+	s.mu.Unlock()
+	if ok {
+		select {
+		case ch <- err:
+		default:
+		}
+	}
 }
-
-var errNotImplemented = errors.New("openailive: non implémenté (T11)")
 
 type frame struct {
-	Type    string `json:"type"`
+	Type          string `json:"type"`
+	ClientEventID string `json:"client_event_id"`
+	OffsetMs      int64  `json:"offset_ms"`
+	Delegation    struct {
+		ID string `json:"id"`
+	} `json:"delegation"`
+	Error struct {
+		Code    string `json:"code"`
+		Type    string `json:"type"`
+		Message string `json:"message"`
+	} `json:"error"`
 	Delta   string `json:"delta"`
 	StartMs int64  `json:"start_ms"`
 	EndMs   int64  `json:"end_ms"`
@@ -137,8 +236,7 @@ type frame struct {
 	} `json:"context_window"`
 }
 
-// translate décode une trame. ok=false : trame ignorée (inconnue, ou
-// délégation, traitée en fonctionnalité 004). closed=true : session.closed,
+// translate décode une trame. ok=false : trame ignorée (inconnue). closed=true : session.closed,
 // ev est alors l'EventClosed portant la raison du fournisseur.
 func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 	var f frame
@@ -162,6 +260,8 @@ func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 			Seconds:      f.Usage.Seconds,
 			ContextRatio: f.ContextWindow.UsageRatio,
 		}, true, false
+	case "session.delegation.created":
+		return port.LiveEvent{Type: port.EventDelegationCreated, DelegationID: f.Delegation.ID, OffsetMs: f.OffsetMs}, true, false
 	case "session.closed":
 		return port.LiveEvent{Type: port.EventClosed, Reason: f.Reason}, false, true
 	}
