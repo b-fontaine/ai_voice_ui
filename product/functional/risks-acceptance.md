@@ -5,7 +5,7 @@ area: functional
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0027-talk-context-meetup-flutter-nantes]
+links: [p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [risques, plan-b, dod, metriques, repetition]
 ---
 # Risques, plan B et critères d'acceptation
@@ -63,4 +63,4 @@ Mise en œuvre des mesures : [p-ar-quality](../architecture/quality.md) ; condit
 
 ## Remarque
 
-D1 vise « les 9 scénarios » ; plusieurs Must n'ont pas de scénario dédié (voir [p-fn-requirements](requirements.md), couverture BDD ; question Q-63). Les steps qui commençaient par un chiffre (incompatibles avec `bdd_widget_test`) sont reformulés en toutes lettres (E16 · Q-34, [pdr-0022](../decisions/pdr-0022-gherkin-steps-no-leading-digit.md)).
+D1 vise « les 9 scénarios » ; plusieurs Must n'ont pas de scénario dédié (voir [p-fn-requirements](requirements.md), couverture BDD) : la DoD s'en tient aux scénarios de la fiche, plus une revue pour ces exigences ([pdr-0049](../decisions/pdr-0049-sheet-gherkin-scenarios-only.md), Q-63 tranchée). Les steps qui commençaient par un chiffre (incompatibles avec `bdd_widget_test`) sont reformulés en toutes lettres (E16 · Q-34, [pdr-0022](../decisions/pdr-0022-gherkin-steps-no-leading-digit.md)).

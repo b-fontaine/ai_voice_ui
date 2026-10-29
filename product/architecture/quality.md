@@ -5,7 +5,7 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:test-tdd-red-green-refactor, knowledge:test-bdd-widget-test, knowledge:test-realtime-fake-runner, knowledge:ma-voice-agent-evals, knowledge:ma-otel-genai-spans]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0048-session-log-only-no-otel-signoz, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [qualite, tdd, bdd, gherkin, ci, nfr, mesure, observabilite]
 ---
 # Qualité, tests et mesure des NFR
@@ -43,7 +43,7 @@ Chaque scénario est étiqueté avec ses exigences (`@FR-01 @NFR-02`…) dans le
 | NFR-03 acte 1 < 8 s | horodatage du journal A2UI | `marker` fin de phrase → dernière mise à jour de données de la 4e surface (`updateDataModel`, A2UI v0.9) |
 | NFR-04 60 i/s | DevTools Performance | profil `--profile` pendant l'acte 1 ; orbe isolé sous `RepaintBoundary` ([perf-audio-visualizer-60hz], [perf-repaint-boundary]) |
 | NFR-05 lisibilité | vidéoprojecteur réel | tokens scène ≥ 24 px ; contraste AA vérifié par Widgetbook ([ds-a11y-wcag-contrast]) |
-| NFR-06 ≤ 6 surfaces | revue visuelle | assertion dans `CanvasBloc` ; aucun scénario de la fiche ne la couvre : scénario à ajouter si Q-63 le décide (la limite porte sur les surfaces : [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) |
+| NFR-06 ≤ 6 surfaces | revue visuelle | assertion dans `CanvasBloc` ; aucun scénario de la fiche ne la couvre et aucun n'est ajouté ([pdr-0049](../decisions/pdr-0049-sheet-gherkin-scenarios-only.md), Q-63) : l'assertion unitaire suffit (la limite porte sur les surfaces : [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) |
 | ~~NFR-07 secours < 2 s~~ | retirée ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) | — |
 | NFR-08 déterminisme | snapshot des réponses d'agents | comparaison des Artifacts A2A par acte en CI |
 | NFR-09 aucune clé | revue de code | scan de secrets en CI sur l'app et les assets |
@@ -66,13 +66,13 @@ La CI est mise en place pour la montrer ; la démo tourne en debug sur le poste 
 
 ## Observabilité
 
-- Backend : spans OTel `gen_ai.*` — une trace par session, `invoke_agent orchestrator` puis `execute_tool` par appel A2A ([ma-otel-genai-spans]).
+- Backend : **journal de session** horodaté (une trace par session, un enregistrement par appel A2A) ; pas de spans OTel `gen_ai.*` pour la démo ([pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md), Q-55). Référence si l'observabilité complète revient : [ma-otel-genai-spans].
 - Client : `BlocObserver` journalise les events (traçabilité Bloc, [bloc-observer]).
-- Pour la scène, le **journal de session** suffit à mesurer ; une stack OTel complète est optionnelle ([Q-55](../roadmap/open-questions.md)).
+- Pour la scène, le **journal de session** suffit à mesurer ; ni OTel ni SigNoz ([pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md), Q-55 tranchée, coupe C2).
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
 - **Point de départ des chronos** : tranché ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md), Q-54) : horloge monotone de l'app, sans alignement client / serveur.
-- **Observabilité en scène** : OTel + SigNoz, ou journal seul → Q-55.
+- ~~Observabilité en scène~~ : tranchée, journal seul ([pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md), Q-55).
 - **Plateforme de CI** : tranchée ([pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md), Q-56) : GitHub Actions, build Linux.
 - **Tests sur vrai micro et sono** (WALK/RUN) : matériel et répétitions gérés par le porteur, hors périmètre de l'assistant (Q-57, Q-24).

@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:genui-overview, knowledge:ma-package-versions, knowledge:adr-0008-ds-widgetbook-4-beta, knowledge:ds-widgetbook-4-spike]
-links: [p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike, pdr-0018-a2ui-v09-genui-0-10-4]
+links: [pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0045-app-backend-channel-wss-recommended, p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [pdr, decision, versions, reproducibility, genui, flutter]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0010 — Versions expérimentales figées
 
-> **En bref.** GenUI et A2UI sont expérimentales : les versions de Flutter, `genui` et `genui_a2a` sont figées et le `pubspec.lock` est committé. Un build propre sur machine vierge fait partie de la Definition of Done. Les numéros exacts restent à arrêter dans [p-ar-stack](../architecture/stack.md).
+> **En bref.** GenUI et A2UI sont expérimentales : les versions de Flutter, `genui` et `genui_a2a` sont figées et le `pubspec.lock` est committé. Un build propre sur machine vierge fait partie de la Definition of Done. Les numéros exacts sont arrêtés dans [p-ar-stack](../architecture/stack.md) ([pdr-0046](pdr-0046-flutter-3-47-8-pinned.md), [pdr-0047](pdr-0047-go-and-tool-versions-pinned.md)).
 
 Part de l'assistant : mise en forme ; état des versions tiré de knowledge.
 
@@ -28,7 +28,7 @@ Part de l'assistant : mise en forme ; état des versions tiré de knowledge.
 
 ## Hypothèses
 - ✅ Flutter 3.47.8 a été exécuté avec succès dans le spike Widgetbook [ds-widgetbook-4-spike].
-- ⚠️ Hypothèse non confirmée : versions exactes à figer (Flutter, `genui`, `genui_a2a`, `a2ui_core`). Info datée du 2026-10-26, à revérifier sur pub.dev avant ajout [ma-package-versions] → [p-ar-stack](../architecture/stack.md), [p-rm-open-questions](../roadmap/open-questions.md) (Q-25).
+- ✅ Versions exactes arrêtées le 2026-10-29 : Flutter 3.47.8 ([pdr-0046](pdr-0046-flutter-3-47-8-pinned.md), Q-25), `genui` 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md)), Go et outils ([pdr-0047](pdr-0047-go-and-tool-versions-pinned.md), Q-46). `genui_a2a` n'entre pas dans la stack de l'app ([pdr-0045](pdr-0045-app-backend-channel-wss-recommended.md), Q-39) ; `a2ui_core` reste transitif via genui 0.10.4. Relevés datés du 2026-10-26, à revérifier sur pub.dev avant tout ajout [ma-package-versions] → [p-ar-stack](../architecture/stack.md).
 - ✅ Écart E3 levé le 2026-10-29 : A2UI v0.9 avec genui 0.10.4 → [pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03 tranchée).
 
 ## Options
@@ -49,7 +49,7 @@ Aucune alternative documentée dans la source.
 - **Stack** : [p-ar-stack](../architecture/stack.md) liste chaque version figée, sa date de relevé et son statut (alpha, bêta, stable). Les contraintes croisées sont à vérifier : `genui` 0.10.4 dépend de `a2ui_core ^0.1.0` [ma-package-versions] ; les paquets `genui_*` 0.7.x sont abandonnés [genui-migration-0-10].
 - **Cohérence** : `widgetbook` est déjà figé à 4.0.0-beta.14 [adr-0008-ds-widgetbook-4-beta] ; il doit rester compatible avec la version de Flutter figée.
 - **CI** : un job « build sur machine vierge » à partir du lock → [p-ar-quality](../architecture/quality.md).
-- **Backend** : la fiche ne parle que des paquets Flutter. Étendre le gel aux modules Go (`go.sum`, version de Go) n'est **pas décidé** → [p-rm-open-questions](../roadmap/open-questions.md) (question à ajouter au registre).
+- **Backend** : la fiche ne parle que des paquets Flutter. Le gel des modules Go (`go.sum`, toolchain Go 1.27.3) est décidé par [pdr-0047](pdr-0047-go-and-tool-versions-pinned.md) (Q-46).
 - **Roadmap** : un gel de versions avant les répétitions (*version freeze*) ; toute montée ensuite est un risque → [p-rm-roadmap](../roadmap/roadmap.md).
 
 ## Réexaminer si
@@ -62,5 +62,6 @@ Aucune alternative documentée dans la source.
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1, NFR-10) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
 | 2026-10-29 | Hypothèse E3 levée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md), décision contrainte) | Assistant |
+| 2026-10-29 | Versions précisées par [pdr-0046](pdr-0046-flutter-3-47-8-pinned.md) (Flutter) et [pdr-0047](pdr-0047-go-and-tool-versions-pinned.md) (Go, outils, genui) ; décision de fond reconfirmée, sans changement | Assistant (mise en forme, sur décisions du porteur) |
 
 Pas d'archive brute.

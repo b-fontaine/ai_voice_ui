@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-rm-open-questions, p-fn-business-rules, p-fn-catalog, p-fn-requirements, p-fn-mockups, p-rm-roadmap, p-rm-backlog, pdr-0014-six-component-catalog]
+links: [p-rm-open-questions, p-fn-business-rules, p-fn-catalog, p-fn-requirements, p-fn-mockups, p-rm-roadmap, p-rm-backlog, pdr-0014-six-component-catalog, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [pdr, decision, actions, checklist]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -24,7 +24,7 @@ Part de l'assistant : recommandation et mise en forme ; la décision est du port
 Fiche § 7 : deux décisions possibles, « Bloquer la release » et « Valider la release » ; seul « Bloquer » est spécifié (S-03, RG-28).
 
 ## Hypothèses
-- ⚠️ Q-63 reste ouverte : aucun scénario Gherkin n'est ajouté pour « Valider ».
+- ✅ Q-63 tranchée ([pdr-0049](pdr-0049-sheet-gherkin-scenarios-only.md), 2026-10-29) : aucun scénario Gherkin n'est ajouté pour « Valider ».
 
 ## Options
 1. **Symétrique de « Bloquer »** (retenue)
@@ -44,7 +44,7 @@ Peu coûteux ; évite un bouton qui ne fait rien sur scène.
 
 ## Conséquences
 - [p-fn-business-rules](../functional/business-rules.md) : nouvelle RG-30. [p-fn-catalog](../functional/catalog.md), [p-fn-mockups](../functional/mockups.md).
-- Les `.feature` ne changent pas (Q-63 ouverte).
+- Les `.feature` ne changent pas (Q-63 tranchée : [pdr-0049](pdr-0049-sheet-gherkin-scenarios-only.md)).
 - Roadmap : dépendance Q-62 levée (J5, EP-06).
 
 ## Réexaminer si

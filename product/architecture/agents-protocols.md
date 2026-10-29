@@ -22,10 +22,10 @@ tags: [protocoles, a2a, a2ui, webrtc, sideband, sequence, barge-in, actes]
 | App → backend | **HTTPS** `POST /voice/sessions` | offre SDP → answer SDP | [rt-ephemeral-keys] |
 | Backend ↔ GPT-Live | **REST** + **sideband WSS** `/live/sessions/{id}/attach` | transcripts, `delegation.created`, `commentary/thinking.append`, `close` | [rt-gpt-live-sideband] |
 | Orchestrateur ↔ agents | **A2A v1.0** (JSON-RPC + SSE) | tâches, statut, Artifacts | [proto-a2a-task-lifecycle], [proto-a2a-streaming-push] |
-| Backend → app | **WSS app-channel** | messages **A2UI** v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), activité des agents, transcript, état orbe | [ma-backend-stack-recommendation] |
+| Backend → app | **WSS app-channel** maison ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md)) | messages **A2UI** v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), activité des agents, transcript, état orbe | [ma-backend-stack-recommendation] |
 | App → backend | **WSS app-channel** | actions utilisateur typées (`UiInteractionPart`) | [genui-user-actions] |
 
-Règles : l'A2UI ne passe **jamais** par le canal de la session voix ([genui-a2ui-transports]) ; le JSON A2UI n'est jamais lu à voix haute ([ma-target-architecture]). Alternative au canal maison : `genui_a2a` (A2A + SSE) si l'orchestrateur s'expose lui-même en A2A ([genui-a2a-connector]). Compatibilité vérifiée en SP-03 (2026-10-29) : `genui_a2a` appelle `message/stream` (A2A v0.3) ; `a2a-go` v2 doit monter le handler `a2acompat/a2av0` (le handler natif v1.0 répond `-32009`) ([proto-a2a-go-v03-compat], [genui-a2a-connector]). Le choix du canal reste un arbitrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md) proposée ; voir Points ouverts (Q-39).
+Règles : l'A2UI ne passe **jamais** par le canal de la session voix ([genui-a2ui-transports]) ; le JSON A2UI n'est jamais lu à voix haute ([ma-target-architecture]). Le canal est un **WSS maison** ; `genui_a2a` (A2A + SSE) n'entre pas dans la stack de l'app ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), acceptée, Q-39). Pour mémoire, compatibilité vérifiée en SP-03 (2026-10-29) : `genui_a2a` appelle `message/stream` (A2A v0.3) ; `a2a-go` v2 doit monter le handler `a2acompat/a2av0` (le handler natif v1.0 répond `-32009`) ([proto-a2a-go-v03-compat], [genui-a2a-connector]).
 
 ## Acte 1 — Créer (FR-01 à FR-06)
 
@@ -145,6 +145,6 @@ Effets techniques des écarts de [p-fn-mockups](../functional/mockups.md) (E1 à
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- **Canal app ↔ backend** : WSS maison ou `genui_a2a` (A2A + SSE, risque v0.3 / v1.0 ci-dessus) ; le panneau protocole (FR-05) exige l'accès aux messages bruts → Q-39.
+- ~~Canal app ↔ backend~~ : tranché, WSS maison ; `genui_a2a` hors stack de l'app ; le panneau protocole (FR-05) accède aux messages bruts de l'app-channel ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), Q-39).
 - **Inférence de l'interruption** pour FR-19 sans événement GPT-Live → Q-40. **Bruits courts** (FR-18, RG-16) : aucun réglage de détection de tour documenté pour GPT-Live ; à mesurer → Q-41.
 - **Détection de « Stop »** : mot-clé sur transcript côté orchestrateur, ou décision du modèle → Q-42. **Agents A2A réels**, processus séparés : tranché ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-16) ; pas d'agent d'un autre éditeur ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md), Q-10).

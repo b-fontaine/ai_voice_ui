@@ -5,7 +5,7 @@ area: functional
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
-links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action, pdr-0024-act2-android-only, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07, pdr-0012-voice-provider-openai]
+links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action, pdr-0024-act2-android-only, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07, pdr-0012-voice-provider-openai, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [exigences, fr, moscow, bdd]
 ---
 # Exigences fonctionnelles (FR-01 à FR-20)
@@ -61,7 +61,7 @@ Les ids S-xx sont une numérotation de l'assistant ; les titres sont ceux de la 
 | Should sans scénario | FR-06, FR-12 |
 | Couverture indirecte | FR-14 (via S-07) |
 
-La DoD exige que « les 9 scénarios de la section 4 » soient vérifiés ([p-fn-risks-acceptance](risks-acceptance.md)). Ajouter des scénarios pour les exigences non couvertes n'est **pas décidé** : question **Q-63** de [p-rm-open-questions](../roadmap/open-questions.md), reprise dans [p-rm-backlog](../roadmap/backlog.md).
+La DoD exige que « les 9 scénarios de la section 4 » soient vérifiés ([p-fn-risks-acceptance](risks-acceptance.md)). Aucun scénario n'est ajouté pour les exigences non couvertes (FR-05, FR-06, FR-09, FR-11, FR-12) : elles sont vérifiées par revue ([pdr-0049](../decisions/pdr-0049-sheet-gherkin-scenarios-only.md), Q-63 tranchée, coupe C4), voir [p-rm-backlog](../roadmap/backlog.md).
 
 ## Groupes fonctionnels
 

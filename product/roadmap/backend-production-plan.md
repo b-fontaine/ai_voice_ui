@@ -5,7 +5,7 @@ area: roadmap
 status: draft
 updated: 2026-10-29
 sources: [git:d8c66bd:knowledge/multi-agent/backend/phase1-plan.md, https://github.com/openai/openai-go/tree/main/live, https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.7.0, https://a2ui.org/specification/v1.0-a2ui/, https://developers.openai.com/api/docs/guides/live-delegation]
-links: [p-ar-backend, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, p-rm-spikes, p-ar-quality, pdr-0001-conference-demo-deliverable, pdr-0005-frozen-fictional-dataset, adr-0003-backend-go, ma-backend-stack-recommendation, ma-backend-sdk-go, proj-sk-backend, rt-gemini-ephemeral-tokens, rt-gpt-live-delegation, ma-real-tool-results, ma-filler-acknowledgements, genui-a2ui-security, ma-mcp-security, test-tdd-red-green-refactor, ma-backend-stack-options, pdr-0012-voice-provider-openai, p-ar-stack, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0029-local-docker-compose-hosting, pdr-0031-github-actions-ci-linux]
+links: [p-ar-backend, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, p-rm-spikes, p-ar-quality, pdr-0001-conference-demo-deliverable, pdr-0005-frozen-fictional-dataset, adr-0003-backend-go, ma-backend-stack-recommendation, ma-backend-sdk-go, proj-sk-backend, rt-gemini-ephemeral-tokens, rt-gpt-live-delegation, ma-real-tool-results, ma-filler-acknowledgements, genui-a2ui-security, ma-mcp-security, test-tdd-red-green-refactor, ma-backend-stack-options, pdr-0012-voice-provider-openai, p-ar-stack, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0029-local-docker-compose-hosting, pdr-0031-github-actions-ci-linux, pdr-0048-session-log-only-no-otel-signoz]
 tags: [backend, go, plan, bdd, tdd, orchestrateur, deploiement]
 ---
 # Plan de construction du backend orchestrateur Go (profil production)
@@ -64,7 +64,7 @@ Flutter app ──HTTPS POST /voice/sessions (offre SDP)──► Kong ─► ag
 | Mode de délégation | L'étape 4 fixe `delegation.type=client`, non prouvé | SP-02, Q-47 |
 | Version A2UI | L'étape 2 épingle v0.9, conforme à la décision | Tranchée : [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03) |
 | MCP | L'étape 9 suppose des outils métier Septeo ; aucun outil MCP n'est prévu pour la démo ([stack.md](../architecture/stack.md)) | [beyond.md](beyond.md) |
-| Observabilité | L'étape 12 suppose SigNoz | Q-55 |
+| Observabilité | L'étape 12 suppose SigNoz | Q-55 tranchée : journal de session seul ([pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md)) |
 | Authentification | Étapes 1 et 8 (JWKS Keycloak, JWT) ; la fiche exclut l'authentification utilisateur | Q-48 tranchée : 127.0.0.1 sans authentification ([pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md)) |
 
 Patron générique de la stack (sans contexte projet) : [ma-backend-stack-recommendation] ; SDK Go : [ma-backend-sdk-go] ; dettes du kit : [proj-sk-backend].

@@ -5,12 +5,12 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, knowledge:ma-package-versions, knowledge:genui-overview, knowledge:bloc-packages-versions, knowledge:di-setup-versions, knowledge:ds-widgetbook-versions, knowledge:ds-widgetbook-4-spike, knowledge:ma-backend-sdk-go, knowledge:adr-0003-backend-go]
-links: [pdr-0045-app-backend-channel-wss-recommended, proto-a2a-bindings, proto-a2a-dart-sdk, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-rm-open-questions, p-rm-spikes, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0002-desktop-platform, ma-package-versions, genui-overview, genui-a2a-connector, genui-a2ui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions, ds-widgetbook-4-spike, ma-backend-sdk-go, ma-backend-stack-recommendation, proj-sk-backend, rt-gpt-live-overview, proto-a2a-overview, test-bdd-widget-test, test-golden-alchemist, test-very-good-analysis, test-mocktail-essentials, test-coverage-ci, perf-desktop-specifics, rt-flutter-webrtc-overview, adr-0001-initial-constraints, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, rt-gpt-live-session-config, rt-provider-abstraction, ds-widgetbook-4-beta, ds-widgetbook-4-risks, ds-claude-design-overview, ds-claude-design-workflow, ds-tokens-figma-sources, ds-widgetbook-publish-web, ma-backend-stack-options, p-rm-backend-production-plan, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0028-linux-demo-machine]
+links: [pdr-0045-app-backend-channel-wss-recommended, pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0048-session-log-only-no-otel-signoz, proto-a2a-go-v03-compat, proto-a2a-bindings, proto-a2a-dart-sdk, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-rm-open-questions, p-rm-spikes, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0002-desktop-platform, ma-package-versions, genui-overview, genui-a2a-connector, genui-a2ui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions, ds-widgetbook-4-spike, ma-backend-sdk-go, ma-backend-stack-recommendation, proj-sk-backend, rt-gpt-live-overview, proto-a2a-overview, test-bdd-widget-test, test-golden-alchemist, test-very-good-analysis, test-mocktail-essentials, test-coverage-ci, perf-desktop-specifics, rt-flutter-webrtc-overview, adr-0001-initial-constraints, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, rt-gpt-live-session-config, rt-provider-abstraction, ds-widgetbook-4-beta, ds-widgetbook-4-risks, ds-claude-design-overview, ds-claude-design-workflow, ds-tokens-figma-sources, ds-widgetbook-publish-web, ma-backend-stack-options, p-rm-backend-production-plan, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0028-linux-demo-machine]
 tags: [stack, versions, flutter, genui, go, epinglage]
 ---
 # Stack technologique et versions
 
-**En bref.** Toutes les versions ci-dessous sont **reprises de la base `knowledge/`**, avec la date de relevé de la note. Aucune n'est inventée. Les briques expérimentales (Flutter, genui, genui_a2a) doivent être **figées exactement** avec `pubspec.lock` committé (NFR-10, [pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md)). « À figer » = version à arrêter au premier commit de code ([Q-25](../roadmap/open-questions.md), [Q-46](../roadmap/open-questions.md)).
+**En bref.** Toutes les versions ci-dessous sont **reprises de la base `knowledge/`**, avec la date de relevé de la note. Aucune n'est inventée. Les briques expérimentales (Flutter, genui, genui_a2a) doivent être **figées exactement** avec `pubspec.lock` committé (NFR-10, [pdr-0010](../decisions/pdr-0010-pinned-experimental-versions.md)). Flutter est **figé** ([pdr-0046](../decisions/pdr-0046-flutter-3-47-8-pinned.md), Q-25) ; « à figer » = version à arrêter au premier commit de code qui introduit la brique ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md), Q-46).
 
 > Statut : **draft**. Les versions sont des relevés datés ; les revérifier sur pub.dev / GitHub avant tout ajout ([ma-package-versions]).
 
@@ -20,9 +20,9 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 
 | Technologie | Version | Relevé | Statut | Source |
 |---|---|---|---|---|
-| Flutter / Dart | 3.47.8 / 3.13.7 (observées au spike) — **à figer** | 2026-10-28 | stable | [ds-widgetbook-4-spike], [perf-desktop-specifics] |
+| Flutter / Dart | **3.47.8 / 3.13.7, figés** ([pdr-0046](../decisions/pdr-0046-flutter-3-47-8-pinned.md) ; `pubspec.yaml` et `pubspec.lock` de la fonctionnalité 000) | 2026-10-29 | stable | [ds-widgetbook-4-spike], [perf-desktop-specifics] |
 | `genui` | **0.10.4**, épinglage exact ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)) | 2026-10-26 | expérimental (« alpha ») | [genui-overview] |
-| `genui_a2a` | 0.10.1 (si le canal A2A est retenu, Q-39) ; appelle `message/stream` (A2A v0.3) ; compatible avec `a2a-go` v2.7.0 via `a2acompat/a2av0` (vérifié en SP-03 le 2026-10-29, [proto-a2a-go-v03-compat]) | 2026-10-26 | expérimental | [genui-a2a-connector], [proto-a2a-bindings], [proto-a2a-dart-sdk], [ma-backend-sdk-go] |
+| `genui_a2a` | **hors de la stack de l'app** ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), Q-39 : canal = WSS app-channel maison). Pour mémoire : 0.10.1 ; appelle `message/stream` (A2A v0.3) ; compatible avec `a2a-go` v2.7.0 via `a2acompat/a2av0` (vérifié en SP-03 le 2026-10-29, [proto-a2a-go-v03-compat]) | 2026-10-26 | expérimental | [genui-a2a-connector], [proto-a2a-bindings], [proto-a2a-dart-sdk], [ma-backend-sdk-go] |
 | `a2ui_core` | transitif `^0.1.0` via genui 0.10.4 (ne pas ajouter 0.3.0) | 2026-10-26 | expérimental | [genui-overview] |
 | `json_schema_builder` | 0.1.7 | 2026-10-26 | expérimental | [genui-overview] |
 | Protocole A2UI | **v0.9**, `"version": "v0.9"` exactement (`a2ui_core` refuse `"v0.9.1"`) ; v0.9.1 stable côté spec, v1.0 en RC ; décidé par [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) (décision contrainte, tranche Q-03) ; paramètre `a2ui.version` | 2026-10-26 | pré-1.0 | [genui-a2ui-overview] |
@@ -33,7 +33,7 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 | `get_it` / `injectable` / `injectable_generator` | 9.3.0 / 3.0.0 / 3.1.3 | 2026-10-26 | stable | [di-setup-versions] |
 | `material_ui` | 1.8.0 | 2026-10-20 | stable (nouveau package) | [adr-0004-ds-visual-base-m3] |
 | `widgetbook` | **4.0.0-beta.14**, exacte | 2026-10-28 | bêta | [adr-0008-ds-widgetbook-4-beta], [ds-widgetbook-versions] |
-| Style Dictionary (Node) | 5.7.1 — **à figer** | 2026-10-28 | stable | [adr-0005-ds-tokens-style-dictionary] |
+| Style Dictionary (Node) | 5.7.1 relevée — **à figer à son introduction** ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md)) | 2026-10-28 | stable | [adr-0005-ds-tokens-style-dictionary] |
 
 ## Tests et qualité (client)
 
@@ -50,11 +50,11 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 
 | Technologie | Version | Relevé | Statut | Source |
 |---|---|---|---|---|
-| Go | ≥ 1.26.10 — **à figer** | 2026-10-27 | stable | [adr-0003-backend-go] |
+| Go | **1.27.3** (vérifiée en SP-03), à figer dans `backend/go.mod` au premier commit de code ; plancher documenté ≥ 1.26.10 ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md)) | 2026-10-29 | stable | [adr-0003-backend-go], [proto-a2a-go-v03-compat] |
 | `openai-go/v3` (package `live`) | ≥ v3.86 (v3.88.0 observée) | 2026-10-26 | expérimental (package jeune) | [ma-backend-sdk-go] |
 | `a2a-go/v2` | v2.7.0 (spec A2A v1.0) | 2026-10-21 | stable | [ma-backend-sdk-go], [proto-a2a-overview] |
 | `google/jsonschema-go` | v0.4.3 (validation A2UI) | 2026-10-27 | pré-1.0 | [ma-backend-sdk-go] |
-| OpenTelemetry Go | ≥ v1.47 | 2026-10-27 | stable (conventions `gen_ai.*` en Development) | [adr-0003-backend-go] |
+| OpenTelemetry Go | ≥ v1.47 — **non retenu pour la démo** (journal de session seul, [pdr-0048](../decisions/pdr-0048-session-log-only-no-otel-signoz.md)) | 2026-10-27 | stable (conventions `gen_ai.*` en Development) | [adr-0003-backend-go] |
 | Godog / testcontainers-go | v0.13.0 / v0.37.0 (versions du kit) | 2026-10-27 | stable | [proj-sk-backend] |
 | Temporal sdk-go | v1.50 — non requis pour le MVP (proposition) | 2026-10-27 | stable | [ma-backend-stack-recommendation] |
 | MCP `go-sdk` | v1.8.0 — non requis pour le MVP (aucun outil MCP prévu) | 2026-10-27 | stable | [ma-backend-sdk-go] |
@@ -94,8 +94,8 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- Versions exactes à figer : Flutter, Go, Style Dictionary, LLM texte → Q-25, Q-46, Q-17.
+- Versions : Flutter figé ([pdr-0046](../decisions/pdr-0046-flutter-3-47-8-pinned.md), Q-25) ; Go figé au premier commit de code et Style Dictionary à son introduction ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md), Q-46). Reste ouvert : LLM texte → Q-17.
 - Rendu effectif de `genui` sous Linux : ✅ confirmé par SP-10 le 2026-10-29 (en-têtes GStreamer requis) ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)). Q-45 (Windows) sans objet.
-- Inclusion ou non de `genui_a2a` (dépend du canal app ↔ backend ; compatibilité A2A v0.3 avec a2a-go vérifiée en SP-03 : reste l'arbitrage, [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md) proposée) → Q-39.
+- ~~Inclusion de `genui_a2a`~~ → tranchée : hors stack de l'app, canal = WSS app-channel maison ; compatibilité A2A v0.3 avec a2a-go vérifiée en SP-03 ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), Q-39).
 - ~~Version du protocole A2UI montrée par la démo~~ → tranchée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).
-- Montée éventuelle vers genui 0.10.6 (non publiée, `a2ui_core` embarqué) avant le talk : interdite sans PR dédiée → Q-46.
+- ~~Montée vers genui 0.10.6~~ (non publiée, `a2ui_core` embarqué) avant le talk : interdite sans PR dédiée ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md), Q-46).

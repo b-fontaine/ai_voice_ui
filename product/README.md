@@ -5,7 +5,7 @@ area: meta
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, AGENTS.md]
-links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0042-calendar-and-cut-order-validated, pdr-0043-light-spec-kit-sdd-template, p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui]
+links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0042-calendar-and-cut-order-validated, pdr-0043-light-spec-kit-sdd-template, p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0048-session-log-only-no-otel-signoz, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [meta, readme, entree, carte]
 ---
 # Genesis Canvas — documentation produit
@@ -68,7 +68,8 @@ Règle en vigueur ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-moc
 | Réponses du porteur du 2026-10-29 : Q-05, Q-06, Q-07, Q-08, Q-10, Q-11, Q-12, Q-13, Q-15, Q-16, Q-18, Q-19, Q-23, Q-26, Q-36, Q-37, Q-54, Q-56, Q-61 (pdr-0012 acceptée, pdr-0027 à pdr-0040) ; Q-45, Q-50, Q-51 sans objet ; Q-14, Q-24, Q-57 gérées par le porteur | Fixent le calendrier, la plateforme, l'hébergement et le backend |
 | Q-52 — pas-à-pas du rejeu (reco : aucun, à confirmer) | Bloque J6 |
 | SP-10 — genui sous Linux : ✅ confirmé le 2026-10-29 | Plus de risque plateforme connu ([pdr-0028](decisions/pdr-0028-linux-demo-machine.md)) |
-| Q-17, Q-39 — LLM des agents, canal app ↔ backend | Bloquent J2 / J3 |
+| Q-25, Q-39, Q-46, Q-55, Q-63 tranchées par le porteur le 2026-10-29 (pdr-0046, pdr-0045, pdr-0047, pdr-0048, pdr-0049) | Fixent les versions, le canal app ↔ backend, l'observabilité et la couverture Gherkin |
+| Q-17 — LLM des agents ; Q-43, Q-47 — niveau audio de l'orbe, mode de délégation GPT-Live (spike SP-02) | Bloquent J2 / J3 |
 
 ## Contribuer
 
