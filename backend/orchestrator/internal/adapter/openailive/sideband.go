@@ -46,8 +46,11 @@ func (s *sideband) Events() <-chan port.LiveEvent { return s.events }
 
 // run lit les trames jusqu'à session.closed, une erreur de lecture ou l'abandon.
 func (s *sideband) run(ctx context.Context) {
-	defer close(s.done)
+	// Ordre d'exécution : Abort, puis done, puis events. done doit être fermé
+	// avant events pour qu'un Close appelé dès la fin du flux voie la session
+	// terminée au lieu de tenter d'envoyer sur une connexion coupée.
 	defer close(s.events)
+	defer close(s.done)
 	defer s.conn.Abort()
 	for {
 		raw, err := s.conn.RecvRaw(ctx)

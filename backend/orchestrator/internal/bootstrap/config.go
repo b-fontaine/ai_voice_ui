@@ -42,8 +42,9 @@ func (c Config) String() string {
 func (c Config) GoString() string { return c.String() }
 
 // ConfigFromEnv construit la configuration à partir de getenv.
-// Modèle, voix, type de délégation, clé et dossier de journal sont obligatoires :
-// aucune valeur par défaut n'est codée en dur.
+// Modèle, voix, type de délégation et clé sont obligatoires : aucune valeur par
+// défaut n'est codée en dur. JOURNAL_DIR est facultatif ici : le dossier effectif
+// vient de Deps.JournalDir ou, à défaut, de Config.JournalDir (exigé par New).
 func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	var cfg Config
 	required := []struct {
@@ -54,7 +55,6 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		{"VOICE_VOICE", &cfg.Voice},
 		{"VOICE_DELEGATION_TYPE", &cfg.DelegationType},
 		{"OPENAI_API_KEY", &cfg.apiKey},
-		{"JOURNAL_DIR", &cfg.JournalDir},
 	}
 	for _, r := range required {
 		v := strings.TrimSpace(getenv(r.name))
@@ -87,6 +87,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		return Config{}, fmt.Errorf("LISTEN_HOST %q n'est pas une adresse loopback ; définir LISTEN_ALLOW_NON_LOOPBACK=1 pour l'autoriser", cfg.ListenHost)
 	}
 
+	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))
 	cfg.InstructionsFile = strings.TrimSpace(getenv("VOICE_INSTRUCTIONS_FILE"))
 	return cfg, nil
 }

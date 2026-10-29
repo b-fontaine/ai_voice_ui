@@ -50,8 +50,17 @@ func TestConfigFromEnv_InstructionsFileOptional(t *testing.T) {
 	}
 }
 
+func TestConfigFromEnv_JournalDirOptional(t *testing.T) {
+	env := fullEnv()
+	delete(env, "JOURNAL_DIR")
+	cfg, err := load(env)
+	if err != nil || cfg.JournalDir != "" {
+		t.Fatalf("JOURNAL_DIR est facultatif (le dossier peut venir des dépendances) : %v %q", err, cfg.JournalDir)
+	}
+}
+
 func TestConfigFromEnv_MissingVariable(t *testing.T) {
-	for _, key := range []string{"OPENAI_API_KEY", "VOICE_MODEL", "VOICE_VOICE", "VOICE_DELEGATION_TYPE", "JOURNAL_DIR"} {
+	for _, key := range []string{"OPENAI_API_KEY", "VOICE_MODEL", "VOICE_VOICE", "VOICE_DELEGATION_TYPE"} {
 		env := fullEnv()
 		delete(env, key)
 		_, err := load(env)

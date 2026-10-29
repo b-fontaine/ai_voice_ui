@@ -32,6 +32,10 @@
 - `jsonljournal.Options{Dir string; Clock port.Clock; OnError func(error)}` : toutes obligatoires (sinon `New` échoue) ; dossier 0700, fichiers 0600 ; `*Recorder` = `port.Sink` + `Close() error` ; erreurs d'écriture transmises à `OnError`, jamais de panique.
 - Identifiant de session du journal : `[A-Za-z0-9_-]{1,128}`, sinon enregistrement refusé (`OnError`), aucune traversée de chemin.
 - Abonné lent : file bornée par `SendBuffer` ; en cas de débordement la connexion est fermée en 1008 (« trop lent ») sans bloquer `Publish`.
+- Routes HTTP (`httpapi.NewHandler`) : `POST /voice/sessions` (415 si pas `application/sdp`, 400 corps vide, 413 corps trop gros, 429 + `Retry-After`, 502 JSON `{error}` opaque), `GET /healthz` (200 `ok`), `GET /app` (hub WSS) ; journal d'accès slog (méthode, route, statut, durée, session), jamais de corps.
+- `DELETE /voice/sessions/{id}` : fermeture propre via `Sessions.Close` ; 204, 404 (id inconnu), 504 (`ErrCloseTimeout`), 502 sinon.
+- Limite de débit : seau à jetons sur la création de session, `Options{RateBurst, RateWindow, MaxBodyBytes}` injectées et > 0, horloge injectée ; un jeton rendu par fenêtre.
+- `bootstrap.New` : `Deps.Live == nil` construit `openailive` depuis `Config` (clé, modèle, voix, délégation, instructions lues dans `InstructionsFile`) ; `JOURNAL_DIR` facultatif dans `ConfigFromEnv`, `Deps.JournalDir` prime sur `Config.JournalDir`, l'un des deux est requis ; `App.Close` : sessions, hub, journal (idempotent).
 
 ## Références
 - `product/architecture/backend.md` (modules `voice-session`, `sideband-supervisor`, `app-channel`, `session-recorder`), `security.md` § contrat de relais, `agents-protocols.md`.
