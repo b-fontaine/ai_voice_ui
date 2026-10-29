@@ -15,6 +15,13 @@
 - `GET /app?session=<id>` (WSS) : enveloppe `{v:1, type, t_ms, data}` ; types : `orb.level` (`{level}` 0..1, 5 Hz), `transcript` (`{role: user|ai, text, final}`), `session.state` (`{state}`), `usage` (`{seconds, context_ratio}`).
 - Configuration (variables d'environnement, aucune valeur en dur) : `OPENAI_API_KEY`, `VOICE_MODEL`, `VOICE_VOICE`, `VOICE_DELEGATION_TYPE`, `VOICE_INSTRUCTIONS_FILE`, `LISTEN_HOST` (défaut `127.0.0.1`), `LISTEN_PORT`, `JOURNAL_DIR`.
 
+### Contrats imposés par les tests d'acceptation (A1-A3)
+- `port.LiveProvider` : `CreateSession(ctx, offerSDP string) (port.LiveSession{ID, AnswerSDP}, error)` et `Sideband(ctx, sessionID string) (port.Sideband, error)`.
+- `port.Sideband` : `Events() <-chan port.LiveEvent` (fermé après `EventClosed`) et `Close(ctx) error`. `port.Clock` : `Now() time.Time`.
+- `port.LiveEvent{Type EventType; Text string; Final bool; PCM []byte; Seconds, ContextRatio float64}` ; `EventType` : `EventInputTranscriptDelta`, `EventOutputTranscriptDelta`, `EventOutputAudio`, `EventUsageUpdated`, `EventClosed`.
+- `bootstrap.Config{Model, Voice, DelegationType, ListenHost string; ListenPort int; JournalDir string}` (+ `String()` sans clé) ; `Deps{Live, Clock, JournalDir}` ; `New`, `App.Handler()`, `App.Close(ctx)`, `ConfigFromEnv(getenv)` ; `LISTEN_ALLOW_NON_LOOPBACK=1` lève le refus.
+- Un `orb.level` par bloc `EventOutputAudio` de 200 ms (= 5 Hz de signal) ; l'horloge ne sert qu'à `t_ms` et au journal.
+
 ## Références
 - `product/architecture/backend.md` (modules `voice-session`, `sideband-supervisor`, `app-channel`, `session-recorder`), `security.md` § contrat de relais, `agents-protocols.md`.
 - Notes : [rt-gpt-live-webrtc-session], [rt-gpt-live-sideband], [rt-gpt-live-output-level], [rt-gpt-live-lifecycle], [rt-graceful-close], [ma-backend-sdk-go], [rt-ephemeral-keys].

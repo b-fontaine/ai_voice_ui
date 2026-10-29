@@ -3,9 +3,9 @@
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`.
 
 ## Gherkin (acceptation Go, build tag `acceptance`)
-- [ ] T01 Go — A1 : `POST /voice/sessions` avec fournisseur simulé, aucune clé dans les sorties · test d'abord : le serveur n'existe pas (échec de compilation du test)
-- [ ] T02 Go — A2 : le WSS `/app` reçoit `orb.level` (~5 Hz) et les transcripts d'un sideband simulé · test d'abord : idem
-- [ ] T03 Go — A3 : configuration injectée, refus d'une adresse non loopback · test d'abord : idem
+- [x] T01 Go — A1 : `POST /voice/sessions` avec fournisseur simulé, aucune clé dans les sorties · test d'abord : le serveur n'existe pas (échec de compilation du test)
+- [x] T02 Go — A2 : le WSS `/app` reçoit `orb.level` (~5 Hz) et les transcripts d'un sideband simulé · test d'abord : idem
+- [x] T03 Go — A3 : configuration injectée, refus d'une adresse non loopback · test d'abord : idem
 
 ## TDD
 - [ ] T10 Go — `go.mod` (Go 1.27.3) + `Config` depuis l'environnement, `String()` sans secret · test d'abord : `TestConfigFromEnv`
