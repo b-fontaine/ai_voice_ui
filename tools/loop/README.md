@@ -36,6 +36,7 @@ Accélérations du 2026-10-29 : revue du **plan** par l'architecte avant le TDD 
 | Quota hebdomadaire | lissage : la boucle consomme au plus 90 % de la semaine, au rythme du temps écoulé (+10 points), plafond 95 % (choix du porteur, 2026-10-29) ; le reste est pour lui |
 | Pause longue | > 1 h : la boucle s'arrête (`paused_until`) ; le superviseur la relance à l'heure |
 | Limite atteinte malgré tout | Claude Code attend seul la remise à zéro ; hook `StopFailure` → `rate_limited_at` ; le superviseur n'intervient pas avant |
+| Contexte qui grossit | une conversation neuve par fonctionnalité : après publication, la boucle pose `fresh_session` et s'arrête ; le superviseur la relance avec un nouvel identifiant. La compaction automatique reste le filet de sécurité |
 | Plantage, session tuée | `supervisor.sh` relance (`--resume <id>`) ; il ne tape jamais dans la session, et ne relance pas une session occupée |
 | Tâche interrompue | `status.md` garde « Tâche en cours » et « Fichiers touchés » : reprise par la porte, ou annulation ciblée |
 | Boucle sans fin | 3 tentatives par étape, compteur dans `status.md`, puis « Bloquée » et fonctionnalité suivante |
