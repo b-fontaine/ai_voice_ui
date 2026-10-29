@@ -3,9 +3,9 @@ id: p-rm-beyond
 title: Au-delà du talk
 area: roadmap
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2-p3, product/sources/product-description.pdf#p12, product/roadmap/backend-production-plan.md, knowledge:proto-a2a-overview]
-links: [p-rm-roadmap, p-rm-open-questions, p-fn-scope, p-ar-overview, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0009-french-only, p-rm-backend-production-plan, ma-target-architecture, proto-a2a-overview, proto-a2a-agent-card, proto-mcp-overview, genui-a2ui-v1-rc]
+links: [p-rm-roadmap, p-rm-open-questions, p-fn-scope, p-ar-overview, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0009-french-only, p-rm-backend-production-plan, ma-target-architecture, proto-a2a-overview, proto-a2a-agent-card, proto-mcp-overview, genui-a2ui-v1-rc, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [au-dela, hors-perimetre, evolutions, roadmap]
 ---
 # Au-delà du talk : pistes hors périmètre MVP
@@ -21,7 +21,7 @@ tags: [au-dela, hors-perimetre, evolutions, roadmap]
 | **Autres langues** | Talk en anglais ou démo bilingue | Voix, consignes, catalogue et données localisés | Fiche § 3 ; [pdr-0009](../decisions/pdr-0009-french-only.md) | Hors MVP |
 | **Ouvrir le code de la démo** | Les développeurs repartent avec un exemple GenUI + A2A complet | Retrait des dépendances internes, licence, dépôt publiable (cf. Q-27), nettoyage des secrets | [Q-27](open-questions.md) | Hors MVP, non décidé |
 | **Réutilisation dans les projets Septeo** | Porter le patron voix → orchestrateur → A2UI dans les produits (successeur d'`ai_voice_widget`) | Reprise du plan backend complet : Keycloak, Kong, Temporal, MCP gateway, observabilité | [p-rm-backend-production-plan](backend-production-plan.md) étapes 9 à 12 ; [ma-target-architecture] ; `knowledge/projects/` | Hors MVP |
-| **Passage à A2UI v1.0** | RPC bidirectionnel, catalogues mélangeables, `userMessage` sur les actions | Support par genui ; migration des bindings (`@path`) | [genui-a2ui-v1-rc] ; [Q-03](open-questions.md) | Hors MVP, dépend de genui |
+| **Passage à A2UI v1.0** | RPC bidirectionnel, catalogues mélangeables, `userMessage` sur les actions | Support par genui ; migration des bindings (`@path`) | [genui-a2ui-v1-rc] ; condition de réexamen de [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) | Hors MVP, dépend de genui |
 
 ## Règles
 

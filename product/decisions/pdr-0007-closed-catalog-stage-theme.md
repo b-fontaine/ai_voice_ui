@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf, knowledge:ux-genui-catalog-as-ds, knowledge:genui-a2ui-security, knowledge:genui-custom-catalog-item, knowledge:ux-genui-errors-validation]
-links: [pdr-0014-six-component-catalog, p-fn-catalog, p-fn-business-rules, p-fn-nfr, p-fn-mockups, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0003-use-case-release-copilot, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, ux-genui-catalog-as-ds, genui-a2ui-security, genui-custom-catalog-item, ux-genui-errors-validation, genui-catalog-ids]
+links: [pdr-0014-six-component-catalog, p-fn-catalog, p-fn-business-rules, p-fn-nfr, p-fn-mockups, p-ar-frontend, p-ar-agents-protocols, p-rm-open-questions, pdr-0003-use-case-release-copilot, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, ux-genui-catalog-as-ds, genui-a2ui-security, genui-custom-catalog-item, ux-genui-errors-validation, genui-catalog-ids, pdr-0019-six-limit-applies-to-surfaces]
 tags: [pdr, decision, catalog, theme, genui, a2ui]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -28,7 +28,7 @@ Part de l'assistant : mise en forme de la fiche ; liens vers knowledge.
 ## Hypothèses
 - ✅ Les 4 règles fonctionnelles du catalogue (fiche § 7, ci-dessous).
 - ⚠️ Écart E2 non tranché : fiche = 8 composants (En-tête de release, Indicateur clé, Courbe de tendance, Liste des crashs, Sentiment des avis, Comparatif de versions, Checklist go/no-go, Barre d'actions) ; maquettes = 6 (Carte KPI, Courbes, Liste d'avis, Checklist, Timeline, Bouton d'action) plus un `Grid` racine (« board ») → [p-rm-open-questions](../roadmap/open-questions.md) (Q-02), [p-fn-catalog](../functional/catalog.md).
-- ⚠️ Écart E4 non tranché : « au maximum 6 surfaces visibles » (fiche § 3, NFR-06) ; « 4 / 6 utilisés » dans la maquette porte sur le catalogue → [p-rm-open-questions](../roadmap/open-questions.md) (Q-04).
+- Écart E4 tranché le 2026-10-29 par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (la limite porte sur les surfaces) ; constat d'origine : « au maximum 6 surfaces visibles » (fiche § 3, NFR-06) ; « 4 / 6 utilisés » dans la maquette porte sur le catalogue → [p-rm-open-questions](../roadmap/open-questions.md) (Q-04).
 
 ## Options
 Aucune alternative documentée dans la source, hormis la génération hors catalogue, exclue.
@@ -68,5 +68,6 @@ Le thème de scène impose au minimum un texte de 24 px et un contraste WCAG AA 
 | 2026-10-28 | Acceptée dans la fiche produit (§ 3, § 7) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR ; écarts E2 et E4 signalés | Assistant (mise en forme) |
 | 2026-10-29 | Contenu du catalogue arbitré par [pdr-0014](pdr-0014-six-component-catalog.md) (6 composants, Q-02) ; principe inchangé | Benoît FONTAINE (porteur), conversation |
+| 2026-10-29 | Q-04 tranchée par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (décision contrainte : la limite « 6 » porte sur les surfaces visibles) ; décision maintenue, hypothèse ⚠️ Q-04 levée | Assistant (décision contrainte) |
 
 Pas d'archive brute.

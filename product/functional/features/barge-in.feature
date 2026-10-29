@@ -2,8 +2,8 @@
 # id: p-fn-feature-barge-in
 # Source : product/sources/product-description.pdf § 4, p. 5-6 (repris fidèlement).
 # Exigences : p-fn-requirements ; règles : p-fn-business-rules (RG-11 à RG-17, RG-22).
-# ⚠️ Écart E16 · Q-34 : le step « Soit 2 surfaces sur 4… » commence par un chiffre,
-#    ce qui fait échouer le build bdd_widget_test (knowledge:test-bdd-feature-syntax). Non adapté ici.
+# Steps sans chiffre initial (E16 · Q-34, pdr-0022-gherkin-steps-no-leading-digit) : bdd_widget_test
+#    échoue sur un step qui commence par un chiffre (knowledge:test-bdd-feature-syntax). Sens inchangé.
 
 Fonctionnalité: Couper la parole à l'IA
 
@@ -18,10 +18,10 @@ Fonctionnalité: Couper la parole à l'IA
 
   @S-06 @FR-15 @FR-16
   Scénario: Annuler une génération en cours
-    Soit 2 surfaces sur 4 sont en cours de construction
+    Soit deux surfaces sur quatre sont en cours de construction
     Quand je dis "Stop"
     Alors l'IA se tait
-    Et les 2 surfaces inachevées sont retirées
+    Et les deux surfaces inachevées sont retirées
     Et les surfaces complètes restent affichées
 
   @S-07 @FR-14 @FR-17

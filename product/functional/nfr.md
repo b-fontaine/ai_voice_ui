@@ -3,9 +3,9 @@ id: p-fn-nfr
 title: Exigences non fonctionnelles NFR-01 à NFR-12
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
-links: [ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys]
+links: [ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces]
 tags: [nfr, latence, lisibilite, resilience, securite]
 ---
 # Exigences non fonctionnelles (NFR-01 à NFR-12)
@@ -53,4 +53,4 @@ La DoD ([p-fn-risks-acceptance](risks-acceptance.md)) exige que NFR-01 à NFR-03
 
 ## Écart
 
-NFR-06 (≤ 6 surfaces) et l'étagère des maquettes « n / 6 utilisés » (qui compte des composants du catalogue) utilisent le même nombre pour deux notions différentes : écart E4 · Q-04, [p-fn-mockups](mockups.md).
+NFR-06 porte sur les **surfaces** visibles. Le « n / 6 utilisés » de l'étagère des maquettes (composants du catalogue) est sans portée : E4 · Q-04 tranché par [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md) ([p-fn-mockups](mockups.md)).

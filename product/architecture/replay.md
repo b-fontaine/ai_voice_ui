@@ -3,9 +3,9 @@ id: p-ar-replay
 title: Journal de session, rejeu et mode secours
 area: architecture
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages, knowledge:ma-otel-genai-spans]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, rt-graceful-close, rt-transcription, ma-otel-genai-spans, ma-voice-agent-evals]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, rt-graceful-close, rt-transcription, ma-otel-genai-spans, ma-voice-agent-evals, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [rejeu, replay, journal, mode-secours, determinisme, resilience]
 ---
 # Journal de session, rejeu et mode secours
@@ -27,7 +27,7 @@ tags: [rejeu, replay, journal, mode-secours, determinisme, resilience]
 
 ## Format du journal (proposition)
 
-En-tête (1re ligne) : `schema`, version de l'app, `catalogId`, version A2UI (valeur de `a2ui.version`, `v0.9` ⚠️ selon Q-03 / E3), version du jeu de données, date, profil (répétition / direct).
+En-tête (1re ligne) : `schema`, version de l'app, `catalogId`, version A2UI (valeur de `a2ui.version`, `v0.9`, [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), version du jeu de données, date, profil (répétition / direct).
 
 Une ligne JSON par événement :
 

@@ -5,7 +5,7 @@ area: functional
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
+links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -20,8 +20,8 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 | RG-02 | Toute surface passe par trois temps visibles : squelette, puis composants, puis données. Chaque composant du catalogue possède un état squelette. | FR-04, § 7 (règles du catalogue) |
 | RG-03 | Le premier squelette apparaît en moins de 1,5 s après la fin de la phrase, avant toute donnée. | NFR-02, § 8 (« squelettes immédiats ») |
 | RG-04 | L'IA commente pendant la construction (« je lance l'analyse des crashs... ») : l'attente devient du spectacle. | § 5 (point délicat), § 8 (risque « attente trop longue ») |
-| RG-05 | Au maximum 6 surfaces sont visibles en même temps. | § 3, § 6, NFR-06 ; ⚠️ écart E4 · Q-04 |
-| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; ⚠️ écarts E8 · Q-21 et E19 · Q-58 |
+| RG-05 | Au maximum 6 surfaces sont visibles en même temps. | § 3, § 6, NFR-06 ; portée tranchée (E4 · Q-04, [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) : surfaces visibles, pas de compteur de composants |
+| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; ⚠️ écart E8 · Q-21 ; acte 2 uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) |
 | RG-25 | La fabrication est montrée en continu : l'agent sollicité s'allume avec sa tâche, le message de protocole en cours est mis en évidence et relié à son composant, le composant utilisé s'allume dans l'étagère, la transcription est affichée en direct. | FR-02, FR-03, FR-05, FR-06, § 6 |
 | RG-29 | L'orchestrateur choisit à chaque demande les agents qu'il active, et le rail le montre : agents sollicités allumés avec leur tâche, agents non sollicités visiblement en veille. Les agents portent un nom de rôle métier (Qualité, Voix du client, Livraison). | FR-03, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md) |
 
@@ -80,9 +80,8 @@ Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème
 
 ## Points ouverts
 
-- RG-05 : le plafond de 6 porte-t-il sur les surfaces ou sur les composants de l'étagère ? (E4 · Q-04)
-- RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21) ; elle garde aussi un critère iOS (99,71) alors que S-02 exige des données « uniquement Android » (E19 · Q-58).
-- RG-17 : la fiche affiche la réplique de l'IA (tronquée si coupée) dans la barre supérieure ; les maquettes n'en montrent aucune (E20 · Q-59).
+- RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21). Son critère iOS est sans portée : uniquement Android (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
+- RG-17 : tranché (E20 · Q-59, [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)) : répliques du speaker et de l'IA, réplique coupée tronquée ; la détection de l'interruption reste ouverte (Q-40).
 - Interactions vocales propres à chaque composant (fiche § 7 : détail d'un indicateur, autre période ou plateforme, filtre des crashs, avis d'une plateforme) : aucune règle ne les porte tant que leur place dans le MVP n'est pas décidée (Q-61).
 - RG-14 / RG-15 : modèle de surfaces tranché (E11 · Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : N surfaces dans une grille de l'app ([genui-multiple-surfaces]).
 

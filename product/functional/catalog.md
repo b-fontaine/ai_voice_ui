@@ -5,7 +5,7 @@ area: functional
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
-links: [p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
+links: [p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces]
 tags: [catalogue, composants, a2ui, genui, theme]
 ---
 # Catalogue de composants
@@ -25,7 +25,7 @@ Noms de la fiche, comportement des maquettes ([pdr-0014](../decisions/pdr-0014-s
 | **Barre d'actions** | Livraison | 3 | « Bloquer la release » (RG-28) et « Valider la release » (RG-30, [pdr-0016](../decisions/pdr-0016-validate-release-action.md)) |
 | **Liste des crashs** | Qualité | aucun | Dans le catalogue, hors scénario principal : l'IA la choisit selon la demande. Données à écrire (point ouvert, [p-fn-dataset](dataset.md)) |
 
-Écartés : Comparatif de versions (la comparaison passe par la mutation des surfaces existantes), En-tête de release (version et statut visibles par le titre du canevas et la checklist), Timeline des maquettes. `Grid` n'est pas un composant : l'app place les surfaces ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)). La limite « 6 » (surfaces ou composants) reste ouverte : Q-04.
+Écartés : Comparatif de versions (la comparaison passe par la mutation des surfaces existantes), En-tête de release (version et statut visibles par le titre du canevas et la checklist), Timeline des maquettes. `Grid` n'est pas un composant : l'app place les surfaces ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)). La limite « 6 » porte sur les surfaces visibles, pas sur l'étagère ([pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)). L'acte 1 compose 4 surfaces : Indicateur clé, Courbe de tendance, Sentiment des avis, Checklist go/no-go ([pdr-0020](../decisions/pdr-0020-act1-four-surfaces.md)).
 
 ## Historique : les 8 composants de la fiche (§ 7)
 

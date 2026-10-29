@@ -3,9 +3,9 @@ id: pdr-0010-pinned-experimental-versions
 title: "PDR-0010 — Versions figées de Flutter, genui et genui_a2a ; pubspec.lock committé"
 area: decisions
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:genui-overview, knowledge:ma-package-versions, knowledge:adr-0008-ds-widgetbook-4-beta, knowledge:ds-widgetbook-4-spike]
-links: [p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike]
+links: [p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [pdr, decision, versions, reproducibility, genui, flutter]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -29,7 +29,7 @@ Part de l'assistant : mise en forme ; état des versions tiré de knowledge.
 ## Hypothèses
 - ✅ Flutter 3.47.8 a été exécuté avec succès dans le spike Widgetbook [ds-widgetbook-4-spike].
 - ⚠️ Hypothèse non confirmée : versions exactes à figer (Flutter, `genui`, `genui_a2a`, `a2ui_core`). Info datée du 2026-10-26, à revérifier sur pub.dev avant ajout [ma-package-versions] → [p-ar-stack](../architecture/stack.md), [p-rm-open-questions](../roadmap/open-questions.md) (Q-25).
-- ⚠️ Écart E3 : version A2UI effectivement parlée par la version figée (v0.8 dans les maquettes, v0.9 dans knowledge) → [p-rm-open-questions](../roadmap/open-questions.md) (Q-03).
+- ✅ Écart E3 levé le 2026-10-29 : A2UI v0.9 avec genui 0.10.4 → [pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03 tranchée).
 
 ## Options
 Aucune alternative documentée dans la source.
@@ -61,5 +61,6 @@ Aucune alternative documentée dans la source.
 |---|---|---|
 | 2026-10-28 | Acceptée dans la fiche produit (§ 1, NFR-10) | Benoît FONTAINE (porteur) |
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
+| 2026-10-29 | Hypothèse E3 levée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md), décision contrainte) | Assistant |
 
 Pas d'archive brute.

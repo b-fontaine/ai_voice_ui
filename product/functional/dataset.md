@@ -5,7 +5,7 @@ area: functional
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p6, product/sources/design-example.pdf]
-links: [p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog]
+links: [p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only]
 tags: [donnees, dataset, determinisme, release]
 ---
 # Jeu de données fictif
@@ -79,7 +79,7 @@ tags: [donnees, dataset, determinisme, release]
 
 ## Points à vérifier (assistant)
 
-- ⚠️ **Cohérence à figer (E15 · Q-33, Q-23).** Le taux de crash Android à J7 vaut 0,82 % alors que 99,39 % de sessions sans crash donne 0,61 % sur 7 jours. C'est plausible (valeur du jour contre moyenne), mais le jeu de référence devra le rendre explicite, car le public peut faire le calcul.
+- **Cohérence (E15 · Q-33 tranché, [pdr-0021](../decisions/pdr-0021-mockup-data-not-corrected.md)).** Les incohérences de l'illustration (taux de crash Android J7 0,82 % contre 0,61 % déduit de 99,39 % sans crash ; « 4 tâches » puis « 3 tâches ») ne sont pas corrigées. Le jeu de référence, fixé par Q-23 (ouverte), doit être crédible, cohérent en interne (un taux du jour et une moyenne sur 7 jours libellés comme tels), figé et déterministe. Il couvre les 4 surfaces de l'acte 1 ([pdr-0020](../decisions/pdr-0020-act1-four-surfaces.md)) et, à l'acte 2, uniquement des données Android, checklist comprise ([pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
 - Les données manquantes : **Liste des crashs** (top crashs, plateforme, volume), composant retenu ([pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) mais sans aucune donnée dans les maquettes : **point ouvert**, à écrire dans le jeu figé sans l'inventer ici ; note moyenne, 3 extraits d'avis (Sentiment des avis, version de la fiche), répartition positifs / négatifs. Comparatif de versions et date cible : composants ou champs écartés par pdr-0014.
 - Les seuils go (99,50 %, 25 %) n'apparaissent que dans les maquettes : à confirmer par le porteur.
 

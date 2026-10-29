@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-rm-open-questions, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, pdr-0014-six-component-catalog, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, genui-multiple-surfaces]
+links: [p-rm-open-questions, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, pdr-0014-six-component-catalog, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, genui-multiple-surfaces, pdr-0019-six-limit-applies-to-surfaces]
 tags: [pdr, decision, layout, surfaces, grid]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -25,7 +25,7 @@ Maquette 1 : une surface `release-3-4` à racine `Grid` ; maquette 2 : surfaces 
 
 ## Hypothèses
 - ✅ La disposition était déjà décrite comme tenue par l'app dans [p-ar-frontend](../architecture/frontend.md).
-- ⚠️ Q-04 (limite « 6 ») reste ouverte ; la grille de l'app est dimensionnée pour au plus 6 surfaces (NFR-06) sans trancher Q-04.
+- Q-04 (limite « 6 ») tranchée le 2026-10-29 par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (surfaces visibles) ; constat d'origine : Q-04 restait ouverte ; la grille de l'app est dimensionnée pour au plus 6 surfaces (NFR-06) sans trancher Q-04.
 
 ## Options
 1. **Grille fixe tenue par l'app, N surfaces** (retenue)
@@ -58,5 +58,6 @@ Garantit que « les surfaces restent à leur place » (FR-07, S-02) ; facilite l
 |---|---|---|
 | 2026-10-29 | Recommandation présentée par l'assistant | Assistant |
 | 2026-10-29 | Acceptée, sur la parole « oui, enregistre tes recommandations comme décision. Je les valide. » (conversation) | Benoît FONTAINE (porteur) |
+| 2026-10-29 | Q-04 tranchée par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (décision contrainte : la limite « 6 » porte sur les surfaces visibles) ; décision maintenue, hypothèse ⚠️ Q-04 levée | Assistant (décision contrainte) |
 
 Pas d'archive brute.

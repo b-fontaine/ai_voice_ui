@@ -3,9 +3,9 @@ id: p-fn-risks-acceptance
 title: Risques, plan B, DoD et métriques
 area: functional
 status: validated
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast]
+links: [p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition]
 tags: [risques, plan-b, dod, metriques, repetition]
 ---
 # Risques, plan B et critères d'acceptation
@@ -21,7 +21,7 @@ tags: [risques, plan-b, dod, metriques, repetition]
 | R3 | Interruptions intempestives (rires, applaudissements) | Moyenne | Moyen | Seuil de déclenchement réglé en répétition ; raccourci « silence » en secours | FR-18, FR-20, RG-16 | [stage-runtime](../architecture/stage-runtime.md), [agents-protocols](../architecture/agents-protocols.md) · J7 (Q-41) |
 | R4 | L'IA ne s'arrête pas quand le speaker la coupe | Moyenne | Fort | Raccourci « silence » ; répliques de l'IA courtes par consigne | FR-20, RG-27, [rt-barge-in] | [agents-protocols](../architecture/agents-protocols.md) (interruption) · J7 |
 | R5 | Bruit de salle et mauvaise compréhension | Moyenne | Fort | Phrases clés courtes et rodées ; transcription visible pour reformuler | FR-02 | [frontend](../architecture/frontend.md) (transcription) · J7 (script des phrases clés) |
-| R6 | L'IA produit un écran incohérent | Moyenne | Fort | Catalogue restreint ; exemples d'écrans attendus fournis à l'IA ; rejeu si besoin | RG-07, [pdr-0007](../decisions/pdr-0007-closed-catalog-stage-theme.md) | [backend](../architecture/backend.md) (catalogue, exemples d'écrans : Q-38), [replay](../architecture/replay.md) · J3, J6 |
+| R6 | L'IA produit un écran incohérent | Moyenne | Fort | Catalogue restreint ; exemples d'écrans attendus fournis à l'IA ; rejeu si besoin | RG-07, [pdr-0007](../decisions/pdr-0007-closed-catalog-stage-theme.md) | [backend](../architecture/backend.md) (catalogue, exemples d'écrans : [pdr-0023](../decisions/pdr-0023-example-guided-composition.md)), [replay](../architecture/replay.md) · J3, J6 |
 | R7 | Attente trop longue entre la demande et l'écran | Haute | Moyen | L'IA commente pendant la construction ; squelettes immédiats | RG-03, RG-04 | [agents-protocols](../architecture/agents-protocols.md) (commentaire), [frontend](../architecture/frontend.md) (squelettes) · J3 |
 | R8 | Texte illisible au projecteur | Moyenne | Moyen | Thème de scène en 24 px minimum ; test sur un vrai projecteur | NFR-05, RG-09, [ds-a11y-wcag-contrast] | [frontend](../architecture/frontend.md) (thème de scène), [stage-runtime](../architecture/stage-runtime.md) · SP-07, J7 |
 
@@ -63,4 +63,4 @@ Mise en œuvre des mesures : [p-ar-quality](../architecture/quality.md) ; condit
 
 ## Remarque
 
-D1 vise « les 9 scénarios » ; plusieurs Must n'ont pas de scénario dédié (voir [p-fn-requirements](requirements.md), couverture BDD ; question Q-63). Un des scénarios contient des steps qui ne compilent pas tels quels avec `bdd_widget_test` (écart E16 · Q-34, [p-fn-mockups](mockups.md)).
+D1 vise « les 9 scénarios » ; plusieurs Must n'ont pas de scénario dédié (voir [p-fn-requirements](requirements.md), couverture BDD ; question Q-63). Les steps qui commençaient par un chiffre (incompatibles avec `bdd_widget_test`) sont reformulés en toutes lettres (E16 · Q-34, [pdr-0022](../decisions/pdr-0022-gherkin-steps-no-leading-digit.md)).

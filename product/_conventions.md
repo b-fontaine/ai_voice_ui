@@ -3,9 +3,9 @@ id: p-conventions
 title: Conventions de la documentation produit
 area: meta
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [AGENTS.md, knowledge/_conventions.md]
-links: [p-readme, p-rm-open-questions, adr-0001-initial-constraints]
+links: [p-readme, p-rm-open-questions, adr-0001-initial-constraints, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, p-sources, p-fn-mockups]
 tags: [meta, conventions, documentation, lint, decision]
 ---
 # Conventions de `product/`
@@ -22,8 +22,9 @@ L'information est…
 │     → knowledge/decisions/adr-NNNN-*.md via kb-curate
 ├─ une décision propre à Genesis Canvas (fonctionnelle ou technique) ?
 │     → product/decisions/pdr-NNNN-*.md via le skill product-decide
-├─ une question non tranchée, un écart entre sources, une hypothèse ?
+├─ une question non tranchée (vrai arbitrage), une hypothèse ?
 │     → product/roadmap/open-questions.md (Q-xx), via product-curate
+│       (une question à réponse unique imposée par les faits = décision contrainte, § 5)
 └─ tout autre contenu propre au produit (exigence, écran, archi, jalon…)
       → product/<zone>/ via le skill product-curate
 ```
@@ -77,7 +78,12 @@ Les `.feature` (Gherkin, `# language: fr`) n'ont pas de frontmatter : un comment
 | Choix propre au produit | id de PDR (`pdr-0006-replay-fallback-must`) |
 | Hypothèse non confirmée | « ⚠️ Hypothèse non confirmée » + renvoi à une `Q-xx` |
 
-- **Écarts entre sources** (fiche vs maquettes, fiche vs `knowledge/`) : ne pas trancher dans les docs. Décrire l'écart, citer les deux sources et renvoyer à sa `Q-xx`.
+- **Hiérarchie des sources** ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md), remplace la consigne « tout laisser ouvert » du 2026-10-28) : la **fiche produit fait foi**. Les **maquettes illustrent la vision** du porteur, ne sont jamais une spécification ni suivies à la lettre.
+  - Écart fiche/maquette : ce n'est **pas une question**, la fiche l'emporte ; on le note dans [p-fn-mockups](functional/mockups.md) comme « différence avec l'illustration ».
+  - Fiche muette : la maquette n'est qu'une inspiration et n'impose rien.
+  - Point technique (version A2UI, noms de messages, ids de surfaces, `Grid`, `catalogId`…) : la maquette ne compte pas du tout ; seuls les faits vérifiés et les décisions décident.
+  - Exception : les PDR déjà acceptées par le porteur (pdr-0013 à pdr-0016) restent valables telles quelles.
+- **Écart fiche vs `knowledge/`** : décrire l'écart, citer les deux sources ; décision contrainte (§ 5) si les faits imposent la réponse, sinon `Q-xx`.
 - Si une note `knowledge/` contredit la doc officielle actuelle, corriger la note via `kb-curate` (AGENTS.md § 1).
 
 ## 5. Décisions produit (PDR)
@@ -94,11 +100,14 @@ Champs en plus du frontmatter commun :
 | `scope` | `fonctionnel` · `technique` · `mixte` |
 | `supersedes` | liste des PDR remplacés (`[]` sinon) |
 | `superseded_by` | id du PDR remplaçant, ou `null` |
+| `constraint_basis` | **optionnel**, obligatoire pour une décision contrainte : liste des ids (notes `knowledge/` vérifiées, `pdr-*`, `adr-*`, ou `AGENTS.md#<règle>`) qui imposent la réponse ; résolus par le lint comme les `links` |
 
 Cohérence vérifiée par le lint : `acceptée` → `status: validated` ; `proposée` → `proposed` ; `remplacée par …` et `abandonnée` → `superseded` (et `superseded_by` égal au remplaçant).
 
 **Cycle de vie** : proposée → acceptée → remplacée / abandonnée.
-- **L'assistant recommande, le porteur décide.** L'assistant ne passe jamais une PDR à `acceptée` sans une parole explicite du porteur, citée dans l'historique.
+- **L'assistant recommande, le porteur décide.** L'assistant ne passe jamais une PDR à `acceptée` sans une parole explicite du porteur, citée dans l'historique — **sauf décision contrainte**.
+- **Décision contrainte** (délégation du porteur du 2026-10-29) : question dont **une seule réponse est correcte** au vu de faits vérifiés (notes `knowledge/` `status: verified`, doc officielle) et/ou de décisions déjà acceptées (`pdr-*`, `adr-*` hérités, règles AGENTS.md § 2). L'assistant la tranche lui-même et l'enregistre en PDR `acceptée` avec `decided_by: "Assistant (décision contrainte), sur délégation du porteur du 2026-10-29"` et `constraint_basis`, puis la **signale au porteur** dans son compte rendu. Le porteur peut la contester : elle est alors remplacée par une PDR de sa main. Le lint exige `constraint_basis` dès que `decided_by` commence par « Assistant (décision contrainte) ».
+- **Restent au porteur** : les vrais arbitrages (goûts, priorités, mise en scène, budget, calendrier, matériel, écarts fiche/maquettes de nature produit, compromis entre options toutes valables) et toute hypothèse sur l'équipe, l'hébergement ou le contexte.
 - **Archives** : les sorties brutes (panels, recherches) d'une PDR vont dans `product/decisions/_archive/AAAA-MM-JJ-<slug>.md` (ignoré par le lint) ; celles d'un ADR, dans `knowledge/decisions/_archive/`.
 - **Jamais supprimée.** Remplacer = nouvelle PDR avec `supersedes`, ancienne marquée `remplacée par …`.
 - **Reconfirmer** = ajouter une ligne au tableau « Historique » de la PDR existante (pas de nouveau numéro).
@@ -122,4 +131,4 @@ docs:
 
 ## 7. Contrôle
 
-`python3 -I product/_tools/product_lint.py` vérifie : frontmatter, ids uniques et préfixes, `area`/`status`/`updated`, champs et numérotation des PDR, `next_id` au format `pdr-NNNN`, `decision_status` index ↔ fichier, questions « Avant Jn » du registre citées dans la colonne « Dépend de » du jalon Jn de `roadmap/roadmap.md`, `links` résolus (product ou knowledge hors `_archive`), en-têtes des `.feature`, index ↔ fichiers, index racine, liens markdown relatifs, tailles. Avertissements : tags `@FR-xx` inconnus, `Q-xx` absente de `open-questions.md`, `supersedes` non réciproque. Code retour 1 en cas d'erreur.
+`python3 -I product/_tools/product_lint.py` vérifie : frontmatter, ids uniques et préfixes, `area`/`status`/`updated`, champs et numérotation des PDR, `constraint_basis` (liste, ids résolus, obligatoire pour une décision contrainte), `next_id` au format `pdr-NNNN`, `decision_status` index ↔ fichier, questions « Avant Jn » du registre citées dans la colonne « Dépend de » du jalon Jn de `roadmap/roadmap.md`, `links` résolus (product ou knowledge hors `_archive`), en-têtes des `.feature`, index ↔ fichiers, index racine, liens markdown relatifs, tailles. Avertissements : tags `@FR-xx` inconnus, `Q-xx` absente de `open-questions.md`, `supersedes` non réciproque. Code retour 1 en cas d'erreur.

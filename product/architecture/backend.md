@@ -5,12 +5,12 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, knowledge:adr-0003-backend-go, knowledge:ma-backend-stack-recommendation, product/roadmap/backend-production-plan.md, knowledge:ma-backend-sdk-go, knowledge:rt-gpt-live-sideband, knowledge:rt-gpt-live-delegation]
-links: [p-fn-risks-acceptance, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-security, p-ar-replay, p-ar-quality, p-ar-stack, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-recommendation, p-rm-backend-production-plan, ma-backend-sdk-go, proj-sk-backend, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-gpt-live-session-config, rt-transcription, rt-ephemeral-keys, ma-filler-acknowledgements, ma-real-tool-results, genui-a2ui-security, genui-a2ui-messages, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-agent-card, ma-otel-genai-spans, genui-a2ui-overview, ma-target-architecture, rt-graceful-close, rt-latency, proto-mcp-dart-sdks, ma-where-to-run-agents, rt-gpt-live-overview, pdr-0013-orchestrator-visible-agent-selection]
+links: [p-fn-risks-acceptance, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-security, p-ar-replay, p-ar-quality, p-ar-stack, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-dataset, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-backend-stack-recommendation, p-rm-backend-production-plan, ma-backend-sdk-go, proj-sk-backend, rt-gpt-live-webrtc-session, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-gpt-live-lifecycle, rt-gpt-live-session-config, rt-transcription, rt-ephemeral-keys, ma-filler-acknowledgements, ma-real-tool-results, genui-a2ui-security, genui-a2ui-messages, proto-a2a-overview, proto-a2a-task-lifecycle, proto-a2a-agent-card, ma-otel-genai-spans, genui-a2ui-overview, ma-target-architecture, rt-graceful-close, rt-latency, proto-mcp-dart-sdks, ma-where-to-run-agents, rt-gpt-live-overview, pdr-0013-orchestrator-visible-agent-selection, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0023-example-guided-composition]
 tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 ---
 # Architecture du backend orchestrateur
 
-**En bref.** Le backend est le module Go hexagonal `backend/agent_orchestrator` décidé dans [adr-0003-backend-go] (appliqué au produit par [pdr-0011](../decisions/pdr-0011-adopt-knowledge-adrs.md)). Il crée la session voix, s'attache au sideband, planifie les tâches, interroge les agents spécialisés en A2A, valide l'A2UI contre le catalogue `genesis` et pousse le tout à l'app sur un canal unique (proposé : WSS maison ; ⚠️ Hypothèse non confirmée, alternative `genui_a2a` → Q-39). Les noms de messages A2UI de cette page sont ceux de v0.9, sous réserve de Q-03 (E3).
+**En bref.** Le backend est le module Go hexagonal `backend/agent_orchestrator` décidé dans [adr-0003-backend-go] (appliqué au produit par [pdr-0011](../decisions/pdr-0011-adopt-knowledge-adrs.md)). Il crée la session voix, s'attache au sideband, planifie les tâches, interroge les agents spécialisés en A2A, valide l'A2UI contre le catalogue `genesis` et pousse le tout à l'app sur un canal unique (proposé : WSS maison ; ⚠️ Hypothèse non confirmée, alternative `genui_a2a` → Q-39). Les noms de messages A2UI de cette page sont ceux de v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).
 
 > Statut : **draft**. Le socle vient de [ma-backend-stack-recommendation] et [p-rm-backend-production-plan](../roadmap/backend-production-plan.md) (plan de construction pensé pour un socle de production, écart suivi par Q-15 et Q-27) ; son **profil de déploiement pour la démo** est une proposition à valider.
 
@@ -42,9 +42,9 @@ tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 ## Orchestrateur : règles de comportement
 
 1. **Une délégation = un plan** de tâches (Qualité, Voix du client, Livraison… ; l'orchestrateur ne sollicite que les agents utiles à la demande, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)), lancées **en parallèle** pour tenir NFR-03.
-2. Dès le plan connu, émettre l'activité des agents (rail) et un **squelette** de surface (`createSurface` + composants squelette, noms v0.9 selon Q-03) pour tenir NFR-02, sans attendre les données ([rt-latency] §5).
+2. Dès le plan connu, émettre l'activité des agents (rail) et un **squelette** de surface (`createSurface` + composants squelette, noms v0.9) pour tenir NFR-02, sans attendre les données ([rt-latency] §5).
 3. La voix reçoit (RG-04) un **commentaire générique** de progression puis le **vrai résumé** une fois les résultats reçus ; jamais d'hypothèse ([ma-filler-acknowledgements], [ma-real-tool-results]).
-4. **Modifier sur place** (FR-07, FR-17, RG-06) : `updateComponents` / `updateDataModel` sur les `surfaceId` existants (noms v0.9 selon Q-03) ; un éventuel `deleteSurface` + `createSurface` dépend de Q-21 (E8) ([genui-a2ui-messages]).
+4. **Modifier sur place** (FR-07, FR-17, RG-06) : `updateComponents` / `updateDataModel` sur les `surfaceId` existants (noms v0.9) ; un éventuel `deleteSurface` + `createSurface` dépend de Q-21 (E8) ([genui-a2ui-messages]).
 5. **Révision de tâche** : chaque consigne en vigueur porte un numéro de révision ; les résultats d'une révision périmée sont jetés (FR-14, [ma-real-tool-results]).
 6. **Stop / annule** (FR-16) : `CancelTask` sur les tâches A2A en vol, `deleteSurface` des surfaces inachevées, puis seulement confirmation vocale ([rt-gpt-live-delegation] pièges).
 7. **Action utilisateur** (FR-08) : l'action typée « Bloquer la release » est routée vers l'agent Livraison ; le vrai résultat met à jour la checklist et produit le commentary vocal.
@@ -72,7 +72,7 @@ tags: [backend, go, hexagonal, orchestrateur, a2a, a2ui, gpt-live, sideband]
 | `voice.model`, `voice.voice`, `voice.instructions_ref` | `gpt-live-1`, voix FR | jamais en dur (AGENTS.md §2) |
 | `voice.delegation_type` | `client` (proposé, Q-47) | jamais en dur |
 | `voice.ack_delay_ms` | à régler en répétition | NFR-01 |
-| `a2ui.catalog_id`, `a2ui.version` | URI versionnée (Q-44) ; `v0.9` ⚠️ selon Q-03 / E3 | paramètre, jamais constante ; [genui-a2ui-overview] |
+| `a2ui.catalog_id`, `a2ui.version` | URI versionnée (Q-44) ; `v0.9` exactement ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)) | paramètre, jamais constante ; [genui-a2ui-overview] |
 | `agents[]` | URL d'Agent Card par agent | nombre libre ([pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)) |
 | `dataset.path`, `dataset.version` | jeu figé | NFR-08 |
 | `limits.max_session_s`, `limits.budget` | plafond de coût | NFR-11 |
@@ -101,7 +101,7 @@ Passages propres au projet retirés des notes génériques lors du nettoyage de 
 - **Profil de déploiement** démo vs socle `septeo_saaster_kit` complet (Keycloak, Kong, Postgres, Temporal) → Q-15, Q-55.
 - **Hébergement** du backend pendant le talk : local (machine de démo) ou cloud → Q-15.
 - **Topologie A2UI** : agents qui renvoient de l'A2UI (fiche §1) ou agents qui renvoient des données et un composeur central qui produit l'A2UI ([ma-target-architecture]) → Q-37.
-- **Déterminisme de la composition** : LLM libre, LLM contraint par exemples, ou plans A2UI pré-écrits par acte (NFR-08 dit « seule la composition varie ») → Q-38. La parade R6 de la fiche § 8 (« exemples d'écrans attendus fournis à l'IA ») en dépend : forme et emplacement des exemples (prompt, fixtures, catalogue) à fixer avec Q-38 ([p-fn-risks-acceptance](../functional/risks-acceptance.md)).
+- **Déterminisme de la composition** : tranché par [pdr-0023](../decisions/pdr-0023-example-guided-composition.md) (décision contrainte, Q-38) : LLM guidé par des exemples d'écrans attendus, sur le catalogue fermé ; ni LLM libre, ni plans A2UI pré-écrits par acte (NFR-08 : « seule la composition varie » ; parade R6 de la fiche § 8). Forme et emplacement des exemples (prompt, fixtures) : détail de conception ([p-fn-risks-acceptance](../functional/risks-acceptance.md)).
 - **LLM texte** de composition et son coût (NFR-11) → Q-17, Q-13.
 - **Voix FR** (`brise` / `sillage`) et texte des instructions vocales → Q-26.
 - **Mode de délégation** `client` vs `decisions` : non prouvé, à établir par SP-02 ([ma-backend-stack-recommendation]) → Q-47.

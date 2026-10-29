@@ -13,6 +13,9 @@ tags: [pdr, decision]
 decision_status: proposée  # acceptée | proposée | remplacée par pdr-XXXX | abandonnée
 decided_on: 2026-10-28     # date de la décision (ou de la proposition si proposée)
 decided_by: "<Nom (rôle)>, <canal : fiche produit, conversation, réunion…>"
+# Décision contrainte uniquement : decided_by: "Assistant (décision contrainte), sur délégation du porteur du 2026-10-29"
+# et constraint_basis (ids des faits vérifiés et décisions qui imposent la réponse ; obligatoire dans ce cas) :
+# constraint_basis: [genui-a2ui-overview, pdr-0008-single-screen-show-the-making]
 scope: fonctionnel         # fonctionnel | technique | mixte
 supersedes: []             # ids des PDR que celle-ci remplace
 superseded_by: null        # id du PDR qui la remplace, le cas échéant
@@ -21,7 +24,8 @@ superseded_by: null        # id du PDR qui la remplace, le cas échéant
 
 > **En bref.** <2-3 lignes : ce qui est décidé, par qui, et ce que ça change.>
 
-<!-- Part de l'assistant : préciser ici s'il a recommandé, mis en forme ou seulement consigné. -->
+<!-- Part de l'assistant : préciser ici s'il a recommandé, mis en forme ou seulement consigné,
+     ou s'il s'agit d'une décision contrainte (prise sur délégation, contestable par le porteur). -->
 
 ## Contexte
 <!-- Le problème, la contrainte ou la question. Citer la source (§ / page de la fiche, maquette n°,

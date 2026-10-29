@@ -7,12 +7,20 @@ description: Enregistre une décision produit de Genesis Canvas (PDR, product/de
 
 Référence : `product/_conventions.md` § 5 et le gabarit `product/decisions/_template.md`.
 
-**Règle d'or : l'assistant recommande, le porteur décide.** Seule une parole explicite du porteur (citée dans l'Historique) fait passer une décision à `acceptée`, `remplacée` ou `abandonnée`. `decided_by` est toujours renseigné.
+**Règle d'or : l'assistant recommande, le porteur décide les vrais arbitrages ; l'assistant tranche seul les décisions contraintes.** Une parole explicite du porteur (citée dans l'Historique) est nécessaire pour accepter, remplacer ou abandonner un arbitrage. `decided_by` est toujours renseigné.
+
+**Hiérarchie des sources ([pdr-0017](../../../product/decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)) :** la fiche produit fait foi. Les maquettes illustrent la vision : jamais suivies à la lettre, jamais pour un point technique. Une simple différence avec la maquette n'est pas une question.
 
 ## 0. Produit ou réutilisable ?
 - Choix valable pour d'autres projets (techno, pattern, outil) → ADR dans `knowledge/decisions/` via `kb-curate`. Si le produit l'applique, l'ajouter à la section `inherited` de `product/decisions/index.yaml` (et à `pdr-0011-adopt-knowledge-adrs`).
 - Choix propre à Genesis Canvas (périmètre, écran, données, plateforme, fournisseur pour la démo…) → PDR, ci-dessous.
 - Avant tout : `product-lookup` (lire `decisions/index.yaml`, `inherited` compris, et les `Q-xx` liées) pour éviter un doublon ou une contradiction.
+
+## 0 bis. Contrainte ou arbitrage ?
+- **Décision contrainte** : une seule réponse correcte découle de faits vérifiés (notes `knowledge/` `status: verified`, doc officielle) et/ou de décisions acceptées (`pdr-*`, ADR hérités, AGENTS.md § 2, exigences de la fiche). L'assistant la tranche **sans demander** : PDR `acceptée`, `decided_by: "Assistant (décision contrainte), sur délégation du porteur du 2026-10-29"`, champ `constraint_basis` (ids qui imposent la réponse), puis il la **signale** au porteur dans son compte rendu. Le porteur peut la contester : elle est alors remplacée (§ 3) par une PDR de sa main. Exemple : [pdr-0018](../../../product/decisions/pdr-0018-a2ui-v09-genui-0-10-4.md).
+- **Arbitrage** (porteur) : plusieurs options valables ; goût, priorité, mise en scène, budget, calendrier, matériel, hypothèse sur l'équipe ou l'hébergement. L'assistant recommande, le porteur tranche.
+- **Fait à établir** : la réponse dépend d'un spike ou d'une mesure ; rattacher la `Q-xx` au spike.
+- En cas de doute, c'est un arbitrage.
 
 ## 1. Créer une PDR (proposée ou acceptée)
 1. Prendre `next_id` dans `product/decisions/index.yaml` (format `pdr-NNNN`, ex. `pdr-0013`), puis l'**incrémenter** en gardant ce format (`pdr-0014`).
@@ -46,6 +54,6 @@ Référence : `product/_conventions.md` § 5 et le gabarit `product/decisions/_t
 4. `python3 -I product/_tools/product_lint.py` → **0 erreur** (cohérence `decision_status`/`status`, `decision_status` index ↔ fichier, numérotation sans trou, `next_id` au format `pdr-NNNN`, `superseded_by`).
 
 ## Garde-fous
-- Ne jamais décider à la place du porteur, ni présenter une PDR `proposée` comme acquise.
+- Ne jamais trancher un arbitrage à la place du porteur, ni présenter une PDR `proposée` comme acquise. Une décision contrainte cite toujours son `constraint_basis` et n'est jamais fondée sur la maquette.
 - Ne jamais supprimer, renuméroter ou réutiliser un numéro de PDR.
 - Signaler explicitement toute hypothèse non confirmée et la faire confirmer avant de l'inscrire comme décision.

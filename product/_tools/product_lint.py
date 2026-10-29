@@ -7,7 +7,7 @@ Usage :
 Vérifie : frontmatter complet (id, title, area, status, updated, sources, links, tags),
 ids uniques et préfixés selon le dossier, area/status/updated valides, champs des
 décisions pdr-* (decision_status, decided_on, decided_by, scope, supersedes,
-superseded_by),
+superseded_by ; constraint_basis optionnel, obligatoire pour une décision contrainte),
 numérotation sans trou ni doublon (next_id au format pdr-NNNN), decision_status de
 decisions/index.yaml identique à celui du fichier, questions « Avant Jn » de
 roadmap/open-questions.md citées dans la colonne « Dépend de » du jalon Jn, links résolus vers un id product ou un
@@ -37,6 +37,7 @@ META_DIRS = ("", "sources")  # racine de product/ et sources/ : préfixe p-, are
 ZONE_PREFIXES = tuple(p for p, _ in ZONES.values())
 PDR_FIELDS = ("decision_status", "decided_on", "decided_by", "scope", "supersedes", "superseded_by")
 PDR_SCOPES = {"fonctionnel", "technique", "mixte"}
+CONSTRAINED_BY = "Assistant (décision contrainte)"  # préfixe de decided_by d'une décision contrainte
 DECISION_STATUS = {  # decision_status -> status(es) de frontmatter acceptés
     "proposée": {"proposed"},
     "acceptée": {"validated"},
@@ -300,6 +301,14 @@ def check_decisions(docs, index_lines):
             err(f"{r} : decided_on n'est pas une date AAAA-MM-JJ")
         if "decided_by" in fm and not (isinstance(fm["decided_by"], str) and fm["decided_by"].strip()):
             err(f"{r} : decided_by vide (toujours indiquer qui décide ou doit décider)")
+        cb = fm.get("constraint_basis")
+        constrained = isinstance(fm.get("decided_by"), str) and fm["decided_by"].startswith(CONSTRAINED_BY)
+        if "constraint_basis" in fm and not isinstance(cb, list):
+            err(f"{r} : 'constraint_basis' doit être une liste d'ids")
+        elif constrained and not cb:
+            err(f"{r} : décision contrainte sans constraint_basis (ids des faits et décisions qui imposent la réponse)")
+        elif cb and not constrained:
+            warn(f"{r} : constraint_basis renseigné mais decided_by ne commence pas par « {CONSTRAINED_BY} »")
         if "scope" in fm and fm["scope"] not in PDR_SCOPES:
             err(f"{r} : scope invalide {fm['scope']!r} (attendu {' | '.join(sorted(PDR_SCOPES))})")
         sup = fm.get("supersedes")
@@ -565,6 +574,14 @@ def main():
                 warn(f"{r} : lien vers soi-même")
         if len(set(links)) != len(links):
             warn(f"{r} : links contient des doublons")
+        cb = fm.get("constraint_basis") if isinstance(fm.get("constraint_basis"), list) else []
+        for c in cb:  # résolus comme links (product ou knowledge) ; « AGENTS.md#… » admis pour une règle du § 2
+            if c.startswith("AGENTS.md"):
+                continue
+            if k_ids is None and not c.startswith(("p-", "pdr-")):
+                continue
+            if c not in known:
+                err(f"{r} : constraint_basis -> id inexistant {c}")
         check_md_links(fm["__path__"], fm["__body__"])
 
     # exigences citées par les .feature et questions ouvertes citées

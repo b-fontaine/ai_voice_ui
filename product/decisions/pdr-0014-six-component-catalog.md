@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-rm-open-questions, p-fn-catalog, p-fn-scope, p-fn-mockups, p-fn-glossary, p-fn-screen, p-fn-dataset, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, pdr-0007-closed-catalog-stage-theme, pdr-0013-orchestrator-visible-agent-selection, pdr-0008-single-screen-show-the-making]
+links: [p-rm-open-questions, p-fn-catalog, p-fn-scope, p-fn-mockups, p-fn-glossary, p-fn-screen, p-fn-dataset, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, pdr-0007-closed-catalog-stage-theme, pdr-0013-orchestrator-visible-agent-selection, pdr-0008-single-screen-show-the-making, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces]
 tags: [pdr, decision, catalog, genui, sentiment]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -26,7 +26,7 @@ Fiche § 7 : 8 composants. Maquettes : 6 (Carte KPI, Courbes, Liste d'avis, Chec
 ## Hypothèses
 - ✅ Les noms de la fiche sont préférés aux noms des maquettes ([pdr-0013](pdr-0013-orchestrator-visible-agent-selection.md)).
 - ⚠️ Hypothèse non confirmée : les données de la Liste des crashs (top crashs, plateforme, volume) restent à écrire dans le jeu figé ([p-fn-dataset](../functional/dataset.md)).
-- ⚠️ Q-04 (sur quoi porte la limite « 6 ») reste ouverte : le catalogue compte maintenant 6 composants, ce qui ne tranche pas Q-04.
+- Q-04 (sur quoi porte la limite « 6 ») tranchée le 2026-10-29 par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (surfaces visibles) ; constat d'origine : le catalogue compte maintenant 6 composants, ce qui ne tranche pas Q-04.
 
 ## Options
 1. **6 composants : noms de la fiche, comportement des maquettes** (retenue)
@@ -65,7 +65,7 @@ Cohérent avec [pdr-0013](pdr-0013-orchestrator-visible-agent-selection.md) ; me
 - [p-fn-dataset](../functional/dataset.md) : données de la Liste des crashs à écrire (point ouvert).
 - [p-ar-frontend](../architecture/frontend.md), [p-ar-agents-protocols](../architecture/agents-protocols.md) : 6 `CatalogItem` ; acte 2 par mutation, sans Comparatif.
 - Roadmap : dépendances Q-02 et Q-60 levées (J3, EP-04).
-- Q-21 (retrait d'une surface à l'acte 2) reste ouverte ; Q-04 aussi.
+- Q-21 (retrait d'une surface à l'acte 2) reste ouverte ; Q-04 tranchée depuis par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md). Composition de l'acte 1 déduite de la colonne « Actes » : [pdr-0020](pdr-0020-act1-four-surfaces.md).
 
 ## Réexaminer si
 - Le public ne perçoit pas la mutation sur place à l'acte 2.
@@ -77,5 +77,7 @@ Cohérent avec [pdr-0013](pdr-0013-orchestrator-visible-agent-selection.md) ; me
 |---|---|---|
 | 2026-10-29 | Recommandation présentée par l'assistant | Assistant |
 | 2026-10-29 | Acceptée, sur la parole « oui, enregistre tes recommandations comme décision. Je les valide. » (conversation) | Benoît FONTAINE (porteur) |
+| 2026-10-29 | Q-04 tranchée par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (décision contrainte : la limite « 6 » porte sur les surfaces visibles) ; décision maintenue, hypothèse ⚠️ Q-04 levée | Assistant (décision contrainte) |
+| 2026-10-29 | Composition de l'acte 1 (Q-28) tranchée par [pdr-0020](pdr-0020-act1-four-surfaces.md) à partir de la colonne « Actes » ; décision maintenue | Assistant (décision contrainte) |
 
 Pas d'archive brute.

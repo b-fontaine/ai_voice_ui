@@ -30,6 +30,8 @@ Sous Claude Code, le skill `kb-lookup` automatise cette procédure.
 
 `product/` décrit tout ce qui est **propre à Genesis Canvas** : fonctionnel (exigences `FR-xx`/`NFR-xx`, règles `RG-xx`, écran, catalogue, scénarios Gherkin), roadmap (jalons, backlog, spikes, questions ouvertes `Q-xx`), architecture du produit et décisions produit (`pdr-*`). Porte d'entrée humaine : `product/README.md`.
 
+**Hiérarchie des sources (pdr-0017) :** la fiche produit fait foi ; les maquettes illustrent la vision du porteur et ne sont jamais suivies à la lettre, ni pour un point technique.
+
 **Frontière :**
 
 | `knowledge/` | `product/` |
@@ -86,7 +88,8 @@ Sous Claude Code, les skills `product-lookup` (lire), `product-curate` (écrire)
 - **Toute nouvelle décision** donne lieu à un nouvel ADR ou PDR. Une décision **remplacée** en donne aussi un nouveau, et l'ancien est marqué « remplacée par ». Une décision réévaluée puis **reconfirmée** s'ajoute à l'historique de son ADR ou PDR existant. Les sorties brutes des panels vont dans `knowledge/decisions/_archive/` pour un ADR, dans `product/decisions/_archive/` pour une PDR. Une décision n'est jamais effacée : on la marque remplacée.
 - **Une question tranchée** de `product/roadmap/open-questions.md` passe à « tranchée → pdr-NNNN » ; la PDR cite la `Q-xx`.
 - **Signaler explicitement toute hypothèse non confirmée** par le porteur du projet (compétences de l'équipe, contraintes d'hébergement…), et la faire confirmer avant de la noter comme décision. Dans `product/`, elle est marquée « ⚠️ Hypothèse non confirmée » et renvoie à une `Q-xx`.
-- **L'assistant recommande, le porteur décide.** L'ADR ou la PDR indique qui a décidé (`decided_by` pour les PDR).
+- **L'assistant recommande, le porteur décide** les vrais arbitrages. L'ADR ou la PDR indique qui a décidé (`decided_by` pour les PDR).
+- **Exception : décision contrainte.** Quand une seule réponse découle des faits vérifiés et des décisions déjà prises, l'assistant la tranche, l'enregistre (PDR avec `constraint_basis`) et la signale ; le porteur peut la contester. Parole du porteur (2026-10-29) : « Tu as toutes les infos […], tu pouvais donc prendre la bonne décision seul, non ? »
 
 ## 5. Entretenir la base `knowledge/`
 

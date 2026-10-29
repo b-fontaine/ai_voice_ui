@@ -5,7 +5,7 @@ area: roadmap
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p3-p7, product/sources/product-description.pdf#p11-p12]
-links: [p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action]
+links: [p-fn-business-rules, pdr-0012-voice-provider-openai, rt-ephemeral-keys, p-rm-roadmap, p-rm-open-questions, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-dataset, p-ar-overview, p-ar-replay, p-ar-quality, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines]
 tags: [backlog, epics, moscow, couverture, exigences]
 ---
 # Backlog : epics → exigences → jalons
@@ -27,7 +27,7 @@ tags: [backlog, epics, moscow, couverture, exigences]
 | EP-09 | Jeu de données fictif et figé | NFR-08 | J3 |
 | EP-10 | Coût, mesures et répétitions (DoD) | NFR-11 + vérification de toutes les exigences | J2, J8 |
 
-Questions qui conditionnent les epics : EP-03 (Q-01, Q-15, Q-16, Q-17), EP-04 (Q-02, Q-03, Q-04, Q-21, Q-29, Q-58, Q-60, Q-61), EP-06 (Q-20, Q-49, Q-62). Tranchées : Q-01 (pdr-0013), Q-02 et Q-60 (pdr-0014), Q-29 (pdr-0015), Q-62 (pdr-0016) ; EP-04 porte 6 composants (étagère, grille de l'app), EP-06 « Bloquer » et « Valider » (RG-28, RG-30), EP-07 (Q-18, Q-19), EP-08 (Q-05), EP-09 (Q-08, Q-23), EP-10 (Q-13, Q-14, Q-24). Voir [open-questions.md](open-questions.md).
+Questions qui conditionnent les epics : EP-03 (Q-01, Q-15, Q-16, Q-17), EP-04 (Q-02, Q-03, Q-04, Q-21, Q-29, Q-58, Q-60, Q-61), EP-06 (Q-20, Q-49, Q-62). Tranchées : Q-01 (pdr-0013), Q-02 et Q-60 (pdr-0014), Q-29 (pdr-0015), Q-62 (pdr-0016), Q-03 (pdr-0018, décision contrainte : A2UI v0.9, genui 0.10.4) ; décisions contraintes du 2026-10-29 : Q-04 (pdr-0019, limite = surfaces), Q-58 (pdr-0024, acte 2 Android seul), Q-59 (pdr-0025, répliques speaker + IA) ; EP-04 porte 6 composants (étagère, grille de l'app), EP-06 « Bloquer » et « Valider » (RG-28, RG-30), EP-07 (Q-18, Q-19), EP-08 (Q-05), EP-09 (Q-08, Q-23), EP-10 (Q-13, Q-14, Q-24). Voir [open-questions.md](open-questions.md).
 
 ## Exigences fonctionnelles (fiche § 4)
 
@@ -65,7 +65,7 @@ Bilan MoSCoW : 16 Must, 4 Should (FR-06, FR-12, FR-17, FR-18), aucun Could ni Wo
 | NFR-03 | Latence UI | Acte 1 complet < 8 s | EP-03 | J3 | J3 indicatif, p90 J8 |
 | NFR-04 | Fluidité | 60 i/s pendant les apparitions | EP-04 | J7 | J7 (DevTools) |
 | NFR-05 | Lisibilité | ≥ 24 px, contraste WCAG AA | EP-04 | J7 | J7 projecteur, J8 fond de salle |
-| NFR-06 | Lisibilité | ≤ 6 surfaces visibles | EP-04 | J3 | J3 (cf. Q-04) |
+| NFR-06 | Lisibilité | ≤ 6 surfaces visibles | EP-04 | J3 | J3 (Q-04 → pdr-0019) |
 | NFR-07 | Résilience | Bascule secours < 2 s, sans redémarrer | EP-07 | J6 | J6, J8 Wi-Fi coupé |
 | NFR-08 | Déterminisme | Données figées, seule la composition varie | EP-09 | J3 | J3 (snapshot des réponses d'agents) |
 | NFR-09 | Sécurité | Aucune clé OpenAI dans l'app (fiche : « jeton éphémère » ; GPT-Live : relais SDP backend, aucun client secret, cf. écart de vocabulaire dans [pdr-0012](../decisions/pdr-0012-voice-provider-openai.md), [rt-ephemeral-keys]) | EP-01 | J2 | J2 revue de code |
@@ -122,10 +122,10 @@ Lecture de l'assistant ; les règles viennent de [p-fn-business-rules](../functi
 |---|---|---|---|---|---|
 | RG-01 | EP-04 | J2 | RG-15 | EP-03 | J4 |
 | RG-02 | EP-04 | J2, J3 | RG-16 | EP-02 | J7 |
-| RG-03 | EP-03 | J3 | RG-17 | EP-02 | J7 (E20 · Q-59) |
+| RG-03 | EP-03 | J3 | RG-17 | EP-02 | J7 (E20 · Q-59 → pdr-0025) |
 | RG-04 | EP-03 | J3 (commentaire pendant la construction) | RG-18 | EP-06 | J5 |
-| RG-05 | EP-04 | J3 (Q-04) | RG-19 | EP-07 | J6 |
-| RG-06 | EP-04 | J4 (Q-21, Q-58) | RG-20 | EP-07 | J6 |
+| RG-05 | EP-04 | J3 (Q-04 → pdr-0019) | RG-19 | EP-07 | J6 |
+| RG-06 | EP-04 | J4 (Q-21 ; Q-58 → pdr-0024) | RG-20 | EP-07 | J6 |
 | RG-07 | EP-04 | J3 | RG-21 | EP-08 | J7 |
 | RG-08 | EP-03 | J3 (refus à la voix, alternative) | RG-22 | EP-08 | J7 |
 | RG-09 | EP-04 | J3 (thème), J7 (projecteur) | RG-23 | EP-08 | J3 |

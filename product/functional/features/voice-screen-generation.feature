@@ -2,8 +2,8 @@
 # id: p-fn-feature-voice-screen-generation
 # Source : product/sources/product-description.pdf § 4, p. 4-5 (repris fidèlement).
 # Exigences : p-fn-requirements ; règles : p-fn-business-rules.
-# ⚠️ Écart E16 · Q-34 : le step « Et 4 surfaces sont complètes… » commence par un chiffre,
-#    ce qui fait échouer le build bdd_widget_test (knowledge:test-bdd-feature-syntax). Non adapté ici.
+# Steps sans chiffre initial (E16 · Q-34, pdr-0022-gherkin-steps-no-leading-digit) : bdd_widget_test
+#    échoue sur un step qui commence par un chiffre (knowledge:test-bdd-feature-syntax). Sens inchangé.
 
 Fonctionnalité: Génération d'écran pilotée à la voix
 
@@ -18,7 +18,7 @@ Fonctionnalité: Génération d'écran pilotée à la voix
     Alors la transcription affiche "Prépare la release 3.4"
     Et les agents Qualité, Voix du client et Livraison s'allument dans le rail
     Et un squelette de surface apparaît en moins de 1,5 seconde
-    Et 4 surfaces sont complètes en moins de 8 secondes
+    Et quatre surfaces sont complètes en moins de 8 secondes
 
   @S-02 @FR-07
   Scénario: Acte 2 - transformer sans recréer

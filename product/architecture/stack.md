@@ -3,9 +3,9 @@ id: p-ar-stack
 title: Stack technologique et versions
 area: architecture
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, knowledge:ma-package-versions, knowledge:genui-overview, knowledge:bloc-packages-versions, knowledge:di-setup-versions, knowledge:ds-widgetbook-versions, knowledge:ds-widgetbook-4-spike, knowledge:ma-backend-sdk-go, knowledge:adr-0003-backend-go]
-links: [proto-a2a-bindings, proto-a2a-dart-sdk, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-rm-open-questions, p-rm-spikes, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0002-desktop-platform, ma-package-versions, genui-overview, genui-a2a-connector, genui-a2ui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions, ds-widgetbook-4-spike, ma-backend-sdk-go, ma-backend-stack-recommendation, proj-sk-backend, rt-gpt-live-overview, proto-a2a-overview, test-bdd-widget-test, test-golden-alchemist, test-very-good-analysis, test-mocktail-essentials, test-coverage-ci, perf-desktop-specifics, rt-flutter-webrtc-overview, adr-0001-initial-constraints, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, rt-gpt-live-session-config, rt-provider-abstraction, ds-widgetbook-4-beta, ds-widgetbook-4-risks, ds-claude-design-overview, ds-claude-design-workflow, ds-tokens-figma-sources, ds-widgetbook-publish-web, ma-backend-stack-options, p-rm-backend-production-plan]
+links: [proto-a2a-bindings, proto-a2a-dart-sdk, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-rm-open-questions, p-rm-spikes, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0002-desktop-platform, ma-package-versions, genui-overview, genui-a2a-connector, genui-a2ui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions, ds-widgetbook-4-spike, ma-backend-sdk-go, ma-backend-stack-recommendation, proj-sk-backend, rt-gpt-live-overview, proto-a2a-overview, test-bdd-widget-test, test-golden-alchemist, test-very-good-analysis, test-mocktail-essentials, test-coverage-ci, perf-desktop-specifics, rt-flutter-webrtc-overview, adr-0001-initial-constraints, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, rt-gpt-live-session-config, rt-provider-abstraction, ds-widgetbook-4-beta, ds-widgetbook-4-risks, ds-claude-design-overview, ds-claude-design-workflow, ds-tokens-figma-sources, ds-widgetbook-publish-web, ma-backend-stack-options, p-rm-backend-production-plan, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [stack, versions, flutter, genui, go, epinglage]
 ---
 # Stack technologique et versions
@@ -21,11 +21,11 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 | Technologie | Version | Relevé | Statut | Source |
 |---|---|---|---|---|
 | Flutter / Dart | 3.47.8 / 3.13.7 (observées au spike) — **à figer** | 2026-10-28 | stable | [ds-widgetbook-4-spike], [perf-desktop-specifics] |
-| `genui` | **0.10.4**, épinglage exact | 2026-10-26 | expérimental (« alpha ») | [genui-overview] |
+| `genui` | **0.10.4**, épinglage exact ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)) | 2026-10-26 | expérimental (« alpha ») | [genui-overview] |
 | `genui_a2a` | 0.10.1 (si le canal A2A est retenu, Q-39) ; ⚠️ appelle `message/stream` (nommage A2A v0.3) alors qu'a2a-go v2 implémente la v1.0 (compat v0.3 via `a2acompat`) : à vérifier en SP-03 | 2026-10-26 | expérimental | [genui-a2a-connector], [proto-a2a-bindings], [proto-a2a-dart-sdk], [ma-backend-sdk-go] |
 | `a2ui_core` | transitif `^0.1.0` via genui 0.10.4 (ne pas ajouter 0.3.0) | 2026-10-26 | expérimental | [genui-overview] |
 | `json_schema_builder` | 0.1.7 | 2026-10-26 | expérimental | [genui-overview] |
-| Protocole A2UI | v0.9 parlé par genui 0.10.x (`"version":"v0.9"`) ; v0.9.1 stable côté spec, v1.0 en RC. ⚠️ Hypothèse non confirmée : maquettes en v0.8, version de la démo ouverte → Q-03 / E3 ; paramètre `a2ui.version` | 2026-10-26 | pré-1.0 | [genui-a2ui-overview] |
+| Protocole A2UI | **v0.9**, `"version": "v0.9"` exactement (`a2ui_core` refuse `"v0.9.1"`) ; v0.9.1 stable côté spec, v1.0 en RC ; décidé par [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) (décision contrainte, tranche Q-03) ; paramètre `a2ui.version` | 2026-10-26 | pré-1.0 | [genui-a2ui-overview] |
 | `flutter_webrtc` | 1.6.3 | 2026-10-26 | stable | [ma-package-versions], [rt-flutter-webrtc-overview] |
 | `bloc` / `flutter_bloc` | 9.2.1 / 9.1.1 | 2026-10-26 | stable | [bloc-packages-versions] |
 | `bloc_concurrency` | 0.3.0 | 2026-10-26 | pré-1.0 | [bloc-packages-versions] |
@@ -98,5 +98,5 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 - Versions exactes à figer : Flutter, Go, Style Dictionary, LLM texte → Q-25, Q-46, Q-17.
 - Support Windows effectif de `genui` (et `genui_a2a`) pour le plan de secours, à vérifier par le spike SP-09 → Q-45.
 - Inclusion ou non de `genui_a2a` (dépend du canal app ↔ backend ; compatibilité A2A v0.3 / v1.0 avec a2a-go) → Q-39.
-- Version du protocole A2UI montrée par la démo (v0.8 des maquettes ou v0.9 de genui 0.10) → Q-03.
+- ~~Version du protocole A2UI montrée par la démo~~ → tranchée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).
 - Montée éventuelle vers genui 0.10.6 (non publiée, `a2ui_core` embarqué) avant le talk : interdite sans PR dédiée → Q-46.

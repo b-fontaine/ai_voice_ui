@@ -3,9 +3,9 @@ id: p-rm-backend-production-plan
 title: Plan de construction du backend orchestrateur Go (profil production)
 area: roadmap
 status: draft
-updated: 2026-10-28
+updated: 2026-10-29
 sources: [git:d8c66bd:knowledge/multi-agent/backend/phase1-plan.md, https://github.com/openai/openai-go/tree/main/live, https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.7.0, https://a2ui.org/specification/v1.0-a2ui/, https://developers.openai.com/api/docs/guides/live-delegation]
-links: [p-ar-backend, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, p-rm-spikes, p-ar-quality, pdr-0001-conference-demo-deliverable, pdr-0005-frozen-fictional-dataset, adr-0003-backend-go, ma-backend-stack-recommendation, ma-backend-sdk-go, proj-sk-backend, rt-gemini-ephemeral-tokens, rt-gpt-live-delegation, ma-real-tool-results, ma-filler-acknowledgements, genui-a2ui-security, ma-mcp-security, test-tdd-red-green-refactor, ma-backend-stack-options, pdr-0012-voice-provider-openai, p-ar-stack]
+links: [p-ar-backend, p-rm-roadmap, p-rm-beyond, p-rm-open-questions, p-rm-spikes, p-ar-quality, pdr-0001-conference-demo-deliverable, pdr-0005-frozen-fictional-dataset, adr-0003-backend-go, ma-backend-stack-recommendation, ma-backend-sdk-go, proj-sk-backend, rt-gemini-ephemeral-tokens, rt-gpt-live-delegation, ma-real-tool-results, ma-filler-acknowledgements, genui-a2ui-security, ma-mcp-security, test-tdd-red-green-refactor, ma-backend-stack-options, pdr-0012-voice-provider-openai, p-ar-stack, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [backend, go, plan, bdd, tdd, orchestrateur, deploiement]
 ---
 # Plan de construction du backend orchestrateur Go (profil production)
@@ -60,7 +60,7 @@ Flutter app ──HTTPS POST /voice/sessions (offre SDP)──► Kong ─► ag
 |---|---|---|
 | Fournisseur voix | Les étapes 0 et 10 (Gemini) n'ont d'objet que si Gemini est retenu ; [pdr-0012](../decisions/pdr-0012-voice-provider-openai.md) propose OpenAI seul | Q-11 |
 | Mode de délégation | L'étape 4 fixe `delegation.type=client`, non prouvé | SP-02, Q-47 |
-| Version A2UI | L'étape 2 épingle v0.9 ; les maquettes montrent v0.8 | Q-03 (E3) |
+| Version A2UI | L'étape 2 épingle v0.9, conforme à la décision | Tranchée : [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03) |
 | MCP | L'étape 9 suppose des outils métier Septeo ; aucun outil MCP n'est prévu pour la démo ([stack.md](../architecture/stack.md)) | [beyond.md](beyond.md) |
 | Observabilité | L'étape 12 suppose SigNoz | Q-55 |
 | Authentification | Étapes 1 et 8 (JWKS Keycloak, JWT) ; la fiche exclut l'authentification utilisateur | Q-48 |
