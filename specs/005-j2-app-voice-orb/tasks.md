@@ -18,7 +18,7 @@
 
 ## TDD
 - [x] T10 Flutter — `entities/session` : `SessionEvent` (dont `A2uiEnvelopeReceived`, `ChannelLost`), port `SessionEventSource` ; test que le `pubspec.yaml` de `backend_channel` ne déclare ni `session` ni feature · test d'abord : égalités, exhaustivité du `switch` sealed, test de dépendances
-- [ ] T11 Flutter — `shared/core` : `AppClock` et `A2uiDecoder` extrait du rejeu (le rejeu l'utilise) · test d'abord : `A2uiDecoderTest` (v0.9 valide, version erronée, corps invalide), tests du rejeu inchangés
+- [x] T11 Flutter — `shared/core` : `AppClock` et `A2uiDecoder` extrait du rejeu (le rejeu l'utilise) · test d'abord : `A2uiDecoderTest` (v0.9 valide, version erronée, corps invalide), tests du rejeu inchangés
 - [ ] T12 Flutter — `backend_channel` : `AppChannelEnvelope` (DTO + parse) · test d'abord : table (un cas par type du contrat, type inconnu, enveloppe illisible, `agent`/`task`, `a2ui` brut)
 - [ ] T13 Flutter — `backend_channel` : `AppChannel` abstrait et `WebSocketAppChannel` (`?session=`, hôte `127.0.0.1`, sans `Origin`, 404/421/1008, fermeture serveur = fin sans erreur, annulation = fermeture de la socket) · test d'abord : faux backend de T02
 - [ ] T14 Flutter — `backend_channel` : `VoiceRelay` abstrait, `HttpVoiceRelay`, `RelayFailure` (200 + `X-Session-Id`, 400/413/415/429 + `Retry-After`/502/504, délai, `DELETE` 204/404/504 et délai borné) · test d'abord : faux backend de T02
