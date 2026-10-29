@@ -239,34 +239,7 @@ func encode(m domain.Message) ([]byte, error) {
 		Type string `json:"type"`
 		TMs  int64  `json:"t_ms"`
 		Data any    `json:"data"`
-	}{envelopeVersion, m.Type, m.TMs, wireData(m.Data)})
-}
-
-// wireData convertit les données du domaine en champs JSON de l'enveloppe.
-func wireData(d any) any {
-	switch v := d.(type) {
-	case domain.OrbLevel:
-		return struct {
-			Level float64 `json:"level"`
-		}{v.Level}
-	case domain.Transcript:
-		return struct {
-			Role  string `json:"role"`
-			Text  string `json:"text"`
-			Final bool   `json:"final"`
-		}{v.Role, v.Text, v.Final}
-	case domain.SessionState:
-		return struct {
-			State string `json:"state"`
-		}{v.State}
-	case domain.Usage:
-		return struct {
-			Seconds      float64 `json:"seconds"`
-			ContextRatio float64 `json:"context_ratio"`
-		}{v.Seconds, v.ContextRatio}
-	default:
-		return d
-	}
+	}{envelopeVersion, m.Type, m.TMs, domain.WireData(m.Data)})
 }
 
 // subscribers et sessionCount servent aux tests.

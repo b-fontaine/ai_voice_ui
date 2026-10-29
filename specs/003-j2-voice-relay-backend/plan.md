@@ -28,6 +28,9 @@
 - `openailive` ignore sans erreur tout événement sideband hors transcripts, audio, usage et `session.closed` (dont `session.delegation.created`, fonctionnalité 004) ; une coupure inattendue produit `EventClosed` puis ferme le canal.
 - `wsapp.Options{Backlog, SendBuffer int}` : injectées, toutes > 0 (sinon `NewHub` échoue) ; `Hub` = `port.Sink` + `http.Handler` ; `Forget(id)` et `Close(ctx)` (1001).
 - Backlog : à la connexion, rejeu des `Backlog` derniers messages publiés, `orb.level` exclu, sans doublon ni perte avant le direct.
+- Journal : une ligne JSON par message dans `<JOURNAL_DIR>/<session>.jsonl` : `{"unix_ms","t_ms","type","data"}` ; `data` est sérialisé par `domain.DataJSON` (mêmes noms de champs que l'enveloppe de l'app-channel, partagé avec `wsapp`).
+- `jsonljournal.Options{Dir string; Clock port.Clock; OnError func(error)}` : toutes obligatoires (sinon `New` échoue) ; dossier 0700, fichiers 0600 ; `*Recorder` = `port.Sink` + `Close() error` ; erreurs d'écriture transmises à `OnError`, jamais de panique.
+- Identifiant de session du journal : `[A-Za-z0-9_-]{1,128}`, sinon enregistrement refusé (`OnError`), aucune traversée de chemin.
 - Abonné lent : file bornée par `SendBuffer` ; en cas de débordement la connexion est fermée en 1008 (« trop lent ») sans bloquer `Publish`.
 
 ## Références

@@ -3,7 +3,7 @@
 - **Étape** : TDD
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
-- **Fichiers touchés** (T14) : backend/orchestrator/internal/adapter/wsapp/{hub.go,hub_test.go}, plan.md, tasks.md, status.md
+- **Fichiers touchés** (T15) : backend/orchestrator/internal/adapter/jsonljournal/{journal.go,journal_test.go}, internal/domain/wire.go, internal/adapter/wsapp/hub.go, plan.md, tasks.md, status.md
 - **Branche** : feat/003-j2-voice-relay-backend
 - **Backlog** : EP-01, EP-02
 - **Mis à jour** : 2026-10-29 18:20
@@ -18,6 +18,7 @@
 | 2026-10-29 | TDD | T12 : ports (`LiveProvider`, `Sideband`, `Sink`, `Clock`), `domain.Message`, service `voice` (Open, Close avec délai de garde, Shutdown) ; rouge `no required module provides package .../internal/domain`, vert ensuite sous `-race` | .omc/state/loop/gates/20261029-181338-unit-go.log |
 | 2026-10-29 | TDD | T13 : adaptateur `openailive` (`New`, `CreateSession`, `Sideband` + traduction des événements, `Close` = `session.close`) ; rouge `no non-test Go files` (paquet absent), vert sous `-race` ; httptest HTTP + WebSocket, aucun réseau réel (comportement face à la vraie API non vérifié ici) | .omc/state/loop/gates/20261029-181932-unit-go.log |
 | 2026-10-29 | TDD | T14 : hub WSS `wsapp` (`NewHub`, `Publish`, `Forget`, `Close`, `ServeHTTP`) ; rouge `undefined: Hub` (paquet absent), vert sous `-race -count=3` ; backlog sans `orb.level`, abonné lent fermé 1008, oubli des sessions closes | .omc/state/loop/gates/20261029-182423-unit-go.log |
+| 2026-10-29 | TDD | T15 : journal `jsonljournal` (`New`, `Publish`, `Close`) ; `domain.WireData`/`DataJSON` extraits de `wsapp` (noms de champs communs) ; rouge `undefined: Recorder`/`domain.DataJSON`, vert sous `-race -count=3` ; id de session validé, permissions 0600/0700 | .omc/state/loop/gates/20261029-182732-unit-go.log |
 
 ## Revue d'architecte
 
