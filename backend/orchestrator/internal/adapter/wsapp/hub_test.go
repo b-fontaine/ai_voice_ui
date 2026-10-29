@@ -351,6 +351,8 @@ func TestWireA2UIAttribution(t *testing.T) {
 	}{
 		{domain.Message{Type: domain.TypeA2UI, TMs: 5, Agent: "Qualité", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":5,"agent":"Qualité","task":"t1","data":{"version":"v0.9"}}`},
 		{domain.Message{Type: domain.TypeA2UI, TMs: 6, Agent: "orchestrateur", Task: "t1", Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":6,"agent":"orchestrateur","task":"t1","data":{"version":"v0.9"}}`},
+		{domain.Message{Type: domain.TypeAgentActivity, TMs: 8, Agent: "Qualité", Task: "t1", Data: domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking}}, `{"v":1,"type":"agent.activity","session":"s1","t_ms":8,"agent":"Qualité","task":"t1","data":{"agent":"Qualité","task":"t1","state":"working"}}`},
+		{domain.Message{Type: domain.TypeDelegation, TMs: 9, Data: domain.Delegation{ID: "d1", OffsetMs: 12}}, `{"v":1,"type":"delegation","session":"s1","t_ms":9,"data":{"id":"d1","offset_ms":12}}`},
 		{domain.Message{Type: domain.TypeA2UI, TMs: 7, Data: domain.A2UI{Message: map[string]any{"version": "v0.9"}}}, `{"v":1,"type":"a2ui","session":"s1","t_ms":7,"data":{"version":"v0.9"}}`},
 	}
 	for _, tc := range cases {

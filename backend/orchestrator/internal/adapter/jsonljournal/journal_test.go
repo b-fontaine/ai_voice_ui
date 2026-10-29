@@ -429,3 +429,25 @@ func TestJournalLineCarriesAttribution(t *testing.T) {
 		t.Fatalf("task doit être omis quand il est vide : %s", lines[2])
 	}
 }
+
+// TestJournalRecordsDelegation : le message delegation est journalisé avec son offset (NFR-02).
+func TestJournalRecordsDelegation(t *testing.T) {
+	dir := t.TempDir()
+	r, _ := newRecorder(t, dir)
+	r.Publish("s1", domain.Message{Type: domain.TypeDelegation, TMs: 12, Data: domain.Delegation{ID: "d1", OffsetMs: 4200}})
+	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
+	if len(lines) != 1 {
+		t.Fatalf("lignes = %d", len(lines))
+	}
+	var l struct {
+		Type string         `json:"type"`
+		TMs  int64          `json:"t_ms"`
+		Data map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(lines[0]), &l); err != nil {
+		t.Fatal(err)
+	}
+	if l.Type != "delegation" || l.TMs != 12 || l.Data["id"] != "d1" || l.Data["offset_ms"] != float64(4200) {
+		t.Fatalf("ligne = %s", lines[0])
+	}
+}

@@ -501,7 +501,7 @@ func (p *Pipeline) untrackLocked(ts *taskState) {
 }
 
 func (p *Pipeline) publishActivityLocked(ts *taskState, state, detail string) {
-	p.publishLocked(domain.TypeAgentActivity, "", "", domain.AgentActivity{
+	p.publishLocked(domain.TypeAgentActivity, ts.agent, ts.taskID, domain.AgentActivity{
 		Agent: ts.agent, Task: ts.taskID, State: state, Label: ts.label, Detail: detail,
 	})
 }

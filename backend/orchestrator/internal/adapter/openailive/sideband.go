@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -73,7 +74,7 @@ func (s *sideband) run(ctx context.Context) {
 			return
 		}
 		s.route(raw)
-		ev, ok, closed := translate(raw)
+		ev, ok, closed := translate(raw, s.p.log)
 		if closed {
 			s.emit(ctx, ev)
 			return
@@ -238,7 +239,7 @@ type frame struct {
 
 // translate décode une trame. ok=false : trame ignorée (inconnue). closed=true : session.closed,
 // ev est alors l'EventClosed portant la raison du fournisseur.
-func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
+func translate(raw []byte, log *slog.Logger) (ev port.LiveEvent, ok, closed bool) {
 	var f frame
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return ev, false, false
@@ -261,6 +262,11 @@ func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 			ContextRatio: f.ContextWindow.UsageRatio,
 		}, true, false
 	case "session.delegation.created":
+		if f.Delegation.ID == "" {
+			// Sans identifiant, aucun commentaire ne peut être rattaché à la délégation.
+			log.Warn("délégation sans identifiant ignorée", "offset_ms", f.OffsetMs)
+			return ev, false, false
+		}
 		return port.LiveEvent{Type: port.EventDelegationCreated, DelegationID: f.Delegation.ID, OffsetMs: f.OffsetMs}, true, false
 	case "session.closed":
 		return port.LiveEvent{Type: port.EventClosed, Reason: f.Reason}, false, true

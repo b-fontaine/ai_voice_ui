@@ -24,6 +24,7 @@ func TestWireDataCoversAllPayloads(t *testing.T) {
 		{"Usage", domain.Usage{Seconds: 1.5, ContextRatio: 0.1}, `{"seconds":1.5,"context_ratio":0.1}`},
 		{"A2UI", domain.A2UI{Message: map[string]any{"version": "v0.9"}}, `{"version":"v0.9"}`},
 		{"AgentActivity", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking}, `{"agent":"Qualité","task":"t1","state":"working"}`},
+		{"Delegation", domain.Delegation{ID: "d1", OffsetMs: 1234}, `{"id":"d1","offset_ms":1234}`},
 		{"AgentActivityLabel", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}, `{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}`},
 	}
 	for _, c := range cases {
@@ -48,6 +49,19 @@ func TestWireDataCoversAllPayloads(t *testing.T) {
 
 // TestWireA2UIAndActivity vérifie que le message A2UI est sérialisé tel quel
 // (types imbriqués inclus) et que agent.activity omet detail quand il est vide.
+func TestWireDelegation(t *testing.T) {
+	got, err := wire.DataJSON(domain.Message{Type: domain.TypeDelegation, Data: domain.Delegation{ID: "dlg_1", OffsetMs: 4200}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"id":"dlg_1","offset_ms":4200}`; string(got) != want {
+		t.Errorf("delegation = %s, attendu %s", got, want)
+	}
+	if domain.TypeDelegation != "delegation" {
+		t.Errorf("TypeDelegation = %q", domain.TypeDelegation)
+	}
+}
+
 func TestWireA2UIAndActivity(t *testing.T) {
 	msg := map[string]any{
 		"version": "v0.9",

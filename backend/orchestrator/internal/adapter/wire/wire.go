@@ -45,6 +45,11 @@ func WireData(d domain.Payload) any {
 			Label  string `json:"label,omitempty"`
 			Detail string `json:"detail,omitempty"`
 		}{v.Agent, v.Task, v.State, v.Label, v.Detail}
+	case domain.Delegation:
+		return struct {
+			ID       string `json:"id"`
+			OffsetMs int64  `json:"offset_ms"`
+		}{v.ID, v.OffsetMs}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil

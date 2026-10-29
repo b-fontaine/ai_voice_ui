@@ -405,8 +405,11 @@ func TestOrchestrateHappyPath(t *testing.T) {
 			t.Fatalf("message %d publié pour la session %q", i, e.sink.sessions[i])
 		}
 	}
-	if got[0].Type != domain.TypeAgentActivity || got[0].Agent != "" {
-		t.Fatalf("agent.activity : type=%q agent de l'enveloppe=%q", got[0].Type, got[0].Agent)
+	// R10(a) : l'enveloppe d'agent.activity porte agent et task au premier niveau.
+	for _, i := range []int{0, 4} {
+		if got[i].Type != domain.TypeAgentActivity || got[i].Agent != agentQuality || got[i].Task != "task-1" {
+			t.Fatalf("agent.activity %d : type=%q agent=%q task=%q de l'enveloppe", i, got[i].Type, got[i].Agent, got[i].Task)
+		}
 	}
 
 	reqs := agent.sent()
@@ -485,6 +488,17 @@ func TestAgentFails(t *testing.T) {
 				t.Fatal("tâche non oubliée par le registre")
 			}
 		})
+	}
+}
+
+// failed peut arriver sans working : task vide, agent = nom connu de l'hôte.
+func TestFailedWithoutWorkingEnvelopeHasAgentAndEmptyTask(t *testing.T) {
+	e := newEnv(t, newAgent(agentQuality, failedSteps(errors.New("boom"))...))
+	e.p.Run(context.Background(), e.delegation(t))
+	got := e.sink.snapshot()
+	expectSeq(t, got, "activity:failed:"+DetailAgentFailed)
+	if got[0].Agent != agentQuality || got[0].Task != "" {
+		t.Fatalf("enveloppe : agent=%q task=%q", got[0].Agent, got[0].Task)
 	}
 }
 
@@ -883,7 +897,7 @@ func TestSurfaceCapAcrossAgents(t *testing.T) {
 
 	var beta []string
 	for _, m := range e.sink.snapshot() {
-		if m.Agent == "Beta" || (m.Agent == "orchestrateur" && m.Task == "tb") {
+		if m.Type == domain.TypeA2UI && (m.Agent == "Beta" || (m.Agent == "orchestrateur" && m.Task == "tb")) {
 			beta = append(beta, describe(m))
 		}
 		if m.Type == domain.TypeA2UI {

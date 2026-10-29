@@ -2,6 +2,9 @@ package voice
 
 import (
 	"context"
+	"io"
+	"log/slog"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -306,5 +309,110 @@ func TestAttachFailedNeverOpensDelegations(t *testing.T) {
 	}
 	if fd.sess.closes() != 0 {
 		t.Fatal("Close inattendu")
+	}
+}
+
+// orderDelegations vérifie qu'au moment de Delegate le message `delegation`
+// est déjà publié sur le sink (NFR-02 : l'instant est mesurable dans le journal).
+type orderDelegations struct {
+	sink      *testSink
+	mu        sync.Mutex
+	seenAtDlg []domain.Message
+}
+
+func (o *orderDelegations) Open(string, time.Time, port.VoiceReply) port.SessionDelegations {
+	return o
+}
+func (o *orderDelegations) Transcript(port.LiveEvent) {}
+func (o *orderDelegations) Close(context.Context)     {}
+func (o *orderDelegations) Delegate(string, int64) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.seenAtDlg = o.sink.ofType(domain.TypeDelegation)
+}
+
+func TestDelegationCreatedPublishedAndJournaled(t *testing.T) {
+	sink, clock := &testSink{}, newTestClock()
+	od := &orderDelegations{sink: sink}
+	opts := testOptions()
+	opts.Delegations = od
+	live := &testLive{autoClose: true}
+	svc, err := NewService(live, sink, clock, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened, err := svc.Open(context.Background(), "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sb := live.waitAttached(t)
+	clock.Advance(1500 * time.Millisecond)
+	sb.events <- port.LiveEvent{Type: port.EventDelegationCreated, DelegationID: "d1", OffsetMs: 1234}
+	msgs := sink.waitCount(t, domain.TypeDelegation, 1)
+	if len(msgs) != 1 {
+		t.Fatalf("delegation publiés = %d", len(msgs))
+	}
+	if d, ok := msgs[0].Data.(domain.Delegation); !ok || d != (domain.Delegation{ID: "d1", OffsetMs: 1234}) {
+		t.Fatalf("charge utile = %+v", msgs[0].Data)
+	}
+	if msgs[0].TMs != 1500 {
+		t.Fatalf("TMs = %d, attendu 1500", msgs[0].TMs)
+	}
+	for _, p := range sink.snapshot() {
+		if p.Msg.Type == domain.TypeDelegation && p.SessionID != opened.SessionID {
+			t.Fatalf("session = %q", p.SessionID)
+		}
+	}
+	waitFor(t, func() bool { od.mu.Lock(); defer od.mu.Unlock(); return od.seenAtDlg != nil })
+	od.mu.Lock()
+	n := len(od.seenAtDlg)
+	od.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("à l'appel de Delegate, %d message(s) delegation publié(s), 1 attendu (publié AVANT)", n)
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+type gatedTranscripts struct {
+	gate   chan struct{}
+	mu     sync.Mutex
+	texts  []string
+	dlgIDs []string
+}
+
+func (g *gatedTranscripts) Transcript(ev port.LiveEvent) {
+	<-g.gate
+	g.mu.Lock()
+	g.texts = append(g.texts, ev.Text)
+	g.mu.Unlock()
+}
+func (g *gatedTranscripts) Delegate(id string, _ int64) {
+	g.mu.Lock()
+	g.dlgIDs = append(g.dlgIDs, id)
+	g.mu.Unlock()
+}
+func (g *gatedTranscripts) Close(context.Context) {}
+
+// La file saturée de transcripts n'abandonne jamais une délégation : le plus
+// ancien transcript en attente est abandonné à sa place.
+func TestForwarderNeverDropsDelegation(t *testing.T) {
+	g := &gatedTranscripts{gate: make(chan struct{})}
+	f := newForwarder(g, "s", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	for i := 0; i < forwardQueue+50; i++ { // le premier bloque dans Transcript, les autres saturent la file
+		f.transcript(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: strconv.Itoa(i)})
+	}
+	f.delegate("d1", 10)
+	f.delegate("d2", 20)
+	close(g.gate)
+	f.shutdown(5 * time.Second)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if len(g.dlgIDs) != 2 || g.dlgIDs[0] != "d1" || g.dlgIDs[1] != "d2" {
+		t.Fatalf("délégations livrées = %v", g.dlgIDs)
+	}
+	if len(g.texts) > forwardQueue+1 {
+		t.Fatalf("file non bornée : %d transcripts livrés", len(g.texts))
 	}
 }

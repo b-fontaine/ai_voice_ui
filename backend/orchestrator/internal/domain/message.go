@@ -12,6 +12,9 @@ const (
 	// l'état d'une tâche confiée à un agent distant.
 	TypeA2UI          = "a2ui"
 	TypeAgentActivity = "agent.activity"
+	// TypeDelegation signale la création d'une délégation par le modèle vocal :
+	// il rend NFR-02 mesurable (offset du fournisseur, t_ms de réception).
+	TypeDelegation = "delegation"
 )
 
 // Rôles d'un transcript.
@@ -88,7 +91,15 @@ type A2UI struct{ Message map[string]any }
 // nom du skill de la carte de l'agent (facultatif).
 type AgentActivity struct{ Agent, Task, State, Label, Detail string }
 
+// Delegation est la création d'une délégation : ID est l'identifiant du
+// fournisseur, OffsetMs l'instant qu'il rapporte (ms depuis le début de la session).
+type Delegation struct {
+	ID       string
+	OffsetMs int64
+}
+
 func (A2UI) isPayload()          {}
+func (Delegation) isPayload()    {}
 func (AgentActivity) isPayload() {}
 func (OrbLevel) isPayload()      {}
 func (Transcript) isPayload()    {}

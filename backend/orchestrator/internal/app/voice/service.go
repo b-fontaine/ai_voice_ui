@@ -470,6 +470,10 @@ func (s *Service) translate(sess *session, ev port.LiveEvent) {
 		}
 	case port.EventUsageUpdated:
 		s.publish(sess, domain.TypeUsage, domain.Usage{Seconds: ev.Seconds, ContextRatio: ev.ContextRatio})
+	case port.EventDelegationCreated:
+		// Publié avant la transmission à l'orchestrateur (supervise la route
+		// ensuite) : NFR-02 est mesurable dans le journal.
+		s.publish(sess, domain.TypeDelegation, domain.Delegation{ID: ev.DelegationID, OffsetMs: ev.OffsetMs})
 	case port.EventClosed:
 		reason := ev.Reason
 		if forced := sess.forcedReason(); forced != "" {

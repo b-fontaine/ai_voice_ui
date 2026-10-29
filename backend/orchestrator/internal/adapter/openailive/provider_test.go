@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -756,5 +757,43 @@ func TestNewRejectsNegativeAcknowledgementDelay(t *testing.T) {
 	o.AcknowledgementDelayMs = &ms
 	if _, err := openailive.New(o); err == nil {
 		t.Fatal("un délai négatif doit être refusé")
+	}
+}
+
+// lockedBuf est un tampon sûr pour la concurrence, destiné à capter les journaux.
+type lockedBuf struct {
+	mu sync.Mutex
+	b  strings.Builder
+}
+
+func (l *lockedBuf) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.Write(p)
+}
+
+func (l *lockedBuf) String() string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.String()
+}
+
+// Une délégation sans identifiant est écartée (Warn, aucun événement) : la
+// suite du flux est traitée normalement.
+func TestEmptyDelegationIDIgnored(t *testing.T) {
+	srv := newSidebandServer(t, []string{
+		`{"type":"session.delegation.created","event_id":"e1","offset_ms":10,"delegation":{"id":"","target":"client","type":"delegation"}}`,
+		`{"type":"session.input_transcript.delta","event_id":"e2","delta":"bonjour","start_ms":100,"end_ms":900}`,
+	}, false, false)
+	buf := &lockedBuf{}
+	opts := testOptions(srv.URL)
+	opts.Logger = slog.New(slog.NewTextHandler(buf, nil))
+	sb := openSideband(t, opts)
+	e := nextEvent(t, sb.Events())
+	if e.Type != port.EventInputTranscriptDelta || e.Text != "bonjour" {
+		t.Fatalf("premier événement = %+v, la délégation sans id devait être écartée", e)
+	}
+	if out := buf.String(); !strings.Contains(out, "level=WARN") || !strings.Contains(out, "délégation") {
+		t.Fatalf("Warn attendu, journal = %q", out)
 	}
 }
