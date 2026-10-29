@@ -4,3 +4,10 @@ analyzer:
   exclude:
     - build/**
     - linux/**
+    # Acceptation 005 écrite avant le code de production (étape Gherkin) :
+    # ces deux fichiers référencent `VoiceTransport`, le paramètre
+    # `voiceTransportFactory` de `GenesisCanvasApp` et `VoiceOrb.level`,
+    # livrés par T16, T22 et T23. La tâche T23 retire cette exclusion
+    # quand ces symboles existent ; `flutter test` les compile dans tous les cas.
+    - test/acceptance/support/fake_voice_transport.dart
+    - test/acceptance/support/session_harness.dart

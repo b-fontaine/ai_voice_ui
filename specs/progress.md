@@ -10,11 +10,12 @@
 | 002 | SP-02 : session GPT-Live par relais SDP (spike réduit) | EP-02 | J1 | Terminée ⚠️ (résultat partiel), publiée (`82465d5`) | 2026-10-29 |
 | 003 | J2 : backend squelette (relais SDP, sideband, app-channel, compose, CI) | EP-01, EP-02 | J2 | Terminée ✅, publiée (`c193434`) | 2026-10-29 |
 | 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Terminée ✅, publiée (`0d979f9`) | 2026-10-29 |
-| 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | Gherkin (branche `feat/005-j2-app-voice-orb`) | 2026-10-29 |
+| 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | TDD, T10 à T23 (branche `feat/005-j2-app-voice-orb`) | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-29 | 005 : Gherkin terminé (T01 : 4 paquets et DI, `build_runner` figé en 2.16.1 car `injectable_generator` 3.1.3 est incompatible avec 2.16.2 — choix contraint ; T02 : 12 scénarios V1-V5bis rouges pour la bonne raison, gate --unit vert) ; passage au TDD (T10 à T23). |
 | 2026-10-29 | 005 : revue du plan rendue (À AMENDER, 2 bloquants), amendements A1-A8 intégrés ; passage à l'étape Gherkin (T01 d'abord : résolution `injectable_generator`/`analyzer`, arrêt et remontée au porteur si impossible). |
 | 2026-10-29 | 005 : étape Définir faite (spec, plan, 23 tâches) ; passage à la revue du plan. |
 | 2026-10-29 | **004 terminée** (orchestrateur Go : file par session, client A2A, validateur A2UI v0.9 et registre de surfaces, agent A2A Qualité déterministe sur le jeu figé, branchement voix, compose à réseau interne, CI en matrice ; revue du plan puis revue de code, R1-R10 appliquées en 6 lots ; essai réel unique OK, 0,04 €). Prochaine : 005 (app Flutter : `app/di` get_it+injectable, WebRTC `flutter_webrtc`, orbe alimenté par `orb.level`, rendu A2UI des messages `a2ui`, panneau d'activité des agents) ; SP-06 (AEC) en J7. **Pour le porteur, sans bloquer** : Q-69 (surface partielle si l'agent échoue, reco : retirer, avant J3) ; Q-70 (le canevas survit-il à la session voix, avant J4) ; Q-68 (plafond de durée par session, avant J7) ; Q-67 (délai d'arrêt de la voix) ; reformuler AGENTS.md § 2 (écoute 127.0.0.1 : conteneur en 0.0.0.0, hôte en 127.0.0.1). |
