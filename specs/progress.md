@@ -5,11 +5,12 @@
 ## Fonctionnalités
 | NNN | Fonctionnalité | Backlog | Jalon | Étape | Mise à jour |
 |---|---|---|---|---|---|
-| 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | TDD (T14 à venir) | 2026-10-29 |
+| 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | Revue d'architecte | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-29 | 000 : TDD terminé (T01 à T14), gate --full vert ; passage à la Revue d'architecte. |
 | 2026-10-29 | 000 : T13 faite (capture PNG, config, lecteur de scénario) ; H-01 à H-03 verts ; reste T14 (fixture alignée sur le jeu de données). |
 | 2026-10-29 | 000 : T12 faite (`CanvasBloc` + `CanvasBoard`) ; `bloc_test` impossible (conflit analyzer), helper maison, note KB corrigée ; reste T13, T14. |
 | 2026-10-29 | 000 : T11 faite (`A2uiReplaySource`) ; reste T12 à T14. |
