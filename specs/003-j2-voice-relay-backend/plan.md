@@ -14,6 +14,9 @@
 - `POST /voice/sessions` : corps `application/sdp` (offre) ; réponse 200 `application/sdp` + en-tête `X-Session-Id` ; erreurs JSON `{error}`. Limité en débit, journalisé.
 - `GET /app?session=<id>` (WSS) : enveloppe `{v:1, type, t_ms, data}` ; types : `orb.level` (`{level}` 0..1, 5 Hz), `transcript` (`{role: user|ai, text, final}`), `session.state` (`{state}`), `usage` (`{seconds, context_ratio}`).
 - Configuration (variables d'environnement, aucune valeur en dur) : `OPENAI_API_KEY`, `VOICE_MODEL`, `VOICE_VOICE`, `VOICE_DELEGATION_TYPE`, `VOICE_INSTRUCTIONS_FILE`, `LISTEN_HOST` (défaut `127.0.0.1`), `LISTEN_PORT`, `JOURNAL_DIR`.
+- Compose (racine) : service `orchestrator`, `env_file: .env`, défauts surchargeables `VOICE_MODEL=gpt-live-1`, `VOICE_VOICE=brise`, `VOICE_DELEGATION_TYPE=client` ; écoute `0.0.0.0` + `LISTEN_ALLOW_NON_LOOPBACK=1` dans le conteneur seulement ; journal sur volume nommé ; consignes vocales provisoires montées en lecture seule.
+- Ports : publication `127.0.0.1:8080:8080` uniquement (pdr-0041) ; conteneur `read_only`, `cap_drop: ALL`, `no-new-privileges` ; healthcheck = sous-commande `orchestrator healthcheck` (sonde `/healthz`, image distroless sans shell).
+- CI (`.github/workflows/ci.yaml`) : jobs `backend` (gofmt, vet, tests `-race` avec et sans `acceptance`, `docker build`) et `app` (Flutter 3.47.8, build_runner si présent, analyze, test) ; `contents: read`, aucun secret.
 
 ### Contrats imposés par les tests d'acceptation (A1-A3)
 - `port.LiveProvider` : `CreateSession(ctx, offerSDP string) (port.LiveSession{ID, AnswerSDP}, error)` et `Sideband(ctx, sessionID string) (port.Sideband, error)`.

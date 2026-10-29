@@ -1,0 +1,38 @@
+# Genesis Canvas : démo locale (pdr-0029, pdr-0041).
+# Usage : `docker compose up --build`, après avoir créé `.env`.
+# `.env` est requis (clé OPENAI_API_KEY) et ne doit JAMAIS être commité.
+# Les valeurs VOICE_* ci-dessous sont des défauts de configuration, surchargeables par `.env`.
+# Les agents A2A viendront ici, un service par agent (fonctionnalité 004).
+services:
+  orchestrator:
+    build:
+      context: backend/orchestrator
+    env_file: .env
+    environment:
+      VOICE_MODEL: ${VOICE_MODEL:-gpt-live-1}
+      VOICE_VOICE: ${VOICE_VOICE:-brise}
+      VOICE_DELEGATION_TYPE: ${VOICE_DELEGATION_TYPE:-client}
+      # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
+      LISTEN_HOST: 0.0.0.0
+      LISTEN_ALLOW_NON_LOOPBACK: "1"
+      LISTEN_PORT: "8080"
+      JOURNAL_DIR: /var/lib/genesis/journal
+      VOICE_INSTRUCTIONS_FILE: /etc/genesis/voice-instructions.fr.md
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - journal:/var/lib/genesis/journal
+      - ./backend/orchestrator/config/voice-instructions.fr.md:/etc/genesis/voice-instructions.fr.md:ro
+    healthcheck:
+      test: ["CMD", "/orchestrator", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  journal:

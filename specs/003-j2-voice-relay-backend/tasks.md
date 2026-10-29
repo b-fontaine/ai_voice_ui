@@ -15,7 +15,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T14 Go — hub WSS `wsapp` (enveloppe v1, diffusion par session) · test d'abord : `TestHubBroadcast`
 - [x] T15 Go — journal JSONL horodaté `jsonljournal` · test d'abord : `TestJournalLine`
 - [x] T16 Go — `httpapi` (routes, limite de débit, `/healthz`) et `cmd/orchestrator` · test d'abord : `TestRateLimit`, `TestHealthz`
-- [ ] T17 Infra — `backend/Dockerfile`, `docker-compose.yaml`, `.github/workflows/ci.yaml` minimal · test d'abord : `docker compose config` en échec (fichier absent)
+- [x] T17 Infra — `backend/Dockerfile`, `docker-compose.yaml`, `.github/workflows/ci.yaml` minimal · test d'abord : `docker compose config` en échec (fichier absent)
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert

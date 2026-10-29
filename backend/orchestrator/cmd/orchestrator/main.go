@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -20,10 +21,35 @@ const shutdownTimeout = 15 * time.Second
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		if err := healthcheck(os.Getenv); err != nil {
+			logger.Error("healthcheck en échec", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(logger); err != nil {
 		logger.Error("arrêt sur erreur", "error", err)
 		os.Exit(1)
 	}
+}
+
+// healthcheck sonde /healthz ; l'image finale n'a ni shell ni curl.
+func healthcheck(getenv func(string) string) error {
+	url, err := bootstrap.HealthcheckURL(getenv)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("/healthz a répondu %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func run(logger *slog.Logger) error {
