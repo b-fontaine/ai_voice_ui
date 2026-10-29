@@ -2,13 +2,17 @@ import 'dart:async';
 
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:feature_canvas/feature_canvas.dart'
-    show CanvasBloc, CanvasSourceStatus, CanvasSourceSubscribed, CanvasState;
+    show
+        CanvasBloc,
+        CanvasBoard,
+        CanvasSourceStatus,
+        CanvasSourceSubscribed,
+        CanvasState;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_core/shared_core.dart' show ExitHandler, SnapshotService;
 
-import '../../widgets/canvas_board/canvas_board.dart';
 import '../../widgets/top_bar/top_bar.dart';
 import 'engine_error_watcher.dart';
 
@@ -141,7 +145,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage> {
           child: Column(
             children: <Widget>[
               const Padding(padding: EdgeInsets.all(16), child: VoiceOrb()),
-              Expanded(child: CanvasBoardView(controller: _controller)),
+              Expanded(
+                child: CanvasBoard(
+                  key: const Key('canvas-board'),
+                  controller: _controller,
+                ),
+              ),
             ],
           ),
         ),
