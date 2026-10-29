@@ -128,20 +128,6 @@ func (h *Hub) deliver(sub *subscriber, payload []byte, remove func()) {
 	}
 }
 
-// Forget oublie la session et déconnecte ses abonnés.
-func (h *Hub) Forget(sessionID string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	s, ok := h.sessions[sessionID]
-	if !ok {
-		return
-	}
-	delete(h.sessions, sessionID)
-	for sub := range s.subs {
-		sub.stop(closeReason{websocket.StatusGoingAway, "session oubliée"})
-	}
-}
-
 // Close ferme proprement tous les abonnés (code 1001) et attend la fin des
 // gestionnaires, dans la limite de ctx.
 func (h *Hub) Close(ctx context.Context) error {

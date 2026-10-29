@@ -93,14 +93,11 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		*r.dst = v
 	}
 
-	cfg.ListenPort = defaultListenPort
-	if raw := strings.TrimSpace(getenv("LISTEN_PORT")); raw != "" {
-		p, err := strconv.Atoi(raw)
-		if err != nil || p < 1 || p > 65535 {
-			return Config{}, errors.New("LISTEN_PORT doit être un entier entre 1 et 65535")
-		}
-		cfg.ListenPort = p
+	port, err := parseListenPort(getenv)
+	if err != nil {
+		return Config{}, err
 	}
+	cfg.ListenPort = port
 
 	cfg.ListenHost = defaultListenHost
 	if raw := strings.TrimSpace(getenv("LISTEN_HOST")); raw != "" {
@@ -171,6 +168,20 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))
 	cfg.InstructionsFile = strings.TrimSpace(getenv("VOICE_INSTRUCTIONS_FILE"))
 	return cfg, nil
+}
+
+// parseListenPort lit LISTEN_PORT (facultatif, défaut 8080) ; partagé avec la
+// sous-commande healthcheck.
+func parseListenPort(getenv func(string) string) (int, error) {
+	raw := strings.TrimSpace(getenv("LISTEN_PORT"))
+	if raw == "" {
+		return defaultListenPort, nil
+	}
+	p, err := strconv.Atoi(raw)
+	if err != nil || p < 1 || p > 65535 {
+		return 0, errors.New("LISTEN_PORT doit être un entier entre 1 et 65535")
+	}
+	return p, nil
 }
 
 func isLoopback(host string) bool {

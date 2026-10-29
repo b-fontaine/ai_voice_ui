@@ -137,17 +137,6 @@ func TestMeterOddByteKeptAcrossWrites(t *testing.T) {
 	}
 }
 
-func TestMeterReset(t *testing.T) {
-	m := newTestMeter(t)
-	m.Write(sine(4000, 1))
-	m.Write([]byte{1})
-	m.Reset()
-	got := m.Write(make([]byte, 9600))
-	if len(got) != 1 || got[0] != 0 {
-		t.Fatalf("reliquat non vidé : %v", got)
-	}
-}
-
 func TestNewMeterErrors(t *testing.T) {
 	for _, c := range [][2]int{{0, 200}, {-1, 200}, {24000, 0}, {24000, -5}} {
 		if _, err := NewMeter(c[0], c[1]); err == nil {

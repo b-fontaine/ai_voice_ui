@@ -26,3 +26,23 @@ func TestHealthcheckURL(t *testing.T) {
 		})
 	}
 }
+
+func TestHealthcheckURLInvalidPort(t *testing.T) {
+	for _, bad := range []string{"abc", "0", "-1", "65536", "80.5"} {
+		getenv := func(k string) string {
+			if k == "LISTEN_PORT" {
+				return bad
+			}
+			return ""
+		}
+		if _, err := HealthcheckURL(getenv); err == nil {
+			t.Fatalf("LISTEN_PORT=%q : erreur attendue", bad)
+		}
+		if _, err := parseListenPort(getenv); err == nil {
+			t.Fatalf("parseListenPort(%q) : erreur attendue", bad)
+		}
+	}
+	if p, err := parseListenPort(func(string) string { return "" }); err != nil || p != defaultListenPort {
+		t.Fatalf("défaut : %d, %v", p, err)
+	}
+}

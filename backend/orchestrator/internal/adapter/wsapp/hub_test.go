@@ -276,16 +276,6 @@ func TestHubForgetsClosedSession(t *testing.T) {
 	if n := h.sessionCount(); n != 0 {
 		t.Fatalf("session s2 retenue (%d)", n)
 	}
-
-	// Forget explicite.
-	h.Publish("s3", transcript(1))
-	if h.sessionCount() != 1 {
-		t.Fatal("s3 devrait exister")
-	}
-	h.Forget("s3")
-	if n := h.sessionCount(); n != 0 {
-		t.Fatalf("Forget : %d sessions", n)
-	}
 }
 
 func TestHubCloseClosesSubscribers(t *testing.T) {
@@ -474,15 +464,6 @@ func TestHubUnknownSession404(t *testing.T) {
 	code, body := rawGet(t, srv, "?session=inconnue")
 	if code != http.StatusNotFound || !strings.Contains(body, `"error"`) {
 		t.Fatalf("statut %d corps %q, attendu 404 JSON", code, body)
-	}
-	if n := h.sessionCount(); n != 0 {
-		t.Fatalf("%d entrées créées, attendu 0", n)
-	}
-	// Session connue puis oubliée : 404 aussi.
-	h.Publish("s1", transcript(1))
-	h.Forget("s1")
-	if code, _ := rawGet(t, srv, "?session=s1"); code != http.StatusNotFound {
-		t.Fatalf("session oubliée : statut %d, attendu 404", code)
 	}
 	if n := h.sessionCount(); n != 0 {
 		t.Fatalf("%d entrées créées, attendu 0", n)

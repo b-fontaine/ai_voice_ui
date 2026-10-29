@@ -79,9 +79,3 @@ func (m *Meter) Write(pcm []byte) []float64 {
 	}
 	return out
 }
-
-// Reset vide le reliquat (fenêtre partielle et octet coupé).
-func (m *Meter) Reset() {
-	m.sum, m.count = 0, 0
-	m.pending = m.pending[:0]
-}
