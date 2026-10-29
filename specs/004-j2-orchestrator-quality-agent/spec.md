@@ -8,10 +8,11 @@
 - **Hors périmètre** : catalogue fermé `genesis` à 6 composants et agents Voix du client / Livraison (J3), LLM de composition (Q-17 ouverte : l'agent de J2 compose de façon déterministe à partir du jeu figé, derrière un port), modification de surface en place et correction en cours de génération (J4), action utilisateur routée vers un agent (J5), annulation `stop` (J7), app Flutter (005), `genui_a2a`.
 
 ## Scénarios (Gherkin)
-Le scénario de la fiche « Acte 1 – créer le tableau de release » (`product/functional/features/voice-screen-generation.feature`, S-01) est automatisé côté Flutter par 005 ; ici, des tests d'acceptation Go (build tag `acceptance`) avec LLM/Live simulés et un vrai agent A2A en processus de test :
+Le scénario de la fiche « Acte 1 – créer le tableau de release » (`product/functional/features/voice-screen-generation.feature`, S-01) est automatisé côté Flutter par 005 ; ici, des tests d'acceptation Go (build tag `acceptance`) avec Live simulé. Les modules `backend/orchestrator` et `backend/agents/quality` étant indépendants, B1-B3 joignent un **serveur A2A de test** (`a2a-go/v2`, natif v1.0, exécuteur scripté) via `AGENTS`, et B4 teste le **vrai agent Qualité** dans son propre module :
 - B1 — une phrase → une surface : après `delegation.created`, l'app-channel reçoit `agent.activity` (Qualité « en cours »), puis `a2ui` (`createSurface`, `updateComponents`, `updateDataModel` v0.9, dans cet ordre), puis `agent.activity` (terminé) ; la voix reçoit un commentaire générique immédiat, puis un commentaire fondé sur le résultat de l'agent (contient « 99,57 % »).
 - B2 — agent injoignable ou en erreur : `agent.activity` « échec », aucune surface inventée, la voix reçoit un commentaire honnête d'échec ; la session reste ouverte.
 - B3 — A2UI invalide produit par l'agent : rejeté (jamais relayé), traité comme un échec de l'agent (B2).
+- B4 — l'agent Qualité (module `backend/agents/quality`) : carte (streaming, skill `quality-kpi`), flux `submitted` → trois messages A2UI v0.9 → artefact texte (« 99,57 % », seuil « 99,50 % ») → `completed` ; requête hors périmètre refusée (« pas supporté en J2 »).
 
 ## Critères d'acceptation
 - [ ] B1 à B3 automatisés et verts

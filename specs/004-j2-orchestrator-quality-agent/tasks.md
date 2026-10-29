@@ -3,9 +3,10 @@
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`.
 
 ## Gherkin (acceptation Go, build tag `acceptance`)
-- [ ] T01 Go — B1 : une phrase → une surface, avec un vrai agent A2A Qualité en processus de test, Live simulé (`delegation.created`) · test d'abord : le paquet d'orchestration n'existe pas (échec de compilation)
-- [ ] T02 Go — B2 : agent injoignable / en erreur → échec honnête, session ouverte · test d'abord : idem
-- [ ] T03 Go — B3 : A2UI invalide de l'agent → rejeté, jamais relayé · test d'abord : idem
+- [x] T01 Go — B1 : une phrase → une surface, avec un serveur A2A de test, Live simulé (`delegation.created`) · test d'abord : le paquet d'orchestration n'existe pas (échec de compilation)
+- [x] T02 Go — B2 : agent injoignable / en erreur → échec honnête, session ouverte · test d'abord : idem
+- [x] T03 Go — B3 : A2UI invalide de l'agent → rejeté, jamais relayé · test d'abord : idem
+- [x] B4 Go — l'agent Qualité (module `backend/agents/quality`) : carte, flux A2UI + résumé, requête hors périmètre refusée · test d'abord : le paquet `internal/agent` n'existe pas (échec de compilation)
 
 ## TDD
 - [ ] T10 Go — domaine et ports : `a2ui`, `agent.activity`, `EventDelegationCreated`, `AppendCommentary` / `AppendThinking`, `RemoteAgent` · test d'abord : `TestWireA2UIAndActivity`
