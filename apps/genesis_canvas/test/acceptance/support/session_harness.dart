@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/app.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
+import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
-import '../../support/fake_backend.dart';
 import '../../support/pump_until.dart';
 import 'fake_voice_transport.dart';
 
@@ -122,7 +122,8 @@ class SessionHarness {
     bool Function(Map<String, Object?> envelope) where,
   ) async {
     final session = backend.lastSessionId!;
-    final envelopes = FakeBackend.fixtureEnvelopes(session).where(where);
+    final envelopes = (await FakeBackend.fixtureEnvelopes(session))
+        .where(where);
     assert(envelopes.isNotEmpty, 'aucune enveloppe de la fixture retenue');
     for (final envelope in envelopes) {
       await onServer(tester, () async => backend.emitEnvelope(envelope));

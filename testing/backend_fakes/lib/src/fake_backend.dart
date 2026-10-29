@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 /// Comportement de `POST /voice/sessions`.
 enum PostMode {
@@ -37,8 +38,11 @@ class FakeBackend {
       'v=0\r\no=fake-relay 0 0 IN IP4 127.0.0.1\r\n';
 
   /// Fixture versionnée : enveloppes réelles d'une phrase → une surface
-  /// (voir `test/fixtures/session_act1.jsonl`, `{session}` est remplacé).
-  static const String fixturePath = 'test/fixtures/session_act1.jsonl';
+  /// (voir `lib/fixtures/session_act1.jsonl`, `{session}` est remplacé).
+  /// Elle est résolue par URI de paquet, donc indépendamment du répertoire
+  /// courant du test.
+  static const String fixtureUri =
+      'package:testing_backend_fakes/fixtures/session_act1.jsonl';
 
   static final RegExp _idPattern = RegExp(r'^[A-Za-z0-9_-]{1,128}$');
   static const int _backlogLimit = 50;
@@ -69,6 +73,10 @@ class FakeBackend {
   /// Statut de `DELETE` pour une session connue ; `null` : 204 (404 si la
   /// session est inconnue).
   int? deleteStatus;
+
+  /// Statut forcé pour le refus de `GET /app` (avant la mise à niveau
+  /// WebSocket), par exemple 400 ; `null` : comportement normal.
+  int? appRejectStatus;
 
   /// Délai avant la réponse à `DELETE`.
   Duration deleteDelay = Duration.zero;
@@ -101,15 +109,57 @@ class FakeBackend {
       _clients.where((c) => c.session == sessionId).length;
 
   /// Charge la fixture, avec [session] à la place de `{session}`.
-  static List<Map<String, Object?>> fixtureEnvelopes(String session) =>
-      File(fixturePath)
-          .readAsLinesSync()
-          .where((l) => l.trim().isNotEmpty)
-          .map((line) {
-            final decoded = jsonDecode(line.replaceAll('{session}', session));
-            return Map<String, Object?>.from(decoded as Map);
-          })
-          .toList();
+  static Future<List<Map<String, Object?>>> fixtureEnvelopes(
+    String session,
+  ) async {
+    final file = File.fromUri(await _resolveFixture());
+    return (await file.readAsLines()).where((l) => l.trim().isNotEmpty).map((
+      line,
+    ) {
+      final decoded = jsonDecode(line.replaceAll('{session}', session));
+      return Map<String, Object?>.from(decoded as Map);
+    }).toList();
+  }
+
+  /// Résout [fixtureUri] : `Isolate.resolvePackageUri` d'abord ; le lanceur
+  /// `flutter_tester` ne le prend pas en charge, on lit alors le
+  /// `package_config.json` de l'espace de travail (remonté depuis le
+  /// répertoire courant), ce qui revient à la même résolution par paquet.
+  static Future<Uri> _resolveFixture() async {
+    final uri = Uri.parse(fixtureUri);
+    try {
+      final resolved = await Isolate.resolvePackageUri(uri);
+      if (resolved != null) return resolved;
+    } on UnsupportedError {
+      // Repli ci-dessous.
+    }
+    var dir = Directory.current.absolute;
+    while (true) {
+      final config = File.fromUri(
+        dir.uri.resolve('.dart_tool/package_config.json'),
+      );
+      if (config.existsSync()) {
+        final packages =
+            (jsonDecode(await config.readAsString())
+                    as Map<String, Object?>)['packages']!
+                as List<Object?>;
+        for (final entry in packages.cast<Map<String, Object?>>()) {
+          if (entry['name'] != uri.pathSegments.first) continue;
+          final rootUri = entry['rootUri']! as String;
+          final root = config.uri.resolve(
+            rootUri.endsWith('/') ? rootUri : '$rootUri/',
+          );
+          final lib = root.resolve(entry['packageUri']! as String);
+          return lib.resolve(uri.pathSegments.skip(1).join('/'));
+        }
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) {
+        throw StateError('Fixture introuvable : $fixtureUri');
+      }
+      dir = parent;
+    }
+  }
 
   /// Publie une enveloppe `{v:1,type,session,t_ms,data,agent?,task?}`.
   void emit(
@@ -284,6 +334,12 @@ class FakeBackend {
   }
 
   Future<void> _app(HttpRequest request) async {
+    final forced = appRejectStatus;
+    if (forced != null) {
+      return _json(request.response, forced, <String, Object?>{
+        'error': 'forced',
+      });
+    }
     final filter = request.uri.queryParameters['session'];
     if (filter != null) {
       if (!_idPattern.hasMatch(filter)) {

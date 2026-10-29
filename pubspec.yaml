@@ -14,3 +14,4 @@ workspace:
   - packages/shared/backend_channel
   - packages/features/voice_session
   - packages/features/agent_activity
+  - testing/backend_fakes

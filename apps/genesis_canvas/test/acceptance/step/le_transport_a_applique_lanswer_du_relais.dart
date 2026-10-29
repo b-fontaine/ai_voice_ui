@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
-import '../../support/fake_backend.dart';
 import '../../support/pump_until.dart';
 import '../support/session_harness.dart';
 

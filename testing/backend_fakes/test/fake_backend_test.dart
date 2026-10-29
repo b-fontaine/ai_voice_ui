@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'fake_backend.dart';
+import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
 /// Le faux backend sert de référence à plusieurs tâches (acceptation 005,
 /// clients WSS et relais) : il doit lui-même être fiable.
@@ -117,6 +117,20 @@ void main() {
     expect(await status('a%20b'), 400);
   });
 
+  test('WSS : appRejectStatus force le refus de la connexion', () async {
+    await read(await post('v=0'));
+    backend.appRejectStatus = HttpStatus.badRequest;
+
+    final request = await http.getUrl(
+      Uri.parse('${backend.url}/app?session=sess-1'),
+    );
+    final response = await request.close();
+    await read(response);
+
+    expect(response.statusCode, 400);
+    expect(backend.appClientCount('sess-1'), 0);
+  });
+
   test(
     'WSS : rejoue le backlog sans orb.level, puis le direct, sans Origin',
     () async {
@@ -177,8 +191,8 @@ void main() {
     expect((await post('v=0')).statusCode, 200);
   });
 
-  test('la fixture réelle de 004 respecte l enveloppe du contrat', () {
-    final envelopes = FakeBackend.fixtureEnvelopes('sess-9');
+  test('la fixture réelle de 004 respecte l enveloppe du contrat', () async {
+    final envelopes = await FakeBackend.fixtureEnvelopes('sess-9');
 
     expect(envelopes.map((e) => e['type']), <Object?>[
       'transcript',
