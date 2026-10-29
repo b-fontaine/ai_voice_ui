@@ -13,7 +13,7 @@ type Limits struct {
 }
 
 type surface struct {
-	agent    string
+	owner    string
 	taskID   string
 	children map[string][]string // identifiant de composant -> enfants référencés
 }
@@ -47,7 +47,9 @@ func NewRegistry(l Limits) (*Registry, error) {
 
 // Apply contrôle op puis l'enregistre ; en cas de refus, l'état est inchangé
 // (hormis le compteur de messages de la tâche, qui compte aussi les refus).
-func (r *Registry) Apply(agent, taskID string, op Operation) error {
+// owner est l'identité stable de l'agent (port.RemoteAgent.ID) : jamais son nom
+// d'affichage, que deux agents peuvent partager.
+func (r *Registry) Apply(owner, taskID string, op Operation) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -68,7 +70,7 @@ func (r *Registry) Apply(agent, taskID string, op Operation) error {
 		if len(r.surfaces) >= r.limits.MaxSurfaces {
 			return fail(CodeSurfaceLimit, "%d surfaces déjà actives", r.limits.MaxSurfaces)
 		}
-		r.surfaces[op.SurfaceID] = &surface{agent: agent, taskID: taskID, children: map[string][]string{}}
+		r.surfaces[op.SurfaceID] = &surface{owner: owner, taskID: taskID, children: map[string][]string{}}
 		t.created = append(t.created, op.SurfaceID)
 		return nil
 	}
@@ -77,7 +79,7 @@ func (r *Registry) Apply(agent, taskID string, op Operation) error {
 	if !ok {
 		return fail(CodeUnknownSurface, "surface inconnue")
 	}
-	if s.agent != agent {
+	if s.owner != owner {
 		return fail(CodeForeignSurface, "surface d'un autre agent")
 	}
 

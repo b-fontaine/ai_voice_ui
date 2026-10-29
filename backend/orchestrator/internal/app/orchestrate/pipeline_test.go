@@ -149,6 +149,7 @@ type fakeAgent struct {
 	card     port.AgentCard
 	cardErr  error
 	fallback string
+	id       string
 	script   func(ctx context.Context, yield func(port.AgentUpdate, error) bool)
 
 	mu       sync.Mutex
@@ -177,14 +178,38 @@ func (a *fakeAgent) Card(context.Context) (port.AgentCard, error) {
 	return a.card, a.cardErr
 }
 
-func (a *fakeAgent) FallbackName() string { return a.fallback }
+func (a *fakeAgent) ID() string {
+	if a.id != "" {
+		return a.id
+	}
+	return "id-" + a.card.Name
+}
+
+func (a *fakeAgent) Name() string {
+	if a.fallback != "" {
+		return a.fallback
+	}
+	return a.card.Name
+}
 
 func (a *fakeAgent) Send(ctx context.Context, req port.AgentRequest) iter.Seq2[port.AgentUpdate, error] {
-	a.mu.Lock()
-	a.requests = append(a.requests, req)
-	a.mu.Unlock()
 	return func(yield func(port.AgentUpdate, error) bool) {
+		// Comme l'adaptateur : l'unique lecture de la carte se fait dans Send.
+		if a.cardErr != nil {
+			yield(port.AgentUpdate{Kind: port.UpdateFailed, Err: a.cardErr}, a.cardErr)
+			return
+		}
+		a.mu.Lock()
+		a.requests = append(a.requests, req)
+		a.mu.Unlock()
 		a.script(ctx, func(u port.AgentUpdate, err error) bool {
+			if u.Kind == port.UpdateSubmitted {
+				u.Name = a.card.Name
+				u.Label = a.card.Label
+				if u.Label == "" && len(a.card.Skills) > 0 {
+					u.Label = a.card.Skills[0]
+				}
+			}
 			ok := yield(u, err)
 			if !ok {
 				a.stopped.Add(1)
@@ -473,7 +498,7 @@ func TestAgentUnreachable(t *testing.T) {
 	got := e.sink.snapshot()
 	expectSeq(t, got, "activity:failed:injoignable")
 	if f := activityOf(t, got[0]); f.Agent != "agent-quality.test" || f.Task != "" {
-		t.Fatalf("failed = %+v, attendu agent = FallbackName() et aucune tâche", f)
+		t.Fatalf("failed = %+v, attendu agent = Name() et aucune tâche", f)
 	}
 	if len(agent.sent()) != 0 {
 		t.Fatal("Send appelé alors que la carte est illisible")
@@ -945,5 +970,87 @@ func TestFailurePhraseMatchesCause(t *testing.T) {
 				t.Fatalf("messages = %q", describeAll(got))
 			}
 		})
+	}
+}
+
+func TestForeignSurfaceSameDisplayNameRejected(t *testing.T) {
+	created := make(chan struct{})
+	release := make(chan struct{})
+	a := newAgent("Qualité")
+	a.id = "id-a"
+	a.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
+		for _, s := range []step{submitted("ta"), a2uiStep(createMsg("s"))} {
+			if !yield(s.u, s.err) {
+				return
+			}
+		}
+		close(created)
+		select {
+		case <-release:
+		case <-ctx.Done():
+			return
+		}
+		for _, s := range []step{a2uiStep(rootMsg("s")), completedStep()} {
+			if !yield(s.u, s.err) {
+				return
+			}
+		}
+	}
+	b := newAgent("Qualité")
+	b.id = "id-b"
+	b.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
+		select {
+		case <-created:
+		case <-ctx.Done():
+			return
+		}
+		defer close(release)
+		for _, s := range []step{submitted("tb"), a2uiStep(dataMsg("s"))} {
+			if !yield(s.u, s.err) {
+				return
+			}
+		}
+	}
+	e := newEnv(t, a, b)
+	e.p.Run(context.Background(), e.delegation(t))
+
+	var failedB bool
+	for _, m := range e.sink.snapshot() {
+		if act, ok := m.Data.(domain.AgentActivity); ok && act.Task == "tb" && act.State == domain.ActivityFailed && act.Detail == DetailInvalidA2UI {
+			failedB = true
+		}
+		if m.Type == domain.TypeA2UI && m.Task == "tb" && m.Agent != OrchestratorName {
+			t.Fatalf("opération sur la surface d'un autre agent relayée : %q", describe(m))
+		}
+	}
+	if !failedB {
+		t.Fatalf("échec « A2UI invalide » attendu pour le second agent : %q", describeAll(e.sink.snapshot()))
+	}
+}
+
+func TestPipelineDoesNotReadCard(t *testing.T) {
+	agent := newAgent(agentQuality, submitted("t1"), textStep("ok"), completedStep())
+	e := newEnv(t, agent)
+	e.p.Run(context.Background(), e.delegation(t))
+	if agent.cards != 0 {
+		t.Fatalf("Card appelée %d fois : la carte est lue une seule fois, dans Send", agent.cards)
+	}
+	if f := activityOf(t, e.sink.snapshot()[0]); f.Agent != agentQuality || f.Label != "KPI qualité" {
+		t.Fatalf("working = %+v, attendu Name et Label issus de submitted", f)
+	}
+}
+
+func TestSummaryConcatenatesTextParts(t *testing.T) {
+	e := newEnv(t, newAgent(agentQuality, submitted("t1"), textStep("Premier."), textStep("Second."), completedStep()))
+	e.p.Run(context.Background(), e.delegation(t))
+	if got, want := e.texts()[1], "Voici ce que l'agent rapporte : Premier. Second."; got != want {
+		t.Fatalf("commentaire = %q, attendu %q", got, want)
+	}
+
+	long := strings.Repeat("x", 3000)
+	e = newEnv(t, newAgent(agentQuality, submitted("t1"), textStep(long), textStep(long), textStep(long), completedStep()))
+	e.p.Run(context.Background(), e.delegation(t))
+	if n := utf8.RuneCountInString(strings.TrimPrefix(e.texts()[1], "Voici ce que l'agent rapporte : ")); n != 600 {
+		t.Fatalf("résumé de %d runes, attendu 600 (borné)", n)
 	}
 }

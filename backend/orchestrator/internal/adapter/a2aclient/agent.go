@@ -101,8 +101,16 @@ func (a *Agent) LastName() string {
 	return a.lastName
 }
 
-// FallbackName renvoie LastName, sinon l'hôte de l'URL de la carte.
-func (a *Agent) FallbackName() string {
+// ID est l'identité stable de l'agent : l'URL de carte configurée, sans
+// identifiants ni requête.
+func (a *Agent) ID() string {
+	u := *a.cardURL
+	u.User, u.RawQuery, u.Fragment = nil, "", ""
+	return u.String()
+}
+
+// Name renvoie LastName, sinon l'hôte de l'URL de la carte.
+func (a *Agent) Name() string {
 	if n := a.LastName(); n != "" {
 		return n
 	}
@@ -123,6 +131,18 @@ func (a *Agent) Card(ctx context.Context) (port.AgentCard, error) {
 		}
 	}
 	return out, nil
+}
+
+// cardLabel est le libellé d'activité : le nom du premier skill, sinon son
+// identifiant, sinon vide.
+func cardLabel(card *a2a.AgentCard) string {
+	if len(card.Skills) == 0 {
+		return ""
+	}
+	if n := card.Skills[0].Name; n != "" {
+		return n
+	}
+	return card.Skills[0].ID
 }
 
 // fetchCard lit la carte et la valide ; seule l'interface JSON-RPC de même
@@ -209,6 +229,8 @@ type stream struct {
 	client *sdk.Client
 	taskID a2a.TaskID
 	done   bool // un état terminal (a2a) ou un arrêt a été vu
+	// name et label viennent de l'unique lecture de carte de l'envoi.
+	name, label string
 }
 
 // fail émet UpdateFailed (et l'erreur) ; renvoie false : l'itération s'arrête.
@@ -230,6 +252,7 @@ func (s *stream) run(req port.AgentRequest) {
 		s.fail(ae)
 		return
 	}
+	s.name, s.label = card.Name, cardLabel(card)
 	cctx, cancel := context.WithTimeout(s.ctx, s.a.timeout)
 	client, err := sdk.NewFromCard(cctx, card, sdk.WithDefaultsDisabled(), sdk.WithJSONRPCTransport(s.a.client))
 	cancel()
@@ -275,13 +298,19 @@ func (s *stream) run(req port.AgentRequest) {
 func (s *stream) handle(ev a2a.Event) bool {
 	switch e := ev.(type) {
 	case *a2a.Task:
-		s.taskID = e.ID
+		if !s.noteTask(e.ID) {
+			return false
+		}
 		return s.status(e.Status.State, e.Status.Message)
 	case *a2a.TaskStatusUpdateEvent:
-		s.taskID = e.TaskID
+		if !s.noteTask(e.TaskID) {
+			return false
+		}
 		return s.status(e.Status.State, e.Status.Message)
 	case *a2a.TaskArtifactUpdateEvent:
-		s.taskID = e.TaskID
+		if !s.noteTask(e.TaskID) {
+			return false
+		}
 		for _, p := range e.Artifact.Parts {
 			if t := p.Text(); t != "" {
 				if !s.emit(port.AgentUpdate{Kind: port.UpdateText, Text: t}) {
@@ -295,10 +324,25 @@ func (s *stream) handle(ev a2a.Event) bool {
 	}
 }
 
+// noteTask retient l'identifiant de tâche d'un événement. Le premier
+// identifiant vu émet UpdateSubmitted (quel que soit l'état de la tâche, qui
+// peut arriver directement en `working`) ; un identifiant qui change ensuite
+// est une erreur de protocole. Renvoie false quand l'itération doit s'arrêter.
+func (s *stream) noteTask(id a2a.TaskID) bool {
+	switch {
+	case id == "" || id == s.taskID:
+		return true
+	case s.taskID != "":
+		return s.fail(&port.AgentError{Kind: port.AgentProtocol, Reason: "identifiant de tâche modifié en cours de flux"})
+	}
+	s.taskID = id
+	return s.emit(port.AgentUpdate{Kind: port.UpdateSubmitted, Name: s.name, Label: s.label})
+}
+
 func (s *stream) status(st a2a.TaskState, msg *a2a.Message) bool {
 	switch st {
 	case a2a.TaskStateSubmitted:
-		return s.emit(port.AgentUpdate{Kind: port.UpdateSubmitted})
+		return true // UpdateSubmitted a déjà été émis par noteTask
 	case a2a.TaskStateWorking:
 		if msg == nil {
 			return true

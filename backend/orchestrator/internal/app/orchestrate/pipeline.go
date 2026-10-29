@@ -32,6 +32,9 @@ const (
 	// maxSummaryRunes borne le résumé de l'agent cité dans le commentaire final
 	// (réparti entre les agents quand il y en a plusieurs).
 	maxSummaryRunes = 600
+	// maxRawSummaryRunes borne le résumé concaténé des textes de l'agent,
+	// avant nettoyage.
+	maxRawSummaryRunes = 4000
 	// commentaryCap borne l'envoi d'un commentaire après un délai dépassé : le
 	// contexte de la délégation est alors annulé, mais la voix doit recevoir
 	// l'échec honnête.
@@ -78,7 +81,8 @@ var _ Runner = (*Pipeline)(nil)
 
 // taskState suit une exécution d'agent ; ses champs sont protégés par mu.
 type taskState struct {
-	agent  string
+	agent  string // nom d'affichage
+	owner  string // identité stable de l'agent : propriétaire des surfaces
 	label  string
 	taskID string
 	done   bool
@@ -288,28 +292,10 @@ func sanitizeSummary(s string, limit int) string {
 
 // runAgent suit une tâche d'agent de la carte à l'état final.
 func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegation) agentResult {
-	ts := &taskState{}
-	if fb, ok := a.(interface{ FallbackName() string }); ok {
-		ts.agent = fb.FallbackName()
-	}
+	ts := &taskState{agent: a.Name(), owner: a.ID()}
 	if !p.track(ts) {
 		return agentResult{}
 	}
-
-	card, err := a.Card(ctx)
-	if err != nil {
-		p.fail(ctx, ts, err)
-		return agentResult{}
-	}
-	p.mu.Lock()
-	if card.Name != "" {
-		ts.agent = card.Name
-	}
-	ts.label = card.Label
-	if ts.label == "" && len(card.Skills) > 0 {
-		ts.label = card.Skills[0]
-	}
-	p.mu.Unlock()
 
 	var summary string
 	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.deps.SessionID}) {
@@ -319,7 +305,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegatio
 		}
 		switch u.Kind {
 		case port.UpdateSubmitted:
-			if !p.begin(ts, u.TaskID) {
+			if !p.begin(ts, u) {
 				return agentResult{}
 			}
 		case port.UpdateA2UI:
@@ -327,7 +313,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegatio
 				return agentResult{}
 			}
 		case port.UpdateText:
-			summary = u.Text
+			summary = appendSummary(summary, u.Text)
 		case port.UpdateCompleted:
 			if !p.complete(ts) {
 				return agentResult{}
@@ -349,6 +335,19 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, d Delegatio
 	return agentResult{}
 }
 
+// appendSummary concatène les textes successifs (séparés par une espace),
+// bornés à maxRawSummaryRunes avant nettoyage.
+func appendSummary(cur, add string) string {
+	if cur != "" && add != "" {
+		cur += " "
+	}
+	cur += add
+	if r := []rune(cur); len(r) > maxRawSummaryRunes {
+		cur = string(r[:maxRawSummaryRunes])
+	}
+	return cur
+}
+
 // track enregistre la tâche en vol ; faux si le pipeline est déjà fermé.
 func (p *Pipeline) track(ts *taskState) bool {
 	p.mu.Lock()
@@ -362,7 +361,8 @@ func (p *Pipeline) track(ts *taskState) bool {
 }
 
 // begin publie `working` à la réception de `submitted`, jamais avant.
-func (p *Pipeline) begin(ts *taskState, taskID string) bool {
+func (p *Pipeline) begin(ts *taskState, u port.AgentUpdate) bool {
+	taskID := u.TaskID
 	p.mu.Lock()
 	if ts.done || p.closed {
 		p.mu.Unlock()
@@ -375,6 +375,10 @@ func (p *Pipeline) begin(ts *taskState, taskID string) bool {
 		return false
 	}
 	ts.taskID = taskID
+	if u.Name != "" {
+		ts.agent = u.Name
+	}
+	ts.label = u.Label
 	p.publishActivityLocked(ts, domain.ActivityWorking, "")
 	p.mu.Unlock()
 	return true
@@ -394,7 +398,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 		return false
 	}
 	if err == nil {
-		err = p.deps.Registry.Apply(ts.agent, ts.taskID, op)
+		err = p.deps.Registry.Apply(ts.owner, ts.taskID, op)
 	}
 	if err != nil {
 		p.failLocked(ts, DetailInvalidA2UI)

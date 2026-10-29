@@ -34,18 +34,22 @@ const (
 	UpdateText                                 // un texte, résumé factuel (champ Text)
 	UpdateCompleted                            // la tâche est terminée
 	UpdateFailed                               // la tâche a échoué (champ Err, de type *AgentError)
-	UpdateSubmitted                            // la tâche est créée côté agent (champ TaskID)
+	UpdateSubmitted                            // la tâche est connue côté agent (champs TaskID, Name, Label)
 )
 
 // AgentUpdate est un élément du flux d'une tâche d'agent. A2UI ne contient que
 // des map[string]any et des []any. TaskID est l'identifiant de tâche A2A, dès
-// qu'il est connu.
+// qu'il est connu. Name et Label ne sont renseignés que sur UpdateSubmitted :
+// ils viennent de l'unique lecture de la carte faite par Send (Name vide si la
+// carte n'a pas de nom, Label vide si elle n'annonce aucun skill).
 type AgentUpdate struct {
 	Kind   AgentUpdateKind
 	TaskID string
 	A2UI   map[string]any
 	Text   string
 	Err    error
+	Name   string
+	Label  string
 }
 
 // AgentErrorKind est la nature, fermée, d'un échec d'agent distant.
@@ -76,7 +80,15 @@ func (e *AgentError) Error() string {
 
 // RemoteAgent est un agent A2A distant, vu de l'application.
 type RemoteAgent interface {
-	// Card relit la carte de l'agent à chaque appel.
+	// ID est l'identité stable de l'agent (dérivée de l'URL de carte
+	// configurée) : elle sert de propriétaire des surfaces, jamais à
+	// l'affichage.
+	ID() string
+	// Name est le dernier nom valide de carte, sinon l'hôte de l'URL de carte :
+	// il sert à l'affichage et aux échecs survenus avant toute lecture de carte.
+	Name() string
+	// Card relit la carte de l'agent à chaque appel (diagnostic : Send fait sa
+	// propre lecture, unique, de la carte).
 	Card(ctx context.Context) (AgentCard, error)
 	// Send confie une demande et renvoie le flux des mises à jour, sans
 	// goroutine d'adaptateur : le travail se fait dans l'itération. Le flux se

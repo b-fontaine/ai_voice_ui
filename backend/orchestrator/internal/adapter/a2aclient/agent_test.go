@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -39,6 +40,7 @@ type testServer struct {
 	name        atomic.Value // string : nom annoncé par la carte
 	ifaceURL    atomic.Value // string : URL de l'interface JSON-RPC annoncée ("" = URL du serveur)
 	submit      atomic.Bool  // false : le script répond sans tâche (Message direct)
+	rewriteID   atomic.Bool  // true : le taskId des événements est modifié après la tâche initiale
 	truncate    atomic.Bool  // true : le flux SSE est fermé proprement après son premier événement
 }
 
@@ -62,6 +64,10 @@ func startServer(t *testing.T, sc script) *testServer {
 	mux := http.NewServeMux()
 	rpc := a2asrv.NewJSONRPCHandler(handler)
 	mux.HandleFunc("POST /{$}", func(w http.ResponseWriter, r *http.Request) {
+		if s.rewriteID.Load() {
+			rpc.ServeHTTP(&idRewriter{ResponseWriter: w}, r)
+			return
+		}
 		if !s.truncate.Load() {
 			rpc.ServeHTTP(w, r)
 			return
@@ -227,8 +233,8 @@ func TestCardReadEveryTimeAndLastNameKept(t *testing.T) {
 	}
 	wantHost := strings.TrimPrefix(s.URL, "http://")
 	wantHost = wantHost[:strings.LastIndex(wantHost, ":")]
-	if got := a.FallbackName(); got != wantHost {
-		t.Fatalf("FallbackName sans carte = %q, attendu l'hôte %q", got, wantHost)
+	if got := a.Name(); got != wantHost {
+		t.Fatalf("Name sans carte = %q, attendu l'hôte %q", got, wantHost)
 	}
 
 	card, err := a.Card(ctx)
@@ -246,8 +252,8 @@ func TestCardReadEveryTimeAndLastNameKept(t *testing.T) {
 	if n := s.cardReads.Load(); n != 2 {
 		t.Fatalf("%d lectures de carte pour 2 appels", n)
 	}
-	if a.LastName() != "Qualité v2" || a.FallbackName() != "Qualité v2" {
-		t.Fatalf("LastName = %q, FallbackName = %q", a.LastName(), a.FallbackName())
+	if a.LastName() != "Qualité v2" || a.Name() != "Qualité v2" {
+		t.Fatalf("LastName = %q, Name = %q", a.LastName(), a.Name())
 	}
 
 	s.Close() // l'agent tombe : la dernière carte valide reste utilisable pour le nom
@@ -256,7 +262,7 @@ func TestCardReadEveryTimeAndLastNameKept(t *testing.T) {
 	if !errors.As(err, &ae) || ae.Kind != port.AgentUnreachable {
 		t.Fatalf("carte injoignable : %v, attendu *AgentError{Unreachable}", err)
 	}
-	if a.LastName() != "Qualité v2" || a.FallbackName() != "Qualité v2" {
+	if a.LastName() != "Qualité v2" || a.Name() != "Qualité v2" {
 		t.Fatalf("la dernière carte valide n'est pas gardée : %q", a.LastName())
 	}
 }
@@ -610,3 +616,89 @@ func TestNoGoroutineLeak(t *testing.T) {
 		t.Fatalf("goroutines : %d avant, %d après\n%s", base, n, buf[:runtime.Stack(buf, true)])
 	}
 }
+
+func TestSendSubmittedCarriesCardName(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	if a.ID() == "" || a.ID() != newAgent(t, s).ID() {
+		t.Fatalf("ID instable ou vide : %q", a.ID())
+	}
+	us := collect(t, a, context.Background(), "q", "ctx")
+	if len(us) == 0 || us[0].Kind != port.UpdateSubmitted {
+		t.Fatalf("mises à jour = %v", kinds(us))
+	}
+	if us[0].Name != "Qualité" || us[0].Label != "Qualité" || us[0].TaskID == "" {
+		t.Fatalf("submitted = %+v, attendu Name et Label de la carte", us[0])
+	}
+	if a.Name() != "Qualité" {
+		t.Fatalf("Name() = %q", a.Name())
+	}
+}
+
+func TestCardFetchedOncePerDelegation(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	collect(t, newAgent(t, s), context.Background(), "q", "ctx")
+	if n := s.cardReads.Load(); n != 1 {
+		t.Fatalf("%d lectures de la carte pour une délégation, attendu 1", n)
+	}
+}
+
+func TestSendWorkingTaskFirstEmitsSubmitted(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		if !emit(&a2a.Task{ID: ec.TaskID, ContextID: ec.ContextID, Status: a2a.TaskStatus{State: a2a.TaskStateWorking}}) {
+			return
+		}
+		if !emit(working(ec, a2a.NewDataPart(a2uiMsg(1)))) {
+			return
+		}
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	s.submit.Store(false)
+	us := collect(t, newAgent(t, s), context.Background(), "q", "ctx")
+	want := []port.AgentUpdateKind{port.UpdateSubmitted, port.UpdateA2UI, port.UpdateCompleted}
+	if !reflect.DeepEqual(kinds(us), want) {
+		t.Fatalf("mises à jour = %v, attendu %v", kinds(us), want)
+	}
+	if us[0].TaskID == "" || us[0].Name != "Qualité" {
+		t.Fatalf("submitted = %+v", us[0])
+	}
+}
+
+func TestTaskIDChangeIsProtocolError(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		if emit(working(ec, a2a.NewDataPart(a2uiMsg(1)))) {
+			emit(state(ec, a2a.TaskStateCompleted))
+		}
+	})
+	s.rewriteID.Store(true)
+	us := collect(t, newAgent(t, s), context.Background(), "q", "ctx")
+	last := us[len(us)-1]
+	var ae *port.AgentError
+	if last.Kind != port.UpdateFailed || !errors.As(last.Err, &ae) || ae.Kind != port.AgentProtocol {
+		t.Fatalf("mises à jour = %v, dernière = %+v, attendu un échec AgentProtocol", kinds(us), last)
+	}
+	for _, u := range us {
+		if u.Kind == port.UpdateCompleted || u.Kind == port.UpdateA2UI {
+			t.Fatalf("mise à jour relayée malgré le changement de tâche : %v", kinds(us))
+		}
+	}
+}
+
+// idRewriter change le taskId des événements de statut : le serveur de test
+// ne peut pas en émettre de lui-même (a2asrv refuse un identifiant différent).
+type idRewriter struct{ http.ResponseWriter }
+
+var taskIDField = regexp.MustCompile(`"taskId":"([^"]+)"`)
+
+func (d *idRewriter) Write(p []byte) (int, error) {
+	if _, err := d.ResponseWriter.Write(taskIDField.ReplaceAll(p, []byte(`"taskId":"$1-autre"`))); err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+func (d *idRewriter) Flush() { d.ResponseWriter.(http.Flusher).Flush() }
