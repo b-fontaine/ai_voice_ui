@@ -1,6 +1,6 @@
 # NNN — État
 
-- **Étape** : Définir | Gherkin | TDD | Revue | Refactorisation | Vérification | Clôture | Terminée | Bloquée
+- **Étape** : Définir | Revue du plan | Gherkin | TDD | Revue | Refactorisation | Vérification | Clôture | Terminée | Bloquée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
