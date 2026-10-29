@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
@@ -20,10 +19,11 @@ import (
 var _ port.Sink = (*Hub)(nil)
 
 type env struct {
-	V    int             `json:"v"`
-	Type string          `json:"type"`
-	TMs  int64           `json:"t_ms"`
-	Data json.RawMessage `json:"data"`
+	V       int             `json:"v"`
+	Type    string          `json:"type"`
+	Session string          `json:"session"`
+	TMs     int64           `json:"t_ms"`
+	Data    json.RawMessage `json:"data"`
 }
 
 func newTestHub(t *testing.T, opts Options) (*Hub, *httptest.Server) {
@@ -46,7 +46,11 @@ func dial(t *testing.T, srv *httptest.Server, session string) *websocket.Conn {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+"/app?session="+session, nil)
+	path := "/app"
+	if session != "" {
+		path += "?session=" + session
+	}
+	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+path, nil)
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
@@ -229,18 +233,6 @@ func TestHubSlowSubscriberDropped(t *testing.T) {
 	}
 }
 
-func TestHubMissingSessionParam(t *testing.T) {
-	_, srv := newTestHub(t, Options{Backlog: 1, SendBuffer: 1})
-	resp, err := http.Get(srv.URL + "/app")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Fatalf("statut %d, attendu 400", resp.StatusCode)
-	}
-}
-
 func TestHubForgetsClosedSession(t *testing.T) {
 	h, srv := newTestHub(t, Options{Backlog: 5, SendBuffer: 5})
 	c := dial(t, srv, "s1")
@@ -311,11 +303,11 @@ func TestEnvelopeShape(t *testing.T) {
 		msg  domain.Message
 		want string
 	}{
-		{domain.Message{Type: domain.TypeOrbLevel, TMs: 200, Data: domain.OrbLevel{Level: 0.25}}, `{"v":1,"type":"orb.level","t_ms":200,"data":{"level":0.25}}`},
-		{domain.Message{Type: domain.TypeTranscript, TMs: 300, Data: domain.Transcript{Role: "user", Text: "bonjour", Final: true}}, `{"v":1,"type":"transcript","t_ms":300,"data":{"role":"user","text":"bonjour","final":true}}`},
-		{domain.Message{Type: domain.TypeSessionState, TMs: 0, Data: domain.SessionState{State: "active"}}, `{"v":1,"type":"session.state","t_ms":0,"data":{"state":"active"}}`},
-		{domain.Message{Type: domain.TypeSessionState, TMs: 5, Data: domain.SessionState{State: "closed", Reason: "max_session"}}, `{"v":1,"type":"session.state","t_ms":5,"data":{"state":"closed","reason":"max_session"}}`},
-		{domain.Message{Type: domain.TypeUsage, TMs: 900, Data: domain.Usage{Seconds: 1.5, ContextRatio: 0.1}}, `{"v":1,"type":"usage","t_ms":900,"data":{"seconds":1.5,"context_ratio":0.1}}`},
+		{domain.Message{Type: domain.TypeOrbLevel, TMs: 200, Data: domain.OrbLevel{Level: 0.25}}, `{"v":1,"type":"orb.level","session":"s1","t_ms":200,"data":{"level":0.25}}`},
+		{domain.Message{Type: domain.TypeTranscript, TMs: 300, Data: domain.Transcript{Role: "user", Text: "bonjour", StartMs: 120, EndMs: 280}}, `{"v":1,"type":"transcript","session":"s1","t_ms":300,"data":{"role":"user","text":"bonjour","start_ms":120,"end_ms":280}}`},
+		{domain.Message{Type: domain.TypeSessionState, TMs: 0, Data: domain.SessionState{State: "active"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":0,"data":{"state":"active"}}`},
+		{domain.Message{Type: domain.TypeSessionState, TMs: 5, Data: domain.SessionState{State: "closed", Reason: "max_session"}}, `{"v":1,"type":"session.state","session":"s1","t_ms":5,"data":{"state":"closed","reason":"max_session"}}`},
+		{domain.Message{Type: domain.TypeUsage, TMs: 900, Data: domain.Usage{Seconds: 1.5, ContextRatio: 0.1}}, `{"v":1,"type":"usage","session":"s1","t_ms":900,"data":{"seconds":1.5,"context_ratio":0.1}}`},
 	}
 	for _, tc := range cases {
 		h.Publish("s1", tc.msg)
@@ -328,5 +320,107 @@ func TestEnvelopeShape(t *testing.T) {
 		if string(b) != tc.want {
 			t.Fatalf("enveloppe %s, attendu %s", b, tc.want)
 		}
+	}
+}
+
+// waitAll attend que n abonnés « toutes sessions » soient enregistrés.
+func waitAll(t *testing.T, h *Hub, n int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if h.allSubscribers() == n {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("abonnés toutes sessions : %d, attendu %d", h.allSubscribers(), n)
+}
+
+func TestHubAllSessionsSubscriber(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	all := dial(t, srv, "") // sans paramètre session
+	waitAll(t, h, 1)
+	// Les sessions s'ouvrent après la connexion de l'abonné.
+	h.Publish("a", transcript(1))
+	h.Publish("b", transcript(2))
+	h.Publish("a", transcript(3))
+	for _, want := range []struct{ session, text string }{{"a", "1"}, {"b", "2"}, {"a", "3"}} {
+		e := read(t, all)
+		if e.Session != want.session || textOf(t, e) != want.text {
+			t.Fatalf("reçu session %q texte %q, attendu %+v", e.Session, textOf(t, e), want)
+		}
+	}
+}
+
+func TestHubSessionFilter(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h.Publish("a", transcript(1))
+	h.Publish("b", transcript(2))
+	onlyB := dial(t, srv, "b")
+	waitSubs(t, h, "b", 1)
+	h.Publish("a", transcript(3))
+	h.Publish("b", transcript(4))
+	for _, want := range []string{"2", "4"} { // backlog de b seulement, puis direct de b
+		e := read(t, onlyB)
+		if e.Session != "b" || textOf(t, e) != want {
+			t.Fatalf("reçu session %q texte %q, attendu b/%s", e.Session, textOf(t, e), want)
+		}
+	}
+}
+
+func TestHubBacklogAllSessionsOrdered(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	h.Publish("a", transcript(1))
+	h.Publish("b", transcript(2))
+	h.Publish("a", domain.Message{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.5}})
+	h.Publish("a", transcript(3))
+	h.Publish("b", transcript(4))
+	all := dial(t, srv, "")
+	waitAll(t, h, 1)
+	h.Publish("a", transcript(5)) // direct : ni doublon ni perte
+	for i, want := range []string{"1", "2", "3", "4", "5"} {
+		if got := textOf(t, read(t, all)); got != want {
+			t.Fatalf("position %d : %q, attendu %s", i, got, want)
+		}
+	}
+}
+
+func closedMsg() domain.Message {
+	return domain.Message{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateClosed}}
+}
+
+func TestHubAllSessionsDoesNotLeakSessions(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 64})
+	all := dial(t, srv, "")
+	waitAll(t, h, 1)
+	for i := 0; i < 20; i++ {
+		id := fmt.Sprintf("s%d", i)
+		h.Publish(id, transcript(i))
+		h.Publish(id, closedMsg())
+	}
+	for i := 0; i < 40; i++ { // l'abonné présent a reçu tous les messages
+		read(t, all)
+	}
+	if n := h.sessionCount(); n != 0 {
+		t.Fatalf("%d sessions retenues, attendu 0", n)
+	}
+}
+
+func TestHubClosedSessionKeptForFilteredSubscriber(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 10, SendBuffer: 16})
+	c := dial(t, srv, "s1")
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", closedMsg())
+	read(t, c)
+	if h.sessionCount() != 1 {
+		t.Fatal("session oubliée alors que l'abonné filtré reste connecté")
+	}
+	_ = c.CloseNow()
+	deadline := time.Now().Add(5 * time.Second)
+	for h.sessionCount() != 0 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if n := h.sessionCount(); n != 0 {
+		t.Fatalf("%d sessions retenues, attendu 0", n)
 	}
 }

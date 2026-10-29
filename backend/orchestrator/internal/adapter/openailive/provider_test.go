@@ -231,6 +231,29 @@ func TestSidebandTranslatesEvents(t *testing.T) {
 	}
 }
 
+func TestTranslateTranscriptTimes(t *testing.T) {
+	srv := newSidebandServer(t, []string{
+		`{"type":"session.input_transcript.delta","event_id":"1","delta":"bonjour","start_ms":120,"end_ms":480}`,
+		`{"type":"session.output_transcript.delta","event_id":"2","delta":"salut","start_ms":500,"end_ms":900}`,
+		`{"type":"session.closed","event_id":"3","reason":"remote_hangup"}`,
+	}, false, false)
+	p, err := openailive.New(testOptions(srv.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sb, err := p.Sideband(ctxT(t), "live_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ch := sb.Events()
+	if e := nextEvent(t, ch); e.Type != port.EventInputTranscriptDelta || e.StartMs != 120 || e.EndMs != 480 {
+		t.Fatalf("e1 = %+v", e)
+	}
+	if e := nextEvent(t, ch); e.Type != port.EventOutputTranscriptDelta || e.StartMs != 500 || e.EndMs != 900 {
+		t.Fatalf("e2 = %+v", e)
+	}
+}
+
 func TestSidebandIgnoresUnknown(t *testing.T) {
 	srv := newSidebandServer(t, []string{
 		`{"type":"session.delegation.created","event_id":"1","delegation":{"id":"d1"}}`,

@@ -53,7 +53,8 @@ const (
 type LiveEvent struct {
 	Type         EventType
 	Text         string
-	Final        bool
+	StartMs      int64  // début du fragment de transcript (ms), tel que donné par le fournisseur
+	EndMs        int64  // fin du fragment de transcript (ms)
 	PCM          []byte // PCM16 little-endian mono (EventOutputAudio)
 	Seconds      float64
 	ContextRatio float64

@@ -111,10 +111,12 @@ func (s *sideband) close(ctx context.Context) error {
 }
 
 type frame struct {
-	Type   string `json:"type"`
-	Delta  string `json:"delta"`
-	Reason string `json:"reason"`
-	Usage  struct {
+	Type    string `json:"type"`
+	Delta   string `json:"delta"`
+	StartMs int64  `json:"start_ms"`
+	EndMs   int64  `json:"end_ms"`
+	Reason  string `json:"reason"`
+	Usage   struct {
 		Seconds float64 `json:"seconds"`
 	} `json:"usage"`
 	ContextWindow struct {
@@ -132,9 +134,9 @@ func translate(raw []byte) (ev port.LiveEvent, ok, closed bool) {
 	}
 	switch f.Type {
 	case "session.input_transcript.delta":
-		return port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: f.Delta}, true, false
+		return port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: f.Delta, StartMs: f.StartMs, EndMs: f.EndMs}, true, false
 	case "session.output_transcript.delta":
-		return port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: f.Delta}, true, false
+		return port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: f.Delta, StartMs: f.StartMs, EndMs: f.EndMs}, true, false
 	case "session.output_audio.delta":
 		pcm, err := base64.StdEncoding.DecodeString(f.Delta)
 		if err != nil {

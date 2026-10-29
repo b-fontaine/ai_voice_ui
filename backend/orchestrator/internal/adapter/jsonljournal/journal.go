@@ -93,10 +93,11 @@ func probeWritable(dir string) error {
 }
 
 type line struct {
-	UnixMs int64           `json:"unix_ms"`
-	TMs    int64           `json:"t_ms"`
-	Type   string          `json:"type"`
-	Data   json.RawMessage `json:"data"`
+	UnixMs  int64           `json:"unix_ms"`
+	Session string          `json:"session"`
+	TMs     int64           `json:"t_ms"`
+	Type    string          `json:"type"`
+	Data    json.RawMessage `json:"data"`
 }
 
 // Publish ajoute une ligne au journal de la session. Il ne panique ni ne
@@ -111,7 +112,7 @@ func (r *Recorder) Publish(sessionID string, m domain.Message) {
 		r.opts.OnError(fmt.Errorf("jsonljournal: données non sérialisables (%s) : %w", m.Type, err))
 		return
 	}
-	b, err := json.Marshal(line{r.opts.Clock.Now().UnixMilli(), m.TMs, m.Type, data})
+	b, err := json.Marshal(line{r.opts.Clock.Now().UnixMilli(), sessionID, m.TMs, m.Type, data})
 	if err != nil {
 		r.opts.OnError(fmt.Errorf("jsonljournal: sérialisation : %w", err))
 		return

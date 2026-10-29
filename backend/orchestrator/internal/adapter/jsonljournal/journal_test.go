@@ -72,7 +72,7 @@ func TestPublishWritesOneLinePerMessage(t *testing.T) {
 	dir := t.TempDir()
 	r, e := newRecorder(t, dir)
 	r.Publish("s1", domain.Message{Type: domain.TypeOrbLevel, TMs: 200, Data: domain.OrbLevel{Level: 0.5}})
-	r.Publish("s1", domain.Message{Type: domain.TypeTranscript, TMs: 400, Data: domain.Transcript{Role: domain.RoleAI, Text: "salut", Final: true}})
+	r.Publish("s1", domain.Message{Type: domain.TypeTranscript, TMs: 400, Data: domain.Transcript{Role: domain.RoleAI, Text: "salut"}})
 	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
 	if len(lines) != 2 {
 		t.Fatalf("lignes = %d, attendu 2", len(lines))
@@ -105,7 +105,7 @@ func TestDataFieldNamesMatchEnvelope(t *testing.T) {
 	r, _ := newRecorder(t, dir)
 	msgs := []domain.Message{
 		{Type: domain.TypeOrbLevel, Data: domain.OrbLevel{Level: 0.25}},
-		{Type: domain.TypeTranscript, Data: domain.Transcript{Role: domain.RoleUser, Text: "a", Final: true}},
+		{Type: domain.TypeTranscript, Data: domain.Transcript{Role: domain.RoleUser, Text: "a", StartMs: 10, EndMs: 20}},
 		{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateActive}},
 		{Type: domain.TypeSessionState, Data: domain.SessionState{State: domain.StateClosed, Reason: "remote_hangup"}},
 		{Type: domain.TypeUsage, Data: domain.Usage{Seconds: 3, ContextRatio: 0.1}},
@@ -368,5 +368,28 @@ func TestOnErrorRateLimited(t *testing.T) {
 	r.Publish("s1", m)
 	if strings.Contains(e.list[3].Error(), "supprimées") {
 		t.Errorf("compteur non remis à zéro : %q", e.list[3])
+	}
+}
+
+func TestJournalLineHasSession(t *testing.T) {
+	dir := t.TempDir()
+	r, _ := newRecorder(t, dir)
+	r.Publish("s1", domain.Message{Type: domain.TypeTranscript, TMs: 7, Data: domain.Transcript{Role: domain.RoleUser, Text: "a", StartMs: 1, EndMs: 5}})
+	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
+	if len(lines) != 1 {
+		t.Fatalf("lignes = %d", len(lines))
+	}
+	var l struct {
+		Session string          `json:"session"`
+		Data    json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(lines[0]), &l); err != nil {
+		t.Fatal(err)
+	}
+	if l.Session != "s1" {
+		t.Fatalf("session = %q, attendu s1 (%s)", l.Session, lines[0])
+	}
+	if string(l.Data) != `{"role":"user","text":"a","start_ms":1,"end_ms":5}` {
+		t.Fatalf("data = %s", l.Data)
 	}
 }

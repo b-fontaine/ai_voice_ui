@@ -5,6 +5,7 @@ package acceptance
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -33,6 +34,7 @@ type fakeLive struct {
 	offers   []string
 	hangups  []string
 	sideband *fakeSideband
+	created  int // nombre de sessions créées : fournit des identifiants distincts
 }
 
 func newFakeLive(clock *fakeClock) *fakeLive {
@@ -46,7 +48,12 @@ func (f *fakeLive) CreateSession(_ context.Context, offerSDP string) (port.LiveS
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.offers = append(f.offers, offerSDP)
-	return port.LiveSession{ID: fakeSessionID, AnswerSDP: fakeAnswerSDP}, nil
+	f.created++
+	id := fakeSessionID // la première session garde l'identifiant historique (A1)
+	if f.created > 1 {
+		id = fmt.Sprintf("sess_fake_%04d", f.created)
+	}
+	return port.LiveSession{ID: id, AnswerSDP: fakeAnswerSDP}, nil
 }
 
 func (f *fakeLive) Sideband(_ context.Context, sessionID string) (port.Sideband, error) {
@@ -79,7 +86,7 @@ type fakeSideband struct {
 
 func (s *fakeSideband) Events() <-chan port.LiveEvent { return s.events }
 
-// run joue la séquence scriptée après Release, puis attend la fermeture.
+// run joue la séquence scriptée (identique pour chaque session) après Release, puis attend la fermeture.
 func (s *fakeSideband) run() {
 	select {
 	case <-s.live.release:
@@ -87,8 +94,8 @@ func (s *fakeSideband) run() {
 		s.finish()
 		return
 	}
-	s.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "bonjour", Final: true}
-	s.events <- port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: "salut, comment puis-je aider ?", Final: true}
+	s.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "bonjour", StartMs: 0, EndMs: 800}
+	s.events <- port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: "salut, comment puis-je aider ?", StartMs: 800, EndMs: 2000}
 	for i := 0; i < fakeBlockCount; i++ {
 		s.live.clock.Advance(fakeBlockMs * time.Millisecond)
 		s.events <- port.LiveEvent{Type: port.EventOutputAudio, PCM: sinePCM16(fakeBlockMs, i)}

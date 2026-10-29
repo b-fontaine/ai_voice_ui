@@ -13,10 +13,11 @@ func WireData(d any) any {
 		}{v.Level}
 	case Transcript:
 		return struct {
-			Role  string `json:"role"`
-			Text  string `json:"text"`
-			Final bool   `json:"final"`
-		}{v.Role, v.Text, v.Final}
+			Role    string `json:"role"`
+			Text    string `json:"text"`
+			StartMs int64  `json:"start_ms"`
+			EndMs   int64  `json:"end_ms"`
+		}{v.Role, v.Text, v.StartMs, v.EndMs}
 	case SessionState:
 		return struct {
 			State  string `json:"state"`

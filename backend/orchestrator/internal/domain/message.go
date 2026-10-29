@@ -34,11 +34,14 @@ type Message struct {
 // OrbLevel est le niveau sonore (0..1) de la voix de l'IA.
 type OrbLevel struct{ Level float64 }
 
-// Transcript est un fragment de transcription (Role : user ou ai).
+// Transcript est un fragment de transcription (Role : user ou ai). StartMs et
+// EndMs situent le fragment (ms depuis le début de la session, selon le
+// fournisseur) ; GPT-Live n'émet aucun événement de fin de tour.
 type Transcript struct {
-	Role  string
-	Text  string
-	Final bool
+	Role    string
+	Text    string
+	StartMs int64
+	EndMs   int64
 }
 
 // ReasonMaxSession est la raison de clôture quand le plafond de durée est atteint.

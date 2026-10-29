@@ -442,9 +442,9 @@ func (s *Service) expire(sess *session) {
 func (s *Service) translate(sess *session, ev port.LiveEvent) {
 	switch ev.Type {
 	case port.EventInputTranscriptDelta:
-		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleUser, Text: ev.Text, Final: ev.Final})
+		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleUser, Text: ev.Text, StartMs: ev.StartMs, EndMs: ev.EndMs})
 	case port.EventOutputTranscriptDelta:
-		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleAI, Text: ev.Text, Final: ev.Final})
+		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleAI, Text: ev.Text, StartMs: ev.StartMs, EndMs: ev.EndMs})
 	case port.EventOutputAudio:
 		for _, l := range sess.meter.Write(ev.PCM) {
 			s.publish(sess, domain.TypeOrbLevel, domain.OrbLevel{Level: l})

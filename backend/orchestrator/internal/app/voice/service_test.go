@@ -357,18 +357,18 @@ func TestEventsTranslated(t *testing.T) {
 		t.Fatal(err)
 	}
 	sb := live.waitAttached(t)
-	sb.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "bonjour", Final: true}
-	sb.events <- port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: "salut", Final: false}
+	sb.events <- port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "bonjour", StartMs: 100, EndMs: 900}
+	sb.events <- port.LiveEvent{Type: port.EventOutputTranscriptDelta, Text: "salut", StartMs: 1000, EndMs: 1500}
 	for i := 0; i < 5; i++ {
 		sb.events <- port.LiveEvent{Type: port.EventOutputAudio, PCM: pcmBlock(200, 16384)}
 	}
 	sb.events <- port.LiveEvent{Type: port.EventUsageUpdated, Seconds: 1, ContextRatio: 0.25}
 
 	tr := sink.waitCount(t, domain.TypeTranscript, 2)
-	if tr[0].Data != (domain.Transcript{Role: "user", Text: "bonjour", Final: true}) {
+	if tr[0].Data != (domain.Transcript{Role: "user", Text: "bonjour", StartMs: 100, EndMs: 900}) {
 		t.Errorf("transcript 0 = %+v", tr[0].Data)
 	}
-	if tr[1].Data != (domain.Transcript{Role: "ai", Text: "salut", Final: false}) {
+	if tr[1].Data != (domain.Transcript{Role: "ai", Text: "salut", StartMs: 1000, EndMs: 1500}) {
 		t.Errorf("transcript 1 = %+v", tr[1].Data)
 	}
 	levels := sink.waitCount(t, domain.TypeOrbLevel, 5)
