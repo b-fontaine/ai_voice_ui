@@ -1,6 +1,6 @@
 # 003 — État
 
-- **Étape** : Définir
+- **Étape** : Gherkin
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
