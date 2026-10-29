@@ -27,6 +27,7 @@
 - **T11 `Options.AppendAckTimeout`** (> 0, validé) et `Options.Logger` (nil = `slog.Default()`) ; `bootstrap` utilise provisoirement 2 s (`defaultAppendAckTimeout`), T16 le lira depuis `VOICE_APPEND_ACK_TIMEOUT`.
 - **T11 `port.LiveEvent.OffsetMs`** : `offset_ms` de `session.delegation.created` (avec `DelegationID`) ; `StartMs`/`EndMs` des transcripts conservés (A9).
 - **T11 retrait d'`AppendThinking`** du port `Sideband`, des doubles et de l'échafaudage `errNotImplemented` (A8).
+- **T12a `app/a2ui`** : `NewValidator(Options{CatalogID, Components, MaxMessageBytes, MaxDepth, MaxComponentsPerUpdate})` ; `Validate(map[string]any) (Operation, error)` ; `Operation{Kind, SurfaceID, ComponentIDs, Children map[string][]string, RootPresent, ComponentCount}` ; erreur `*ValidationError{Code, Detail}` à codes fermés (`bad_version`, `bad_operation`, `too_large`, `too_deep`, `bad_surface_id`, `bad_catalog`, `bad_component_count`, `duplicate_component_id`, `component_not_allowed`, `bad_children`, `bad_pointer`).
 - **Configuration** : `AGENTS` (liste d'URL de carte, séparées par des virgules), `A2UI_CATALOG_ID`, `AGENT_TIMEOUT` ; l'agent : `AGENT_LISTEN_ADDR`, `DATASET_PATH` facultatif (jeu embarqué par défaut).
 - **Jeu de données** ([p-fn-dataset], pdr-0040) : sessions sans crash global 7 j = 99,57 % (seuil ≥ 99,50 %, « à risque ») ; copie JSON figée et versionnée sous `backend/agents/quality/dataset/`, identique en valeur à `product/functional/dataset.md`.
 
