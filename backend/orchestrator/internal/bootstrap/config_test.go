@@ -243,3 +243,47 @@ func TestConfigFromEnv_WriteTimeoutValid(t *testing.T) {
 		t.Fatalf("valeur valide refusée : %v %v", err, cfg.WriteTimeout)
 	}
 }
+
+func TestConfigFromEnv_RehearsalDefaults(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.CloseGuard != 5*time.Second || cfg.SessionRateBurst != 5 || cfg.SessionRateWindow != 10*time.Second {
+		t.Fatalf("défauts attendus 5s, 5 et 10s, obtenu %v, %d et %v", cfg.CloseGuard, cfg.SessionRateBurst, cfg.SessionRateWindow)
+	}
+}
+
+func TestConfigFromEnv_RehearsalInvalid(t *testing.T) {
+	cases := []struct{ name, value string }{
+		{"VOICE_CLOSE_GUARD", "abc"},
+		{"VOICE_CLOSE_GUARD", "5"},
+		{"VOICE_CLOSE_GUARD", "0s"},
+		{"VOICE_CLOSE_GUARD", "-1s"},
+		{"SESSION_RATE_BURST", "abc"},
+		{"SESSION_RATE_BURST", "0"},
+		{"SESSION_RATE_BURST", "-3"},
+		{"SESSION_RATE_WINDOW", "abc"},
+		{"SESSION_RATE_WINDOW", "10"},
+		{"SESSION_RATE_WINDOW", "0s"},
+		{"SESSION_RATE_WINDOW", "-1s"},
+	}
+	for _, c := range cases {
+		env := fullEnv()
+		env[c.name] = c.value
+		if _, err := load(env); err == nil || !strings.Contains(err.Error(), c.name) {
+			t.Errorf("%s=%q doit être refusée en nommant la variable : %v", c.name, c.value, err)
+		}
+	}
+}
+
+func TestConfigFromEnv_RehearsalValid(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_CLOSE_GUARD"] = "1500ms"
+	env["SESSION_RATE_BURST"] = "2"
+	env["SESSION_RATE_WINDOW"] = "30s"
+	cfg, err := load(env)
+	if err != nil || cfg.CloseGuard != 1500*time.Millisecond || cfg.SessionRateBurst != 2 || cfg.SessionRateWindow != 30*time.Second {
+		t.Fatalf("valeurs valides refusées : %v %v %d %v", err, cfg.CloseGuard, cfg.SessionRateBurst, cfg.SessionRateWindow)
+	}
+}

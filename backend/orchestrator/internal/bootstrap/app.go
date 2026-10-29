@@ -19,25 +19,15 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
-// Format audio de sortie de gpt-live (WebRTC) : PCM16 mono 24 kHz.
-// Le niveau de l'orbe est calculé par fenêtres de 200 ms, soit 5 Hz.
+// Constantes d'infrastructure (pas des réglages de politique).
 const (
-	liveSampleRate = 24000
-	levelWindowMs  = 200
-)
-
-// guardTimeout borne l'attente de la confirmation `session.closed` du
-// fournisseur : au-delà, la session est abandonnée côté serveur et l'erreur
-// ErrCloseTimeout remontée (risque de coût, voir rt-graceful-close).
-const guardTimeout = 5 * time.Second
-
-// Paramètres du canal WSS de l'application et de l'API HTTP.
-const (
-	hubBacklog       = 50 // derniers messages (hors orb.level) rejoués à la connexion
-	hubSendBuffer    = 64 // file d'envoi par abonné avant fermeture 1008
-	sessionRateBurst = 5  // créations de session acceptées d'affilée
-	sessionRateEvery = 10 * time.Second
-	maxOfferBytes    = 64 << 10 // une offre SDP fait quelques Kio
+	// levelWindowMs : le niveau de l'orbe est calculé par fenêtres de 200 ms,
+	// soit 5 Hz (pdr-0051).
+	levelWindowMs = 200
+	// Paramètres du canal WSS de l'application et de l'API HTTP.
+	hubBacklog    = 50       // derniers messages (hors orb.level) rejoués à la connexion
+	hubSendBuffer = 64       // file d'envoi par abonné avant fermeture 1008
+	maxOfferBytes = 64 << 10 // une offre SDP fait quelques Kio
 )
 
 // Deps regroupe les dépendances remplaçables (tests, simulation).
@@ -104,7 +94,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		return nil, err
 	}
 	service, err := voice.NewService(live, fanout.New(hub, journal), clock, voice.Options{
-		SampleRate: liveSampleRate, WindowMs: levelWindowMs, GuardTimeout: guardTimeout,
+		SampleRate: openailive.OutputSampleRate, WindowMs: levelWindowMs, GuardTimeout: cfg.CloseGuard,
 		MaxSession:     cfg.MaxSession,
 		AttachAttempts: cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
 		Logger: logger,
@@ -115,7 +105,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 	}
 	handler, err := httpapi.NewHandler(httpapi.Options{
 		Sessions: service, App: hub, Clock: clock, Logger: logger,
-		RateBurst: sessionRateBurst, RateWindow: sessionRateEvery, MaxBodyBytes: maxOfferBytes,
+		RateBurst: cfg.SessionRateBurst, RateWindow: cfg.SessionRateWindow, MaxBodyBytes: maxOfferBytes,
 	})
 	if err != nil {
 		_ = journal.Close()

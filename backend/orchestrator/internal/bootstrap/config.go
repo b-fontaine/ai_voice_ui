@@ -18,6 +18,10 @@ const (
 	defaultAttachDelay    = 500 * time.Millisecond
 	// Délai d'écriture vers un abonné du canal /app (WS_WRITE_TIMEOUT).
 	defaultWriteTimeout = 5 * time.Second
+	// Réglages de répétition (VOICE_CLOSE_GUARD, SESSION_RATE_BURST, SESSION_RATE_WINDOW).
+	defaultCloseGuard        = 5 * time.Second
+	defaultSessionRateBurst  = 5
+	defaultSessionRateWindow = 10 * time.Second
 )
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.
@@ -40,6 +44,15 @@ type Config struct {
 	// WriteTimeout borne chaque écriture vers un client du canal /app ; défaut 5 s
 	// (documenté ici ; docker-compose.yaml le fixe aussi).
 	WriteTimeout time.Duration
+	// CloseGuard borne l'attente de la confirmation de fermeture du fournisseur
+	// (VOICE_CLOSE_GUARD) ; défaut 5 s, documenté ici ; docker-compose.yaml le fixe aussi.
+	CloseGuard time.Duration
+	// SessionRateBurst : créations de session acceptées d'affilée
+	// (SESSION_RATE_BURST) ; défaut 5.
+	SessionRateBurst int
+	// SessionRateWindow : intervalle de recharge d'un jeton de création
+	// (SESSION_RATE_WINDOW) ; défaut 10 s.
+	SessionRateWindow time.Duration
 
 	apiKey string
 }
@@ -134,6 +147,31 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 			return Config{}, errors.New("WS_WRITE_TIMEOUT doit être une durée strictement positive (par exemple 5s)")
 		}
 		cfg.WriteTimeout = d
+	}
+
+	cfg.CloseGuard = defaultCloseGuard
+	if raw := strings.TrimSpace(getenv("VOICE_CLOSE_GUARD")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return Config{}, errors.New("VOICE_CLOSE_GUARD doit être une durée strictement positive (par exemple 5s)")
+		}
+		cfg.CloseGuard = d
+	}
+	cfg.SessionRateBurst = defaultSessionRateBurst
+	if raw := strings.TrimSpace(getenv("SESSION_RATE_BURST")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 {
+			return Config{}, errors.New("SESSION_RATE_BURST doit être un entier >= 1")
+		}
+		cfg.SessionRateBurst = n
+	}
+	cfg.SessionRateWindow = defaultSessionRateWindow
+	if raw := strings.TrimSpace(getenv("SESSION_RATE_WINDOW")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return Config{}, errors.New("SESSION_RATE_WINDOW doit être une durée strictement positive (par exemple 10s)")
+		}
+		cfg.SessionRateWindow = d
 	}
 
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))

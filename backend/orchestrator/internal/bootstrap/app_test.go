@@ -159,3 +159,87 @@ func TestApp_HealthzAndCloseShutsSessionsDown(t *testing.T) {
 		t.Fatalf("Close doit être idempotent : %v", err)
 	}
 }
+
+func postOffer(t *testing.T, url string) *http.Response {
+	t.Helper()
+	resp, err := http.Post(url+"/voice/sessions", "application/sdp", strings.NewReader("v=0\r\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	return resp
+}
+
+func TestNew_SessionRateBurstFromConfig(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.SessionRateBurst = 1
+	cfg.SessionRateWindow = time.Hour
+	app, err := New(cfg, Deps{Live: newStubLive(), JournalDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer app.Close(context.Background())
+	srv := httptest.NewServer(app.Handler())
+	defer srv.Close()
+
+	if got := postOffer(t, srv.URL).StatusCode; got != http.StatusOK {
+		t.Fatalf("première création : %d", got)
+	}
+	if got := postOffer(t, srv.URL).StatusCode; got != http.StatusTooManyRequests {
+		t.Fatalf("deuxième création immédiate : %d, attendu 429", got)
+	}
+}
+
+// silentSideband ne confirme jamais la fermeture.
+type silentSideband struct {
+	events   chan port.LiveEvent
+	attached chan struct{}
+}
+
+func (s *silentSideband) Events() <-chan port.LiveEvent { return s.events }
+func (s *silentSideband) Close(context.Context) error   { return nil }
+
+type silentLive struct {
+	stubLive
+	sb *silentSideband
+}
+
+func (l *silentLive) Sideband(context.Context, string) (port.Sideband, error) {
+	close(l.sb.attached)
+	return l.sb, nil
+}
+
+func TestNew_CloseGuardFromConfig(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.CloseGuard = 150 * time.Millisecond
+	live := &silentLive{sb: &silentSideband{events: make(chan port.LiveEvent, 1), attached: make(chan struct{})}}
+	app, err := New(cfg, Deps{Live: live, JournalDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	srv := httptest.NewServer(app.Handler())
+	defer srv.Close()
+	defer app.Close(context.Background())
+
+	if got := postOffer(t, srv.URL).StatusCode; got != http.StatusOK {
+		t.Fatalf("création : %d", got)
+	}
+	select {
+	case <-live.sb.attached:
+	case <-time.After(5 * time.Second):
+		t.Fatal("sideband non attaché")
+	}
+	req, _ := http.NewRequest(http.MethodDelete, srv.URL+"/voice/sessions/sess-1", nil)
+	start := time.Now()
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusGatewayTimeout {
+		t.Fatalf("DELETE : %d, attendu 504", resp.StatusCode)
+	}
+	if d := time.Since(start); d < 100*time.Millisecond || d > 2*time.Second {
+		t.Fatalf("504 après %v, attendu ≈ 150ms", d)
+	}
+}

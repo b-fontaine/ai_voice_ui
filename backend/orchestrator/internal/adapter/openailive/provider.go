@@ -17,6 +17,10 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
+// OutputSampleRate est la fréquence d'échantillonnage (Hz) de la sortie audio
+// de gpt-live : PCM16 mono 24 kHz [rt-gpt-live-output-level].
+const OutputSampleRate = 24000
+
 const delegationClient = "client"
 
 // Options configure l'adaptateur. Aucune valeur par défaut n'est codée en dur,

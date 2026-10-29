@@ -19,6 +19,10 @@ services:
       VOICE_ATTACH_DELAY: ${VOICE_ATTACH_DELAY:-500ms}
       # Délai maximal d'une écriture vers un client du canal /app (client bloqué : connexion coupée).
       WS_WRITE_TIMEOUT: ${WS_WRITE_TIMEOUT:-5s}
+      # Réglages de répétition : attente de la confirmation de fermeture, puis limiteur de créations de session.
+      VOICE_CLOSE_GUARD: ${VOICE_CLOSE_GUARD:-5s}
+      SESSION_RATE_BURST: ${SESSION_RATE_BURST:-5}
+      SESSION_RATE_WINDOW: ${SESSION_RATE_WINDOW:-10s}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"
