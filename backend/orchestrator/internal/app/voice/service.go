@@ -39,6 +39,9 @@ type Options struct {
 	AttachDelay    time.Duration
 	// Logger reçoit les échecs intermédiaires d'attache ; nil : slog.Default().
 	Logger *slog.Logger
+	// Delegations gère les délégations de chaque session (A1) ; nil : aucune
+	// délégation n'est traitée.
+	Delegations port.Delegations
 }
 
 func (o Options) validate() error {
@@ -211,8 +214,13 @@ func (s *Service) run(ctx context.Context, sess *session) {
 		s.forget(sess)
 		return
 	}
+	// Open précède « active » : aucun événement n'est consommé avant lui.
+	var fw *forwarder
+	if s.opts.Delegations != nil {
+		fw = newForwarder(s.opts.Delegations.Open(sess.id, sess.start, sb), sess.id, s.opts.Logger)
+	}
 	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateActive})
-	s.supervise(sess, sb)
+	s.supervise(sess, sb, fw)
 }
 
 // attach tente Sideband jusqu'à AttachAttempts fois, AttachDelay entre deux
@@ -368,8 +376,11 @@ func (s *Service) closeConnecting(ctx, gctx context.Context, sess *session) erro
 	}
 }
 
-// supervise traduit les événements du fournisseur en messages applicatifs.
-func (s *Service) supervise(sess *session, sb port.Sideband) {
+// supervise traduit les événements du fournisseur en messages applicatifs et
+// route les transcripts d'entrée et les délégations vers fw (nil : aucun). Les
+// délégations sont fermées avant la publication de « closed », sur tous les
+// chemins de fin.
+func (s *Service) supervise(sess *session, sb port.Sideband, fw *forwarder) {
 	closedSent := false
 	closedReason := ""
 	events := sb.Events()
@@ -391,8 +402,15 @@ loop:
 				sess.confirmClosed()
 				closedSent = true
 				closedReason = ev.Reason
+				fw.shutdown(s.opts.GuardTimeout)
 			}
 			s.translate(sess, ev)
+			switch ev.Type {
+			case port.EventInputTranscriptDelta:
+				fw.transcript(ev)
+			case port.EventDelegationCreated:
+				fw.delegate(ev.DelegationID, ev.OffsetMs)
+			}
 		case <-sess.abandon:
 			break loop
 		}
@@ -402,6 +420,7 @@ loop:
 		if sess.closeRequested() {
 			closedReason = ""
 		}
+		fw.shutdown(s.opts.GuardTimeout)
 		s.translate(sess, port.LiveEvent{Type: port.EventClosed, Reason: closedReason})
 	}
 	s.forget(sess)
