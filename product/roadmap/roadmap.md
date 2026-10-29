@@ -45,7 +45,7 @@ Marge : les **2 jours de gel** (10-11/11) ; aucune marge entre J1 et J7. Tout gl
 Le développement est mené par la **boucle autonome** décrite dans `tools/loop/README.md` et `.claude/skills/dev-loop/SKILL.md` ([pdr-0043](../decisions/pdr-0043-light-spec-kit-sdd-template.md)) :
 - worktree `../ai_voice_ui-loop`, branche `loop` ; le porteur récupère le travail par `git pull` sur `main` ;
 - une fonctionnalité = un dossier `specs/NNN-<slug>/` (spec, plan, tasks, status) ; avancement dans `specs/progress.md` ;
-- ordre : `specs/000-loop-harness` (squelette de l'app + mode capture), puis les spikes SP-03 et SP-02 restants, puis J2 ;
+- ordre : `specs/000-loop-harness` (squelette de l'app + mode capture ; **terminée le 2026-10-29**, voir `specs/progress.md`), puis les spikes SP-03 et SP-02 restants, puis J2 ;
 - le code du backend vit dans ce dépôt, sous `backend/` ([pdr-0041](../decisions/pdr-0041-backend-in-this-repo-local-no-auth.md)).
 
 ## Jalons (contenu détaillé et dépendances)

@@ -69,7 +69,7 @@ flowchart LR
 |---|---|---|---|
 | `VoiceSessionBloc` | `VoiceSessionStarted`, `VoiceSessionStopped`, `MicMuteToggled`, `SilenceRequested`, `VoiceEventReceived` | `Idle`, `Connecting`, `Active(orb: repos/écoute/réflexion/parole/interrompue/microCoupé)`, `Failed` | `restartable` (start), `droppable` (toggle), `sequential` (events) |
 | `TranscriptBloc` | `TranscriptDeltaReceived`, `AiReplyTruncated` | lignes `{rôle, texte, tronquée}` | `sequential` |
-| `CanvasBloc` | `SurfaceAdded`, `SurfacePhaseChanged`, `SurfaceRemoved`, `CanvasResetRequested` | `surfaceIds` ordonnés + phase `squelette/composants/données` | `sequential` |
+| `CanvasBloc` | `A2uiMessageReceived(A2uiMessage)`, `CanvasResetRequested` (commandes), `CanvasSourceSubscribed(Stream<A2uiMessage>)` | `surfaceIds` ordonnés + phase `squelette/composants/données` + statut de source `none/playing/completed/failed` | `sequential` (commandes), `restartable` (source, `emit.onEach`) |
 | `AgentsRailBloc` | `AgentActivityReceived` | par agent : `veille/actif`, tâche, compteur | `sequential` |
 | `ProtocolFeedBloc` | `A2uiMessageLogged`, `PanelToggled`, `MessageHighlighted` | entrées, déplié, id en évidence, total/taille | `sequential` / `droppable` |
 | `CatalogShelfBloc` | `ComponentUsed`, `ComponentReleased` | usage par composant | `sequential` |
@@ -83,6 +83,7 @@ flowchart LR
 
 - `get_it` 9.3 + `injectable` 3.0 ([di-setup-versions]) ; un module par package, composé dans `app/di` ([di-micro-packages]).
 - Environnements proposés : `live` (backend réel), `replay` (journal seul, sans réseau), `test` (fakes aux frontières, [test-mock-boundaries-only]).
+- ⚠️ `app/di` (get_it + injectable) n'est pas encore introduit : la fonctionnalité `specs/000-loop-harness` n'a aucun service à environnement, tout est injecté par constructeur depuis `GenesisCanvasApp` (racine de composition) ; report à valider par le porteur, voir `Q-66` ([open-questions.md](../roadmap/open-questions.md)).
 - Portée get_it **par session** pour `VoiceSession`, transport genui et bus d'événements, recréée à chaque session et à chaque remise à vide ([di-get-it-scopes], [ma-flutter-event-bus]).
 
 ## Rendu GenUI

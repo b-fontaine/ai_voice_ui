@@ -38,7 +38,7 @@ Questions encore ouvertes qui conditionnent les epics : EP-03 (Q-17), EP-04 (Q-2
 | Texte des instructions vocales (français, répliques courtes, commentaire pendant la construction) | EP-02 | J3, réglage J7 | [pdr-0037](../decisions/pdr-0037-voice-brise-delegated-instructions.md) |
 | Valeurs du jeu de référence dans `dataset.md` | EP-09 | J3 | [pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md) |
 
-Mode de développement : boucle autonome (`tools/loop/README.md`), un dossier `specs/NNN-<slug>/` par fonctionnalité ([pdr-0043](../decisions/pdr-0043-light-spec-kit-sdd-template.md)) ; première fonctionnalité `specs/000-loop-harness`, puis SP-03, SP-02, J2 ([roadmap](roadmap.md)).
+Mode de développement : boucle autonome (`tools/loop/README.md`), un dossier `specs/NNN-<slug>/` par fonctionnalité ([pdr-0043](../decisions/pdr-0043-light-spec-kit-sdd-template.md)) ; première fonctionnalité `specs/000-loop-harness` (**terminée le 2026-10-29** : app Linux, rejeu A2UI v0.9 scripté, capture PNG ; couvre la part « app Linux » d'EP-01 et le début de NFR-10 : Flutter 3.47.8 et `genui` 0.10.4 figés, `pubspec.lock` committé ; `genui_a2a` arrive avec la fonctionnalité A2A), puis SP-03, SP-02, J2 ([roadmap](roadmap.md)).
 
 Slides et supports du talk : uniquement sur demande explicite du porteur ([pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)).
 

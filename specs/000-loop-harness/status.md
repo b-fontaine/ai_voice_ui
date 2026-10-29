@@ -1,6 +1,6 @@
 # 000 — État
 
-- **Étape** : Clôture
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -30,6 +30,7 @@
 | 2026-10-29 | Refactorisation | R9 faite : (1) `bloc` retiré de l'app ; (2) `environment: flutter: 3.47.8` exact dans la racine et les 3 membres, `pubspec.lock` : `sdks.flutter: "3.47.8"` ; (3) `SnapshotService` déplacé (`git mv`) vers `apps/genesis_canvas/lib/app/bootstrap/` avec son test (assertions inchangées), `shared_core` sans dépendance `flutter` (typedef `ExitHandler` dans `src/exit_handler.dart`), interface `CaptureService` dans `pages/` implémentée par `SnapshotService` (la page n'importe rien de `app` : grep vide) ; `plan.md` ligne 9 mise à jour. Reste R10. | `.omc/state/loop/gates/20261029-150412-full.log` (VERT, arbre propre, `94a6bc0`) |
 | 2026-10-29 | Refactorisation | R10 faite : (a) titre « chemin non inscriptible » ; (b) ré-export de `GenesisCanvasApp` supprimé de `main.dart`, tests via `package:genesis_canvas/app/app.dart` (`harness.dart` : ligne d'import seulement) ; (c) `A2uiReplaySource(ReplayDelay? delay)` avec `delay ?? _realDelay`, ternaire supprimé de `ScenarioPlayer` ; (d) `src/debug/` → `src/replay/` (`git mv`, barrel et `plan.md` à jour). Greps `genesis_canvas/main.dart` et `src/debug` vides. **R1 à R10 toutes appliquées** ; passage à la Vérification. | `.omc/state/loop/gates/20261029-150843-full.log` (VERT, arbre propre, `7a52729`) |
 | 2026-10-29 | Vérification | `gate.sh --full` vert (`.omc/state/loop/gates/20261029-151149-full.log`, `9e0705d`) sur arbre propre ; `app-smoke.sh` code 0, capture `.omc/state/loop/snapshots/20261029-151132-act1-replay.png` ouverte et conforme : orbe (H-01), « Sessions sans crash » et « 99,57 % » (H-02) en texte clair sur fond sombre ; rejeu A2UI v0.9 → PNG → sortie 0 (H-03). Aucun test OpenAI réel (fonctionnalité sans voix). | `.omc/state/loop/gates/20261029-151149-full.log` (VERT, arbre propre, `9e0705d`) ; capture `.omc/state/loop/snapshots/20261029-151132-act1-replay.png` |
+| 2026-10-29 | Clôture | `product/architecture/frontend.md` (ligne `CanvasBloc`, note `app/di` → Q-66), `product/roadmap/roadmap.md` et `backlog.md` (000 terminée) mis à jour ; `product_lint` 0 erreur. Aucune décision à enregistrer (choix contraints : helper `statesAfter`, critère `genui_a2a` amendé, consignés dans le journal et `test-bloc-test`). Fusion dans `loop` puis `publish.sh`. | `product_lint` vert |
 
 ## Revue d'architecte
 
@@ -55,3 +56,4 @@
 **Non vérifié par le relecteur** : capture réelle sous Xvfb (T91 à venir ; le contraste de R4 est déduit du code genui) ; que genui signale un composant hors catalogue via `reportError` ; `injectable_generator` avec `build_runner` 2.16.2 ; le rejeu tourne aussi en release si `GENESIS_SCENARIO` est défini (spec : « en mode debug » — la capture seule est réservée au debug ; cohérent avec pdr-0032 acte 4, à noter).
 
 ## Questions pour le porteur
+- **Q-66** : reporter `app/di` (get_it + injectable) à la première fonctionnalité qui a besoin des environnements `live`/`replay`/`test` ? (échéance avant J3 ; non bloquante)
