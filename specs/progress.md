@@ -5,7 +5,7 @@
 ## Fonctionnalités
 | NNN | Fonctionnalité | Backlog | Jalon | Étape | Mise à jour |
 |---|---|---|---|---|---|
-| 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | Vérification | 2026-10-29 |
+| 000 | Outillage de boucle dans l'app (squelette, mode capture, rejeu scripté) | EP-01 (socle) | J2 | Clôture | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
