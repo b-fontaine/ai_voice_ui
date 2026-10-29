@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-29 | Gherkin | T01 faite : 4 paquets, versions exactes, DI injectable ; 1re tentative bloquée (`injectable_generator` 3.1.3 incompatible avec `build_runner` 2.16.2 / `analyzer` 14.6.0), levée par `build_runner` 2.16.1 (vérifié en copie isolée du workspace, choix contraint) ; smoke test rouge puis vert | `.omc/state/loop/gates/20261029-224730-unit-flutter.log` (VERT, 22 contrôles) |
 | 2026-10-29 | Revue du plan | verdict À AMENDER (2 bloquants), A1-A8 intégrés dans spec/plan/tâches | — |
 | 2026-10-29 | Définir | spec, plan, tâches rédigés (lookup product + kb faits) ; aucune Q-xx bloquante | — |
 

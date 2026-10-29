@@ -10,3 +10,7 @@ workspace:
   - apps/genesis_canvas
   - packages/features/canvas
   - packages/shared/core
+  - packages/entities/session
+  - packages/shared/backend_channel
+  - packages/features/voice_session
+  - packages/features/agent_activity

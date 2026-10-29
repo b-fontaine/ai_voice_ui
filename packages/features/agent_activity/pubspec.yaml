@@ -1,0 +1,19 @@
+name: feature_agent_activity
+description: Slice agent_activity, activité des agents de Genesis Canvas.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  bloc: 9.2.1
+  entity_session:
+    path: ../../entities/session
+
+dev_dependencies:
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter

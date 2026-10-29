@@ -1,0 +1,28 @@
+name: feature_voice_session
+description: Slice voice_session, session voix temps réel (WebRTC) de Genesis Canvas.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  bloc: 9.2.1
+  bloc_concurrency: 0.3.0
+  entity_session:
+    path: ../../entities/session
+  flutter:
+    sdk: flutter
+  flutter_bloc: 9.1.1
+  flutter_webrtc: 1.6.3
+  shared_backend_channel:
+    path: ../../shared/backend_channel
+  shared_core:
+    path: ../../shared/core
+
+dev_dependencies:
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
