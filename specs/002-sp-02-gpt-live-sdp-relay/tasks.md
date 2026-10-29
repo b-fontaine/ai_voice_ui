@@ -7,4 +7,4 @@
 - [x] S5 Barge-in automatisé : parole synthétisée pendant que l'IA parle · sortie : délai de coupure mesuré
 - [x] S6 Essai réel avec le porteur sur l'enceinte du PC (une session courte) · sortie : ressenti et observations du porteur, citées
 - [x] S7 Consigner : `knowledge/`, `spikes.md`, Q-43/Q-47 (product-decide), `openai-spend.tsv`
-- [ ] S8 Clôture : `gate.sh --full`, fusion, `publish.sh`
+- [x] S8 Clôture : `gate.sh --full`, fusion, `publish.sh`
