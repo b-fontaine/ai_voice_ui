@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:feature_canvas/feature_canvas.dart' show A2uiGate;
 import 'package:flutter/foundation.dart' show FlutterError;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,6 +97,31 @@ void main() {
       expect(messages.map((m) => m.message.toJson()), raws);
       // La ligne brute est transmise telle quelle, pour la validation.
       expect(messages.map((m) => m.raw), raws);
+    });
+
+    test('lit l\'asset act2-replay versionné : seize messages que le gate '
+        'accepte tous (acte 1 puis quatre updateDataModel)', () async {
+      final file = File('assets/replays/act2-replay.jsonl');
+      final bundle = _Utf8Bundle(<String, List<int>>{
+        'assets/replays/act2-replay.jsonl': file.readAsBytesSync(),
+      });
+      final messages = await ScenarioPlayer(
+        bundle: bundle,
+        delay: (_) async {},
+      ).entries('act2-replay').toList();
+      expect(messages, hasLength(16));
+
+      final rejected = <String>[];
+      final gate = A2uiGate(
+        catalogId: GenesisContract.defaultCatalogId,
+        onRejected: rejected.add,
+      );
+      addTearDown(gate.dispose);
+      final accepted = gate.accepted.toList();
+      gate.attach(A2uiGate.replayEvents(Stream.fromIterable(messages)));
+
+      expect(await accepted, hasLength(16));
+      expect(rejected, isEmpty);
     });
 
     test('scénario inconnu : l\'erreur remonte', () async {

@@ -190,6 +190,32 @@ abstract final class ContractFixtures {
     return buffer.toString();
   }
 
+  /// Contenu de `assets/replays/act2-replay.jsonl` dérivé du contrat : l'acte 1
+  /// à l'identique ([act1ReplayJsonl]), puis les `updateDataModel` du tour de
+  /// transformation ([GenesisFollowUp.act2]), une surface toutes les 500 ms,
+  /// la première 500 ms après la dernière surface de l'acte 1.
+  static Future<String> act2ReplayJsonl({
+    String catalogId = defaultCatalogId,
+  }) async {
+    final buffer = StringBuffer(await act1ReplayJsonl(catalogId: catalogId));
+    final act1Count = act1Files.length;
+    final updates = await followUpSurfaces(
+      GenesisFollowUp.act2,
+      catalogId: catalogId,
+    );
+    for (var s = 0; s < updates.length; s++) {
+      for (var m = 0; m < updates[s].messages.length; m++) {
+        buffer.writeln(
+          jsonEncode(<String, Object?>{
+            't_ms': (act1Count + s) * 500 + m * 50,
+            'message': updates[s].messages[m],
+          }),
+        );
+      }
+    }
+    return buffer.toString();
+  }
+
   /// Résout une URI `package:` : `Isolate.resolvePackageUri` d'abord ; le
   /// lanceur `flutter_tester` ne le prend pas en charge, on lit alors le
   /// `package_config.json` de l'espace de travail (remonté depuis le

@@ -282,6 +282,39 @@ void main() {
 
       expect(rig.errors.toString(), isNot(contains('Rejeu impossible')));
     });
+
+    testWidgets('démarrage en mode vivant : une remise à vide du backend, '
+        'avant toute session voix (pdr-0064 D6)', (tester) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+
+      expect(rig.resetClient.startupCalls, 1);
+      expect(rig.resetClient.calls, 0);
+      expect(rig.resolved, 1);
+      expect(rig.errors.toString(), isEmpty);
+    });
+
+    testWidgets('démarrage en mode vivant : l\'échec de la remise à vide est '
+        'consigné sans bloquer le démarrage', (tester) async {
+      final rig = PageRig(tester);
+      rig.resetClient.startupResult = CanvasResetResult.unreachable;
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      expect(rig.resetClient.startupCalls, 1);
+      expect(rig.errors.toString(), contains('Remise à vide'));
+      expect(rig.errors.toString(), contains('unreachable'));
+    });
+
+    testWidgets('démarrage en mode rejeu : aucune remise à vide', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester, replay: const Stream<ReplayedMessage>.empty());
+      await drain(tester);
+
+      expect(rig.resetClient.calls, 0);
+    });
   });
 
   group('écran de fabrication : Blocs de l\'acte 1 branchés par la page', () {

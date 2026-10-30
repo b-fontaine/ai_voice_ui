@@ -41,5 +41,16 @@ class Harness {
       ),
     );
     await tester.pump();
+    if (scenario == null) {
+      // Mode vivant : la page demande la remise à vide du backend au
+      // démarrage (pdr-0064, D6). Le banc de test répond 400 à toute requête
+      // HTTP : on laisse la réponse arriver (horloge réelle), puis on avance
+      // l'horloge du test au-delà du délai pour qu'aucun minuteur du client ne
+      // survive au test.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pump(const GenesisConfig().canvasResetTimeout * 2);
+    }
   }
 }

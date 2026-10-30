@@ -221,6 +221,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       replay == null ? _source.events : A2uiGate.replayEvents(replay),
     );
     if (replay == null) {
+      // Démarrage en mode vivant (pdr-0064, D6) : l'écran est déjà vide, mais
+      // le canevas du backend peut garder des surfaces d'une exécution
+      // précédente ; une mutation par données seules viserait alors une
+      // surface inconnue de l'app. Une seule demande, avant la première
+      // session (le bouton Démarrer n'a pas encore été touché), au mieux :
+      // l'échec est consigné sans bloquer. Aucune remise à vide visuelle.
+      unawaited(_requestBackendReset());
       if (_snapshot.isActive) {
         // Sans scénario : capture du canevas vide après la première frame.
         WidgetsBinding.instance.addPostFrameCallback(
