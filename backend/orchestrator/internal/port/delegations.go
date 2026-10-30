@@ -12,6 +12,14 @@ import (
 // à vide est idempotente).
 var ErrCanvasBusy = errors.New("canevas occupé")
 
+// ErrNoSession signale qu'une action de l'interface vise une session voix qui
+// n'existe pas (ou plus).
+var ErrNoSession = errors.New("aucune session voix")
+
+// ErrUnknownAction signale une action au nom invalide ou qu'aucun agent
+// n'accepte.
+var ErrUnknownAction = errors.New("action inconnue")
+
 // VoiceReply est la part du sideband dont l'orchestrateur a besoin : faire
 // dire un commentaire à la voix pour une délégation.
 type VoiceReply interface {

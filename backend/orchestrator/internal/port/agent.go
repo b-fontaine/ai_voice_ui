@@ -36,11 +36,22 @@ type AgentCard struct {
 // appartiennent à cet agent (celles qu'il a créées), d'après le registre de
 // l'orchestrateur : l'agent s'en sert pour ne recréer aucune surface déjà
 // affichée. Liste vide : aucune surface.
+//
+// Action, si non nil, transmet une action de l'interface (clic sur un bouton)
+// au lieu d'une demande vocale : seul son nom part vers l'agent, jamais une
+// surface ni une donnée venue du client. Text est alors ignoré par l'adaptateur.
 type AgentRequest struct {
 	Text           string
 	ContextID      string
 	Card           *AgentCard
 	ActiveSurfaces []string
+	Action         *ActionCall
+}
+
+// ActionCall est une action de l'interface adressée à un agent : son nom,
+// validé par ^[a-z][a-z_]{0,39}$ (voir orchestrate.ActionPlanner).
+type ActionCall struct {
+	Name string
 }
 
 // AgentUpdateKind identifie la nature d'une AgentUpdate.

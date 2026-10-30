@@ -482,6 +482,57 @@ func TestSendForwardsTextAndContextID(t *testing.T) {
 	}
 }
 
+func TestSendWithActionCarriesOnlyActionMetadata(t *testing.T) {
+	var mu sync.Mutex
+	var gotMeta map[string]any
+	var gotParts []string
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		mu.Lock()
+		gotMeta = ec.Message.Metadata
+		for _, p := range ec.Message.Parts {
+			gotParts = append(gotParts, p.Text())
+		}
+		mu.Unlock()
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	for range a.Send(context.Background(), port.AgentRequest{
+		ContextID:      "sess-1",
+		Action:         &port.ActionCall{Name: "block_release"},
+		ActiveSurfaces: []string{"surf-1"},
+	}) {
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	want := map[string]any{
+		"genesis/action":         map[string]any{"name": "block_release"},
+		"genesis/activeSurfaces": []any{"surf-1"},
+	}
+	if !reflect.DeepEqual(gotMeta, want) {
+		t.Fatalf("metadata = %#v, attendu %#v", gotMeta, want)
+	}
+	if !reflect.DeepEqual(gotParts, []string{"block_release"}) {
+		t.Fatalf("parts = %q, attendu le seul nom de l'action", gotParts)
+	}
+}
+
+func TestSendWithoutActionHasNoActionMetadata(t *testing.T) {
+	var mu sync.Mutex
+	var gotMeta map[string]any
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		mu.Lock()
+		gotMeta = ec.Message.Metadata
+		mu.Unlock()
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	collect(t, newAgent(t, s), context.Background(), "Prépare la 3.4", "sess-1")
+	mu.Lock()
+	defer mu.Unlock()
+	if _, ok := gotMeta["genesis/action"]; ok {
+		t.Fatalf("metadata = %#v : clé d'action inattendue", gotMeta)
+	}
+}
+
 // blockUntilCanceled bloque l'exécuteur (après un message A2UI) tant que CancelTask n'est pas arrivé.
 func blockUntilCanceled(s **testServer) script {
 	return func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
