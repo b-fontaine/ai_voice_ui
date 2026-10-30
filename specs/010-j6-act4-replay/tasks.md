@@ -23,8 +23,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T08 Flutter — `StageBar` : « Acte 4 · Rejeu » non cliquable en rejeu ; « Remettre à vide » = `ReplayDirectPressed` en rejeu · test d'abord : `stage_bar_test.dart`
 
 ## Câblage de la page
-- [ ] T09a Flutter — routeur sur la source vivante, journal, renommage `_replayMode` → `_scenarioMode`, aucun changement visible · test d'abord : actes 1 à 3 et `loop_harness` restent verts (régression), `genesis_canvas_page_replay_test.dart` (enregistrement)
-- [ ] T09b Flutter — `ReplayBloc`, `ReplayStage` (`clear`/`exit`), barrière, fermeture ordonnée (lecteur synchrone dans `dispose`), `genesis_canvas_page_layout_test.dart` (étagère 900 px, zone Rejeu 480 px, 1920 × 1080) · R-01 à R-04 et R-08 verts
+- [x] T09a Flutter — routeur sur la source vivante, journal, renommage `_replayMode` → `_scenarioMode`, aucun changement visible · test d'abord : actes 1 à 3 et `loop_harness` restent verts (régression), `genesis_canvas_page_replay_test.dart` (enregistrement)
+- [x] T09b Flutter — `ReplayBloc`, `ReplayStage` (`clear`/`exit`), barrière, fermeture ordonnée (lecteur synchrone dans `dispose`), `genesis_canvas_page_layout_test.dart` (étagère 900 px, zone Rejeu 480 px, 1920 × 1080) · R-01 à R-04 et R-08 verts
 - [ ] T09c Flutter — isolation (`startEnabled`, `CanvasActionScope.enabled` coupés en rejeu), relais booléen `ReplayBusyChanged`, Direct, remise à vide en rejeu, ligne `errorSink` du nombre de messages écartés · R-05 à R-07 et R-09 verts
 - [ ] T09d Flutter — `replayMaxGap`, `replayJournalMaxEntries`, `tick`, `defaultSpeed` dans `GenesisCanvasPageSettings`/`GenesisConfig` (tests de réglages), `GENESIS_REPLAY_AT` et capture sur `liveDone` (A3) · test d'abord : `genesis_config_test.dart`, `loop_harness.feature`
 
