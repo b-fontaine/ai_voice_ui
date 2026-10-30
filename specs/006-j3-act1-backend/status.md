@@ -1,8 +1,8 @@
 # 006 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : Lot 2 (R7, R8 agents)
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
