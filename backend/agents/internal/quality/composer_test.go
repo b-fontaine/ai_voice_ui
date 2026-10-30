@@ -342,3 +342,5 @@ func TestNoFileAccess(t *testing.T) {
 		t.Errorf("seulement %d paquets du module analysés", seen)
 	}
 }
+
+func asScope(err error, target **kit.ScopeError) bool { return errors.As(err, target) }

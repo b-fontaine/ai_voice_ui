@@ -125,6 +125,110 @@ func TestParseIntentReasons(t *testing.T) {
 	}
 }
 
+// TestParseIntentCrashList : la liste des crashs (012, A2) est une vue, pas un focus. Elle
+// n'hérite pas du focus, accepte une plateforme nommée, et n'est jamais confondue avec la
+// demande d'une vue inconnue.
+func TestParseIntentCrashList(t *testing.T) {
+	ds := testDataset(t)
+	list := kit.Intent{View: kit.ViewCrashList}
+	listAndroid := kit.Intent{View: kit.ViewCrashList, Platform: "Android"}
+	listIOS := kit.Intent{View: kit.ViewCrashList, Platform: "iOS"}
+	cases := []struct {
+		text  string
+		focus kit.Focus
+		want  kit.Intent
+	}{
+		{"Affiche la liste des crashs", kit.Focus{}, list},
+		{"affiche la liste des crash", kit.Focus{}, list},
+		{"Montre-moi la liste des crashes", kit.Focus{}, list},
+		{"Donne-moi la liste de crashs", kit.Focus{}, list},
+		{"LISTE DES CRASHS", kit.Focus{}, list},
+		{"Affiche la crash list", kit.Focus{}, list},
+		{"la crashlist", kit.Focus{}, list},
+		{"Affiche les top crashs", kit.Focus{}, list},
+		{"le top 5 des crashs", kit.Focus{}, list},
+		{"les principaux crashs", kit.Focus{}, list},
+		{"Quels sont les principaux crashs de la 3.4 ?", kit.Focus{}, list},
+		{"Affiche la liste des crashs sur Android", kit.Focus{}, listAndroid},
+		{"liste des crashs iOS", kit.Focus{}, listIOS},
+		// N'hérite pas du focus : global sans plateforme nommée.
+		{"Affiche la liste des crashs", kit.Focus{Platform: "Android", CompareTo: "3.3"}, list},
+		// Une plateforme nommée prime sur le focus.
+		{"Affiche la liste des crashs sur iOS", kit.Focus{Platform: "Android"}, listIOS},
+		// La liste ignore la comparaison : elle n'en porte pas.
+		{"Affiche la liste des crashs sur Android par rapport à la 3.3", kit.Focus{}, listAndroid},
+	}
+	for _, tc := range cases {
+		got, err := kit.ParseIntent(tc.text, tc.focus, ds)
+		if err != nil || got != tc.want {
+			t.Errorf("ParseIntent(%q, %+v) = %+v, %v ; attendu %+v", tc.text, tc.focus, got, err, tc.want)
+		}
+		if got.IsZero() {
+			t.Errorf("ParseIntent(%q) : une vue n'est pas l'intention nulle", tc.text)
+		}
+	}
+	// Les listes d'autres sujets ne sont pas la liste des crashs.
+	for _, text := range []string{"la liste des avis", "la liste des tâches", "Prépare la release 3.4", "Affiche les crashs"} {
+		if got, err := kit.ParseIntent(text, kit.Focus{}, ds); err != nil || got.View != "" {
+			t.Errorf("ParseIntent(%q) = %+v, %v ; attendu une intention sans vue", text, got, err)
+		}
+	}
+	// Les refus existants restent valables pour la liste.
+	for text, reason := range map[string]string{
+		"la liste des crashs de la 3.5":         kit.ReasonVersion,
+		"la liste des crashs Android et iOS":    kit.ReasonTwoPlatforms,
+		"la liste des crashs de la version 3.3": kit.ReasonVersion,
+	} {
+		_, err := kit.ParseIntent(text, kit.Focus{}, ds)
+		var se *kit.ScopeError
+		if !errors.As(err, &se) || se.Reason != reason {
+			t.Errorf("ParseIntent(%q) : erreur %v, motif attendu %q", text, err, reason)
+		}
+	}
+}
+
+// TestParseIntentUnknownViewLexicon : lexique fermé de vues que le profil ne produit pas
+// (A3). Un verbe d'affichage suivi d'un nom du lexique donne view_unavailable ; sans verbe
+// d'affichage, ou avec un autre nom, la vue globale reste servie.
+func TestParseIntentUnknownViewLexicon(t *testing.T) {
+	ds := testDataset(t)
+	refused := []string{
+		"Montre-moi la carte des crashs par pays",
+		"Affiche la carte",
+		"affiche un tableau des crashs",
+		"Donne-moi un camembert des crashs",
+		"Fais-moi voir l'histogramme des sessions",
+		"Montre un diagramme en barres",
+		"Affiche les crashs par pays",
+		"Montre les crashs par région",
+		"Je voudrais voir une carte thermique",
+		"Affiche la liste des crashs par pays",
+		"Présente-moi les crashs sur une carte",
+		"Affiche le tableau des crashs sur Android",
+	}
+	for _, text := range refused {
+		got, err := kit.ParseIntent(text, kit.Focus{}, ds)
+		var se *kit.ScopeError
+		if !errors.Is(err, kit.ErrOutOfScope) || !errors.As(err, &se) || se.Reason != kit.ReasonViewUnavailable || got != (kit.Intent{}) {
+			t.Errorf("ParseIntent(%q) = %+v, %v ; attendu view_unavailable", text, got, err)
+		}
+	}
+	served := []string{
+		"Fais-moi un camembert des ventes",    // pas de verbe d'affichage
+		"Un camembert",                        // idem
+		"Affiche la courbe des crashs",        // courbe : vue produite
+		"Montre-moi la stabilité de la 3.4",   // aucun nom du lexique
+		"Affiche le tableau de bord",          // le canevas lui-même
+		"Prépare la release 3.4",              // acte 1
+		"Montre la carte bancaire 3-D Secure", // hors lexique de vues : « carte bancaire »
+	}
+	for _, text := range served {
+		if _, err := kit.ParseIntent(text, kit.Focus{}, ds); err != nil {
+			t.Errorf("ParseIntent(%q) : %v ; attendu une vue servie", text, err)
+		}
+	}
+}
+
 func TestParseIntentTruncatesAtOneThousandRunes(t *testing.T) {
 	ds := testDataset(t)
 	if got, err := kit.ParseIntent(strings.Repeat("é", 1000)+" Android", kit.Focus{}, ds); err != nil || got != (kit.Intent{}) {

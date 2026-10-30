@@ -256,3 +256,13 @@ func TestDeliveryCreatesOnlySurfacesNotActive(t *testing.T) {
 		})
 	}
 }
+
+// Une demande de vue nommée d'un autre agent (« liste des crashs ») ne perturbe pas
+// Livraison : sans plateforme nommée, c'est la checklist globale (012, A2).
+func TestDeliveryIgnoresCrashListView(t *testing.T) {
+	want := compose(t, "Prépare la release 3.4")
+	got := compose(t, "Affiche la liste des crashs")
+	if !reflect.DeepEqual(got.Messages, want.Messages) {
+		t.Errorf("la vue « liste des crashs » change la checklist :\n got  %v\n want %v", got.Messages, want.Messages)
+	}
+}

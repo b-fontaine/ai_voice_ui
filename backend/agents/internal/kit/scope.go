@@ -19,6 +19,16 @@ const (
 	ReasonTwoPlatforms           = "two_platforms"
 	ReasonCompareWithoutPlatform = "compare_without_platform"
 	ReasonCompareUnavailable     = "compare_unavailable"
+	// ReasonViewUnavailable : la demande nomme une vue que le profil ne produit pas
+	// (lexique fermé de unknownViewNouns, ou refus du modèle de composition).
+	ReasonViewUnavailable = "view_unavailable"
+)
+
+// Vues nommables d'une Intent : énumération fermée. "" est la vue par défaut de l'agent
+// (indicateur et courbe).
+const (
+	// ViewCrashList est la liste des principaux crashs (surface `crashes`).
+	ViewCrashList = "crashlist"
 )
 
 // ScopeError est le refus d'une demande hors périmètre, avec son motif. Elle enveloppe
@@ -42,7 +52,34 @@ var (
 	measureSuffix = regexp.MustCompile(`^\s*(?:%|pts?\b|points?\b|étoiles?|sur\s+5\b|/\s*5\b|millions?|milliers?)`)
 	// compareWord reconnaît un mot commençant par « compar » ou « par rapport à ».
 	compareWord = regexp.MustCompile(`\bcompar|\bpar\s+rapport\s+(?:à|a)(?:\P{L}|$)`)
+	// crashListWord reconnaît la demande de la liste des crashs : « liste des crashs »,
+	// « crash list », « top (5) crashs », « principaux crashs » (et « plantages »).
+	crashListWord = regexp.MustCompile(`\b(?:liste|listes)\s+(?:des?|d')\s*(?:crash(?:s|es)?|plantages?)\b` +
+		`|\bcrash[\s-]?lists?\b` +
+		`|\btop\s+(?:\d+\s+)?(?:des\s+)?(?:crash(?:s|es)?|plantages?)\b` +
+		`|\bprincipa(?:ux|l|les)\s+(?:crash(?:s|es)?|plantages?)\b`)
 )
+
+// displayVerbs : verbes d'affichage qui introduisent le nom d'une vue (lexique fermé).
+var displayVerbs = []string{
+	"affiche", "affiches", "afficher", "affichez", "montre", "montres", "montrer", "montrez",
+	"donne", "donnes", "donner", "donnez", "voir", "voyons", "présente", "presente", "présenter", "présentez",
+}
+
+// unknownViewNouns : lexique fermé de noms de vues que le profil Qualité ne produit pas
+// (aucun composant de carte, de tableau ou de diagramme). Un verbe d'affichage suivi de
+// l'un d'eux donne ReasonViewUnavailable ; tout autre mot laisse la vue globale.
+// « carte bancaire » et « tableau de bord » n'en sont pas (voir isUnknownView).
+var unknownViewNouns = []string{
+	"carte", "cartes", "cartographie", "tableau", "tableaux", "camembert", "camemberts",
+	"histogramme", "histogrammes", "diagramme", "diagrammes", "heatmap", "heatmaps",
+}
+
+// unknownViewGroups : dimensions d'agrégation absentes du jeu (« par pays »).
+var unknownViewGroups = []string{"pays", "région", "régions", "region", "regions", "ville", "villes", "continent", "continents"}
+
+// unknownViewWindow borne la distance (en mots) entre le verbe d'affichage et le nom.
+const unknownViewWindow = 8
 
 // spokenDigits donne le mot français d'un chiffre de version dite à l'oral
 // (« trois point quatre »).
@@ -58,9 +95,13 @@ type Intent struct {
 	Platform string
 	// CompareTo vaut "" ou la version de comparaison du jeu de données.
 	CompareTo string
+	// View vaut "" (vue par défaut de l'agent) ou ViewCrashList. Une vue n'est jamais
+	// renvoyée à l'orchestrateur dans la metadata `genesis/intent` : elle ne déplace pas
+	// le focus (spec 012, A2).
+	View string
 }
 
-// IsZero indique la vue globale : ni plateforme ni comparaison.
+// IsZero indique la vue globale : ni plateforme, ni comparaison, ni vue nommée.
 func (i Intent) IsZero() bool { return i == Intent{} }
 
 // Focus est la vue courante du canevas, transmise par l'orchestrateur (spec 011,
@@ -138,9 +179,17 @@ func ParseIntent(text string, focus Focus, ds dataset.Dataset) (Intent, error) {
 	if len(found) > 1 {
 		return Intent{}, &ScopeError{Reason: ReasonTwoPlatforms}
 	}
+	if isUnknownView(words) {
+		return Intent{}, &ScopeError{Reason: ReasonViewUnavailable}
+	}
 	var in Intent
 	if len(found) == 1 {
 		in.Platform = found[0]
+	}
+	if crashListWord.MatchString(text) {
+		// La liste ne porte ni comparaison ni focus : une plateforme nommée la filtre.
+		in.View = ViewCrashList
+		return in, nil
 	}
 	if comparing {
 		if in.Platform == "" && slices.Contains(knownPlatforms(ds), focus.Platform) {
@@ -155,6 +204,33 @@ func ParseIntent(text string, focus Focus, ds dataset.Dataset) (Intent, error) {
 		in.CompareTo = ds.CompareVersion
 	}
 	return in, nil
+}
+
+// isUnknownView indique qu'un verbe d'affichage est suivi (à unknownViewWindow mots près)
+// d'un nom du lexique des vues inconnues.
+func isUnknownView(words []string) bool {
+	for i, w := range words {
+		if !slices.Contains(displayVerbs, w) {
+			continue
+		}
+		for j := i + 1; j < len(words) && j <= i+unknownViewWindow; j++ {
+			next := ""
+			if j+1 < len(words) {
+				next = words[j+1]
+			}
+			switch {
+			case slices.Contains(unknownViewNouns, words[j]):
+				if (words[j] == "carte" && next == "bancaire") ||
+					(words[j] == "tableau" && next == "de" && j+2 < len(words) && words[j+2] == "bord") {
+					continue
+				}
+				return true
+			case words[j] == "par" && slices.Contains(unknownViewGroups, next):
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // splitWords découpe un texte en mots (suites de lettres et de chiffres).

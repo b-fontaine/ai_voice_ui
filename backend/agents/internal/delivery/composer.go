@@ -38,6 +38,8 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err != nil {
 		return kit.Composition{}, err
 	}
+	// Une vue nommée (liste des crashs) appartient à un autre agent : ici elle est sans objet.
+	intent.View = ""
 	var cl dataset.Checklist
 	if intent.IsZero() {
 		cl, err = ds.Checklist(ds.TargetVersion)
