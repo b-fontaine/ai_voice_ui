@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0065 — Acte 3 (J5) : détails de l'interaction
 
-> **En bref.** La fiche fixe le résultat de l'acte 3 (clic sur « Bloquer la release » → Livraison s'allume → l'IA confirme à la voix → statut « Bloquée »). Elle est muette sur le mécanisme ; la boucle tranche sept détails sous la règle permanente pdr-0062 et les signale au porteur, qui peut les contester. Aucun ne touche le périmètre, la mise en scène des actes, le budget ni les fournisseurs.
+> **En bref.** La fiche fixe le résultat de l'acte 3 (clic sur « Bloquer la release » → Livraison s'allume → l'IA confirme à la voix → statut « Bloquée »). Elle est muette sur le mécanisme ; la boucle tranche huit détails sous la règle permanente pdr-0062 et les signale au porteur, qui peut les contester. Aucun ne touche le périmètre, la mise en scène des actes, le budget ni les fournisseurs.
 
 Part de l'assistant : décision prise sur délégation (pdr-0062), contestable par le porteur.
 
@@ -36,11 +36,13 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 - **D6 — Sémantique du clic** : pendant une action, les deux boutons sont inactifs (état `busy` côté app, 409 `busy` côté backend, réessai borné comme la remise à vide) ; un nouveau clic après le résultat est permis (« Bloquer » puis « Valider » donne « Validée ») ; échec de l'agent : checklist inchangée, phrase d'échec honnête dite, rail en `failed`.
 
 - **D7 — Mise en page** : la Barre d'actions est un **bandeau sous la grille 2×2**, hors de la grille ; les quatre surfaces de l'acte 1 gardent position et état de rendu (S-02 de la fiche, « les surfaces existantes restent à leur place », intact). Détail d'interface sur lequel la fiche est muette (pdr-0015 : mise en page tenue par l'app).
+- **D8 — Budget des zones de l'écran (1920×1080)** : pour loger le bandeau sans réduire les cellules de la grille sous 248 px (à 220 px, l'acte 2 débordait), la barre supérieure passe de 160 à 128 px, la marge verticale de 18 à 8 px et le canevas de 520 à 572 px (grille 2×250 + bandeau de 72 px) ; le rail garde ses 200 px. Le bandeau est réservé dès la première surface, donc **une bande vide de 72 px reste en bas du canevas pendant les actes 1 et 2** (c'est le prix d'une grille qui ne bouge pas, S-02). Détail d'interface sur lequel la fiche est muette ; à valider visuellement à la capture.
 ## Raisons
 - D1 : réutilise une route et des gardes déjà testées (007) ; un clic n'est pas un flux ; l'accusé évite un clic perdu en silence.
 - D2 : pdr-0061 veut la barre visible à la fin de l'acte 2 sans ajouter de surface en acte 3 ; le catalogue fermé (pdr-0014) la prévoit déjà.
 - D3 : le jeu de données fixe les libellés ; ne rien recalculer ni dupliquer côté agent.
 - D4 : l'orchestrateur ne fait confiance qu'à ce que ses cartes annoncent ([genui-a2ui-security] : un clic est un événement typé, jamais une commande libre).
+- D8 : la hauteur utile de la grille est la contrainte ; le rail ne peut pas céder de place (cas « aucun agent retenu », 5 lignes).
 - D7 : une grille 3×2 déplacerait les quatre surfaces et recréerait leur état de rendu, ce qui contredit S-02 ; seul le porteur pourrait l'assouplir.
 - D5 : [ma-real-tool-results] : jamais de confirmation avant le résultat ; [rt-gpt-live-delegation] ne documente que `commentary.append` par délégation.
 
@@ -62,6 +64,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-30 | Acceptée sous la règle permanente pdr-0062 (fiche muette, détails d'interface et de mécanisme). | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-30 | Revue du code (architect-reviewer, À REFACTORISER) : D8 ajouté (budget des zones modifié par T17 sans trace décisionnelle). Détail d'interface sous pdr-0062 ; la bande vide des actes 1 et 2 est signalée au porteur. | Assistant (délégation du porteur, pdr-0062) |
 | 2026-10-30 | Revue du plan (architect-reviewer, À AMENDER) : D5 amendé (ordre des stratégies, pas de renvoi sur silence, consigne propre à l'orchestrateur : contrainte par le SDK et par la règle « résultat réel »), D7 ajouté (bandeau hors grille). Aucune décision du porteur n'est touchée. | Assistant (délégation du porteur, pdr-0062) |
 
 Pas d'archive brute.
