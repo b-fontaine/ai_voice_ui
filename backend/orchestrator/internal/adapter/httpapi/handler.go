@@ -1,9 +1,18 @@
 // Package httpapi expose l'API HTTP de l'orchestrateur : relais SDP des
-// sessions voix, fermeture propre, santé et montage du canal WSS de l'app.
+// sessions voix, fermeture propre, remise à vide du canevas, actions de
+// l'interface (`POST /canvas/actions`), santé et montage du canal WSS de l'app.
+//
+// `POST /canvas/actions` reçoit `{"action":"<nom>","surface":"<id>"}` (deux
+// chaînes non vides, aucune autre clé, corps ≤ 1 Kio) et répond sans corps :
+// 202 (acceptée, le travail continue en arrière-plan), 400 corps invalide,
+// 403 en-tête Origin, 413 corps trop gros, 415 Content-Type autre que
+// application/json, 421 Host non autorisé, 422 action ou surface inconnue,
+// 409 `{"error":"no_session"}` ou `{"error":"busy"}`, 500 opaque.
 package httpapi
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -37,6 +46,14 @@ type CanvasResetter interface {
 	ResetCanvas(ctx context.Context) error
 }
 
+// CanvasActor confie au backend l'action d'interface name portée par la surface
+// surface. Elle rend aussitôt (le travail ne dépend pas de ctx) et renvoie
+// port.ErrUnknownAction, port.ErrNoSession ou port.ErrCanvasBusy (éventuellement
+// enveloppées) quand l'action est refusée.
+type CanvasActor interface {
+	Act(ctx context.Context, name, surface string) error
+}
+
 // Sessions est la partie du service voix dont l'API HTTP dépend.
 type Sessions interface {
 	Open(ctx context.Context, offerSDP string) (voice.Opened, error)
@@ -48,6 +65,8 @@ type Options struct {
 	Sessions Sessions
 	// Canvas sert `POST /canvas/reset`.
 	Canvas CanvasResetter
+	// Actor sert `POST /canvas/actions`.
+	Actor CanvasActor
 	// App sert `GET /app` (hub WSS).
 	App    http.Handler
 	Clock  port.Clock
@@ -70,6 +89,8 @@ func (o Options) validate() error {
 		return errors.New("httpapi: Sessions est requis")
 	case o.Canvas == nil:
 		return errors.New("httpapi: Canvas est requis")
+	case o.Actor == nil:
+		return errors.New("httpapi: Actor est requis")
 	case o.App == nil:
 		return errors.New("httpapi: App est requis")
 	case o.Clock == nil:
@@ -103,6 +124,7 @@ func NewHandler(opts Options) (http.Handler, error) {
 	mux.HandleFunc("POST /voice/sessions", a.createSession)
 	mux.HandleFunc("DELETE /voice/sessions/{id}", a.deleteSession)
 	mux.HandleFunc("POST /canvas/reset", a.resetCanvas)
+	mux.HandleFunc("POST /canvas/actions", a.canvasAction)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, "ok\n")
@@ -221,6 +243,57 @@ func (a *api) resetCanvas(w http.ResponseWriter, r *http.Request) {
 	default:
 		a.opts.Logger.Error("remise à vide du canevas impossible", "error", err)
 		writeError(w, http.StatusInternalServerError, "remise à vide impossible")
+	}
+}
+
+// actionRequest est le corps strict de `POST /canvas/actions`.
+type actionRequest struct {
+	Action  string `json:"action"`
+	Surface string `json:"surface"`
+}
+
+// canvasAction relaie un clic de l'interface. Mêmes gardes que resetCanvas
+// (Host déjà gardé, Origin, Content-Type, taille), puis corps strict : un seul
+// objet JSON, deux chaînes non vides, aucune autre clé. Le travail ne dépend pas
+// du contexte de la requête.
+func (a *api) canvasAction(w http.ResponseWriter, r *http.Request) {
+	if len(r.Header.Values("Origin")) > 0 {
+		writeError(w, http.StatusForbidden, "origine non autorisée")
+		return
+	}
+	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != jsonContentType {
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, resetMaxBodyBytes))
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "corps trop volumineux")
+			return
+		}
+		writeError(w, http.StatusBadRequest, "corps illisible")
+		return
+	}
+	var req actionRequest
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil || dec.More() || req.Action == "" || req.Surface == "" {
+		writeError(w, http.StatusBadRequest, "corps JSON {action, surface} attendu")
+		return
+	}
+	switch err := a.opts.Actor.Act(context.WithoutCancel(r.Context()), req.Action, req.Surface); {
+	case err == nil:
+		w.WriteHeader(http.StatusAccepted)
+	case errors.Is(err, port.ErrUnknownAction):
+		writeError(w, http.StatusUnprocessableEntity, "action inconnue")
+	case errors.Is(err, port.ErrNoSession):
+		writeError(w, http.StatusConflict, "no_session")
+	case errors.Is(err, port.ErrCanvasBusy):
+		writeError(w, http.StatusConflict, "busy")
+	default:
+		a.opts.Logger.Error("action du canevas impossible", "error", err)
+		writeError(w, http.StatusInternalServerError, "action impossible")
 	}
 }
 
