@@ -97,7 +97,7 @@ Verdict PLAN de l'architecte : **À AMENDER** (3 bloquants, 4 importants, 1 mine
 
 **A7 — Flutter.**
 - `CanvasBoard` construit une `Row` par ligne : passer de 2×2 à 3×2 recrée les `State` de `reviews` et `checklist`. T42 adopte une **disposition à parent unique** (`CustomMultiChildLayout` + `LayoutId`, ou `Stack` + `Positioned`) ; F-01 : « position » = rang dans l'ordre de lecture ; test `same(state)` sur les quatre `Surface` à l'arrivée de `crashes` (modèle du test du bandeau).
-- Libellés : **deux lignes au plus, puis ellipse** (décision pdr-0062, D9) ; spec F-02, T41 et golden alignés (les libellés vont jusqu'à ~60 caractères).
+- Libellés : ~~deux lignes au plus, puis ellipse~~ **une ligne puis ellipse** (D9 remplacée par D10 après la capture à 1920×1080 : cinq lignes de deux lignes ne tiennent pas dans 250 px) ; spec F-02, T41 et tests alignés (les libellés vont jusqu'à ~60 caractères).
 
 **A8 — Contrat.**
 - « items mal typé » et « ligne sans libellé » : tests de rendu Dart (état neutre, RG-10) et tests des builders Go, pas fixtures de refus (aucun validateur Go ne contrôle les valeurs ; `expected.json` = codes fermés). « Propriété inconnue » double `bad_property_unknown.jsonl` : pas de nouvelle négative.

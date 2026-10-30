@@ -32,7 +32,7 @@ Nouveaux, ajoutés à `product/functional/features/` à la clôture (pdr-0062 po
 - **C-07** (Go, orchestrateur) la passerelle refuse : corps trop grand, schéma absent, méthode ou chemin inconnus, dépassement de débit, requête hors réseau interne ; aucune clé ni contenu dans les journaux ; `check-compose.sh` rouge si un agent reçoit la clé ou un port publié.
 - **C-08** (Go, bout en bout simulé) voix « Affiche la liste des crashs » → plan `[Qualité]` → message `crashes` relayé et validé par la liste blanche à 6 composants.
 - **F-01** (Flutter) `crashes` arrive : cinquième cellule de la grille 3×2, les quatre `Surface` existantes gardent leur `State` (rang de lecture inchangé), l'étagère montre CrashList « utilisée ».
-- **F-02** (Flutter) CrashList en squelette, sans données et en état neutre (champ de mauvais type, ligne incomplète) ; texte ≥ 24 px, libellé sur deux lignes au plus puis ellipse.
+- **F-02** (Flutter) CrashList en squelette, sans données et en état neutre (champ de mauvais type, ligne incomplète) ; texte ≥ 24 px, libellé sur une ligne puis ellipse, plateforme et volume à droite (`sessions` non affiché, pdr-0074 D10).
 
 ## Critères d'acceptation
 - [ ] Scénarios C-01 à C-08 et F-01, F-02 automatisés et verts
