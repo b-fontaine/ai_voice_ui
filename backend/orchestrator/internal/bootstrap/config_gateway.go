@@ -28,12 +28,12 @@ const (
 	defaultComposerRateWindow = 10 * time.Second
 	// Bornes de taille : corps entier 64 Kio ; consignes 32 Kio (code des agents, avec
 	// exemples) ; demande du speaker 4 Kio (1 000 runes au plus après planification) ;
-	// schéma 8 Kio sur 8 niveaux d'imbrication.
+	// schéma 8 Kio sur 12 niveaux d'imbrication (le schéma de production en atteint 9).
 	defaultComposerMaxRequestBytes      = 64 << 10
 	defaultComposerMaxInstructionsBytes = 32 << 10
 	defaultComposerMaxInputBytes        = 4 << 10
 	defaultComposerMaxSchemaBytes       = 8 << 10
-	defaultComposerMaxSchemaDepth       = 8
+	defaultComposerMaxSchemaDepth       = 12
 )
 
 // ComposerConfig regroupe les réglages de la composition par modèle de langage : l'appel

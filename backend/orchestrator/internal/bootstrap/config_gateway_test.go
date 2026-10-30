@@ -31,7 +31,7 @@ func TestConfigGateway_DefaultsWhenAbsent(t *testing.T) {
 	if c.Timeout != 4*time.Second || c.MaxOutputTokens != 1024 || c.ReasoningEffort != "" ||
 		c.RateBurst != 10 || c.RateWindow != 10*time.Second ||
 		c.MaxRequestBytes != 64<<10 || c.MaxInstructionsBytes != 32<<10 || c.MaxInputBytes != 4<<10 ||
-		c.MaxSchemaBytes != 8<<10 || c.MaxSchemaDepth != 8 {
+		c.MaxSchemaBytes != 8<<10 || c.MaxSchemaDepth != 12 {
 		t.Fatalf("défauts documentés incorrects : %+v", c)
 	}
 }
