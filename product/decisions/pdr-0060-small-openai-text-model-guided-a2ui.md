@@ -52,5 +52,6 @@ Q-17 : NFR-02/03 imposent une latence courte. 006 : les trois agents composent d
 |---|---|---|
 | 2026-10-30 | Acceptée. Parole du porteur : Question « Q-17 : comment les agents génèrent-ils l'A2UI ? (aujourd'hui : écrans fixes, ce qui contredit pdr-0023) » → option « Petit LLM OpenAI + repli (Recommandé) » : « Un petit modèle texte OpenAI guidé par les écrans d'exemple, choisi par une mesure courte en J3 ; si la latence dépasse NFR-02/03, retour aux écrans fixes, assumé devant le public. ». Tranche Q-17. | Benoît FONTAINE (porteur) |
 | 2026-10-30 | pdr-0023 reste valable (c'en est la mise en œuvre) ; ligne d'historique ajoutée à pdr-0023. | Assistant |
+| 2026-10-30 | Mise en œuvre planifiée en 012 (pdr-0070), parole du porteur citée dans cette PDR | Benoît FONTAINE (porteur), conversation |
 
 Pas d'archive brute.

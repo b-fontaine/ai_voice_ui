@@ -5,7 +5,7 @@ area: functional
 status: validated
 updated: 2026-10-30
 sources: [specs/009-j5-act3-interact/status.md, specs/009-j5-act3-interact/plan.md, specs/008-j4-act2-transform/status.md, specs/008-j4-act2-transform/plan.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
-links: [pdr-0065-009-act3-interact-details-assistant-decided, pdr-0061-action-bar-appears-end-of-act-2, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-app-channel-contract, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
+links: [pdr-0070-llm-composer-and-crashlist-012, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0061-action-bar-appears-end-of-act-2, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-app-channel-contract, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
 tags: [catalogue, composants, a2ui, genui, theme]
 ---
 # Catalogue de composants
@@ -122,3 +122,5 @@ La correspondance ci-dessus est une lecture de l'assistant, gardée pour mémoir
 - Le catalogue est une liste blanche et une frontière de sécurité : [genui-a2ui-security].
 - Traiter le catalogue comme une partie du design system : [ux-genui-catalog-as-ds].
 - Erreurs de validation et états dégradés : [ux-genui-errors-validation].
+
+- **CrashList réel (pdr-0070, fonctionnalité 012)** : données du jeu, schéma du catalogue, liste blanche, états squelette/neutre, choix par l'IA selon la demande, après la composition par petit modèle (pdr-0060).

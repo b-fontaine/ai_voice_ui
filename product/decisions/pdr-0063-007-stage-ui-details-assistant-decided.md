@@ -58,5 +58,6 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-30 | Acceptée sous la règle permanente pdr-0062 (fiche muette, détail d'interface). | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-30 | D1 complétée : avance automatique de l'indicateur (pdr-0071), parole du porteur citée dans cette PDR | Benoît FONTAINE (porteur), conversation |
 
 Pas d'archive brute.
