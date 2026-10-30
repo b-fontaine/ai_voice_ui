@@ -1,8 +1,8 @@
 # 006 — État
 
 - **Étape** : Vérification
-- **Tentatives** : 1/3
-- **Tâche en cours** : T92 (essai réel unique)
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
@@ -41,6 +41,8 @@
 | 2026-10-30 | Refactorisation (clôture) | R1 à R10 appliquées en 5 lots (Lot 1 CI, Lot 2 agents, Lot 3 planification, Lot 4 contrat et phrases, Lot 5 hygiène). **`gate --full` VERT sur arbre propre** (40 contrôles) au commit `674f410`. Passage à la Vérification. | `.omc/state/loop/gates/20261030-032052-full.log` |
 
 | 2026-10-30 | Vérification | `gate --full` vert sur arbre propre (`.omc/state/loop/gates/20261030-032052-full.log`) ; `app-smoke.sh` OK : pile compose complète démarrée avec `--wait` (orchestrateur + `agent-quality` + `agent-voice` + `agent-delivery` : 4 services `healthy`), capture `.omc/state/loop/snapshots/20261030-032308-act1-replay.png` lue : rejeu de la fixture de l'app (surface J2 « Sessions sans crash / 99,57 % », barre du haut, orbe, bouton Démarrer) conforme à l'état attendu de l'app, que 006 ne modifie pas. **Constat à signaler au porteur** : l'app (005) rend avec le catalogue de base de genui ; le backend émet désormais les composants `genesis` (`KeyIndicator`…) : tant que 007 n'est pas livrée, le flux vocal réel de bout en bout n'affiche pas ces surfaces (écart attendu du découpage J3, mais il rend la `main` incohérente entre app et backend jusqu'à 007). Essai réel unique en cours. | `.omc/state/loop/snapshots/last-compose.log` |
+
+| 2026-10-30 | Vérification (essai réel unique) | Pile compose complète (4 services `healthy`) + client jetable `spikes/003-live-check -scenario act1` (nouveau : `act1.go`, tests rouge `undefined: summarizeAct1` puis vert) avec le **vrai** modèle `gpt-live-1` et une question TTS (`gpt-4o-mini-tts`, voix `alloy`, Ogg/Opus) « Bonjour. Prépare la release trois point quatre. » : POST 200, DELETE 204, `active` 1 588 ms après le POST ; transcription « Bonjour, prépare la release 3.4 » ; le modèle **délègue** ; 1 message `plan` : `selected=[Qualité, Voix du client, Livraison]`, `idle=[]` ; `agent.activity` 3 `working` puis 3 `completed`, 0 `failed`/`rejected` ; 12 `a2ui`, 4 surfaces (`reviews`, `kpi`, `checklist`, `trend` dans l'ordre d'arrivée, parallélisme des agents), chacune createSurface → updateComponents → updateDataModel ; délais `delegation` → 1er `createSurface` 3 ms (NFR-02) et → 4ᵉ `updateDataModel` 4 ms (NFR-03), agents déterministes donc quasi nuls (la vraie mesure attend Q-17, LLM) ; voix : « Je m'en occupe, un voici ce que je constate. "99,57 % de sessions sans crash sur 7 jours, à risque : marge 0,07 point. Android franchit le seuil de crash à J5. 24 % d'avis négatifs… » (fondé sur les vrais résultats ; mot parasite « un » : paraphrase du modèle, à surveiller en répétition) ; dernier `usage` 43 s, contexte 2,5 % ; clé absente des journaux compose, du JSONL et de la sortie du client (revérifié par la session principale : 0 fichier de `spikes/`, `specs/` et des captures la contient) ; VERDICT OK ; coût 0,05 € (43 s × 0,05 $/min + TTS 0,01), total 0,38 €/12 € ; `docker compose down` fait. **Non vérifié avec le vrai modèle** : la règle de délégation universelle (demande hors catalogue, RG-08) — un seul essai payant par fonctionnalité ; couverte par G2 avec les vrais agents. Les journaux de l'orchestrateur n'affichent que les requêtes HTTP : les messages `plan`/`a2ui`/`agent.activity` sont dans le journal JSONL du volume (comme en 004), pas dans les logs de conteneur. | `…/scratchpad/live-check-006.out`, `specs/openai-spend.tsv` |
 
 ## Revue d'architecte
 
