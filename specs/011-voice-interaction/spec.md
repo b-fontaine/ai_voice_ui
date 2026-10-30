@@ -16,6 +16,9 @@ Rendre tenables les Must d'interaction vocale révélés par l'essai au micro du
 6. **Indicateur d'acte automatique** (pdr-0071) : règle monotone `StageActReached` ; acte 2 à l'apparition de la surface `actions`, acte 3 au clic accepté ; le clic manuel corrige ; la remise à vide ramène à 1 ; sans effet en rejeu.
 7. **Retour au clic** (pdr-0071) : statut de décision très visible et sans troncature, bouton « fait » (désactivé, ✓), état « en cours » ; clic idempotent (action déjà en place : pas de réannonce).
 
+## Couverture de S-05 (revue du plan, Q-77)
+S-05 n'est couvert **qu'en partie** : `voice.interrupted` n'est publié que sur un mot d'arrêt ; couper la parole sans « stop » repose sur le modèle (consigne). Un déclencheur sur chevauchement est la **Q-77** (porteur, avant J7, non bloquante).
+
 ## Hors périmètre
 - Faire taire à la souris / raccourci (FR-20, S-09), micro coupé (FR-12), correction « Non, plutôt iOS » en vol (FR-17 reste partielle) : J7.
 - Compositeur LLM et CrashList (012), design (013).
@@ -25,7 +28,7 @@ Rendre tenables les Must d'interaction vocale révélés par l'essai au micro du
 Nouveaux, dans `product/functional/features/` (ajoutés à la clôture, pdr-0062 pour l'écart) : sources S-05, S-06, S-08 de `barge-in.feature`, plus :
 - **K-01** (Go) « Compare avec la 3.3 » après « Concentre-toi sur Android » donne la comparaison dans `/kpi`, `/reviews`, `/trend`, `/checklist` ; sans focus : refus `rejected`.
 - **K-02** (Go) un mot dit à l'offset de la délégation est dans la demande.
-- **K-03** (Go) S-06 : « Stop » pendant deux surfaces sur quatre en construction → annulation, deux `deleteSurface`, deux complètes intactes, `voice.interrupted` publié, session ouverte.
+- **K-03** (Go, agents scriptés bloquants) S-06 : « Stop » pendant deux surfaces sur quatre en construction → annulation, deux `deleteSurface`, deux complètes intactes, `voice.interrupted` publié, session ouverte.
 - **K-04** (Go) « stop » dans un mot (« stoppé », « bus stop ») ne déclenche pas.
 - **K-05** (Flutter) `voice.interrupted` → piste distante coupée, orbe « Interrompue » puis « Écoute », réplique tronquée, surfaces inchangées (S-05).
 - **K-06** (Flutter) indicateur : acte 2 à l'apparition de `actions`, acte 3 au clic accepté, jamais en arrière, remise à vide → 1, rejeu sans effet.

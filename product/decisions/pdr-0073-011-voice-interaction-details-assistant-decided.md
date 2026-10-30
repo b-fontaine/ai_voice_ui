@@ -25,11 +25,11 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 |---|---|
 | **D1** | **Événement `voice.interrupted {at_ms}`** sur l'app-channel, un seul type nouveau ; il sert au « Stop » détecté (pdr-0069) et déclenche la coupure locale, l'orbe « Interrompue » puis « Écoute » et la troncature de la réplique. |
 | **D2** | **Détecteur de mots d'arrêt** : correspondance sur mots entiers, fenêtre glissante de 6 mots, anti-rebond configurable ; liste injectée (`VOICE_STOP_WORDS`), jamais codée en dur. |
-| **D3** | **Annulation sans fermeture** : `Manager.CancelInFlight` ; le statut d'agent `canceled`, réservé au contrat depuis 004, est désormais émis. Les surfaces complètes restent (RG-14). |
-| **D4** | **Focus** : métadonnée A2A `genesis/focus` (liste fermée : plateforme, vue), calculée par l'orchestrateur à partir de la dernière intention réussie du canevas ; les agents restent sans état. |
+| **D3** | **Annulation sans fermeture** : `Interrupt` du port des délégations, époque et contexte annulé par cause (pas de verrou du canevas tenu pendant l'annulation) ; les actions `act-<n>` ne sont pas annulées ; le statut d'agent `canceled`, réservé au contrat depuis 004, est désormais émis. Les surfaces complètes restent (RG-14). |
+| **D4** | **Focus** : métadonnée A2A `genesis/focus` (liste fermée : plateforme, comparaison), l'orchestrateur la tient à partir de `genesis/intent` renvoyée par les agents réussis du canevas ; les agents restent sans état. |
 | **D5** | **Motif des refus** dans le journal de l'orchestrateur seulement ; le `detail` d'`agent.activity` reste l'ensemble fermé (« hors périmètre »). |
 | **D6** | **Indicateur d'acte** : événement monotone `StageActReached` (max) ; acte 2 à l'apparition de la surface `actions`, acte 3 à `ActionRunning` ; ni l'ouverture d'une session voix ni le message `plan` ne servent de signal. |
-| **D7** | **Clic idempotent** : une action dont l'effet est en place répond comme un succès sans nouvelle annonce vocale ; le bouton passe à « fait ». |
+| **D7** | **Clic idempotent côté client** : le bouton de l'action déjà en place passe à « fait » et ne renvoie aucune requête ; pas d'idempotence backend (amendé par la revue du plan : un 202 sans activité laisserait l'action « en cours » 60 s). |
 
 ## Raisons
 Mécanismes déduits du diagnostic de l'essai au micro (journaux contre-vérifiés) ; chacun est la seule voie testable sans toucher aux contrats `genesis/v1`.
@@ -41,3 +41,4 @@ Le mot-clé déclenche à tort en répétition, ou la piste distante ne se coupe
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-30 | Acceptée (délégation pdr-0062). | Assistant |
+| 2026-10-30 | Amendée par la revue du plan (D3, D4, D7). Q-77 ouverte (déclencheur sur prise de parole). | Assistant |
