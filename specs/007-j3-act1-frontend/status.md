@@ -2,8 +2,8 @@
 
 - **Étape** : Refactorisation
 - **Tentatives** : 1/3
-- **Tâche en cours** : L2 (R2+R3, Flutter)
-- **Fichiers touchés** (tâche en cours) : packages/features/catalog_shelf, packages/entities/catalog, packages/features/canvas/lib/src/model/a2ui_gate.dart
+- **Tâche en cours** : L3 (R4, Flutter)
+- **Fichiers touchés** (tâche en cours) : packages/features/protocol_feed, apps/genesis_canvas/lib/widgets/protocol_panel
 - **Branche** : feat/007-j3-act1-frontend
 - **Backlog** : EP-03, EP-04, EP-05, EP-08
 - **Mis à jour** : 2026-10-30
@@ -33,8 +33,8 @@
 ### Revue du code (mode CODE, 2026-10-30, architect-reviewer Opus) — verdict : À REFACTORISER (aucun défaut bloquant)
 Architecture conforme (Clean + FSD, `getIt` confiné, pas de Cubit, ordre de `_shutdown` testé, route Go correcte sous `-race`). Lots prévus : **L1** R1 ; **L2** R2+R3 ; **L3** R4 ; **L4** R5 ; **L5** R6, R7, R8, R10 (mineures Flutter) ; **LG** R9 (Go, parallèle de L1).
 - [x] **R1 important (Flutter)** — désynchronisation app/backend sur un 409 : le bouton n'est inactif que si un agent est `working` alors que le backend répond `busy` pendant tout `Pipeline.Run` (étape `plan`, agents `pending`, commentaire final). `anyWorking` doit couvrir `pending` ; `_requestBackendReset` réessaie sur `busy` (essais et intervalle injectés par `GenesisConfig`) ; test de page `busy` puis `done` = 2 appels.
-- [ ] **R2 important (Flutter)** — `CatalogShelfBloc` ignore `compensations` : après un refus sur une surface active, l'étagère affiche 4/6 pour 3 surfaces (FR-06). Retirer les surfaces compensées ; tests dont « Cleared vide la table interne ».
-- [ ] **R3 important (Flutter)** — `surface_exists` détruit une surface valide par compensation (le Go laisse l'état intact) : pas de compensation pour `surface_exists`. Tests validateur + gate.
+- [x] **R2 important (Flutter)** — `CatalogShelfBloc` ignore `compensations` : après un refus sur une surface active, l'étagère affiche 4/6 pour 3 surfaces (FR-06). Retirer les surfaces compensées ; tests dont « Cleared vide la table interne ».
+- [x] **R3 important (Flutter)** — `surface_exists` détruit une surface valide par compensation (le Go laisse l'état intact) : pas de compensation pour `surface_exists`. Tests validateur + gate.
 - [ ] **R4 important (Flutter)** — le panneau montre le même JSON (`{` puis `"version": "v0.9",`) : stocker le JSON compact du corps de l'opération sans `version`, borné ; test `protocol-json-<n>`.
 - [ ] **R5 important (Flutter)** — débordements : `ReleaseChecklist` `ClipRect` cache des lignes (dont une bloquante) → « + N autres critères » ; légende de `TrendChart` sans `Flexible` ; nom d'agent du rail sans ellipse ; tests à données longues/nombreuses.
 - [ ] **R6 mineur (Flutter)** — couleurs `Colors.*` du rail et `fontSize: 28` hors `SceneTheme` (RG-09) ; paires graphiques sur `surface` au test de contraste (3:1, WCAG 1.4.11).
