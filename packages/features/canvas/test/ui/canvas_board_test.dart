@@ -79,6 +79,47 @@ void main() {
     );
   });
 
+  testWidgets('la cellule existe dès createSurface et peint le squelette', (
+    tester,
+  ) async {
+    createEngine();
+    await pumpBoard(tester);
+
+    bloc.add(A2uiMessageReceived(createSurface('kpi')));
+    await settle(tester);
+
+    expect(find.byKey(const Key('surface-kpi')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('surface-kpi')),
+        matching: find.byKey(const Key('skeleton-kpi')),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(Surface), findsNothing);
+  });
+
+  testWidgets('Surface est montée dès updateComponents et le squelette part', (
+    tester,
+  ) async {
+    createEngine();
+    await pumpBoard(tester);
+    bloc.add(A2uiMessageReceived(createSurface('kpi')));
+    await settle(tester);
+
+    bloc.add(A2uiMessageReceived(updateComponents('kpi', 'Bonjour')));
+    await settle(tester);
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('surface-kpi')),
+        matching: find.byType(Surface),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('skeleton-kpi')), findsNothing);
+  });
+
   testWidgets('une surface supprimée disparaît du canevas', (tester) async {
     createEngine();
     await pumpBoard(tester);
