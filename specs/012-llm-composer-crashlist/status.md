@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | TDD | T10 (`dataset.json` `crashes`, `TopCrashes`, contrôles de cohérence) et T11 (`CrashList` en 6ᵉ composant du contrat, fixtures `crashlist-global|android`, parité Go/Dart, compose à 6 composants) faites ; `check-compose.sh` OK. Note : `genesis_catalog_test.dart` exclut `CrashList` de la comparaison au contrat jusqu'à T41. | `gates/20261030-230235-unit-go.log`, `gates/20261030-230237-unit-flutter.log` |
 | 2026-10-30 | Gherkin | T01 (agents C-01 à C-06), T02 (orchestrateur C-07, C-08), T03 (Flutter F-01, F-02). Rouges pour la bonne raison — Go : `0 appel(s) à la passerelle, attendu exactement 1` (C-01 à C-03, C-06 repli), surface `crashes` absente (C-04, C-05), écouteur de la passerelle absent (C-07), `crashes` refusé / `failure_rejected_view` absente (C-08) ; Flutter : 5 échecs sur 5, `component_not_allowed` puis `unknown_surface` (validateur client). `gate --unit` go et flutter verts. | `.omc/state/loop/gates/20261030-225637-unit-go.log`, `20261030-225625-unit-flutter.log` |
 | 2026-10-30 | Revue du plan | architect-reviewer (Opus) : À AMENDER (3 bloquants, 4 importants, 1 mineur, 3 conflits) ; amendements A1 à A8 intégrés (`plan.md` § Amendements, `tasks.md` 28 tâches, `spec.md`, pdr-0074 D7/D8/D9) | `product_lint` |
 | 2026-10-30 | Définir | spec, plan, 24 tâches, pdr-0074 (décision contrainte D1-D4, D6 ; détails D5, D7, D8) ; `product_lint` sans erreur | `python3 -I product/_tools/product_lint.py` |

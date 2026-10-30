@@ -8,8 +8,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [ ] T03 Flutter — `acte_crashlist.feature` F-01, F-02 · rouges : composant `CrashList` inconnu du catalogue fermé ; étagère « inutilisé »
 
 ## Contrat et données (session principale)
-- [ ] T10 Go — jeu de données : `crashes` (5 lignes de `dataset.md`), `TopCrashes`, contrôles de cohérence · `dataset_test.go` (ordre, filtre de plateforme, bornes)
-- [ ] T11 contrat — `catalog.json` : `CrashList` en dernier dans `components` (6), définition, `dataModel` ; fixtures `crashlist-global.jsonl`, `crashlist-android.jsonl` (pas de nouvelle négative, A8) ; README ; `docker-compose.yaml` `A2UI_COMPONENTS` et son commentaire ; `genesis_contract_test.dart` (6), docstring de `genesis_contract.dart`, `genesis_fixtures_test.go` · `check-compose.sh` et tests de parité rouges avant la mise à jour
+- [x] T10 Go — jeu de données : `crashes` (5 lignes de `dataset.md`), `TopCrashes`, contrôles de cohérence · `dataset_test.go` (ordre, filtre de plateforme, bornes)
+- [x] T11 contrat — `catalog.json` : `CrashList` en dernier dans `components` (6), définition, `dataModel` ; fixtures `crashlist-global.jsonl`, `crashlist-android.jsonl` (pas de nouvelle négative, A8) ; README ; `docker-compose.yaml` `A2UI_COMPONENTS` et son commentaire ; `genesis_contract_test.dart` (6), docstring de `genesis_contract.dart`, `genesis_fixtures_test.go` · `check-compose.sh` et tests de parité rouges avant la mise à jour
 
 ## TDD Go — orchestrateur (séquentiel)
 - [ ] T19 savoir — vérifier la doc officielle de l'API Responses (sortie structurée, `store`, effort de raisonnement, `incomplete`) et créer la note `knowledge/` (kb-curate) avant T20 · `kb_lint.py` vert

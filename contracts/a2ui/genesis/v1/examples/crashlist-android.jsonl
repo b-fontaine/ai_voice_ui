@@ -1,0 +1,3 @@
+{"version":"v0.9","createSurface":{"surfaceId":"crashes","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","updateComponents":{"surfaceId":"crashes","components":[{"id":"root","component":"CrashList","data":{"path":"/crashes"}}]}}
+{"version":"v0.9","updateDataModel":{"surfaceId":"crashes","path":"/crashes","value":{"title":"Principaux crashs · Android","items":[{"rank":1,"label":"Plantage à la validation du panier (3-D Secure 2)","platform":"Android","volume":371,"sessions":352},{"rank":2,"label":"Fermeture au retour de l'app bancaire (WebView 3-D Secure)","platform":"Android","volume":148,"sessions":139},{"rank":3,"label":"Mémoire saturée à l'ouverture de la galerie photos","platform":"Android","volume":72,"sessions":66}]}}}

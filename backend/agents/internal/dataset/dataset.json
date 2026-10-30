@@ -41,6 +41,13 @@
     {"day": "J7", "platform": "Android", "version": "3.4", "sessions": 23500, "crashes": 197},
     {"day": "J7", "platform": "Android", "version": "3.3", "sessions": 40700, "crashes": 117}
   ],
+  "crashes": [
+    {"label": "Plantage à la validation du panier (3-D Secure 2)", "platform": "Android", "volume": 371, "sessions": 352},
+    {"label": "Fermeture au retour de l'app bancaire (WebView 3-D Secure)", "platform": "Android", "volume": 148, "sessions": 139},
+    {"label": "Mémoire saturée à l'ouverture de la galerie photos", "platform": "Android", "volume": 72, "sessions": 66},
+    {"label": "Crash au démarrage à froid (migration de la base locale 3.4)", "platform": "iOS", "volume": 58, "sessions": 55},
+    {"label": "Plantage à l'ouverture d'une notification push", "platform": "iOS", "volume": 41, "sessions": 39}
+  ],
   "reviews": [
     {"platform": "iOS", "version": "3.4", "stars": [16, 8, 13, 95, 240]},
     {"platform": "Android", "version": "3.4", "stars": [140, 56, 44, 190, 362]},
