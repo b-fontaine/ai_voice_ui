@@ -25,13 +25,15 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 
 ## Hypothèses
 - ✅ Fiche muette sur ces détails ; ni périmètre, ni mise en scène, ni budget, ni fournisseur.
-- ⚠️ Hypothèse non confirmée : le texte de délégation transmis par GPT-Live contient la plateforme et la version à chaque tour (les agents sont sans état) ; à vérifier à l'essai réel (J7, instructions vocales, pdr-0037).
+- ⚠️ Hypothèse non confirmée : la demande transmise aux agents est la **transcription d'entrée du speaker** depuis la délégation précédente (la délégation ne transporte aucun texte) ; une délégation peut couper la phrase en deux (« Concentre-toi sur Android » puis « et compare avec la 3.3 », la seconde moitié serait refusée) ; les agents sont sans état. À vérifier à l'essai réel (J7, instructions vocales, pdr-0037).
 
 ## Décision
 - **D1 — Mutation par données seules** : sur une surface déjà active, l'agent n'émet que `updateDataModel` (chemin entier de la surface, jamais un sous-chemin) ; `createSurface` et `updateComponents` ne sont émis que si la surface manque. Le message du protocole et le contour pointillé de 007 désignent la surface mutée ; aucun squelette n'est repeint.
 - **D2 — Comparaison dans les composants existants** (pdr-0014 : ni Comparatif ni Timeline) : l'Indicateur clé et le Sentiment des avis lisent le champ facultatif `comparison {label, value, delta}` déjà réservé par le contrat ; la Courbe de tendance reçoit deux séries nommées « Android 3.4 » et « Android 3.3 » ; la Checklist garde sa forme (la valeur de chaque critère cite la 3.3).
 - **D3 — Grammaire des demandes des agents** : une plateforme (Android ou iOS, jamais les deux) et/ou une comparaison avec la 3.3. La 3.3 n'existe que pour Android dans le jeu figé : « compare avec la 3.3 » sans Android est refusé honnêtement (état `rejected`). Toute autre version est refusée.
 - **D4 — FR-17 en deux temps (coupe C7 partielle, pdr-0042)** : 008 livre la **correction de plateforme sur surfaces existantes** (« non, plutôt iOS » → les quatre surfaces passent sur les données iOS, sans canevas vide ni recréation). L'**arrêt de la voix et l'annulation de la génération en vol** (« l'IA se tait », S-07, FR-14) restent à J7 avec le barge-in. S-07 n'est donc pas encore vert ; il le devient à J7.
+- **D6 — Remise à vide au démarrage de l'app (mode vivant)** : avec D1, une mutation visant une surface que l'app ne connaît pas est refusée (`unknown_surface`). L'app, vide au démarrage, demande donc une fois `POST /canvas/reset` avant la première session voix (invisible : le canevas est déjà vide ; aucune requête en mode rejeu).
+- **D7 — Vue iOS et `comparison` incomplet** : la vue iOS de la correction (FR-17) est définie dans [p-fn-dataset](../functional/dataset.md) (GO iOS, une série, 3 extraits iOS, sans comparaison) ; un `comparison` incomplet omet seulement sa ligne (le reste du composant est rendu) ; la couleur de la ligne de comparaison est neutre, jamais déduite du texte du `delta` (RG-09).
 - **D5 — Barre d'actions** : [pdr-0061](pdr-0061-action-bar-appears-end-of-act-2.md) la fait apparaître à la fin de l'acte 2 ; elle n'a pas de schéma avant J5 (FR-08) et reste hors de 008.
 
 ## Raisons

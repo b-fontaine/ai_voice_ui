@@ -4,12 +4,12 @@
 
 - **Jalon** : J4 « Acte 2 Transformer » (`product/roadmap/roadmap.md`), backlog EP-04 (mutation), EP-03 (agents), EP-09 (jeu de données).
 - **Exigences visées** : FR-07 (Must), FR-17 (Should, premier temps seulement, D4) ; RG-06, RG-15 (premier temps), RG-10, RG-02 ; NFR-06, NFR-08 (valeurs recalculées depuis les lignes brutes).
-- **Décisions applicables** : pdr-0014, pdr-0015, pdr-0017, pdr-0018, pdr-0024, pdr-0036, pdr-0053, pdr-0055, pdr-0056, pdr-0058, pdr-0059, pdr-0061, pdr-0062, pdr-0064 (créée par cette étape) ; ADR hérités (hexagonal Go, Bloc, FSD).
+- **Décisions applicables** : pdr-0014, pdr-0015, pdr-0017, pdr-0018, pdr-0024, pdr-0036, pdr-0053, pdr-0055, pdr-0056, pdr-0058, pdr-0059, pdr-0061, pdr-0062, pdr-0064 (D1 à D7) ; ADR hérités (hexagonal Go, Bloc, FSD).
 - **Hors périmètre** : `ActionBar` et acte 3 (J5, FR-08) ; arrêt de la voix et annulation de la génération en vol (S-07, FR-14, FR-16 : J7) ; rejeu (J6) ; instructions vocales de GPT-Live (J7, pdr-0037) ; composeur par LLM (Q-17) ; `CrashList` ; filtres à l'écran (pdr-0059) ; suppression de surface en acte 2 (pdr-0059).
 
 ## Décisions prises par la boucle (pdr-0062 → pdr-0064, à signaler au porteur)
 Voir `product/decisions/pdr-0064-008-act2-transform-details-assistant-decided.md`.
-- **D1** mutation par `updateDataModel` seul (chemin entier) sur surface active ; **D2** comparaison dans les composants existants (`comparison`, deuxième série, valeurs de la checklist) ; **D3** grammaire des demandes (une plateforme, 3.3 seulement avec Android) ; **D4** FR-17 en deux temps (correction de plateforme en J4 ; « l'IA se tait » et l'annulation en vol en J7) ; **D5** `ActionBar` reste à J5.
+- **D1** mutation par `updateDataModel` seul (chemin entier) sur surface active ; **D2** comparaison dans les composants existants (`comparison`, deuxième série, valeurs de la checklist) ; **D3** grammaire des demandes (une plateforme, 3.3 seulement avec Android) ; **D4** FR-17 en deux temps (correction de plateforme en J4 ; « l'IA se tait » et l'annulation en vol en J7) ; **D5** `ActionBar` reste à J5 ; **D6** l'app demande une remise à vide au démarrage (mode vivant) ; **D7** vue iOS définie dans `dataset.md`, `comparison` incomplet = ligne omise.
 - **Q-73** (canevas entre deux sessions voix) : résolue par construction, pdr-0058 livré (registre partagé). La consigne de régie « remettre à vide avant toute nouvelle session voix » devient inutile côté backend ; au redémarrage de l'**app seule** (backend resté actif), l'app est vide alors que le registre ne l'est pas → consigne conservée : « remettre à vide au démarrage de l'app » (à traiter à la clôture : doc `product/` et note au porteur).
 
 ## Scénarios (Gherkin)
@@ -18,10 +18,10 @@ Voir `product/decisions/pdr-0064-008-act2-transform-details-assistant-decided.md
   - « les données affichées concernent uniquement Android » : aucune chaîne « iOS » dans les data models émis ni dans le texte affiché ;
   - « une comparaison avec la 3.3 apparaît » : `comparison` du KPI et des avis, série « Android 3.3 », valeurs de la checklist.
 - **Scénarios propres à 008** (fichiers `.feature` hors les 9 de la fiche, pdr-0049) :
-  - **B1 — registre partagé (Q-73, pdr-0058)** : session A crée les quatre surfaces et se ferme ; session B dit la demande d'acte 2 : mutation sans `createSurface` ; « Remettre à vide » vide le registre (une nouvelle session recrée les quatre surfaces).
-  - **B2 — correction de plateforme (FR-17, premier temps)** : après l'acte 2, « Non, plutôt iOS » : les quatre surfaces passent sur iOS (aucune 3.3 : absente du jeu), sans recréation.
-  - **B3 — refus honnêtes (D3)** : « compare avec la 3.3 » sans plateforme, « Android et iOS », « la 3.2 » → état `rejected`, aucune surface modifiée, phrase de refus.
-  - **B4 — rendu de la comparaison (app)** : l'Indicateur clé affiche « 3.3 : 99,71 % · −0,28 pt » ; le Sentiment des avis « 3.3 : 14 % négatifs · +16 pts » ; la Courbe a deux séries nommées avec légende ; un `comparison` incomplet donne l'état neutre sans erreur (RG-10).
+  - **B1 — registre partagé (Q-73, pdr-0058), côté Go et côté app** : session A crée les quatre surfaces et se ferme ; session B dit la demande d'acte 2 : mutation sans `createSurface` ; « Remettre à vide » vide le registre (une nouvelle session recrée les quatre surfaces).
+  - **B2 — correction de plateforme (FR-17, premier temps)** : après l'acte 2, « Non, plutôt iOS » : les quatre surfaces passent sur la vue iOS de `dataset.md` (99,80 %, une série, 372 avis, **GO iOS** ; aucune 3.3 : absente du jeu), la ligne de comparaison disparaît, sans recréation.
+  - **B3 — refus honnêtes (D3)** : « Compare avec la 3.3 », « Montre Android et iOS », « Compare Android avec la 3.2 » → les trois agents `rejected`, phrase de refus, aucune surface modifiée ; « la 3.2 » seule → plan vide, phrase `out_of_catalog`. Cas en deux délégations : « Concentre-toi sur Android » (vue plateforme) puis « et compare avec la 3.3 » (refus honnête), sans recréer de surface.
+  - **B4 — rendu de la comparaison (app)** : l'Indicateur clé affiche « 3.3 : 99,71 % · −0,28 pt » ; le Sentiment des avis « 3.3 : 14 % négatifs · +16 pts » ; la Courbe a deux séries nommées avec légende ; un `comparison` incomplet omet seulement sa ligne, le reste du composant est rendu sans erreur (RG-10, D7).
 - Les scénarios de 000, 005, 007 (H-01…H-03, V1…V5bis, S-01, A1…A5) restent **verts sans affaiblir d'assertion**.
 
 ## Critères d'acceptation
@@ -35,4 +35,4 @@ Voir `product/decisions/pdr-0064-008-act2-transform-details-assistant-decided.md
 - [ ] Essai réel (une seule fois, budget, `openai-budget.sh check`) : « Prépare la release 3.4 » puis « Concentre-toi sur Android et compare avec la 3.3 » ; si indisponible (pas de micro), noté dans `status.md`
 
 ## Questions ouvertes
-Aucune ne bloque. Q-73 est résolue par pdr-0058 une fois 008 livrée. Q-40 à Q-42, Q-67, Q-68 restent à J7. ⚠️ Hypothèse non confirmée (pdr-0064) : la délégation vocale transmet la plateforme et la version à chaque tour.
+Aucune ne bloque. Q-73 est résolue par pdr-0058 une fois 008 livrée. Q-40 à Q-42, Q-67, Q-68 restent à J7. ⚠️ Hypothèse non confirmée (pdr-0064) : la demande des agents est la transcription d'entrée depuis la délégation précédente ; une délégation peut couper la phrase en deux (couvert par un test, observé à l'essai réel).
