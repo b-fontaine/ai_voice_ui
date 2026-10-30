@@ -1,0 +1,549 @@
+<!-- ===================================================================== -->
+<!-- Chapitre 02 — GenUI, son histoire et le protocole A2UI                 -->
+<!-- ===================================================================== -->
+
+<section class="chapter" data-hud="high">
+  <p class="chapter-num">Chapitre <b>02</b></p>
+  <h2>GenUI &amp; A2UI</h2>
+  <div class="chapter-rule"></div>
+  <p class="subtitle">Quand l'agent génère de la donnée d'interface</p>
+  <aside class="notes">
+    Deuxième partie : l'UI générative côté Flutter. On va voir ce qu'est GenUI, d'où ça vient, comment le moteur genui est construit, puis le protocole A2UI message par message : surfaces, composants, data model, actions, transports, sécurité.
+    Point de vigilance pour tout le chapitre : genui est en alpha et A2UI en pré-1.0, les API bougent vite. Tout ce qui suit est daté d'octobre 2026 [genui-overview] [genui-a2ui-overview].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <p class="eyebrow">Définition</p>
+  <h2>Générer de la donnée, pas du code</h2>
+  <div class="flow">
+    <div class="node node--round">Intention<small>prompt · outil</small></div>
+    <div class="arrow"><span class="arrow-label">compose</span></div>
+    <div class="node node--amber">Agent LLM<small>choisit quoi afficher</small></div>
+    <div class="arrow"><span class="arrow-label">JSON A2UI</span></div>
+    <div class="node">Catalogue<small>liste blanche</small></div>
+    <div class="arrow"><span class="arrow-label">rend</span></div>
+    <div class="node">Widgets Flutter<small>natifs</small></div>
+  </div>
+  <div class="grid-2 stretch-items mt-2">
+    <div class="hud-panel fragment rise-in">
+      <p class="panel-title">L'agent décide</p>
+      <ul class="compact">
+        <li>quels composants afficher</li>
+        <li>avec quelles données</li>
+      </ul>
+    </div>
+    <div class="hud-panel hud-panel--amber fragment rise-in">
+      <p class="panel-title">Le développeur garde la main</p>
+      <ul class="compact amber-list">
+        <li>les composants qui existent</li>
+        <li>leur rendu et leur thème</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lead fragment glow-in mt-1">« <span class="accent">safe like data</span>, but <span class="amber">expressive like code</span> »</p>
+  <p class="refs">[genui-overview] · [genui-a2ui-overview] · [proto-a2ui-pointer] · [ux-genui-catalog-as-ds]</p>
+  <aside class="notes">
+    L'idée centrale : l'agent n'écrit pas de code Flutter et n'envoie pas de HTML. Il envoie une description JSON déclarative, l'intention d'UI, que le client rend avec ses propres widgets [genui-a2ui-overview].
+    genui laisse un LLM composer une UI Flutter à partir d'un catalogue de widgets approuvés, en parlant le protocole A2UI v0.9 [genui-overview].
+    Le partage des rôles est net : l'IA choisit quels composants et quelles données ; le développeur décide quels composants existent et à quoi ils ressemblent. L'agent n'envoie que des indications sémantiques, jamais de style [ux-genui-catalog-as-ds].
+    La devise vient du README d'A2UI : « safe like data, but expressive like code ».
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <p class="eyebrow">Histoire</p>
+  <h2>Une histoire courte et rapide</h2>
+  <div class="timeline">
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">03/2024</span>
+      <span class="tl-title">AI SDK 3.0</span>
+      <span class="tl-text">Vercel introduit « Generative UI » : composants React streamés</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">07/2025</span>
+      <span class="tl-title">flutter_genui</span>
+      <span class="tl-text">Flutter, alpha : 0.0.1 sur pub.dev</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">11/2025</span>
+      <span class="tl-title">GenUI SDK</span>
+      <span class="tl-text">annonce ; renommé genui (0.5.0)</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">12/2025</span>
+      <span class="tl-title">A2UI open source</span>
+      <span class="tl-text">Google, Apache 2.0 ; Lit, Angular, Flutter</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">09/2026</span>
+      <span class="tl-title">genui 0.10.4</span>
+      <span class="tl-text">parle A2UI v0.9</span>
+    </div>
+    <div class="tl-item is-now fragment rise-in">
+      <span class="tl-date">Statut au 26/10/2026</span>
+      <span class="tl-title">A2UI v0.9.1</span>
+      <span class="tl-text">en production ; v1.0 en release candidate</span>
+    </div>
+    <div class="tl-item is-future fragment rise-in">
+      <span class="tl-date">À venir</span>
+      <span class="tl-title">a2ui_flutter</span>
+      <span class="tl-text">genui redécoupé en paquets modulaires</span>
+    </div>
+  </div>
+  <p class="mt-2 fragment glow-in"><span class="badge badge--neutral">alpha</span> <span class="badge badge--neutral">pré-1.0</span> <span class="muted">chaque version mineure de genui casse l'API</span></p>
+  <p class="refs">[genui-overview] · [genui-a2ui-overview] · [genui-migration-from-0-7] · [genui-migration-0-10] · [genui-a2ui-v1-rc] · avant 2026 : blogs officiels (Vercel, Flutter, Google Developers) et pub.dev</p>
+  <aside class="notes">
+    Le terme « Generative UI » est introduit par Vercel avec l'AI SDK 3.0, le 1er mars 2024 : le LLM renvoie des React Server Components streamés, donc du code exécuté côté serveur (source : vercel.com/blog/ai-sdk-3-generative-ui).
+    Le SDK existe avant son annonce : flutter_genui 0.0.1 est publié sur pub.dev le 2025-07-28. Le 2025-11-12, le paquet est renommé : genui 0.5.0 paraît le même jour que la dernière flutter_genui, 0.5.0, marquée « discontinued » et remplacée par genui (source : API pub.dev, consultée le 2026-10-29). Le 18 novembre 2025, l'équipe Flutter annonce le GenUI SDK en alpha, « built around the upcoming A2UI protocol », inspiré par la mise en page visuelle de l'app Gemini (source : flutter.dev/blog/rich-and-dynamic-user-interfaces-with-flutter-and-generative-ui). Ces jalons d'avant 2026 viennent des blogs officiels et de pub.dev, pas de la base knowledge/.
+    Le 15 décembre 2025, Google publie A2UI en open source, avec des renderers Lit, Angular et Flutter (source : developers.googleblog.com, « Introducing A2UI »). A2UI est sous licence Apache 2.0, avec des contributions de CopilotKit [genui-a2ui-overview].
+    Entre-temps, le format passe de v0.8 à v0.9 : discriminant plat « component », beginRendering devient createSurface [genui-migration-from-0-7]. genui 0.10.4 est publiée le 2026-09-29, genui_a2a 0.10.1 le 2026-07-20 [genui-overview].
+    Dernier jalon = statut constaté le 2026-10-26 dans le README d'A2UI, pas une date de sortie : v0.9.1 en production, v1.0 en release candidate, v0.8 legacy [genui-a2ui-overview] [genui-a2ui-v1-rc]. Le CHANGELOG de genui annonce une refonte en a2ui_core, a2ui_agent et a2ui_flutter [genui-overview] [genui-migration-0-10]. Donc : épingler les versions exactes.
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Le moteur genui 0.10.x</p>
+  <h2>Moteur, transport, façade</h2>
+  <svg class="diagram" viewBox="0 0 1440 560" width="1440" height="560" role="img" aria-label="Architecture du package genui : LLM, Transport, Conversation, SurfaceController, Surface">
+    <defs>
+      <marker id="s02-arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s02-arch-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+
+    <rect class="d-zone" x="300" y="30" width="780" height="420" rx="6" />
+    <text class="d-zone-label" x="320" y="60">PACKAGE:GENUI</text>
+
+    <!-- Votre LLM -->
+    <rect class="d-node d-node--amber" x="20" y="100" width="230" height="110" rx="4" />
+    <text class="d-label" x="135" y="140">Votre LLM</text>
+    <text class="d-sub" x="135" y="180">ou agent distant</text>
+
+    <!-- Transport -->
+    <rect class="d-node" x="340" y="100" width="320" height="110" rx="4" />
+    <text class="d-label" x="500" y="140">Transport</text>
+    <text class="d-sub" x="500" y="180">A2uiTransportAdapter</text>
+
+    <!-- SurfaceController -->
+    <rect class="d-node" x="740" y="100" width="310" height="110" rx="4" />
+    <text class="d-label" x="895" y="140">SurfaceController</text>
+    <text class="d-sub" x="895" y="180">moteur · handleMessage</text>
+
+    <!-- Catalogues + DataModel -->
+    <path class="d-link d-link--static" d="M895,210 L895,290" />
+    <rect class="d-node d-node--ghost" x="740" y="290" width="148" height="90" rx="4" />
+    <text class="d-label" x="814" y="335">Catalogues</text>
+    <rect class="d-node d-node--ghost" x="902" y="290" width="148" height="90" rx="4" />
+    <text class="d-label" x="976" y="335">DataModel</text>
+
+    <!-- Conversation -->
+    <rect class="d-node" x="340" y="290" width="320" height="110" rx="4" />
+    <text class="d-label" x="500" y="330">Conversation</text>
+    <text class="d-sub" x="500" y="370">façade · sendRequest</text>
+
+    <!-- Surface -->
+    <rect class="d-node" x="1150" y="100" width="270" height="110" rx="4" />
+    <text class="d-label" x="1285" y="140">Surface × N</text>
+    <text class="d-sub" x="1285" y="180">widgets Flutter</text>
+
+    <!-- Aller : LLM -> Transport -> Controller -> Surface -->
+    <path class="d-link" d="M250,155 L340,155" marker-end="url(#s02-arch-arrow)" />
+    <text class="d-link-label" x="295" y="90">addChunk</text>
+    <path class="d-link" d="M660,155 L740,155" marker-end="url(#s02-arch-arrow)" />
+    <text class="d-link-label" x="700" y="90">A2uiMessage</text>
+    <text class="d-link-label" x="700" y="250">câblé par Conversation</text>
+    <path class="d-link" d="M1050,155 L1150,155" marker-end="url(#s02-arch-arrow)" />
+    <text class="d-link-label" x="1100" y="90">rebuild</text>
+    <circle class="d-packet" r="6">
+      <animateMotion dur="2.4s" repeatCount="indefinite" path="M250,155 L1150,155" />
+    </circle>
+
+    <!-- Retour : action utilisateur -->
+    <g class="fragment">
+      <path class="d-link d-link--amber" d="M1285,210 L1285,500 L500,500 L500,400" marker-end="url(#s02-arch-arrow-amber)" />
+      <text class="d-link-label" x="900" y="535">clic → onSubmit → action</text>
+      <path class="d-link d-link--amber" d="M420,290 L420,210" marker-end="url(#s02-arch-arrow-amber)" />
+      <text class="d-link-label" x="420" y="250">sendRequest</text>
+      <path class="d-link d-link--amber" d="M340,185 L250,185" marker-end="url(#s02-arch-arrow-amber)" />
+      <text class="d-link-label" x="295" y="230">onSend</text>
+      <circle class="d-packet" r="6">
+        <animateMotion dur="2.6s" repeatCount="indefinite" path="M1285,210 L1285,500 L500,500 L500,400" />
+      </circle>
+    </g>
+  </svg>
+  <p class="refs">[genui-architecture] · [genui-user-actions] · [genui-multiple-surfaces] · [genui-migration-0-10]</p>
+  <aside class="notes">
+    Depuis la 0.8, genui sépare trois rôles. Le SurfaceController est le moteur : il applique les messages A2UI, tient un DataModel par surface et connaît les catalogues. Le Transport, en général A2uiTransportAdapter, transforme le texte du LLM en messages. La Conversation est la façade qui relie les deux : c'est elle qui branche transport.incomingMessages sur controller.handleMessage [genui-architecture].
+    genui n'appelle aucun LLM lui-même : c'est votre callback onSend qui le fait, puis vous poussez chaque morceau de texte avec addChunk. Le parseur sépare texte libre et messages A2UI. Pour un message déjà parsé, par exemple issu d'un tool call, on utilise addMessage [genui-architecture].
+    Chaque widget Surface affiche une surface identifiée par son surfaceId, à l'endroit choisi par l'app [genui-multiple-surfaces].
+    Au clic suivant : la boucle retour. Une action utilisateur sort par controller.onSubmit ; Conversation appelle sendRequest sur le transport, qui appelle votre onSend, et le LLM répond [genui-user-actions] [genui-architecture].
+    Pièges : la méthode s'appelle sendRequest (la doc mélange avec sendMessage), et depuis la 0.10 les messages sont des types a2ui_core [genui-migration-0-10].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Protocole A2UI v0.9 · agent → client</p>
+  <h2>Quatre messages, un flux JSONL</h2>
+  <pre data-title="flux A2UI v0.9 (un message par ligne sur le fil)"><code class="language-json" data-trim data-line-numbers="1-3|4-7|8|9">
+{"version":"v0.9","createSurface":{"surfaceId":"main",
+  "catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
+  "sendDataModel":true}}
+{"version":"v0.9","updateComponents":{"surfaceId":"main","components":[
+  {"id":"root","component":"Column","children":["title","name"]},
+  {"id":"title","component":"Text","text":"# Profil","variant":"h2"},
+  {"id":"name","component":"TextField","label":"Nom","value":{"path":"/user/name"}}]}}
+{"version":"v0.9","updateDataModel":{"surfaceId":"main","path":"/user/name","value":"Alice"}}
+{"version":"v0.9","deleteSurface":{"surfaceId":"main"}}
+  </code></pre>
+  <div class="grid-4 mt-1">
+    <p class="mono small"><span class="accent">createSurface</span><br><span class="muted">ouvre, fige le catalogue</span></p>
+    <p class="mono small"><span class="accent">updateComponents</span><br><span class="muted">la structure</span></p>
+    <p class="mono small"><span class="accent">updateDataModel</span><br><span class="muted">les valeurs</span></p>
+    <p class="mono small"><span class="accent">deleteSurface</span><br><span class="muted">ferme la zone</span></p>
+  </div>
+  <p class="refs">[genui-a2ui-messages] · [genui-a2ui-overview] · [genui-multiple-surfaces]</p>
+  <aside class="notes">
+    Exemple adapté de la spécification v0.9.1, avec « version » forcée à « v0.9 » pour genui (mis en forme sur plusieurs lignes pour la lecture ; sur le fil, un message = une ligne JSONL). Chaque message porte « version » et exactement une clé parmi createSurface, updateComponents, updateDataModel et deleteSurface [genui-a2ui-messages].
+    createSurface fixe le surfaceId et le catalogId pour toute la vie de la surface. updateComponents envoie une liste plate de composants ; l'un d'eux doit avoir l'id « root ». updateDataModel remplace la valeur à un chemin JSON Pointer. deleteSurface ferme la zone.
+    Trois pièges. Un : genui 0.10.x exige « version » : « v0.9 » exactement, alors que les exemples de la spec v0.9.1 portent « v0.9.1 » [genui-a2ui-overview]. Deux : le transport doit garantir l'ordre ; genui met en tampon les updates arrivées avant le create. Trois : un createSurface sur un id actif est une erreur, il faut d'abord deleteSurface [genui-multiple-surfaces].
+    MIME standard depuis la v0.9.1 : application/a2ui+json. Attention, la doc Flutter cite encore les noms v0.8 (surfaceUpdate, dataModelUpdate) [genui-a2ui-messages].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Structure</p>
+  <h2>Une liste plate, reliée par id</h2>
+  <svg class="diagram" viewBox="0 0 1440 360" width="1440" height="360" role="img" aria-label="Liste d'adjacence : une liste plate de composants devient un arbre">
+    <defs>
+      <marker id="s02-adj-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+    <text class="d-zone-label" x="40" y="24">COMPONENTS[ ]</text>
+    <rect class="d-node" x="40" y="40" width="560" height="80" rx="4" />
+    <text class="d-sub" x="320" y="80">root · Column · children: [title, name]</text>
+    <rect class="d-node" x="40" y="140" width="560" height="80" rx="4" />
+    <text class="d-sub" x="320" y="180">title · Text</text>
+    <rect class="d-node d-node--ghost" x="40" y="240" width="560" height="80" rx="4" />
+    <text class="d-sub" x="320" y="280">name · TextField · peut arriver plus tard</text>
+
+    <path class="d-link" d="M620,180 L800,180" marker-end="url(#s02-adj-arrow)" />
+    <text class="d-link-label" x="710" y="160">résolution par id</text>
+
+    <text class="d-zone-label" x="840" y="24">ARBRE RENDU</text>
+    <rect class="d-node d-node--amber" x="1000" y="40" width="240" height="80" rx="4" />
+    <text class="d-label" x="1120" y="80">root</text>
+    <path class="d-link d-link--static" d="M1060,120 L960,240" />
+    <rect class="d-node" x="840" y="240" width="240" height="80" rx="4" />
+    <text class="d-label" x="960" y="280">title</text>
+    <g class="fragment">
+      <path class="d-link d-link--static" d="M1180,120 L1280,240" />
+      <rect class="d-node" x="1160" y="240" width="240" height="80" rx="4" />
+      <text class="d-label" x="1280" y="280">name</text>
+    </g>
+  </svg>
+  <ul class="compact mt-1">
+    <li class="fragment rise-in">Simple à générer pour un LLM : pas d'imbrication profonde</li>
+    <li class="fragment rise-in">Rendu progressif <span class="accent">dès que <span class="mono">root</span> existe</span> ; le reste arrive ensuite</li>
+  </ul>
+  <p class="refs">[genui-a2ui-overview] · [genui-a2ui-messages] · [ux-genui-streaming-loading]</p>
+  <aside class="notes">
+    A2UI ne décrit pas un arbre imbriqué mais une liste d'adjacence : une liste plate de composants, chacun avec un id, et les enfants référencés par id via child ou children [genui-a2ui-overview].
+    Deux avantages. Pour le LLM, c'est plus simple à produire que des niveaux d'imbrication. Pour l'utilisateur, le rendu peut commencer dès que root est défini ; les enfants manquants peuvent arriver plus tard, dans d'autres updateComponents incrémentaux [genui-a2ui-messages] [ux-genui-streaming-loading].
+    Au clic, le composant « name » arrive et l'arbre se complète : c'est le rendu progressif. L'utilisateur voit l'interface se construire au lieu d'un spinner. Dans l'exemple précédent tout arrivait dans le même message ; la spec permet de l'étaler.
+    Différence avec la v0.8 : le type de composant est un discriminant plat, "component": "Text", et non plus un objet imbriqué {"Text": {...}} [genui-a2ui-messages].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Données</p>
+  <h2>Data model et binding</h2>
+  <div class="flow">
+    <div class="node node--amber">Agent<small>updateDataModel</small></div>
+    <div class="arrow"><span class="arrow-label">/user/name</span></div>
+    <div class="node">DataModel<small>un par surface</small></div>
+    <div class="arrow arrow--both"><span class="arrow-label">{"path": …}</span></div>
+    <div class="node">TextField<small>saisie utilisateur</small></div>
+  </div>
+  <div class="grid-2 stretch-items mt-2">
+    <div class="hud-panel fragment rise-in">
+      <p class="panel-title">Structure ≠ valeurs</p>
+      <ul class="compact">
+        <li>propriété = littéral ou <span class="mono" style="white-space: nowrap">{"path": "/a/b"}</span></li>
+        <li>seuls les widgets liés se reconstruisent</li>
+        <li>mises à jour granulaires (<span class="mono">/user/name</span>) plutôt que tout le modèle</li>
+      </ul>
+    </div>
+    <div class="hud-panel hud-panel--amber fragment rise-in">
+      <p class="panel-title">Binding bidirectionnel</p>
+      <ul class="compact amber-list">
+        <li>la saisie écrit dans le modèle, sans LLM</li>
+        <li>retour à l'agent : <span class="mono">context</span> ou <span class="mono">sendDataModel</span></li>
+        <li>jamais de secret dans le modèle <span class="badge badge--opinion">opinion</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="refs">[genui-data-model] · [genui-a2ui-client-messages] · [ux-genui-streaming-loading] · [genui-a2ui-security] · [genui-a2ui-v1-rc]</p>
+  <aside class="notes">
+    Chaque surface a son DataModel observable. Une propriété de composant est soit un littéral JSON, soit un objet path, un JSON Pointer vers ce modèle. Seuls les widgets qui dépendent d'un chemin modifié sont reconstruits [genui-data-model].
+    Côté agent, updateDataModel remplace la valeur à un chemin ; sans value, la clé est supprimée [genui-data-model]. Préférer des mises à jour granulaires, /user/name plutôt que tout le modèle [ux-genui-streaming-loading].
+    Côté utilisateur, TextField, CheckBox, Slider ou ChoicePicker écrivent directement dans le modèle : aucun aller-retour avec le LLM pendant la saisie.
+    Le modèle ne remonte à l'agent que dans le context d'une action, ou à chaque message si createSurface a sendDataModel à true [genui-a2ui-client-messages]. D'où la règle interne : aucun secret dans le data model [genui-a2ui-security].
+    Des fonctions comme formatString, formatDate, required ou email s'évaluent côté client. Dans la v1.0 RC, le binding devient {"@path": …}, non supporté par genui 0.10.x [genui-a2ui-v1-rc].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Protocole A2UI · client → agent</p>
+  <h2>Un clic devient un message</h2>
+  <div class="seq" style="--n: 5">
+    <div class="seq-actor">Utilisateur</div>
+    <div class="seq-actor">Surface</div>
+    <div class="seq-actor">Controller</div>
+    <div class="seq-actor">Conversation</div>
+    <div class="seq-actor seq-actor--amber">Agent</div>
+    <div class="seq-body">
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">clic</span></div>
+      <div class="seq-note fragment">ActionDelegate : interception locale possible</div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">UserActionEvent</span></div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 4"><span class="seq-label">onSubmit</span></div>
+      <div class="seq-msg fragment" style="--from: 4; --to: 5"><span class="seq-label">action</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 5; --to: 2"><span class="seq-label">updateComponents · updateDataModel</span></div>
+    </div>
+  </div>
+  <p class="mono small mt-1"><span class="accent">action</span> = { name, surfaceId, sourceComponentId, timestamp, context }</p>
+  <p class="refs">[genui-user-actions] · [genui-a2ui-client-messages] · [genui-a2ui-security]</p>
+  <aside class="notes">
+    L'agent attache une action à un composant, par exemple un bouton avec action.event.name « confirm_rdv » et un context lié au data model [genui-user-actions].
+    Au clic, le widget émet un UserActionEvent. La Surface le propose d'abord à son ActionDelegate, qui peut le gérer localement. Sinon le SurfaceController l'émet sur onSubmit, et Conversation le renvoie au LLM via sendRequest, donc votre onSend [genui-user-actions].
+    Sur le fil, c'est un message action : name, surfaceId, sourceComponentId, timestamp et context, tous requis [genui-a2ui-client-messages]. Attention : context ne contient que ce que l'agent a déclaré.
+    Un functionCall comme openUrl s'exécute localement, sans aller-retour.
+    Règle interne (recommandation) : une action est un événement typé renvoyé à l'orchestrateur, jamais exécuté directement [genui-a2ui-security]. Sans Conversation, il faut écouter onSubmit soi-même, sinon les clics sont perdus.
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Catalogue</p>
+  <h2>Le catalogue, contrat du développeur</h2>
+  <div class="grid-2-1">
+    <pre data-title="catalog_item.dart"><code class="language-dart" data-trim data-line-numbers="2|3-6|7-11|13-14">
+final riddleCard = CatalogItem(
+  name: 'RiddleCard',
+  dataSchema: S.object(properties: {
+    'question': S.string(description: 'La question.'),
+    'answer': S.string(description: 'La réponse.'),
+  }, required: ['question', 'answer']),
+  widgetBuilder: (ctx) {
+    final json = ctx.data as Map&lt;String, Object?&gt;;
+    return RiddleCard(question: json['question'] as String,
+                      answer: json['answer'] as String);
+  },
+);
+final catalog = BasicCatalogItems.asCatalog()
+    .copyWith(newItems: [riddleCard]);
+    </code></pre>
+    <ul class="compact">
+      <li class="fragment rise-in"><span class="mono accent">name</span> = valeur de <span class="mono">component</span></li>
+      <li class="fragment rise-in">schéma injecté dans le prompt</li>
+      <li class="fragment rise-in">builder = votre widget du DS</li>
+      <li class="fragment rise-in"><span class="mono accent">catalogId</span> : une URI, figée par surface</li>
+    </ul>
+  </div>
+  <p class="refs">[genui-custom-catalog-item] · [genui-catalog-ids] · [ux-genui-catalog-as-ds]</p>
+  <aside class="notes">
+    Un CatalogItem, c'est trois choses : un name, qui est la valeur de « component » dans le JSON ; un dataSchema écrit avec json_schema_builder ; un widgetBuilder qui construit votre widget [genui-custom-catalog-item].
+    Les descriptions du schéma sont injectées dans le prompt : on les écrit pour le LLM, le quoi et le quand. Ajouter un item ne suffit pas, il faut aussi le nommer dans les fragments de prompt système.
+    Le catalogId est un contrat nommé entre agent et renderer, une URI par convention. Le client annonce ses catalogues via supportedCatalogIds ; l'agent en choisit un à createSurface, figé pour la vie de la surface. En v0.9, une surface n'utilise qu'un catalogue [genui-catalog-ids].
+    Piège : un catalogue étendu par copyWith garde l'id du catalogue basique si on ne passe pas de catalogId ; un agent distant ignorera alors vos items.
+    En production, le catalogue reflète le design system : chaque item enveloppe un composant du DS et lit le thème ; on le versionne comme une API, avec une version majeure dans l'URI (recommandation interne) [ux-genui-catalog-as-ds]. Des widgets métier de haut niveau coûtent moins de tokens que des primitives (opinion) [genui-custom-catalog-item].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <p class="eyebrow">Transports</p>
+  <h2>Un format, plusieurs tuyaux</h2>
+  <div class="grid-1-2 stretch-items">
+    <div class="hud-panel">
+      <p class="panel-title">Contrat imposé</p>
+      <ol class="compact">
+        <li>livraison fiable et ordonnée</li>
+        <li>messages délimités</li>
+        <li>métadonnées</li>
+        <li>canal retour (option)</li>
+      </ol>
+    </div>
+    <div class="grid-2">
+      <div class="card fragment rise-in">
+        <h3>A2A</h3>
+        <p class="small">genui_a2a : <span class="mono">message/stream</span> sur SSE, une Part par message</p>
+      </div>
+      <div class="card fragment rise-in">
+        <h3>AG-UI</h3>
+        <p class="small">flux d'événements agent → app, dont l'A2UI</p>
+      </div>
+      <div class="card fragment rise-in">
+        <h3>MCP</h3>
+        <p class="small">sortie d'outil ou ressource</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3>Texte LLM</h3>
+        <p class="small">JSONL dans le texte, parsé par <span class="mono">addChunk</span></p>
+      </div>
+    </div>
+  </div>
+  <p class="refs">[genui-a2ui-transports] · [genui-a2a-connector] · [proto-agui-overview] · [proto-a2ui-pointer]</p>
+  <aside class="notes">
+    A2UI ne fixe pas de transport mais impose un contrat : livraison fiable et ordonnée, délimitation des messages (lignes JSONL, frames WebSocket, événements SSE), support des métadonnées comme les capabilities, et un canal retour optionnel pour les actions [genui-a2ui-transports].
+    Binding A2A : un message A2UI est une Part de message A2A, les capabilities vont dans metadata, la session correspond au contextId. C'est ce que fait genui_a2a. Vérifié dans le code et par un essai de bout en bout le 2026-10-29 : JSON-RPC message/stream sur SSE, protocole A2A v0.3, en-tête X-A2A-Extensions avec l'URI de l'extension A2UI v0.9. La doc Flutter parle de WebSocket, c'est inexact [genui-a2a-connector].
+    AG-UI transporte les événements entre backend et app, dont les instructions d'UI générative [proto-agui-overview]. MCP livre l'A2UI comme sortie d'outil ou abonnement à une ressource.
+    Le cas le plus simple : le LLM écrit le JSONL dans sa réponse texte et A2uiTransportAdapter le parse [proto-a2ui-pointer].
+    Recommandation interne pour la voix : le canal de données de la session temps réel ne transporte pas l'A2UI ; on passe par un canal séparé vers l'agent GenUI [genui-a2ui-transports].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <p class="eyebrow">Sécurité</p>
+  <h2>Le catalogue est la frontière</h2>
+  <div class="grid-3 stretch-items">
+    <div class="card">
+      <span class="card-icon">01</span>
+      <h3>Données</h3>
+      <p class="small">JSON déclaratif : l'agent n'envoie aucun code exécutable</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">02</span>
+      <h3>Liste blanche</h3>
+      <p class="small">seuls les composants approuvés ; schéma validé</p>
+    </div>
+    <div class="card">
+      <span class="card-icon">03</span>
+      <h3>Événements</h3>
+      <p class="small">clic = événement typé (<span class="mono">action</span>) ; seules les fonctions du catalogue (<span class="mono">openUrl</span>…) s'exécutent en local</p>
+    </div>
+  </div>
+  <div class="hud-panel hud-panel--amber mt-1 fragment rise-in">
+    <p class="panel-title">Reste à votre charge <span class="badge badge--opinion">recommandation interne</span></p>
+    <ul class="compact amber-list">
+      <li>valider deux fois : orchestrateur, puis client</li>
+      <li>filtrer <span class="mono">openUrl</span> et les URLs d'<span class="mono">Image</span> / <span class="mono">Video</span></li>
+      <li>confirmer hors GenUI toute action sensible</li>
+    </ul>
+  </div>
+  <p class="mt-0 mb-0"><span class="badge badge--neutral">« Secure by Design » : revendiqué par le projet, sans audit indépendant</span></p>
+  <p class="refs">[genui-a2ui-security] · [genui-a2ui-client-messages] · [genui-user-actions] · [genui-data-model] · [proto-a2ui-pointer] · [ux-ai-human-in-the-loop]</p>
+  <aside class="notes">
+    a2ui.org le résume ainsi : « Declarative data format, not executable code. Agents can only use pre-approved components from your catalog. » Tout JSON de l'agent est validé contre le catalogue choisi [genui-a2ui-security]. « Not executable code » vise le code envoyé par l'agent : les fonctions du catalogue, comme formatString ou openUrl, s'évaluent ou s'exécutent bien côté client [genui-data-model] [genui-a2ui-client-messages]. Un clic part comme message action typé vers l'agent, sauf les functionCall locaux [genui-user-actions].
+    Nuance importante : ce sont des garanties revendiquées par le projet lui-même ; aucun audit indépendant n'a été trouvé. Et la garantie ne couvre pas les données liées, qu'il faut valider côté app [proto-a2ui-pointer].
+    Ce qui reste à faire relève de règles internes, donc de recommandations : valider deux fois, dans l'orchestrateur avant envoi puis au rendu ; filtrer openUrl, qui est dans le catalogue de base, via un ActionDelegate ; restreindre les domaines des images et vidéos ; ne jamais mettre de secret dans le data model.
+    Enfin, l'injection de prompt en amont reste possible, par exemple un faux formulaire : toute action sensible se confirme hors de l'UI générée [genui-a2ui-security] [ux-ai-human-in-the-loop].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Erreurs et UX</p>
+  <h2>La machine corrige, l'humain comprend</h2>
+  <div class="grid-2 center-items">
+    <div>
+      <svg class="diagram" viewBox="0 0 680 300" width="680" height="300" role="img" aria-label="Boucle génération, validation, erreur renvoyée au LLM">
+        <defs>
+          <marker id="s02-err-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+          </marker>
+          <marker id="s02-err-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+          </marker>
+        </defs>
+        <rect class="d-node d-node--amber" x="20" y="30" width="230" height="90" rx="4" />
+        <text class="d-label" x="135" y="75">LLM</text>
+        <rect class="d-node" x="430" y="30" width="230" height="90" rx="4" />
+        <text class="d-label" x="545" y="65">Validation</text>
+        <text class="d-sub" x="545" y="98">schéma du catalogue</text>
+        <path class="d-link" d="M250,75 L430,75" marker-end="url(#s02-err-arrow)" />
+        <text class="d-link-label" x="340" y="60">A2UI</text>
+        <path id="s02-err-back" class="d-link d-link--amber" d="M545,120 L545,230 L135,230 L135,120" marker-end="url(#s02-err-arrow-amber)" />
+        <text class="d-link-label" x="340" y="265">error · VALIDATION_FAILED</text>
+        <circle class="d-packet" r="6">
+          <animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#s02-err-back" /></animateMotion>
+        </circle>
+      </svg>
+      <p class="small muted">plafonner à 2 ou 3 tours <span class="badge badge--opinion">opinion</span></p>
+    </div>
+    <ul class="compact">
+      <li class="fragment rise-in">l'UI se construit sous les yeux</li>
+      <li class="fragment rise-in">chargement en 2 temps, avec un libellé</li>
+      <li class="fragment rise-in">erreur LLM invisible pour l'utilisateur <span class="badge badge--opinion">opinion</span></li>
+      <li class="fragment rise-in">message simple + étape suivante</li>
+      <li class="fragment rise-in">confirmer avant une action importante</li>
+    </ul>
+  </div>
+  <p class="refs">[genui-error-reporting] · [ux-genui-errors-validation] · [ux-genui-streaming-loading] · [ux-ai-human-in-the-loop]</p>
+  <aside class="notes">
+    A2UI décrit une boucle prompt, génération, validation. Quand un message viole le schéma, le client renvoie un error standard, code VALIDATION_FAILED, avec le surfaceId, un JSON Pointer vers le champ fautif et un message. Dans genui 0.10.x, Conversation renvoie automatiquement cette erreur au LLM, qui se corrige au tour suivant [genui-error-reporting].
+    Mesuré le 2026-10-29 sur genui 0.10.4 : un composant hors catalogue ou un createSurface en double sont signalés ; un update sur une surface inexistante est silencieux, mis en tampon. Il faut plafonner les tours de correction : ai_voice_widget en autorisait 20, la recommandation interne est 2 ou 3 [genui-error-reporting].
+    Côté utilisateur, recommandation interne : l'erreur de validation ne s'affiche jamais ; on montre un état de chargement, puis un message générique si le plafond est atteint [ux-genui-errors-validation].
+    Chargement selon Cloudscape : deux étapes, traitement puis génération, toujours avec un texte visible ; rien sous une seconde [ux-genui-streaming-loading]. Erreurs en langage simple avec une étape suivante (Apple HIG), possibilité de reprendre la main (Google PAIR). Et confirmation avant toute action importante [ux-ai-human-in-the-loop].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section data-hud="low">
+  <p class="eyebrow">Paysage</p>
+  <h2>A2UI face aux autres approches</h2>
+  <table class="compare">
+    <thead>
+      <tr><th>Critère</th><th class="hl">A2UI</th><th>MCP Apps</th><th>AG-UI</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Rôle</th><td class="hl">ce que l'agent affiche</td><td>UI d'un outil MCP</td><td>comment l'agent parle à l'app</td></tr>
+      <tr><th>Ce qui circule</th><td class="hl">JSON déclaratif</td><td>HTML/JS en iframe sandboxée</td><td>flux d'événements typés</td></tr>
+      <tr><th>Code distant exécuté</th><td class="hl yes">non</td><td class="no">oui, isolé</td><td class="partial">sans objet</td></tr>
+      <tr><th>Flutter natif <span class="badge badge--opinion">opinion</span></th><td class="hl yes">genui</td><td class="partial">via WebView</td><td class="partial">SDK Dart communautaire (<span class="mono">ag_ui</span>)</td></tr>
+      <tr><th>Maturité</th><td class="hl">v0.9.1 · v1.0 RC</td><td>extension opt-in</td><td>pré-1.0</td></tr>
+    </tbody>
+  </table>
+  <p class="mt-1 fragment glow-in">Complémentaires, pas concurrents : <span class="accent">AG-UI peut transporter de l'A2UI</span></p>
+  <p class="refs">[proto-protocol-map] · [proto-mcp-extensions] · [proto-agui-overview] · [proto-a2ui-pointer]</p>
+  <aside class="notes">
+    Carte des protocoles : MCP, c'est ce que l'agent peut faire ; A2A, à qui il délègue ; AG-UI, comment il parle à l'app ; A2UI, ce qu'il affiche [proto-protocol-map].
+    MCP Apps : un tool déclare une ressource ui:// ; c'est une page HTML rendue par le host dans une iframe sandboxée, qui dialogue par postMessage. Donc du code exécutable, isolé, qui suppose un host web ou une WebView [proto-mcp-extensions].
+    AG-UI n'est pas un format d'UI : c'est un protocole d'événements entre backend agentique et frontend, né du partenariat de CopilotKit avec LangChain et CrewAI. Côté Flutter, il existe un SDK Dart communautaire, ag_ui 0.3.0 [proto-protocol-map]. Sa doc dit qu'A2UI et AG-UI « work well together » [proto-agui-overview].
+    La ligne « Flutter natif » est une recommandation interne : pour une app Flutter native, A2UI est préférable ; MCP Apps n'aurait de sens que dans une WebView, au prix de la cohérence visuelle et de la sécurité [proto-mcp-extensions] [proto-a2ui-pointer].
+  </aside>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<section>
+  <p class="eyebrow">Et dans Genesis Canvas ?</p>
+  <h2>Ce que la démo en retient</h2>
+  <ul class="check-list">
+    <li class="fragment rise-in">A2UI <span class="mono">"v0.9"</span>, genui 0.10.4 figé <span class="badge badge--accepted">pdr-0018</span></li>
+    <li class="fragment rise-in">catalogue fermé ; apparence par le thème, jamais par l'IA <span class="badge badge--accepted">pdr-0007</span> <span class="badge badge--accepted">pdr-0014</span></li>
+    <li class="fragment rise-in">LLM guidé par des exemples d'écrans <span class="badge badge--accepted">pdr-0023</span></li>
+    <li class="fragment rise-in">chaque agent A2A produit son A2UI <span class="badge badge--accepted">pdr-0036</span></li>
+  </ul>
+  <p class="fragment rise-in mt-1">Canal app ↔ backend : WSS maison ou genui_a2a ? <span class="badge badge--proposed">pdr-0045 proposée</span> <span class="badge badge--open">Q-39 ouverte</span></p>
+  <p class="refs">product/decisions : pdr-0007 · pdr-0014 · pdr-0018 · pdr-0023 · pdr-0036 · pdr-0045 · product/roadmap/open-questions.md</p>
+  <aside class="notes">
+    Transition vers la partie projet. Ce que Genesis Canvas applique de ce chapitre, décisions acceptées à date :
+    A2UI v0.9 avec « version » exactement « v0.9 », et genui 0.10.4 figé ; c'est une décision contrainte, qui découle directement des faits vérifiés [pdr-0018-a2ui-v09-genui-0-10-4].
+    Catalogue fermé : l'IA choisit les composants et leurs données, leur apparence vient du thème de scène, jamais de l'IA. C'est le message clé du talk [pdr-0007-closed-catalog-stage-theme]. Le catalogue compte 6 composants [pdr-0014-six-component-catalog].
+    La composition est faite par un LLM guidé par des exemples d'écrans attendus : ni LLM libre, ni plans pré-écrits [pdr-0023-example-guided-composition].
+    Chaque agent A2A produit l'A2UI de ses surfaces ; l'orchestrateur valide contre le catalogue et relaie [pdr-0036-real-a2a-agents-produce-a2ui].
+    Pas encore tranché : le canal entre l'app et le backend. La recommandation est un WSS maison ; le spike SP-03 a montré que genui_a2a fonctionne avec a2a-go, mais la décision appartient au porteur (pdr-0045 proposée, Q-39 ouverte).
+  </aside>
+</section>

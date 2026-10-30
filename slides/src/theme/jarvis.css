@@ -1,0 +1,324 @@
+/* =========================================================================
+   Thème « Jarvis » pour reveal.js — base (couleurs, typographie, chrome).
+   Composants réutilisables : components.css. Coloration du code : code.css.
+   Taille logique des slides : 1600 × 900 (voir src/deck.js).
+   ========================================================================= */
+
+:root {
+  /* Fond */
+  --j-bg: #030810;
+  --j-bg-2: #071423;
+  --j-panel: rgba(8, 26, 44, 0.72);
+  --j-panel-strong: rgba(8, 28, 48, 0.9);
+
+  /* Accents */
+  --j-cyan: #00e5ff;           /* accent principal (holographique) */
+  --j-cyan-soft: #4fc3f7;
+  --j-cyan-dim: rgba(0, 229, 255, 0.35);
+  --j-cyan-faint: rgba(0, 229, 255, 0.12);
+  --j-amber: #ffb300;          /* accent secondaire */
+  --j-amber-dim: rgba(255, 179, 0, 0.35);
+  --j-amber-faint: rgba(255, 179, 0, 0.12);
+  --j-red: #ff4d5e;            /* alerte : à utiliser rarement */
+  --j-red-faint: rgba(255, 77, 94, 0.14);
+  --j-green: #4dffb0;          /* validé (usage ponctuel) */
+
+  /* Texte — contrastes sur --j-bg : text 17:1, muted 9:1, dim 5.6:1 (AA) */
+  --j-text: #e3f7ff;
+  --j-text-muted: #9fc6d6;
+  --j-text-dim: #7c9fb0;
+
+  /* Lueurs */
+  --j-glow: 0 0 6px rgba(0, 229, 255, 0.55), 0 0 22px rgba(0, 229, 255, 0.25);
+  --j-glow-amber: 0 0 6px rgba(255, 179, 0, 0.55), 0 0 22px rgba(255, 179, 0, 0.25);
+  --j-box-glow: 0 0 0 1px rgba(0, 229, 255, 0.25), 0 0 24px rgba(0, 229, 255, 0.12), inset 0 0 30px rgba(0, 229, 255, 0.05);
+
+  /* Typographie */
+  --j-font-title: 'Orbitron', 'Rajdhani', system-ui, sans-serif;
+  --j-font-body: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  --j-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  /* Variables lues par reveal.js */
+  --r-background-color: transparent;
+  --r-main-font: var(--j-font-body);
+  --r-main-font-size: 36px;
+  --r-main-color: var(--j-text);
+  --r-heading-font: var(--j-font-title);
+  --r-heading-color: var(--j-text);
+  --r-link-color: var(--j-cyan);
+  --r-link-color-hover: #8af3ff;
+  --r-selection-background-color: var(--j-cyan);
+  --r-selection-color: #001018;
+  --r-code-font: var(--j-font-mono);
+}
+
+html,
+body {
+  background: var(--j-bg);
+  color: var(--j-text);
+}
+
+/* Canvas animé, derrière tout. */
+#hud-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* Scanlines CSS + léger vignettage, au-dessus du canvas, sous le texte. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 229, 255, 0.025) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+body[data-hud='off']::after,
+body[data-hud='low']::after {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.reveal {
+  z-index: 2;
+  font-family: var(--r-main-font);
+  font-size: var(--r-main-font-size);
+  font-weight: 500;
+  color: var(--r-main-color);
+  background: transparent;
+}
+.reveal-viewport {
+  background: transparent;
+}
+.reveal ::selection {
+  color: var(--r-selection-color);
+  background: var(--r-selection-background-color);
+}
+
+.reveal .slides section,
+.reveal .slides section > section {
+  line-height: 1.3;
+  font-weight: inherit;
+  text-align: left;
+}
+.reveal .slides section.center,
+.reveal .slides section .center {
+  text-align: center;
+}
+
+/* ---- Titres ------------------------------------------------------------- */
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4 {
+  margin: 0 0 0.55em;
+  font-family: var(--r-heading-font);
+  color: var(--r-heading-color);
+  line-height: 1.12;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  word-wrap: break-word;
+}
+.reveal h1 {
+  font-size: 84px;
+  font-weight: 900;
+  text-shadow: var(--j-glow);
+}
+.reveal h2 {
+  font-size: 54px;
+  font-weight: 700;
+  text-shadow: 0 0 18px rgba(0, 229, 255, 0.28);
+}
+/* Soulignement HUD sous les h2 de contenu */
+.reveal .slides section > h2:first-child::after {
+  content: '';
+  display: block;
+  width: 180px;
+  height: 3px;
+  margin-top: 18px;
+  background: linear-gradient(90deg, var(--j-cyan), transparent);
+  box-shadow: 0 0 10px var(--j-cyan-dim);
+}
+.reveal .slides section.center > h2:first-child::after {
+  margin-inline: auto;
+  background: linear-gradient(90deg, transparent, var(--j-cyan), transparent);
+}
+.reveal h3 {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--j-cyan);
+  letter-spacing: 0.06em;
+}
+.reveal h4 {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--j-amber);
+  letter-spacing: 0.12em;
+}
+
+/* ---- Texte ------------------------------------------------------------ */
+.reveal p {
+  margin: 0 0 0.6em;
+  line-height: 1.35;
+}
+.reveal strong,
+.reveal b {
+  font-weight: 700;
+  color: #fff;
+}
+.reveal em {
+  font-style: normal;
+  color: var(--j-cyan);
+}
+.reveal a {
+  color: var(--r-link-color);
+  text-decoration: none;
+  border-bottom: 1px solid var(--j-cyan-dim);
+  transition: color 0.2s ease;
+}
+.reveal a:hover {
+  color: var(--r-link-color-hover);
+  text-shadow: var(--j-glow);
+}
+.reveal small,
+.reveal .small {
+  font-size: 0.72em;
+}
+.reveal code {
+  font-family: var(--r-code-font);
+  font-size: 0.85em;
+  color: #9ff3ff;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 4px;
+  padding: 0.05em 0.3em;
+}
+.reveal pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.reveal img,
+.reveal svg {
+  max-width: 100%;
+}
+
+/* Utilitaires de couleur et de texte */
+.reveal .accent { color: var(--j-cyan); }
+.reveal .amber { color: var(--j-amber); }
+.reveal .alert { color: var(--j-red); }
+.reveal .ok { color: var(--j-green); }
+.reveal .muted { color: var(--j-text-muted); }
+.reveal .dim { color: var(--j-text-dim); }
+.reveal .mono { font-family: var(--j-font-mono); }
+.reveal .title-font { font-family: var(--j-font-title); letter-spacing: 0.05em; }
+.reveal .glow { text-shadow: var(--j-glow); }
+.reveal .glow-amber { text-shadow: var(--j-glow-amber); }
+.reveal .lead { font-size: 1.2em; color: var(--j-text-muted); }
+.reveal .big { font-size: 1.5em; }
+.reveal .upper { text-transform: uppercase; letter-spacing: 0.1em; }
+.reveal .mt-0 { margin-top: 0 !important; }
+.reveal .mt-1 { margin-top: 24px !important; }
+.reveal .mt-2 { margin-top: 48px !important; }
+.reveal .mb-0 { margin-bottom: 0 !important; }
+
+/* ---- Chrome HUD fixe (coins d'écran et libellés) ------------------------ */
+.hud-chrome {
+  position: fixed;
+  inset: 14px;
+  z-index: 3;
+  pointer-events: none;
+  font-family: var(--j-font-title);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--j-text-dim);
+}
+.hud-chrome__corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-color: var(--j-cyan-dim);
+  border-style: solid;
+  border-width: 0;
+}
+.hud-chrome__corner--tl { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; }
+.hud-chrome__corner--tr { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; }
+.hud-chrome__corner--bl { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; }
+.hud-chrome__corner--br { bottom: 0; right: 0; border-bottom-width: 2px; border-right-width: 2px; }
+.hud-chrome__label {
+  position: absolute;
+  white-space: nowrap;
+}
+.hud-chrome__label b { color: var(--j-cyan); font-weight: 500; }
+.hud-chrome__label--tl { top: 10px; left: 48px; }
+.hud-chrome__label--bl { bottom: 10px; left: 48px; }
+@media (max-width: 700px) {
+  .hud-chrome__label { display: none; }
+}
+
+/* ---- Barre de progression, numéro de slide, contrôles ------------------- */
+.reveal .progress {
+  height: 4px;
+  color: var(--j-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  z-index: 4;
+}
+.reveal .progress span {
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.2), var(--j-cyan));
+  box-shadow: 0 0 10px var(--j-cyan), 0 0 22px rgba(0, 229, 255, 0.5);
+}
+.reveal .slide-number {
+  right: 64px;
+  bottom: 22px;
+  padding: 4px 12px;
+  font-family: var(--j-font-title);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--j-cyan);
+  background: rgba(3, 8, 16, 0.7);
+  border: 1px solid var(--j-cyan-dim);
+  border-radius: 0;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.reveal .slide-number a { border: 0; color: inherit; }
+.reveal .slide-number-delimiter { color: var(--j-text-dim); margin: 0 0.3em; }
+.reveal .controls {
+  color: var(--j-cyan);
+  right: 64px;
+  bottom: 64px;
+}
+/* Petits écrans (1280 × 720) : les flèches gardent leur taille en px alors que
+   la slide rétrécit ; on les réduit pour ne pas couvrir le contenu. */
+@media (max-height: 800px) {
+  .reveal .controls {
+    right: 40px;
+    bottom: 40px;
+    transform: scale(0.7);
+    transform-origin: bottom right;
+  }
+}
+
+/* ---- Notes orateur masquées, impression ---------------------------------- */
+.reveal aside.notes { display: none; }
+
+html.print-pdf #hud-bg,
+html.print-pdf .hud-chrome,
+html.print-pdf body::after {
+  display: none;
+}
+html.print-pdf .reveal .slides .pdf-page {
+  background: radial-gradient(ellipse at center, #0a2238 0%, var(--j-bg) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal *,
+  .reveal *::before,
+  .reveal *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,912 @@
+/* =========================================================================
+   Composants réutilisables (documentés dans STYLEGUIDE.md).
+   Toutes les tailles sont exprimées pour la taille logique 1600 × 900.
+   ========================================================================= */
+
+/* ---- 1. Slide de titre de section --------------------------------------- */
+.reveal .slides section.chapter {
+  text-align: center;
+}
+.reveal .chapter .chapter-num {
+  display: inline-block;
+  margin: 0 0 28px;
+  padding: 6px 22px;
+  font-family: var(--j-font-title);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.45em;
+  color: var(--j-amber);
+  border: 1px solid var(--j-amber-dim);
+  background: var(--j-amber-faint);
+  text-shadow: var(--j-glow-amber);
+}
+.reveal .chapter .chapter-num b {
+  font-size: 1.6em;
+  font-weight: 900;
+  color: #ffd166;
+  letter-spacing: 0.1em;
+  margin-left: 0.3em;
+}
+.reveal .chapter h1,
+.reveal .chapter h2 {
+  text-wrap: balance;
+  font-size: 88px;
+  font-weight: 900;
+  margin-bottom: 0.3em;
+  text-shadow: var(--j-glow);
+}
+.reveal .chapter h2::after {
+  display: none !important;
+}
+.reveal .chapter .subtitle {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 38px;
+  color: var(--j-text-muted);
+}
+.reveal .chapter .chapter-rule {
+  width: 520px;
+  height: 2px;
+  margin: 26px auto 30px;
+  background: linear-gradient(90deg, transparent, var(--j-cyan), transparent);
+  box-shadow: 0 0 12px var(--j-cyan);
+}
+
+/* ---- 2. Panneau HUD (coins de cadre) ------------------------------------ */
+.reveal .hud-panel {
+  --c: var(--j-cyan);
+  --c-dim: var(--j-cyan-dim);
+  position: relative;
+  padding: 28px 34px;
+  background: var(--j-panel);
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  box-shadow: var(--j-box-glow);
+  backdrop-filter: blur(2px);
+}
+.reveal .hud-panel::before,
+.reveal .hud-panel::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 0 solid var(--c);
+  filter: drop-shadow(0 0 4px var(--c));
+  pointer-events: none;
+}
+.reveal .hud-panel::before { top: -1px; left: -1px; border-top-width: 3px; border-left-width: 3px; }
+.reveal .hud-panel::after { bottom: -1px; right: -1px; border-bottom-width: 3px; border-right-width: 3px; }
+.reveal .hud-panel--amber { --c: var(--j-amber); --c-dim: var(--j-amber-dim); border-color: rgba(255, 179, 0, 0.22); }
+.reveal .hud-panel--alert { --c: var(--j-red); border-color: rgba(255, 77, 94, 0.3); background: rgba(40, 8, 14, 0.7); }
+.reveal .hud-panel > :last-child { margin-bottom: 0; }
+.reveal .panel-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  font-family: var(--j-font-title);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--c, var(--j-cyan));
+}
+.reveal .panel-title::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  transform: rotate(45deg);
+}
+
+/* ---- 3. Grilles ---------------------------------------------------------- */
+.reveal .grid-2,
+.reveal .grid-3,
+.reveal .grid-4 {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+}
+.reveal .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.reveal .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.reveal .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.reveal .grid-1-2 { display: grid; gap: 32px; grid-template-columns: 1fr 2fr; align-items: start; }
+.reveal .grid-2-1 { display: grid; gap: 32px; grid-template-columns: 2fr 1fr; align-items: start; }
+.reveal .stretch-items { align-items: stretch; }
+.reveal .center-items { align-items: center; }
+
+/* ---- 4. Cartes ----------------------------------------------------------- */
+.reveal .card {
+  --c: var(--j-cyan);
+  position: relative;
+  height: 100%;
+  padding: 26px 28px 24px;
+  background: linear-gradient(160deg, rgba(10, 34, 56, 0.85), rgba(4, 14, 26, 0.85));
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-top: 3px solid var(--c);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  box-sizing: border-box;
+}
+.reveal .card--amber { --c: var(--j-amber); }
+.reveal .card--alert { --c: var(--j-red); }
+.reveal .card h3 {
+  margin-bottom: 0.4em;
+  font-size: 28px;
+  color: var(--c);
+}
+.reveal .card p,
+.reveal .card li {
+  font-size: 28px;
+  color: var(--j-text);
+}
+.reveal .card > :last-child { margin-bottom: 0; }
+.reveal .card .card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 14px;
+  font-family: var(--j-font-title);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--c);
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent);
+}
+
+/* ---- 5. Puces stylées ---------------------------------------------------- */
+.reveal ul,
+.reveal ol {
+  display: block;
+  margin: 0 0 0.6em;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.reveal ul > li,
+.reveal ol > li {
+  position: relative;
+  margin: 0 0 0.45em;
+  padding-left: 1.3em;
+  line-height: 1.3;
+}
+.reveal ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0.15em;
+  top: 0.5em;
+  width: 0.42em;
+  height: 0.42em;
+  border: 2px solid var(--j-cyan);
+  background: var(--j-cyan-faint);
+  box-shadow: 0 0 8px var(--j-cyan-dim);
+  transform: rotate(45deg);
+}
+.reveal ul ul,
+.reveal ol ol {
+  margin: 0.35em 0 0.2em;
+  font-size: 0.85em;
+}
+.reveal ul ul > li::before {
+  width: 0.5em;
+  height: 2px;
+  top: 0.68em;
+  border: 0;
+  background: var(--j-cyan-soft);
+  transform: none;
+}
+.reveal ol {
+  counter-reset: j-ol;
+}
+.reveal ol > li {
+  counter-increment: j-ol;
+  padding-left: 1.8em;
+}
+.reveal ol > li::before {
+  content: counter(j-ol, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.12em;
+  font-family: var(--j-font-title);
+  font-size: 0.7em;
+  font-weight: 700;
+  color: var(--j-amber);
+  text-shadow: var(--j-glow-amber);
+}
+.reveal ul.amber-list > li::before { border-color: var(--j-amber); background: var(--j-amber-faint); box-shadow: 0 0 8px var(--j-amber-dim); }
+.reveal ul.check-list > li::before { content: '✓'; border: 0; background: none; box-shadow: none; transform: none; width: auto; height: auto; top: 0; color: var(--j-green); font-weight: 700; }
+.reveal ul.cross-list > li::before { content: '✕'; border: 0; background: none; box-shadow: none; transform: none; width: auto; height: auto; top: 0; color: var(--j-red); font-weight: 700; }
+.reveal ul.plain > li { padding-left: 0; }
+.reveal ul.plain > li::before { display: none; }
+.reveal .compact > li { margin-bottom: 0.2em; }
+
+/* ---- 6. Badges / tags ---------------------------------------------------- */
+.reveal .badge {
+  --c: var(--j-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.12em 0.6em;
+  font-family: var(--j-font-title);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+  color: var(--c);
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+.reveal .badge::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+.reveal .badge--verified { --c: var(--j-green); }
+.reveal .badge--accepted { --c: var(--j-cyan); }
+.reveal .badge--proposed { --c: var(--j-amber); }
+.reveal .badge--open { --c: var(--j-red); }
+.reveal .badge--opinion { --c: var(--j-text-muted); }
+.reveal .badge--neutral { --c: var(--j-cyan-soft); }
+.reveal .badge--plain::before { display: none; }
+
+/* Référence de source (id de note knowledge/ ou document product/) */
+.reveal .refs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  margin: 0;
+  font-family: var(--j-font-mono);
+  font-size: 16px;
+  color: var(--j-text-dim);
+  text-align: left;
+}
+/* Réserve la place de la ligne de sources (absolue) sous le contenu centré */
+.reveal .slides section:has(> .refs) {
+  padding-bottom: 48px;
+}
+.reveal .refs::before {
+  content: 'SRC // ';
+  color: var(--j-cyan);
+}
+
+/* ---- 7. KPI -------------------------------------------------------------- */
+.reveal .kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+}
+.reveal .kpi {
+  --c: var(--j-cyan);
+  min-width: 260px;
+  padding: 22px 30px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--c) 14%, transparent), transparent 70%);
+}
+.reveal .kpi--amber { --c: var(--j-amber); }
+.reveal .kpi--alert { --c: var(--j-red); }
+.reveal .kpi-value {
+  display: block;
+  font-family: var(--j-font-title);
+  font-size: 76px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--c);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.reveal .kpi-value small {
+  font-size: 0.42em;
+  font-weight: 500;
+  margin-left: 0.15em;
+}
+.reveal .kpi-label {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--j-text-muted);
+}
+
+/* ---- 8. Timeline horizontale -------------------------------------------- */
+.reveal .timeline {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 20px;
+  padding-top: 64px;
+}
+.reveal .timeline::before {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--j-cyan) 6%, var(--j-cyan) 94%, transparent);
+  box-shadow: 0 0 10px var(--j-cyan-dim);
+}
+.reveal .tl-item {
+  position: relative;
+  padding-top: 8px;
+}
+.reveal .tl-item::before {
+  content: '';
+  position: absolute;
+  top: -46px;
+  left: 6px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--j-cyan);
+  background: var(--j-bg);
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px var(--j-cyan);
+}
+.reveal .tl-item::after {
+  content: '';
+  position: absolute;
+  top: -26px;
+  left: 15px;
+  width: 1px;
+  height: 26px;
+  background: var(--j-cyan-dim);
+}
+.reveal .tl-date {
+  display: block;
+  font-family: var(--j-font-title);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--j-amber);
+}
+.reveal .tl-title {
+  display: block;
+  margin: 6px 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--j-text);
+}
+.reveal .tl-text {
+  display: block;
+  font-size: 23px;
+  line-height: 1.3;
+  color: var(--j-text-muted);
+}
+.reveal .tl-item.is-now::before {
+  background: var(--j-amber);
+  border-color: var(--j-amber);
+  box-shadow: 0 0 14px var(--j-amber);
+}
+.reveal .tl-item.is-future { opacity: 0.75; }
+.reveal .tl-item.is-future::before { border-style: dashed; box-shadow: none; }
+
+/* ---- 9. Diagramme boîtes et flèches (HTML/CSS) --------------------------- */
+.reveal .flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+.reveal .flow--vertical { flex-direction: column; }
+.reveal .node {
+  --c: var(--j-cyan);
+  position: relative;
+  min-width: 180px;
+  padding: 18px 22px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  background: var(--j-panel-strong);
+  border: 2px solid var(--c);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 30%, transparent), inset 0 0 18px color-mix(in srgb, var(--c) 10%, transparent);
+}
+.reveal .node small {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--j-text-muted);
+  font-family: var(--j-font-mono);
+}
+.reveal .node--amber { --c: var(--j-amber); }
+.reveal .node--alert { --c: var(--j-red); }
+.reveal .node--ghost { --c: var(--j-text-dim); border-style: dashed; box-shadow: none; }
+.reveal .node--round { border-radius: 999px; }
+
+/* Flèche horizontale avec flux de données animé */
+.reveal .arrow {
+  --c: var(--j-cyan);
+  position: relative;
+  flex: 1 1 90px;
+  min-width: 90px;
+  height: 4px;
+  margin: 0 6px;
+  background:
+    repeating-linear-gradient(90deg, var(--c) 0 10px, transparent 10px 22px);
+  background-size: 22px 100%;
+  animation: j-flow-x 0.8s linear infinite;
+  filter: drop-shadow(0 0 4px var(--c));
+}
+.reveal .arrow::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  border: 10px solid transparent;
+  border-left: 14px solid var(--c);
+  border-right: 0;
+  transform: translateY(-50%);
+}
+.reveal .arrow--back { animation-direction: reverse; }
+.reveal .arrow--back::after { right: auto; left: -4px; border-left: 0; border-right: 14px solid var(--c); }
+.reveal .arrow--both::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  border: 10px solid transparent;
+  border-right: 14px solid var(--c);
+  border-left: 0;
+  transform: translateY(-50%);
+}
+.reveal .arrow--amber { --c: var(--j-amber); }
+.reveal .arrow--static { animation: none; }
+.reveal .arrow-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--j-font-mono);
+  font-size: 18px;
+  color: var(--j-text-muted);
+}
+.reveal .arrow-label--below { bottom: auto; top: 14px; }
+/* Flèche verticale (dans .flow--vertical) */
+.reveal .flow--vertical .arrow {
+  flex: 0 0 60px;
+  width: 4px;
+  height: auto;
+  min-width: 0;
+  min-height: 60px;
+  margin: 6px 0;
+  background: repeating-linear-gradient(180deg, var(--c) 0 10px, transparent 10px 22px);
+  background-size: 100% 22px;
+  animation-name: j-flow-y;
+}
+.reveal .flow--vertical .arrow::after {
+  right: auto;
+  top: auto;
+  left: 50%;
+  bottom: -4px;
+  border: 10px solid transparent;
+  border-top: 14px solid var(--c);
+  border-bottom: 0;
+  transform: translateX(-50%);
+}
+.reveal .flow--vertical .arrow-label {
+  bottom: auto;
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+}
+
+@keyframes j-flow-x { to { background-position: 22px 0; } }
+@keyframes j-flow-y { to { background-position: 0 22px; } }
+
+/* Diagramme SVG inline : classes à poser sur les éléments SVG */
+.reveal svg.diagram { overflow: visible; font-family: var(--j-font-body); }
+.reveal svg.diagram .d-node { fill: rgba(8, 28, 48, 0.92); stroke: var(--j-cyan); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.45)); }
+.reveal svg.diagram .d-node--amber { stroke: var(--j-amber); filter: drop-shadow(0 0 6px rgba(255, 179, 0, 0.45)); }
+.reveal svg.diagram .d-node--ghost { stroke: var(--j-text-dim); stroke-dasharray: 6 6; filter: none; }
+.reveal svg.diagram .d-zone { fill: rgba(0, 229, 255, 0.03); stroke: var(--j-cyan-dim); stroke-width: 1.5; stroke-dasharray: 2 8; }
+.reveal svg.diagram .d-label { fill: var(--j-text); font-size: 26px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+.reveal svg.diagram .d-sub { fill: var(--j-text-muted); font-family: var(--j-font-mono); font-size: 16px; text-anchor: middle; dominant-baseline: middle; }
+.reveal svg.diagram .d-zone-label { fill: var(--j-cyan); font-family: var(--j-font-title); font-size: 16px; letter-spacing: 0.2em; }
+.reveal svg.diagram .d-link { fill: none; stroke: var(--j-cyan); stroke-width: 2.5; stroke-dasharray: 10 10; animation: j-dash 0.9s linear infinite; }
+.reveal svg.diagram .d-link--amber { stroke: var(--j-amber); }
+.reveal svg.diagram .d-link--static { animation: none; stroke-dasharray: none; }
+.reveal svg.diagram .d-link--back { animation-direction: reverse; }
+.reveal svg.diagram .d-link-label { fill: var(--j-text-muted); font-family: var(--j-font-mono); font-size: 16px; text-anchor: middle; }
+/* Halo de la couleur du fond : un libellé posé sur un trait reste lisible. */
+.reveal svg.diagram .d-link-label,
+.reveal svg.diagram .d-sub { paint-order: stroke; stroke: var(--j-bg); stroke-width: 6px; stroke-linejoin: round; }
+.reveal svg.diagram .d-arrowhead { fill: var(--j-cyan); }
+.reveal svg.diagram .d-arrowhead--amber { fill: var(--j-amber); }
+.reveal svg.diagram .d-packet { fill: #fff; filter: drop-shadow(0 0 6px var(--j-cyan)); }
+@keyframes j-dash { to { stroke-dashoffset: -20; } }
+
+/* ---- 10. Diagramme de séquence ------------------------------------------ */
+/* Usage : <div class="seq" style="--n:4"> ; chaque .seq-msg porte --from et --to (1..n). */
+.reveal .seq {
+  --n: 3;
+  --line: rgba(0, 229, 255, 0.35);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  row-gap: 0;
+}
+.reveal .seq-actor {
+  margin: 0 12px 10px;
+  padding: 12px 10px;
+  text-align: center;
+  font-family: var(--j-font-title);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--j-cyan);
+  border: 2px solid var(--j-cyan);
+  background: var(--j-panel-strong);
+  box-shadow: 0 0 12px var(--j-cyan-dim);
+}
+.reveal .seq-actor--amber { color: var(--j-amber); border-color: var(--j-amber); box-shadow: 0 0 12px var(--j-amber-dim); }
+.reveal .seq-body {
+  position: relative;
+  grid-column: 1 / -1;
+  padding: 6px 0 14px;
+  /* lignes de vie au centre de chaque colonne */
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(50% / var(--n) - 1px),
+    var(--line) calc(50% / var(--n) - 1px),
+    var(--line) calc(50% / var(--n) + 1px),
+    transparent calc(50% / var(--n) + 1px),
+    transparent calc(100% / var(--n))
+  );
+}
+.reveal .seq-msg {
+  --from: 1;
+  --to: 2;
+  --c: var(--j-cyan);
+  position: relative;
+  height: 64px;
+}
+.reveal .seq-msg::before {
+  /* la ligne */
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  left: calc((min(var(--from), var(--to)) - 0.5) / var(--n) * 100%);
+  width: calc((max(var(--from), var(--to)) - min(var(--from), var(--to))) / var(--n) * 100%);
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--c) 0 10px, transparent 10px 16px);
+  background-size: 16px 100%;
+  animation: j-flow-seq 0.8s linear infinite;
+  filter: drop-shadow(0 0 4px var(--c));
+}
+.reveal .seq-msg::after {
+  /* la pointe, côté --to (sens gauche → droite par défaut) */
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: calc((max(var(--from), var(--to)) - 0.5) / var(--n) * 100% - 14px);
+  border: 7.5px solid transparent;
+  border-left: 14px solid var(--c);
+  border-right: 0;
+}
+.reveal .seq-msg.is-back::before { animation-direction: reverse; }
+.reveal .seq-msg.is-back::after {
+  left: calc((min(var(--from), var(--to)) - 0.5) / var(--n) * 100%);
+  border-left: 0;
+  border-right: 14px solid var(--c);
+}
+.reveal .seq-msg.is-reply { --c: var(--j-amber); }
+.reveal .seq-msg.is-reply::before { background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 10px); background-size: 10px 100%; }
+.reveal .seq-label {
+  position: absolute;
+  bottom: 22px;
+  left: calc((min(var(--from), var(--to)) - 0.5) / var(--n) * 100%);
+  width: calc((max(var(--from), var(--to)) - min(var(--from), var(--to))) / var(--n) * 100%);
+  text-align: center;
+  font-family: var(--j-font-mono);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--j-text);
+  white-space: nowrap;
+}
+.reveal .seq-note {
+  position: relative;
+  margin: 6px auto;
+  width: fit-content;
+  padding: 4px 14px;
+  font-size: 20px;
+  color: var(--j-amber);
+  border: 1px dashed var(--j-amber-dim);
+  background: rgba(3, 8, 16, 0.9);
+}
+@keyframes j-flow-seq { to { background-position: 16px 0; } }
+
+/* ---- 11. Tableau comparatif --------------------------------------------- */
+.reveal table.compare {
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 26px;
+}
+.reveal table.compare th,
+.reveal table.compare td {
+  padding: 12px 18px;
+  text-align: left;
+  vertical-align: top;
+  border: 0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+}
+.reveal table.compare thead th {
+  font-family: var(--j-font-title);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--j-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border-bottom: 2px solid var(--j-cyan);
+}
+.reveal table.compare tbody th {
+  font-weight: 700;
+  color: var(--j-text);
+}
+.reveal table.compare tbody tr:nth-child(even) td,
+.reveal table.compare tbody tr:nth-child(even) th {
+  background: rgba(0, 229, 255, 0.03);
+}
+.reveal table.compare .hl {
+  background: rgba(255, 179, 0, 0.08) !important;
+  box-shadow: inset 2px 0 0 var(--j-amber-dim), inset -2px 0 0 var(--j-amber-dim);
+}
+.reveal table.compare thead .hl { color: var(--j-amber); border-bottom-color: var(--j-amber); }
+.reveal table.compare .yes::before { content: '✓ '; color: var(--j-green); font-weight: 700; }
+.reveal table.compare .no::before { content: '✕ '; color: var(--j-red); font-weight: 700; }
+.reveal table.compare .partial::before { content: '◐ '; color: var(--j-amber); }
+
+/* ---- 12. Bloc de code ---------------------------------------------------- */
+.reveal pre {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 0.6em;
+  font-family: var(--j-font-mono);
+  font-size: 22px;
+  line-height: 1.5;
+  text-align: left;
+  background: rgba(2, 10, 20, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-left: 3px solid var(--j-cyan);
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.1);
+  word-wrap: normal;
+}
+.reveal pre[data-title] {
+  padding-top: 36px;
+}
+.reveal pre[data-title]::before {
+  content: attr(data-title);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 16px;
+  font-family: var(--j-font-title);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--j-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+}
+.reveal pre code {
+  display: block;
+  max-height: 560px;
+  padding: 18px 22px;
+  overflow: auto;
+  font-size: inherit;
+  color: #cfefff;
+}
+/* Étapes data-line-numbers="1|3-5" : reveal clone le <code> et empile les
+   copies en absolu. Fond opaque (sinon les étapes se superposent) et décalage
+   sous la barre de titre. */
+.reveal pre code.hljs:not(:first-child).fragment {
+  background: #020a14;
+}
+.reveal pre[data-title] code.hljs:not(:first-child).fragment {
+  top: 36px;
+  bottom: 0;
+  min-height: 0;
+}
+
+/* ---- 13. Citation -------------------------------------------------------- */
+.reveal blockquote,
+.reveal .quote {
+  position: relative;
+  width: auto;
+  max-width: 1200px;
+  margin: 0 auto 0.6em;
+  padding: 30px 40px 30px 70px;
+  font-size: 38px;
+  font-style: normal;
+  line-height: 1.35;
+  color: var(--j-text);
+  background: linear-gradient(90deg, rgba(255, 179, 0, 0.08), transparent);
+  border-left: 3px solid var(--j-amber);
+  box-shadow: none;
+}
+.reveal blockquote::before {
+  content: '«';
+  position: absolute;
+  left: 18px;
+  top: 6px;
+  font-family: var(--j-font-title);
+  font-size: 72px;
+  color: var(--j-amber);
+  text-shadow: var(--j-glow-amber);
+}
+.reveal blockquote p { margin: 0; }
+.reveal blockquote cite,
+.reveal blockquote footer {
+  display: block;
+  margin-top: 14px;
+  font-size: 22px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: var(--j-text-muted);
+}
+.reveal blockquote cite::before,
+.reveal blockquote footer::before { content: '— '; color: var(--j-amber); }
+
+/* ---- 14. Fragments stylés ----------------------------------------------- */
+/* Apparition avec flash lumineux */
+.reveal .slides section .fragment.glow-in {
+  opacity: 0;
+  visibility: hidden;
+  filter: brightness(2.2) blur(3px);
+  transition: opacity 0.45s ease, filter 0.6s ease, visibility 0s linear 0.45s;
+}
+.reveal .slides section .fragment.glow-in.visible {
+  opacity: 1;
+  visibility: inherit;
+  filter: none;
+  transition: opacity 0.45s ease, filter 0.6s ease;
+}
+/* Balayage de gauche à droite (effet scanner) */
+.reveal .slides section .fragment.scan-in {
+  opacity: 1;
+  visibility: hidden;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0.6s;
+}
+.reveal .slides section .fragment.scan-in.visible {
+  visibility: inherit;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* Montée depuis le bas avec lueur */
+.reveal .slides section .fragment.rise-in {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(24px);
+  transition: all 0.45s ease;
+}
+.reveal .slides section .fragment.rise-in.visible {
+  opacity: 1;
+  visibility: inherit;
+  transform: none;
+}
+/* Surlignages (l'élément est visible dès le départ) */
+.reveal .slides section .fragment.hl-cyan,
+.reveal .slides section .fragment.hl-amber,
+.reveal .slides section .fragment.hl-alert {
+  opacity: 1;
+  visibility: inherit;
+  transition: color 0.3s ease, text-shadow 0.3s ease, background 0.3s ease;
+}
+.reveal .slides section .fragment.hl-cyan.visible { color: var(--j-cyan); text-shadow: var(--j-glow); }
+.reveal .slides section .fragment.hl-amber.visible { color: var(--j-amber); text-shadow: var(--j-glow-amber); }
+.reveal .slides section .fragment.hl-alert.visible { color: var(--j-red); text-shadow: 0 0 10px rgba(255, 77, 94, 0.6); }
+/* Atténuer ce qui précède le fragment courant */
+.reveal .slides section .fragment.dim-after.visible:not(.current-fragment) {
+  opacity: 0.4;
+}
+
+/* ---- 15. Mise en page utilitaire ---------------------------------------- */
+.reveal .stack > * + * { margin-top: 24px; }
+.reveal .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.reveal .row.center { justify-content: center; }
+.reveal .divider {
+  height: 1px;
+  margin: 28px 0;
+  border: 0;
+  background: linear-gradient(90deg, var(--j-cyan-dim), transparent);
+}
+.reveal .eyebrow {
+  margin: 0 0 12px;
+  font-family: var(--j-font-title);
+  font-size: 18px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--j-amber);
+}
+/* Portrait / avatar circulaire (image locale uniquement) */
+.reveal .avatar {
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--j-cyan);
+  box-shadow: 0 0 0 8px rgba(0, 229, 255, 0.08), 0 0 30px var(--j-cyan-dim);
+}
+
+/* Slide orateur + projet : fiche à gauche, trois questions à droite */
+.reveal .intro-split {
+  display: grid;
+  grid-template-columns: 520px 1fr;
+  gap: 40px;
+  align-items: stretch;
+  text-align: left;
+}
+.reveal .intro-split .speaker { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.reveal .intro-split .speaker ul { width: 100%; margin-top: 0; font-size: 25px; }
+.reveal .intro-split .speaker li + li { margin-top: 10px; }
+.reveal .intro-split .stack { display: flex; flex-direction: column; gap: 14px; }
+.reveal .intro-split .stack .lead { font-size: 28px; }
+.reveal .intro-split .card { padding: 14px 22px; }
+.reveal .intro-split .card h3 { margin: 0 0 4px; display: flex; align-items: center; gap: 14px; }
+.reveal .intro-split .card .card-icon { position: static; margin: 0; }
+.reveal .intro-split .card p { margin: 0; }
+
+/* Portrait dans un réticule HUD (anneaux en rotation) */
+.reveal .portrait {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  margin: 22px auto 40px;
+}
+.reveal .portrait img {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+  object-position: 50% 20%;
+  border-radius: 50%;
+  border: 3px solid var(--j-cyan);
+  background: radial-gradient(circle at 50% 40%, rgba(0, 229, 255, 0.25), rgba(0, 20, 40, 0.9));
+  box-shadow: 0 0 30px var(--j-cyan-dim);
+}
+.reveal .portrait::before,
+.reveal .portrait::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.reveal .portrait::before {
+  inset: -14px;
+  border: 2px dashed rgba(0, 229, 255, 0.55);
+  animation: portrait-spin 24s linear infinite;
+}
+.reveal .portrait::after {
+  inset: -26px;
+  border: 2px solid transparent;
+  border-top-color: var(--j-amber);
+  border-bottom-color: var(--j-amber);
+  animation: portrait-spin 9s linear infinite reverse;
+}
+@keyframes portrait-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .reveal .portrait::before, .reveal .portrait::after { animation: none; }
+}

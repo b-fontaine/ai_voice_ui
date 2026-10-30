@@ -1,0 +1,592 @@
+<!-- ================================================================
+     Chapitre 05 — Genesis Canvas sous le capot
+     Sources : product/ (pdr-*, Q-xx, architecture/, functional/, roadmap/),
+     knowledge/ (ids entre crochets), specs/001-sp-03-a2a-go-genui, tools/loop/.
+     État décrit : 29/10/2026 (cadrage + spikes). À relire avant le talk.
+     ================================================================ -->
+
+<!-- 00 · Titre de chapitre -->
+<section id="p05-00" class="chapter" data-hud="high">
+  <p class="chapter-num">Chapitre <b>05</b></p>
+  <h2>Genesis Canvas sous le capot</h2>
+  <div class="chapter-rule"></div>
+  <p class="subtitle">Écran, actes, architecture technique et agentique, flux de données, méthode</p>
+  <aside class="notes">
+    Dernière partie : on ouvre le capot du projet qui sert de fil rouge. Genesis Canvas est un livrable de conférence, pas un produit de production [pdr-0001-conference-demo-deliverable].
+    Le cas d'usage est Release Copilot : décider go / no-go pour la release 3.4 d'une app mobile fictive face à la 3.3, sur des données fictives figées [pdr-0003-use-case-release-copilot] [pdr-0005-frozen-fictional-dataset] [pdr-0034-app-name-release-copilot].
+    Message du talk, tiré de la fiche produit : l'agent ne génère pas du code, il génère de la donnée d'interface ; le développeur Flutter garde la main sur le rendu via son catalogue [p-readme].
+    Important : tout ce qui suit décrit l'état du dépôt au 29 octobre, en phase de cadrage et de spikes. Je signale à chaque fois ce qui est décidé, proposé ou encore ouvert.
+  </aside>
+</section>
+
+<!-- 01 · L'écran unique -->
+<section id="p05-01" data-hud="low">
+  <p class="eyebrow">Fonctionnel · pdr-0008</p>
+  <h2>Un écran, six zones</h2>
+  <svg class="diagram" viewBox="0 0 1440 470" width="1440" height="470" role="img" aria-label="Écran unique en six zones">
+    <rect class="d-zone" x="4" y="4" width="1432" height="462" rx="6" />
+    <!-- Barre supérieure -->
+    <g class="fragment rise-in" data-fragment-index="1">
+      <rect class="d-node d-node--amber" x="24" y="20" width="1392" height="80" rx="4" />
+      <circle class="d-node d-node--amber" cx="80" cy="60" r="26" />
+      <text class="d-label" x="560" y="50">Barre supérieure</text>
+      <text class="d-sub" x="560" y="80">orbe vocal · transcription speaker + IA · forme d'onde</text>
+    </g>
+    <!-- Canevas -->
+    <g class="fragment rise-in" data-fragment-index="1">
+      <rect class="d-node" x="292" y="118" width="760" height="250" rx="4" />
+      <rect class="d-node d-node--ghost" x="312" y="138" width="350" height="70" rx="4" />
+      <rect class="d-node d-node--ghost" x="682" y="138" width="350" height="70" rx="4" />
+      <rect class="d-node d-node--ghost" x="312" y="278" width="350" height="70" rx="4" />
+      <rect class="d-node d-node--ghost" x="682" y="278" width="350" height="70" rx="4" />
+      <text class="d-label" x="672" y="228">Canevas génératif</text>
+      <text class="d-sub" x="672" y="258">6 surfaces au plus · squelette → composants → données</text>
+    </g>
+    <!-- Rail des agents -->
+    <g class="fragment rise-in" data-fragment-index="2">
+      <rect class="d-node" x="24" y="118" width="250" height="250" rx="4" />
+      <text class="d-label" x="149" y="220">Rail</text>
+      <text class="d-label" x="149" y="252">des agents</text>
+      <text class="d-sub" x="149" y="296">actifs / en veille</text>
+    </g>
+    <!-- Flux du protocole -->
+    <g class="fragment rise-in" data-fragment-index="3">
+      <rect class="d-node" x="1070" y="118" width="346" height="250" rx="4" />
+      <text class="d-label" x="1243" y="220">Flux du protocole</text>
+      <text class="d-sub" x="1243" y="260">messages A2UI bruts</text>
+      <text class="d-sub" x="1243" y="286">reliés au composant</text>
+    </g>
+    <!-- Étagère -->
+    <g class="fragment rise-in" data-fragment-index="4">
+      <rect class="d-node" x="292" y="386" width="760" height="64" rx="4" />
+      <text class="d-label" x="672" y="418">Étagère du catalogue · 6 composants</text>
+      <rect class="d-node d-node--ghost" x="24" y="386" width="250" height="64" rx="4" />
+      <text class="d-sub" x="149" y="418">1920 × 1080 · desktop</text>
+    </g>
+    <!-- Rejeu -->
+    <g class="fragment rise-in" data-fragment-index="5">
+      <rect class="d-node d-node--amber" x="1070" y="386" width="346" height="64" rx="4" />
+      <text class="d-label" x="1243" y="418">Rejeu</text>
+    </g>
+  </svg>
+  <p class="small mt-1">Orbe : <span class="badge badge--neutral badge--plain">repos</span> <span class="badge badge--neutral badge--plain">écoute</span> <span class="badge badge--neutral badge--plain">réflexion</span> <span class="badge badge--neutral badge--plain">parole</span> <span class="badge badge--neutral badge--plain">interrompue</span> <span class="badge badge--neutral badge--plain">micro coupé</span></p>
+  <p class="refs">p-fn-screen · pdr-0008 · pdr-0015 · pdr-0019 · pdr-0026 · [rt-barge-in]</p>
+  <aside class="notes">
+    L'écran est unique et projeté en 1920×1080 : il montre en même temps le résultat, le canevas, et sa fabrication, c'est-à-dire les agents, le protocole et le catalogue [pdr-0008-single-screen-show-the-making] [p-fn-screen] [pdr-0026-desktop-only-target].
+    Barre supérieure : l'orbe vocal et la transcription des deux voix en direct ; une réplique de l'IA coupée est tronquée [pdr-0025-top-bar-speaker-and-ai-lines].
+    Le canevas accueille 6 surfaces au plus ; la limite porte sur les surfaces, pas sur les composants [pdr-0019-six-limit-applies-to-surfaces]. La mise en page est tenue par l'app, pas par l'IA [pdr-0015-app-held-canvas-layout].
+    Le rail montre quels agents l'orchestrateur a choisis [pdr-0013-orchestrator-visible-agent-selection] ; le flux du protocole montre les messages A2UI, reliés au composant qu'ils construisent.
+    La disposition dessinée ici est indicative : la position de l'orbe et l'état affiché pendant le travail des agents sont la question ouverte Q-30, la visibilité de la zone Rejeu est Q-31.
+    GPT-Live n'émet aucun événement d'interruption : l'état « interrompue » devra être inféré côté app [rt-barge-in], méthode encore ouverte (Q-40).
+  </aside>
+</section>
+
+<!-- 02 · Les actes -->
+<section id="p05-02">
+  <p class="eyebrow">Scénario · pdr-0004 · pdr-0032</p>
+  <h2>Trois actes et un rejeu</h2>
+  <div class="timeline mt-1">
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 1 · créer</span>
+      <span class="tl-title">« Prépare la release 3.4 »</span>
+      <span class="tl-text">4 surfaces : indicateur clé, courbe, sentiment des avis, checklist</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 2 · transformer</span>
+      <span class="tl-title">« Concentre-toi sur Android »</span>
+      <span class="tl-text">Comparaison avec la 3.3 : les surfaces mutent sur place</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 3 · interagir</span>
+      <span class="tl-title">Clic « Bloquer la release »</span>
+      <span class="tl-text">Checklist « Bloquée », confirmation à la voix</span>
+    </div>
+    <div class="tl-item is-now fragment rise-in">
+      <span class="tl-date">Acte 4 · rejeu</span>
+      <span class="tl-title">Le flux A2UI rejoué</span>
+      <span class="tl-text">L'acte 1 au ralenti, synchronisé avec le JSON, sans réseau</span>
+    </div>
+  </div>
+  <div class="kpi-row mt-2 fragment glow-in">
+    <div class="kpi"><span class="kpi-value">&lt; 1<small>s</small></span><span class="kpi-label">réponse vocale · NFR-01</span></div>
+    <div class="kpi"><span class="kpi-value">&lt; 1,5<small>s</small></span><span class="kpi-label">squelette · NFR-02</span></div>
+    <div class="kpi kpi--amber"><span class="kpi-value">&lt; 8<small>s</small></span><span class="kpi-label">acte 1 complet · NFR-03</span></div>
+  </div>
+  <p class="refs">pdr-0004 · pdr-0020 · pdr-0024 · pdr-0016 · pdr-0032 · p-ar-overview</p>
+  <aside class="notes">
+    Le MVP tient en trois actes, créer, transformer, interagir, plus un acte 4 de rejeu [pdr-0004-mvp-three-acts].
+    Acte 1 : quatre surfaces, indicateur clé, courbe de tendance, sentiment des avis et checklist go / no-go [pdr-0020-act1-four-surfaces].
+    Acte 2 : « Concentre-toi sur Android et compare avec la 3.3 ». On ne recrée rien, les surfaces existantes mutent sur place, et toutes les données affichées concernent Android [pdr-0024-act2-android-only]. Savoir si l'acte 2 peut retirer une surface reste ouvert (Q-21).
+    Acte 3 : le clic part vers un agent, le vrai résultat met à jour la checklist et la voix confirme ; « Valider la release » se comporte de la même façon [pdr-0016-validate-release-action].
+    Acte 4 : on rejoue le flux A2UI seul ; le secours en cas de panne est une vidéo que je gère, pas un mode de l'app [pdr-0032-obs-video-fallback-a2ui-replay-act].
+    Les trois chiffres sont des exigences de la fiche, pas des mesures : elles seront mesurées sur l'horloge de l'app [pdr-0038-latency-measured-on-app-clock] [p-ar-overview].
+  </aside>
+</section>
+
+<!-- 03 · Architecture technique C4 -->
+<section id="p05-03" data-hud="low">
+  <p class="eyebrow">Architecture technique · C4 niveau 2</p>
+  <h2>Qui tourne où</h2>
+  <svg class="diagram" viewBox="0 0 1440 560" width="1440" height="560" role="img" aria-label="Conteneurs : app Flutter, backend Go en docker compose, OpenAI">
+    <defs>
+      <marker id="s05-c4-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s05-c4-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+    <!-- Zone app -->
+    <rect class="d-zone" x="10" y="60" width="420" height="490" rx="6" />
+    <text class="d-zone-label" x="28" y="88">MACHINE LINUX · APP FLUTTER</text>
+    <rect class="d-node" x="40" y="110" width="360" height="80" rx="4" />
+    <text class="d-label" x="220" y="140">Shell 6 zones</text>
+    <text class="d-sub" x="220" y="170">Clean + FSD · Bloc</text>
+    <rect class="d-node" x="40" y="210" width="360" height="80" rx="4" />
+    <text class="d-label" x="220" y="240">voice-session</text>
+    <text class="d-sub" x="220" y="270">flutter_webrtc · micro unique</text>
+    <rect class="d-node" x="40" y="330" width="360" height="80" rx="4" />
+    <text class="d-label" x="220" y="360">Rendu GenUI</text>
+    <text class="d-sub" x="220" y="390">catalogue genesis</text>
+    <rect class="d-node d-node--ghost" x="40" y="440" width="360" height="80" rx="4" />
+    <text class="d-label" x="220" y="470">Journal + rejeu</text>
+    <text class="d-sub" x="220" y="500">lecture locale</text>
+
+    <!-- Zone backend -->
+    <rect class="d-zone" x="500" y="60" width="560" height="490" rx="6" />
+    <text class="d-zone-label" x="518" y="88">DOCKER COMPOSE · 127.0.0.1</text>
+    <rect class="d-node d-node--amber" x="540" y="110" width="480" height="200" rx="4" />
+    <text class="d-label" x="780" y="145">Orchestrateur Go</text>
+    <text class="d-sub" x="780" y="180">hexagonal · relais SDP · sideband</text>
+    <text class="d-sub" x="780" y="206">validation A2UI · app-channel</text>
+    <text class="d-sub" x="780" y="250">clé OpenAI : .env côté backend</text>
+    <rect class="d-node" x="540" y="420" width="145" height="100" rx="4" />
+    <text class="d-label" x="612" y="458">Qualité</text>
+    <text class="d-sub" x="612" y="492">A2A</text>
+    <rect class="d-node" x="707" y="420" width="145" height="100" rx="4" />
+    <text class="d-label" x="779" y="450">Voix du</text>
+    <text class="d-label" x="779" y="478">client</text>
+    <text class="d-sub" x="779" y="506">A2A</text>
+    <rect class="d-node" x="874" y="420" width="145" height="100" rx="4" />
+    <text class="d-label" x="946" y="458">Livraison</text>
+    <text class="d-sub" x="946" y="492">A2A</text>
+
+    <!-- Externe -->
+    <rect class="d-node d-node--amber" x="1130" y="110" width="290" height="110" rx="4" />
+    <text class="d-label" x="1275" y="150">OpenAI</text>
+    <text class="d-sub" x="1275" y="186">gpt-live-1</text>
+    <rect class="d-node d-node--ghost" x="1130" y="420" width="290" height="100" rx="4" />
+    <text class="d-label" x="1275" y="456">LLM texte</text>
+    <text class="d-sub" x="1275" y="490">non choisi · Q-17</text>
+
+    <!-- Liens -->
+    <path id="s05-c4-webrtc" class="d-link d-link--amber" d="M400,222 L455,222 L455,30 L1275,30 L1275,110" marker-end="url(#s05-c4-arrow-amber)" marker-start="url(#s05-c4-arrow-amber)" />
+    <text class="d-link-label" x="760" y="22">WebRTC : audio + DataChannel oai-events</text>
+    <path id="s05-c4-sdp" class="d-link" d="M400,250 L540,250" marker-end="url(#s05-c4-arrow)" />
+    <text class="d-link-label" x="470" y="238">POST SDP</text>
+    <path id="s05-c4-app" class="d-link" d="M540,290 L470,290 L470,370 L400,370" marker-end="url(#s05-c4-arrow)" marker-start="url(#s05-c4-arrow)" />
+    <text class="d-link-label" x="220" y="430">app-channel · WSS proposé · Q-39</text>
+    <path class="d-link d-link--amber" d="M1020,165 L1130,165" marker-end="url(#s05-c4-arrow-amber)" marker-start="url(#s05-c4-arrow-amber)" />
+    <text class="d-link-label" x="1075" y="150">sideband</text>
+    <path class="d-link" d="M612,310 L612,420" marker-end="url(#s05-c4-arrow)" />
+    <path class="d-link" d="M779,310 L779,420" marker-end="url(#s05-c4-arrow)" />
+    <path class="d-link" d="M946,310 L946,420" marker-end="url(#s05-c4-arrow)" />
+    <text class="d-link-label" x="862" y="372">A2A v1.0</text>
+    <path class="d-link d-link--static" d="M1060,470 L1130,470" marker-end="url(#s05-c4-arrow)" />
+    <text class="d-link-label" x="1095" y="456">LLM</text>
+    <circle class="d-packet" r="6"><animateMotion dur="3s" repeatCount="indefinite"><mpath href="#s05-c4-webrtc" /></animateMotion></circle>
+    <circle class="d-packet" r="6"><animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#s05-c4-sdp" /></animateMotion></circle>
+    <circle class="d-packet" r="6"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#s05-c4-app" /></animateMotion></circle>
+  </svg>
+  <p class="refs">p-ar-overview · pdr-0028 · pdr-0029 · pdr-0041 · pdr-0036 · [adr-0002-orchestrator-backend] · [adr-0003-backend-go]</p>
+  <aside class="notes">
+    À gauche, l'app Flutter desktop Linux, lancée en debug hors conteneur [pdr-0028-linux-demo-machine]. Elle ne porte que l'audio WebRTC, le rendu A2UI et la régie de scène [p-ar-overview].
+    Au centre, le backend Go hexagonal [adr-0003-backend-go] : l'orchestrateur et un conteneur par agent A2A, lancés par docker compose depuis ce dépôt, ports publiés sur 127.0.0.1 sans authentification utilisateur [pdr-0029-local-docker-compose-hosting] [pdr-0041-backend-in-this-repo-local-no-auth]. Un processus par agent est décidé [pdr-0036-real-a2a-agents-produce-a2ui] ; un conteneur par agent est un choix de conception.
+    L'orchestrateur est côté backend dès le départ [adr-0002-orchestrator-backend] : la clé OpenAI ne quitte jamais le backend, elle vit dans un .env non versionné.
+    La voix va directement de l'app à gpt-live-1 en WebRTC [pdr-0012-voice-provider-openai] ; le backend écoute la même session en sideband [rt-gpt-live-sideband]. Seuls GPT-Live et le LLM texte sortent de la machine.
+    Le canal app-channel en WebSocket est une recommandation : pdr-0045 est proposée, pas acceptée, et la question Q-39 reste ouverte. Le LLM texte des agents n'est pas choisi (Q-17).
+  </aside>
+</section>
+
+<!-- 04 · Dans l'app et le backend -->
+<section id="p05-04" data-hud="low">
+  <p class="eyebrow">Architecture technique · versions épinglées ou à figer (pdr-0010)</p>
+  <h2>Deux piles, deux architectures</h2>
+  <div class="grid-2 stretch-items">
+    <div class="hud-panel fragment rise-in">
+      <p class="panel-title">App Flutter · Clean + FSD</p>
+      <ul class="compact small">
+        <li>Slices FSD, Clean à l'intérieur ; imports vers le bas</li>
+        <li>Un seul flux d'événements de session</li>
+        <li>Bloc uniquement, events et states <code>sealed</code></li>
+        <li><code>get_it</code> + <code>injectable</code>, par constructeur</li>
+        <li class="mono">genui 0.10.4 · flutter_webrtc 1.6.3</li>
+      </ul>
+    </div>
+    <div class="hud-panel hud-panel--amber fragment rise-in">
+      <p class="panel-title">Backend Go · hexagonal</p>
+      <ul class="compact small amber-list">
+        <li>voice-session · sideband-supervisor · orchestrator</li>
+        <li>a2a-client · a2ui · app-channel · session-recorder</li>
+        <li>Ports : LiveProvider, RemoteAgent, LlmText…</li>
+        <li>Agents : serveurs A2A, jeu de données figé</li>
+        <li class="mono">openai-go/v3 ≥ v3.86 (à figer) · a2a-go/v2 v2.7.0</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small mt-1 fragment glow-in"><span class="badge badge--accepted">pdr-0018 · A2UI v0.9 · genui 0.10.4</span> <span class="badge badge--open">Flutter à figer · Q-25</span> <span class="badge badge--open">Go à figer · Q-46</span></p>
+  <p class="refs">p-ar-frontend · p-ar-backend · p-ar-stack · [arch-clean-fsd-combo] · [di-no-service-locator] · [ma-backend-sdk-go]</p>
+  <aside class="notes">
+    Côté Flutter : Clean Architecture combinée à Feature Sliced Design ; chaque slice suit Clean en interne et les features ne s'importent pas entre elles, elles se coordonnent par les ports de entities/session [arch-clean-fsd-combo] [p-ar-frontend]. Les noms de slices et de Blocs sont une proposition de l'assistant, encore à valider.
+    Toutes les zones de l'écran lisent un seul flux d'événements de session. Bloc uniquement, pas de Cubit ; DI par constructeur, getIt n'est jamais appelé dans un widget ou un Bloc [di-no-service-locator] ; get_it et injectable arrivent en J2 avec le premier service [pdr-0044-di-deferred-to-j2].
+    Côté Go : architecture hexagonale ; chaque fournisseur est derrière un port, par exemple LiveProvider, parce que le package live d'openai-go est jeune [p-ar-backend] [ma-backend-sdk-go].
+    Les versions expérimentales sont épinglées exactement [pdr-0010-pinned-experimental-versions] : genui 0.10.4 et A2UI v0.9 sont une décision contrainte [pdr-0018-a2ui-v09-genui-0-10-4]. Flutter 3.47.8 est déjà épinglée par le harnais 000 et recommandée par l'assistant ; la décision formelle reste Q-25, ouverte [specs/progress.md]. Go, openai-go (v3.88.0 observée, ≥ v3.86 requise) et le reste : Q-46 [p-ar-stack].
+  </aside>
+</section>
+
+<!-- 05 · Architecture agentique -->
+<section id="p05-05" data-hud="low">
+  <p class="eyebrow">Architecture agentique · pdr-0036</p>
+  <h2>Un chef d'orchestre, des experts</h2>
+  <svg class="diagram" viewBox="0 0 1440 500" width="1440" height="500" role="img" aria-label="Agent vocal, orchestrateur, agents A2A, rendu GenUI">
+    <defs>
+      <marker id="s05-ag-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s05-ag-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+    <rect class="d-node d-node--ghost" x="0" y="160" width="150" height="100" rx="50" />
+    <text class="d-label" x="75" y="210">Speaker</text>
+    <g class="fragment rise-in" data-fragment-index="1">
+      <rect class="d-node d-node--amber" x="200" y="150" width="250" height="120" rx="4" />
+      <text class="d-label" x="325" y="190">Agent vocal</text>
+      <text class="d-sub" x="325" y="225">gpt-live-1 · voix brise</text>
+      <path class="d-link d-link--amber" d="M150,210 L200,210" marker-end="url(#s05-ag-arrow-amber)" marker-start="url(#s05-ag-arrow-amber)" />
+    </g>
+    <g class="fragment rise-in" data-fragment-index="2">
+      <rect class="d-node" x="600" y="140" width="290" height="140" rx="4" />
+      <text class="d-label" x="745" y="180">Orchestrateur</text>
+      <text class="d-sub" x="745" y="215">planifie · route · valide</text>
+      <text class="d-sub" x="745" y="240">relaie · annule</text>
+      <path id="s05-ag-deleg" class="d-link" d="M450,190 L600,190" marker-end="url(#s05-ag-arrow)" />
+      <text class="d-link-label" x="525" y="176">délégation</text>
+      <path class="d-link d-link--amber" d="M600,245 L450,245" marker-end="url(#s05-ag-arrow-amber)" />
+      <text class="d-link-label" x="525" y="272">commentary</text>
+      <text class="d-link-label" x="525" y="296">Q-47 ouverte</text>
+    </g>
+    <g class="fragment rise-in" data-fragment-index="3">
+      <rect class="d-node" x="1000" y="20" width="260" height="96" rx="4" />
+      <text class="d-label" x="1130" y="56">Qualité</text>
+      <text class="d-sub" x="1130" y="88">crashs · stabilité</text>
+      <rect class="d-node" x="1000" y="162" width="260" height="96" rx="4" />
+      <text class="d-label" x="1130" y="198">Voix du client</text>
+      <text class="d-sub" x="1130" y="230">avis des stores</text>
+      <rect class="d-node" x="1000" y="304" width="260" height="96" rx="4" />
+      <text class="d-label" x="1130" y="340">Livraison</text>
+      <text class="d-sub" x="1130" y="372">checklist · actions</text>
+      <path class="d-link" d="M890,170 L1000,68" marker-end="url(#s05-ag-arrow)" />
+      <path id="s05-ag-a2a2" class="d-link" d="M890,210 L1000,210" marker-end="url(#s05-ag-arrow)" />
+      <path class="d-link" d="M890,250 L1000,352" marker-end="url(#s05-ag-arrow)" />
+      <text class="d-link-label" x="945" y="198">A2A</text>
+      <text class="d-label" x="1350" y="196">A2UI</text>
+      <text class="d-sub" x="1350" y="230">v0.9</text>
+    </g>
+    <g class="fragment rise-in" data-fragment-index="4">
+      <rect class="d-node d-node--amber" x="600" y="380" width="290" height="100" rx="4" />
+      <text class="d-label" x="745" y="415">Rendu GenUI</text>
+      <text class="d-sub" x="745" y="450">catalogue fermé genesis</text>
+      <path id="s05-ag-render" class="d-link d-link--amber" d="M720,280 L720,380" marker-end="url(#s05-ag-arrow-amber)" />
+      <text class="d-link-label" x="650" y="335">A2UI validé</text>
+      <path class="d-link" d="M770,380 L770,280" marker-end="url(#s05-ag-arrow)" />
+      <text class="d-link-label" x="845" y="335">action typée</text>
+    </g>
+    <circle class="d-packet" r="6"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#s05-ag-deleg" /></animateMotion></circle>
+    <circle class="d-packet" r="6"><animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#s05-ag-a2a2" /></animateMotion></circle>
+    <circle class="d-packet" r="6"><animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#s05-ag-render" /></animateMotion></circle>
+  </svg>
+  <p class="small fragment glow-in" data-fragment-index="5">Catalogue : <span class="badge badge--neutral badge--plain">Indicateur clé</span> <span class="badge badge--neutral badge--plain">Courbe de tendance</span> <span class="badge badge--neutral badge--plain">Sentiment des avis</span> <span class="badge badge--neutral badge--plain">Checklist go/no-go</span> <span class="badge badge--neutral badge--plain">Barre d'actions</span> <span class="badge badge--neutral badge--plain">Liste des crashs</span></p>
+  <p class="refs">pdr-0036 · pdr-0013 · pdr-0014 · pdr-0023 · pdr-0037 · [ma-target-architecture] · [rt-gpt-live-delegation]</p>
+  <aside class="notes">
+    L'agent vocal gpt-live-1 est l'unique interlocuteur ; tout travail passe par une seule délégation vers l'orchestrateur [ma-target-architecture] [rt-gpt-live-delegation]. Voix « brise », instructions rédigées pour la démo [pdr-0037-voice-brise-delegated-instructions].
+    L'orchestrateur planifie la demande en tâches, choisit visiblement les agents utiles, et les appelle en parallèle [pdr-0013-orchestrator-visible-agent-selection].
+    Les agents sont de vrais serveurs A2A, un processus chacun ; chacun produit l'A2UI de ses surfaces, et l'orchestrateur valide contre le catalogue puis relaie sans recomposer [pdr-0036-real-a2a-agents-produce-a2ui].
+    La composition se fait par un LLM guidé par des exemples d'écrans attendus, sur catalogue fermé : ni LLM libre, ni écrans pré-écrits [pdr-0023-example-guided-composition]. Quel LLM : encore ouvert (Q-17).
+    Le catalogue a six composants [pdr-0014-six-component-catalog] ; la Liste des crashs est disponible hors scénario principal. Dans Genesis Canvas, les clics reviennent à l'orchestrateur comme actions typées, jamais exécutés localement : c'est un choix du projet [genui-a2ui-security] [p-ar-security], GenUI permettant aussi des actions locales ; le mécanisme, UserActionEvent puis onSubmit, est décrit dans [genui-user-actions].
+    Le commentary, c'est-à-dire le texte que l'orchestrateur fait dire à la voix, suppose le mode de délégation client [rt-gpt-live-delegation] : Q-47 reste ouverte, à établir par le spike SP-02.
+    Pendant que les agents travaillent, la voix ne dit que des commentaires génériques, puis le vrai résumé [ma-filler-acknowledgements] [ma-real-tool-results].
+  </aside>
+</section>
+
+<!-- 06 · Séquence 1 : session voix -->
+<section id="p05-06" data-hud="low">
+  <p class="eyebrow">Flux de données · 1 / 4</p>
+  <h2>Ouvrir la session voix</h2>
+  <div class="seq" style="--n: 3">
+    <div class="seq-actor">App Flutter</div>
+    <div class="seq-actor seq-actor--amber">Backend Go</div>
+    <div class="seq-actor">OpenAI GPT-Live</div>
+    <div class="seq-body">
+      <div class="seq-note fragment">micro + DataChannel oai-events, offre SDP après la collecte ICE</div>
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">POST /voice/sessions · offre SDP</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">POST /v1/live/sessions · clé projet</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 3; --to: 2"><span class="seq-label">201 · session.id + answer SDP</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">answer SDP</span></div>
+      <div class="seq-msg fragment" style="--from: 1; --to: 3"><span class="seq-label">média WebRTC : voix ⇄ voix</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">WSS …/attach · sideband</span></div>
+    </div>
+  </div>
+  <p class="refs">[rt-gpt-live-webrtc-session] · [rt-gpt-live-sideband] · [rt-ephemeral-keys] · pdr-0012 · p-ar-backend</p>
+  <aside class="notes">
+    Le client n'appelle jamais OpenAI pour créer la session : il génère une offre SDP, avec la piste micro et le DataChannel oai-events créé avant l'offre, et attend la fin de la collecte ICE [rt-gpt-live-webrtc-session].
+    Il envoie l'offre à notre backend, qui appelle l'API Live avec la clé projet et renvoie l'answer SDP. La doc GPT-Live ne décrit aucun jeton éphémère : la clé reste sur le serveur [rt-gpt-live-webrtc-session] [rt-ephemeral-keys].
+    Ensuite, l'audio circule en direct entre l'app et OpenAI, pour la latence.
+    Bonus du relais : le backend connaît session.id et s'attache en sideband, avec le même projet ; il reçoit transcripts et délégations, et peut injecter des commentaires [rt-gpt-live-sideband].
+    Le mode de délégation, client ou decisions, n'est pas encore prouvé : c'est Q-47, à établir par le spike SP-02, qui attend la clé côté backend [p-ar-backend].
+  </aside>
+</section>
+
+<!-- 07 · Séquence 2 : voix → surface -->
+<section id="p05-07" data-hud="low">
+  <p class="eyebrow">Flux de données · 2 / 4 · acte 1</p>
+  <h2>De la phrase à la surface</h2>
+  <div class="seq" style="--n: 5">
+    <div class="seq-actor">Speaker</div>
+    <div class="seq-actor seq-actor--amber">GPT-Live</div>
+    <div class="seq-actor">Orchestrateur</div>
+    <div class="seq-actor">Agents A2A</div>
+    <div class="seq-actor">App Flutter</div>
+    <div class="seq-body">
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">« Prépare la release 3.4 »</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">transcript · delegation</span></div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 5"><span class="seq-label">rail + createSurface squelette</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 3; --to: 2"><span class="seq-label">commentary</span></div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 4"><span class="seq-label">tâches en parallèle</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 4; --to: 3"><span class="seq-label">A2UI v0.9</span></div>
+      <div class="seq-note fragment">validation contre le catalogue genesis</div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 5"><span class="seq-label">updateComponents · updateDataModel</span></div>
+    </div>
+  </div>
+  <p class="refs">p-ar-agents-protocols · p-ar-backend · [genui-a2ui-messages] · [rt-latency] · pdr-0036</p>
+  <aside class="notes">
+    La phrase part en WebRTC vers GPT-Live ; le backend reçoit en sideband le transcript et l'événement de délégation [p-ar-agents-protocols].
+    Dès que le plan est connu, l'orchestrateur allume le rail et envoie un squelette de surface, createSurface plus composants squelette, sans attendre les données : c'est l'UI optimiste qui vise NFR-02 [rt-latency] [p-ar-backend].
+    En parallèle, il fait dire à la voix un commentaire générique de progression, jamais une hypothèse de résultat [ma-filler-acknowledgements].
+    Les agents travaillent en parallèle, en A2A, et renvoient des messages A2UI v0.9 [pdr-0036-real-a2a-agents-produce-a2ui] [genui-a2ui-messages] ; l'orchestrateur valide contre le catalogue puis relaie updateComponents et updateDataModel. À la fin, la voix reçoit le vrai résumé.
+    Cette séquence est la proposition de conception de l'assistant. L'A2UI ne passe jamais par le canal de la session voix [genui-a2ui-transports] ; le canal vers l'app reste Q-39.
+  </aside>
+</section>
+
+<!-- 08 · Séquence 3 : clic → action → voix -->
+<section id="p05-08" data-hud="low">
+  <p class="eyebrow">Flux de données · 3 / 4 · acte 3</p>
+  <h2>Du clic à la voix</h2>
+  <div class="seq" style="--n: 5">
+    <div class="seq-actor">Speaker</div>
+    <div class="seq-actor">App Flutter</div>
+    <div class="seq-actor">Orchestrateur</div>
+    <div class="seq-actor">Agent Livraison</div>
+    <div class="seq-actor seq-actor--amber">GPT-Live</div>
+    <div class="seq-body">
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">clic « Bloquer »</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">action typée</span></div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 4"><span class="seq-label">bloquer la 3.4</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 4; --to: 3"><span class="seq-label">résultat réel</span></div>
+      <div class="seq-msg is-back fragment" style="--from: 3; --to: 2"><span class="seq-label">checklist « Bloquée »</span></div>
+      <div class="seq-msg fragment" style="--from: 3; --to: 5"><span class="seq-label">commentary · vrai résultat</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 5; --to: 1"><span class="seq-label">confirmation vocale</span></div>
+    </div>
+  </div>
+  <p class="refs">p-ar-agents-protocols · [genui-user-actions] · [ma-real-tool-results] · pdr-0016</p>
+  <aside class="notes">
+    Le clic ne fait rien localement : il devient une action typée, nom, surfaceId et contexte, renvoyée à l'orchestrateur sur le canal de l'app [genui-user-actions].
+    L'orchestrateur allume l'agent Livraison dans le rail et lui envoie la tâche ; le vrai résultat revient, et c'est lui qui fait passer la checklist à « Bloquée » [p-ar-agents-protocols].
+    La confirmation vocale ne part qu'après le résultat réel : on corrige ainsi l'anti-pattern du faux « status ok » [ma-real-tool-results].
+    Faut-il une confirmation hors GenUI pour cette action, fictive ici ? La règle générique l'exige pour les actions sensibles ; c'est la question ouverte Q-49.
+  </aside>
+</section>
+
+<!-- 09 · Séquence 4 : journal et rejeu -->
+<section id="p05-09" data-hud="low">
+  <p class="eyebrow">Flux de données · 4 / 4 · acte 4</p>
+  <h2>Enregistrer, puis rejouer</h2>
+  <div class="seq" style="--n: 4">
+    <div class="seq-actor">Orchestrateur</div>
+    <div class="seq-actor">App · canevas</div>
+    <div class="seq-actor seq-actor--amber">Journal JSONL</div>
+    <div class="seq-actor">Lecteur de rejeu</div>
+    <div class="seq-body">
+      <div class="seq-note">en direct</div>
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">message A2UI v0.9</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">seq · t_ms · payload brut</span></div>
+      <div class="seq-note fragment">acte 4 · ni LLM, ni réseau, ni voix</div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 4; --to: 3"><span class="seq-label">lecture dans l'ordre</span></div>
+      <div class="seq-msg is-back fragment" style="--from: 4; --to: 2"><span class="seq-label">réémis à t_ms / vitesse</span></div>
+      <div class="seq-note fragment">0,25× → 2× · reculer = remise à vide puis rejeu</div>
+    </div>
+  </div>
+  <p class="refs">p-ar-replay · pdr-0032 · pdr-0038 · [genui-a2ui-messages] · [genui-multiple-surfaces]</p>
+  <aside class="notes">
+    Chaque session écrit un journal horodaté du flux A2UI, tel que reçu par l'app, et rien d'autre : ni voix, ni transcription, ni actions [p-ar-replay] [pdr-0032-obs-video-fallback-a2ui-replay-act].
+    Une ligne par message : numéro d'ordre strict, parce que l'ordre A2UI est obligatoire [genui-a2ui-messages], temps sur l'horloge monotone de l'app [pdr-0038-latency-measured-on-app-clock], et payload brut. Le format exact est une proposition de l'assistant.
+    En acte 4, le lecteur réémet les messages à t_ms divisé par la vitesse, de 0,25× à 2×. Comme l'A2UI est incrémental, reculer veut dire remettre le canevas à vide puis rejouer jusqu'à la position [genui-multiple-surfaces].
+    Le rejeu est déterministe par construction : il n'appelle ni LLM ni réseau. Le même journal sert de fake de transport dans les tests [test-mock-boundaries-only].
+    Le pas-à-pas au clavier reste à confirmer (Q-52).
+  </aside>
+</section>
+
+<!-- 10 · Sécurité -->
+<section id="p05-10" data-hud="low">
+  <p class="eyebrow">Sécurité · NFR-09</p>
+  <h2>Même pour une démo</h2>
+  <table class="compare">
+    <thead><tr><th>Menace</th><th class="hl">Parade</th></tr></thead>
+    <tbody>
+      <tr class="fragment rise-in"><th>Fuite de la clé OpenAI</th><td class="hl yes">clé côté backend seul, session par relais SDP</td></tr>
+      <tr class="fragment rise-in"><th>Quota brûlé via la route de relais</th><td class="hl yes">127.0.0.1 seulement, budget total de 20 €</td></tr>
+      <tr class="fragment rise-in"><th>UI injectée par un agent</th><td class="hl yes">catalogue fermé, validé deux fois</td></tr>
+      <tr class="fragment rise-in"><th>Style imposé par l'IA</th><td class="hl yes">thème de scène, <code>theme</code> de l'agent ignoré</td></tr>
+      <tr class="fragment rise-in"><th>Action exécutée par le client</th><td class="hl yes">événement typé, traité par l'orchestrateur</td></tr>
+      <tr class="fragment rise-in"><th>Injection via les avis</th><td class="hl yes">sorties d'agents traitées comme données</td></tr>
+    </tbody>
+  </table>
+  <p class="refs">p-ar-security · pdr-0041 · pdr-0030 · pdr-0007 · [genui-a2ui-security] · [ma-prompt-injection-tools]</p>
+  <aside class="notes">
+    Même pour une démo, aucune clé OpenAI ni secret d'agent ne vit dans l'app [p-ar-security] [rt-ephemeral-keys].
+    NFR-09 parle de jeton éphémère ; pour GPT-Live, aucun n'est documenté, d'où le relais SDP par le backend [rt-gpt-live-webrtc-session].
+    Le vrai risque ici est financier et réputationnel : un quota brûlé ou un contenu inattendu à l'écran. Les données, elles, sont toutes fictives.
+    Les services n'écoutent que sur 127.0.0.1, sans authentification utilisateur, décision du 29 octobre [pdr-0041-backend-in-this-repo-local-no-auth] ; le budget total est de 20 € pour tous les modèles [pdr-0030-llm-budget-20-eur]. Si le backend était un jour exposé, on reviendrait à des JWT vérifiés par JWKS.
+    L'UI produite par un agent est validée deux fois, par l'orchestrateur puis par le client, contre un catalogue fermé ; l'apparence vient du thème de scène, jamais de l'IA [genui-a2ui-security] [pdr-0007-closed-catalog-stage-theme].
+    Les extraits d'avis peuvent porter une injection indirecte : les retours d'agents sont encadrés comme données et la voix ne reçoit qu'un résumé produit par l'orchestrateur [ma-prompt-injection-tools].
+  </aside>
+</section>
+
+<!-- 11 · Spike SP-03 -->
+<section id="p05-11" data-hud="low">
+  <p class="eyebrow">Spike SP-03 · 29/10/2026</p>
+  <h2>A2A Go ↔ genui_a2a : ça passe</h2>
+  <div class="flow">
+    <div class="node">Client Flutter<small>genui 0.10.4 · genui_a2a 0.10.1</small></div>
+    <div class="arrow arrow--both"><span class="arrow-label">message/stream · SSE</span><span class="arrow-label arrow-label--below">A2A v0.3</span></div>
+    <div class="node node--amber">Agent Go<small>a2a-go v2.7.0 · a2acompat/a2av0</small></div>
+  </div>
+  <div class="grid-2 mt-1">
+    <ul class="check-list compact small">
+      <li class="fragment rise-in">Surface rendue de bout en bout</li>
+      <li class="fragment rise-in">Clic → <code>connectAndSend</code> → « validé »</li>
+      <li class="fragment rise-in">Aucune glue en plus</li>
+    </ul>
+    <ul class="cross-list compact small">
+      <li class="fragment rise-in">Handler natif v1.0 : <code>message/stream</code> inconnu</li>
+      <li class="fragment rise-in"><code>sendEvent</code> n'atteint pas le flux</li>
+      <li class="fragment rise-in">Agent Card sans <code>url</code> hors v0.3</li>
+    </ul>
+  </div>
+  <p class="small mt-1 fragment glow-in"><span class="badge badge--verified">SP-03 vérifié</span> <span class="badge badge--proposed">pdr-0045 proposée : WSS maison</span> <span class="badge badge--open">Q-39 ouverte</span></p>
+  <p class="refs">specs/001-sp-03-a2a-go-genui · p-rm-spikes · [proto-a2a-go-v03-compat] · [genui-a2a-connector] · [genui-test-a2a-roundtrip]</p>
+  <aside class="notes">
+    Question du spike : un agent Go écrit avec a2a-go v2 peut-il streamer de l'A2UI vers genui_a2a côté Flutter ? Réponse vérifiée le 29 octobre : oui [specs/001-sp-03-a2a-go-genui].
+    Le piège : genui_a2a 0.10.1 parle A2A v0.3, message/stream. Le handler natif v1.0 d'a2a-go ne connaît pas les méthodes v0.3 : -32601 « method not found » sur message/stream, et -32009 sur SendStreamingMessage sans en-tête A2A-Version ; il faut monter le handler de compatibilité a2acompat/a2av0 [proto-a2a-go-v03-compat] [genui-a2a-connector].
+    Résultat : l'agent émet cinq événements SSE, de task submitted à completed en passant par createSurface, updateComponents et updateDataModel ; l'app rend la surface, le tap repart par connectAndSend et l'agent répond « validé ». Aucune glue supplémentaire [genui-test-a2a-roundtrip].
+    Attention à la portée : c'est prouvé par un test widget de bout en bout contre l'agent Go réel, processus et HTTP/SSE réels, mais avec un tap simulé, sur un client Flutter jetable ; ce n'est pas encore dans l'app.
+    Autres pièges : sendEvent n'atteint jamais le flux du connecteur, les clics doivent passer par connectAndSend ; l'Agent Card perd url et preferredTransport si l'interface n'est pas déclarée en version 0.3.
+    Conséquence : le risque technique est levé, mais le choix du canal app ↔ backend reste au porteur. L'assistant recommande un WSS maison ; pdr-0045 est seulement proposée, Q-39 est ouverte.
+  </aside>
+</section>
+
+<!-- 12 · Méthode -->
+<section id="p05-12">
+  <p class="eyebrow">Méthode · ce que vous pouvez réutiliser</p>
+  <h2>Docs vivantes et boucle autonome</h2>
+  <div class="grid-2-1">
+    <div class="grid-2 stretch-items">
+      <div class="card fragment rise-in">
+        <span class="card-icon">KB</span>
+        <h3>knowledge/</h3>
+        <p class="small">261 notes datées, index YAML, ADR réutilisables</p>
+        <p class="small mono accent">kb-lookup<br>kb-curate</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <span class="card-icon">PR</span>
+        <h3>product/</h3>
+        <p class="small">45 PDR (2 remplacées, 1 proposée), registre Q-xx, exigences FR / NFR</p>
+        <p class="small mono amber">product-lookup<br>product-decide</p>
+      </div>
+    </div>
+    <div class="hud-panel fragment rise-in">
+      <p class="panel-title">Boucle · specs/NNN</p>
+      <ol class="compact small">
+        <li>Définir (SDD)</li>
+        <li>Gherkin rouge</li>
+        <li>TDD + gate</li>
+        <li>Revue d'architecte</li>
+        <li>Refactorisation</li>
+        <li>Vérification, clôture</li>
+      </ol>
+    </div>
+  </div>
+  <p class="refs">AGENTS.md · tools/loop/README.md · .claude/skills · .claude/agents · pdr-0043 · specs/progress.md</p>
+  <aside class="notes">
+    La base knowledge/ est un zettelkasten : des notes atomiques, datées, sourcées, pour des API qui changent vite. Chaque tâche commence par la consulter, via le skill kb-lookup, et on corrige une note dès que la doc officielle la contredit [AGENTS.md].
+    product/ porte ce qui est propre à Genesis Canvas : exigences, écran, roadmap, et chaque décision en PDR, avec qui l'a prise. L'assistant recommande, le porteur décide ; seules les décisions contraintes par les faits sont tranchées par l'assistant, et signalées.
+    Le développement est confié à une boucle autonome qui tourne dans un worktree séparé et ne publie sur main que par publish.sh [tools/loop/README.md]. Une fonctionnalité = un dossier specs/NNN selon un gabarit Spec Kit léger [pdr-0043-light-spec-kit-sdd-template].
+    Chaque étape : Gherkin rouge en BDD, TDD tâche par tâche avec la porte gate.sh, revue par un agent architecte sur Opus, refactorisation, vérification complète. Garde-fous : quota, trois tentatives par étape, refus des tests désactivés, budget OpenAI.
+    Agents dédiés : feature-developer, architect-reviewer, refactorer, product-steward [.claude/agents]. Au 29 octobre, deux fonctionnalités sont passées par la boucle : 000, le harnais de l'app, et 001, le spike SP-03 [specs/progress.md].
+    Chiffres au 29 octobre (261 notes, 45 PDR dont 42 acceptées) : à recompter la veille du talk.
+  </aside>
+</section>
+
+<!-- 13 · Où on en est, ce qui reste ouvert -->
+<section id="p05-13">
+  <p class="eyebrow">Roadmap · état au 29/10/2026 · pdr-0042</p>
+  <h2>Où on en est</h2>
+  <div class="timeline">
+    <div class="tl-item is-now">
+      <span class="tl-date">29-30/10</span>
+      <span class="tl-title">J1 spikes</span>
+      <span class="tl-text">SP-10, SP-03 ✓ · SP-02 en attente</span>
+    </div>
+    <div class="tl-item is-future">
+      <span class="tl-date">31/10-1/11</span>
+      <span class="tl-title">J2 squelette</span>
+      <span class="tl-text">relais SDP, 1 agent A2A</span>
+    </div>
+    <div class="tl-item is-future">
+      <span class="tl-date">2-6/11</span>
+      <span class="tl-title">J3-J5 actes</span>
+      <span class="tl-text">créer, transformer, interagir</span>
+    </div>
+    <div class="tl-item is-future">
+      <span class="tl-date">7-9/11</span>
+      <span class="tl-title">J6-J7</span>
+      <span class="tl-text">rejeu, durcissement</span>
+    </div>
+    <div class="tl-item is-future">
+      <span class="tl-date">12/11</span>
+      <span class="tl-title">Talk</span>
+      <span class="tl-text">gel les 10-11/11</span>
+    </div>
+  </div>
+  <div class="grid-2 mt-1">
+    <ul class="compact small plain">
+      <li class="fragment rise-in"><span class="badge badge--open">Q-17</span> LLM des agents</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-39</span> canal app ↔ backend</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-47</span> mode de délégation</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-40</span> détecter l'interruption</li>
+    </ul>
+    <ul class="compact small plain">
+      <li class="fragment rise-in"><span class="badge badge--open">Q-42</span> qui détecte « Stop »</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-43</span> niveau audio de l'orbe</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-21</span> retirer une surface</li>
+      <li class="fragment rise-in"><span class="badge badge--open">Q-49</span> confirmer l'action</li>
+    </ul>
+  </div>
+  <p class="refs">p-rm-roadmap · p-rm-spikes · p-rm-open-questions · specs/progress.md</p>
+  <aside class="notes">
+    Calendrier validé : développement jusqu'au 9 novembre au soir, gel les 10 et 11, talk le 12 [pdr-0042-calendar-and-cut-order-validated]. Si un jalon glisse, les coupes C1 à C5 s'appliquent dans l'ordre sans redemander ; au-delà, c'est moi qui décide.
+    Au 29 octobre : genui confirmé sous Linux (SP-10), A2A Go ↔ genui_a2a validé (SP-03). SP-02, la vraie session gpt-live-1, attend la clé côté backend et un essai de barge-in sur enceinte [p-rm-spikes] [specs/progress.md].
+    Ce qui reste ouvert, sans le trancher ici : le LLM texte des agents (Q-17), le canal app ↔ backend (Q-39, pdr-0045 proposée), le mode de délégation GPT-Live (Q-47), l'inférence de l'interruption faute d'événement côté GPT-Live (Q-40), la détection de « Stop » (Q-42), la source du niveau audio de l'orbe avec une seule capture micro (Q-43), le retrait de surface à l'acte 2 (Q-21) et la confirmation de l'action (Q-49) [p-rm-open-questions].
+    À mettre à jour juste avant le talk : cette slide reflète l'état du 29 octobre.
+  </aside>
+</section>
