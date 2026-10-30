@@ -1,0 +1,300 @@
+{
+  "catalogId": "${CATALOG_ID}",
+  "version": "v1",
+  "sendDataModel": false,
+  "components": [
+    "KeyIndicator",
+    "TrendChart",
+    "ReviewSentiment",
+    "ReleaseChecklist"
+  ],
+  "definitions": {
+    "KeyIndicator": {
+      "surface": "kpi",
+      "description": "Indicateur clé",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/kpi"
+        }
+      },
+      "dataModel": {
+        "path": "/kpi",
+        "fields": {
+          "label": {
+            "type": "string",
+            "required": true
+          },
+          "value": {
+            "type": "string",
+            "required": true,
+            "format": "français, ex. « 99,57 % »"
+          },
+          "trend": {
+            "type": "string",
+            "required": true,
+            "format": "ex. « −0,36 pt »"
+          },
+          "threshold": {
+            "type": "string",
+            "required": true,
+            "format": "ex. « ≥ 99,50 % »"
+          },
+          "status": {
+            "type": "string",
+            "required": true,
+            "enum": [
+              "ok",
+              "risk",
+              "blocking"
+            ]
+          },
+          "statusLabel": {
+            "type": "string",
+            "required": true
+          },
+          "comparison": {
+            "type": "object",
+            "required": false,
+            "reserved": "acte 2 (FR-07), toléré par le client",
+            "fields": {
+              "label": {
+                "type": "string",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "required": true
+              },
+              "delta": {
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "TrendChart": {
+      "surface": "trend",
+      "description": "Courbe de tendance",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/trend"
+        }
+      },
+      "dataModel": {
+        "path": "/trend",
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "thresholdPct": {
+            "type": "number",
+            "required": true,
+            "unit": "% (0.5 = 0,50 %)"
+          },
+          "yMaxPct": {
+            "type": "number",
+            "required": true,
+            "unit": "%"
+          },
+          "days": {
+            "type": "array",
+            "required": true,
+            "items": "string",
+            "example": [
+              "J1",
+              "J7"
+            ]
+          },
+          "series": {
+            "type": "array",
+            "required": true,
+            "items": {
+              "name": {
+                "type": "string",
+                "required": true
+              },
+              "points": {
+                "type": "array",
+                "required": true,
+                "items": "number",
+                "unit": "% du jour, un point par jour, même longueur que days"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ReviewSentiment": {
+      "surface": "reviews",
+      "description": "Sentiment des avis",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/reviews"
+        }
+      },
+      "dataModel": {
+        "path": "/reviews",
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "count": {
+            "type": "integer",
+            "required": true
+          },
+          "positivePct": {
+            "type": "integer",
+            "required": true,
+            "unit": "%"
+          },
+          "negativePct": {
+            "type": "integer",
+            "required": true,
+            "unit": "%"
+          },
+          "average": {
+            "type": "number",
+            "required": true
+          },
+          "excerpts": {
+            "type": "array",
+            "required": true,
+            "items": {
+              "stars": {
+                "type": "integer",
+                "required": true,
+                "min": 1,
+                "max": 5
+              },
+              "platform": {
+                "type": "string",
+                "required": true
+              },
+              "text": {
+                "type": "string",
+                "required": true
+              }
+            },
+            "length": 3
+          },
+          "comparison": {
+            "type": "object",
+            "required": false,
+            "reserved": "acte 2 (FR-07), toléré par le client",
+            "fields": {
+              "label": {
+                "type": "string",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "required": true
+              },
+              "delta": {
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "ReleaseChecklist": {
+      "surface": "checklist",
+      "description": "Checklist go/no-go",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/checklist"
+        }
+      },
+      "dataModel": {
+        "path": "/checklist",
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "items": {
+            "type": "array",
+            "required": true,
+            "items": {
+              "label": {
+                "type": "string",
+                "required": true
+              },
+              "threshold": {
+                "type": "string",
+                "required": true
+              },
+              "value": {
+                "type": "string",
+                "required": true
+              },
+              "level": {
+                "type": "string",
+                "required": true,
+                "enum": [
+                  "ok",
+                  "risk",
+                  "blocking"
+                ]
+              },
+              "levelLabel": {
+                "type": "string",
+                "required": true
+              }
+            }
+          },
+          "recommendation": {
+            "type": "object",
+            "required": true,
+            "fields": {
+              "level": {
+                "type": "string",
+                "required": true,
+                "enum": [
+                  "ok",
+                  "risk",
+                  "blocking"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "required": true
+              }
+            }
+          },
+          "decisionStatus": {
+            "type": "string",
+            "required": true,
+            "format": "libellé de Q-35, ex. « En attente de décision »"
+          }
+        }
+      }
+    }
+  }
+}
