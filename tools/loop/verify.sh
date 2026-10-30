@@ -38,9 +38,45 @@ step "go.mod uniquement sous backend/" stray_go
 if want flutter; then
   mapfile -t PUBS < <(find apps packages testing -name pubspec.yaml -not -path '*/.dart_tool/*' -not -path '*/build/*' 2>/dev/null | sort)
   [ "${#PUBS[@]}" -eq 0 ] && skip "Flutter" "aucun pubspec.yaml sous apps/, packages/ ou testing/"
+  # Porte rapide (--unit) : seulement les packages modifiés depuis HEAD (suivis ou nouveaux)
+  # et, par point fixe, ceux qui en dépendent. Arbre propre -> tous. La porte complète
+  # (--full) vérifie toujours tout.
+  mapfile -t CHANGED < <({ git diff --name-only HEAD; git ls-files --others --exclude-standard; } 2>/dev/null | sort -u)
+  declare -A SEL=()
+  if [ "$MODE" = --unit ] && [ "${#CHANGED[@]}" -gt 0 ]; then
+    for p in "${PUBS[@]}"; do
+      d="$(dirname "$p")"
+      printf '%s\n' "${CHANGED[@]}" | grep -q "^$d/" && SEL[$d]=1
+    done
+    grown=1
+    while [ $grown -eq 1 ]; do
+      grown=0
+      for p in "${PUBS[@]}"; do
+        d="$(dirname "$p")"; [ -n "${SEL[$d]:-}" ] && continue
+        for s in "${!SEL[@]}"; do
+          name="$(awk '/^name:/ {print $2; exit}' "$s/pubspec.yaml")"
+          if grep -qE "^ +$name:" "$p"; then SEL[$d]=1; grown=1; break; fi
+        done
+      done
+    done
+    keys="${!SEL[*]}"; echo "── porte rapide limitée à : ${keys:-(aucun package Flutter modifié)}"
+  else
+    for p in "${PUBS[@]}"; do SEL[$(dirname "$p")]=1; done
+  fi
   for p in "${PUBS[@]}"; do
     d="$(dirname "$p")"
-    if grep -q '^ *build_runner:' "$p"; then
+    [ -n "${SEL[$d]:-}" ] || continue
+    # build_runner : toujours en --full ; en --unit, seulement si une entrée de génération a changé
+    # (.feature, pubspec/build.yaml, ou fichier Dart à « part » / annotations de génération).
+    need_gen=1
+    if [ "$MODE" = --unit ] && [ "${#CHANGED[@]}" -gt 0 ]; then
+      need_gen=0
+      while IFS= read -r f; do
+        case "$f" in *.feature|*/pubspec.yaml|*/build.yaml) need_gen=1; break ;; esac
+        [[ "$f" == *.dart && -f "$f" ]] && grep -qE "^part '|@(injectable|Injectable|singleton|lazySingleton|module|freezed|JsonSerializable)" "$f" && { need_gen=1; break; }
+      done < <(printf '%s\n' "${CHANGED[@]}" | grep "^$d/")
+    fi
+    if [ "$need_gen" -eq 1 ] && grep -q '^ *build_runner:' "$p"; then
       step "build_runner ($d)" bash -c "cd '$d' && dart run build_runner build --delete-conflicting-outputs >/dev/null"
       # Les tests générés par bdd_widget_test ne sont pas formatés : on les formate ici,
       # pour que le contrôle de format ne porte que sur le code écrit à la main.
