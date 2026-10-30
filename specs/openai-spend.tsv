@@ -9,3 +9,6 @@
 2026-10-29T22:24:17+01:00	0.04	004 essai réel unique (compose orchestrateur + agent, 43 s de session)
 2026-10-30T03:28:07+01:00	0.05	006 essai réel unique (43 s facturées x 0,05 $/min + TTS 0,01, arrondi)
 2026-10-30T16:49:31+01:00	0.03	009 essai réel unique (15 s facturées x 0,05 $/min = 0,0125 $ + 2 TTS courts, arrondi) : actes 1 et 2 OK, clic refusé 409 busy
+2026-10-30T23:52:21+01:00	0.05	012 mesure T51 : gpt-6-luna, 25 appels texte (23,4k jetons entrée, 1,7k sortie), estimé par excès
+2026-10-30T23:54:01+01:00	0.05	012 mesure T51 : gpt-6.1-terra, 25 appels texte, estimé par excès
+2026-10-30T23:56:35+01:00	0.03	012 mesure T51 : gpt-6-luna, essais d'effort de raisonnement (minimal refusé, low et none : 10 appels chacun), estimé par excès
