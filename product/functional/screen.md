@@ -4,8 +4,8 @@ title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
+sources: [specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [pdr-0066-010-act4-replay-details-assistant-decided, pdr-0072-design-ergonomics-013, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -38,13 +38,28 @@ Fiche muette sur les détails d'interface : tranchés par la boucle sous [pdr-00
 | **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille 2×2 (6 surfaces au plus) ; **bandeau de 72 px sous la grille** pour la Barre d'actions (009, pdr-0065 D7), réservé dès la première surface ; **contour pointillé** autour de la surface du message en cours (D2) |
 | **Flux du protocole** | **replié en bas à droite** ; déplié (clic), il recouvre le canevas à droite **sans le redimensionner** ; message en cours mis en évidence, messages refusés marqués « refusé » ; JSON affiché brut |
 | **Étagère** | « CATALOGUE · n / 6 utilisés » ; « 4 / 6 » en fin d'acte 1, **« 5 / 6 »** quand la Barre d'actions apparaît (fin de l'acte 2, 009), Liste des crashs « inutilisée » (FR-06) |
-| **Rejeu** | **emplacement** « REJEU », commandes inactives jusqu'à J6 (D3) |
+| **Rejeu** | **zone active depuis 010** (voir ci-dessous) ; emplacement « REJEU » aux commandes inactives en 007 (D3) |
 
 D6 : composants au seul thème de scène (RG-09), statuts par codes fermés `ok|risk|blocking`, courbe dessinée sans nouvelle dépendance.
 
-**Budget des zones à 1920×1080** (modifié par 009, [pdr-0065](../decisions/pdr-0065-009-act3-interact-details-assistant-decided.md) D8) : barre supérieure **128 px** (160 en 007), rail ≤ 200 px, canevas **572 px** (520 en 007 : grille 2×250 + bandeau de la Barre d'actions de 72 px ; cellules ≈ 940×250), rangée du bas ≤ 140 px (étagère, Rejeu, panneau replié), marges et intervalles **40 px** au total à la verticale (60 en 007 ; marge verticale 18 → 8 px) ; texte ≥ 24 px partout (NFR-05), aucun défilement ni mise à l'échelle. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 (la fenêtre Linux s'ouvre à cette taille) ; en dessous, les zones débordent ; projection 16:9 en 1080p de la machine de démo ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
+**Budget des zones à 1920×1080** (modifié par 009, [pdr-0065](../decisions/pdr-0065-009-act3-interact-details-assistant-decided.md) D8) : barre supérieure **128 px** (160 en 007), rail ≤ 200 px, canevas **572 px** (520 en 007 : grille 2×250 + bandeau de la Barre d'actions de 72 px ; cellules ≈ 940×250), rangée du bas ≤ 140 px (étagère **900 px**, Rejeu **480 px** depuis 010, panneau replié 460 px), marges et intervalles **40 px** au total à la verticale (60 en 007 ; marge verticale 18 → 8 px) ; texte ≥ 24 px partout (NFR-05), aucun défilement ni mise à l'échelle. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 (la fenêtre Linux s'ouvre à cette taille) ; en dessous, les zones débordent ; projection 16:9 en 1080p de la machine de démo ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
 
 **À valider par le porteur** (détail d'interface tranché par la boucle sous pdr-0062, contestable) : le bandeau étant réservé dès la première surface, **une bande vide de 72 px reste en bas du canevas pendant les actes 1 et 2**. C'est le prix d'une grille qui ne bouge pas quand la barre arrive (S-02 : « les surfaces existantes restent à leur place »). Une grille 3×2 évitait la bande mais déplaçait les quatre surfaces ; seul le porteur peut assouplir S-02. Les couleurs de bordure des deux boutons sont aussi un choix de la boucle (contrastes mesurés).
+
+## Zone Rejeu et acte 4 (010, 2026-10-30)
+
+FR-09 livrée ; la fiche ne détaille pas les commandes : détails tranchés par la boucle sous pdr-0062 ([pdr-0066](../decisions/pdr-0066-010-act4-replay-details-assistant-decided.md) D1 à D8, contestables). Mécanisme : [p-ar-replay](../architecture/replay.md) ; implémentation : [p-ar-frontend-screen](../architecture/frontend-screen.md) § Acte 4.
+
+| Élément | Comportement |
+|---|---|
+| Disposition | zone de **480 px** à 1920×1080, **deux rangées de 48 px** (étagère ramenée de 1040 à 900 px) : rangée 1 « REJEU », Lecture/Pause (un bouton), Recommencer, curseur, « Direct » ; rangée 2 : vitesses 0,25×, 0,5×, 1×, 1,5×, 2× (1× par défaut, la vitesse choisie est gardée par Recommencer) |
+| Entrée | « Lecture » : sans appel backend ; inactif sans surface créée au journal, pendant qu'un agent travaille ou qu'une action est en cours |
+| Indicateur d'acte | « Acte 4 · Rejeu » (texte seul, non cliquable) pendant le rejeu |
+| En rejeu | le canevas se vide puis se reconstruit comme en direct ; le panneau du protocole suit le message rejoué et reste déplié pendant un positionnement (FR-05) ; « Démarrer » et les boutons du canevas sont inactifs ; la session voix n'est pas touchée ; les messages A2UI vivants sont écartés |
+| Curseur | couvre la durée comprimée (silence plafonné à 3 s entre deux messages) ; un seul positionnement au relâchement |
+| Sortie | « Direct » (toujours actif) ou « Remettre à vide » : remise à vide complète, journal vidé |
+
+⚠️ **À voir avec le porteur en répétition** (détails d'interface tranchés par la boucle, rien n'est décidé par le porteur) : le titre du panneau reste « FLUX A2UI · live » pendant le rejeu (cosmétique) ; le rail des agents est vide pendant le rejeu (seul le flux A2UI est rejoué, pdr-0032) ; plafond d'écart de 3 s ; place de la zone Rejeu dans la rangée du bas. Hors périmètre de 010 : panneau déplié qui déborde de 39 px, boutons d'acte et de remise à vide à 44 px (013, [pdr-0072](../decisions/pdr-0072-design-ergonomics-013.md)).
 
 ## États de l'orbe vocal (fiche § 6, p. 9)
 
@@ -96,7 +111,7 @@ Tranché (E5 · Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-
 | P | Déplier ou replier le flux du protocole | FR-05 (zone flux) |
 | R | Remettre le canevas à vide | FR-11 ; **non fourni** : bouton « Remettre à vide » (007, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) |
 | ~~B~~ | ~~Basculer en mode secours~~ | ~~FR-10~~ retirée (pdr-0032) |
-| ← / → | Reculer ou avancer dans le rejeu | FR-09 ; pas de pas-à-pas : lecture, pause et vitesse suffisent (Q-52 → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)) |
+| ← / → | Reculer ou avancer dans le rejeu | FR-09 ; **non fourni** (010) : pas de pas-à-pas : lecture, pause et vitesse suffisent (Q-52 → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)) |
 
 Points d'attention (assistant) :
 - Sur desktop, Espace active aussi le bouton qui a le focus (par exemple « Bloquer la release ») ; un raccourci Flutter ne se déclenche que dans le sous-arbre focalisé ([ux-desktop-shortcuts], [ux-desktop-focus]).

@@ -17,6 +17,12 @@ final class ProtocolFeedCleared extends ProtocolFeedEvent {
   const ProtocolFeedCleared();
 }
 
+/// Commande : vide les entrées et le compteur comme [ProtocolFeedCleared],
+/// mais conserve l'état déplié ou replié du panneau (entrée en rejeu).
+final class ProtocolFeedEntriesCleared extends ProtocolFeedEvent {
+  const ProtocolFeedEntriesCleared();
+}
+
 /// Commande : replie ou déplie le panneau.
 final class PanelToggled extends ProtocolFeedEvent {
   const PanelToggled();

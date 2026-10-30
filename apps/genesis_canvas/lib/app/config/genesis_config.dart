@@ -1,4 +1,5 @@
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:feature_replay/feature_replay.dart' show ReplaySettings;
 
 /// Erreur de configuration de lancement. Le message nomme la variable
 /// d'environnement fautive, jamais sa valeur (elle pourrait être sensible).
@@ -47,6 +48,11 @@ class GenesisConfig {
     this.orbAttack = const Duration(milliseconds: 80),
     this.orbRelease = const Duration(milliseconds: 250),
     this.orbSpeakingThreshold = 0.03,
+    this.replayMaxGap = defaultReplayMaxGap,
+    this.replayTick = defaultReplayTick,
+    this.replayJournalMaxEntries = defaultReplayJournalMaxEntries,
+    this.replayDefaultSpeed = defaultReplaySpeed,
+    this.replayCaptureAt,
     // Un paramètre nommé ne peut pas être un formel privé.
     // ignore: prefer_initializing_formals
   }) : _backendUrl = backendUrl,
@@ -65,34 +71,49 @@ class GenesisConfig {
   /// lues dans l'environnement, sauf `GENESIS_CANVAS_RESET_TIMEOUT_MS`,
   /// `GENESIS_CANVAS_RESET_RETRIES`, `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS`,
   /// `GENESIS_CANVAS_ACTION_TIMEOUT_MS`, `GENESIS_CANVAS_ACTION_RETRIES`,
-  /// `GENESIS_CANVAS_ACTION_RETRY_INTERVAL_MS` et
-  /// `GENESIS_CANVAS_ACTION_MAX_DURATION_MS`.
+  /// `GENESIS_CANVAS_ACTION_RETRY_INTERVAL_MS`,
+  /// `GENESIS_CANVAS_ACTION_MAX_DURATION_MS` et les variables du rejeu
+  /// (`GENESIS_REPLAY_MAX_GAP_MS`, `GENESIS_REPLAY_TICK_MS`,
+  /// `GENESIS_REPLAY_JOURNAL_MAX`, `GENESIS_REPLAY_SPEED`,
+  /// `GENESIS_REPLAY_AT`).
   ///
   /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` ou
   /// `GENESIS_CATALOG_ID`, `GENESIS_CANVAS_RESET_TIMEOUT_MS`,
   /// `GENESIS_CANVAS_RESET_RETRIES`, `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS`
-  /// ou l'une des variables `GENESIS_CANVAS_ACTION_*` est invalide.
-  factory GenesisConfig.fromEnvironment(Map<String, String> environment) =>
-      GenesisConfig(
-        scenario: _read(environment, 'GENESIS_SCENARIO'),
-        snapshotPath: _read(environment, 'GENESIS_SNAPSHOT'),
-        backendUrl: _readBackendUrl(environment),
-        catalogId: _readCatalogId(environment),
-        appLogPath: _read(environment, 'GENESIS_APP_LOG'),
-        canvasResetTimeout: _readCanvasResetTimeout(environment),
-        canvasResetRetries: _readCanvasResetRetries(environment),
-        canvasResetRetryInterval: _readCanvasResetRetryInterval(environment),
-        canvasActionTimeout:
-            _readCanvasActionTimeout(environment) ?? defaultCanvasActionTimeout,
-        canvasActionRetries:
-            _readCanvasActionRetries(environment) ?? defaultCanvasActionRetries,
-        canvasActionRetryInterval:
-            _readCanvasActionRetryInterval(environment) ??
-            defaultCanvasActionRetryInterval,
-        canvasActionMaxDuration:
-            _readCanvasActionMaxDuration(environment) ??
-            defaultCanvasActionMaxDuration,
-      );
+  /// ou l'une des variables `GENESIS_CANVAS_ACTION_*` ou `GENESIS_REPLAY_*`
+  /// est invalide.
+  factory GenesisConfig.fromEnvironment(
+    Map<String, String> environment,
+  ) => GenesisConfig(
+    scenario: _read(environment, 'GENESIS_SCENARIO'),
+    snapshotPath: _read(environment, 'GENESIS_SNAPSHOT'),
+    backendUrl: _readBackendUrl(environment),
+    catalogId: _readCatalogId(environment),
+    appLogPath: _read(environment, 'GENESIS_APP_LOG'),
+    canvasResetTimeout: _readCanvasResetTimeout(environment),
+    canvasResetRetries: _readCanvasResetRetries(environment),
+    canvasResetRetryInterval: _readCanvasResetRetryInterval(environment),
+    canvasActionTimeout:
+        _readCanvasActionTimeout(environment) ?? defaultCanvasActionTimeout,
+    canvasActionRetries:
+        _readCanvasActionRetries(environment) ?? defaultCanvasActionRetries,
+    canvasActionRetryInterval:
+        _readCanvasActionRetryInterval(environment) ??
+        defaultCanvasActionRetryInterval,
+    canvasActionMaxDuration:
+        _readCanvasActionMaxDuration(environment) ??
+        defaultCanvasActionMaxDuration,
+    replayMaxGap:
+        _readMillis(environment, _replayMaxGapVariable, min: 100, max: 60000) ??
+        defaultReplayMaxGap,
+    replayTick:
+        _readMillis(environment, _replayTickVariable, min: 10, max: 1000) ??
+        defaultReplayTick,
+    replayJournalMaxEntries:
+        _readReplayJournalMax(environment) ?? defaultReplayJournalMaxEntries,
+    replayDefaultSpeed: _readReplaySpeed(environment) ?? defaultReplaySpeed,
+    replayCaptureAt: _readReplayCaptureAt(environment),
+  );
 
   static const String _backendUrlVariable = 'GENESIS_BACKEND_URL';
 
@@ -207,6 +228,40 @@ class GenesisConfig {
 
   /// Durée maximale par défaut des boutons inactifs (60 s).
   static const Duration defaultCanvasActionMaxDuration = Duration(seconds: 60);
+
+  /// Écart maximal conservé entre deux messages rejoués, à 1x
+  /// (`GENESIS_REPLAY_MAX_GAP_MS`, 100 à 60000 ms, défaut 3 s).
+  final Duration replayMaxGap;
+
+  /// Écart maximal par défaut entre deux messages rejoués (3 s).
+  static const Duration defaultReplayMaxGap = ReplaySettings.defaultMaxGap;
+
+  /// Pas de l'horloge du lecteur de rejeu (`GENESIS_REPLAY_TICK_MS`, 10 à
+  /// 1000 ms, défaut 100 ms).
+  final Duration replayTick;
+
+  /// Pas par défaut du lecteur de rejeu (100 ms).
+  static const Duration defaultReplayTick = ReplaySettings.defaultTick;
+
+  /// Plafond du journal des messages A2UI (`GENESIS_REPLAY_JOURNAL_MAX`, 1 à
+  /// 100000, défaut 5000) : au-delà, il cesse d'enregistrer.
+  final int replayJournalMaxEntries;
+
+  /// Plafond par défaut du journal (5000 messages).
+  static const int defaultReplayJournalMaxEntries =
+      ReplaySettings.defaultJournalMaxEntries;
+
+  /// Vitesse du rejeu au premier démarrage (`GENESIS_REPLAY_SPEED`, l'une des
+  /// vitesses proposées par la barre, défaut 1).
+  final double replayDefaultSpeed;
+
+  /// Vitesse de rejeu par défaut (1x).
+  static const double defaultReplaySpeed = ReplaySettings.defaultStartSpeed;
+
+  /// Position, en fraction de la durée comprimée du rejeu (`GENESIS_REPLAY_AT`,
+  /// 0 à 1), où la capture est prise en mode scénario ; `null` : capture de la
+  /// fin du scénario, sans entrer en rejeu.
+  final double? replayCaptureAt;
 
   /// Silence au-delà duquel l'orbe retombe au repos.
   final Duration orbSilenceTimeout;
@@ -365,6 +420,71 @@ class GenesisConfig {
       );
     }
     return Duration(milliseconds: millis);
+  }
+
+  static const String _replayMaxGapVariable = 'GENESIS_REPLAY_MAX_GAP_MS';
+  static const String _replayTickVariable = 'GENESIS_REPLAY_TICK_MS';
+  static const String _replayJournalMaxVariable = 'GENESIS_REPLAY_JOURNAL_MAX';
+  static const String _replaySpeedVariable = 'GENESIS_REPLAY_SPEED';
+  static const String _replayCaptureAtVariable = 'GENESIS_REPLAY_AT';
+  static final RegExp _positiveIntegerPattern = RegExp(r'^\d{1,6}$');
+  static final RegExp _decimalPattern = RegExp(r'^\d(\.\d{1,3})?$');
+
+  static Duration? _readMillis(
+    Map<String, String> environment,
+    String name, {
+    required int min,
+    required int max,
+  }) {
+    final raw = _read(environment, name);
+    if (raw == null) return null;
+    final millis = _millisecondsPattern.hasMatch(raw) ? int.parse(raw) : -1;
+    if (millis < min || millis > max) {
+      throw GenesisConfigException(
+        'La variable $name est invalide : un nombre entier de millisecondes '
+        'compris entre $min et $max est attendu.',
+      );
+    }
+    return Duration(milliseconds: millis);
+  }
+
+  static int? _readReplayJournalMax(Map<String, String> environment) {
+    final raw = _read(environment, _replayJournalMaxVariable);
+    if (raw == null) return null;
+    final count = _positiveIntegerPattern.hasMatch(raw) ? int.parse(raw) : 0;
+    if (count < 1 || count > 100000) {
+      throw const GenesisConfigException(
+        'La variable $_replayJournalMaxVariable est invalide : un nombre '
+        'entier compris entre 1 et 100000 est attendu.',
+      );
+    }
+    return count;
+  }
+
+  static double? _readReplaySpeed(Map<String, String> environment) {
+    final raw = _read(environment, _replaySpeedVariable);
+    if (raw == null) return null;
+    final speed = _decimalPattern.hasMatch(raw) ? double.parse(raw) : null;
+    if (speed == null || !ReplaySettings.defaultSpeeds.contains(speed)) {
+      throw GenesisConfigException(
+        'La variable $_replaySpeedVariable est invalide : l\'une des vitesses '
+        '${ReplaySettings.defaultSpeeds.join(', ')} est attendue.',
+      );
+    }
+    return speed;
+  }
+
+  static double? _readReplayCaptureAt(Map<String, String> environment) {
+    final raw = _read(environment, _replayCaptureAtVariable);
+    if (raw == null) return null;
+    final fraction = _decimalPattern.hasMatch(raw) ? double.parse(raw) : -1.0;
+    if (fraction < 0 || fraction > 1) {
+      throw const GenesisConfigException(
+        'La variable $_replayCaptureAtVariable est invalide : une fraction '
+        'décimale comprise entre 0 et 1 est attendue (par exemple 0.5).',
+      );
+    }
+    return fraction;
   }
 
   static String? _readCatalogId(Map<String, String> environment) {

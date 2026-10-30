@@ -22,6 +22,7 @@ import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 import 'page_settings.dart';
+import 'replay_rig.dart' show withOverlay;
 
 const rigCatalog = GenesisContract.defaultCatalogId;
 
@@ -155,6 +156,8 @@ class PageRig {
     Stream<ReplayedMessage>? replay,
     Size size = const Size(1920, 1080),
     bool themed = false,
+    String? snapshotPath,
+    void Function(int code)? onExit,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -165,11 +168,11 @@ class PageRig {
       catalogs: <Catalog>[genesisCatalog(catalogId: rigCatalog)],
       replay: replay,
       snapshotFactory: (exitHandler) => SnapshotService(
-        path: null,
+        path: snapshotPath,
         exitHandler: exitHandler,
         errorSink: errors,
       ),
-      exitHandler: (_) {},
+      exitHandler: onExit ?? (_) {},
       errorSink: errors,
       settings: settings,
     );
@@ -180,7 +183,10 @@ class PageRig {
               theme: genesisThemeData(),
               home: Material(type: MaterialType.transparency, child: page),
             )
-          : Directionality(textDirection: TextDirection.ltr, child: page),
+          : Directionality(
+              textDirection: TextDirection.ltr,
+              child: withOverlay(page),
+            ),
     );
     // Bornés : l'orbe au repos pulse sans fin (jamais `pumpAndSettle`).
     await tester.pump(const Duration(milliseconds: 50));

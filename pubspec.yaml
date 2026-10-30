@@ -19,6 +19,7 @@ workspace:
   - packages/features/protocol_feed
   - packages/features/catalog_shelf
   - packages/features/stage_controls
+  - packages/features/replay
   - testing/backend_fakes
   - testing/bloc_harness
   - testing/voice_fakes

@@ -1,7 +1,12 @@
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/app.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
+import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart'
+    show GenesisCanvasPage;
+import 'package:shared_core/shared_core.dart' show AppClock;
 
 /// Taille de l'écran de la démo (six zones, budget de la spec 007).
 void _demoScreen(WidgetTester tester) {
@@ -22,7 +27,109 @@ Future<void> _settleStartupReset(WidgetTester tester) async {
   await tester.pump(const GenesisConfig().canvasResetTimeout * 2);
 }
 
+/// Faux paquet d'assets : frontière plateforme.
+class _FakeBundle extends CachingAssetBundle {
+  _FakeBundle(this.text);
+
+  final String text;
+
+  @override
+  Future<ByteData> load(String key) async =>
+      ByteData.sublistView(Uint8List.fromList(text.codeUnits));
+}
+
+/// Horloge fausse (frontière « temps ») qui compte ses lectures.
+class _CountingClock implements AppClock {
+  int reads = 0;
+
+  @override
+  int nowUnixMs() => 1761800000000 + (++reads) * 1000;
+}
+
 void main() {
+  testWidgets(
+    "l'horloge fournie remplace celle de l'app (panneau du protocole)",
+    (tester) async {
+      _demoScreen(tester);
+      final clock = _CountingClock();
+      const catalog = GenesisContract.defaultCatalogId;
+      await tester.pumpWidget(
+        GenesisCanvasApp(
+          config: const GenesisConfig(scenario: 'demo'),
+          errorSink: StringBuffer(),
+          exitHandler: (_) {},
+          clock: clock,
+          replayDelay: (_) async {},
+          assetBundle: _FakeBundle(
+            '{"t_ms": 0, "message": {"version":"v0.9","createSurface":'
+            '{"surfaceId":"kpi","catalogId":"$catalog"}}}\n',
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(clock.reads, greaterThan(0));
+    },
+  );
+
+  testWidgets('les réglages du rejeu de la configuration arrivent à la page', (
+    tester,
+  ) async {
+    _demoScreen(tester);
+    await tester.pumpWidget(
+      GenesisCanvasApp(
+        errorSink: StringBuffer(),
+        config: const GenesisConfig(
+          replayMaxGap: Duration(seconds: 1),
+          replayTick: Duration(milliseconds: 50),
+          replayJournalMaxEntries: 42,
+          replayDefaultSpeed: 2,
+          replayCaptureAt: 0.25,
+        ),
+      ),
+    );
+    await _settleStartupReset(tester);
+
+    final settings = tester
+        .widget<GenesisCanvasPage>(find.byType(GenesisCanvasPage))
+        .settings;
+    expect(settings.replayMaxGap, const Duration(seconds: 1));
+    expect(settings.replayTick, const Duration(milliseconds: 50));
+    expect(settings.replayJournalMaxEntries, 42);
+    expect(settings.replayDefaultSpeed, 2.0);
+    expect(settings.replayCaptureAt, 0.25);
+  });
+
+  testWidgets('capture à mi-parcours sans createSurface : erreur et code 1', (
+    tester,
+  ) async {
+    _demoScreen(tester);
+    final errors = StringBuffer();
+    final exitCodes = <int>[];
+    await tester.pumpWidget(
+      GenesisCanvasApp(
+        config: const GenesisConfig(
+          scenario: 'demo',
+          snapshotPath: '/nonexistent/capture.png',
+          replayCaptureAt: 0.5,
+        ),
+        errorSink: errors,
+        exitHandler: exitCodes.add,
+        replayDelay: (_) async {},
+        assetBundle: _FakeBundle(
+          '{"t_ms": 0, "message": {"version":"v0.9","deleteSurface":'
+          '{"surfaceId":"kpi"}}}\n',
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(exitCodes, <int>[1]);
+    expect(errors.toString(), contains('Capture impossible'));
+  });
+
   testWidgets("l'app démarre et affiche l'orbe et le canevas vide", (
     tester,
   ) async {

@@ -13,6 +13,8 @@ import './step/la_valeur_liee_au_modele_de_donnees_est_affichee.dart';
 import './step/lapp_lancee_avec_genesis_snapshot_vers_un_fichier_temporaire.dart';
 import './step/un_png_non_vide_est_ecrit_a_ce_chemin.dart';
 import './step/lapp_se_ferme_avec_le_code0.dart';
+import './step/lapp_lancee_avec_genesis_snapshot_vers_un_fichier_temporaire_et_genesis_replay_at.dart';
+import './step/la_zone_rejeu_est_en_pause_a_miparcours.dart';
 
 void main() {
   group('''Outillage de boucle dans l'app''', () {
@@ -32,6 +34,18 @@ void main() {
       await leRejeuSeTermine(tester);
       await unPngNonVideEstEcritACeChemin(tester);
       await lappSeFermeAvecLeCode0(tester);
+    });
+    testWidgets('''H-04 Capture à mi-parcours du rejeu (GENESIS_REPLAY_AT)''', (
+      tester,
+    ) async {
+      await lappLanceeAvecGenesisSnapshotVersUnFichierTemporaireEtGenesisReplayAt(
+        tester,
+        0.5,
+      );
+      await leRejeuSeTermine(tester);
+      await unPngNonVideEstEcritACeChemin(tester);
+      await lappSeFermeAvecLeCode0(tester);
+      await laZoneRejeuEstEnPauseAMiparcours(tester);
     });
   });
 }

@@ -34,12 +34,12 @@ tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, des
 | pages | `genesis_canvas` | page unique, racine de composition (`BlocProvider`) | — |
 | widgets | `top_bar` | orbe, transcription (répliques du speaker et de l'IA, réplique coupée tronquée : [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)), forme d'onde | FR-02, FR-19, RG-17 |
 | widgets | `agents_rail` | orchestrateur + agents, liaisons animées | FR-03 |
-| widgets | `protocol_panel`, `catalog_shelf`, `replay_bar`, `stage_bar` | flux A2UI repliable (FR-05) ; étagère (FR-06) ; lecture, pause, vitesse de l'acte 4 (FR-09, emplacement en 007) ; acte et remise à vide (FR-11) | FR-05, FR-06, FR-09, FR-11 |
+| widgets | `protocol_panel`, `catalog_shelf`, `replay_bar`, `stage_bar` | flux A2UI repliable (FR-05) ; étagère (FR-06) ; lecture, pause, vitesse de l'acte 4 (FR-09, active depuis 010) ; acte et remise à vide (FR-11) | FR-05, FR-06, FR-09, FR-11 |
 | features | `voice_session` | session voix (port + adaptateur GPT-Live WebRTC) | FR-02, FR-12, FR-13, FR-20 |
 | features | `canvas` | rendu GenUI, catalogue `genesis`, `A2uiGate`, `CanvasBoard` (grille, 6 max), cycle de vie des surfaces, actions | FR-01, FR-04, FR-07, FR-08, FR-15, FR-16 |
 | features | `agent_activity` | état des agents à partir des événements d'orchestration | FR-03 |
 | features | `protocol_feed` | journal lisible des messages A2UI | FR-05 |
-| features | `replay` | journal du flux A2UI, lecteur (acte 4) | FR-09 |
+| features | `replay` | routeur vivant / rejeu, lecteur, Bloc du rejeu (acte 4, livré par 010 ; le journal est dans `entities/session`) | FR-09 |
 | features | `stage_controls` | contrôles cliquables et raccourcis facultatifs → events Bloc | FR-11, FR-20, NFR-12 |
 | entities | `session` | `SessionEvent` (sealed), port `SessionEventSource`, `TranscriptSegment` | — |
 | entities | `catalog` | pur Dart : `GenesisContract` (noms, ids, propriétés, champs requis) et `GenesisMessageValidator`, partagés par `canvas`, `protocol_feed` et `catalog_shelf` | FR-06 |
@@ -97,7 +97,7 @@ apps/genesis_canvas/                 # app desktop (Linux, pdr-0028)
   lib/app/{di,bootstrap,theme,shortcuts,config}/   # réel : di, bootstrap, config, lifecycle, scenario, theme
   lib/pages/genesis_canvas/                        # réel : page (racine de composition), capture, surveillance du moteur
   lib/widgets/{top_bar,agents_rail,protocol_panel,catalog_shelf,replay_bar,stage_bar}/  # réel : les six
-packages/features/{voice_session,canvas,agent_activity,protocol_feed,catalog_shelf,stage_controls,replay}/  # réel : tous sauf replay (J6)
+packages/features/{voice_session,canvas,agent_activity,protocol_feed,catalog_shelf,stage_controls,replay}/  # réel : tous (replay depuis 010)
 packages/entities/{session,catalog}/ # réel : les deux (catalog en Dart pur)
 packages/shared/{core,backend_channel,design_system,realtime_transport}/  # réel : core, backend_channel, design_system
 testing/                             # réel : backend_fakes, voice_fakes, bloc_harness

@@ -478,6 +478,41 @@ void main() {
     });
 
     test(
+      'requestCount : toutes les requêtes HTTP, refusées et 404 comprises, '
+      'sans les connexions WebSocket ; resetRequestCounts remet à zéro',
+      () async {
+        expect(backend.requestCount, 0);
+        expect(backend.requestCountFor('/voice/sessions'), 0);
+
+        await read(await post('v=0'));
+        await read(await post('v=0', contentType: 'text/plain'));
+        final missing = await (await http.getUrl(
+          Uri.parse('${backend.url}/inconnu'),
+        )).close();
+        await missing.drain<void>();
+        expect(missing.statusCode, 404);
+        final notFoundSession = await (await http.getUrl(
+          Uri.parse('${backend.url}/app?session=absente'),
+        )).close();
+        await notFoundSession.drain<void>();
+
+        expect(backend.requestCount, 3);
+        expect(backend.requestCountFor('/voice/sessions'), 2);
+        expect(backend.requestCountFor('/inconnu'), 1);
+        expect(backend.requestCountFor('/app'), 0);
+
+        final socket = await connect(<Map<String, Object?>>[]);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(backend.requestCount, 3);
+        await socket.close();
+
+        backend.resetRequestCounts();
+        expect(backend.requestCount, 0);
+        expect(backend.requestCountFor('/voice/sessions'), 0);
+      },
+    );
+
+    test(
       'POST /canvas/reset : 204, requête comptée, deleteSurface émis triés',
       () async {
         await read(await post('v=0'));

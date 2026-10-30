@@ -6,6 +6,7 @@ export 'src/model/protocol_feed_event.dart'
     show
         PanelToggled,
         ProtocolFeedCleared,
+        ProtocolFeedEntriesCleared,
         ProtocolFeedEvent,
         ProtocolSourceSubscribed;
 export 'src/model/protocol_feed_state.dart'

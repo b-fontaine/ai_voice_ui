@@ -17,6 +17,11 @@ class GenesisCanvasPageSettings {
     required this.canvasActionRetries,
     required this.canvasActionRetryInterval,
     required this.canvasActionMaxDuration,
+    required this.replayJournalMaxEntries,
+    required this.replayTick,
+    required this.replayMaxGap,
+    required this.replayDefaultSpeed,
+    this.replayCaptureAt,
   });
 
   /// Temps de montée du lissage de l'orbe.
@@ -52,6 +57,24 @@ class GenesisCanvasPageSettings {
   /// Durée maximale de l'état « en cours » d'une action.
   final Duration canvasActionMaxDuration;
 
+  /// Plafond du journal des messages A2UI (rejeu, acte 4) : au-delà, il cesse
+  /// d'enregistrer.
+  final int replayJournalMaxEntries;
+
+  /// Pas de l'horloge du lecteur de rejeu.
+  final Duration replayTick;
+
+  /// Écart maximal conservé entre deux messages rejoués (valeur à 1x).
+  final Duration replayMaxGap;
+
+  /// Vitesse du rejeu au premier démarrage.
+  final double replayDefaultSpeed;
+
+  /// Mode scénario avec capture : fraction (0 à 1) de la durée comprimée du
+  /// rejeu où se placer avant la capture ; `null` : pas de rejeu avant la
+  /// capture.
+  final double? replayCaptureAt;
+
   @override
   bool operator ==(Object other) =>
       other is GenesisCanvasPageSettings &&
@@ -65,7 +88,12 @@ class GenesisCanvasPageSettings {
       other.canvasResetRetryInterval == canvasResetRetryInterval &&
       other.canvasActionRetries == canvasActionRetries &&
       other.canvasActionRetryInterval == canvasActionRetryInterval &&
-      other.canvasActionMaxDuration == canvasActionMaxDuration;
+      other.canvasActionMaxDuration == canvasActionMaxDuration &&
+      other.replayJournalMaxEntries == replayJournalMaxEntries &&
+      other.replayTick == replayTick &&
+      other.replayMaxGap == replayMaxGap &&
+      other.replayDefaultSpeed == replayDefaultSpeed &&
+      other.replayCaptureAt == replayCaptureAt;
 
   @override
   int get hashCode => Object.hash(
@@ -80,5 +108,10 @@ class GenesisCanvasPageSettings {
     canvasActionRetries,
     canvasActionRetryInterval,
     canvasActionMaxDuration,
+    replayJournalMaxEntries,
+    replayTick,
+    replayMaxGap,
+    replayDefaultSpeed,
+    replayCaptureAt,
   );
 }

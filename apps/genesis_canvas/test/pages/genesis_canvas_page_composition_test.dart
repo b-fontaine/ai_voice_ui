@@ -6,6 +6,8 @@ import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_catalog_shelf/feature_catalog_shelf.dart';
 import 'package:feature_protocol_feed/feature_protocol_feed.dart';
+import 'package:feature_replay/feature_replay.dart'
+    show ReplayBloc, ReplayRouter;
 import 'package:feature_stage_controls/feature_stage_controls.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:flutter/material.dart' show FilledButton, OutlinedButton;
@@ -16,6 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/page_rig.dart';
 
 import 'package:genesis_canvas/app/config/genesis_config.dart';
+import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart'
+    show GenesisCanvasPage;
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasActionResult, CanvasResetResult;
@@ -116,6 +120,49 @@ void main() {
       'bloc.shelf closed',
       'bloc.stage closed',
     ]);
+    expect(rig.errors.toString(), isEmpty);
+  });
+
+  testWidgets('fermeture : Bloc du rejeu en premier et une seule fois, '
+      'routeur avant le gate, Bloc du canevas après', (tester) async {
+    final observer = _CloseCounter();
+    final previous = Bloc.observer;
+    Bloc.observer = observer;
+    addTearDown(() => Bloc.observer = previous);
+    final rig = PageRig(tester);
+    await rig.mount(tester);
+    await rig.start(tester);
+    final journal = rig.journal;
+    final ctx = rig.context;
+    final page = tester.state(find.byType(GenesisCanvasPage)) as dynamic;
+    (page.router as ReplayRouter).journalSize.listen(
+      null,
+      onDone: () => journal.add('router disposed'),
+    );
+    ctx.read<ReplayBloc>().stream.listen(
+      null,
+      onDone: () => journal.add('bloc.replay closed'),
+    );
+    ctx.read<CanvasBloc>().stream.listen((state) {
+      if (state.sourceStatus == CanvasSourceStatus.completed) {
+        journal.add('source disposed');
+      }
+    }, onDone: () => journal.add('bloc.canvas closed'));
+
+    await tester.pumpWidget(const SizedBox());
+    await drain(tester);
+
+    final replayClosed = journal.indexOf('bloc.replay closed');
+    final routerDisposed = journal.indexOf('router disposed');
+    final gateClosed = journal.indexOf('source disposed');
+    final canvasClosed = journal.indexOf('bloc.canvas closed');
+    expect(replayClosed, isNonNegative);
+    expect(replayClosed, lessThan(journal.indexOf('t1.stop')));
+    expect(replayClosed, lessThan(gateClosed));
+    expect(replayClosed, lessThan(routerDisposed));
+    expect(routerDisposed, lessThan(gateClosed));
+    expect(canvasClosed, greaterThan(routerDisposed));
+    expect(observer.closes[ReplayBloc], 1);
     expect(rig.errors.toString(), isEmpty);
   });
 
@@ -879,5 +926,16 @@ class _JournalObserver extends BlocObserver {
     super.onEvent(bloc, event);
     final name = event.runtimeType.toString();
     if (_watched.contains(name)) journal.add(name);
+  }
+}
+
+/// Compte les appels à `close()` par type de Bloc.
+class _CloseCounter extends BlocObserver {
+  final Map<Type, int> closes = <Type, int>{};
+
+  @override
+  void onClose(BlocBase<dynamic> bloc) {
+    super.onClose(bloc);
+    closes[bloc.runtimeType] = (closes[bloc.runtimeType] ?? 0) + 1;
   }
 }

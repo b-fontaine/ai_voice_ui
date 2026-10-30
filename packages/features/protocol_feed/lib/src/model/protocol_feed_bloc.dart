@@ -21,6 +21,10 @@ class ProtocolFeedBloc extends Bloc<ProtocolFeedEvent, ProtocolFeedState> {
       _nextIndex = 0;
       emit(const ProtocolFeedState.empty());
     }, transformer: sequential());
+    on<ProtocolFeedEntriesCleared>((event, emit) {
+      _nextIndex = 0;
+      emit(ProtocolFeedState.empty().copyWith(expanded: state.expanded));
+    }, transformer: sequential());
     on<PanelToggled>(
       (event, emit) => emit(state.copyWith(expanded: !state.expanded)),
       transformer: droppable(),

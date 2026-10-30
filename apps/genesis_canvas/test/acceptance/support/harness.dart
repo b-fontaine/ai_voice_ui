@@ -4,6 +4,18 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
+import 'package:shared_core/shared_core.dart' show AppClock;
+
+/// Horloge fausse (frontière « temps ») qui avance de 500 ms à chaque lecture :
+/// le journal du rejeu reçoit des `t_ms` déterministes. Avec l'horloge réelle,
+/// un scénario rejoué sans attente tient dans quelques millisecondes et la
+/// position demandée par `GENESIS_REPLAY_AT` n'a plus de sens (arrondis).
+class _SteppingClock implements AppClock {
+  int _unixMs = 1761800000000;
+
+  @override
+  int nowUnixMs() => _unixMs += 500;
+}
 
 /// État partagé entre les étapes d'un scénario de l'outillage de boucle.
 ///
@@ -25,23 +37,30 @@ class Harness {
     WidgetTester tester, {
     String? scenario,
     String? snapshotPath,
+    Map<String, String>? environment,
   }) async {
     reset();
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    // `environment` : configuration lue comme au lancement réel (variables
+    // `GENESIS_*`) ; sinon les deux réglages directs.
+    final config = environment != null
+        ? GenesisConfig.fromEnvironment(environment)
+        : GenesisConfig(scenario: scenario, snapshotPath: snapshotPath);
     await tester.pumpWidget(
       GenesisCanvasApp(
-        config: GenesisConfig(scenario: scenario, snapshotPath: snapshotPath),
+        config: config,
         exitHandler: exitCodes.add,
         // Frontière « temps » : le rejeu enchaîne ses douze messages sans
         // attente réelle (le rythme de l'asset est celui d'une démonstration ;
         // `pumpAndSettle` s'arrêterait entre deux messages espacés de 500 ms).
         replayDelay: (_) async {},
+        clock: _SteppingClock(),
       ),
     );
     await tester.pump();
-    if (scenario == null) {
+    if (config.scenario == null) {
       // Mode vivant : la page demande la remise à vide du backend au
       // démarrage (pdr-0064, D6). Le banc de test répond 400 à toute requête
       // HTTP : on laisse la réponse arriver (horloge réelle), puis on avance

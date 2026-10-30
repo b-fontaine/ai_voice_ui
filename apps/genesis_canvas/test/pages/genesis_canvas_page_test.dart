@@ -8,6 +8,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasResetClient, CanvasResetResult;
 
 import '../support/page_settings.dart';
+import '../support/replay_rig.dart' show withOverlay;
 
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
@@ -93,6 +94,7 @@ void main() {
     String scenario = 'demo',
     bool withReplay = true,
     List<Catalog>? catalogs,
+    GenesisConfig config = const GenesisConfig(),
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -100,24 +102,27 @@ void main() {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: GenesisCanvasPage(
-          getIt: newGetIt(),
-          catalogs: catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
-          replay: withReplay
-              ? ScenarioPlayer(
-                  bundle: _FakeBundle(<String, String>{
-                    'assets/replays/demo.jsonl': ?jsonl,
-                  }),
-                ).entries(scenario)
-              : null,
-          snapshotFactory: (exitHandler) => SnapshotService(
-            path: capture ? '${dir.path}/out.png' : null,
-            exitHandler: exitHandler,
+        child: withOverlay(
+          GenesisCanvasPage(
+            getIt: newGetIt(),
+            catalogs:
+                catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
+            replay: withReplay
+                ? ScenarioPlayer(
+                    bundle: _FakeBundle(<String, String>{
+                      'assets/replays/demo.jsonl': ?jsonl,
+                    }),
+                  ).entries(scenario)
+                : null,
+            snapshotFactory: (exitHandler) => SnapshotService(
+              path: capture ? '${dir.path}/out.png' : null,
+              exitHandler: exitHandler,
+              errorSink: errors,
+            ),
+            exitHandler: exitCodes.add,
             errorSink: errors,
+            settings: pageSettingsOf(config),
           ),
-          exitHandler: exitCodes.add,
-          errorSink: errors,
-          settings: pageSettingsOf(),
         ),
       ),
     );
@@ -227,6 +232,22 @@ void main() {
     expect(errors.toString(), isEmpty);
   });
 
+  testWidgets('journal plein : une seule ligne, le nombre sans le contenu', (
+    tester,
+  ) async {
+    await launch(
+      tester,
+      _valid,
+      config: const GenesisConfig(replayJournalMaxEntries: 1),
+    );
+
+    expect(
+      errors.toString(),
+      'Rejeu : journal plein (1 messages), la suite n\'est pas enregistrée\n',
+    );
+    expect(errors.toString(), isNot(contains('kpi')));
+  });
+
   testWidgets('capture active sans scénario : PNG non vide et sortie 0', (
     tester,
   ) async {
@@ -249,18 +270,20 @@ void main() {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: GenesisCanvasPage(
-          getIt: newGetIt(),
-          catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
-          replay: messages.stream,
-          snapshotFactory: (exitHandler) => SnapshotService(
-            path: '${dir.path}/out.png',
-            exitHandler: exitHandler,
+        child: withOverlay(
+          GenesisCanvasPage(
+            getIt: newGetIt(),
+            catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
+            replay: messages.stream,
+            snapshotFactory: (exitHandler) => SnapshotService(
+              path: '${dir.path}/out.png',
+              exitHandler: exitHandler,
+              errorSink: errors,
+            ),
+            exitHandler: exitCodes.add,
             errorSink: errors,
+            settings: pageSettingsOf(),
           ),
-          exitHandler: exitCodes.add,
-          errorSink: errors,
-          settings: pageSettingsOf(),
         ),
       ),
     );

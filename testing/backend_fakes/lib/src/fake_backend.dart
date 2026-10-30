@@ -126,6 +126,23 @@ class FakeBackend {
   final List<String?> appOrigins = <String?>[];
   final List<String> events = <String>[];
 
+  final Map<String, int> _requestsByPath = <String, int>{};
+
+  /// Nombre de requêtes HTTP reçues, toutes confondues : succès, refus (421,
+  /// 415, 429, 404…) et chemins inconnus compris. Les connexions WebSocket
+  /// (`GET /app`, y compris refusées avant la mise à niveau) ne sont **pas**
+  /// comptées : ce sont des connexions, suivies par [appConnections]. Sert à
+  /// vérifier qu'une action (p. ex. le rejeu) n'a touché le backend en rien.
+  int get requestCount =>
+      _requestsByPath.values.fold(0, (total, count) => total + count);
+
+  /// Nombre de requêtes HTTP reçues sur [path] (même périmètre que
+  /// [requestCount]).
+  int requestCountFor(String path) => _requestsByPath[path] ?? 0;
+
+  /// Remet à zéro [requestCount] et les compteurs par chemin.
+  void resetRequestCounts() => _requestsByPath.clear();
+
   /// Nombre de requêtes `POST /canvas/reset` reçues.
   int canvasResets = 0;
 
@@ -530,6 +547,13 @@ class FakeBackend {
   }
 
   Future<void> _handle(HttpRequest request) async {
+    if (!(request.method == 'GET' && request.uri.path == '/app')) {
+      _requestsByPath.update(
+        request.uri.path,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
     if (request.headers.host != '127.0.0.1') {
       return _json(
         request.response,

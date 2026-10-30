@@ -293,6 +293,45 @@ void main() {
     expect(states.last.expanded, isFalse);
   });
 
+  test('ProtocolFeedEntriesCleared vide les entrées et le compteur, '
+      'mais conserve le dépliage', () async {
+    final states = await run(
+      [for (final m in fixture('kpi')) accepted(m)],
+      after: (bloc) async {
+        bloc.add(const PanelToggled());
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ProtocolFeedEntriesCleared());
+        await Future<void>.delayed(Duration.zero);
+      },
+    );
+    expect(states.last.expanded, isTrue);
+    expect(states.last.entries, isEmpty);
+    expect(states.last.totalCount, 0);
+    expect(states.last.highlightedIndex, isNull);
+  });
+
+  test(
+    'après ProtocolFeedEntriesCleared, la numérotation repart de zéro',
+    () async {
+      final c = StreamController<ValidatedEnvelope>();
+      final states = await statesAfter(ProtocolFeedBloc(clock: FakeClock()), (
+        bloc,
+      ) async {
+        bloc.add(ProtocolSourceSubscribed(c.stream));
+        await Future<void>.delayed(Duration.zero);
+        c.add(accepted(fixture('kpi').first));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ProtocolFeedEntriesCleared());
+        await Future<void>.delayed(Duration.zero);
+        c.add(accepted(fixture('kpi').first));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      });
+      expect(states.last.entries.map((e) => e.index), [0]);
+      expect(states.last.totalCount, 1);
+    },
+  );
+
   test('une erreur du flux est ignorée, le suivi continue', () async {
     final StreamController<ValidatedEnvelope> c =
         StreamController<ValidatedEnvelope>();
