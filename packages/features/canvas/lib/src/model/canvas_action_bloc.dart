@@ -55,13 +55,18 @@ class CanvasActionBloc extends Bloc<CanvasActionEvent, CanvasActionState> {
   ) async {
     if (!GenesisContract.actionIds.contains(event.name)) return;
     final int generation = _generation;
-    _sawBusy = false;
-    _finished = false;
     emit(ActionSending(event.name));
 
     CanvasActionFailure? failure;
     var retriesLeft = _settings.retries;
     while (true) {
+      // Remis à zéro avant chaque envoi : une fin d'activité vue pendant un
+      // `busy` (délégation vocale) ne doit pas compter pour cette action.
+      // Si le tag d'action disparaît après le 202, le backend publie un plan
+      // sans agent ni activité : les boutons restent inactifs jusqu'à
+      // `maxDuration`.
+      _sawBusy = false;
+      _finished = false;
       final CanvasActionResult result = await _client.send(
         action: event.name,
         surface: event.surfaceId,

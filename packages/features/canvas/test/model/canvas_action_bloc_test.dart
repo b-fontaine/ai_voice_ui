@@ -159,6 +159,38 @@ void main() {
     expect(emitted, [isA<ActionSending>(), isA<ActionRunning>()]);
   });
 
+  test('busy, activité vraie puis fausse, puis accepted : reste Running '
+      'jusqu\'au prochain passage de busy à idle (D6)', () async {
+    final client = _FakeActionClient([
+      CanvasActionResult.busy,
+      CanvasActionResult.accepted,
+    ]);
+    build(
+      client,
+      const CanvasActionSettings(
+        retries: 3,
+        retryInterval: Duration(milliseconds: 60),
+        maxDuration: Duration(seconds: 5),
+      ),
+    );
+
+    click();
+    await _tick(20);
+    // Fin d'une délégation vocale pendant l'attente avant le réessai.
+    bloc.add(const ActionActivityChanged(busy: true));
+    bloc.add(const ActionActivityChanged(busy: false));
+    await _tick(150);
+
+    expect(client.calls, hasLength(2));
+    expect(bloc.state, isA<ActionRunning>());
+
+    bloc.add(const ActionActivityChanged(busy: true));
+    bloc.add(const ActionActivityChanged(busy: false));
+    await _tick();
+
+    expect(bloc.state, isA<ActionIdle>());
+  });
+
   test('réessais épuisés : Failed(busy) puis Idle, nombre borné', () async {
     final client = _FakeActionClient(List.filled(50, CanvasActionResult.busy));
     build(client);

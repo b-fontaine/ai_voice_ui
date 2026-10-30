@@ -1,6 +1,8 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
+import 'package:feature_canvas/src/ui/action_availability.dart'
+    show ActionAvailability;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -297,6 +299,38 @@ void main() {
         expect(r.bottom, lessThanOrEqualTo(frame.bottom));
         expect(r.right, lessThanOrEqualTo(frame.right));
       }
+    });
+  });
+
+  group('libellé très long dans le bandeau de 72 px', () {
+    testWidgets('120 caractères : aucun débordement, cible >= 48 px, '
+        'texte >= 24 px', (tester) async {
+      tester.view.physicalSize = const Size(940, 400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpBar(
+        tester,
+        onAction: (_, _) {},
+        alter: (v) {
+          final List<dynamic> actions = v['actions'] as List<dynamic>;
+          (actions[0] as Map<String, dynamic>)['label'] = 'L' * 120;
+          return v;
+        },
+      );
+      expect(tester.takeException(), isNull);
+      final Rect frame = tester.getRect(find.byKey(const Key('band')));
+      expect(frame.height, 72);
+      expect(frame.width, 940);
+      final Finder long = find.byKey(const Key('action-block_release'));
+      final Rect r = tester.getRect(long);
+      expect(r.height, greaterThanOrEqualTo(48));
+      expect(r.top, greaterThanOrEqualTo(frame.top));
+      expect(r.bottom, lessThanOrEqualTo(frame.bottom));
+      expect(r.right, lessThanOrEqualTo(frame.right));
+      final Text text = tester.widget<Text>(
+        find.descendant(of: long, matching: find.byType(Text)),
+      );
+      expect(text.style!.fontSize, greaterThanOrEqualTo(24));
     });
   });
 

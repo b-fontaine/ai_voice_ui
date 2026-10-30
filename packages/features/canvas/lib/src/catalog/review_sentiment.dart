@@ -11,7 +11,8 @@ final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
   description: 'Sentiment des avis lié à /reviews.',
   parse: _Reviews.tryParse,
-  build: (BuildContext context, _Reviews r) => _ReviewsView(reviews: r),
+  build: (BuildContext context, _Reviews r, String _) =>
+      _ReviewsView(reviews: r),
 );
 
 class _Excerpt {

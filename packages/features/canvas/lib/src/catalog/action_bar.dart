@@ -18,7 +18,8 @@ final CatalogItem actionBarItem = boundCatalogItem<_ActionBar>(
   name: 'ActionBar',
   description: 'Barre d\'actions liée à /actions.',
   parse: _ActionBar.tryParse,
-  build: (BuildContext context, _ActionBar bar) => _ActionBarView(bar: bar),
+  build: (BuildContext context, _ActionBar bar, String surfaceId) =>
+      _ActionBarView(bar: bar, surfaceId: surfaceId),
 );
 
 class _Action {
@@ -58,23 +59,23 @@ class _ActionBar {
   }
 }
 
-/// Surface qui porte la Barre d'actions (le contrat n'en admet qu'une).
-final String _surfaceId = GenesisContract.surfaceOf('ActionBar')!;
+/// Ton `danger` de `GenesisContract.actionTones` (l'autre est `neutral`).
+const String _toneDanger = 'danger';
 
-Color _foreground(SceneTheme theme, String tone) =>
-    tone == 'danger' ? theme.blockingForeground : theme.textPrimary;
+/// Couleurs d'un bouton selon son `tone` : seule résolution du ton.
+({Color foreground, Color border}) _toneColors(SceneTheme theme, String tone) =>
+    tone == _toneDanger
+    ? (foreground: theme.blockingForeground, border: theme.actionDangerBorder)
+    : (foreground: theme.textPrimary, border: theme.actionNeutralBorder);
 
 /// Style d'un bouton selon son `tone` (code fermé `neutral|danger`), jamais
 /// selon son libellé (RG-09). Le texte reste lisible quand le bouton est
 /// inactif ; seule l'épaisseur de la bordure distingue les deux états.
 ButtonStyle _style(SceneTheme theme, String tone) {
-  final bool danger = tone == 'danger';
-  final Color foreground = danger
-      ? theme.blockingForeground
-      : theme.textPrimary;
-  final Color borderColor = danger
-      ? theme.actionDangerBorder
-      : theme.actionNeutralBorder;
+  final (:Color foreground, border: Color borderColor) = _toneColors(
+    theme,
+    tone,
+  );
   return OutlinedButton.styleFrom(
     minimumSize: const Size(0, 48),
     foregroundColor: foreground,
@@ -90,9 +91,12 @@ ButtonStyle _style(SceneTheme theme, String tone) {
 }
 
 class _ActionBarView extends StatelessWidget {
-  const _ActionBarView({required this.bar});
+  const _ActionBarView({required this.bar, required this.surfaceId});
 
   final _ActionBar bar;
+
+  /// Surface du contexte de rendu, transmise au clic.
+  final String surfaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -104,26 +108,36 @@ class _ActionBarView extends StatelessWidget {
     return CellFrame(
       // 12 + 48 + 12 = 72 : le bouton tient, centré, dans le bandeau.
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Row(
         children: <Widget>[
-          Text(bar.title, style: theme.label),
-          for (final _Action action in bar.actions)
-            OutlinedButton(
-              key: Key('action-${action.id}'),
-              onPressed: enabled
-                  ? () => availability!.onAction(action.id, _surfaceId)
-                  : null,
-              style: _style(theme, action.tone),
-              child: Text(
-                action.label,
-                style: theme.body.copyWith(
-                  color: _foreground(theme, action.tone),
+          Flexible(
+            child: Text(
+              bar.title,
+              style: theme.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          for (final _Action action in bar.actions) ...<Widget>[
+            const SizedBox(width: 16),
+            Flexible(
+              child: OutlinedButton(
+                key: Key('action-${action.id}'),
+                onPressed: enabled
+                    ? () => availability!.onAction(action.id, surfaceId)
+                    : null,
+                style: _style(theme, action.tone),
+                child: Text(
+                  action.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.body.copyWith(
+                    color: _toneColors(theme, action.tone).foreground,
+                  ),
                 ),
               ),
             ),
+          ],
         ],
       ),
     );

@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
+import 'package:a2ui_core/a2ui_core.dart' as a2ui;
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_catalog_shelf/feature_catalog_shelf.dart';
 import 'package:feature_protocol_feed/feature_protocol_feed.dart';
 import 'package:feature_stage_controls/feature_stage_controls.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
-import 'package:flutter/material.dart' show FilledButton;
+import 'package:flutter/material.dart' show FilledButton, OutlinedButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -693,6 +694,57 @@ void main() {
       'task': 't1',
     };
 
+    Map<String, Object?> actionsCreate() => <String, Object?>{
+      'version': 'v0.9',
+      'createSurface': <String, Object?>{
+        'surfaceId': 'actions',
+        'catalogId': _catalog,
+      },
+    };
+    Map<String, Object?> actionsComponents() => <String, Object?>{
+      'version': 'v0.9',
+      'updateComponents': <String, Object?>{
+        'surfaceId': 'actions',
+        'components': <Object?>[
+          <String, Object?>{
+            'id': 'root',
+            'component': 'ActionBar',
+            'data': <String, Object?>{'path': '/actions'},
+          },
+        ],
+      },
+    };
+    Map<String, Object?> actionsData() => <String, Object?>{
+      'version': 'v0.9',
+      'updateDataModel': <String, Object?>{
+        'surfaceId': 'actions',
+        'path': '/actions',
+        'value': <String, Object?>{
+          'title': 'Décision',
+          'actions': <Object?>[
+            <String, Object?>{
+              'id': 'block_release',
+              'label': 'Bloquer',
+              'tone': 'danger',
+            },
+          ],
+        },
+      },
+    };
+
+    /// Le bouton de la Barre d'actions est-il actif (disponibilité vue par
+    /// l'utilisateur : `OutlinedButton.onPressed`) ?
+    bool actionEnabled(WidgetTester tester) =>
+        tester
+            .widget<OutlinedButton>(
+              find.byKey(const Key('action-block_release')),
+            )
+            .onPressed !=
+        null;
+
+    ReplayedMessage replayed(Map<String, Object?> json) =>
+        (raw: json, message: a2ui.A2uiMessage.fromJson(json));
+
     Future<void> pumpMessages(WidgetTester tester) async {
       await tester.pump();
       await tester.pump();
@@ -775,13 +827,17 @@ void main() {
       tester,
     ) async {
       final rig = PageRig(tester);
-      await rig.mount(tester, replay: const Stream<ReplayedMessage>.empty());
+      await rig.mount(
+        tester,
+        replay: Stream<ReplayedMessage>.fromIterable(<ReplayedMessage>[
+          replayed(actionsCreate()),
+          replayed(actionsComponents()),
+          replayed(actionsData()),
+        ]),
+      );
       await drain(tester);
 
-      final availability = tester.widget<ActionAvailability>(
-        find.byType(ActionAvailability),
-      );
-      expect(availability.enabled, isFalse);
+      expect(actionEnabled(tester), isFalse);
       expect(rig.actionClient.calls, isEmpty);
     });
 
@@ -792,10 +848,13 @@ void main() {
       await rig.mount(tester);
       await rig.start(tester);
 
-      final availability = tester.widget<ActionAvailability>(
-        find.byType(ActionAvailability),
-      );
-      expect(availability.enabled, isTrue);
+      rig.receive(actionsCreate());
+      rig.receive(actionsComponents());
+      rig.receive(actionsData());
+      await tester.pump();
+      await tester.pump();
+
+      expect(actionEnabled(tester), isTrue);
     });
   });
 }

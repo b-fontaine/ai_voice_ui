@@ -27,6 +27,5 @@ export 'src/model/canvas_event.dart'
         CanvasSourceSubscribed;
 export 'src/model/canvas_state.dart'
     show CanvasSourceStatus, CanvasState, SurfacePhase;
-export 'src/ui/action_availability.dart'
-    show ActionAvailability, CanvasActionScope;
+export 'src/ui/action_availability.dart' show CanvasActionScope;
 export 'src/ui/canvas_board.dart' show CanvasBoard;

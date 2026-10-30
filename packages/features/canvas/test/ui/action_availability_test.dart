@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
+import 'package:feature_canvas/src/ui/action_availability.dart'
+    show ActionAvailability;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
