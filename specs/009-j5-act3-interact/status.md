@@ -1,12 +1,12 @@
 # 009 — État
 
-- **Étape** : TDD
+- **Étape** : Revue
 - **Tentatives** : 0/3
-- **Tâche en cours** : T90 (gate --full)
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/009-j5-act3-interact
 - **Backlog** : EP-03, EP-04, EP-02, EP-06
-- **Mis à jour** : 2026-10-30 15:15
+- **Mis à jour** : 2026-10-30 16:00
 
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
@@ -24,6 +24,7 @@
 | 2026-10-30 | TDD | T14 faite (`9f8316f`) : `Sideband.AppendInstructions` (`session.instructions.append`, acquittement `instructions.appended` typé dans `route()`), politique de la voix dans `app/voice` (`sidebandReply`) : (1) commentaire à `delegation_id` nul, (2) sur erreur d'acquittement seulement la dernière délégation de la session, (3) consigne fixe de l'orchestrateur (`announce_instruction`, aucune donnée d'agent) ; toutes refusées : journal, `nil` ; **jamais de second envoi sur silence** ; observation asynchrone du transcript sortant (`VOICE_ANNOUNCE_TIMEOUT`, 4 s, compose) journalisée (`strategy`, `speech_observed`) pour Q-75 ; rien après `Close`. Test d'acceptation `DelegationInProgressIsBusy` corrigé à force égale (n'accepte que les envois `delegated` hors préfixe `act-`, rejette `general`/`instruction`). **Acceptation Go complète VERTE** (`-race -count=1 -tags acceptance` : 008, 007, 006, S-03, C1 à C5 ; 48 s). Point à garder : la consigne ne cite pas la décision (la voix la tient du contexte) ; si l'essai réel montre qu'elle ne confirme pas la bonne décision, c'est à trancher avec le porteur. | `.omc/state/loop/gates/20261030-154028-unit-go.log` : VERT |
 | 2026-10-30 | TDD | T17 faite (`51f2014`, `606dae0`) : `CanvasBoard` stable (grille 2×2 sous un seul parent, bandeau `actions` frère de 72 px réservé dès la première surface pour que les quatre cellules ne bougent pas : S-02 intact), `act2-replay.jsonl` régénéré (19 lignes avec la barre) et `act3-replay.jsonl` (20 lignes), relus par tests. **Acceptation Flutter de l'acte 3 : 10 scénarios sur 10 verts**, `test/acceptance` : 42 sur 42. **Détail d'interface tranché (pdr-0062, à signaler au porteur)** : pour que le bandeau tienne sans réduire les cellules sous 248 px (l'acte 2 débordait à 220 px), le budget des zones de 1920×1080 passe de barre supérieure 160 → **128 px**, marge verticale 18 → **8 px**, canevas 520 → **572 px** (grille 2×250 + bandeau 72 px) ; le rail garde ses 200 px (cas « aucun agent retenu »). Conséquence : une bande vide de 72 px en bas du canevas pendant les actes 1 et 2. Documents `product/` (screen.md, frontend-screen.md) à mettre à jour à la clôture. Un état intermédiaire non vert existe entre les deux commits de T17 (acceptation de l'acte 1) ; `gate --full` tranchera. | `.omc/state/loop/gates/20261030-154656-unit-flutter.log` : VERT |
 | 2026-10-30 | TDD | T15 faite (`efce505`) : `ActionBar` par ton (jetons `actionNeutralBorder`/`actionDangerBorder`, texte `textPrimary`/`blockingForeground`, contrastes mesurés ≥ 8,36:1 et ≥ 3:1 ; bug corrigé : le texte du bouton portait une couleur codée), bandeau de 72 px (padding 12 + bouton 48 + 12), tests du clic, des trois états, de la lisibilité et des libellés issus de la donnée ; couverture du contrat vérifiée (Dart : champs requis imbriqués et enums ; Go : `checkObject` sur `act2-actions`) ; **non couvert** : une valeur invalide du data model n'est refusée par aucun validateur Go (seul le rendu Dart la traite, en état neutre). Réserves : de très longs libellés passeraient sur deux lignes et déborderaient des 72 px (longueur non bornée par la spec) ; les couleurs de bordure sont un choix de la boucle, à valider visuellement à la capture. | `.omc/state/loop/gates/20261030-155435-unit-flutter.log` : VERT |
+| 2026-10-30 | TDD | **T90 : `gate --full` VERT, 55 contrôles, arbre propre, HEAD `7686c80`** (Flutter, Go, acceptation, `docker compose config`). **TDD terminé** : T01 à T17 toutes faites (T06 absorbée par T02 et T10). Acceptation Go : 008, 007, 006, S-03, C1 à C5 verts ; acceptation Flutter : 10 scénarios de l'acte 3 verts, 42 sur 42 sous `test/acceptance`. Passage à la revue d'architecte du code. | `.omc/state/loop/gates/20261030-155606-full.log` : VERT |
 
 ## Revue d'architecte
 

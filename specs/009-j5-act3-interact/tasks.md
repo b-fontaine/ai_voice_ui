@@ -25,6 +25,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T17 Flutter — `CanvasBoard` stable (A1) et assets de rejeu (`act2-replay.jsonl` régénéré, `act3-replay.jsonl`) : parent unique des quatre cellules, bandeau `actions` frère de la grille ; capture de l'acte 2 à 5 surfaces · test d'abord : à l'arrivée de `actions`, les quatre surfaces gardent le même `State` et la même position (pas S-02 inchangé)
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert (Flutter + Go)
+- [x] T90 `tools/loop/gate.sh --full` vert (Flutter + Go)
 - [ ] T91 Revue architect-reviewer (mode CODE) et refactorisations par lots
 - [ ] T92 Vérification : `gate --full`, `app-smoke.sh` (capture de l'acte 3 à lire), essai réel unique si le budget le permet (Q-75) ; clôture : docs `product/` (catalogue, jeu de données, agents-protocols, app-channel-contract, security, backend, frontend-screen, roadmap, backlog, requirements FR-08 livrée), note `knowledge/` sur la voix hors délégation, `specs/progress.md`, `publish.sh`
