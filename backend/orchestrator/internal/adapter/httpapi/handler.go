@@ -210,22 +210,8 @@ func (a *api) deleteSession(w http.ResponseWriter, r *http.Request) {
 // (ce qui impose un pré-vol aux navigateurs), le corps est borné et aucun
 // en-tête CORS n'est jamais émis.
 func (a *api) resetCanvas(w http.ResponseWriter, r *http.Request) {
-	if len(r.Header.Values("Origin")) > 0 {
-		writeError(w, http.StatusForbidden, "origine non autorisée")
-		return
-	}
-	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != jsonContentType {
-		writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
-		return
-	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, resetMaxBodyBytes))
-	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			writeError(w, http.StatusRequestEntityTooLarge, "corps trop volumineux")
-			return
-		}
-		writeError(w, http.StatusBadRequest, "corps illisible")
+	body, ok := readGuardedBody(w, r)
+	if !ok {
 		return
 	}
 	// Le contenu est ignoré, mais un corps qui n'est pas un objet JSON est une
@@ -257,28 +243,12 @@ type actionRequest struct {
 // objet JSON, deux chaînes non vides, aucune autre clé. Le travail ne dépend pas
 // du contexte de la requête.
 func (a *api) canvasAction(w http.ResponseWriter, r *http.Request) {
-	if len(r.Header.Values("Origin")) > 0 {
-		writeError(w, http.StatusForbidden, "origine non autorisée")
+	body, ok := readGuardedBody(w, r)
+	if !ok {
 		return
 	}
-	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != jsonContentType {
-		writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
-		return
-	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, resetMaxBodyBytes))
-	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			writeError(w, http.StatusRequestEntityTooLarge, "corps trop volumineux")
-			return
-		}
-		writeError(w, http.StatusBadRequest, "corps illisible")
-		return
-	}
-	var req actionRequest
-	dec := json.NewDecoder(bytes.NewReader(body))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&req); err != nil || dec.More() || req.Action == "" || req.Surface == "" {
+	req, ok := parseActionBody(body)
+	if !ok {
 		writeError(w, http.StatusBadRequest, "corps JSON {action, surface} attendu")
 		return
 	}
@@ -295,6 +265,77 @@ func (a *api) canvasAction(w http.ResponseWriter, r *http.Request) {
 		a.opts.Logger.Error("action du canevas impossible", "error", err)
 		writeError(w, http.StatusInternalServerError, "action impossible")
 	}
+}
+
+// readGuardedBody applique les gardes communes aux routes d'écriture du
+// canevas, dans l'ordre : Origin (403), Content-Type (415), taille (413), puis
+// lecture (400). Si elle rend false, la réponse d'erreur est déjà écrite.
+func readGuardedBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+	if len(r.Header.Values("Origin")) > 0 {
+		writeError(w, http.StatusForbidden, "origine non autorisée")
+		return nil, false
+	}
+	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != jsonContentType {
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
+		return nil, false
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, resetMaxBodyBytes))
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "corps trop volumineux")
+			return nil, false
+		}
+		writeError(w, http.StatusBadRequest, "corps illisible")
+		return nil, false
+	}
+	return body, true
+}
+
+// parseActionBody exige un unique objet JSON portant exactement les clés
+// `action` et `surface` (casse exacte, sans doublon), chacune une chaîne non
+// vide, et rien après la valeur.
+func parseActionBody(body []byte) (actionRequest, bool) {
+	var req actionRequest
+	dec := json.NewDecoder(bytes.NewReader(body))
+	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
+		return req, false
+	}
+	fields := map[string]json.RawMessage{}
+	for dec.More() {
+		keyTok, err := dec.Token()
+		if err != nil {
+			return req, false
+		}
+		key, isString := keyTok.(string)
+		if !isString {
+			return req, false
+		}
+		if _, dup := fields[key]; dup {
+			return req, false
+		}
+		var raw json.RawMessage
+		if err := dec.Decode(&raw); err != nil {
+			return req, false
+		}
+		fields[key] = raw
+	}
+	if tok, err := dec.Token(); err != nil || tok != json.Delim('}') {
+		return req, false
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return req, false
+	}
+	if len(fields) != 2 {
+		return req, false
+	}
+	for key, dst := range map[string]*string{"action": &req.Action, "surface": &req.Surface} {
+		raw, present := fields[key]
+		if !present || json.Unmarshal(raw, dst) != nil || *dst == "" {
+			return actionRequest{}, false
+		}
+	}
+	return req, true
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

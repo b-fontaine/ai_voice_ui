@@ -159,3 +159,32 @@ func TestCanvasActions_WorkDoesNotDependOnRequestContext(t *testing.T) {
 		t.Fatalf("statut %d, contexte vivant %v : attendu 202 et contexte non annulé", rec.Code, a.ctxLive)
 	}
 }
+
+func TestCanvasActions_StrictBodyNeverReachesTheActor(t *testing.T) {
+	cases := []struct{ name, body string }{
+		{"clés en majuscules", `{"ACTION":"block_release","SURFACE":"actions"}`},
+		{"une clé en majuscules", `{"action":"block_release","Surface":"actions"}`},
+		{"accolade en trop", okAction + `}`},
+		{"crochet en trop", okAction + `]`},
+		{"deux objets", okAction + okAction},
+		{"deux objets séparés", okAction + "\n" + okAction},
+		{"null", `null`},
+		{"tableau", `[]`},
+		{"clé en double", `{"action":"a","action":"b","surface":"s"}`},
+		{"valeur non chaîne", `{"action":1,"surface":"s"}`},
+		{"chaîne vide", `{"action":"","surface":"s"}`},
+		{"clé en trop", `{"action":"a","surface":"s","x":"y"}`},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a := &fakeActor{}
+			rec := postAction(actionFixture(t, a), c.body, nil)
+			if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "corps JSON {action, surface} attendu") {
+				t.Fatalf("statut %d (%s), attendu 400 avec le corps d'erreur existant", rec.Code, rec.Body.String())
+			}
+			if a.count() != 0 {
+				t.Fatalf("l'acteur a été appelé %d fois", a.count())
+			}
+		})
+	}
+}
