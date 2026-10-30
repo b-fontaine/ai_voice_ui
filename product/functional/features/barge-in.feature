@@ -4,9 +4,14 @@
 # Exigences : p-fn-requirements ; règles : p-fn-business-rules (RG-11 à RG-17, RG-22).
 # Steps sans chiffre initial (E16 · Q-34, pdr-0022-gherkin-steps-no-leading-digit) : bdd_widget_test
 #    échoue sur un step qui commence par un chiffre (knowledge:test-bdd-feature-syntax). Sens inchangé.
+# Couverture automatisée (011, 2026-10-30) : S-05 en partie (K-05, Flutter ; Q-77), S-06 (K-03, Go),
+#    S-08 non automatisé (conforme à l'essai au micro, Q-41), S-07 et S-09 non verts (J7).
+#    Les scénarios K-03 à K-07, complémentaires et hors des 9 de la fiche, sont dans
+#    voice-interaction-011.feature (p-fn-feature-voice-interaction-011).
 
 Fonctionnalité: Couper la parole à l'IA
 
+  # Couvert en partie par 011 : K-05 (voice.interrupted sur mot d'arrêt seulement ; Q-77).
   @S-05 @FR-13 @FR-15 @FR-19
   Scénario: Interrompre l'IA pendant qu'elle parle
     Soit l'IA est en train de commenter le tableau de release
@@ -16,6 +21,7 @@ Fonctionnalité: Couper la parole à l'IA
     Et sa réplique est tronquée dans la transcription à l'endroit de l'interruption
     Et les surfaces déjà affichées restent en place
 
+  # Vert en BDD depuis 011 : K-03 (Go, agents scriptés bloquants).
   @S-06 @FR-15 @FR-16
   Scénario: Annuler une génération en cours
     Soit deux surfaces sur quatre sont en cours de construction

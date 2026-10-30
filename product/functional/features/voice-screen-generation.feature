@@ -28,6 +28,31 @@ Fonctionnalité: Génération d'écran pilotée à la voix
     Et les données affichées concernent uniquement Android
     Et une comparaison avec la 3.3 apparaît
 
+  # --- Scénarios complémentaires de la fonctionnalité 011 (hors des 9 de la fiche, pdr-0049) ---
+  # Automatisés en Go : backend/orchestrator/acceptance/voice_focus_test.go (tag acceptance).
+
+  # TestK01_CompareAfterFocusKeepsPlatform (pdr-0071, Q-74)
+  @K-01 @FR-07
+  Scénario: K-01 Compare avec la 3.3, dit après Android, garde la plateforme affichée
+    Soit le tableau de la release 3.4 est affiché
+    Et je dis "Concentre-toi sur Android"
+    Quand je dis "Compare avec la 3.3"
+    Alors les quatre surfaces affichent la comparaison avec la 3.3 pour Android
+
+  # TestK01_CompareWithoutFocusOnEmptyCanvasIsRejected, TestK01_ResetErasesFocus
+  @K-01 @FR-07
+  Scénario: K-01 Sans plateforme affichée, la comparaison est refusée
+    Quand je dis "Compare avec la 3.3"
+    Alors aucune surface n'est créée
+    Et les agents concernés sont marqués "hors périmètre"
+
+  # TestK02_WordAtDelegationOffsetIsInRequest
+  @K-02 @FR-07
+  Scénario: K-02 Un mot dit au moment où l'IA lance la tâche reste dans la demande
+    Quand je dis "Montre la qualité, la voix du client et livraison" et que l'IA lance la tâche au moment où le dernier mot commence
+    Alors l'agent Livraison est sollicité
+    Et la checklist est affichée
+
   @S-03 @FR-03 @FR-08
   Scénario: Acte 3 - interagir avec un composant généré
     Soit la checklist go/no-go est affichée

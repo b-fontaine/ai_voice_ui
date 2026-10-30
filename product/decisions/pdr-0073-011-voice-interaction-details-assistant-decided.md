@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-10-30
 sources: [specs/011-voice-interaction/spec.md, specs/011-voice-interaction/plan.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md]
-links: [p-rm-open-questions, p-fn-requirements, p-ar-app-channel-contract, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, rt-barge-in]
+links: [p-rm-open-questions, p-fn-requirements, p-ar-app-channel-contract, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, rt-barge-in, p-ar-voice-interruption, p-ar-agents-protocols, p-ar-backend, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-screen, p-fn-business-rules, p-fn-feature-voice-interaction-011, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in]
 tags: [pdr, decision, voix, stop, focus, 011]
 decision_status: acceptée
 decided_on: 2026-10-30
@@ -33,6 +33,13 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 
 ## Raisons
 Mécanismes déduits du diagnostic de l'essai au micro (journaux contre-vérifiés) ; chacun est la seule voie testable sans toucher aux contrats `genesis/v1`.
+
+## Conséquences
+Documents mis à jour à la clôture de 011 (2026-10-30), sans changement des décisions ci-dessus :
+- [p-ar-voice-interruption](../architecture/voice-interruption.md) (D1-D5 : détecteur, annulation, focus, contrat, réglages) ; [p-ar-app-channel-contract](../architecture/app-channel-contract.md) (`voice.interrupted`, `canceled`, métadonnées A2A) ; [p-ar-agents-protocols](../architecture/agents-protocols.md) et [p-ar-backend](../architecture/backend.md) (séquence « Stop », règle 6).
+- [p-ar-frontend-screen](../architecture/frontend-screen.md) § 011 et [p-ar-stage-runtime](../architecture/stage-runtime.md) (D1, D6, D7 : coupure du son, orbe, indicateur d'acte, bouton « fait ») ; [p-fn-screen](../functional/screen.md).
+- [p-fn-requirements](../functional/requirements.md) (FR-08, FR-13 à FR-20), [p-fn-business-rules](../functional/business-rules.md) (RG-11 à RG-17) ; scénarios [voice-interaction-011.feature](../functional/features/voice-interaction-011.feature) (K-03 à K-07), [voice-screen-generation.feature](../functional/features/voice-screen-generation.feature) (K-01, K-02), [barge-in.feature](../functional/features/barge-in.feature).
+- [p-rm-open-questions](../roadmap/open-questions.md) : Q-40, Q-42, Q-67, Q-74 et Q-75 implémentées par 011 ; hypothèses d'observation Q-78 à Q-80 ; Q-77 reste ouverte.
 
 ## Réexaminer si
 Le mot-clé déclenche à tort en répétition, ou la piste distante ne se coupe pas sur `flutter_webrtc` Linux.

@@ -4,8 +4,8 @@ title: Environnement de scène et répétitions
 area: architecture
 status: draft
 updated: 2026-10-30
-sources: [specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
-links: [pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-frontend-screen, p-ar-app-channel-contract, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended, pdr-0067-gpt-live-session-cap-30-min, pdr-0068-act3-decision-not-kept-after-new-request]
+sources: [specs/011-voice-interaction/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
+links: [p-ar-voice-interruption, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-frontend-screen, p-ar-app-channel-contract, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended, pdr-0067-gpt-live-session-cap-30-min, pdr-0068-act3-decision-not-kept-after-new-request]
 tags: [scene, demo, machine, reseau, audio, linux, repetition]
 ---
 # Environnement de scène et répétitions
@@ -44,7 +44,8 @@ Matériel, réglage de la sono et test sur place : gérés par le porteur (micro
 | Une seule capture : `getUserMedia` de `flutter_webrtc`, contraintes `echoCancellation`, `noiseSuppression`, `autoGainControl` | [rt-echo-cancellation] |
 | Ne jamais activer `bypassVoiceProcessing` (casse l'AEC) | [rt-echo-cancellation] |
 | Sortie audio choisie par `selectAudioOutput(deviceId)` | [rt-flutter-webrtc-audio-routing] |
-| Bruits courts : seuil réglé en répétition ; commande « silence » en secours | fiche § 8 ; FR-18, FR-20 |
+| Bruits courts : conforme à l'essai au micro (Q-41) ; commande « silence » en secours (FR-20 : J7) | fiche § 8 ; FR-18, FR-20 |
+| Couper la parole : « Stop » vocal coupe la piste distante (011) ; ⚠️ non vérifié sous `flutter_webrtc` Linux (Q-79) | [p-ar-voice-interruption](voice-interruption.md) |
 
 ⚠️ Risque technique d'écho : la sortie sono captée par le micro du PC peut faire s'auto-interrompre l'IA (R2, déjà couvert par la fiche § 8 et [rt-echo-cancellation]).
 
@@ -58,7 +59,7 @@ Matériel, réglage de la sono et test sur place : gérés par le porteur (micro
 Le bouton **« Remettre à vide »** (barre supérieure, souris d'abord, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) ramène l'écran à l'état initial entre deux répétitions, sans relancer l'app.
 
 1. Attendre la fin du tour : le bouton est inactif tant qu'un agent est « en cours » ou « en attente » (le backend refuserait, 409).
-2. Cliquer : canevas vide, panneau du protocole vide, étagère « 0 / 6 utilisés », rail vide, « Acte 1/3 », aussitôt. La session voix n'est ni ouverte ni fermée, le journal n'est pas touché.
+2. Cliquer : canevas vide, panneau du protocole vide, étagère « 0 / 6 utilisés », rail vide, indicateur d'acte à « Acte 1/3 » (011 : la remise à vide le ramène à 1), aussitôt. La session voix n'est ni ouverte ni fermée, le journal n'est pas touché.
 3. L'app demande ensuite au backend de retirer ses surfaces (`POST /canvas/reset` : [contrat](app-channel-contract.md)) ; sur 409 elle réessaie (8 fois, 1,5 s d'intervalle par défaut, réglables : [p-ar-frontend-screen](frontend-screen.md)). En cas d'échec, une ligne « Remise à vide : le backend ne l'a pas appliquée (…) » est écrite sur `stderr`.
 4. **Plus de consigne de régie depuis 008** (Q-73 résolue par construction, [pdr-0058](../decisions/pdr-0058-backend-canvas-registry-survives-voice-sessions.md)) : le registre de surfaces du backend est partagé entre les sessions voix, l'app garde ses surfaces d'une session à l'autre et l'acte 2 les mute sur place. **App relancée alors que le backend tourne encore** : en mode vivant, l'app demande d'elle-même une remise à vide avant la première session (D6 de [pdr-0064](../decisions/pdr-0064-008-act2-transform-details-assistant-decided.md)) ; si elle échoue (ligne sur `stderr`), cliquer « Remettre à vide » avant de parler. **Limite** : la rétention du hub reste par session (une session fermée n'est plus rejouée à la suivante) ; le registre backend fait foi.
 
@@ -95,4 +96,17 @@ Pas de nouvelle demande vocale après le clic de l'acte 3 : la décision « Bloq
 - **Rendu genui sous Linux** : ✅ confirmé par SP-10 le 2026-10-29 (en-têtes GStreamer requis).
 - **Durée d'une session** GPT-Live : `expires_at` = +2 h, contexte extrapolé ~94 % à 45 min en cas pessimiste (mesuré en SP-02, [rt-gpt-live-lifecycle]) ; une session par acte (Q-53 tranchée : [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md)) ; transitions d'acte = ouverture d'une session (~1 s), à tester en répétition ; ⚠️ Hypothèse non confirmée : l'usage réel du contexte sur un scénario complet reste à mesurer (réexamen prévu par la PDR).
 
-- **Indicateur d'acte automatique (pdr-0071, complète pdr-0063 D1)** : acte 2 quand la barre d'actions apparaît, acte 3 au clic ; clic manuel pour corriger. Au clic, l'écran change aussitôt et nettement ; la voix confirme après sa phrase en cours (Q-75 tranchée). Orbe « Interrompue » puis « Écoute » à l'interruption (pdr-0069).
+- **Indicateur d'acte automatique (pdr-0071, complète pdr-0063 D1, livré par 011)** : acte 2 à l'apparition de la surface `actions` (barre d'actions), acte 3 au clic accepté, jamais en arrière ; le clic manuel sur l'indicateur corrige (cyclique 1 → 2 → 3 → 1) ; sans effet en rejeu ni en mode scénario ([p-ar-frontend-screen](frontend-screen.md) § 011). Au clic, la pastille de décision est entière et le bouton passe à « fait » ; la voix confirme après sa phrase en cours (Q-75 tranchée).
+- **Orbe « Interrompue »** (pdr-0069, livré par 011) : à `voice.interrupted` le son distant est coupé, l'orbe passe à « Interrompue » puis « Écoute » après 3 s de silence (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`) ou 15 s au plus.
+
+## À observer en répétition (interaction vocale, 011)
+
+Aucune de ces vérifications n'a été faite en réel ; chacune est une ⚠️ hypothèse non confirmée, avec le porteur :
+
+| À observer | Renvoi |
+|---|---|
+| Dire « Stop » pendant que l'IA parle : le son s'arrête-t-il réellement (spike T03, piste distante sous Linux) ? la session reste-t-elle ouverte, l'orbe repasse-t-elle à « Écoute » ? | Q-79 |
+| GPT-Live crée-t-il une délégation pour « Stop » ? Un double accusé vocal (« D'accord. » puis l'accusé du modèle) est-il audible ? | Q-78 |
+| Couper la parole sans dire « Stop » : l'IA se tait-elle d'elle-même (consigne) ? | Q-77 (S-05 en partie) |
+| Horloges de `start_ms` et de `at_ms` alignées ? deltas d'entrée jamais révisés ? « Stop » transcrit de façon fiable ? NFR-02 avec la fenêtre de +300 ms (à remesurer) ? | Q-80 |
+| « Compare avec la 3.3 » dit en second tour hérite-t-il bien d'Android ? | Q-74 tranchée, à confirmer en réel |

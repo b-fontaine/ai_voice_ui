@@ -1,12 +1,12 @@
 # 011 — État
 
-- **Étape** : Refactorisation
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/011-voice-interaction
 - **Backlog** : EP-02, EP-03, EP-04, EP-06
-- **Mis à jour** : 2026-10-30 20:08
+- **Mis à jour** : 2026-10-30 22:35
 
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
@@ -18,13 +18,16 @@
 | 2026-10-30 | TDD | T11 `6e33124` (focus : `genesis/intent`, `genesis/focus`, liste blanche écrite en dur dans `a2aclient` ; l'acceptation 008 A6 « compare refusé » est inversée par pdr-0071), T12+T13 `44281c4` (détecteur : `MaxWords` 4 par défaut, liste vide par défaut), T21+T26 `a5d5ccd` (phase de l'orbe ; durée maximale d'interruption 15 s par défaut, `GENESIS_INTERRUPT_MAX_MS`), T24 `8d49d67` (indicateur ; à voir en T91 : le minuteur de 60 s de `CanvasActionBloc` survit à la fermeture de la page), T14 `5bc68d7` (annulation par époque ; `stopped` obligatoire dans `VOICE_PHRASES_FILE`). **T03 (spike) non fait** : manuel, à mener en répétition | `…/gates/20261030-212610-unit-go.log`, `…-212506-unit-flutter.log` |
 | 2026-10-30 | TDD (fin) | T15/T17/T18 `789f34f`, T89 `c29ac4b` ; **`gate --full` vert, 58 contrôles** (acceptation Go K-01 à K-04 et Flutter 11 scénarios `acte_interruption` verts). Écarts tranchés : `StopDetector.SettleNow()` (le service confirme au déclenchement du minuteur), `stopSpanMs = 3000` codé en dur dans `manager.go`, K-03 corrigé (clé de phrase `failure`). **T03 reste à faire en répétition** | `.omc/state/loop/gates/20261030-213658-full.log` |
 | 2026-10-30 | Revue | `architect-reviewer` (Opus, mode CODE) : **À REFACTORISER** (0 bloquante, 5 importantes R1-R5, 5 mineures R6-R10) | rapport ci-dessous |
+| 2026-10-30 | Refactorisation | R1-R10 appliquées en 4 lots ; **`gate --full` vert, 58 contrôles**, HEAD `7fe62af` ; pdr-0073 D2 amendée (`5475c19`) | `.omc/state/loop/gates/20261030-221004-full.log` |
+| 2026-10-30 | Vérification | capture `app-smoke act2-replay` conforme : comparaison 3.3 dans les quatre surfaces, pastille « En attente de décision » entière, Barre d'actions ; l'indicateur reste à « Acte 1/3 » en mode scénario (voulu, T24) ; **essai réel au micro non fait** (voix/« Stop » à observer en répétition) | `.omc/state/loop/snapshots/20261030-221359-act2-replay.png` |
+| 2026-10-30 | Clôture | `product/` mis à jour par `product-steward` (lint 0 erreur, 0 avertissement) ; Q-78, Q-79, Q-80 ouvertes (non bloquantes, avant J7) ; SP-11 | `product_lint`, `kb_lint` |
 
 ## Revue d'architecte
 **Mode PLAN : À AMENDER** (4 bloquants : A1 annulation/interblocage `Canvas.mu`, A2 surface inachevée (`Registry.Compensation` trop large), A3 attente dans `Delegate`, A4 focus/intention inconnue de l'orchestrateur ; 4 importants : A5 détecteur, A6 contrat client, A7 `canceled`/clic, A8 ordre/config/S-05). Détail dans `plan.md` § Amendements, tous intégrés.
 
 **Mode CODE : À REFACTORISER** (0 bloquante, 5 importantes, 5 mineures). Lots : **A (Go)** R1 (`StopSpan` + `IsStopOnly` configurables, paquet neutre `internal/app/stopword`), R2 (`MaxWords` effectif mot à mot : confirmer seulement à ponctuation terminale/`Settle`/nouvel énoncé, écarter si `nWords > MaxWords`), R7 (issue typée pour `failLocked`, supprimer `Poll`, `interrupt.go`, coquille hub) ; **B (Go)** R3 (liste blanche de l'intention : forme seulement), R8 (`hasData` et `Complete()`) ; **C (Flutter)** R4 (état « décision prise » dans `CanvasActionBloc`, `CanvasActionScope` sans état), R9 constantes de `release_checklist.dart` ; **D (Flutter)** R5 (`DelegationStarted` daté du « Stop » ignoré, numéro d'interruption), R6 (sorties alignées, `buildWhen`), R10 (`ActionStageReset` au `dispose`), R9 test `ReplayRouter` ignore `voice.interrupted`. Goldens « Acte n/3 » (A8/R9) : **écart acté**, assertions de texte à la place (aucun golden n'existe pour l'indicateur).
-- [ ] A  - [ ] B  - [ ] C  - [ ] D
+- [x] A (`451538b`)  - [x] B (`21cdd8c`)  - [x] C (`7904bc6`, C3 d'acte 3 aligné sur le bouton « fait »)  - [x] D (`7fe62af`)
 **Conflits avec une décision (pour le porteur, non refactorisés)** : pdr-0073 D2 dit « mots entiers, fenêtre de 6 mots » alors que le code applique A5 (premier mot significatif, `MaxWords`) — à amender par la boucle (pdr-0062), fait à la clôture ; `app-channel-contract.md` en retard sur le code (`canceled` émis, `voice.interrupted`) — T92. Hypothèses non confirmées, à vérifier en répétition : T03 (`track.enabled=false` sous Linux), GPT-Live crée une délégation pour « Stop », même horloge pour `start_ms` de sortie et `at_ms`, double accusé vocal, deltas d'entrée jamais révisés, NFR-02 +300 ms, Q-77.
 
 ## Questions pour le porteur
-Q-77 (déclencheur d'interruption sur prise de parole) : non bloquante, 011 avance sur le mot d'arrêt seul.
+Q-77 (déclencheur d'interruption sur prise de parole), Q-78 (GPT-Live crée-t-il une délégation pour « Stop » ? double accusé), Q-79 (spike T03, `track.enabled=false` sous Linux, SP-11), Q-80 (horloges `start_ms`/`at_ms`, deltas non révisés, NFR-02 +300 ms) : toutes non bloquantes, avant J7.
