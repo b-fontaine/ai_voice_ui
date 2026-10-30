@@ -169,6 +169,12 @@ abstract final class ContractFixtures {
 
   /// Message du résultat d'une action (`examples/act3-block.jsonl` ou
   /// `act3-validate.jsonl`) : un `updateDataModel` de sous-chemin (A7).
+  /// Les trois messages de `examples/crashlist-global.jsonl` (surface
+  /// `crashes`, spec 012), [catalogId] substitué.
+  static Future<List<Map<String, Object?>>> crashlistMessages({
+    String catalogId = defaultCatalogId,
+  }) => _exampleMessages('crashlist-global.jsonl', catalogId);
+
   static Future<List<Map<String, Object?>>> actionResultMessages(
     String action, {
     String catalogId = defaultCatalogId,
@@ -303,7 +309,7 @@ abstract final class ContractFixtures {
     String catalogId = defaultCatalogId,
   }) async {
     final buffer = StringBuffer(await act1ReplayJsonl(catalogId: catalogId));
-    final crashes = await _exampleMessages('crashlist-global.jsonl', catalogId);
+    final crashes = await crashlistMessages(catalogId: catalogId);
     final start = act1Files.length * 500;
     for (var m = 0; m < crashes.length; m++) {
       buffer.writeln(

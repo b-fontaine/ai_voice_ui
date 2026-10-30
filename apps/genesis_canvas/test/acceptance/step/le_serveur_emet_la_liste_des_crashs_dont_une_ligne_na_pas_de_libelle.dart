@@ -9,12 +9,10 @@ import '../support/crashlist_harness.dart';
 /// entière montre l'état neutre (RG-10), sans ligne partielle.
 Future<void> leServeurEmetLaListeDesCrashsDontUneLigneNaPasDeLibelle(
   WidgetTester tester,
-) {
-  final items = CrashListHarness.items();
-  items[2].remove('label');
-  return CrashListHarness.emitUpTo(
-    tester,
-    SurfaceStage.data,
-    value: <String, Object?>{'title': CrashListHarness.title, 'items': items},
+) async {
+  final value = await CrashListHarness.contractValue(tester);
+  ((value['items']! as List<Object?>)[2]! as Map<String, Object?>).remove(
+    'label',
   );
+  await CrashListHarness.emitUpTo(tester, SurfaceStage.data, value: value);
 }

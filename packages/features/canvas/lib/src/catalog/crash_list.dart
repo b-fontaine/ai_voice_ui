@@ -120,7 +120,7 @@ class _CrashRowView extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         // Une seule ligne avec ellipse, sur toute la largeur restante
-        // (pdr-0062 D10) : cinq lignes se partagent environ 187 px dans une
+        // (pdr-0074 D10) : cinq lignes se partagent environ 187 px dans une
         // cellule 3 x 2, soit de quoi loger 24 px sans rognage.
         Expanded(
           child: Text(

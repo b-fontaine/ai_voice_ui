@@ -10,11 +10,11 @@ import '../support/crashlist_harness.dart';
 Future<void> leServeurEmetLaListeDesCrashsDontLeChampEstUneChaine(
   WidgetTester tester,
   String field,
-) => CrashListHarness.emitUpTo(
-  tester,
-  SurfaceStage.data,
-  value: <String, Object?>{
-    'title': CrashListHarness.title,
-    field: 'cinq crashs',
-  },
-);
+) async {
+  final value = await CrashListHarness.contractValue(tester);
+  await CrashListHarness.emitUpTo(
+    tester,
+    SurfaceStage.data,
+    value: <String, Object?>{'title': value['title'], field: 'cinq crashs'},
+  );
+}

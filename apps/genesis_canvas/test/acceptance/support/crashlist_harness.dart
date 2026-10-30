@@ -6,64 +6,32 @@ import 'session_harness.dart';
 /// Messages A2UI de la surface `crashes` (composant `CrashList`, spec 012) et
 /// leur émission par le faux backend.
 ///
-/// Les exemples `crashlist-*` du contrat arrivent avec T11 : en attendant, le
-/// test définit lui-même les trois messages, au format de `act2-actions`
-/// (`createSurface`, `updateComponents`, `updateDataModel`). Les cinq lignes
-/// sont celles de `product/functional/dataset.md` (« Liste des crashs »).
+/// Le chemin nominal rejoue les trois messages de
+/// `contracts/a2ui/genesis/v1/examples/crashlist-global.jsonl` (via
+/// [ContractFixtures]) : une dérive du contrat fait échouer les scénarios.
+/// Seuls les cas neutres (hors contrat) fournissent leur propre `value`.
 class CrashListHarness {
   CrashListHarness._();
 
   static const String surfaceId = 'crashes';
   static const String agent = 'Qualité';
   static const String task = 'task_crashes';
-  static const String title = 'Principaux crashs · 3.4';
 
-  /// Top 5 des crashs de la 3.4 (rang, libellé, plateforme, volume, sessions).
-  static List<Map<String, Object?>> items() => <Map<String, Object?>>[
-    _row(
-      1,
-      'Plantage à la validation du panier (3-D Secure 2)',
-      'Android',
-      371,
-      352,
-    ),
-    _row(
-      2,
-      "Fermeture au retour de l'app bancaire (WebView 3-D Secure)",
-      'Android',
-      148,
-      139,
-    ),
-    _row(
-      3,
-      "Mémoire saturée à l'ouverture de la galerie photos",
-      'Android',
-      72,
-      66,
-    ),
-    _row(
-      4,
-      'Crash au démarrage à froid (migration de la base locale 3.4)',
-      'iOS',
-      58,
-      55,
-    ),
-    _row(5, "Plantage à l'ouverture d'une notification push", 'iOS', 41, 39),
-  ];
-
-  static Map<String, Object?> _row(
-    int rank,
-    String label,
-    String platform,
-    int volume,
-    int sessions,
-  ) => <String, Object?>{
-    'rank': rank,
-    'label': label,
-    'platform': platform,
-    'volume': volume,
-    'sessions': sessions,
-  };
+  /// Modèle de données (`/crashes`) de l'exemple du contrat, copie modifiable.
+  static Future<Map<String, Object?>> contractValue(WidgetTester tester) async {
+    final messages = (await tester.runAsync(
+      ContractFixtures.crashlistMessages,
+    ))!;
+    final data = messages.last['updateDataModel']! as Map<String, Object?>;
+    final value = data['value']! as Map<String, Object?>;
+    return <String, Object?>{
+      'title': value['title'],
+      'items': <Object?>[
+        for (final row in value['items']! as List<Object?>)
+          Map<String, Object?>.of(row! as Map<String, Object?>),
+      ],
+    };
+  }
 
   /// Faux backend (un par scénario) pour lequel des temps ont déjà été émis,
   /// et leur nombre : un temps n'est jamais renvoyé deux fois dans le même
@@ -72,42 +40,26 @@ class CrashListHarness {
   static Object? _emittedFor;
   static int _emitted = 0;
 
-  /// Les trois messages, [catalogId] substitué ; [value] remplace le modèle de
-  /// données (cas hors contrat, état neutre).
-  static List<Map<String, Object?>> messages(
+  /// Les trois messages du contrat (lus hors `FakeAsync`), [catalogId] substitué ; [value] remplace
+  /// le modèle de données (cas hors contrat, état neutre).
+  static Future<List<Map<String, Object?>>> messages(
+    WidgetTester tester,
     String catalogId, {
     Object? value,
-  }) => <Map<String, Object?>>[
-    <String, Object?>{
-      'version': 'v0.9',
-      'createSurface': <String, Object?>{
-        'surfaceId': surfaceId,
-        'catalogId': catalogId,
-        'sendDataModel': false,
+  }) async {
+    final all = (await tester.runAsync(
+      () => ContractFixtures.crashlistMessages(catalogId: catalogId),
+    ))!;
+    if (value == null) return all;
+    final data = all.last['updateDataModel']! as Map<String, Object?>;
+    return <Map<String, Object?>>[
+      ...all.take(2),
+      <String, Object?>{
+        ...all.last,
+        'updateDataModel': <String, Object?>{...data, 'value': value},
       },
-    },
-    <String, Object?>{
-      'version': 'v0.9',
-      'updateComponents': <String, Object?>{
-        'surfaceId': surfaceId,
-        'components': <Object?>[
-          <String, Object?>{
-            'id': 'root',
-            'component': 'CrashList',
-            'data': <String, Object?>{'path': '/crashes'},
-          },
-        ],
-      },
-    },
-    <String, Object?>{
-      'version': 'v0.9',
-      'updateDataModel': <String, Object?>{
-        'surfaceId': surfaceId,
-        'path': '/crashes',
-        'value': value ?? <String, Object?>{'title': title, 'items': items()},
-      },
-    },
-  ];
+    ];
+  }
 
   /// Émet les temps de [SurfaceStage.skeleton] à [upTo] qui ne l'ont pas
   /// encore été dans la session courante.
@@ -122,7 +74,7 @@ class CrashListHarness {
       _emittedFor = backend;
       _emitted = 0;
     }
-    final all = messages(backend.catalogId, value: value);
+    final all = await messages(tester, backend.catalogId, value: value);
     final from = _emitted;
     _emitted = upTo.index + 1;
     await SessionHarness.onServer(tester, () async {

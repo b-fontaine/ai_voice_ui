@@ -5,8 +5,8 @@ Fonctionnalité: Liste des crashs - cinquième surface du canevas
   données `/crashes`) après les quatre surfaces de l'acte 1 : la grille passe
   de 2 × 2 à 3 × 2, la liste prend la cinquième cellule (rang de lecture) et
   les quatre moteurs de rendu gardent leur `State` (spec 012, F-01 et F-02 ;
-  pdr-0074 D5 et D9, A7 et A8 du plan). Les messages sont définis par le test
-  (les exemples `crashlist-*` du contrat arrivent avec T11). L'état neutre
+  pdr-0074 D5 et D9, A7 et A8 du plan). Les messages sont ceux de l'exemple
+  `crashlist-global.jsonl` du contrat. L'état neutre
   (champ de mauvais type, ligne sans libellé) est un test de rendu, pas une
   fixture de refus (A8, RG-10).
 
