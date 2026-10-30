@@ -14,7 +14,7 @@
 | 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | Terminée ✅ (essai réel OK), publiée (`8d27b10`) | 2026-10-30 |
 | 007 | J3-B : acte 1 côté app (catalogue `genesis` fermé et validé côté client, rail, panneau protocole, étagère, indicateur d'acte, remise à vide + route Go `POST /canvas/reset`) | EP-03, EP-04, EP-05, EP-08 | J3 | Terminée ✅ (essai réel avec micro à faire en répétition), publiée (`03cdc38`) | 2026-10-30 |
 | 008 | J4 : acte 2 « Transformer » (mutation sur place, filtre Android, comparaison 3.3, registre de canevas partagé, correction de plateforme) | EP-03, EP-04, EP-09 | J4 | Terminée ✅ (essai réel avec micro à faire en répétition), publiée (`acdc7a5`) | 2026-10-30 |
-| 009 | J5 : acte 3 « Interagir » (Barre d'actions en cinquième surface, clic → agent Livraison → vrai résultat → voix, « Bloquer » / « Valider la release ») | EP-03, EP-04, EP-02, EP-06 | J5 | Vérification | 2026-10-30 |
+| 009 | J5 : acte 3 « Interagir » (Barre d'actions en cinquième surface, clic → agent Livraison → vrai résultat → voix, « Bloquer » / « Valider la release ») | EP-03, EP-04, EP-02, EP-06 | J5 | Clôture | 2026-10-30 |
 
 ## Journal
 | Date | Événement |
