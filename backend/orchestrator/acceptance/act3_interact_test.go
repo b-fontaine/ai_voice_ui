@@ -371,7 +371,7 @@ func TestAct3_C3_SecondClickWhileRunningIsBusy(t *testing.T) {
 }
 
 // requireNoActionPlan vérifie qu'aucun plan d'action ni a2ui n'est publié pendant quiet,
-// et qu'aucun envoi vocal n'a eu lieu.
+// et qu'aucun envoi vocal lié à l'action n'a eu lieu (les commentaires de la délégation en cours sont tolérés).
 func requireNoActionPlan(t *testing.T, fx *act3Stage, what string) {
 	t.Helper()
 	deadline := time.Now().Add(quiet)
@@ -392,8 +392,15 @@ func requireNoActionPlan(t *testing.T, fx *act3Stage, what string) {
 			t.Fatalf("%s : plan d'action %q publié malgré le refus", what, p.Delegation)
 		}
 	}
-	if sent := fx.live.VoiceSends()[fx.mark:]; len(sent) != 0 {
-		t.Fatalf("%s : envoi(s) vocal(aux) malgré le refus : %+v", what, sent)
+	// Aucun envoi vocal LIÉ À L'ACTION : ni commentaire hors délégation, ni consigne, ni
+	// commentaire rattaché à un identifiant d'action. Les commentaires `delegated` de la
+	// délégation vocale en cours (identifiant du fournisseur) sont légitimes : le tour
+	// vocal qui précède le refus en produit.
+	sent := fx.live.VoiceSends()[fx.mark:]
+	for _, s := range sent {
+		if s.Kind != sendDelegated || strings.HasPrefix(s.DelegationID, actionIDPrefix) {
+			t.Fatalf("%s : envoi vocal lié à l'action malgré le refus : %+v (tous les envois : %+v)", what, s, sent)
+		}
 	}
 }
 

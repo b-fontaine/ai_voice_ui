@@ -31,6 +31,8 @@ const (
 	defaultSessionRateWindow = 10 * time.Second
 	// Attente d'acquittement d'un commentaire vocal (VOICE_APPEND_ACK_TIMEOUT).
 	defaultAppendAckTimeout = 2 * time.Second
+	// Observation d'une parole après une annonce acquittée (VOICE_ANNOUNCE_TIMEOUT).
+	defaultAnnounceObserveTimeout = 4 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -94,6 +96,10 @@ type Config struct {
 	// AppendAckTimeout : attente de l'acquittement d'un commentaire vocal
 	// (VOICE_APPEND_ACK_TIMEOUT) ; défaut 2 s, documenté ici.
 	AppendAckTimeout time.Duration
+	// AnnounceObserveTimeout : durée pendant laquelle on observe (journal
+	// seulement, jamais de second envoi) si la voix parle après une annonce
+	// acquittée (VOICE_ANNOUNCE_TIMEOUT) ; défaut 4 s, documenté ici.
+	AnnounceObserveTimeout time.Duration
 	// AckDelayMs (VOICE_ACK_DELAY_MS, entier >= 0) : délai de l'accusé vocal
 	// automatique du fournisseur ; nil : non envoyé.
 	AckDelayMs *int64
@@ -317,6 +323,14 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 			return errors.New("VOICE_APPEND_ACK_TIMEOUT doit être une durée strictement positive (par exemple 2s)")
 		}
 		cfg.AppendAckTimeout = d
+	}
+	cfg.AnnounceObserveTimeout = defaultAnnounceObserveTimeout
+	if raw := strings.TrimSpace(getenv("VOICE_ANNOUNCE_TIMEOUT")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return errors.New("VOICE_ANNOUNCE_TIMEOUT doit être une durée strictement positive (par exemple 4s)")
+		}
+		cfg.AnnounceObserveTimeout = d
 	}
 	if raw := strings.TrimSpace(getenv("VOICE_ACK_DELAY_MS")); raw != "" {
 		n, err := strconv.ParseInt(raw, 10, 64)

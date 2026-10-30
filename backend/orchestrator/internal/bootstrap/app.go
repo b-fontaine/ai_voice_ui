@@ -126,8 +126,10 @@ func New(cfg Config, deps Deps) (*App, error) {
 		MaxSession:              cfg.MaxSession,
 		DelegationsCloseTimeout: delegationsCloseTimeout,
 		AttachAttempts:          cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
-		Delegations: delegations,
-		Logger:      logger,
+		Delegations:            delegations,
+		AnnounceInstruction:    cfg.Phrases.AnnounceInstruction,
+		AnnounceObserveTimeout: cfg.AnnounceObserveTimeout,
+		Logger:                 logger,
 	})
 	if err != nil {
 		_ = journal.Close()

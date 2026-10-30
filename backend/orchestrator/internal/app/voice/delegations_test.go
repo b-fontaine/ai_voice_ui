@@ -2,7 +2,6 @@ package voice
 
 import (
 	"context"
-	"errors"
 	"io"
 	"log/slog"
 	"slices"
@@ -455,24 +454,5 @@ func TestDeleteWithSlowAgentCancelReturns204(t *testing.T) {
 	}
 	if got := live.hangupCalls(); len(got) != 0 {
 		t.Fatalf("raccrochage inattendu après une fermeture confirmée : %v", got)
-	}
-}
-
-func TestAnnounceReportsSidebandRefusal(t *testing.T) {
-	live := &testLive{autoClose: true}
-	svc, sink, _, fd := newDelegationService(t, live, nil)
-	if _, err := svc.Open(context.Background(), "o"); err != nil {
-		t.Fatal(err)
-	}
-	sink.waitState(t, domain.StateActive, 1)
-	sb := live.waitAttached(t)
-	sb.sentMu.Lock()
-	sb.generalErr = errors.New("refusé")
-	sb.sentMu.Unlock()
-	if err := fd.openCalls()[0].reply.Announce(context.Background(), "texte"); err == nil {
-		t.Fatal("le refus d'acquittement doit remonter à l'appelant (politique de repli : T14)")
-	}
-	if err := svc.Shutdown(context.Background()); err != nil {
-		t.Fatal(err)
 	}
 }

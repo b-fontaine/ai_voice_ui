@@ -851,3 +851,66 @@ func TestNewNilLoggerUsesDefault(t *testing.T) {
 		t.Fatalf("Logger nil refusé : %v", err)
 	}
 }
+
+// ackInstructionsFor acquitte une consigne par session.instructions.appended.
+func ackInstructionsFor(cmd map[string]any) []string {
+	id, _ := cmd["event_id"].(string)
+	return []string{`{"type":"session.instructions.appended","event_id":"srv","client_event_id":"` + id + `"}`}
+}
+
+func TestAppendInstructionsHasNullDelegationIDAndWaitsAck(t *testing.T) {
+	srv := newReactiveServer(t, nil, ackInstructionsFor)
+	sb := openSideband(t, testOptions(srv.URL))
+	if err := sb.AppendInstructions(ctxT(t), "Confirme brièvement la décision."); err != nil {
+		t.Fatalf("AppendInstructions: %v", err)
+	}
+	cmds := srv.commands()
+	if len(cmds) != 1 {
+		t.Fatalf("commandes = %v", cmds)
+	}
+	c := cmds[0]
+	id, present := c["delegation_id"]
+	if c["type"] != "session.instructions.append" || !present || id != nil ||
+		c["content"] != "Confirme brièvement la décision." {
+		t.Fatalf("commande = %v, attendu session.instructions.append avec delegation_id présent et nul", c)
+	}
+	if eid, _ := c["event_id"].(string); !strings.HasPrefix(eid, "gi-general-") {
+		t.Fatalf("event_id = %q", eid)
+	}
+}
+
+func TestAppendInstructionsRejectsEmptyOversizedAndReportsRefusal(t *testing.T) {
+	srv := newReactiveServer(t, nil, func(cmd map[string]any) []string {
+		id, _ := cmd["event_id"].(string)
+		return []string{`{"type":"error","event_id":"srv","client_event_id":"` + id +
+			`","error":{"type":"invalid_request_error","code":"bad","message":"refusé pour ` + testKey + `"}}`}
+	})
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 3 * time.Second
+	sb := openSideband(t, opts)
+	if err := sb.AppendInstructions(ctxT(t), ""); err == nil {
+		t.Error("consigne vide acceptée")
+	}
+	if err := sb.AppendInstructions(ctxT(t), strings.Repeat("é", 1001)); err == nil {
+		t.Error("consigne de 1001 runes acceptée")
+	}
+	if n := len(srv.commands()); n != 0 {
+		t.Fatalf("aucun appel réseau attendu pour un texte invalide, reçu %d", n)
+	}
+	err := sb.AppendInstructions(ctxT(t), "texte")
+	if err == nil || strings.Contains(err.Error(), testKey) || !strings.Contains(err.Error(), "bad") {
+		t.Fatalf("refus fournisseur mal rapporté : %v", err)
+	}
+}
+
+func TestAppendInstructionsNotAckedByCommentaryAck(t *testing.T) {
+	// Un acquittement de commentaire ne doit pas résoudre une consigne : les deux
+	// canaux ont des types d'acquittement distincts.
+	srv := newReactiveServer(t, nil, ackFor)
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 200 * time.Millisecond
+	sb := openSideband(t, opts)
+	if err := sb.AppendInstructions(ctxT(t), "texte"); err == nil {
+		t.Fatal("la consigne a été acquittée par session.commentary.appended")
+	}
+}

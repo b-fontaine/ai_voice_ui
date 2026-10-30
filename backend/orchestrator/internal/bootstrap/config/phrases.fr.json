@@ -10,5 +10,6 @@
   "partial_failure": "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
   "result_template": "Voici ce que je constate : « %s »",
   "action_result_template": "C'est fait. %s",
-  "action_failure": "Je n'ai pas pu enregistrer cette décision : la checklist reste inchangée."
+  "action_failure": "Je n'ai pas pu enregistrer cette décision : la checklist reste inchangée.",
+  "announce_instruction": "L'utilisateur vient de prendre une décision sur la checklist ; confirme-la brièvement et factuellement, sans rien ajouter."
 }

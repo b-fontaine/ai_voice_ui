@@ -100,6 +100,11 @@ type Phrases struct {
 	// ActionFailure est dite quand l'action a échoué (agent injoignable, résultat
 	// invalide, délai) : honnête, sans résumé ni décision annoncée, aucun chiffre.
 	ActionFailure string
+	// AnnounceInstruction est la consigne envoyée à la voix en dernier recours
+	// d'une annonce hors délégation. Canal de confiance : texte fixe de
+	// l'orchestrateur, sans gabarit, jamais composé d'une donnée d'agent ni du
+	// client ; il n'annonce aucune décision (la voix la tient du contexte).
+	AnnounceInstruction string
 }
 
 // MaxCommentaryRunes est la borne d'un commentaire vocal. Elle duplique celle
@@ -116,6 +121,7 @@ func (p Phrases) Validate() error {
 		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
 		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "PartialFailure": p.PartialFailure, "ResultTemplate": p.ResultTemplate,
 		"ActionResultTemplate": p.ActionResultTemplate, "ActionFailure": p.ActionFailure,
+		"AnnounceInstruction": p.AnnounceInstruction,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)

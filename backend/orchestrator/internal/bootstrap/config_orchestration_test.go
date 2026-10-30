@@ -114,6 +114,42 @@ func TestConfig_AppendAckTimeout(t *testing.T) {
 	}
 }
 
+func TestConfig_AnnounceTimeout(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil || cfg.AnnounceObserveTimeout != 4*time.Second {
+		t.Fatalf("défaut 4 s attendu : %v %s", err, cfg.AnnounceObserveTimeout)
+	}
+	env := fullEnv()
+	env["VOICE_ANNOUNCE_TIMEOUT"] = "300ms"
+	cfg, err = load(env)
+	if err != nil || cfg.AnnounceObserveTimeout != 300*time.Millisecond {
+		t.Fatalf("valeur lue : %v %s", err, cfg.AnnounceObserveTimeout)
+	}
+	for _, bad := range []string{"0s", "-2s", "x"} {
+		env["VOICE_ANNOUNCE_TIMEOUT"] = bad
+		if _, err := load(env); err == nil || !strings.Contains(err.Error(), "VOICE_ANNOUNCE_TIMEOUT") {
+			t.Fatalf("%q : refus attendu, obtenu %v", bad, err)
+		}
+	}
+}
+
+// La consigne de l'orchestrateur est un canal de confiance : un texte neutre, sans
+// gabarit (rien d'un agent ni du client n'y entre), sans chiffre ni décision annoncée.
+func TestDefaultAnnounceInstructionIsNeutralAndFixed(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := cfg.Phrases.AnnounceInstruction
+	if strings.TrimSpace(got) == "" || strings.ContainsAny(got, "0123456789%") {
+		t.Fatalf("consigne = %q : texte fixe attendu, sans chiffre ni verbe de formatage", got)
+	}
+	low := strings.ToLower(got)
+	if strings.Contains(low, "bloquée") || strings.Contains(low, "validée") {
+		t.Fatalf("la consigne ne doit annoncer aucune décision : %q", got)
+	}
+}
+
 func TestConfig_AckDelay(t *testing.T) {
 	cfg, err := load(fullEnv())
 	if err != nil || cfg.AckDelayMs != nil {
@@ -164,7 +200,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -174,7 +210,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := cfg.Phrases
-	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" || p.ActionResultTemplate != "ar %s" || p.ActionFailure != "af" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" || p.ActionResultTemplate != "ar %s" || p.ActionFailure != "af" || p.AnnounceInstruction != "ai" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -183,11 +219,11 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
 		"json cassé":       `{"partial_failure":"pf %s","generic": "` + secret,
-		"champ inconnu":    `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
-		"deux %s":          `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
+		"champ inconnu":    `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
+		"deux %s":          `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"announce_instruction":"ai","action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -215,6 +251,7 @@ func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
 		"partial_failure":        `"partial_failure":"pf %s",`,
 		"action_result_template": `"action_result_template":"ar %s",`,
 		"action_failure":         `"action_failure":"af",`,
+		"announce_instruction":   `"announce_instruction":"ai",`,
 	} {
 		env := fullEnv()
 		env["VOICE_PHRASES_FILE"] = writePhrases(t, strings.Replace(customPhrases, absent, "", 1))

@@ -42,6 +42,7 @@ var pipePhrases = Phrases{
 	// Confirmation et échec d'une action de l'interface.
 	ActionResultTemplate: "C'est fait. %s",
 	ActionFailure:        "Je n'ai pas pu enregistrer cette décision, la checklist reste inchangée.",
+	AnnounceInstruction:  "L'utilisateur vient de prendre une décision sur la checklist ; confirme-la brièvement.",
 }
 
 type fixedClock struct{ t time.Time }
