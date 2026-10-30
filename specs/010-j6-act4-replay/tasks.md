@@ -1,21 +1,34 @@
 # 010 — Tâches
 
-Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. Pile unique (Flutter) : **une tâche à la fois**. `product/`, `specs/`, `pubspec.yaml` racine : session principale seule.
+Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements », prioritaire).
+
+Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. Pile unique (Flutter) : **une tâche à la fois**. `product/`, `specs/`, `pubspec.yaml` racine, `workspace_dependency_rules_test.dart` : session principale seule.
+
+## Sonde et socle
+- [ ] T05 Flutter — **sonde genui 0.10.4** : `deleteSurface` puis `createSurface` du même identifiant, validateur remis à zéro, redonne le même rendu (surfaces de l'acte 1) · test d'abord : le test lui-même ; **s'il échoue : fonctionnalité Bloquée, Q-xx pour le porteur** (pas de repli)
+- [ ] T03a session principale — workspace racine, `packages/features/replay/pubspec.yaml`, dépendance `feature_replay` dans `apps/genesis_canvas/pubspec.yaml`, ajout à `workspace_dependency_rules_test.dart` · test d'abord : le test de règles de dépendances
+- [ ] T11 Flutter — `testing/backend_fakes` : compteur de **toutes** les requêtes HTTP du `FakeBackend` (aujourd'hui seulement `canvasResets`) · test d'abord : `fake_backend_test.dart`
+- [ ] T12 Flutter — `GenesisApp` : paramètre `clock` (frontière « temps ») vers `AppClock` de la DI · test d'abord : une app lancée avec une horloge fausse l'utilise
+- [ ] T13 Flutter — `feature_protocol_feed` : `ProtocolFeedEntriesCleared` (vide les entrées, garde `expanded`) · test d'abord : `protocol_feed_bloc_test.dart`
 
 ## Gherkin (acceptation Flutter, `bdd_widget_test`)
-- [ ] T01 Flutter — `acte4_rejouer.feature` : R-01 à R-08 sur le faux backend (acte 1 depuis les fixtures `act1-*`, horloge virtuelle du lecteur injectée, compteur de requêtes) · rouges pour la bonne raison : les commandes de la zone Rejeu sont inactives (`onPressed: null`), aucun journal
+- [ ] T01 Flutter — `acte4_rejouer.feature` : R-01 à R-09 (R-09 : « Remettre à vide » pendant un rejeu = Direct), démontage de la page pendant une lecture sans minuteur actif, curseur glissé = un seul seek ; acte 1 depuis les fixtures, `pump(durée)`, compteur de requêtes (T11) · rouges pour la bonne raison : commandes de la zone Rejeu inactives (`onPressed: null`), aucun journal ; `loop_harness.feature` : capture à `GENESIS_REPLAY_AT` (A3)
 
 ## TDD
-- [ ] T02 Flutter — `entity_session` : `A2uiJournal`/`JournalEntry` (ajout, `t_ms` relatif au premier message, `seq`, JSONL aller-retour, lecture du format `{t_ms, message}` de 000) · test d'abord : `a2ui_journal_test.dart`
-- [ ] T03 Flutter — nouvelle slice `packages/features/replay` (pubspec, workspace racine, `analysis_options`) et `ReplayPlayer` : lecture, pause, vitesses, plafond d'écart, seek (avant, arrière, réinjection après `clear`), fin, `dispose` sans minuteur actif ; horloge virtuelle injectée · test d'abord : `replay_player_test.dart` (durée ∝ 1/vitesse, seek arrière puis avant sans doublon)
-- [ ] T04 Flutter — `ReplayRouter` (modes vivant / rejeu, enregistrement, jet des messages vivants en rejeu, abonné unique, pas de fermeture du gate à la fin du rejeu) · test d'abord : `replay_router_test.dart` (course message vivant / entrée en rejeu)
-- [ ] T05 Flutter — **sonde** : test de widget sur genui 0.10.4 verrouillé : `deleteSurface` puis `createSurface` du même identifiant, rejoué avec le validateur remis à zéro, redonne le même rendu (surfaces de l'acte 1) · test d'abord : le test lui-même ; s'il échoue, consigner et appliquer le repli du plan
-- [ ] T06 Flutter — `ReplayBloc` (états/événements scellés, `sequential`, dérivé du lecteur, `canPlay` faux sans journal ou agents occupés) · test d'abord : `replay_bloc_test.dart` (harnais `bloc_harness`)
-- [ ] T07 Flutter — `ReplayBar` active (Lecture/Pause, Recommencer, curseur, cinq vitesses, Direct), libellés accessibles, cibles ≥ 48 px, texte ≥ 24 px, pas de débordement à 340 px et à la largeur retenue · test d'abord : `replay_bar_test.dart`
-- [ ] T08 Flutter — `StageBar` : « Acte 4 · Rejeu » non cliquable en état Rejeu · test d'abord : `stage_bar_test.dart`
-- [ ] T09 Flutter — câblage de `GenesisCanvasPage` : routeur sur la source vivante, journal, `ReplayBloc`, port `ReplayStage` (`enter`/`clear`/`emit`/`exit`), `startEnabled` et `CanvasActionScope.enabled` coupés en rejeu, relais de `anyBusy`, fermeture ordonnée, `_scenarioMode` pour l'ancien mode, réglage `replayMaxGap`, DI · test d'abord : `genesis_canvas_page_replay_test.dart` + R-01 à R-08 verts
+- [ ] T02 Flutter — `entity_session` : `A2uiJournal`/`JournalEntry` (copie profonde non modifiable, `t_ms` relatif au premier message et croissant, `seq`, plafond `maxEntries`, `toString` sans contenu) · test d'abord : `a2ui_journal_test.dart`
+- [ ] T03b Flutter — `ReplayPlayer` (`feature_replay`) : pas fixe `Timer.periodic`, vitesses, pause, plafond d'écart, seek avec barrière d'un tour de boucle, fin, `dispose` synchrone sans minuteur actif · test d'abord : `replay_player_test.dart` (durée ∝ 1/vitesse, seek arrière puis avant sans doublon)
+- [ ] T04 Flutter — `ReplayRouter` (sortie `sync: true`, modes vivant / rejeu, `enterReplay()` atomique avec copie figée, `inject`, jet et **comptage** des messages vivants en rejeu, `journalSize`, `liveDone`, pas de fermeture du gate à la fin du rejeu) · test d'abord : `replay_router_test.dart` (message vivant dans la même pile que `enterReplay()` ni rendu ni enregistré)
+- [ ] T06 Flutter — `ReplayBloc(router, player, stage)` (deux handlers : commandes `sequential`, abonnement au lecteur `restartable` ; `canPlay` combiné ; Direct = `player.stop` → `stage.exit` → `router.exitReplay`) · test d'abord : `replay_bloc_test.dart` (Pause traitée pendant une lecture)
+- [ ] T07 Flutter — `ReplayBar` à 480 px : deux rangées de 48 px, Lecture/Pause, Recommencer, `Slider` (seek sur `onChangeEnd`, `onChanged` = affichage seul), cinq vitesses, Direct ; libellés accessibles, texte ≥ 24 px · test d'abord : `replay_bar_test.dart` (aucun débordement, un seek par glisser)
+- [ ] T08 Flutter — `StageBar` : « Acte 4 · Rejeu » non cliquable en rejeu ; « Remettre à vide » = `ReplayDirectPressed` en rejeu · test d'abord : `stage_bar_test.dart`
+
+## Câblage de la page
+- [ ] T09a Flutter — routeur sur la source vivante, journal, renommage `_replayMode` → `_scenarioMode`, aucun changement visible · test d'abord : actes 1 à 3 et `loop_harness` restent verts (régression), `genesis_canvas_page_replay_test.dart` (enregistrement)
+- [ ] T09b Flutter — `ReplayBloc`, `ReplayStage` (`clear`/`exit`), barrière, fermeture ordonnée (lecteur synchrone dans `dispose`), `genesis_canvas_page_layout_test.dart` (étagère 900 px, zone Rejeu 480 px, 1920 × 1080) · R-01 à R-04 et R-08 verts
+- [ ] T09c Flutter — isolation (`startEnabled`, `CanvasActionScope.enabled` coupés en rejeu), relais booléen `ReplayBusyChanged`, Direct, remise à vide en rejeu, ligne `errorSink` du nombre de messages écartés · R-05 à R-07 et R-09 verts
+- [ ] T09d Flutter — `replayMaxGap`, `replayJournalMaxEntries`, `tick`, `defaultSpeed` dans `GenesisCanvasPageSettings`/`GenesisConfig` (tests de réglages), `GENESIS_REPLAY_AT` et capture sur `liveDone` (A3) · test d'abord : `genesis_config_test.dart`, `loop_harness.feature`
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer (mode CODE) + refactorisations par lots
-- [ ] T92 Vérification : `gate --full`, `app-smoke.sh` (capture lue) ; clôture : docs `product/` (replay.md → `validated` pour le journal et le lecteur, screen, business-rules, frontend-screen, backlog EP-07/EP-05, roadmap J6, requirements FR-09 livrée), note `knowledge/` si fait nouveau (genui : recréation de surface), `specs/progress.md`, `publish.sh`
+- [ ] T92 Vérification : `gate --full`, `GENESIS_REPLAY_AT=0.5 app-smoke.sh` (capture lue) ; clôture : docs `product/` (screen budget, business-rules, frontend-screen, backlog EP-07/EP-05, roadmap J6, requirements FR-09 livrée), note `knowledge/` si fait nouveau, `specs/progress.md`, `publish.sh`

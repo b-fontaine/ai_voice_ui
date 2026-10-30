@@ -5,7 +5,7 @@ area: architecture
 status: draft
 updated: 2026-10-29
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
-links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
+links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
 tags: [rejeu, replay, journal, acte-4, determinisme]
 ---
 # Journal A2UI et rejeu (acte 4)
@@ -24,21 +24,18 @@ tags: [rejeu, replay, journal, acte-4, determinisme]
 | NFR-08 | données figées, seule la composition varie | jeu figé derrière les agents + snapshot de leurs réponses |
 | ~~FR-10, NFR-07~~ | retirées par pdr-0032 | — |
 
-## Format du journal (proposition)
+## Format du journal (pdr-0066 D1)
 
-En-tête (1re ligne) : `schema`, version de l'app, `catalogId`, version A2UI (`a2ui.version` = `v0.9`, [pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)), version du jeu de données, date.
-
-Une ligne JSON par événement :
+Journal **en mémoire** côté client (`A2uiJournal`, `entity_session`), jamais écrit sur disque, sur `errorSink` ni dans les logs (JSON produit par un LLM). Plafond injecté (`replayJournalMaxEntries`). Une entrée par message A2UI reçu du flux vivant, refus et ignorés compris (le validateur rejoué redonne les mêmes verdicts) :
 
 | Champ | Contenu |
 |---|---|
 | `seq` | numéro d'ordre strict (l'ordre A2UI est obligatoire, [genui-a2ui-messages]) |
-| `t_ms` | temps depuis le début de session, horloge monotone de l'app |
-| `kind` | `a2ui` (rejoué) ou `marker` (mesure, non rejoué) |
-| `payload` | message A2UI **brut** tel que reçu |
-| `corr` | agent émetteur, `surfaceId`, id de composant (lien protocole ↔ composant, FR-05) |
+| `t_ms` | temps depuis le premier message, horloge de l'app, croissant ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) |
+| `raw` | message A2UI **brut** tel que reçu (copie profonde non modifiable) |
+| `agent`, `task` | agent émetteur et tâche (lien protocole ↔ composant, FR-05) |
 
-Les `marker` (proposition de l'assistant) balisent la fin de phrase du speaker et le début de chaque acte : ils servent au seul calcul de NFR-02 et NFR-03, le lecteur les ignore. Ils ne contiennent pas le texte de la phrase. Les actions utilisateur ne sont pas enregistrées : leurs effets arrivent déjà sous forme de messages A2UI des agents.
+Aucun marqueur en J6 : les marqueurs de mesure (fin de phrase du speaker, début d'acte) servent NFR-02/03 et relèvent de J8. Les actions utilisateur ne sont pas enregistrées : leurs effets arrivent déjà sous forme de messages A2UI des agents. Le format de fichier JSONL `{t_ms, message}` n'est lu que par le rejeu scripté de la boucle (`GENESIS_SCENARIO`).
 
 ## Où enregistrer
 
@@ -54,15 +51,15 @@ Le journal vit le temps de la session : pas de persistance au-delà (fiche § 3)
 ```mermaid
 stateDiagram-v2
   [*] --> Direct
-  Direct --> Rejeu: acte 4 (fin de l'acte 1 ou plus tard)
-  Rejeu --> Rejeu: lecture / pause / vitesse 0,25×–2× / seek
-  Rejeu --> Direct: remise à vide puis nouvelle demande
+  Direct --> Rejeu: Lecture (journal non vide, aucun agent occupé)
+  Rejeu --> Rejeu: lecture / pause / vitesse 0,25×–2× / curseur
+  Rejeu --> Direct: « Direct » ou « Remettre à vide » (remise à vide complète, journal vidé)
 ```
 
-- **Horloge virtuelle** : les événements sont réémis à `t_ms / vitesse`.
-- **Seek arrière** : l'A2UI est incrémental ; on remet le canevas à vide (nouvelle portée `SurfaceController`) puis on rejoue instantanément jusqu'à la position ([genui-multiple-surfaces]).
-- **Pilotage** : à la souris (lecture, pause, curseur de vitesse) ; raccourcis facultatifs ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)). Pas-à-pas ←/→ : Q-52 ouverte ; proposition de l'assistant : aucun pas-à-pas imposé.
-- Le panneau protocole met en évidence le message rejoué, synchronisé avec son composant.
+- **Un seul chemin** ([pdr-0066](../decisions/pdr-0066-010-act4-replay-details-assistant-decided.md) D2) : un `ReplayRouter` se place devant l'`A2uiGate`. En direct il enregistre puis transmet ; en rejeu il jette (et compte) les messages vivants et le lecteur injecte les messages bruts du journal dans le **même** gate, validateur remis à zéro. Canevas, panneau du protocole et étagère se reconstruisent d'un seul flux.
+- **Horloge à pas fixe** : un seul `Timer.periodic` (100 ms) ; la position avance de `pas × vitesse` et les entrées ≤ position sont émises ; l'attente entre deux messages est plafonnée (`replayMaxGap`, 3 s, D6).
+- **Curseur** : remise à vide du canevas, du panneau (sans le replier) et de l'étagère, barrière d'un tour de boucle, puis réinjection instantanée jusqu'à la position ; le **même** `SurfaceController` est conservé (la remise à vide supprime les surfaces, comme en 007).
+- **Pilotage** : à la souris (Lecture/Pause, Recommencer, curseur, cinq vitesses, Direct) ; pas de pas-à-pas ←/→ ([pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)), aucun raccourci ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)).
 - Le rejeu ne touche pas à la session voix : il n'y a rien à dire pendant le rejeu, le speaker commente.
 
 ## Déterminisme

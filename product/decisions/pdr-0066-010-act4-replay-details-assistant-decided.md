@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0066 — Acte 4 (J6) : détails du rejeu
 
-> **En bref.** La fiche et pdr-0032 fixent le résultat (flux A2UI seul enregistré, rejeu de 0,25× à 2×, sans réseau ni LLM, synchronisé avec le panneau du protocole). Elles sont muettes sur le mécanisme et sur le détail des commandes ; la boucle tranche sept détails sous la règle permanente pdr-0062 et les signale au porteur, qui peut les contester. Aucun ne touche le périmètre, la mise en scène des actes, le budget ni les fournisseurs.
+> **En bref.** La fiche et pdr-0032 fixent le résultat (flux A2UI seul enregistré, rejeu de 0,25× à 2×, sans réseau ni LLM, synchronisé avec le panneau du protocole). Elles sont muettes sur le mécanisme et sur le détail des commandes ; la boucle tranche huit détails sous la règle permanente pdr-0062 et les signale au porteur, qui peut les contester. Aucun ne touche le périmètre, la mise en scène des actes, le budget ni les fournisseurs.
 
 Part de l'assistant : décision prise sur délégation (pdr-0062), contestable par le porteur.
 
@@ -44,6 +44,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 | **D5** | **Positionnement** : déplacer le curseur (avant comme arrière) remet le canevas à vide puis réinjecte instantanément les messages jusqu'à la position (genui est incrémental), puis la lecture reprend si elle était en cours. À la fin du journal, le rejeu s'arrête sur la dernière image ; « Lecture » repart de zéro. |
 | **D6** | **Écarts plafonnés** : l'attente virtuelle entre deux messages consécutifs est plafonnée à `replayMaxGap` (réglage injecté, 3 s par défaut, valeur à 1×), pour que les silences d'un speaker qui parle entre deux actes ne vident le rejeu ; l'axe du curseur est cet axe comprimé. Dans une rafale de génération, aucun écart n'atteint 3 s : le rythme est celui du direct. |
 | **D7** | **Étendue** : le rejeu couvre tout le journal de la session (actes 1 à 3), qui commence par l'acte 1 que la fiche dit « repasser au ralenti » ; le speaker arrête ou déplace le curseur où il veut. Aucun marqueur d'acte n'est enregistré en J6 (les marqueurs de mesure de [p-ar-replay](../architecture/replay.md) servent NFR-02/03, J8). |
+| **D8** | **Compléments de la revue du plan.** « Remettre à vide » pendant un rejeu équivaut à « Direct » ; « Direct » reste toujours actif. « Lecture » est inactif sans journal, pendant qu'un agent travaille, pendant une action en cours. Les messages vivants écartés en rejeu sont comptés et un seul message (le nombre) est écrit à la sortie. Le panneau du protocole reste déplié pendant un curseur ou un « Recommencer » et affiche l'heure du rejeu (pas celle du direct). La zone Rejeu passe à 480 px de large sur deux rangées de 48 px (l'étagère de 1040 à 900 px). Le curseur n'applique qu'un seul positionnement par glissement. |
 
 ## Raisons
 - Fiche suivie (pdr-0017) : « l'acte 1 repasse au ralenti, synchronisé avec le JSON ».
