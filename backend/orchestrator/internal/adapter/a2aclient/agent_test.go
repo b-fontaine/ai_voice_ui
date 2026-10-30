@@ -3,6 +3,7 @@ package a2aclient_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"iter"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"unicode"
 
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
@@ -42,6 +44,7 @@ type testServer struct {
 	submit      atomic.Bool  // false : le script répond sans tâche (Message direct)
 	rewriteID   atomic.Bool  // true : le taskId des événements est modifié après la tâche initiale
 	truncate    atomic.Bool  // true : le flux SSE est fermé proprement après son premier événement
+	extraTags   atomic.Value // []string : tags ajoutés au skill « other » de la carte
 }
 
 func (s *testServer) CardURL() string { return s.URL + a2asrv.WellKnownAgentCardPath }
@@ -83,6 +86,10 @@ func startServer(t *testing.T, sc script) *testServer {
 			if u == "" {
 				u = s.URL
 			}
+			other := []string{"crash", "avis"}
+			if x, ok := s.extraTags.Load().([]string); ok {
+				other = append(other, x...)
+			}
 			return &a2a.AgentCard{
 				Name:                s.name.Load().(string),
 				Description:         "Agent de test.",
@@ -93,7 +100,7 @@ func startServer(t *testing.T, sc script) *testServer {
 				Capabilities:        a2a.AgentCapabilities{Streaming: true},
 				Skills: []a2a.AgentSkill{
 					{ID: "quality-kpi", Name: "Qualité", Description: "KPI.", Tags: []string{"release", "crash"}},
-					{ID: "other", Name: "Autre", Description: "Autre.", Tags: []string{"crash", "avis"}},
+					{ID: "other", Name: "Autre", Description: "Autre.", Tags: other},
 				},
 			}, nil
 		})))
@@ -837,5 +844,56 @@ func TestConfiguredNameEmptyFallsBackToCard(t *testing.T) {
 	}
 	if a.Name() != "Qualité" {
 		t.Fatalf("Name = %q, attendu le nom de la carte", a.Name())
+	}
+}
+
+func TestCardTagsBounded(t *testing.T) {
+	s := startServer(t, func(context.Context, *a2asrv.ExecutorContext, func(a2a.Event) bool) {})
+	a := newAgent(t, s)
+	if a.LastTags() != nil {
+		t.Fatalf("LastTags avant lecture = %v, attendu nil", a.LastTags())
+	}
+
+	extra := []string{"", strings.Repeat("é", 41), "mauvais\ntag", "tab\there", "release"} // vide, trop long, contrôles, doublon
+	extra = append(extra, strings.Repeat("é", 40))                                         // limite acceptée
+	for i := 0; i < 60; i++ {
+		extra = append(extra, fmt.Sprintf("tag%02d", i))
+	}
+	s.extraTags.Store(extra)
+
+	card, err := a.Card(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(card.Tags) != 32 {
+		t.Fatalf("%d tags, attendu 32 au plus : %q", len(card.Tags), card.Tags)
+	}
+	want := []string{"release", "crash", "avis", strings.Repeat("é", 40), "tag00"}
+	if !reflect.DeepEqual(card.Tags[:5], want) {
+		t.Fatalf("début des tags = %q, attendu %q", card.Tags[:5], want)
+	}
+	seen := map[string]bool{}
+	for _, tag := range card.Tags {
+		if n := len([]rune(tag)); n < 1 || n > 40 || strings.ContainsFunc(tag, unicode.IsControl) || seen[tag] {
+			t.Fatalf("tag invalide ou en double : %q", tag)
+		}
+		seen[tag] = true
+	}
+
+	// LastTags : copie des tags de la dernière carte valide, gardée quand l'agent tombe.
+	got := a.LastTags()
+	if !reflect.DeepEqual(got, card.Tags) {
+		t.Fatalf("LastTags = %q, attendu %q", got, card.Tags)
+	}
+	got[0] = "modifié"
+	if a.LastTags()[0] != "release" {
+		t.Fatal("LastTags doit renvoyer une copie")
+	}
+	s.Close()
+	if _, err := a.Card(context.Background()); err == nil {
+		t.Fatal("carte injoignable attendue")
+	}
+	if !reflect.DeepEqual(a.LastTags(), card.Tags) {
+		t.Fatalf("la dernière carte valide n'est pas gardée : %q", a.LastTags())
 	}
 }

@@ -256,7 +256,7 @@ collect:
 			break collect
 		}
 	}
-	succeeded, rejections := p.outcomes(tasks)
+	succeeded, rejections := p.outcomes(agentCtx, tasks)
 
 	if sessionClosed(ctx) {
 		p.seal()
@@ -343,23 +343,28 @@ func (p *Pipeline) readCards(ctx context.Context) ([]port.AgentCard, []error) {
 }
 
 // selectAgents renvoie les indices des agents retenus, dans l'ordre de
-// configuration. Un agent dont la carte est illisible est retenu : il échouera
-// (« injoignable ») au lieu de disparaître en silence. Le planificateur ne voit
-// que les cartes lues.
+// configuration. Un agent dont la carte est illisible et qui n'a jamais été lu
+// est retenu : il échouera (« injoignable ») au lieu de disparaître en silence.
+// Un agent illisible dont les tags sont connus (LastTags : dernière carte
+// valide) passe par le planificateur avec ces tags et n'est retenu que s'il est
+// choisi.
 func (p *Pipeline) selectAgents(request string, cards []port.AgentCard, errs []error) []int {
-	var readable []port.AgentCard
-	var index []int // indice d'agent de chaque carte lisible
-	for i, c := range cards {
-		if errs[i] == nil {
-			readable = append(readable, c)
-			index = append(index, i)
-		}
-	}
+	var planned []port.AgentCard
+	var index []int // indice d'agent de chaque carte présentée au planificateur
 	keep := make([]bool, len(cards))
-	for i, e := range errs {
-		keep[i] = e != nil
+	for i, c := range cards {
+		switch {
+		case errs[i] == nil:
+		case p.deps.Agents[i].LastTags() != nil:
+			c = port.AgentCard{Name: p.deps.Agents[i].Name(), Tags: p.deps.Agents[i].LastTags()}
+		default:
+			keep[i] = true // jamais lue : retenu, il échouera
+			continue
+		}
+		planned = append(planned, c)
+		index = append(index, i)
 	}
-	for _, k := range p.deps.Planner.Plan(request, readable) {
+	for _, k := range p.deps.Planner.Plan(request, planned) {
 		if k >= 0 && k < len(index) {
 			keep[index[k]] = true
 		}
@@ -373,6 +378,9 @@ func (p *Pipeline) selectAgents(request string, cards []port.AgentCard, errs []e
 	return selected
 }
 
+// maxPlanNameRunes borne chaque nom d'agent du message `plan`.
+const maxPlanNameRunes = 40
+
 // publishPlan publie le message `plan` : noms d'agent retenus et inactifs.
 func (p *Pipeline) publishPlan(delegationID string, selected []int) {
 	plan := domain.Plan{Delegation: delegationID, Selected: []string{}, Idle: []string{}}
@@ -381,10 +389,11 @@ func (p *Pipeline) publishPlan(delegationID string, selected []int) {
 		chosen[i] = true
 	}
 	for i, a := range p.deps.Agents {
+		name := sanitizeSummary(a.Name(), maxPlanNameRunes) // le nom peut venir d'une carte
 		if chosen[i] {
-			plan.Selected = append(plan.Selected, a.Name())
+			plan.Selected = append(plan.Selected, name)
 		} else {
-			plan.Idle = append(plan.Idle, a.Name())
+			plan.Idle = append(plan.Idle, name)
 		}
 	}
 	p.mu.Lock()
@@ -520,16 +529,18 @@ func (p *Pipeline) activeSurfaces(owner string) []string {
 	return p.deps.Registry.ActiveFor(owner)
 }
 
-// outcomes lit les issues sous le verrou : une tâche encore ouverte (jamais
-// suivie, agent sourd) est close sans publication, pour qu'elle ne puisse plus
-// contredire le commentaire. Les résumés suivent l'ordre des agents.
-func (p *Pipeline) outcomes(tasks []*taskState) (summaries []string, rejections int) {
+// outcomes lit les issues sous le verrou. Invariant : tout agent retenu reçoit
+// un agent.activity terminal. Une tâche encore ouverte (jamais suivie : la
+// goroutine de l'agent n'a pas démarré avant l'échéance) est donc publiée en
+// échec (détail tiré de agentCtx), sans compensation (aucun taskID), et close
+// pour qu'elle ne puisse plus contredire le commentaire. Les résumés suivent
+// l'ordre des agents.
+func (p *Pipeline) outcomes(agentCtx context.Context, tasks []*taskState) (summaries []string, rejections int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, ts := range tasks {
 		if !ts.done {
-			ts.done = true
-			p.untrackLocked(ts)
+			p.failLocked(ts, detailFor(agentCtx, nil))
 		}
 		switch {
 		case ts.ok:
@@ -554,11 +565,12 @@ func appendSummary(cur, add string) string {
 	return cur
 }
 
-// track enregistre la tâche en vol ; faux si le pipeline est déjà fermé.
+// track enregistre la tâche en vol ; faux si le pipeline est déjà fermé ou si
+// la tâche est déjà close (outcomes l'a publiée en échec).
 func (p *Pipeline) track(ts *taskState) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.closed {
+	if p.closed || ts.done {
 		ts.done = true
 		return false
 	}

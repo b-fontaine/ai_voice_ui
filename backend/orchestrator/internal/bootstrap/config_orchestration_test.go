@@ -365,3 +365,26 @@ func TestConfig_PropertyListsRejectBadNames(t *testing.T) {
 		}
 	}
 }
+
+func TestConfig_AgentsRejectDuplicateCardURL(t *testing.T) {
+	env := orchEnv()
+	env["AGENTS"] = "A=http://a:1/card,B=http://a:1/card"
+	_, err := load(env)
+	if err == nil || !strings.Contains(err.Error(), "AGENTS : entrée en double") || strings.Contains(err.Error(), "a:1") {
+		t.Fatalf("doublon d'URL : erreur sans valeur attendue, obtenu %v", err)
+	}
+}
+
+func TestConfig_AgentsRejectDuplicateName(t *testing.T) {
+	env := orchEnv()
+	env["AGENTS"] = "Qualité=http://a:1/card,Qualité=http://b:2/card"
+	_, err := load(env)
+	if err == nil || !strings.Contains(err.Error(), "AGENTS : entrée en double") || strings.Contains(err.Error(), "Qualité") {
+		t.Fatalf("doublon de nom : erreur sans valeur attendue, obtenu %v", err)
+	}
+	// Les noms vides (non configurés) ne sont pas des doublons.
+	env["AGENTS"] = "http://a:1/card,http://b:2/card"
+	if _, err := load(env); err != nil {
+		t.Fatalf("noms vides : %v", err)
+	}
+}

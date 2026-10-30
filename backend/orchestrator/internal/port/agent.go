@@ -105,6 +105,10 @@ type RemoteAgent interface {
 	// Name est le dernier nom valide de carte, sinon l'hôte de l'URL de carte :
 	// il sert à l'affichage et aux échecs survenus avant toute lecture de carte.
 	Name() string
+	// LastTags renvoie une copie des tags de la dernière carte VALIDE lue, nil
+	// si aucune carte valide n'a jamais été lue : l'orchestrateur s'en sert pour
+	// planifier un agent dont la carte est momentanément illisible.
+	LastTags() []string
 	// Card relit la carte de l'agent à chaque appel. L'orchestrateur la lit une
 	// seule fois par délégation et par agent, avant la planification, puis la
 	// rend dans AgentRequest.Card : Send ne relit pas la carte dans ce cas.

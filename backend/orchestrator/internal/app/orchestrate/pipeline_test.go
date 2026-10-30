@@ -170,10 +170,12 @@ type fakeAgent struct {
 	id       string
 	script   func(ctx context.Context, yield func(port.AgentUpdate, error) bool)
 
-	mu       sync.Mutex
-	requests []port.AgentRequest
-	cards    int
-	stopped  atomic.Int32 // itérations arrêtées par le consommateur
+	mu        sync.Mutex
+	requests  []port.AgentRequest
+	cards     int
+	lastTags  []string     // tags de la dernière carte valide lue (nil : jamais lue)
+	blockCard bool         // Card ne rend la main qu\'à l\'annulation de ctx
+	stopped   atomic.Int32 // itérations arrêtées par le consommateur
 }
 
 func newAgent(name string, steps ...step) *fakeAgent {
@@ -191,11 +193,27 @@ func newAgent(name string, steps ...step) *fakeAgent {
 	}
 }
 
-func (a *fakeAgent) Card(context.Context) (port.AgentCard, error) {
+func (a *fakeAgent) Card(ctx context.Context) (port.AgentCard, error) {
+	if a.blockCard {
+		<-ctx.Done()
+		return port.AgentCard{}, &port.AgentError{Kind: port.AgentTimeout, Reason: "carte"}
+	}
 	a.mu.Lock()
 	a.cards++
+	if a.cardErr == nil {
+		a.lastTags = append([]string{}, a.card.Tags...)
+	}
 	a.mu.Unlock()
 	return a.card, a.cardErr
+}
+
+func (a *fakeAgent) LastTags() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.lastTags == nil {
+		return nil
+	}
+	return append([]string{}, a.lastTags...)
 }
 
 func (a *fakeAgent) ID() string {

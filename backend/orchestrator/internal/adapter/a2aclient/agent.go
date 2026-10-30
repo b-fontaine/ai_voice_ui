@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	sdk "github.com/a2aproject/a2a-go/v2/a2aclient"
@@ -64,6 +66,7 @@ type Agent struct {
 
 	mu       sync.Mutex
 	lastName string
+	lastTags []string // tags de la dernière carte valide ; nil : jamais lue
 }
 
 var _ port.RemoteAgent = (*Agent)(nil)
@@ -112,6 +115,17 @@ func (a *Agent) LastName() string {
 	return a.lastName
 }
 
+// LastTags renvoie une copie des tags de la dernière carte valide lue (nil si
+// aucune).
+func (a *Agent) LastTags() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.lastTags == nil {
+		return nil
+	}
+	return append([]string{}, a.lastTags...)
+}
+
 // ID est l'identité stable de l'agent : l'URL de carte configurée, sans
 // identifiants ni requête.
 func (a *Agent) ID() string {
@@ -139,20 +153,41 @@ func (a *Agent) Card(ctx context.Context) (port.AgentCard, error) {
 	}
 	// Handle porte la carte brute (déjà validée) pour que Send ne la relise pas.
 	out := port.AgentCard{Name: card.Name, Description: card.Description, Handle: card}
-	seen := map[string]bool{}
 	for i, s := range card.Skills {
 		out.Skills = append(out.Skills, s.ID)
 		if i == 0 {
 			out.Label = s.Name
 		}
+	}
+	out.Tags = cardTags(card)
+	return out, nil
+}
+
+const (
+	maxCardTags     = 32
+	maxCardTagRunes = 40
+)
+
+// cardTags est l'union dédupliquée des tags des skills, bornée : une carte est
+// une donnée non fiable. Au plus 32 tags de 1 à 40 runes, sans caractère de
+// contrôle ; les autres sont écartés. Jamais nil.
+func cardTags(card *a2a.AgentCard) []string {
+	tags := []string{}
+	seen := map[string]bool{}
+	for _, s := range card.Skills {
 		for _, tag := range s.Tags {
-			if !seen[tag] {
-				seen[tag] = true
-				out.Tags = append(out.Tags, tag)
+			n := utf8.RuneCountInString(tag)
+			if n < 1 || n > maxCardTagRunes || seen[tag] || strings.ContainsFunc(tag, unicode.IsControl) {
+				continue
 			}
+			if len(tags) == maxCardTags {
+				return tags
+			}
+			seen[tag] = true
+			tags = append(tags, tag)
 		}
 	}
-	return out, nil
+	return tags
 }
 
 // cardLabel est le libellé d'activité : le nom du premier skill, sinon son
@@ -194,6 +229,7 @@ func (a *Agent) fetchCard(ctx context.Context) (*a2a.AgentCard, error) {
 	card.SupportedInterfaces = kept
 	a.mu.Lock()
 	a.lastName = card.Name
+	a.lastTags = cardTags(card)
 	a.mu.Unlock()
 	return card, nil
 }

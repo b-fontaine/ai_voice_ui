@@ -11,9 +11,9 @@ import (
 // Copie des tags des profils réels des trois agents de l'acte 1
 // (backend/agents/internal/{quality,voice,delivery}/profile.json).
 var (
-	tagsQuality  = []string{"release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "a2ui", "3.4"}
-	tagsVoice    = []string{"avis", "notes", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"}
-	tagsDelivery = []string{"checklist", "décision", "livraison", "no-go", "release", "version", "prête", "valider", "3.4"}
+	tagsQuality  = []string{"release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "3.4"}
+	tagsVoice    = []string{"avis", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"}
+	tagsDelivery = []string{"checklist", "décision", "livraison", "release", "version", "prête", "valider", "3.4"}
 )
 
 func realCards() []port.AgentCard {
@@ -40,7 +40,11 @@ func TestPlannerSelectsByCardTags(t *testing.T) {
 		{"demande vide", "", realCards(), []int{}},
 		{"mot entier : go dans gogo", "gogo", []port.AgentCard{{Name: "A", Tags: []string{"go"}}}, []int{}},
 		{"mot entier : go isolé", "c'est parti, go !", []port.AgentCard{{Name: "A", Tags: []string{"go"}}}, []int{0}},
-		{"majuscules et accents", "LA STABILITÉ DE LA VERSION", realCards(), []int{0, 1, 2}},
+		{"majuscules et accents : tag non générique seul", "LA STABILITÉ DE LA VERSION", realCards(), []int{0}},
+		{"non générique : qualité seule", "Montre-moi la stabilité de la 3.4", realCards(), []int{0}},
+		{"virgule décimale = point, génériques seuls", "Où en est la 3,4 ?", realCards(), []int{0, 1, 2}},
+		{"génériques seuls : tous", "Prépare la release 3.4", realCards(), []int{0, 1, 2}},
+		{"une seule carte : tout est générique", "release", []port.AgentCard{{Name: "A", Tags: []string{"release", "avis"}}}, []int{0}},
 		{"accent absent : pas de correspondance", "la stabilite", realCards(), []int{}},
 		{"tag en majuscules dans la carte", "avis", []port.AgentCard{{Name: "A", Tags: []string{"AVIS"}}}, []int{0}},
 		{"3.4 n'est pas 3.45", "la 3.45", realCards(), []int{}},

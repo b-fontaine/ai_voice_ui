@@ -27,7 +27,16 @@ type Planner interface {
 // 1 000 runes ; les mots sont des suites de lettres et de chiffres Unicode, et
 // un nombre décimal (« 3.4 ») reste un seul mot. Les tags sont comparés en
 // minuscules ; un tag qui contient un séparateur (« no-go ») ne correspond
-// jamais. Il n'existe aucun tag joker.
+// jamais. Il n'existe aucun tag joker. Dans un nombre, une virgule entre deux
+// chiffres vaut un point (« 3,4 » = « 3.4 »).
+//
+// Tags génériques : un tag présent dans TOUTES les cartes passées au
+// planificateur est « générique » (« release », « version », « 3.4 »). Si la
+// demande contient au moins un tag non générique d'une carte, seules les cartes
+// qui correspondent par un tag non générique sont retenues ; sinon, celles qui
+// correspondent par un tag générique. Une demande précise (« la stabilité de la
+// 3.4 ») ne réveille donc pas les agents qui ne partagent que le vocabulaire
+// commun.
 type TagPlanner struct{}
 
 var _ Planner = TagPlanner{}
@@ -38,16 +47,47 @@ func (TagPlanner) Plan(request string, cards []port.AgentCard) []int {
 	for _, w := range splitWords(truncateRunes(strings.ToLower(request), maxPlanRequestRunes)) {
 		words[w] = struct{}{}
 	}
-	selected := []int{}
+	// Nombre de cartes qui portent chaque tag (une fois par carte).
+	count := map[string]int{}
+	tagsOf := make([]map[string]struct{}, len(cards))
 	for i, c := range cards {
+		tagsOf[i] = map[string]struct{}{}
 		for _, tag := range c.Tags {
-			if _, ok := words[strings.ToLower(tag)]; ok {
-				selected = append(selected, i)
-				break
-			}
+			tagsOf[i][strings.ToLower(tag)] = struct{}{}
+		}
+		for tag := range tagsOf[i] {
+			count[tag]++
 		}
 	}
-	return selected
+	generic := func(tag string) bool { return count[tag] == len(cards) }
+
+	var byGeneric, bySpecific []int
+	for i := range cards {
+		var hitGeneric, hitSpecific bool
+		for tag := range tagsOf[i] {
+			if _, ok := words[tag]; !ok {
+				continue
+			}
+			if generic(tag) {
+				hitGeneric = true
+			} else {
+				hitSpecific = true
+			}
+		}
+		if hitSpecific {
+			bySpecific = append(bySpecific, i)
+		}
+		if hitGeneric {
+			byGeneric = append(byGeneric, i)
+		}
+	}
+	switch {
+	case len(bySpecific) > 0:
+		return bySpecific
+	case len(byGeneric) > 0:
+		return byGeneric
+	}
+	return []int{}
 }
 
 func truncateRunes(s string, n int) string {
@@ -58,30 +98,29 @@ func truncateRunes(s string, n int) string {
 }
 
 // splitWords découpe en suites de lettres et de chiffres ; un point ou une
-// virgule entre deux chiffres reste dans le mot (nombre décimal).
+// virgule entre deux chiffres reste dans le mot (nombre décimal) et une virgule
+// y est normalisée en point.
 func splitWords(s string) []string {
 	rs := []rune(s)
 	var words []string
-	start := -1
-	flush := func(end int) {
-		if start >= 0 {
-			words = append(words, string(rs[start:end]))
-			start = -1
+	var cur []rune
+	flush := func() {
+		if cur != nil {
+			words = append(words, string(cur))
+			cur = nil
 		}
 	}
 	for i, r := range rs {
 		switch {
 		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			if start < 0 {
-				start = i
-			}
-		case (r == '.' || r == ',') && start >= 0 && unicode.IsDigit(rs[i-1]) &&
+			cur = append(cur, r)
+		case (r == '.' || r == ',') && cur != nil && unicode.IsDigit(rs[i-1]) &&
 			i+1 < len(rs) && unicode.IsDigit(rs[i+1]):
-			// séparateur décimal : le mot continue
+			cur = append(cur, '.') // séparateur décimal : le mot continue
 		default:
-			flush(i)
+			flush()
 		}
 	}
-	flush(len(rs))
+	flush()
 	return words
 }

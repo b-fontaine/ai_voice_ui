@@ -270,6 +270,11 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		if err != nil {
 			return err
 		}
+		for _, prev := range cfg.Agents {
+			if prev.CardURL == spec.CardURL || (spec.Name != "" && prev.Name == spec.Name) {
+				return errors.New("AGENTS : entrée en double (même URL de carte ou même nom d'affichage)")
+			}
+		}
 		cfg.Agents = append(cfg.Agents, spec)
 	}
 
