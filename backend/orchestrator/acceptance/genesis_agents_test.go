@@ -183,10 +183,17 @@ func startGenesisAgents(t *testing.T, skip ...string) genesisAgentURLs {
 // runAgentProcess lance le binaire, attend sa carte (10 s au plus) et l'arrête au nettoyage.
 func runAgentProcess(t *testing.T, name, bin, addr string) {
 	t.Helper()
+	runAgentProcessAt(t, name, bin, addr, "http://"+addr)
+}
+
+// runAgentProcessAt comme runAgentProcess, avec une URL publique distincte de l'adresse
+// d'écoute (agent placé derrière un mandataire de test, acte 3).
+func runAgentProcessAt(t *testing.T, name, bin, addr, publicURL string) {
+	t.Helper()
 	cmd := exec.Command(bin)
 	cmd.Env = append(os.Environ(),
 		"AGENT_LISTEN_ADDR="+addr,
-		"AGENT_PUBLIC_URL=http://"+addr,
+		"AGENT_PUBLIC_URL="+publicURL,
 		"A2UI_CATALOG_ID="+genesisCatalogID,
 	)
 	var logs syncBuffer
@@ -204,7 +211,7 @@ func runAgentProcess(t *testing.T, name, bin, addr string) {
 		}
 	})
 
-	cardURL := "http://" + addr + "/.well-known/agent-card.json"
+	cardURL := publicURL + "/.well-known/agent-card.json"
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
 		select {
@@ -233,12 +240,13 @@ func cardIsServed(url string) bool {
 
 // startGenesisApp assemble l'orchestrateur avec les URL de carte données et la
 // configuration du catalogue fermé `genesis`.
-func startGenesisApp(t *testing.T, agentCardURLs []string) (*httptest.Server, *fakeDelegatingLive) {
+func startGenesisApp(t *testing.T, agentCardURLs []string, opts ...appOption) (*httptest.Server, *fakeDelegatingLive) {
 	t.Helper()
-	return startDelegatingAppWith(t, agentCardURLs, withEnv(map[string]string{
+	base := withEnv(map[string]string{
 		"A2UI_CATALOG_ID":    genesisCatalogID,
 		"A2UI_COMPONENTS":    genesisComponents,
 		"A2UI_ALLOWED_PROPS": "id,component,data",
 		"A2UI_BINDING_PROPS": "data",
-	}))
+	})
+	return startDelegatingAppWith(t, agentCardURLs, append([]appOption{base}, opts...)...)
 }

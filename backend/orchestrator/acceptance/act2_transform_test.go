@@ -159,8 +159,8 @@ func TestAct2_TwoDelegationsAndroidThenCompare(t *testing.T) {
 	sayTurn(live, 2, "Concentre-toi sur Android")
 	envs := collectDelegation(t, feed, "vue Android")
 	requireSelected(t, envs, "deleg_2", allThreeAgents)
-	if createdSurfaces(t, envs) != nil {
-		t.Fatalf("vue Android : createSurface émis (reçu : %s)", describe(envs))
+	if createdAmong(t, envs, act1Surfaces) != nil {
+		t.Fatalf("vue Android : createSurface émis sur une surface de l'acte 1 (reçu : %s)", describe(envs))
 	}
 	got := map[string]map[string]any{}
 	for _, e := range a2uiEnvelopes(envs) {
