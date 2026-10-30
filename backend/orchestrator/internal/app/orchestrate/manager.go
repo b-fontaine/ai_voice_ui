@@ -381,6 +381,8 @@ type session struct {
 	// cours (cause ErrInterrupted) ; nil hors exécution et pendant une action, qui
 	// est atomique et jamais annulée.
 	epoch     uint64
+	stopAt    int64 // at_ms du dernier arrêt, valable si hasStop
+	hasStop   bool
 	cancelRun context.CancelCauseFunc
 	seen      map[string]struct{}
 	order     []string // ordre d'arrivée des identifiants, pour l'éviction
@@ -463,6 +465,7 @@ func (s *session) Interrupt(atMs int64) {
 		return
 	}
 	s.epoch++
+	s.stopAt, s.hasStop = atMs, true
 	if s.cancelRun != nil {
 		s.cancelRun(ErrInterrupted)
 	}
@@ -484,6 +487,9 @@ func (s *session) Interrupt(atMs int64) {
 	}
 	s.pending -= len(removed)
 	s.mu.Unlock()
+	// Le mot d'arrêt ne doit pas ouvrir la demande suivante (hors de session.mu : la
+	// fenêtre a son propre verrou).
+	s.window.ConsumeUntil(atMs)
 	s.log.Info("arrêt demandé", "at_ms", atMs, "removed", len(removed))
 	for _, d := range removed {
 		s.stopped(d)
@@ -494,6 +500,19 @@ func (s *session) Interrupt(atMs int64) {
 // pendant sa préparation, une fois son commentaire générique acquitté.
 func (s *session) stopped(d Delegation) {
 	s.commentAfter(d.ID, s.m.phrases.Stopped, d.GenericDone, nil)
+}
+
+// stopSpanMs borne l'écart entre l'instant du mot d'arrêt et l'offset de la
+// délégation que le modèle crée pour lui (durée de parole d'un « Stop »).
+const stopSpanMs = 3000
+
+// isStopOnly indique si une demande vide est celle d'un « Stop » seul : la
+// délégation est datée de l'arrêt le plus récent, à stopSpanMs près (le mot d'arrêt
+// est consommé par Interrupt, il ne reste donc rien à planifier).
+func (s *session) isStopOnly(d Delegation) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.hasStop && d.OffsetMs >= s.stopAt && d.OffsetMs <= s.stopAt+stopSpanMs
 }
 
 func (s *session) marginMs() int64 { return s.m.opts.RequestWindowMargin.Milliseconds() }
@@ -618,6 +637,14 @@ func (s *session) run(d Delegation) {
 			if interrupted(ctx) {
 				s.stopped(d)
 			}
+			return
+		}
+		if request == "" && s.isStopOnly(d) {
+			// « Stop » seul : la délégation que le modèle crée après l'arrêt ne
+			// contient que le mot d'arrêt consommé. Rien n'est planifié ; seule la
+			// phrase « stopped » est dite.
+			s.log.Info("demande réduite au mot d'arrêt : aucun agent contacté", "delegation", d.ID)
+			s.stopped(d)
 			return
 		}
 		if request == "" {

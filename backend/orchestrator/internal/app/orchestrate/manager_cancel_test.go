@@ -411,6 +411,40 @@ func TestInterruptDropsQueuedDelegationAndAcknowledgesItsComment(t *testing.T) {
 	e.noMoreCommentary()
 }
 
+// La demande réduite aux mots d'arrêt (« Stop » seul) n'est pas planifiée : la délégation
+// que le modèle crée après l'arrêt reçoit la phrase « stopped », jamais « demande vide ».
+func TestDelegationOfStopOnlyRequestSaysStoppedAndSchedulesNothing(t *testing.T) {
+	agent := newStopAgent(surfaceScript("quality", 2)...)
+	e := newCancelEnv(t, agent, nil)
+	say(e.s, "Stop", 5000)
+	e.s.Interrupt(5000)
+	e.s.Delegate("d1", 5400) // le modèle délègue « Stop » après la détection
+
+	var got []string
+	for _, c := range e.commentaries(2) {
+		got = append(got, c.Text)
+	}
+	if !slices.Equal(got, []string{pipePhrases.Generic, pipePhrases.Stopped}) {
+		t.Fatalf("commentaires = %v, attendu [générique, stopped]", got)
+	}
+	e.noMoreCommentary()
+	e.awaitIdle()
+	if n := agent.sends.Load(); n != 0 || e.plans() != 0 {
+		t.Fatalf("%d tâche(s) et %d plan(s) pour une demande réduite à « Stop », attendu aucun", n, e.plans())
+	}
+}
+
+// Une demande vide sans arrêt reste une demande vide (« NoRequest »).
+func TestEmptyRequestWithoutStopStillSaysNoRequest(t *testing.T) {
+	agent := newStopAgent()
+	e := newCancelEnv(t, agent, nil)
+	e.s.Delegate("d1", 5400)
+	got := e.commentaries(2)
+	if got[1].Text != pipePhrases.NoRequest {
+		t.Fatalf("commentaires = %+v, attendu NoRequest en second", got)
+	}
+}
+
 // Une délégation créée après l'arrêt n'est pas annulée.
 func TestDelegationCreatedAfterInterruptIsNotCanceled(t *testing.T) {
 	agent := newStopAgent(surfaceScript("quality", 2)...)
@@ -419,8 +453,8 @@ func TestDelegationCreatedAfterInterruptIsNotCanceled(t *testing.T) {
 	e.ask("d1")
 	agent.awaitBlocked(t)
 
-	e.s.Interrupt(5000)
-	e.ask("d2") // aussitôt, alors que d1 est encore en cours d'annulation
+	e.s.Interrupt(500) // at_ms est sur l'horloge média : d1 a été dite à 0 ms
+	e.ask("d2")        // aussitôt, alors que d1 est encore en cours d'annulation
 
 	e.awaitState(domain.ActivityCompleted)
 	e.awaitIdle()

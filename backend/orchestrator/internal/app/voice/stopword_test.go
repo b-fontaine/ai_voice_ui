@@ -321,3 +321,20 @@ func TestNewStopDetectorValidatesConfig(t *testing.T) {
 		t.Errorf("bornes exactes refusées : %v", err)
 	}
 }
+
+func TestStopDetectorSettleNowConfirmsPendingWithoutClock(t *testing.T) {
+	d, _ := newTestDetector(t) // l'horloge n'avance pas : seul le minuteur du service fait foi
+	if feedAll(d, delta{"Stop", 3000}) != nil {
+		t.Fatal("« Stop » sans frontière ne se confirme pas à l'arrivée")
+	}
+	if _, ok := d.Poll(); ok {
+		t.Fatal("Poll ne confirme pas avant Settle")
+	}
+	det, ok := d.SettleNow()
+	if !ok || det.AtMs != 3000 {
+		t.Fatalf("SettleNow = (%+v, %v), attendu at_ms 3000", det, ok)
+	}
+	if _, ok := d.SettleNow(); ok {
+		t.Fatal("rien n'est plus en attente")
+	}
+}

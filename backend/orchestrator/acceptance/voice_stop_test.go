@@ -168,7 +168,7 @@ func TestK03_StopCancelsInFlightGenerationKeepsSession(t *testing.T) {
 	// La voix dit la phrase `stopped`, jamais un échec (plan A1).
 	stopped := phraseFromConfig(t, "stopped")
 	for _, c := range live.Commentaries() {
-		if c.Text == phraseFromConfig(t, "failure_generic") {
+		if c.Text == phraseFromConfig(t, "failure") {
 			t.Fatalf("la voix a dit l'échec %q après « Stop. »", c.Text)
 		}
 	}

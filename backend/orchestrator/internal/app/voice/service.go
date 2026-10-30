@@ -56,6 +56,9 @@ type Options struct {
 	// AnnounceObserveTimeout borne l'observation (journal seulement) d'une
 	// parole sortante après une annonce acquittée ; 0 : pas d'observation.
 	AnnounceObserveTimeout time.Duration
+	// Stop règle le détecteur de mots d'arrêt (spec 011, A5). Words vide : pas de
+	// détecteur, aucun arrêt vocal. Le minuteur de confirmation est After.
+	Stop StopConfig
 }
 
 // MaxAnnounceInstructionRunes borne une consigne de la voix. Elle duplique celle
@@ -226,6 +229,11 @@ func NewService(live port.LiveProvider, sink port.Sink, clock port.Clock, opts O
 	// Paramètres du compteur de niveau validés ici : Open ne peut plus échouer à cet endroit.
 	if _, err := level.NewMeter(opts.SampleRate, opts.WindowMs); err != nil {
 		return nil, err
+	}
+	if len(opts.Stop.Words) > 0 { // même validation que le détecteur créé par session
+		if _, err := NewStopDetector(opts.Stop, clock); err != nil {
+			return nil, err
+		}
 	}
 	if opts.After == nil {
 		opts.After = time.After
@@ -469,6 +477,7 @@ func (s *Service) supervise(sess *session, sb port.Sideband, fw *forwarder, rep 
 	closedSent := false
 	closedReason := ""
 	events := sb.Events()
+	stop := s.newStopWatch()
 	var maxSession <-chan time.Time
 	if s.opts.MaxSession > 0 {
 		maxSession = s.opts.After(s.opts.MaxSession)
@@ -479,6 +488,12 @@ loop:
 		case <-maxSession:
 			maxSession = nil
 			go s.expire(sess)
+		case <-stop.timer:
+			stop.timer = nil
+			if det, ok := stop.expired(); ok {
+				s.interrupt(sess, fw, det)
+			}
+			stop.rearm(s.opts.After)
 		case ev, ok := <-events:
 			if !ok {
 				break loop
@@ -493,6 +508,10 @@ loop:
 			switch ev.Type {
 			case port.EventInputTranscriptDelta:
 				fw.transcript(ev)
+				if det, ok := stop.feed(ev); ok {
+					s.interrupt(sess, fw, det)
+				}
+				stop.rearm(s.opts.After)
 			case port.EventOutputTranscriptDelta:
 				rep.noteSpeech()
 			case port.EventDelegationCreated:
@@ -517,6 +536,64 @@ loop:
 	if closedReason == port.ReasonConnectionLost && !sess.closeRequested() {
 		_ = s.hangupSession(context.Background(), sess)
 	}
+}
+
+// interrupt traite un mot d'arrêt confirmé : voice.interrupted d'abord (le client coupe
+// le son sans attendre), puis l'arrêt des délégations (file du forwarder, sans blocage).
+// La session reste ouverte.
+func (s *Service) interrupt(sess *session, fw *forwarder, det Detection) {
+	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: det.AtMs})
+	fw.interrupt(det.AtMs)
+}
+
+// stopWatch porte le détecteur de la session et l'échéance de confirmation d'un mot
+// d'arrêt sans frontière. Réservé à la goroutine de supervise. Sans détecteur (aucun
+// mot configuré), toutes ses méthodes sont sans effet et timer reste nil.
+type stopWatch struct {
+	det   *StopDetector
+	timer <-chan time.Time
+}
+
+func (s *Service) newStopWatch() *stopWatch {
+	w := &stopWatch{}
+	if len(s.opts.Stop.Words) == 0 {
+		return w
+	}
+	det, err := NewStopDetector(s.opts.Stop, s.clock)
+	if err != nil { // inatteignable : validé par NewService
+		s.opts.Logger.Error("détecteur de mots d'arrêt désactivé", "err", err)
+		return w
+	}
+	w.det = det
+	return w
+}
+
+func (w *stopWatch) feed(ev port.LiveEvent) (Detection, bool) {
+	if w.det == nil {
+		return Detection{}, false
+	}
+	return w.det.Feed(ev.StartMs, ev.Text)
+}
+
+// expired traite le déclenchement du minuteur : aucun delta n'est arrivé depuis son
+// armement (chaque delta le réarme), le délai de confirmation est donc écoulé.
+func (w *stopWatch) expired() (Detection, bool) {
+	if w.det == nil {
+		return Detection{}, false
+	}
+	return w.det.SettleNow()
+}
+
+// rearm arme l'échéance de confirmation si un mot d'arrêt est en attente.
+func (w *stopWatch) rearm(after func(time.Duration) <-chan time.Time) {
+	if w.det == nil {
+		return
+	}
+	if d, ok := w.det.PendingFor(); ok {
+		w.timer = after(d)
+		return
+	}
+	w.timer = nil
 }
 
 // forget retire la session de la table si elle y est encore.

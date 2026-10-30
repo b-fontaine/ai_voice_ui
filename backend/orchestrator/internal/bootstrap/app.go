@@ -145,7 +145,11 @@ func New(cfg Config, deps Deps) (*App, error) {
 		Delegations:            delegations,
 		Phrases:                cfg.VoicePhrases,
 		AnnounceObserveTimeout: cfg.AnnounceObserveTimeout,
-		Logger:                 logger,
+		Stop: voice.StopConfig{
+			Words: cfg.VoiceStopWords, UtteranceGap: cfg.VoiceStopUtteranceGap, MaxWords: cfg.VoiceStopMaxWords,
+			Settle: cfg.VoiceStopSettle, Debounce: cfg.VoiceStopDebounce,
+		},
+		Logger: logger,
 	})
 	if err != nil {
 		_ = journal.Close()

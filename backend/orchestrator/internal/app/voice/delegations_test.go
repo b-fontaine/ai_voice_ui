@@ -29,6 +29,10 @@ type fakeSessionDelegations struct {
 	closeDone   bool
 
 	delegateGate chan struct{} // si non nil : Delegate bloque jusqu'à sa fermeture
+
+	interrupts     []int64       // at_ms des Interrupt reçus
+	interruptFirst []bool        // voice.interrupted était déjà publié à l'appel
+	interruptGate  chan struct{} // si non nil : Interrupt bloque jusqu'à sa fermeture
 }
 
 type delegateCall struct {
@@ -42,8 +46,30 @@ func (f *fakeSessionDelegations) Transcript(ev port.LiveEvent) {
 	f.transcripts = append(f.transcripts, ev)
 }
 
-// Interrupt n'est pas observé par ces tests (câblage voix : spec 011, T15).
-func (f *fakeSessionDelegations) Interrupt(int64) {}
+// Interrupt enregistre l'arrêt et si voice.interrupted le précédait (spec 011, T15).
+func (f *fakeSessionDelegations) Interrupt(atMs int64) {
+	published := len(f.sink.ofType(domain.TypeVoiceInterrupted)) > 0
+	f.mu.Lock()
+	f.interrupts = append(f.interrupts, atMs)
+	f.interruptFirst = append(f.interruptFirst, published)
+	gate := f.interruptGate
+	f.mu.Unlock()
+	if gate != nil {
+		<-gate
+	}
+}
+
+func (f *fakeSessionDelegations) transcriptsSeen() []port.LiveEvent {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]port.LiveEvent(nil), f.transcripts...)
+}
+
+func (f *fakeSessionDelegations) interruptCalls() []int64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]int64(nil), f.interrupts...)
+}
 
 func (f *fakeSessionDelegations) Delegate(id string, offsetMs int64) {
 	if f.delegateGate != nil {

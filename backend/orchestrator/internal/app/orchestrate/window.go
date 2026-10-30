@@ -132,6 +132,25 @@ func (w *RequestWindow) Take(offsetMs, marginMs int64) (request string, late int
 	return cutRequest(string(b)), late
 }
 
+// ConsumeUntil retire du tampon les deltas qui commencent au plus tard à atMs et
+// écarte désormais ceux qui arrivent avec un start_ms <= atMs : le mot d'arrêt
+// (« Stop ») qui a déclenché une interruption ne s'ajoute pas en tête de la demande
+// suivante. La borne ne recule jamais.
+func (w *RequestWindow) ConsumeUntil(atMs int64) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	kept := w.frags[:0:0]
+	w.runes = 0
+	for _, f := range w.frags {
+		if f.start > atMs {
+			kept = append(kept, f)
+			w.runes += utf8.RuneCountInString(f.text)
+		}
+	}
+	w.frags = kept
+	w.consumed = max(w.consumed, atMs+1)
+}
+
 // Len renvoie le nombre de runes conservées dans le tampon.
 func (w *RequestWindow) Len() int {
 	w.mu.Lock()

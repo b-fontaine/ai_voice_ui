@@ -216,3 +216,31 @@ func TestRequestWindowBeyondSignalsLaterDelta(t *testing.T) {
 		t.Fatal("signal immédiat attendu")
 	}
 }
+
+// « Stop » consommé par un arrêt (spec 011, A5) : il n'ouvre pas la demande suivante,
+// et ses deltas tardifs sont écartés.
+func TestRequestWindowConsumeUntilDropsStopWord(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("Stop", 5000))
+	w.ConsumeUntil(5000)
+	w.Add(delta(".", 5000)) // fin du même mot, déjà consommée
+	w.Add(delta("Prépare la release", 7000))
+	got, late := w.Take(7100, 400)
+	if got != "Prépare la release" {
+		t.Fatalf("demande = %q, attendu \"Prépare la release\" sans « Stop »", got)
+	}
+	if late != 1 {
+		t.Fatalf("late = %d, attendu 1 (le delta de « Stop » arrivé après l'arrêt)", late)
+	}
+}
+
+func TestRequestWindowConsumeUntilKeepsLaterFragmentsAndNeverDecreases(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("Stop", 5000))
+	w.Add(delta(" montre la qualité", 6000))
+	w.ConsumeUntil(5000)
+	w.ConsumeUntil(100) // ne fait pas reculer la borne
+	if got, _ := w.Take(9000, 0); got != "montre la qualité" {
+		t.Fatalf("demande = %q, attendu les deltas après l'arrêt", got)
+	}
+}

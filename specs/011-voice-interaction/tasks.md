@@ -15,10 +15,10 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [x] T12 Go — motif de refus `genesis/scopeReason` (fermé) → slog du `Pipeline` seulement · `pipeline_plan_test.go`
 - [x] T13 [P] Go — `StopDetector` (règle A5, horloge injectée) + `VOICE_STOP_WORDS` borné · `stopword_test.go`
 - [x] T14 Go — `a2ui.Registry` complétude par surface + `CancelCompensation` ; `port.SessionDelegations.Interrupt` ; époque, `WithCancelCause`, `ErrInterrupted`, `ActivityCanceled`, phrase `stopped` · `registry_test.go`, `manager_cancel_test.go` (-race, 7 cas du plan)
-- [ ] T18 Go — `voice.interrupted` : domaine, `wire`, hub jamais rejoué, journal · `hub_test.go`, `wire_test.go`
-- [ ] T15 Go — câblage service voix : détecteur → `voice.interrupted` puis `fw.interrupt()` ; demande réduite aux mots d'arrêt non planifiée · `service_stop_test.go`
+- [x] T18 Go — `voice.interrupted` : domaine, `wire`, hub jamais rejoué, journal · `hub_test.go`, `wire_test.go`
+- [x] T15 Go — câblage service voix : détecteur → `voice.interrupted` puis `fw.interrupt()` ; demande réduite aux mots d'arrêt non planifiée · `service_stop_test.go`
 - [x] T19 Go — `bootstrap.ConfigFromEnv` : `VOICE_STOP_*`, `REQUEST_WINDOW_*`, bornes · `config_test.go`
-- [ ] T17 Go — consignes vocales (`voice-instructions.fr.md`) · test du texte (trois règles)
+- [x] T17 Go — consignes vocales (`voice-instructions.fr.md`) · test du texte (trois règles)
 
 ## TDD Flutter
 - [x] T20 Flutter — `voice.interrupted` et `canceled` : `entities/session`, convertisseur, `AgentRunState.interrupted` · tests de codec et de `agent_activity_bloc`

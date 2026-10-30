@@ -18,6 +18,9 @@ const (
 	// TypePlan est le choix des agents par l'orchestrateur pour une délégation
 	// (pdr-0013, RG-29) : publié avant toute activité de la délégation.
 	TypePlan = "plan"
+	// TypeVoiceInterrupted signale que l'utilisateur a coupé la parole à l'IA
+	// (mot d'arrêt, spec 011) : un instant, jamais rejoué aux abonnés tardifs.
+	TypeVoiceInterrupted = "voice.interrupted"
 )
 
 // Rôles d'un transcript.
@@ -125,11 +128,17 @@ type Plan struct {
 	Idle       []string
 }
 
-func (Plan) isPayload()          {}
-func (A2UI) isPayload()          {}
-func (Delegation) isPayload()    {}
-func (AgentActivity) isPayload() {}
-func (OrbLevel) isPayload()      {}
-func (Transcript) isPayload()    {}
-func (SessionState) isPayload()  {}
-func (Usage) isPayload()         {}
+// VoiceInterrupted est l'arrêt demandé à la voix. AtMs est le start_ms (horloge
+// média du fournisseur) du transcript d'entrée qui a déclenché l'arrêt ; la
+// sérialisation le borne à 0 au minimum.
+type VoiceInterrupted struct{ AtMs int64 }
+
+func (VoiceInterrupted) isPayload() {}
+func (Plan) isPayload()             {}
+func (A2UI) isPayload()             {}
+func (Delegation) isPayload()       {}
+func (AgentActivity) isPayload()    {}
+func (OrbLevel) isPayload()         {}
+func (Transcript) isPayload()       {}
+func (SessionState) isPayload()     {}
+func (Usage) isPayload()            {}

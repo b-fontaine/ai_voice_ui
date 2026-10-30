@@ -166,6 +166,24 @@ func (d *StopDetector) Poll() (Detection, bool) {
 	return Detection{}, false
 }
 
+// SettleNow confirme un mot d'arrêt resté en attente, sans consulter l'horloge : à
+// appeler quand le minuteur armé d'après PendingFor s'est déclenché sans nouveau delta
+// (le minuteur fait foi du délai écoulé). Rend aussi une détection prête.
+func (d *StopDetector) SettleNow() (Detection, bool) {
+	if d.ready != nil {
+		det := *d.ready
+		d.ready = nil
+		return det, true
+	}
+	if d.cand == nil {
+		return Detection{}, false
+	}
+	if det := d.confirm(); det != nil {
+		return *det, true
+	}
+	return Detection{}, false
+}
+
 // PendingFor donne le temps restant avant que Poll puisse confirmer un mot en attente
 // (0 s'il est déjà échu) ; false si rien n'est en attente.
 func (d *StopDetector) PendingFor() (time.Duration, bool) {
