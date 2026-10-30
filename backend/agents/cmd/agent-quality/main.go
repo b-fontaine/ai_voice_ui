@@ -28,7 +28,7 @@ func run(args []string) int {
 		fmt.Fprintln(os.Stderr, "configuration :", err)
 		return 2
 	}
-	s.Composer = quality.NewKpiComposer(s.CatalogID)
+	s.Composer = quality.NewComposer(s.CatalogID)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	if len(args) > 0 && args[0] == "healthcheck" {

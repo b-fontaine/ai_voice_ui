@@ -1,6 +1,6 @@
 {
   "name": "Qualité",
-  "description": "Agent Qualité de Genesis Canvas : indicateur « Sessions sans crash » de la version 3.4 sur 7 jours, avec son seuil, sous forme de surface A2UI et de résumé factuel.",
+  "description": "Agent Qualité de Genesis Canvas : indicateur « Sessions sans crash » et courbe du taux de crash de la version 3.4 sur 7 jours, avec leur seuil, sous forme de surfaces A2UI et de résumé factuel.",
   "listenPort": 8090,
   "skill": {
     "id": "quality-kpi",

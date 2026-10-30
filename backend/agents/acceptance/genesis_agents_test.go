@@ -283,6 +283,9 @@ func TestGenesisG4_AgentCardAndStream(t *testing.T) {
 			if card.Name != tc.agentName {
 				t.Errorf("nom de carte %q, attendu %q", card.Name, tc.agentName)
 			}
+			if !card.Capabilities.Streaming {
+				t.Errorf("la carte n'annonce pas capabilities.streaming")
+			}
 			skill := false
 			for _, s := range card.Skills {
 				if len(s.Tags) > 0 && len(s.Examples) > 0 {

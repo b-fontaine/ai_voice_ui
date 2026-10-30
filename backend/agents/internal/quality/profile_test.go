@@ -31,6 +31,9 @@ func TestQualityProfile(t *testing.T) {
 			t.Errorf("l'exemple %q manque : %v", ex, p.Skill.Examples)
 		}
 	}
+	if !strings.Contains(p.Texts.Rejected, "Demande refusée") {
+		t.Errorf("le refus doit dire que la demande est refusée : %q", p.Texts.Rejected)
+	}
 	if !strings.Contains(p.Texts.Rejected, "l'agent Qualité ne traite que la vue globale de la version 3.4") {
 		t.Errorf("texte de refus %q", p.Texts.Rejected)
 	}
