@@ -40,6 +40,7 @@ services:
       A2UI_COMPONENTS: ${A2UI_COMPONENTS:-KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist,ActionBar}
       A2UI_ALLOWED_PROPS: ${A2UI_ALLOWED_PROPS:-id,component,data}
       A2UI_BINDING_PROPS: ${A2UI_BINDING_PROPS:-data}
+      A2UI_WRITABLE_SUBPATHS: ${A2UI_WRITABLE_SUBPATHS:-/checklist/decisionStatus:string}
       # Délai maximal d'une délégation à un agent (NFR-03) et d'acquittement d'un commentaire vocal.
       AGENT_TIMEOUT: ${AGENT_TIMEOUT:-8s}
       VOICE_APPEND_ACK_TIMEOUT: ${VOICE_APPEND_ACK_TIMEOUT:-2s}

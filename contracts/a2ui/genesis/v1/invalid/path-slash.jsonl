@@ -1,0 +1,2 @@
+{"version":"v0.9","createSurface":{"surfaceId":"checklist","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","updateDataModel":{"surfaceId":"checklist","path":"/","value":{"title":"x"}}}

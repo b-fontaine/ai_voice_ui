@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -472,5 +473,40 @@ func TestConfig_AgentsRejectDuplicateName(t *testing.T) {
 	env["AGENTS"] = "http://a:1/card,http://b:2/card"
 	if _, err := load(env); err != nil {
 		t.Fatalf("noms vides : %v", err)
+	}
+}
+
+func TestConfig_WritableSubPathsParsed(t *testing.T) {
+	cfg, err := load(orchEnv())
+	if err != nil || len(cfg.A2UIWritableSubPaths) != 0 {
+		t.Fatalf("par défaut : vide attendue, obtenu %v %v", cfg.A2UIWritableSubPaths, err)
+	}
+	env := orchEnv()
+	env["A2UI_WRITABLE_SUBPATHS"] = " /checklist/decisionStatus:string , /a~1b/c:string "
+	cfg, err = load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"/checklist/decisionStatus": "string", "/a~1b/c": "string"}
+	if !reflect.DeepEqual(cfg.A2UIWritableSubPaths, want) {
+		t.Fatalf("A2UI_WRITABLE_SUBPATHS = %v, attendu %v", cfg.A2UIWritableSubPaths, want)
+	}
+}
+
+func TestConfig_WritableSubPathsRejectBadEntries(t *testing.T) {
+	for _, bad := range []string{
+		"checklist/decisionStatus:string",  // pas un JSON Pointer
+		"/checklist/decisionStatus",        // type manquant
+		"/checklist/decisionStatus:number", // type hors {string}
+		"/checklist:string",                // objet entier, pas un sous-chemin
+		"/a~2b/c:string",                   // échappement invalide
+		"/checklist/x:string,/checklist/x:string",
+	} {
+		env := orchEnv()
+		env["A2UI_WRITABLE_SUBPATHS"] = bad
+		_, err := load(env)
+		if err == nil || !strings.Contains(err.Error(), "A2UI_WRITABLE_SUBPATHS") || strings.Contains(err.Error(), "decisionStatus") {
+			t.Fatalf("%q : erreur nommant la variable sans la valeur attendue, obtenu %v", bad, err)
+		}
 	}
 }

@@ -28,6 +28,7 @@ func newProductionLikeValidator(t *testing.T) *a2ui.Validator {
 		MaxComponentsPerUpdate: 100,
 		AllowedProps:           []string{"id", "component", "data"},
 		BindingProps:           []string{"data"},
+		WritableSubPaths:       catalogWritableSubPaths(t),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -117,5 +118,39 @@ func TestGenesisInvalidFixturesAreRejectedWithExpectedCode(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// catalogWritableSubPaths lit `definitions.*.dataModel.writableSubPaths` de
+// catalog.json (chemin complet -> type JSON attendu), source de vérité de R4.
+func catalogWritableSubPaths(t *testing.T) map[string]string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(genesisContractDir(t), "catalog.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cat struct {
+		Definitions map[string]struct {
+			DataModel struct {
+				Writable map[string]string `json:"writableSubPaths"`
+			} `json:"dataModel"`
+		} `json:"definitions"`
+	}
+	if err := json.Unmarshal(raw, &cat); err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]string{}
+	for _, d := range cat.Definitions {
+		for p, typ := range d.DataModel.Writable {
+			out[p] = typ
+		}
+	}
+	return out
+}
+
+func TestCatalogDeclaresOnlyTheDecisionStatusSubPath(t *testing.T) {
+	got := catalogWritableSubPaths(t)
+	if len(got) != 1 || got["/checklist/decisionStatus"] != "string" {
+		t.Fatalf("writableSubPaths = %v", got)
 	}
 }

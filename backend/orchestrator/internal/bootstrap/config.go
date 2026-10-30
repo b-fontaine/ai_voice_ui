@@ -14,6 +14,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 )
@@ -94,6 +95,11 @@ type Config struct {
 	// liaison {path}. Listes facultatives : vides, aucun contrôle de propriétés.
 	A2UIAllowedProps []string
 	A2UIBindingProps []string
+	// A2UIWritableSubPaths (A2UI_WRITABLE_SUBPATHS, `chemin:type` séparés par des
+	// virgules) : sous-chemins qu'un updateDataModel peut écrire en plus de l'objet
+	// entier de la surface (R4, spec 009). Vide : chemins non contrôlés. Ne
+	// concerne que le validateur de l'orchestrateur.
+	A2UIWritableSubPaths map[string]string
 	// AppendAckTimeout : attente de l'acquittement d'un commentaire vocal
 	// (VOICE_APPEND_ACK_TIMEOUT) ; défaut 2 s, documenté ici.
 	AppendAckTimeout time.Duration
@@ -301,6 +307,9 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		if !slices.Contains(cfg.A2UIAllowedProps, p) {
 			return errors.New("A2UI_BINDING_PROPS doit être inclus dans A2UI_ALLOWED_PROPS")
 		}
+	}
+	if cfg.A2UIWritableSubPaths, err = a2ui.ParseWritableSubPaths(getenv("A2UI_WRITABLE_SUBPATHS")); err != nil {
+		return errors.New("A2UI_WRITABLE_SUBPATHS doit être une liste de `chemin:type` séparés par des virgules (chemin JSON Pointer d'au moins deux segments, type string)")
 	}
 	if raw := strings.TrimSpace(getenv("AGENT_TIMEOUT")); raw != "" {
 		d, err := time.ParseDuration(raw)

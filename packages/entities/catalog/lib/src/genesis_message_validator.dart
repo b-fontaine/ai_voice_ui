@@ -28,6 +28,7 @@ class GenesisMessageValidator {
     this.maxDepth = 16,
     this.maxComponentsPerUpdate = 100,
     this.maxComponentsPerSurface = 200,
+    this.writableSubPaths,
   });
 
   final String _catalogId;
@@ -36,6 +37,12 @@ class GenesisMessageValidator {
   final int maxDepth;
   final int maxComponentsPerUpdate;
   final int maxComponentsPerSurface;
+
+  /// Sous-chemins inscriptibles par `updateDataModel` (chemin complet -> type),
+  /// en plus de l'objet entier `/<surfaceId>` ; en production
+  /// `GenesisContract.writableSubPaths`. `null` : chemins non contrôlés ; vide :
+  /// seul l'objet entier est admis (R4, spec 009).
+  final Map<String, String>? writableSubPaths;
 
   /// Longueur maximale (en runes) du JSON Pointer d'une liaison.
   static const int maxBindingPathRunes = 128;
@@ -155,6 +162,9 @@ class GenesisMessageValidator {
             return (ValidationCodes.badPointer, null, sid);
           }
         }
+        if (!_writableDataModel(sid, body)) {
+          return (ValidationCodes.pathNotAllowed, null, sid);
+        }
     }
 
     // Règles à état (registry.go, hors règles serveur).
@@ -186,6 +196,20 @@ class GenesisMessageValidator {
       known.addAll(ids);
     }
     return (null, null, sid);
+  }
+
+  /// Règle R4 (miroir de `checkWritablePath` du Go) : l'objet entier de la
+  /// surface ou un sous-chemin déclaré de cette surface, avec le type déclaré.
+  /// Un chemin absent vaut la racine `/` du data model : refusé.
+  bool _writableDataModel(String sid, Map<dynamic, dynamic> body) {
+    final sub = writableSubPaths;
+    if (sub == null) return true;
+    final path = body['path'];
+    if (path is! String) return false;
+    if (path == '/$sid') return true;
+    final type = sub[path];
+    if (type == null || !path.startsWith('/$sid/')) return false;
+    return type != 'string' || body['value'] is String;
   }
 
   /// surfaceId visé, même si le message est mal formé (pour la compensation).

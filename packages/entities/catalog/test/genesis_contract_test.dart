@@ -110,6 +110,24 @@ void main() {
     expect(GenesisContract.actionTones, <String>['neutral', 'danger']);
   });
 
+  test(
+    'sous-chemins inscriptibles = ceux de catalog.json (chemin -> type)',
+    () {
+      final declared = <String, String>{};
+      for (final Object? d
+          in (catalog['definitions'] as Map<String, dynamic>).values) {
+        final dataModel =
+            (d as Map<String, dynamic>)['dataModel'] as Map<String, dynamic>?;
+        final sub = dataModel?['writableSubPaths'] as Map<String, dynamic>?;
+        sub?.forEach((k, v) => declared[k] = v as String);
+      }
+      expect(GenesisContract.writableSubPaths, declared);
+      expect(GenesisContract.writableSubPaths, <String, String>{
+        '/checklist/decisionStatus': 'string',
+      });
+    },
+  );
+
   test('l identifiant de catalogue par défaut est celui de pdr-0055', () {
     expect(
       GenesisContract.defaultCatalogId,

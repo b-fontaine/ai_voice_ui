@@ -101,6 +101,13 @@ abstract final class GenesisContract {
         },
       };
 
+  /// Sous-chemins qu'un `updateDataModel` peut écrire en plus de l'objet entier
+  /// de la surface : chemin complet -> type JSON attendu (R4, spec 009). Miroir
+  /// des `writableSubPaths` de `catalog.json` (valeur de `A2UI_WRITABLE_SUBPATHS`).
+  static const Map<String, String> writableSubPaths = <String, String>{
+    '/checklist/decisionStatus': 'string',
+  };
+
   /// Identifiants d'action admis (ensemble fermé, pdr-0065) : `id` des
   /// éléments de `actions` de la Barre d'actions.
   static const List<String> actionIds = <String>[

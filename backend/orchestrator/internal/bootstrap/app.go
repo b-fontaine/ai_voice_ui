@@ -184,6 +184,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 			CatalogID: cfg.A2UICatalogID, Components: cfg.A2UIComponents,
 			MaxMessageBytes: a2uiMaxMessageBytes, MaxDepth: a2uiMaxDepth, MaxComponentsPerUpdate: a2uiMaxComponents,
 			AllowedProps: cfg.A2UIAllowedProps, BindingProps: cfg.A2UIBindingProps,
+			WritableSubPaths: cfg.A2UIWritableSubPaths,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)

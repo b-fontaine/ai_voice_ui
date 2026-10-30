@@ -242,6 +242,9 @@
       },
       "dataModel": {
         "path": "/checklist",
+        "writableSubPaths": {
+          "/checklist/decisionStatus": "string"
+        },
         "fields": {
           "title": {
             "type": "string",

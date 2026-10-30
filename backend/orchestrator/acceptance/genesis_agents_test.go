@@ -243,10 +243,11 @@ func cardIsServed(url string) bool {
 func startGenesisApp(t *testing.T, agentCardURLs []string, opts ...appOption) (*httptest.Server, *fakeDelegatingLive) {
 	t.Helper()
 	base := withEnv(map[string]string{
-		"A2UI_CATALOG_ID":    genesisCatalogID,
-		"A2UI_COMPONENTS":    genesisComponents,
-		"A2UI_ALLOWED_PROPS": "id,component,data",
-		"A2UI_BINDING_PROPS": "data",
+		"A2UI_CATALOG_ID":        genesisCatalogID,
+		"A2UI_COMPONENTS":        genesisComponents,
+		"A2UI_ALLOWED_PROPS":     "id,component,data",
+		"A2UI_BINDING_PROPS":     "data",
+		"A2UI_WRITABLE_SUBPATHS": "/checklist/decisionStatus:string",
 	})
 	return startDelegatingAppWith(t, agentCardURLs, append([]appOption{base}, opts...)...)
 }
