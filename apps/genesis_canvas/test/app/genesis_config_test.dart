@@ -410,6 +410,122 @@ void main() {
       }
     });
 
+    test('rejeu : valeurs par défaut', () {
+      const config = GenesisConfig();
+      expect(config.replayMaxGap, const Duration(seconds: 3));
+      expect(config.replayTick, const Duration(milliseconds: 100));
+      expect(config.replayJournalMaxEntries, 5000);
+      expect(config.replayDefaultSpeed, 1.0);
+      expect(config.replayCaptureAt, isNull);
+      final fromEmpty = GenesisConfig.fromEnvironment(const <String, String>{});
+      expect(fromEmpty.replayMaxGap, config.replayMaxGap);
+      expect(fromEmpty.replayTick, config.replayTick);
+      expect(fromEmpty.replayJournalMaxEntries, 5000);
+      expect(fromEmpty.replayDefaultSpeed, 1.0);
+      expect(fromEmpty.replayCaptureAt, isNull);
+    });
+
+    test('GENESIS_REPLAY_MAX_GAP_MS : 100 à 60000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_REPLAY_MAX_GAP_MS': ?value},
+      ).replayMaxGap;
+
+      expect(read(null), const Duration(seconds: 3));
+      expect(read(''), const Duration(seconds: 3));
+      expect(read(' 1500 '), const Duration(milliseconds: 1500));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('60000'), const Duration(minutes: 1));
+    });
+
+    test('GENESIS_REPLAY_TICK_MS : 10 à 1000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_REPLAY_TICK_MS': ?value},
+      ).replayTick;
+
+      expect(read(null), const Duration(milliseconds: 100));
+      expect(read(' 50 '), const Duration(milliseconds: 50));
+      expect(read('10'), const Duration(milliseconds: 10));
+      expect(read('1000'), const Duration(seconds: 1));
+    });
+
+    test('GENESIS_REPLAY_JOURNAL_MAX : 1 à 100000 entrées', () {
+      int read(String? value) => GenesisConfig.fromEnvironment(<String, String>{
+        'GENESIS_REPLAY_JOURNAL_MAX': ?value,
+      }).replayJournalMaxEntries;
+
+      expect(read(null), 5000);
+      expect(read(' 250 '), 250);
+      expect(read('1'), 1);
+      expect(read('100000'), 100000);
+    });
+
+    test('GENESIS_REPLAY_SPEED : l\'une des vitesses du rejeu', () {
+      double read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_REPLAY_SPEED': ?value},
+      ).replayDefaultSpeed;
+
+      expect(read(null), 1.0);
+      expect(read(' 0.25 '), 0.25);
+      expect(read('0.5'), 0.5);
+      expect(read('1'), 1.0);
+      expect(read('1.5'), 1.5);
+      expect(read('2'), 2.0);
+    });
+
+    test('GENESIS_REPLAY_AT : fraction de 0 à 1, absente par défaut', () {
+      double? read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_REPLAY_AT': ?value},
+      ).replayCaptureAt;
+
+      expect(read(null), isNull);
+      expect(read(''), isNull);
+      expect(read(' 0.5 '), 0.5);
+      expect(read('0'), 0.0);
+      expect(read('1'), 1.0);
+      expect(read('0.25'), 0.25);
+    });
+
+    test('variables du rejeu invalides : erreur sans la valeur', () {
+      const cases = <String, List<String>>{
+        'GENESIS_REPLAY_MAX_GAP_MS': <String>[
+          'abc',
+          '-0',
+          '99',
+          '60001',
+          '2.5',
+        ],
+        'GENESIS_REPLAY_TICK_MS': <String>['abc', '-0', '9', '1001', '2.5'],
+        'GENESIS_REPLAY_JOURNAL_MAX': <String>[
+          'abc',
+          '-0',
+          '000000',
+          '100001',
+          '7.5',
+          '1e3',
+        ],
+        'GENESIS_REPLAY_SPEED': <String>['abc', '-1', '3', '0.3', '1e0', '4.5'],
+        'GENESIS_REPLAY_AT': <String>['abc', '-0.1', '1.7', '2', '1e0', '9'],
+      };
+      for (final entry in cases.entries) {
+        for (final raw in entry.value) {
+          expect(
+            () =>
+                GenesisConfig.fromEnvironment(<String, String>{entry.key: raw}),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having((e) => e.message, 'message', contains(entry.key))
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: '${entry.key}=$raw',
+          );
+        }
+      }
+    });
+
     test('R5 : invariants des délais de fermeture par défaut', () {
       const config = GenesisConfig();
       // Chaque niveau borne celui qu'il enveloppe, avec une marge.

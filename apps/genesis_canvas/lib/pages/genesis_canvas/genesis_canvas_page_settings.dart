@@ -21,6 +21,7 @@ class GenesisCanvasPageSettings {
     this.replayTick = const Duration(milliseconds: 100),
     this.replayMaxGap = const Duration(seconds: 3),
     this.replayDefaultSpeed = 1.0,
+    this.replayCaptureAt,
   });
 
   /// Temps de montée du lissage de l'orbe.
@@ -69,6 +70,11 @@ class GenesisCanvasPageSettings {
   /// Vitesse du rejeu au premier démarrage.
   final double replayDefaultSpeed;
 
+  /// Mode scénario avec capture : fraction (0 à 1) de la durée comprimée du
+  /// rejeu où se placer avant la capture ; `null` : pas de rejeu avant la
+  /// capture.
+  final double? replayCaptureAt;
+
   @override
   bool operator ==(Object other) =>
       other is GenesisCanvasPageSettings &&
@@ -86,7 +92,8 @@ class GenesisCanvasPageSettings {
       other.replayJournalMaxEntries == replayJournalMaxEntries &&
       other.replayTick == replayTick &&
       other.replayMaxGap == replayMaxGap &&
-      other.replayDefaultSpeed == replayDefaultSpeed;
+      other.replayDefaultSpeed == replayDefaultSpeed &&
+      other.replayCaptureAt == replayCaptureAt;
 
   @override
   int get hashCode => Object.hash(
@@ -105,5 +112,6 @@ class GenesisCanvasPageSettings {
     replayTick,
     replayMaxGap,
     replayDefaultSpeed,
+    replayCaptureAt,
   );
 }

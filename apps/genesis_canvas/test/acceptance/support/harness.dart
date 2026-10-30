@@ -4,6 +4,18 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
+import 'package:shared_core/shared_core.dart' show AppClock;
+
+/// Horloge fausse (frontière « temps ») qui avance de 500 ms à chaque lecture :
+/// le journal du rejeu reçoit des `t_ms` déterministes. Avec l'horloge réelle,
+/// un scénario rejoué sans attente tient dans quelques millisecondes et la
+/// position demandée par `GENESIS_REPLAY_AT` n'a plus de sens (arrondis).
+class _SteppingClock implements AppClock {
+  int _unixMs = 1761800000000;
+
+  @override
+  int nowUnixMs() => _unixMs += 500;
+}
 
 /// État partagé entre les étapes d'un scénario de l'outillage de boucle.
 ///
@@ -44,6 +56,7 @@ class Harness {
         // attente réelle (le rythme de l'asset est celui d'une démonstration ;
         // `pumpAndSettle` s'arrêterait entre deux messages espacés de 500 ms).
         replayDelay: (_) async {},
+        clock: _SteppingClock(),
       ),
     );
     await tester.pump();

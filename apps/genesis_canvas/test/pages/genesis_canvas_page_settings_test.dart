@@ -8,6 +8,7 @@ void main() {
     Duration replayTick = const Duration(milliseconds: 100),
     Duration replayMaxGap = const Duration(seconds: 3),
     double replayDefaultSpeed = 1.0,
+    double? replayCaptureAt,
   }) => GenesisCanvasPageSettings(
     orbAttack: const Duration(milliseconds: 80),
     orbRelease: const Duration(milliseconds: 250),
@@ -24,6 +25,7 @@ void main() {
     replayTick: replayTick,
     replayMaxGap: replayMaxGap,
     replayDefaultSpeed: replayDefaultSpeed,
+    replayCaptureAt: replayCaptureAt,
   );
 
   test('égalité par valeur', () {
@@ -43,4 +45,19 @@ void main() {
     expect(settings, isNot(make(replayTick: const Duration(seconds: 1))));
     expect(settings, isNot(make(replayDefaultSpeed: 2)));
   });
+
+  test(
+    'position de capture du rejeu : absente par défaut, comparée par valeur',
+    () {
+      expect(make().replayCaptureAt, isNull);
+      expect(make(replayCaptureAt: 0.5).replayCaptureAt, 0.5);
+      expect(make(replayCaptureAt: 0.5), make(replayCaptureAt: 0.5));
+      expect(
+        make(replayCaptureAt: 0.5).hashCode,
+        make(replayCaptureAt: 0.5).hashCode,
+      );
+      expect(make(replayCaptureAt: 0.5), isNot(make()));
+      expect(make(replayCaptureAt: 0.5), isNot(make(replayCaptureAt: 0.25)));
+    },
+  );
 }

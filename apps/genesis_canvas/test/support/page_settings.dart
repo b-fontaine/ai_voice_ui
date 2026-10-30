@@ -16,4 +16,9 @@ GenesisCanvasPageSettings pageSettingsOf([
   canvasActionRetries: config.canvasActionRetries,
   canvasActionRetryInterval: config.canvasActionRetryInterval,
   canvasActionMaxDuration: config.canvasActionMaxDuration,
+  replayMaxGap: config.replayMaxGap,
+  replayTick: config.replayTick,
+  replayJournalMaxEntries: config.replayJournalMaxEntries,
+  replayDefaultSpeed: config.replayDefaultSpeed,
+  replayCaptureAt: config.replayCaptureAt,
 );

@@ -13,6 +13,7 @@ import 'package:feature_canvas/feature_canvas.dart'
         ActionFailed,
         ActionSessionClosed,
         ActionStageReset,
+        ActionIdle,
         CanvasActionBloc,
         CanvasActionScope,
         CanvasActionSettings,
@@ -34,7 +35,19 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
         ProtocolSourceSubscribed;
 import 'package:entity_session/entity_session.dart' show A2uiJournal;
 import 'package:feature_replay/feature_replay.dart'
-    show ReplayBloc, ReplayPlayer, ReplayRouter, ReplaySettings, ReplayStage;
+    show
+        ReplayActive,
+        ReplayBloc,
+        ReplayBusyChanged,
+        ReplayPausePressed,
+        ReplayPlayPressed,
+        ReplayPlayer,
+        ReplayRouter,
+        ReplaySeeked,
+        ReplaySettings,
+        ReplayStage,
+        ReplayState,
+        ReplayStatus;
 import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
@@ -178,6 +191,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // Relais de l'activité des agents vers le Bloc d'action : les slices ne se
   // lisent pas entre elles, c'est la page qui les relie.
   StreamSubscription<bool>? _activitySubscription;
+  // Occupation relayée au rejeu : « un agent travaille OU une action est en
+  // cours » (A5). Les deux sources sont combinées ici, la page étant la seule
+  // à connaître les deux slices.
+  StreamSubscription<bool>? _actionBusySubscription;
+  bool _agentsBusy = false;
+  bool _actionBusy = false;
   // Affecté dans `initState` (abonné de la source, il porte un Ticker).
   late final OrbLevelController _orb;
 
@@ -263,9 +282,18 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _activitySubscription = _agentsBloc.stream
         .map((AgentActivityState state) => state.anyBusy)
         .distinct()
-        .listen(
-          (bool busy) => _actionBloc.add(ActionActivityChanged(busy: busy)),
-        );
+        .listen((bool busy) {
+          _actionBloc.add(ActionActivityChanged(busy: busy));
+          _agentsBusy = busy;
+          _relayBusy();
+        });
+    _actionBusySubscription = _actionBloc.stream
+        .map((CanvasActionState state) => state is! ActionIdle)
+        .distinct()
+        .listen((bool busy) {
+          _actionBusy = busy;
+          _relayBusy();
+        });
     // Panneau et étagère lisent le flux validé (tous les messages, avec leur
     // verdict) par des branches qui gardent en mémoire ce qui arrive avant
     // l'abonnement effectif du Bloc.
@@ -291,7 +319,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       router: _router,
       stage: _PageReplayStage(
         clear: () => _clearScene(keepPanelOpen: true),
-        exit: _resetStage,
+        exit: _exitReplayStage,
       ),
       settings: replaySettings,
       playerFactory: (entries, {required inject, required clearStage}) =>
@@ -323,6 +351,21 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
         );
       }
     }
+  }
+
+  /// Relaie au rejeu l'occupation combinée (agents ou action en cours).
+  void _relayBusy() =>
+      _replayBloc.add(ReplayBusyChanged(_agentsBusy || _actionBusy));
+
+  /// Sortie du rejeu (« Direct »), appelée par le Bloc du rejeu AVANT que le
+  /// routeur ne revienne en direct : écrit le nombre de messages vivants
+  /// écartés (jamais leur contenu) puis remet la scène à vide.
+  void _exitReplayStage() {
+    final int discarded = _router.discardedLiveCount;
+    if (discarded > 0) {
+      widget.errorSink.writeln('Rejeu : $discarded messages vivants écartés');
+    }
+    _resetStage();
   }
 
   /// Consigne le code fermé du refus, jamais le contenu du message.
@@ -466,9 +509,58 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   }
 
   /// Fin du flux du scénario : capture, sauf si le flux a échoué (la sortie en
-  /// erreur est alors déjà demandée par [_onSourceChanged]).
+  /// erreur est alors déjà demandée par [_onSourceChanged]). Avec
+  /// `replayCaptureAt`, la page entre d'abord en rejeu et s'y positionne.
   void _onScenarioDone() {
-    if (_snapshot.isActive) unawaited(_captureWhenSettled());
+    if (!_snapshot.isActive) return;
+    final double? at = _settings.replayCaptureAt;
+    if (at == null) {
+      unawaited(_captureWhenSettled());
+    } else {
+      unawaited(_positionReplayThenCapture(at));
+    }
+  }
+
+  /// Capture à mi-parcours du rejeu (A3) : le journal du scénario est
+  /// enregistré ; la page lance le rejeu, se place à la fraction [at] de la
+  /// durée comprimée puis met en pause, et capture une fois la barrière du
+  /// positionnement passée.
+  Future<void> _positionReplayThenCapture(double at) async {
+    if (_bloc.state.sourceStatus == CanvasSourceStatus.failed) return;
+    if (!_router.hasPlayableJournal) {
+      widget.errorSink.writeln(
+        'Capture impossible : le rejeu n\'a aucun message à rejouer.',
+      );
+      widget.exitHandler(1);
+      return;
+    }
+    final Future<ReplayActive> entered = _replayBloc.stream
+        .where((ReplayState state) => state is ReplayActive)
+        .cast<ReplayActive>()
+        .first;
+    _replayBloc.add(const ReplayPlayPressed());
+    final Duration duration = (await entered).snapshot.duration;
+    final Duration target = Duration(
+      microseconds: (duration.inMicroseconds * at).round(),
+    );
+    final Future<ReplayActive> paused = _replayBloc.stream
+        .where(
+          (ReplayState state) =>
+              state is ReplayActive &&
+              state.snapshot.status == ReplayStatus.paused &&
+              state.snapshot.position == target,
+        )
+        .cast<ReplayActive>()
+        .first;
+    _replayBloc
+      ..add(ReplaySeeked(target))
+      ..add(const ReplayPausePressed());
+    await paused;
+    // La barrière du positionnement est un minuteur de durée nulle armé avant
+    // celui-ci : une fois passé, les messages jusqu'à la position sont
+    // réinjectés.
+    await Future<void>.delayed(Duration.zero);
+    await _captureWhenSettled();
   }
 
   /// Nombre maximal de frames attendues avant la capture.
@@ -500,6 +592,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _cancelRetryWait();
     unawaited(_statusSubscription?.cancel());
     unawaited(_activitySubscription?.cancel());
+    unawaited(_actionBusySubscription?.cancel());
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
@@ -620,11 +713,16 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                   children: <Widget>[
                     TickerMode(
                       enabled: !_animationsOff,
-                      child: TopBar(
-                        orbLevel: _orb.level,
-                        speakingThreshold: _settings.orbSpeakingThreshold,
-                        startEnabled: !_scenarioMode,
-                        stage: StageBar(onResetPressed: _resetStage),
+                      // « Démarrer » est inactif en mode scénario et pendant un
+                      // rejeu ; la session voix en cours n'est pas touchée.
+                      child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                        selector: (state) => state is ReplayActive,
+                        builder: (context, replaying) => TopBar(
+                          orbLevel: _orb.level,
+                          speakingThreshold: _settings.orbSpeakingThreshold,
+                          startEnabled: !_scenarioMode && !replaying,
+                          stage: StageBar(onResetPressed: _resetStage),
+                        ),
                       ),
                     ),
                     const SizedBox(height: _gap),
@@ -639,14 +737,19 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                           >(
                             selector: (state) => state.highlightedSurfaceId,
                             builder: (context, highlighted) =>
-                                CanvasActionScope(
-                                  // Rejeu : aucune requête ne part.
-                                  enabled: !_scenarioMode,
-                                  child: CanvasBoard(
-                                    key: const Key('canvas-board'),
-                                    controller: _controller,
-                                    highlightedSurfaceId: highlighted,
-                                  ),
+                                BlocSelector<ReplayBloc, ReplayState, bool>(
+                                  selector: (state) => state is ReplayActive,
+                                  // Rejeu (scénario ou acte 4) : aucune
+                                  // requête ne part.
+                                  builder: (context, replaying) =>
+                                      CanvasActionScope(
+                                        enabled: !_scenarioMode && !replaying,
+                                        child: CanvasBoard(
+                                          key: const Key('canvas-board'),
+                                          controller: _controller,
+                                          highlightedSurfaceId: highlighted,
+                                        ),
+                                      ),
                                 ),
                           ),
                     ),
