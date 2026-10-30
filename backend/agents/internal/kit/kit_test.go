@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -208,6 +210,56 @@ func TestOutOfScopeRejected(t *testing.T) {
 	msg := last.(*a2a.TaskStatusUpdateEvent).Status.Message
 	if msg == nil || msg.Parts[0].Text() != testProfile(t).Texts.Rejected {
 		t.Errorf("message : %+v", msg)
+	}
+}
+
+// syncBuffer est un tampon sûr pour l'écriture concurrente du serveur et la lecture du test.
+type syncBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (s *syncBuffer) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *syncBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.String()
+}
+
+func TestRejectionLogsReasonAndTaskNeverTheRequestText(t *testing.T) {
+	var logs syncBuffer
+	prev := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	base := serve(t, testProfile(t), fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+		return kit.Composition{}, &kit.ScopeError{Reason: kit.ReasonVersion}
+	}})
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	c := newClient(ctx, t, base)
+	var last a2a.Event
+	const secret = "Compare le mot de passe zorglub 3.5"
+	for ev, err := range c.SendStreamingMessage(ctx, userMessage(secret, "")) {
+		if err != nil {
+			t.Fatal(err)
+		}
+		last = ev
+	}
+	if got := stateOf(last); got != a2a.TaskStateRejected {
+		t.Fatalf("état final %q, attendu rejected", got)
+	}
+	out := logs.String()
+	if !strings.Contains(out, "reason="+kit.ReasonVersion) || !strings.Contains(out, "task=") {
+		t.Errorf("le journal doit porter le motif et la tâche : %q", out)
+	}
+	if strings.Contains(out, "zorglub") || strings.Contains(out, "3.5") {
+		t.Errorf("le journal ne doit pas contenir le texte de la demande : %q", out)
 	}
 }
 

@@ -4,8 +4,8 @@ title: Catalogue de composants
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
-links: [p-ar-app-channel-contract, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
+sources: [specs/008-j4-act2-transform/status.md, specs/008-j4-act2-transform/plan.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
+links: [pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-app-channel-contract, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
 tags: [catalogue, composants, a2ui, genui, theme]
 ---
 # Catalogue de composants
@@ -18,10 +18,10 @@ Noms de la fiche, comportement des maquettes ([pdr-0014](../decisions/pdr-0014-s
 
 | Composant | Agent | Actes | Comportement |
 |---|---|---|---|
-| **Indicateur clé** | Qualité | 1, 2 | Muté à l'acte 2 pour afficher l'écart avec la 3.3 |
-| **Courbe de tendance** | Qualité | 1, 2 | Mutée à l'acte 2 : séries 3.3 / 3.4 et ligne de seuil |
-| **Sentiment des avis** | Voix du client | 1, 2 | Répartition positifs / négatifs + 3 extraits (fiche) ; muté à l'acte 2 pour comparer les versions (maquette 3) |
-| **Checklist go/no-go** | Livraison | 1, 3 | Passe à « Bloquée » à l'acte 3 (RG-28) ; ligne « Changelog validé · 37 PR » |
+| **Indicateur clé** | Qualité | 1, 2 | Muté à l'acte 2 : ligne de comparaison avec la 3.3 (`comparison`), valeur Android |
+| **Courbe de tendance** | Qualité | 1, 2 | Mutée à l'acte 2 : deux séries « Android 3.4 » et « Android 3.3 » et ligne de seuil ; une seule série « iOS 3.4 » après la correction |
+| **Sentiment des avis** | Voix du client | 1, 2 | Répartition positifs / négatifs + 3 extraits (fiche) ; muté à l'acte 2 : ligne de comparaison des avis négatifs avec la 3.3 (`comparison`) ; extraits de la vue (Android, puis iOS) |
+| **Checklist go/no-go** | Livraison | 1, 2, 3 | Valeurs qui citent la 3.3 et « NO-GO Android » à l'acte 2 (« GO iOS » après la correction) ; passe à « Bloquée » à l'acte 3 (RG-28) ; ligne « Changelog validé · 37 PR » |
 | **Barre d'actions** | Livraison | 3 | « Bloquer la release » (RG-28) et « Valider la release » (RG-30, [pdr-0016](../decisions/pdr-0016-validate-release-action.md)) |
 | **Liste des crashs** | Qualité | aucun | Dans le catalogue, hors scénario principal : l'IA la choisit selon la demande. Données : top 5 des crashs de la 3.4 dans [p-fn-dataset](dataset.md) |
 
@@ -29,7 +29,7 @@ Noms de la fiche, comportement des maquettes ([pdr-0014](../decisions/pdr-0014-s
 
 ## Contrat exécutable du catalogue `genesis` v1 (J3-A, 006)
 
-Le catalogue est maintenant un **contrat testé** : `contracts/a2ui/genesis/v1/` (`catalog.json`, `examples/act1-*.jsonl`, README) ; messages, validation et configuration : [p-ar-app-channel-contract](../architecture/app-channel-contract.md). Les **noms techniques** des types sont une conception de l'assistant, jamais calqués sur les maquettes ([pdr-0017](../decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)).
+Le catalogue est maintenant un **contrat testé** : `contracts/a2ui/genesis/v1/` (`catalog.json`, `examples/act1-*.jsonl`, `act2-*.jsonl`, `correction-ios-*.jsonl`, README) ; messages, validation et configuration : [p-ar-app-channel-contract](../architecture/app-channel-contract.md). Les **noms techniques** des types sont une conception de l'assistant, jamais calqués sur les maquettes ([pdr-0017](../decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)).
 
 | Composant (fiche) | Type A2UI | Surface | Agent | Liaison `data` | Dans `components` (liste blanche J3) |
 |---|---|---|---|---|---|
@@ -44,7 +44,7 @@ Le catalogue est maintenant un **contrat testé** : `contracts/a2ui/genesis/v1/`
 - **Composants plats** : une surface = un composant `root` lié à son chemin (`data: {path}`), sans `Column` ni `Text` ; couleurs et tailles viennent du thème de scène (RG-09).
 - **Statuts** : codes fermés `ok` | `risk` | `blocking` (validé / à risque / bloquant) accompagnés d'un libellé séparé (`statusLabel`, `levelLabel`) ; aucune couleur côté client ne dépend d'un libellé français. Checklist : `items[].level`, `recommendation {level, label}`, `decisionStatus`. Statuts tranchés (Q-35 → [pdr-0054](../decisions/pdr-0054-stage-screen-orb-acts-checklist.md)) ; libellés du statut global : voir [p-fn-dataset](dataset.md).
 - **Trois temps (RG-02)** : squelette (`createSurface` puis composant sans donnée), composants, données (`updateDataModel` du chemin entier). Le backend ne garantit que l'**ordre** ; le squelette est rendu visible côté app par 007 (§ ci-dessous). `sendDataModel: false`.
-- **Acte 2 (J4)** : champs facultatifs `comparison {label, value, delta}` réservés (KPI, avis), tolérés par le client ; FR-07 écrira le chemin entier, jamais un sous-chemin ([genui-data-model]).
+- **Acte 2 (008, 2026-10-30)** : les fixtures `act2-*` (Android 3.4 avec comparaison 3.3) et `correction-ios-*` (iOS 3.4, sans comparaison) ne contiennent **qu'un `updateDataModel` du chemin entier** par surface, jamais de `createSurface`, `deleteSurface` ni `updateComponents` ([pdr-0064](../decisions/pdr-0064-008-act2-transform-details-assistant-decided.md) D1). Elles se rejouent **après l'acte 1** ; **seules, elles sont invalides** (`unknown_surface`). Le champ facultatif `comparison {label, value, delta}` (KPI et avis, trois chaînes requises) est lu par l'app ; valeurs : [p-fn-dataset-acts](dataset-acts.md).
 - **Valeurs** : chaînes déjà formatées à la française (« 99,57 % », « −0,36 pt »), nombres JSON pour les séries ; calculées par le backend depuis le jeu de données.
 
 ## Rendu côté app : trois états par composant (007, 2026-10-30)
@@ -57,8 +57,9 @@ Livré par la fonctionnalité 007 ; implémentation : [p-ar-frontend-screen](../
 | **Sans données** | composants reçus, objet lié absent (`updateComponents` sans `updateDataModel`) | cellule vide du thème de scène, distincte du squelette |
 | **Neutre** (RG-10) | objet incomplet, champ de mauvais type, code de statut hors `ok\|risk\|blocking` | état neutre du composant, **sans message d'erreur ni exception** ; la démo continue |
 
-- **Données incomplètes (RG-10)** : un champ requis du contrat (`catalog.json`, y compris dans les `series`, `excerpts`, `items`, `recommendation`) manquant donne l'état neutre ; les champs inconnus (dont `comparison`, acte 2) sont tolérés. Le statut se lit sur le **code** (`ok|risk|blocking`), jamais sur le libellé français.
+- **Données incomplètes (RG-10)** : un champ requis du contrat (`catalog.json`, y compris dans les `series`, `excerpts`, `items`, `recommendation`) manquant donne l'état neutre ; les champs inconnus sont tolérés. Un `comparison` incomplet (label, value ou delta absent) omet **seulement sa ligne** : le composant reste complet, sans état neutre global (D7). Le statut se lit sur le **code** (`ok|risk|blocking`), jamais sur le libellé français.
 - **Troncature honnête de la checklist** : quand tous les critères ne tiennent pas, les critères `blocking` puis `risk` sont gardés en priorité (ordre d'origine conservé) et la dernière ligne annonce **« + N autres critères »** ; jamais de ligne rognée en silence. Acte 1 : 3 critères, qui tiennent.
+- **Acte 2 à l'écran (008)** : sous la valeur du KPI et sous la répartition des avis, une ligne `comparison-<surface>` (un seul `Text` : « 3.3 : 99,71 % · −0,28 pt », « 3.3 : 14 % négatifs · +16 pts »), en couleur neutre, jamais déduite du texte du `delta` (RG-09). La courbe a une légende par série (`trend-series-<nom>`), des couleurs **par plateforme** (palette sans couleur de statut) et la série 3.3 en pointillés (D8). Dans la checklist, la valeur d'un critère prend sa largeur avant le seuil et le libellé : la citation de la 3.3 n'est jamais tronquée (NFR-05). Détail : [p-ar-frontend-screen](../architecture/frontend-screen.md).
 - **Autres débordements** : une ligne par libellé, ellipse au-delà (`maxLines`), jamais de réduction sous 24 px (NFR-05).
 - **Emplacements déterministes** (l'app place les surfaces, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : `kpi`, `trend`, `reviews`, `checklist` dans cet ordre, puis les surfaces inconnues dans leur ordre d'arrivée ; **2×2** jusqu'à 4 surfaces, **3×2** pour 5 ou 6 (NFR-06).
 - **Défense en profondeur** : un message hors catalogue (composant, propriété, liaison littérale) est refusé par le validateur client avant le moteur ([pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)) ; le canevas ne montre alors aucune surface pour ce message et le panneau du protocole le marque « refusé ».

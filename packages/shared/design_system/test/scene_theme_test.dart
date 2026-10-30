@@ -39,6 +39,10 @@ void main() {
         theme.blockingForeground,
         theme.blockingBackground,
       ),
+      'ligne de comparaison (neutre) / surface': (
+        theme.textSecondary,
+        theme.surface,
+      ),
       'contour de mise en évidence / fond de scène': (
         theme.highlightOutline,
         theme.background,
@@ -58,7 +62,7 @@ void main() {
     'contraste des éléments graphiques sur la surface (3:1, WCAG 1.4.11)',
     () {
       final graphics = <String, Color>{
-        'accent': theme.accent,
+        'accent (série de rang 0)': theme.accent,
         'ok premier plan (série, seuil)': theme.okForeground,
         'risk premier plan (série)': theme.riskForeground,
         'blocking premier plan (seuil)': theme.blockingForeground,
@@ -67,6 +71,9 @@ void main() {
         'agent en veille': theme.agentIdle,
         'agent hors périmètre': theme.agentRejected,
         'agent interrompu': theme.agentInterrupted,
+        'graphique iOS': theme.chartIos,
+        'graphique Android': theme.chartAndroid,
+        'graphique autre plateforme': theme.chartOther,
       };
       graphics.forEach((name, color) {
         test('$name / surface', () {
@@ -76,6 +83,19 @@ void main() {
       });
     },
   );
+
+  test('la palette de graphique ne reprend aucune couleur de statut', () {
+    final chart = <Color>{theme.chartIos, theme.chartAndroid, theme.chartOther};
+    expect(chart, hasLength(3));
+    expect(
+      chart.intersection(<Color>{
+        theme.okForeground,
+        theme.riskForeground,
+        theme.blockingForeground,
+      }),
+      isEmpty,
+    );
+  });
 
   test('toutes les tailles de texte sont >= 24 px', () {
     final styles = {

@@ -185,12 +185,13 @@ func TestVoiceScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"Montre-moi les avis", true},
 		{"", true},
 		{"Fais-moi un camembert des ventes", true},
-		{"Compare avec la 3.3 sur Android", false},
+		{"Compare avec la 3.3 sur Android", true},
 		{"la release 3.5", false},
 		{"compare avec la 3.3", false},
-		{"uniquement sur Android", false},
-		{"les avis sur iOS", false},
+		{"uniquement sur Android", true},
+		{"les avis sur iOS", true},
 		{"trois point trois", false},
+		{"les avis sur Android et iOS", false},
 	}
 	ds := load(t)
 	for _, tc := range cases {
@@ -225,7 +226,7 @@ func TestVoiceCreatesOnlySurfacesNotActive(t *testing.T) {
 	}{
 		{"surfaces actives vides", map[string]any{kit.ActiveSurfacesKey: []any{}}, create},
 		{"metadata absentes", nil, create},
-		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"reviews"}}, create[1:]},
+		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"reviews"}}, create[2:]},
 		{"surface d'un autre agent seulement", map[string]any{kit.ActiveSurfacesKey: []any{"kpi", "checklist"}}, create},
 		{"valeur mal typée ignorée", map[string]any{kit.ActiveSurfacesKey: "reviews"}, create},
 		{"éléments mal typés ignorés", map[string]any{kit.ActiveSurfacesKey: []any{7, nil}}, create},

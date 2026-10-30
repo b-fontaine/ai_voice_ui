@@ -21,6 +21,7 @@ class _Kpi {
     required this.threshold,
     required this.status,
     required this.statusLabel,
+    this.comparison,
   });
 
   final String label;
@@ -29,6 +30,9 @@ class _Kpi {
   final String threshold;
   final SceneStatus status;
   final String statusLabel;
+
+  /// Ligne de comparaison de l'acte 2 ; `null` : omise.
+  final String? comparison;
 
   /// `null` si l'objet n'est pas une `Map` ou si un champ requis manque, a un
   /// mauvais type ou un statut hors `ok|risk|blocking`.
@@ -55,6 +59,7 @@ class _Kpi {
       threshold: threshold,
       status: status,
       statusLabel: statusLabel,
+      comparison: readComparisonText(raw),
     );
   }
 }
@@ -113,6 +118,12 @@ class _Complete extends StatelessWidget {
               ),
             ],
           ),
+          if (kpi.comparison != null)
+            comparisonLine(
+              context,
+              key: const Key('comparison-kpi'),
+              text: kpi.comparison!,
+            ),
         ],
       ),
     );

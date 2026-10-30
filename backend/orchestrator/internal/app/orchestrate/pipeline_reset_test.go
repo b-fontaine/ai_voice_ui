@@ -47,19 +47,19 @@ func runToCompletion(t *testing.T, e *env) {
 	awaitDone(t, runAsync(e.p, context.Background(), e.delegation(t)))
 }
 
-func TestPipelineResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing.T) {
+func TestResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing.T) {
 	agent := newAgent("Qualité", surfaceSteps("zeta", "alpha", "mid")...)
 	e := newEnv(t, agent)
 	runToCompletion(t, e)
 	before := len(e.sink.snapshot())
 
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas : %v", err)
 	}
 	if got := deletesOf(t, e, before); !slices.Equal(got, []string{"alpha", "mid", "zeta"}) {
 		t.Fatalf("deleteSurface = %v, attendu l'ordre trié", got)
 	}
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("2e ResetCanvas : %v", err)
 	}
 	if n := len(e.sink.snapshot()); n != before+3 {
@@ -67,11 +67,11 @@ func TestPipelineResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing
 	}
 }
 
-func TestPipelineResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
+func TestResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
 	agent := newAgent("Qualité", surfaceSteps("kpi")...)
 	e := newEnv(t, agent)
 	runToCompletion(t, e)
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatal(err)
 	}
 	if got := e.reg.ActiveFor(agent.ID()); len(got) != 0 {
@@ -92,11 +92,11 @@ func TestPipelineResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
 
 // waitBusy attend que ResetCanvas réponde « occupé » : le drapeau est posé dès
 // le début de Run, sans signal externe à attendre.
-func waitBusy(t *testing.T, p *Pipeline) {
+func waitBusy(t *testing.T, e *env) {
 	t.Helper()
 	deadline := time.Now().Add(wait)
 	for time.Now().Before(deadline) {
-		if errors.Is(p.ResetCanvas(), port.ErrCanvasBusy) {
+		if errors.Is(e.reset(t), port.ErrCanvasBusy) {
 			return
 		}
 		time.Sleep(time.Millisecond)
@@ -104,14 +104,14 @@ func waitBusy(t *testing.T, p *Pipeline) {
 	t.Fatal("ResetCanvas jamais occupé pendant Run")
 }
 
-func TestPipelineResetCanvasBusyDuringPlanStep(t *testing.T) {
+func TestResetCanvasBusyDuringPlanStep(t *testing.T) {
 	agent := newAgent("Qualité")
 	agent.blockCard = true // l'étape de plan (lecture des cartes) reste bloquée
 	e := newEnv(t, agent)
 	ctx, cancel := context.WithCancelCause(context.Background())
 	done := runAsync(e.p, ctx, e.delegation(t))
 
-	waitBusy(t, e.p)
+	waitBusy(t, e)
 	if n := len(e.sink.snapshotAll()); n != 0 {
 		t.Fatalf("%d message(s) publié(s) par un ResetCanvas refusé", n)
 	}
@@ -119,7 +119,7 @@ func TestPipelineResetCanvasBusyDuringPlanStep(t *testing.T) {
 	awaitDone(t, done)
 }
 
-func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
+func TestResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	release := make(chan struct{})
 	agent := newAgent("Qualité")
 	agent.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
@@ -140,7 +140,7 @@ func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	e.sink.await(t, 4) // working, createSurface, updateComponents, updateDataModel
 	before := len(e.sink.snapshotAll())
 
-	if err := e.p.ResetCanvas(); !errors.Is(err, port.ErrCanvasBusy) {
+	if err := e.reset(t); !errors.Is(err, port.ErrCanvasBusy) {
 		t.Fatalf("ResetCanvas = %v, ErrCanvasBusy attendu", err)
 	}
 	if got := e.reg.ActiveFor(agent.ID()); !slices.Equal(got, []string{"kpi"}) {
@@ -153,38 +153,40 @@ func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	awaitDone(t, done)
 
 	// Le drapeau est levé à la fin de Run.
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas après Run : %v", err)
 	}
 }
 
-func TestPipelineResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
+func TestResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
+	canvas := newTestCanvas(t)
 	p, err := NewPipeline(PipelineDeps{
 		SessionID: testSession, Start: time.Unix(1000, 0), Clock: fixedClock{time.Unix(1000, 0)},
-		Sink: &recSink{}, Reply: newFakeReply(), Phrases: pipePhrases,
+		Sink: &recSink{}, Reply: newFakeReply(), Canvas: canvas, Phrases: pipePhrases,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(p.Close)
-	if err := p.ResetCanvas(); err != nil {
-		t.Fatalf("sans agent ni registre : %v", err)
+	e := &env{p: p, canvas: canvas, start: time.Unix(1000, 0)}
+	if err := e.reset(t); err != nil {
+		t.Fatalf("sans agent : %v", err)
 	}
 	gen := make(chan struct{})
 	close(gen)
 	p.Run(context.Background(), Delegation{ID: "d", Request: "x", GenericDone: gen})
-	if err := p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("après Run sans agent : %v", err)
 	}
 }
 
-func TestPipelineResetCanvasAfterCloseIsNoOp(t *testing.T) {
+func TestResetCanvasAfterCloseIsNoOp(t *testing.T) {
 	e := newEnv(t, newAgent("Qualité", surfaceSteps("kpi")...))
 	runToCompletion(t, e)
 	e.p.Close()
 	before := len(e.sink.snapshotAll())
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas après Close : %v", err)
 	}
 	if n := len(e.sink.snapshotAll()); n != before {
@@ -192,7 +194,7 @@ func TestPipelineResetCanvasAfterCloseIsNoOp(t *testing.T) {
 	}
 }
 
-func TestPipelineResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
+func TestResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
 	e := newEnv(t, newAgent("Qualité", surfaceSteps("a", "b", "c", "d")...))
 	runToCompletion(t, e)
 	before := len(e.sink.snapshot())
@@ -202,7 +204,7 @@ func TestPipelineResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := e.p.ResetCanvas(); err != nil {
+			if err := e.reset(t); err != nil {
 				t.Errorf("ResetCanvas : %v", err)
 			}
 		}()

@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
@@ -30,10 +31,16 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
-		return kit.Composition{}, kit.ErrOutOfScope
+	intent, err := kit.ParseIntent(req.Text, ds)
+	if err != nil {
+		return kit.Composition{}, err
 	}
-	cl, err := ds.Checklist(dataset.ScenarioVersion)
+	var cl dataset.Checklist
+	if intent.IsZero() {
+		cl, err = ds.Checklist(ds.TargetVersion)
+	} else {
+		cl, err = platformChecklist(ds, intent)
+	}
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -87,11 +94,61 @@ func summary(cl dataset.Checklist) string {
 	case blocking > 1:
 		blockingText = fmt.Sprintf("%d bloquants", blocking)
 	}
-	// Valeurs dans l'ordre fixe de la checklist : sans crash, avis négatifs, changelog.
+	// Valeurs clés : sans crash, avis négatifs, changelog (sélectionnés par Kind).
 	figures := ""
-	if len(cl.Criteria) == 3 {
+	crash, hasCrash := criterionOf(cl, dataset.CriterionCrashFree)
+	reviews, hasReviews := criterionOf(cl, dataset.CriterionReviews)
+	changelog, hasChangelog := criterionOf(cl, dataset.CriterionChangelog)
+	if hasCrash && hasReviews && hasChangelog {
 		figures = fmt.Sprintf(" — sans crash %s, avis négatifs %s, changelog %s (%s)",
-			cl.Criteria[0].Value, cl.Criteria[1].Value, cl.Criteria[2].LevelLabel, cl.Criteria[2].Value)
+			crash.Value, reviews.Value, changelog.LevelLabel, changelog.Value)
 	}
 	return fmt.Sprintf("Recommandation %s : %s, %s%s.", cl.Recommendation.Label, riskText, blockingText, figures)
+}
+
+// criterionOf renvoie le critère de la nature demandée.
+func criterionOf(cl dataset.Checklist, kind dataset.CriterionKind) (dataset.Criterion, bool) {
+	for _, cr := range cl.Criteria {
+		if cr.Kind == kind {
+			return cr, true
+		}
+	}
+	return dataset.Criterion{}, false
+}
+
+// platformChecklist calcule la checklist d'une plateforme (intent.Platform est le nom
+// canonique du jeu). En vue comparaison, les valeurs des deux critères mesurés portent
+// la valeur de la version de comparaison : « 99,43 % (3.3 : 99,71 %) ».
+func platformChecklist(ds dataset.Dataset, intent kit.Intent) (dataset.Checklist, error) {
+	cl, err := ds.PlatformChecklist(ds.TargetVersion, intent.Platform)
+	if err != nil {
+		return dataset.Checklist{}, err
+	}
+	if intent.CompareTo == "" {
+		return cl, nil
+	}
+	cmp, err := ds.Comparison(ds.TargetVersion, intent.Platform)
+	if err != nil {
+		return dataset.Checklist{}, fmt.Errorf("comparaison acceptée par ParseIntent mais impossible : %w", err)
+	}
+	return withComparison(cl, cmp), nil
+}
+
+// withComparison ajoute la valeur de la version de comparaison aux critères sans crash
+// et avis négatifs (désignés par Kind). Le jeu ne fournit que des nombres : le texte est
+// formaté ici. La liste de critères reçue n'est pas modifiée.
+func withComparison(cl dataset.Checklist, cmp dataset.Comparison) dataset.Checklist {
+	with := func(value string, previous float64, decimals int) string {
+		return fmt.Sprintf("%s (%s : %s)", value, cmp.CompareVersion, dataset.FormatPct(previous, decimals))
+	}
+	cl.Criteria = slices.Clone(cl.Criteria)
+	for i, cr := range cl.Criteria {
+		switch cr.Kind {
+		case dataset.CriterionCrashFree:
+			cl.Criteria[i].Value = with(cr.Value, cmp.Previous.CrashFreePct, 2)
+		case dataset.CriterionReviews:
+			cl.Criteria[i].Value = with(cr.Value, cmp.PreviousReviews.NegativePct, 0)
+		}
+	}
+	return cl
 }

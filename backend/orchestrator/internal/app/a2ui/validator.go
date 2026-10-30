@@ -1,6 +1,6 @@
 // Package a2ui valide les messages A2UI v0.9 produits par les agents distants
 // avant de les relayer à l'application (A3 du plan 004). Le validateur est sans
-// état ; le registre de surfaces porte les règles qui dépendent de la session.
+// état ; le registre de surfaces porte les règles qui dépendent de l'état du canevas.
 package a2ui
 
 import (

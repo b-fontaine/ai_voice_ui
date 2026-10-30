@@ -1,19 +1,21 @@
 {
   "name": "Voix du client",
-  "description": "Agent Voix du client de Genesis Canvas : sentiment des avis des stores de la version 3.4 sur 7 jours (part de positifs et de négatifs, note moyenne, extraits) sous forme de surface A2UI et de résumé factuel.",
+  "description": "Agent Voix du client de Genesis Canvas : sentiment des avis des stores de la version 3.4 sur 7 jours (part de positifs et de négatifs, note moyenne, extraits) sous forme de surface A2UI et de résumé factuel ; il sait aussi se concentrer sur une plateforme (Android ou iOS) et, pour Android, comparer avec la version précédente.",
   "listenPort": 8091,
   "skill": {
     "id": "voice-of-customer",
     "name": "Sentiment des avis",
-    "tags": ["avis", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"],
+    "tags": ["avis", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4", "android", "ios", "compare", "comparer", "comparaison", "3.3"],
     "examples": [
       "Prépare la release 3.4",
       "Que disent les clients de la 3.4 ?",
-      "Montre-moi les avis"
+      "Montre-moi les avis",
+      "Concentre-toi sur Android et compare avec la 3.3",
+      "Non, plutôt iOS"
     ]
   },
   "texts": {
-    "rejected": "Demande refusée : l'agent Voix du client ne traite que la vue globale de la version 3.4, sans comparaison ni plateforme précise.",
+    "rejected": "Demande refusée : l'agent Voix du client traite une plateforme à la fois (Android ou iOS) et la comparaison avec la version précédente seulement avec Android.",
     "failed": "L'agent Voix du client n'a pas pu produire la réponse."
   }
 }

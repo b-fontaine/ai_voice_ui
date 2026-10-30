@@ -68,6 +68,8 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			// Annulée : l'événement terminal vient de Cancel ou le consommateur est parti.
 			return
 		case errors.Is(err, ErrOutOfScope):
+			// Seuls le motif (ensemble fermé) et la tâche sont journalisés : jamais la demande.
+			e.log.Info("demande refusée", "task", string(ec.TaskID), "reason", scopeReason(err))
 			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
 			return
 		case err != nil:
@@ -91,6 +93,15 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 		}
 		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCompleted, nil), nil)
 	}
+}
+
+// scopeReason donne le motif d'un refus hors périmètre, ou "unspecified" sans ScopeError.
+func scopeReason(err error) string {
+	var se *ScopeError
+	if errors.As(err, &se) {
+		return se.Reason
+	}
+	return "unspecified"
 }
 
 // Cancel publie l'état canceled puis annule le contexte de l'exécution en cours.

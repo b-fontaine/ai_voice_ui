@@ -1,20 +1,22 @@
 {
   "name": "Qualité",
-  "description": "Agent Qualité de Genesis Canvas : indicateur « Sessions sans crash » et courbe du taux de crash de la version 3.4 sur 7 jours, avec leur seuil, sous forme de surfaces A2UI et de résumé factuel.",
+  "description": "Agent Qualité de Genesis Canvas : indicateur « Sessions sans crash » et courbe du taux de crash de la version 3.4 sur 7 jours, avec leur seuil, sous forme de surfaces A2UI et de résumé factuel ; il sait aussi se concentrer sur une plateforme (Android ou iOS) et, pour Android, comparer avec la version précédente.",
   "listenPort": 8090,
   "skill": {
     "id": "quality-kpi",
     "name": "Indicateur de qualité",
-    "tags": ["release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "3.4"],
+    "tags": ["release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "3.4", "android", "ios", "compare", "comparer", "comparaison", "3.3"],
     "examples": [
       "Prépare la release 3.4",
       "Montre-moi la stabilité de la 3.4",
       "Où en est la qualité de la 3.4 ?",
-      "Affiche la courbe des crashs"
+      "Affiche la courbe des crashs",
+      "Concentre-toi sur Android et compare avec la 3.3",
+      "Non, plutôt iOS"
     ]
   },
   "texts": {
-    "rejected": "Demande refusée : l'agent Qualité ne traite que la vue globale de la version 3.4, sans comparaison ni plateforme précise.",
+    "rejected": "Demande refusée : l'agent Qualité traite une plateforme à la fois (Android ou iOS) et la comparaison avec la version précédente seulement avec Android.",
     "failed": "L'agent Qualité n'a pas pu produire la réponse."
   }
 }

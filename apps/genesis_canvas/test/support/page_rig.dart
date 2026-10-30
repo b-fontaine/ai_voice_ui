@@ -37,8 +37,21 @@ class FakeResetClient implements CanvasResetClient {
   final List<CanvasResetResult> script = <CanvasResetResult>[];
   int calls = 0;
 
+  /// Armé au montage de la page en mode vivant : le premier appel est celui du
+  /// démarrage (pdr-0064, D6). Il est compté à part dans [startupCalls] pour
+  /// que `calls`, le journal et `script` ne décrivent que les remises à vide
+  /// demandées ensuite par les tests.
+  bool startupArmed = false;
+  int startupCalls = 0;
+  CanvasResetResult startupResult = CanvasResetResult.done;
+
   @override
   Future<CanvasResetResult> reset() {
+    if (startupArmed) {
+      startupArmed = false;
+      startupCalls++;
+      return Future<CanvasResetResult>.value(startupResult);
+    }
     calls++;
     journal.add('client.reset');
     return Future<CanvasResetResult>.value(
@@ -125,6 +138,7 @@ class PageRig {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    resetClient.startupArmed = replay == null;
     final page = GenesisCanvasPage(
       getIt: getIt,
       catalogs: <Catalog>[genesisCatalog(catalogId: rigCatalog)],

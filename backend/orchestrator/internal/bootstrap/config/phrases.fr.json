@@ -1,7 +1,7 @@
 {
   "generic": "Je regarde ça, un instant.",
   "failure": "Je n'ai pas pu obtenir cette information.",
-  "failure_rejected": "Cette demande n'est pas encore prise en charge : je peux afficher la vue globale de la release 3.4, avec stabilité, avis et checklist. Voulez-vous la voir ?",
+  "failure_rejected": "Cette demande n'est pas encore prise en charge : je peux afficher une plateforme à la fois, Android ou iOS, et la comparaison avec la version précédente seulement avec Android. Voulez-vous l'une de ces vues ?",
   "no_summary": "Le résultat est affiché.",
   "queue_full": "Je termine d'abord la demande en cours.",
   "no_request": "Je n'ai pas bien saisi la demande, pouvez-vous répéter ?",

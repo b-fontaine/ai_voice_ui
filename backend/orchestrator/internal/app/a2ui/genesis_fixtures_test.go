@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -360,5 +361,125 @@ func TestGenesisFixtures_CatalogComponentsAreThePdr0014Six(t *testing.T) {
 	}
 	if len(cat.Components) != 4 {
 		t.Errorf("components = %v, 4 attendus (liste blanche J3)", cat.Components)
+	}
+}
+
+// Acte 2 et correction iOS (spec 008, T02) : un seul `updateDataModel` par
+// fixture, rejoué après l'acte 1 sur le même état.
+
+var follow = []struct {
+	file, surface, component string
+	comparison               bool // `comparison` attendu (acte 2) ou absent (correction iOS)
+}{
+	{"act2-kpi.jsonl", "kpi", "KeyIndicator", true},
+	{"act2-trend.jsonl", "trend", "TrendChart", false},
+	{"act2-reviews.jsonl", "reviews", "ReviewSentiment", true},
+	{"act2-checklist.jsonl", "checklist", "ReleaseChecklist", false},
+	{"correction-ios-kpi.jsonl", "kpi", "KeyIndicator", false},
+	{"correction-ios-trend.jsonl", "trend", "TrendChart", false},
+	{"correction-ios-reviews.jsonl", "reviews", "ReviewSentiment", false},
+	{"correction-ios-checklist.jsonl", "checklist", "ReleaseChecklist", false},
+}
+
+func TestGenesisFixtures_FollowUpDataModelMatchesCatalog(t *testing.T) {
+	defs := loadCatalogDefinitions(t)
+	for _, ex := range follow {
+		t.Run(ex.file, func(t *testing.T) {
+			def, ok := defs[ex.component]
+			if !ok {
+				t.Fatalf("definitions.%s absent de catalog.json", ex.component)
+			}
+			msgs := genesisMessages(t, ex.file)
+			if len(msgs) != 1 {
+				t.Fatalf("%d messages, un seul updateDataModel attendu", len(msgs))
+			}
+			if msgs[0]["version"] != "v0.9" {
+				t.Errorf("version = %v, v0.9 attendu", msgs[0]["version"])
+			}
+			body, ok := msgs[0]["updateDataModel"].(map[string]any)
+			if !ok {
+				t.Fatalf("updateDataModel attendu, obtenu %v", msgs[0])
+			}
+			if body["surfaceId"] != ex.surface || body["path"] != def.DataModel.Path {
+				t.Errorf("surfaceId/path = %v/%v, attendu %s/%s", body["surfaceId"], body["path"], ex.surface, def.DataModel.Path)
+			}
+			value, ok := body["value"].(map[string]any)
+			if !ok {
+				t.Fatalf("value : objet attendu, obtenu %T", body["value"])
+			}
+			checkObject(t, ex.file, value, def.DataModel.Fields)
+			_, has := value["comparison"]
+			if has != ex.comparison {
+				t.Errorf("comparison présent = %v, attendu %v", has, ex.comparison)
+			}
+			if ex.component == "TrendChart" {
+				days, _ := value["days"].([]any)
+				series, _ := value["series"].([]any)
+				if len(days) == 0 || len(series) == 0 {
+					t.Fatal("days et series ne doivent pas être vides")
+				}
+				for i, s := range series {
+					pts, _ := s.(map[string]any)["points"].([]any)
+					if len(pts) != len(days) {
+						t.Errorf("série %d : %d points pour %d jours", i, len(pts), len(days))
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGenesisFixtures_FollowUpReplayAfterAct1(t *testing.T) {
+	v := newProductionLikeValidator(t)
+	reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+	if err != nil {
+		t.Fatal(err)
+	}
+	creations := 0
+	apply := func(file string) {
+		for _, msg := range genesisMessages(t, file) {
+			op, err := v.Validate(msg)
+			if err != nil {
+				t.Fatalf("%s refusé par le validateur : %v", file, err)
+			}
+			if op.Kind == a2ui.CreateSurface {
+				creations++
+			}
+			if err := reg.Apply("agent", "task-"+file, op); err != nil {
+				t.Fatalf("%s refusé par le registre : %v", file, err)
+			}
+		}
+	}
+	for _, ex := range genesisExamples {
+		apply(ex.file)
+	}
+	afterAct1 := creations
+	for _, ex := range follow {
+		apply(ex.file)
+	}
+	if creations != afterAct1 {
+		t.Errorf("%d création(s) de surface par l'acte 2 et la correction iOS, aucune attendue", creations-afterAct1)
+	}
+}
+
+func TestGenesisFixtures_FollowUpAloneIsUnknownSurface(t *testing.T) {
+	for _, ex := range follow {
+		t.Run(ex.file, func(t *testing.T) {
+			v := newProductionLikeValidator(t)
+			reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, msg := range genesisMessages(t, ex.file) {
+				op, err := v.Validate(msg)
+				if err == nil {
+					err = reg.Apply("agent", "task-1", op)
+				}
+				var ve *a2ui.ValidationError
+				if !errors.As(err, &ve) || ve.Code != a2ui.CodeUnknownSurface {
+					t.Fatalf("code unknown_surface attendu, obtenu %v", err)
+				}
+			}
+		})
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
@@ -108,7 +109,12 @@ func (r *fakeRunner) nextStarted(t *testing.T) Delegation {
 }
 
 func testOptions() Options {
+	canvas, err := NewCanvas(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+	if err != nil {
+		panic(err)
+	}
 	return Options{
+		Canvas:       canvas,
 		QueueDepth:   2,
 		AgentTimeout: 5 * time.Second,
 		GuardTimeout: 500 * time.Millisecond,
@@ -155,6 +161,7 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		func(o *Options) { o.AgentTimeout = 0 },
 		func(o *Options) { o.GuardTimeout = 0 },
 		func(o *Options) { o.SeenCap = 0 },
+		func(o *Options) { o.Canvas = nil },
 	}
 	for i, mutate := range bad {
 		o := testOptions()

@@ -5,7 +5,8 @@ import 'package:shared_design_system/shared_design_system.dart';
 import 'bound_item.dart';
 
 /// `ReviewSentiment` : répartition positifs / négatifs, note moyenne et
-/// 3 extraits d'avis. Le champ réservé `comparison` (acte 2) est toléré.
+/// 3 extraits d'avis, et la ligne de comparaison de l'acte 2 si `comparison`
+/// est complet.
 final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
   description: 'Sentiment des avis lié à /reviews.',
@@ -29,6 +30,7 @@ class _Reviews {
     required this.negativePct,
     required this.average,
     required this.excerpts,
+    this.comparison,
   });
 
   final String title;
@@ -37,6 +39,9 @@ class _Reviews {
   final int negativePct;
   final double average;
   final List<_Excerpt> excerpts;
+
+  /// Ligne de comparaison de l'acte 2 ; `null` : omise.
+  final String? comparison;
 
   /// Exactement 3 extraits attendus, étoiles de 1 à 5.
   static _Reviews? tryParse(Object raw) {
@@ -77,6 +82,7 @@ class _Reviews {
       negativePct: negative,
       average: average,
       excerpts: excerpts,
+      comparison: readComparisonText(raw),
     );
   }
 }
@@ -135,6 +141,12 @@ class _ReviewsView extends StatelessWidget {
               ),
             ],
           ),
+          if (reviews.comparison != null)
+            comparisonLine(
+              context,
+              key: const Key('comparison-reviews'),
+              text: reviews.comparison!,
+            ),
           const SizedBox(height: 6),
           for (int i = 0; i < reviews.excerpts.length; i++)
             _ExcerptRow(

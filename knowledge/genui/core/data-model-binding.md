@@ -3,7 +3,7 @@ id: genui-data-model
 title: DataModel et data binding (chemins JSON Pointer)
 tags: [genui, a2ui, data-binding, state]
 status: verified
-updated: 2026-10-26
+updated: 2026-10-30
 sources: [https://docs.flutter.dev/ai/genui/get-started, https://github.com/google/A2UI/blob/main/specification/v0_9_1/docs/a2ui_protocol.md, https://a2ui.org/concepts/data-binding/, https://github.com/flutter/genui/blob/main/docs/usage/migration/migration_0.9.1_to_0.10.0.md]
 links: [genui-a2ui-messages, genui-user-actions, genui-custom-catalog-item]
 ---
@@ -24,4 +24,5 @@ Une propriété de composant A2UI est soit un littéral JSON, soit un objet `{"p
 ⚠️ Pièges
 - Depuis 0.10, les écritures sont plus strictes : écrire à travers une valeur intermédiaire qui n'est ni map ni liste lève une exception.
 - Le modèle ne remonte à l'agent que dans le `context` d'une action, ou si `createSurface.sendDataModel: true` (via les métadonnées du transport).
+- **Mutation en place (vérifié sur genui 0.10.4) :** un `updateDataModel` seul, sur une surface déjà montée, met à jour les `BoundObject` abonnés au chemin sans reconstruire la surface ni son `State`. Il remplace l'objet entier : un champ facultatif absent de la nouvelle valeur disparaît du rendu (une ligne de comparaison s'efface si la valeur suivante n'en porte pas). Écrire toujours le chemin entier de la surface.
 - En A2UI v1.0 RC, le binding devient `{"@path": ...}`. Voir genui-a2ui-v1-rc.

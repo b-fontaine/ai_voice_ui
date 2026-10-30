@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// Limits borne l'état d'une session ; valeurs injectées par le câblage.
+// Limits borne l'état du registre (celui du canevas partagé) ; valeurs injectées par le câblage.
 type Limits struct {
 	MaxSurfaces             int
 	MaxComponentsPerSurface int
@@ -24,7 +24,9 @@ type task struct {
 	created  []string // surfaces créées par la tâche, dans l'ordre de création
 }
 
-// Registry suit les surfaces actives d'une session (règles A3 « avec état »).
+// Registry suit les surfaces actives du canevas, partagé par toutes les sessions et
+// vivant autant que le processus (règles A3 « avec état »). Ordre des verrous :
+// Canvas.mu → Pipeline.mu → Registry.mu (voir orchestrate.Canvas).
 // Il est sûr pour un usage concurrent.
 type Registry struct {
 	limits Limits

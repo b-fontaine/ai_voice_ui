@@ -4,13 +4,13 @@ title: Jeu de données fictif et figé
 area: functional
 status: draft
 updated: 2026-10-30
-sources: [specs/006-j3-act1-backend/status.md, specs/006-j3-act1-backend/plan.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-ar-backend, p-ar-app-channel-contract, p-rm-roadmap, p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
+sources: [specs/008-j4-act2-transform/status.md, specs/006-j3-act1-backend/status.md, specs/006-j3-act1-backend/plan.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-backend, p-ar-app-channel-contract, p-rm-roadmap, p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
 tags: [donnees, dataset, determinisme, release]
 ---
 # Jeu de données fictif — jeu de référence
 
-**En bref.** Jeu de référence de l'app mobile fictive **Release Copilot**, versions 3.3 et 3.4, iOS et Android, conçu par l'assistant ([pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md)) : inspiré de l'illustration sans la copier, cohérent en interne, **figé et déterministe** (NFR-08, [pdr-0005](../decisions/pdr-0005-frozen-fictional-dataset.md)). Récit : la 3.4 passe de justesse au global, mais Android régresse nettement face à la 3.3 (flux de paiement 3-D Secure 2) → NO-GO Android. Brouillon à relire par le porteur.
+**En bref.** Jeu de référence de l'app mobile fictive **Release Copilot**, versions 3.3 et 3.4, iOS et Android, conçu par l'assistant ([pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md)) : inspiré de l'illustration sans la copier, cohérent en interne, **figé et déterministe** (NFR-08, [pdr-0005](../decisions/pdr-0005-frozen-fictional-dataset.md)). Récit : la 3.4 passe de justesse au global, mais Android régresse nettement face à la 3.3 (flux de paiement 3-D Secure 2) → NO-GO Android. Brouillon à relire par le porteur. Valeurs des actes 2 et 3 et de la vue iOS : [p-fn-dataset-acts](dataset-acts.md).
 
 ## Cadre
 
@@ -84,37 +84,9 @@ Trois extraits affichés (acte 1) :
 | Changelog validé | revue faite | 37 PR | validé |
 | **Recommandation** | | 2 critères à risque, aucun bloquant | **À RISQUE** · statut « En attente de décision » |
 
-## Acte 2 — « Concentre-toi sur Android et compare avec la 3.3 » (Android seul, [pdr-0024](../decisions/pdr-0024-act2-android-only.md))
+## Actes 2 et 3, vue iOS
 
-| Surface | Android 3.3 | Android 3.4 | Écart | Seuil |
-|---|---|---|---|---|
-| Indicateur clé : sans crash 7 j | 99,71 % | **99,43 %** | **−0,28 pt** | ≥ 99,50 % : non atteint par la 3.4 |
-| Courbe : taux de crash du jour | 0,27 à 0,31 %, stable | 0,30 % → 0,84 % | J7 : +0,55 pt | ligne 0,50 % ; 3.4 au-dessus dès J5 |
-| Sentiment : avis négatifs | 14 % (108 / 774) | **30 %** (240 / 792) | **+16 pts** | ≤ 25 % : non atteint par la 3.4 |
-| Sentiment : note moyenne | 4,2 | 3,7 | −0,5 | — |
-
-Répartition Android 3.3 (1★ à 5★) : 50 / 30 / 28 / 236 / 430 ; positifs 86 %. Thème n° 1 des avis négatifs Android 3.4 : « Plantage à la validation du panier », **118 mentions** sur 240 avis négatifs (0 en 3.3, où le flux 3-D Secure 2 n'existe pas).
-
-Trois extraits affichés (acte 2, Android 3.4) :
-1. ★☆☆☆☆ — « L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour. »
-2. ★★☆☆☆ — « Je valide dans l'app de ma banque, je reviens : l'app redémarre et mon panier est vide. »
-3. ★★★★☆ — « Le panier hors ligne est pratique, mais le paiement plante encore de temps en temps. »
-
-**Checklist go/no-go** — 3.4 Android.
-
-| Critère | Seuil | Valeur | Statut |
-|---|---|---|---|
-| Sessions sans crash Android (7 j) | ≥ 99,50 % | 99,43 % (3.3 : 99,71 %) | **bloquant** |
-| Avis négatifs Android (7 j) | ≤ 25 % | 30 % (3.3 : 14 %) | **bloquant** |
-| Changelog validé (37 PR, toutes livrées dans le build Android) | revue faite | 37 PR | validé |
-| **Recommandation** | | 2 critères bloquants | **NO-GO Android** · statut « En attente de décision » |
-
-## Acte 3 — action sur la Barre d'actions
-
-| Action | Agent | Statut de la checklist | Critères et recommandation |
-|---|---|---|---|
-| « Bloquer la release » (S-03, RG-28) | Livraison | **Bloquée** | inchangés (NO-GO Android) |
-| « Valider la release » (RG-30, [pdr-0016](../decisions/pdr-0016-validate-release-action.md)) | Livraison | **Validée** | inchangés : la décision humaine prime sur la recommandation |
+Valeurs de l'acte 2 (Android seul, comparaison 3.3), de la correction de plateforme (vue iOS) et de l'acte 3 : [p-fn-dataset-acts](dataset-acts.md). Elles se lisent dans les mêmes séries quotidiennes ci-dessus, et le code du backend les recalcule (008).
 
 ## Liste des crashs (hors scénario principal, [pdr-0014](../decisions/pdr-0014-six-component-catalog.md))
 
@@ -142,7 +114,8 @@ Paiement : flux 3-D Secure 2 (feat, 11 PR) · Panier : sauvegarde hors ligne (fe
 | Avis | 37 + 240 = 277 négatifs ; 372 + 792 = 1 164 ; chaque répartition somme à 100 % |
 | Top 5 crashs ≤ sessions avec crash | Android 352 + 139 + 66 = 557 ≤ 694 sessions avec crash ; iOS 55 + 39 = 94 ≤ 151 |
 | Tendances | J1 global = 58 / 21 800 ; J7 global = 219 / 35 000 ; signes cohérents avec les courbes |
-| Code du backend (J3-A, 006) | `backend/agents/internal/dataset` (lignes brutes embarquées, rien de dérivé stocké) **recalcule toutes les valeurs de l'acte 1** par tests, sans écart : 99,57 % ; 99,80 % ; 99,43 % ; −0,36 pt ; 1 164 avis ; 24 % / 76 % ; note 4,0 ; 37 PR ; 2 critères « à risque », 1 « validé » ; recommandation À RISQUE. Statuts calculés sur valeurs non arrondies (`FormatPct(v, décimales)` : 99,57 % mais 24 %), bords testés à 0,10 pt et 2 pts. Chaînes émises avec une espace simple (la fiche écrit l'espace insécable). Cas hors fiche, jamais déclenchés par le jeu actuel : changelog vide = « bloquant », avis 3.3 refusés avant J4 ([p-ar-backend](../architecture/backend.md)) |
+| Actes 2 et vue iOS (008) | Recalculés par les tests Go depuis les lignes brutes, sans écart : voir [p-fn-dataset-acts](dataset-acts.md) § Contrôles |
+| Code du backend (J3-A, 006) | `backend/agents/internal/dataset` (lignes brutes embarquées, rien de dérivé stocké) **recalcule toutes les valeurs de l'acte 1** par tests, sans écart : 99,57 % ; 99,80 % ; 99,43 % ; −0,36 pt ; 1 164 avis ; 24 % / 76 % ; note 4,0 ; 37 PR ; 2 critères « à risque », 1 « validé » ; recommandation À RISQUE. Statuts calculés sur valeurs non arrondies (`FormatPct(v, décimales)` : 99,57 % mais 24 %), bords testés à 0,10 pt et 2 pts. Chaînes émises avec une espace simple (la fiche écrit l'espace insécable). Cas hors fiche, jamais déclenchés par le jeu actuel : changelog vide = « bloquant » (les avis 3.3 ne sont lus, depuis 008, que pour la comparaison Android) ([p-ar-backend](../architecture/backend.md)) |
 
 ## Différences avec l'illustration et points ouverts
 

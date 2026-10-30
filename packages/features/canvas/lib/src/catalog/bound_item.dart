@@ -131,3 +131,35 @@ List<Map<Object?, Object?>>? readMaps(Map<Object?, Object?> map, String field) {
   }
   return out;
 }
+
+/// Texte de la ligne de comparaison (`<label> : <value> · <delta>`) de
+/// l'objet [raw] ; `null` si `comparison` est absent ou incomplet (un champ
+/// `label`/`value`/`delta` manquant ou de mauvais type) : la ligne est alors
+/// omise sans toucher au reste du composant (pdr-0064 D7, RG-10).
+String? readComparisonText(Map<Object?, Object?> raw) {
+  final Object? comparison = raw['comparison'];
+  if (comparison is! Map) return null;
+  final String? label = readString(comparison, 'label');
+  final String? value = readString(comparison, 'value');
+  final String? delta = readString(comparison, 'delta');
+  if (label == null || value == null || delta == null) return null;
+  return '$label : $value \u00B7 $delta';
+}
+
+/// Ligne de comparaison : un seul `Text` portant la clé [key]
+/// (`comparison-<surface>`), en couleur neutre (jamais une couleur de statut),
+/// sur une ligne.
+Text comparisonLine(
+  BuildContext context, {
+  required Key key,
+  required String text,
+}) {
+  final SceneTheme theme = SceneTheme.of(context);
+  return Text(
+    text,
+    key: key,
+    style: theme.body.copyWith(color: theme.textSecondary),
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+  );
+}

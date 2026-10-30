@@ -1,9 +1,11 @@
 package dataset_test
 
 import (
+	"encoding/json"
 	"math"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -387,8 +389,272 @@ func TestDecisionStatusComesFromDataset(t *testing.T) {
 	}
 }
 
-func TestScenarioVersion(t *testing.T) {
-	if dataset.ScenarioVersion != "3.4" {
-		t.Errorf("ScenarioVersion = %q, attendu 3.4", dataset.ScenarioVersion)
+func TestScenarioVersionsComeFromDataset(t *testing.T) {
+	ds := mustLoad(t)
+	if ds.TargetVersion != "3.4" || ds.CompareVersion != "3.3" {
+		t.Errorf("versions = %q / %q, attendu 3.4 / 3.3", ds.TargetVersion, ds.CompareVersion)
+	}
+}
+
+func TestLoadRequiresVersions(t *testing.T) {
+	for _, field := range []string{"targetVersion", "compareVersion"} {
+		t.Run(field, func(t *testing.T) {
+			if _, err := dataset.LoadFrom(withoutField(t, field)); err == nil {
+				t.Errorf("Load doit échouer sans %s", field)
+			}
+		})
+	}
+	if _, err := dataset.LoadFrom(withoutField(t, "")); err != nil {
+		t.Errorf("le jeu complet doit se charger : %v", err)
+	}
+}
+
+// withoutField renvoie le jeu embarqué privé d'un champ de premier niveau.
+func withoutField(t *testing.T, field string) []byte {
+	t.Helper()
+	b, err := os.ReadFile("dataset.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(b, &m); err != nil {
+		t.Fatal(err)
+	}
+	delete(m, field)
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func near(got, want float64) bool { return math.Abs(got-want) < 1e-9 }
+
+// TestAct2AndIosValuesFromRows recalcule, depuis les lignes brutes, les valeurs
+// de l'acte 2 et de la vue iOS de dataset.md.
+func TestAct2AndIosValuesFromRows(t *testing.T) {
+	ds := mustLoad(t)
+	round := func(v float64, d int) string { return dataset.FormatDecimal(v, d) }
+
+	t.Run("Android 3.4 contre 3.3", func(t *testing.T) {
+		cmp, err := ds.Comparison("3.4", "Android")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cmp.CompareVersion != "3.3" {
+			t.Errorf("version de comparaison = %q", cmp.CompareVersion)
+		}
+		if got := round(cmp.Current.CrashFreePct, 2); got != "99,43" {
+			t.Errorf("sans crash 3.4 = %s", got)
+		}
+		if got := round(cmp.Previous.CrashFreePct, 2); got != "99,71" {
+			t.Errorf("sans crash 3.3 = %s", got)
+		}
+		if got := dataset.FormatPt(cmp.CrashFreeDeltaPt); got != "\u22120,28 pt" {
+			t.Errorf("écart sans crash = %s", got)
+		}
+		if cmp.CurrentReviews.Count != 792 || round(cmp.CurrentReviews.NegativePct, 0) != "30" || round(cmp.CurrentReviews.Average, 1) != "3,7" {
+			t.Errorf("avis 3.4 = %+v", cmp.CurrentReviews)
+		}
+		if cmp.PreviousReviews.Count != 774 || round(cmp.PreviousReviews.NegativePct, 0) != "14" {
+			t.Errorf("avis 3.3 = %+v", cmp.PreviousReviews)
+		}
+		if got := dataset.FormatPts(cmp.NegativeDeltaPts); got != "+16 pts" {
+			t.Errorf("écart d'avis négatifs = %s", got)
+		}
+		if !near(cmp.NegativeDeltaPts, cmp.CurrentReviews.NegativePct-cmp.PreviousReviews.NegativePct) {
+			t.Errorf("l'écart doit être calculé, pas stocké : %v", cmp.NegativeDeltaPts)
+		}
+	})
+
+	t.Run("checklist Android 3.4", func(t *testing.T) {
+		cl, err := ds.PlatformChecklist("3.4", "Android")
+		if err != nil {
+			t.Fatal(err)
+		}
+		blocking := 0
+		for _, c := range cl.Criteria {
+			if c.Level == dataset.LevelBlocking {
+				blocking++
+			}
+		}
+		if len(cl.Criteria) != 3 || blocking != 2 {
+			t.Errorf("%d critères dont %d bloquants, attendu 3 dont 2 : %+v", len(cl.Criteria), blocking, cl.Criteria)
+		}
+		if cl.Criteria[0].Value != "99,43 %" || cl.Criteria[1].Value != "30 %" || cl.Criteria[2].Value != "37 PR" || cl.Criteria[2].Level != dataset.LevelOK {
+			t.Errorf("valeurs des critères : %+v", cl.Criteria)
+		}
+		if cl.Recommendation.Level != dataset.LevelBlocking || cl.Recommendation.Label != "NO-GO Android" {
+			t.Errorf("recommandation = %+v", cl.Recommendation)
+		}
+		if cl.DecisionStatus != "En attente de décision" || cl.Platform != "Android" {
+			t.Errorf("checklist = %+v", cl)
+		}
+	})
+
+	t.Run("vue iOS 3.4", func(t *testing.T) {
+		kpi, err := ds.CrashFreeByPlatform("3.4", "iOS")
+		if err != nil {
+			t.Fatal(err)
+		}
+		trend, err := ds.Trend("3.4", "iOS")
+		if err != nil {
+			t.Fatal(err)
+		}
+		rv, err := ds.PlatformReviews("3.4", "iOS")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if round(kpi.CrashFreePct, 2) != "99,80" || dataset.FormatPt(trend) != "+0,03 pt" || kpi.Level != dataset.LevelOK {
+			t.Errorf("KPI iOS = %+v, tendance %v", kpi, trend)
+		}
+		if rv.Count != 372 || round(rv.NegativePct, 0) != "10" || round(rv.Average, 1) != "4,4" {
+			t.Errorf("avis iOS = %+v", rv)
+		}
+		cl, err := ds.PlatformChecklist("3.4", "iOS")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cl.Recommendation.Level != dataset.LevelOK || cl.Recommendation.Label != "GO iOS" {
+			t.Errorf("recommandation iOS = %+v", cl.Recommendation)
+		}
+		if cl.Criteria[0].Value != "99,80 %" || cl.Criteria[1].Value != "10 %" || cl.Criteria[2].Value != "37 PR" {
+			t.Errorf("critères iOS : %+v", cl.Criteria)
+		}
+	})
+
+	t.Run("comparaison refusée pour iOS", func(t *testing.T) {
+		if _, err := ds.Comparison("3.4", "iOS"); err == nil {
+			t.Error("le jeu n'a pas de 3.3 iOS : la comparaison doit être refusée")
+		}
+	})
+
+	t.Run("version ou plateforme inconnue", func(t *testing.T) {
+		if _, err := ds.PlatformChecklist("9.9", "Android"); err == nil {
+			t.Error("version inconnue : erreur attendue")
+		}
+		if _, err := ds.PlatformChecklist("3.4", ""); err == nil {
+			t.Error("plateforme requise : erreur attendue")
+		}
+		if _, err := ds.Comparison("3.4", "Windows"); err == nil {
+			t.Error("plateforme inconnue : erreur attendue")
+		}
+	})
+}
+
+func TestComparisonNeedsRowsOfBothSources(t *testing.T) {
+	ds := mustLoad(t)
+	ds.ReviewRows = slices.DeleteFunc(slices.Clone(ds.ReviewRows), func(r dataset.ReviewRow) bool {
+		return r.Version == "3.3"
+	})
+	if _, err := ds.Comparison("3.4", "Android"); err == nil {
+		t.Error("sans avis 3.3, la comparaison doit être refusée")
+	}
+	ds = mustLoad(t)
+	ds.Rows = slices.DeleteFunc(slices.Clone(ds.Rows), func(r dataset.Row) bool { return r.Version == "3.3" })
+	if _, err := ds.Comparison("3.4", "Android"); err == nil {
+		t.Error("sans sessions 3.3, la comparaison doit être refusée")
+	}
+}
+
+func TestFormatPts(t *testing.T) {
+	for _, c := range []struct {
+		v    float64
+		want string
+	}{
+		{16.35, "+16 pts"}, {15.5, "+16 pts"}, {-4.6, "\u22125 pts"}, {1, "+1 pt"}, {-1, "\u22121 pt"}, {0.2, "0 pt"}, {-0.4, "0 pt"},
+	} {
+		if got := dataset.FormatPts(c.v); got != c.want {
+			t.Errorf("FormatPts(%v) = %q, attendu %q", c.v, got, c.want)
+		}
+	}
+}
+
+var viewExcerptLine = regexp.MustCompile(`^(\d)\. ([★☆]{5}) — « (.+) »$`)
+
+// TestExcerptsByView : chaque vue a exactement trois extraits, dont le texte est
+// celui de la fiche (acte 2 = vue android, correction = vue ios).
+func TestExcerptsByView(t *testing.T) {
+	type ex struct {
+		stars int
+		text  string
+	}
+	var sheetEx []ex
+	for _, line := range strings.Split(readSheet(t), "\n") {
+		if m := viewExcerptLine.FindStringSubmatch(line); m != nil {
+			sheetEx = append(sheetEx, ex{strings.Count(m[2], "★"), m[3]})
+		}
+	}
+	if len(sheetEx) != 6 {
+		t.Fatalf("%d extraits lus dans la fiche, attendu 6", len(sheetEx))
+	}
+	ds := mustLoad(t)
+	for _, c := range []struct {
+		view string
+		want []ex
+	}{
+		{"android", sheetEx[:3]},
+		{"ios", sheetEx[3:]},
+	} {
+		got := ds.ExcerptsByView("3.4", c.view)
+		if len(got) != 3 {
+			t.Fatalf("vue %s : %d extraits, attendu 3", c.view, len(got))
+		}
+		for i, e := range got {
+			if e.Stars != c.want[i].stars || e.Text != c.want[i].text {
+				t.Errorf("vue %s extrait %d = %+v, la fiche dit %+v", c.view, i+1, e, c.want[i])
+			}
+		}
+	}
+	if got := ds.ExcerptsByView("3.4", "global"); len(got) != 3 || got[0].Stars != 1 || got[1].Platform != "iOS" {
+		t.Errorf("vue globale : %+v", got)
+	}
+	if got := ds.ExcerptsByView("3.4", "inconnue"); len(got) != 0 {
+		t.Errorf("vue inconnue : %+v", got)
+	}
+	// La synthèse d'une plateforme joint les extraits de sa vue, pas ceux de la vue globale.
+	rv, err := ds.PlatformReviews("3.4", "Android")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rv.Excerpts) != 3 || rv.Excerpts[0].Text != sheetEx[0].text {
+		t.Errorf("extraits de PlatformReviews(Android) : %+v", rv.Excerpts)
+	}
+}
+
+func TestLoadRequiresThreeExcerptsPerView(t *testing.T) {
+	b := withoutField(t, "")
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+	var ex []map[string]any
+	_ = json.Unmarshal(m["excerpts"], &ex)
+	ex = ex[:len(ex)-1]
+	m["excerpts"], _ = json.Marshal(ex)
+	out, _ := json.Marshal(m)
+	if _, err := dataset.LoadFrom(out); err == nil {
+		t.Error("une vue à deux extraits doit faire échouer Load")
+	}
+}
+
+func TestChecklistCriteriaCarryTheirKind(t *testing.T) {
+	ds := mustLoad(t)
+	want := []dataset.CriterionKind{dataset.CriterionCrashFree, dataset.CriterionReviews, dataset.CriterionChangelog}
+	global, err := ds.Checklist("3.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	platform, err := ds.PlatformChecklist("3.4", "Android")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, cl := range map[string]dataset.Checklist{"globale": global, "plateforme": platform} {
+		if len(cl.Criteria) != len(want) {
+			t.Fatalf("checklist %s : %d critères", name, len(cl.Criteria))
+		}
+		for i, cr := range cl.Criteria {
+			if cr.Kind != want[i] {
+				t.Errorf("checklist %s, critère %d : Kind %q, attendu %q", name, i, cr.Kind, want[i])
+			}
+		}
 	}
 }

@@ -3,6 +3,7 @@ import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
+import 'text_metrics.dart';
 
 /// `ReleaseChecklist` : lignes go/no-go, recommandation et statut de décision.
 ///
@@ -181,13 +182,16 @@ class _ItemList extends StatelessWidget {
             ..sort();
         }
         final int hidden = items.length - shown;
+        final _Columns columns = _Columns.measure(context, theme, <_Item>[
+          for (final int i in kept) items[i],
+        ], constraints.maxWidth);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             for (final int i in kept)
               SizedBox(
                 height: rowH,
-                child: _ItemRow(item: items[i]),
+                child: _ItemRow(item: items[i], columns: columns),
               ),
             if (!all && capacity > 0)
               SizedBox(
@@ -210,10 +214,64 @@ class _ItemList extends StatelessWidget {
   }
 }
 
+/// Largeurs des colonnes seuil / valeur / puce, communes à toutes les lignes
+/// pour qu'elles restent alignées. La valeur passe en priorité (elle cite la
+/// 3.3 à l'acte 2 et ne doit jamais être coupée) ; le libellé prend le reste
+/// et porte l'ellipse.
+class _Columns {
+  const _Columns({
+    required this.threshold,
+    required this.value,
+    required this.chip,
+  });
+
+  static const double gap = 12;
+
+  final double threshold;
+  final double value;
+  final double chip;
+
+  factory _Columns.measure(
+    BuildContext context,
+    SceneTheme theme,
+    List<_Item> items,
+    double maxWidth,
+  ) {
+    double widest(Iterable<String> texts, TextStyle style) {
+      double max = 0;
+      for (final String t in texts) {
+        final double w = measureTextWidth(context, t, style);
+        if (w > max) max = w;
+      }
+      // Marge d'arrondi pour ne pas déclencher l'ellipse sur un demi-pixel.
+      return max == 0 ? 0 : max.ceilToDouble() + 1;
+    }
+
+    // Puce : libellé en style `label` plus le remplissage horizontal (2 x 16).
+    final double chip =
+        widest(items.map((_Item i) => i.levelLabel), theme.label) + 32;
+    final double available =
+        (maxWidth.isFinite ? maxWidth : double.maxFinite) - chip - 3 * gap;
+    final double value = _clamp(
+      widest(items.map((_Item i) => i.value), theme.body),
+      available,
+    );
+    final double threshold = _clamp(
+      widest(items.map((_Item i) => i.threshold), theme.body),
+      (available - value) / 2,
+    );
+    return _Columns(threshold: threshold, value: value, chip: chip);
+  }
+
+  static double _clamp(double wanted, double limit) =>
+      wanted < limit ? wanted : (limit > 0 ? limit : 0);
+}
+
 class _ItemRow extends StatelessWidget {
-  const _ItemRow({required this.item});
+  const _ItemRow({required this.item, required this.columns});
 
   final _Item item;
+  final _Columns columns;
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +281,6 @@ class _ItemRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            flex: 5,
             child: Text(
               item.label,
               style: theme.body,
@@ -231,9 +288,9 @@ class _ItemRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
+          const SizedBox(width: _Columns.gap),
+          SizedBox(
+            width: columns.threshold,
             child: Text(
               item.threshold,
               style: theme.body.copyWith(color: theme.textSecondary),
@@ -241,9 +298,9 @@ class _ItemRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
+          const SizedBox(width: _Columns.gap),
+          SizedBox(
+            width: columns.value,
             child: Text(
               item.value,
               style: theme.body,
@@ -251,8 +308,14 @@ class _ItemRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 12),
-          DsStatusChip(status: item.level, label: item.levelLabel),
+          const SizedBox(width: _Columns.gap),
+          SizedBox(
+            width: columns.chip,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: DsStatusChip(status: item.level, label: item.levelLabel),
+            ),
+          ),
         ],
       ),
     );

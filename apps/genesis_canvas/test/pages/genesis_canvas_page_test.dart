@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_backend_channel/shared_backend_channel.dart'
+    show CanvasResetClient, CanvasResetResult;
 
 import '../support/page_settings.dart';
 
@@ -30,6 +32,11 @@ class _FakeBundle extends CachingAssetBundle {
     if (text == null) throw FlutterError('asset absent : $key');
     return ByteData.sublistView(Uint8List.fromList(text.codeUnits));
   }
+}
+
+class _DoneResetClient implements CanvasResetClient {
+  @override
+  Future<CanvasResetResult> reset() async => CanvasResetResult.done;
 }
 
 const _catalog = GenesisContract.defaultCatalogId;
@@ -64,6 +71,10 @@ void main() {
       config: const GenesisConfig(),
       errorSink: StringBuffer(),
     );
+    // Frontière réseau : en mode vivant, la page demande la remise à vide du
+    // backend au démarrage (pdr-0064, D6) ; le banc de test répondrait 400.
+    getIt.unregister<CanvasResetClient>();
+    getIt.registerSingleton<CanvasResetClient>(_DoneResetClient());
     addTearDown(getIt.reset);
     return getIt;
   }

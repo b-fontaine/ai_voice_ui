@@ -218,6 +218,82 @@ class FakeBackend {
     await emitGenesisActivity(session, 'completed');
   }
 
+  /// Publie la phrase du speaker puis la délégation qu'elle déclenche
+  /// ([delegation] : identifiant du tour, `deleg_2` pour l'acte 2).
+  void emitGenesisUserPhrase(
+    String session,
+    String text, {
+    String delegation = 'deleg_2',
+  }) {
+    emit(session, 'transcript', <String, Object?>{
+      'role': 'user',
+      'text': text,
+      'start_ms': 300,
+      'end_ms': 1200,
+    }, tMs: 1200);
+    emit(session, 'delegation', <String, Object?>{
+      'id': delegation,
+      'offset_ms': 1300,
+    }, tMs: 1300);
+  }
+
+  /// Publie un tour de transformation (spec 008) construit depuis les exemples
+  /// du contrat : `plan` des trois agents, `agent.activity working` ×3, un
+  /// `updateDataModel` par surface (aucun `createSurface`, D1), puis
+  /// `agent.activity completed` ×3. Les identifiants de tâche sont distincts
+  /// de l'acte 1.
+  Future<void> emitGenesisFollowUp(
+    String session,
+    GenesisFollowUp followUp, {
+    String delegation = 'deleg_2',
+  }) async {
+    final surfaces = await ContractFixtures.followUpSurfaces(
+      followUp,
+      catalogId: catalogId,
+    );
+    final tasks = <String, String>{for (final s in surfaces) s.agent: s.task};
+    emitGenesisPlan(
+      session,
+      selected: ContractFixtures.act1Agents,
+      delegation: delegation,
+    );
+    _emitActivities(session, 'working', tasks);
+    for (var i = 0; i < surfaces.length; i++) {
+      emit(
+        session,
+        'a2ui',
+        surfaces[i].messages.single,
+        tMs: 3500 + i * 50,
+        agent: surfaces[i].agent,
+        task: surfaces[i].task,
+      );
+    }
+    _emitActivities(session, 'completed', tasks);
+  }
+
+  void _emitActivities(
+    String session,
+    String state,
+    Map<String, String> tasks, {
+    List<String>? agents,
+  }) {
+    for (final agent in agents ?? ContractFixtures.act1Agents) {
+      emit(
+        session,
+        'agent.activity',
+        <String, Object?>{
+          'agent': agent,
+          'task': tasks[agent],
+          'state': state,
+          'label': agent,
+        },
+        tMs: 2050,
+        agent: agent,
+        task: tasks[agent],
+      );
+    }
+  }
+
   /// Publie l'enveloppe `plan` de l'orchestrateur : [selected] retenus et
   /// [idle] en veille (par défaut, les autres agents de l'acte 1).
   void emitGenesisPlan(
@@ -244,21 +320,7 @@ class FakeBackend {
   }) async {
     final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
     final tasks = <String, String>{for (final s in surfaces) s.agent: s.task};
-    for (final agent in agents ?? ContractFixtures.act1Agents) {
-      emit(
-        session,
-        'agent.activity',
-        <String, Object?>{
-          'agent': agent,
-          'task': tasks[agent],
-          'state': state,
-          'label': agent,
-        },
-        tMs: 2050,
-        agent: agent,
-        task: tasks[agent],
-      );
-    }
+    _emitActivities(session, state, tasks, agents: agents);
   }
 
   /// Publie les messages `a2ui` de la surface [surfaceId] de l'acte 1, du temps

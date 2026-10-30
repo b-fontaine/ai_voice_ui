@@ -38,10 +38,12 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
-		return kit.Composition{}, kit.ErrOutOfScope
+	intent, err := kit.ParseIntent(req.Text, ds)
+	if err != nil {
+		return kit.Composition{}, err
 	}
-	rv, err := ds.Reviews(dataset.ScenarioVersion)
+	platform := intent.Platform
+	rv, err := ds.PlatformReviews(ds.TargetVersion, platform)
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -54,8 +56,12 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 			"text":     e.Text,
 		})
 	}
+	title := "Sentiment des avis"
+	if platform != "" {
+		title = "Avis \u00b7 " + platform
+	}
 	value := map[string]any{
-		"title":       "Sentiment des avis",
+		"title":       title,
 		"count":       float64(rv.Count),
 		"positivePct": math.Round(rv.PositivePct),
 		"negativePct": math.Round(rv.NegativePct),
@@ -63,13 +69,30 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 		"excerpts":    excerpts,
 	}
 
-	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "reviews", "ReviewSentiment", "/reviews", value)
-
 	level := dataset.ClassifyMargin(ds.ReviewNegativeMaxPct-rv.NegativePct, ds.ReviewRiskMarginPt)
-	summary := fmt.Sprintf("%s d'avis négatifs sur %s avis en 7 jours (seuil ≤ %s, %s) ; note moyenne %s.",
-		dataset.FormatPct(rv.NegativePct, 0), groupThousands(rv.Count),
+	noun := "avis"
+	if platform != "" {
+		noun += " " + platform
+	}
+	summary := fmt.Sprintf("%s d'avis négatifs sur %s %s en 7 jours (seuil ≤ %s, %s) ; note moyenne %s",
+		dataset.FormatPct(rv.NegativePct, 0), groupThousands(rv.Count), noun,
 		dataset.FormatPct(ds.ReviewNegativeMaxPct, 0), level.Label(), dataset.FormatDecimal(rv.Average, 1))
-	return kit.Composition{Messages: msgs, Summary: summary}, nil
+	if intent.CompareTo != "" {
+		cmp, err := ds.Comparison(ds.TargetVersion, platform)
+		if err != nil {
+			return kit.Composition{}, fmt.Errorf("comparaison acceptée par ParseIntent mais impossible : %w", err)
+		}
+		delta := dataset.FormatPts(cmp.NegativeDeltaPts)
+		value["comparison"] = map[string]any{
+			"label": cmp.CompareVersion,
+			"value": dataset.FormatPct(cmp.PreviousReviews.NegativePct, 0) + " négatifs",
+			"delta": delta,
+		}
+		summary += fmt.Sprintf(" ; %s : %s, écart %s", cmp.CompareVersion, dataset.FormatPct(cmp.PreviousReviews.NegativePct, 0), delta)
+	}
+
+	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "reviews", "ReviewSentiment", "/reviews", value)
+	return kit.Composition{Messages: msgs, Summary: summary + "."}, nil
 }
 
 // groupThousands écrit un entier avec une espace entre les milliers : 1164 → « 1 164 ».

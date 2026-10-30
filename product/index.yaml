@@ -13,12 +13,12 @@ zones:
     prefix: p-fn-
     index: functional/index.yaml
     description: "Produit fonctionnel : vision, personas et parcours en 3 actes, périmètre, exigences FR/NFR, règles RG, écran en 6 zones, catalogue, jeu de données, maquettes et écarts E1-E22, risques et DoD, glossaire, scénarios Gherkin"
-    keywords: [fonctionnel, functional, vision, persona, parcours, acte, périmètre, scope, exigence, requirement, FR, NFR, MoSCoW, règle, RG, écran, zone, orbe, barge-in, interruption, raccourci, catalogue, composant, jeu de données, dataset, maquette, mockup, écart, risque, plan B, DoD, glossaire, gherkin, feature, scénario, BDD]
+    keywords: [fonctionnel, functional, acte 2, comparaison, vue iOS, vision, persona, parcours, acte, périmètre, scope, exigence, requirement, FR, NFR, MoSCoW, règle, RG, écran, zone, orbe, barge-in, interruption, raccourci, catalogue, composant, jeu de données, dataset, maquette, mockup, écart, risque, plan B, DoD, glossaire, gherkin, feature, scénario, BDD]
   - name: architecture
     prefix: p-ar-
     index: architecture/index.yaml
     description: "Architecture du produit : vue d'ensemble C4, app Flutter desktop Linux (Clean + FSD, Bloc), backend Go hexagonal en docker compose local, agents A2A réels et protocoles, stack et versions, rejeu A2UI (acte 4), sécurité, qualité, environnement de scène"
-    keywords: [architecture, C4, plan, planificateur, rejected, catalogue genesis, contrat exécutable, remise à vide, canvas/reset, validation côté client, A2uiGate, BoundObject, squelette, état neutre, panneau protocole, étagère, rail, 1920×1080, agent A2A, tags, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition]
+    keywords: [architecture, C4, canevas partagé, ParseIntent, updateDataModel, comparaison 3.3, plan, planificateur, rejected, catalogue genesis, contrat exécutable, remise à vide, canvas/reset, validation côté client, A2uiGate, BoundObject, squelette, état neutre, panneau protocole, étagère, rail, 1920×1080, agent A2A, tags, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition]
   - name: roadmap
     prefix: p-rm-
     index: roadmap/index.yaml
@@ -42,7 +42,7 @@ entrypoints:
   - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
   - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
   - {id: p-rm-roadmap, why: "jalons J0-J9 datés, dépendances, ordre de coupe"}
-  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-73)"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-74)"}
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
@@ -56,8 +56,8 @@ tasks:
   - task: "Implémenter l'acte 1 « Créer » (construction des surfaces)"
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-screen, p-fn-catalog, p-fn-dataset, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0008-single-screen-show-the-making]
     knowledge: [genui-a2ui-messages, genui-multiple-surfaces, genui-custom-catalog-item, proto-a2a-task-lifecycle, ma-filler-acknowledgements, ux-genui-streaming-loading]
-  - task: "Implémenter l'acte 2 « Transformer » (mutation sur place, correction)"
-    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-mockups, p-ar-agents-protocols, p-ar-frontend, p-rm-open-questions]
+  - task: "Implémenter ou modifier l'acte 2 « Transformer » (mutation sur place par updateDataModel, comparaison 3.3, correction de plateforme, canevas partagé ; livré par 008, annulation en vol à J7)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-dataset-acts, p-fn-catalog, p-fn-mockups, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-backend, p-ar-frontend-screen, p-ar-frontend, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0042-calendar-and-cut-order-validated, p-rm-open-questions]
     knowledge: [genui-a2ui-messages, genui-data-model, genui-multiple-surfaces]
   - task: "Implémenter l'acte 3 « Interagir » (clic → agent → voix)"
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-catalog, p-ar-agents-protocols, p-ar-backend, p-ar-security]
@@ -78,13 +78,13 @@ tasks:
     docs: [p-fn-screen, p-fn-mockups, p-fn-glossary, p-ar-frontend, p-ar-frontend-screen, pdr-0008-single-screen-show-the-making, pdr-0028-linux-demo-machine, pdr-0033-optional-shortcuts-mouse-first]
     knowledge: [ux-desktop-shortcuts, ux-desktop-focus, perf-audio-visualizer-60hz, perf-repaint-boundary, ds-a11y-wcag-contrast]
   - task: "Concevoir ou modifier le backend orchestrateur et les agents A2A"
-    docs: [p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-stack, p-fn-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0029-local-docker-compose-hosting, pdr-0036-real-a2a-agents-produce-a2ui, p-rm-backend-production-plan]
+    docs: [p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-stack, p-fn-dataset, p-fn-dataset-acts, pdr-0011-adopt-knowledge-adrs, pdr-0029-local-docker-compose-hosting, pdr-0036-real-a2a-agents-produce-a2ui, p-rm-backend-production-plan]
     knowledge: [adr-0002-orchestrator-backend, adr-0003-backend-go, ma-target-architecture, ma-backend-sdk-go, proto-a2a-overview, proto-a2a-agent-card]
   - task: "Ajouter un agent A2A ou faire évoluer le contrat du catalogue genesis (contracts/a2ui/genesis/v1)"
     docs: [p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-catalog, p-fn-dataset, p-ar-quality, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui]
     knowledge: [proto-a2a-agent-card, genui-catalog-ids, genui-a2ui-messages, genui-data-model]
   - task: "Valider l'A2UI côté client ou modifier la remise à vide (A2uiGate, GenesisMessageValidator, POST /canvas/reset)"
-    docs: [p-ar-frontend-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-backend, p-ar-stage-runtime, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-open-questions]
+    docs: [p-ar-frontend-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-backend, p-ar-stage-runtime, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-a2ui-security, genui-custom-catalog-item, genui-data-model]
   - task: "Écrire ou faire évoluer un scénario BDD"
     docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-requirements, p-ar-quality]
@@ -115,9 +115,9 @@ requirement_index:
   "RG-01..RG-30": p-fn-business-rules
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-73 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-74 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-10 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0063": decisions/index.yaml
+  "pdr-0001..pdr-0064": decisions/index.yaml

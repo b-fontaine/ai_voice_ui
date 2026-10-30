@@ -4,8 +4,8 @@ title: Règles de fonctionnement RG-01 à RG-30
 area: functional
 status: draft
 updated: 2026-10-30
-sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
+sources: [specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
+links: [pdr-0064-008-act2-transform-details-assistant-decided, p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -21,7 +21,7 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 | RG-03 | Le premier squelette apparaît en moins de 1,5 s après la fin de la phrase, avant toute donnée. | NFR-02, § 8 (« squelettes immédiats ») |
 | RG-04 | L'IA commente pendant la construction (« je lance l'analyse des crashs... ») : l'attente devient du spectacle. | § 5 (point délicat), § 8 (risque « attente trop longue ») |
 | RG-05 | Au maximum 6 surfaces sont visibles en même temps. | § 3, § 6, NFR-06 ; portée tranchée (E4 · Q-04, [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) : surfaces visibles, pas de compteur de composants |
-| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; aucune suppression en acte 2 (E8 · Q-21 → pdr-0059) ; acte 2 uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) |
+| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; aucune suppression en acte 2 (E8 · Q-21 → pdr-0059) ; **livrée par 008** (`updateDataModel` seul, [pdr-0064](../decisions/pdr-0064-008-act2-transform-details-assistant-decided.md)) ; acte 2 uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) |
 | RG-25 | La fabrication est montrée en continu : l'agent sollicité s'allume avec sa tâche, le message de protocole en cours est mis en évidence et relié à son composant, le composant utilisé s'allume dans l'étagère, la transcription est affichée en direct. | FR-02, FR-03, FR-05, FR-06, § 6 |
 | RG-29 | L'orchestrateur choisit à chaque demande les agents qu'il active, et le rail le montre : agents sollicités allumés avec leur tâche, agents non sollicités visiblement en veille. Les agents portent un nom de rôle métier (Qualité, Voix du client, Livraison). | FR-03, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md) |
 
@@ -42,7 +42,7 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 | RG-12 | Après une interruption, la nouvelle phrase devient la consigne en vigueur. | FR-14 |
 | RG-13 | Une interruption ne détruit jamais les surfaces déjà construites. | FR-15, S-05 |
 | RG-14 | « Stop » ou « annule » arrête la voix **et** la génération en cours ; les surfaces inachevées sont retirées proprement ; les surfaces complètes restent. | FR-16, S-06 |
-| RG-15 | Une correction en cours de génération (« non, plutôt iOS ») réoriente la génération : les surfaces déjà construites passent sur les nouvelles données, sans repartir d'un canevas vide. | FR-17, S-07 |
+| RG-15 | Une correction en cours de génération (« non, plutôt iOS ») réoriente la génération : les surfaces déjà construites passent sur les nouvelles données, sans repartir d'un canevas vide. | FR-17, S-07 ; **partielle** : correction de plateforme livrée (008), annulation en vol : J7 |
 | RG-16 | Un bruit court (toux, applaudissements d'une seconde, rire) n'interrompt pas l'IA. | FR-18, S-08, § 8 (seuil réglé en répétition) |
 | RG-17 | Une interruption est visible : l'orbe passe par « Interrompue » (arrêt net, bref flash) puis « Écoute » ; la réplique de l'IA est tronquée dans la transcription là où elle a été coupée. | FR-19, § 6 (états de l'orbe) |
 | RG-27 | Les répliques de l'IA sont **courtes**, par consigne. | § 8 (parade « l'IA ne s'arrête pas ») |

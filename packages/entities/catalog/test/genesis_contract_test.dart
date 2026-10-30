@@ -72,7 +72,7 @@ void main() {
       for (final e in fields.entries) {
         final spec = e.value as Map<String, dynamic>;
         final sub = spec['fields'] ?? spec['items'];
-        if (sub is Map<String, dynamic> && e.key != 'comparison') {
+        if (sub is Map<String, dynamic>) {
           nested[e.key] = requiredOf(sub);
         }
       }

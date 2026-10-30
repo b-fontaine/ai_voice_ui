@@ -4,6 +4,7 @@ Ces fixtures sont le **contrat exécutable** entre les agents A2A, l'orchestrate
 
 - `catalog.json` : les 4 composants du catalogue (`components` est la valeur de `A2UI_COMPONENTS`), propriétés admises (`id`, `component`, `data`), liaison `data = {"path": "/<surface>"}` et forme du data model de chaque surface. Les codes de statut sont fermés (`ok|risk|blocking`) et accompagnés d'un libellé séparé ; aucune couleur ne dépend d'un libellé français (RG-09).
 - `examples/act1-*.jsonl` : une ligne JSON par message A2UI v0.9, dans l'ordre des trois temps (RG-02) : `createSurface`, `updateComponents` (composant `root`, donnée absente), `updateDataModel` (chemin racine de la surface, valeur complète). Valeurs : `product/functional/dataset.md`, acte 1.
+- `examples/act2-*.jsonl` et `examples/correction-ios-*.jsonl` (spec 008) : **un seul** message `updateDataModel` par fichier (chemin racine de la surface, valeur complète, jamais de sous-chemin), pour les quatre surfaces `kpi`, `trend`, `reviews`, `checklist`. Ils ne contiennent ni `createSurface` ni `updateComponents` : les surfaces de l'acte 1 sont réutilisées. Valeurs : `product/functional/dataset.md`, § Acte 2 et § vue iOS. `act2-*` (Android 3.4) porte, pour l'indicateur clé et les avis, le champ facultatif `comparison` (`label`, `value`, `delta`, tous requis) avec la 3.3 ; `correction-ios-*` (iOS 3.4) n'a **pas** de `comparison` (le jeu ne contient pas de 3.3 pour iOS) et sa courbe n'a qu'une série.
 
 `catalogComponents` liste les 6 composants du catalogue de pdr-0014 (dont `ActionBar` et `CrashList`, sans schéma avant leur fonctionnalité) : l'étagère de l'app se construit sur `catalogComponents`, le validateur sur `components`.
 
@@ -16,3 +17,7 @@ Les fixtures ne doivent jamais contenir d'identifiant réel.
 ## Fixtures négatives (`invalid/`)
 
 Chaque fichier `invalid/*.jsonl` est une séquence de messages (une ligne JSON chacune, `${CATALOG_ID}` à remplacer comme ci-dessus) à rejouer, dans l'ordre, sur un validateur neuf : tous les messages sont acceptés sauf le dernier, qui est refusé avec le code que `invalid/expected.json` associe au nom du fichier (codes fermés du validateur Go ; `too_large.jsonl` dépasse volontairement 64 Kio, la limite d'un message). Le validateur Go et le validateur Dart partagent ces fixtures (parité des refus).
+
+## Rejeu de l'acte 2 et de la correction iOS
+
+Les fixtures `act2-*` et `correction-ios-*` se rejouent **après** l'acte 1, sur le même état (même validateur, même registre de surfaces), dans cet ordre : acte 1, acte 2, correction iOS. **Seules, elles sont invalides** : rejouées sur un validateur neuf, elles sont refusées avec `unknown_surface`, puisque la surface n'existe pas encore. La parité Go/Dart porte sur cette séquence complète (acte 1, puis acte 2, puis correction iOS : tous les messages acceptés, aucune surface créée après l'acte 1) et sur le refus de chaque fixture seule.

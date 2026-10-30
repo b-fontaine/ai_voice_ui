@@ -20,6 +20,26 @@ class Act1Surface {
   final List<Map<String, Object?>> messages;
 }
 
+/// Tour de parole qui transforme un tableau déjà affiché (spec 008) : les
+/// fixtures `examples/<prefix>-*.jsonl` ne contiennent que des
+/// `updateDataModel` (D1) et se rejouent après l'acte 1.
+enum GenesisFollowUp {
+  /// « Concentre-toi sur Android et compare avec la 3.3 » (S-02).
+  act2('act2', 4),
+
+  /// « Non, plutôt iOS » (B2, FR-17 premier temps).
+  correctionIos('correction-ios', 7);
+
+  const GenesisFollowUp(this.filePrefix, this.firstTask);
+
+  /// Préfixe des fichiers d'exemple.
+  final String filePrefix;
+
+  /// Numéro de la première tâche A2A du tour : les identifiants de tâche sont
+  /// uniques sur toute la démo (ceux de l'acte 1 sont `task_1` à `task_3`).
+  final int firstTask;
+}
+
 /// Lecture des fixtures du contrat `contracts/a2ui/genesis/v1`.
 ///
 /// Le dossier `contracts/` est retrouvé en remontant les répertoires depuis
@@ -97,6 +117,41 @@ abstract final class ContractFixtures {
     return surfaces;
   }
 
+  /// Surfaces d'un tour de transformation : un `updateDataModel` par surface,
+  /// dans l'ordre de l'acte 1. Qualité sert `kpi` et `trend` (une tâche),
+  /// Voix du client `reviews`, Livraison `checklist` ; les identifiants de
+  /// tâche sont distincts de ceux de l'acte 1 et des autres tours.
+  static Future<List<Act1Surface>> followUpSurfaces(
+    GenesisFollowUp followUp, {
+    String catalogId = defaultCatalogId,
+  }) async {
+    final dir = await genesisDirectory();
+    final surfaces = <Act1Surface>[];
+    for (final (file, agent, task) in act1Files) {
+      final offset = int.parse(task.substring('task_'.length)) - 1;
+      final text = File.fromUri(
+        dir.uri.resolve(
+          'examples/${followUp.filePrefix}-${file.substring('act1-'.length)}',
+        ),
+      ).readAsStringSync().replaceAll(catalogPlaceholder, catalogId);
+      final messages = const LineSplitter()
+          .convert(text)
+          .where((l) => l.trim().isNotEmpty)
+          .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
+          .toList();
+      final update = messages.first['updateDataModel']! as Map;
+      surfaces.add(
+        Act1Surface(
+          surfaceId: update['surfaceId']! as String,
+          agent: agent,
+          task: 'task_${followUp.firstTask + offset}',
+          messages: messages,
+        ),
+      );
+    }
+    return surfaces;
+  }
+
   /// Messages d'une fixture négative `invalid/<name>.jsonl`, `${CATALOG_ID}`
   /// remplacé par [catalogId].
   static Future<List<Map<String, Object?>>> invalidMessages(
@@ -128,6 +183,32 @@ abstract final class ContractFixtures {
           jsonEncode(<String, Object?>{
             't_ms': s * 500 + m * 50,
             'message': surfaces[s].messages[m],
+          }),
+        );
+      }
+    }
+    return buffer.toString();
+  }
+
+  /// Contenu de `assets/replays/act2-replay.jsonl` dérivé du contrat : l'acte 1
+  /// à l'identique ([act1ReplayJsonl]), puis les `updateDataModel` du tour de
+  /// transformation ([GenesisFollowUp.act2]), une surface toutes les 500 ms,
+  /// la première 500 ms après la dernière surface de l'acte 1.
+  static Future<String> act2ReplayJsonl({
+    String catalogId = defaultCatalogId,
+  }) async {
+    final buffer = StringBuffer(await act1ReplayJsonl(catalogId: catalogId));
+    final act1Count = act1Files.length;
+    final updates = await followUpSurfaces(
+      GenesisFollowUp.act2,
+      catalogId: catalogId,
+    );
+    for (var s = 0; s < updates.length; s++) {
+      for (var m = 0; m < updates[s].messages.length; m++) {
+        buffer.writeln(
+          jsonEncode(<String, Object?>{
+            't_ms': (act1Count + s) * 500 + m * 50,
+            'message': updates[s].messages[m],
           }),
         );
       }

@@ -46,7 +46,7 @@ const (
 	a2uiMaxMessageBytes   = 64 << 10        // taille maximale d'un message A2UI
 	a2uiMaxDepth          = 16              // profondeur JSON maximale d'un message A2UI
 	a2uiMaxComponents     = 100             // composants par updateComponents
-	a2uiMaxSurfaces       = 6               // surfaces ouvertes par session (pdr-0019)
+	a2uiMaxSurfaces       = 6               // surfaces ouvertes sur le canevas partagé (pdr-0019)
 	a2uiMaxSurfaceWidgets = 200             // composants cumulés par surface
 	a2uiMaxTaskMessages   = 64              // messages A2UI par tâche
 )
@@ -164,7 +164,8 @@ func newOpenAI(cfg Config, logger *slog.Logger) (port.LiveProvider, error) {
 
 // newDelegations assemble le gestionnaire de délégations : clients A2A (aucune
 // connexion ici : la carte est lue à la délégation), validateur A2UI partagé,
-// et, par session, un registre de surfaces et un pipeline.
+// canevas unique (registre des surfaces, partagé par toutes les sessions, qui
+// survit à chacune d'elles) et, par session, un pipeline.
 func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.Logger) (*orchestrate.Manager, error) {
 	agents := make([]port.RemoteAgent, 0, len(cfg.Agents))
 	for _, spec := range cfg.Agents {
@@ -190,10 +191,16 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	if agentTimeout <= 0 {
 		agentTimeout = defaultAgentTimeout
 	}
+	// Le canevas est commun au pipeline de chaque session et au Manager (remise à
+	// vide) ; ses limites sont validées ici, une seule fois, comme le reste.
+	canvas, err := orchestrate.NewCanvas(a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages})
+	if err != nil {
+		return nil, fmt.Errorf("bootstrap: canevas A2UI : %w", err)
+	}
 	// Toute la configuration du pipeline est validée ici, une seule fois.
 	factory, err := orchestrate.NewPipelineFactory(orchestrate.PipelineConfig{
 		Clock: clock, Sink: sink, Agents: agents, Planner: orchestrate.TagPlanner{}, Validator: validator,
-		Limits:  a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages},
+		Canvas:  canvas,
 		Phrases: cfg.Phrases, Logger: logger,
 	})
 	if err != nil {
@@ -201,7 +208,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	}
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
-		SeenCap: delegationSeenCap, Logger: logger,
+		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
 	})
 }
 

@@ -1,0 +1,1 @@
+{"version":"v0.9","updateDataModel":{"surfaceId":"trend","path":"/trend","value":{"title":"Taux de crash du jour","thresholdPct":0.5,"yMaxPct":1.0,"days":["J1","J2","J3","J4","J5","J6","J7"],"series":[{"name":"Android 3.4","points":[0.3,0.33,0.4,0.5,0.62,0.73,0.84]},{"name":"Android 3.3","points":[0.3,0.28,0.29,0.27,0.31,0.29,0.29]}]}}}

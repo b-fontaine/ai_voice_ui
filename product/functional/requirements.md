@@ -4,8 +4,8 @@ title: Exigences fonctionnelles FR-01 à FR-20
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
-links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action, pdr-0024-act2-android-only, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07, pdr-0012-voice-provider-openai, pdr-0049-sheet-gherkin-scenarios-only]
+sources: [specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
+links: [pdr-0064-008-act2-transform-details-assistant-decided, pdr-0042-calendar-and-cut-order-validated, p-fn-dataset-acts, rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action, pdr-0024-act2-android-only, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07, pdr-0012-voice-provider-openai, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [exigences, fr, moscow, bdd]
 ---
 # Exigences fonctionnelles (FR-01 à FR-20)
@@ -17,12 +17,12 @@ tags: [exigences, fr, moscow, bdd]
 | Id | Scénario | Fichier |
 |---|---|---|
 | S-01 | Acte 1 - créer le tableau de release | [voice-screen-generation.feature](features/voice-screen-generation.feature) |
-| S-02 | Acte 2 - transformer sans recréer | idem |
+| S-02 | Acte 2 - transformer sans recréer — **vert en BDD depuis 008** (Go et Flutter) | idem |
 | S-03 | Acte 3 - interagir avec un composant généré | idem |
 | S-04 | ~~Bascule en mode secours~~ — **retiré par pdr-0032** (scénario commenté dans le `.feature`) | idem |
 | S-05 | Interrompre l'IA pendant qu'elle parle | [barge-in.feature](features/barge-in.feature) |
 | S-06 | Annuler une génération en cours | idem |
-| S-07 | Corriger la demande en cours de génération | idem |
+| S-07 | Corriger la demande en cours de génération — **pas encore vert** : correction de plateforme livrée (008), « l'IA se tait » et annulation en vol : J7 | idem |
 | S-08 | Un bruit court n'interrompt pas l'IA | idem |
 | S-09 | Faire taire l'IA au clavier | idem |
 
@@ -38,7 +38,7 @@ Les ids S-xx sont une numérotation de l'assistant ; les titres sont ceux de la 
 | FR-04 | Chaque surface apparaît en 3 temps : squelette, composants, données | Must | S-01 (squelette < 1,5 s) | RG-02, RG-03 |
 | FR-05 | Le panneau protocole met en évidence le message qui correspond au composant en train d'apparaître | Must | — | RG-25 |
 | FR-06 | Le composant utilisé s'allume dans l'étagère du catalogue | Should | — | RG-25 |
-| FR-07 | Une demande de modification transforme une surface existante sur place, sans la recréer | Must | S-02 | RG-06 ; aucune surface retirée (E8 · Q-21 → pdr-0059) ; uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) ; couvre aussi les interactions vocales par composant de la fiche § 7 (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) |
+| FR-07 | Une demande de modification transforme une surface existante sur place, sans la recréer | Must | S-02 | RG-06 ; aucune surface retirée (E8 · Q-21 → pdr-0059) ; uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) ; couvre aussi les interactions vocales par composant de la fiche § 7 (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) ; **livrée par 008 (2026-10-30)** : mutation par `updateDataModel` seul, Android seul, comparaison 3.3, NO-GO Android ([pdr-0064](../decisions/pdr-0064-008-act2-transform-details-assistant-decided.md), [p-fn-dataset-acts](dataset-acts.md)) ; essai réel avec micro : à faire en répétition |
 | FR-08 | Un clic sur un composant généré est transmis à l'agent, qui répond à la voix | Must | S-03 | RG-18, RG-28, RG-30 |
 | FR-09 | Toute la génération est enregistrée et rejouable à une vitesse de 0,25× à 2× | Must | — | RG-19 ; flux A2UI seul, rejeu = acte 4 ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) |
 | FR-10 | ~~Un raccourci clavier bascule en mode secours (rejeu d'une session enregistrée)~~ | ~~Must~~ **retirée (pdr-0032)** | ~~S-04~~ | ~~RG-20~~ ; secours = vidéo OBS gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) |
@@ -48,7 +48,7 @@ Les ids S-xx sont une numérotation de l'assistant ; les titres sont ceux de la 
 | FR-14 | Après une interruption, la nouvelle phrase est traitée comme la consigne en vigueur | Must | S-07 (indirectement) | RG-12 |
 | FR-15 | Une interruption ne détruit jamais les surfaces déjà construites | Must | S-05, S-06 | RG-13 |
 | FR-16 | « Stop » ou « annule » arrête la voix et la génération en cours ; les surfaces inachevées sont retirées proprement | Must | S-06 | RG-14 |
-| FR-17 | Une correction en cours de génération (« non, plutôt iOS ») réoriente la génération sans tout recommencer | Should | S-07 | RG-15 |
+| FR-17 | Une correction en cours de génération (« non, plutôt iOS ») réoriente la génération sans tout recommencer | Should | S-07 | RG-15 ; **partielle (pdr-0064 D4, coupe C7 partielle, [pdr-0042](../decisions/pdr-0042-calendar-and-cut-order-validated.md))** : correction de plateforme livrée par 008 (les quatre surfaces passent sur la vue iOS, GO iOS) ; arrêt de la voix et annulation de la génération en vol (FR-14, FR-16) : J7 |
 | FR-18 | Un bruit court (toux, applaudissements, rire) n'interrompt pas l'IA | Should | S-08 | RG-16 |
 | FR-19 | L'interruption est visible : l'orbe change d'état et la réplique de l'IA est tronquée dans la transcription, là où elle a été coupée | Must | S-05 | RG-17 |
 | FR-20 | Un raccourci clavier fait taire l'IA, en secours si le micro capte mal | Must | S-09 | RG-21, RG-22 ; **assouplie par pdr-0033** : faisable à la souris, raccourci s'il ne pose pas de problème ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) |

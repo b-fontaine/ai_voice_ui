@@ -12,16 +12,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
-/// Lit les lignes de la fixture `act1-<name>.jsonl` du contrat, en
-/// substituant `${CATALOG_ID}` textuellement.
-List<Map<String, dynamic>> contractFixture(String name, String catalogId) {
+/// Lit les lignes de la fixture `<variant>-<name>.jsonl` du contrat
+/// (`act1` par défaut), en substituant `${CATALOG_ID}` textuellement.
+List<Map<String, dynamic>> contractFixture(
+  String name,
+  String catalogId, {
+  String variant = 'act1',
+}) {
   var dir = Directory.current.absolute;
   while (!Directory('${dir.path}/contracts/a2ui/genesis/v1').existsSync()) {
     final parent = dir.parent;
     if (parent.path == dir.path) throw StateError('contracts/ introuvable');
     dir = parent;
   }
-  return File('${dir.path}/contracts/a2ui/genesis/v1/examples/act1-$name.jsonl')
+  return File(
+        '${dir.path}/contracts/a2ui/genesis/v1/examples/$variant-$name.jsonl',
+      )
       .readAsLinesSync()
       .where((String l) => l.trim().isNotEmpty)
       .map(
@@ -37,7 +43,7 @@ List<Map<String, dynamic>> contractFixture(String name, String catalogId) {
 class CatalogHarness {
   CatalogHarness(
     this.surface,
-    String fixtureName, {
+    this.fixtureName, {
     this.size = const Size(940, 255),
   }) {
     controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
@@ -52,6 +58,7 @@ class CatalogHarness {
   }
 
   final String surface;
+  final String fixtureName;
   final Size size;
   late final SurfaceController controller;
   late final CanvasBloc bloc;
@@ -87,6 +94,29 @@ class CatalogHarness {
     bloc.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(json)));
     for (var i = 0; i < 6; i++) {
       await tester.pump();
+    }
+  }
+
+  /// Objet du data model de la variante [variant] (copie modifiable).
+  Map<String, dynamic> variantData(String variant) => cloneJson(
+    (contractFixture(
+              fixtureName,
+              GenesisContract.defaultCatalogId,
+              variant: variant,
+            ).single['updateDataModel']
+            as Map<String, dynamic>)['value']
+        as Map<String, dynamic>,
+  );
+
+  /// Envoie la mise à jour de données de la variante [variant] (`act2`,
+  /// `correction-ios`) de la fixture de cette surface.
+  Future<void> sendVariant(WidgetTester tester, String variant) async {
+    for (final Map<String, dynamic> message in contractFixture(
+      fixtureName,
+      GenesisContract.defaultCatalogId,
+      variant: variant,
+    )) {
+      await send(tester, message);
     }
   }
 

@@ -8,31 +8,47 @@ import (
 	"testing"
 	"time"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
-// resetRunner est un Runner qui sait aussi remettre le canevas à vide.
+// resetRunner est un Runner qui sait aussi publier les deleteSurface d'une
+// remise à vide du canevas.
 type resetRunner struct {
 	*fakeRunner
-	resets atomic.Int32
-	hook   func() // appelé dans ResetCanvas (tests de non-interblocage)
-	err    error
+	resets  atomic.Int32 // appels de publishDeletions
+	deleted atomic.Int32 // messages reçus au total
+	hook    func()       // appelé dans publishDeletions (tests de non-interblocage)
 }
 
-func (r *resetRunner) ResetCanvas() error {
+func (r *resetRunner) publishDeletions(msgs []map[string]any) {
 	r.resets.Add(1)
+	r.deleted.Add(int32(len(msgs)))
 	if r.hook != nil {
 		r.hook()
 	}
-	return r.err
 }
 
 // resetEnv ouvre des sessions dont chaque Runner est un resetRunner.
 type resetEnv struct {
 	m       *Manager
+	canvas  *Canvas
 	mu      sync.Mutex
 	runners []*resetRunner
 }
+
+// seed crée des surfaces dans le registre partagé (une tâche d'agent fictive).
+func (e *resetEnv) seed(t *testing.T, ids ...string) {
+	t.Helper()
+	for _, id := range ids {
+		op := a2ui.Operation{Kind: a2ui.CreateSurface, SurfaceID: id}
+		if err := e.canvas.Registry().Apply("owner", "seed", op); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func (e *resetEnv) surfaces() []string { return e.canvas.Registry().ActiveFor("owner") }
 
 func newResetEnv(t *testing.T, run func(ctx context.Context, d Delegation)) *resetEnv {
 	t.Helper()
@@ -44,11 +60,12 @@ func newResetEnv(t *testing.T, run func(ctx context.Context, d Delegation)) *res
 		e.mu.Unlock()
 		return r
 	}
-	m, err := NewManager(factory, testPhrases, testOptions())
+	opts := testOptions()
+	m, err := NewManager(factory, testPhrases, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.m = m
+	e.m, e.canvas = m, opts.Canvas
 	return e
 }
 
@@ -70,20 +87,32 @@ func delegate(s port.SessionDelegations, id string) {
 	s.Delegate(id, 100)
 }
 
-func TestManagerResetCanvasCallsEveryOpenSession(t *testing.T) {
+func TestManagerResetCanvasEmptiesRegistryOnceAndCallsEveryOpenSession(t *testing.T) {
 	e := newResetEnv(t, nil)
+	e.seed(t, "b", "a")
 	_, r1 := e.open(t)
 	_, r2 := e.open(t)
 	if err := e.m.ResetCanvas(context.Background()); err != nil {
 		t.Fatalf("ResetCanvas : %v", err)
 	}
+	if r1.resets.Load() != 1 || r2.resets.Load() != 1 || r1.deleted.Load() != 2 || r2.deleted.Load() != 2 {
+		t.Fatalf("publications = %d/%d et %d/%d message(s), 1 appel de 2 messages chacune attendu",
+			r1.resets.Load(), r1.deleted.Load(), r2.resets.Load(), r2.deleted.Load())
+	}
+	if got := e.surfaces(); len(got) != 0 {
+		t.Fatalf("registre non vidé : %v", got)
+	}
+	if err := e.m.ResetCanvas(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	if r1.resets.Load() != 1 || r2.resets.Load() != 1 {
-		t.Fatalf("remises à vide = %d et %d, 1 chacune attendue", r1.resets.Load(), r2.resets.Load())
+		t.Fatal("un registre vide ne doit rien publier (idempotent)")
 	}
 }
 
 func TestManagerResetCanvasForgetsClosedSessions(t *testing.T) {
 	e := newResetEnv(t, nil)
+	e.seed(t, "a")
 	s1, r1 := e.open(t)
 	_, r2 := e.open(t)
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
@@ -93,29 +122,34 @@ func TestManagerResetCanvasForgetsClosedSessions(t *testing.T) {
 		t.Fatalf("ResetCanvas : %v", err)
 	}
 	if r1.resets.Load() != 0 || r2.resets.Load() != 1 {
-		t.Fatalf("remises à vide = %d et %d, attendu 0 (session fermée) et 1", r1.resets.Load(), r2.resets.Load())
+		t.Fatalf("publications = %d et %d, attendu 0 (session fermée) et 1", r1.resets.Load(), r2.resets.Load())
 	}
 	if n := e.m.openSessions(); n != 1 {
 		t.Fatalf("%d session(s) suivie(s), 1 attendue", n)
 	}
 }
 
-func TestManagerResetCanvasWithoutSessionIsNoContent(t *testing.T) {
+func TestManagerResetCanvasWithoutSessionEmptiesRegistryAndPublishesNothing(t *testing.T) {
 	e := newResetEnv(t, nil)
+	e.seed(t, "a")
 	if err := e.m.ResetCanvas(context.Background()); err != nil {
 		t.Fatalf("aucune session : %v", err)
+	}
+	if got := e.surfaces(); len(got) != 0 {
+		t.Fatalf("registre non vidé : %v", got)
 	}
 }
 
 func TestManagerResetCanvasRunnerWithoutResetSupportIsIgnored(t *testing.T) {
-	m, err := NewManager(factoryOf(newRunner(nil)), testPhrases, testOptions())
+	opts := testOptions()
+	m, err := NewManager(factoryOf(newRunner(nil)), testPhrases, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := m.Open("sess", time.Now(), newFakeReply())
 	defer s.Close(context.Background())
 	if err := m.ResetCanvas(context.Background()); err != nil {
-		t.Fatalf("Runner sans ResetCanvas : %v", err)
+		t.Fatalf("Runner sans publication : %v", err)
 	}
 }
 
@@ -127,6 +161,7 @@ func TestManagerResetCanvasBusyWhileDelegationRunsThenIdle(t *testing.T) {
 		case <-ctx.Done():
 		}
 	})
+	e.seed(t, "a")
 	s, r := e.open(t)
 	delegate(s, "d1")
 	r.nextStarted(t)
@@ -134,8 +169,8 @@ func TestManagerResetCanvasBusyWhileDelegationRunsThenIdle(t *testing.T) {
 	if err := e.m.ResetCanvas(context.Background()); !errors.Is(err, port.ErrCanvasBusy) {
 		t.Fatalf("ResetCanvas pendant une délégation = %v, ErrCanvasBusy attendu", err)
 	}
-	if r.resets.Load() != 0 {
-		t.Fatal("le Runner ne doit pas être sollicité pendant une délégation")
+	if r.resets.Load() != 0 || len(e.surfaces()) != 1 {
+		t.Fatal("un refus ne doit ni publier ni toucher au registre")
 	}
 	close(release)
 	deadline := time.Now().Add(wait)
@@ -150,7 +185,7 @@ func TestManagerResetCanvasBusyWhileDelegationRunsThenIdle(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 	if r.resets.Load() != 1 {
-		t.Fatalf("%d remise(s) à vide, 1 attendue", r.resets.Load())
+		t.Fatalf("%d publication(s), 1 attendue", r.resets.Load())
 	}
 }
 
@@ -180,6 +215,7 @@ func TestManagerResetCanvasBusySessionBlocksAllSessionsUntouched(t *testing.T) {
 		case <-ctx.Done():
 		}
 	})
+	e.seed(t, "a", "b")
 	_, idle := e.open(t)
 	busy, busyRunner := e.open(t)
 	delegate(busy, "d1")
@@ -190,23 +226,19 @@ func TestManagerResetCanvasBusySessionBlocksAllSessionsUntouched(t *testing.T) {
 		t.Fatalf("ResetCanvas = %v, ErrCanvasBusy attendu pour l'ensemble", err)
 	}
 	if idle.resets.Load() != 0 || busyRunner.resets.Load() != 0 {
-		t.Fatalf("remises à vide = %d et %d, aucune attendue (tout ou rien)", idle.resets.Load(), busyRunner.resets.Load())
+		t.Fatalf("publications = %d et %d, aucune attendue (tout ou rien)", idle.resets.Load(), busyRunner.resets.Load())
+	}
+	if got := e.surfaces(); len(got) != 2 {
+		t.Fatalf("registre touché malgré le refus : %v", got)
 	}
 }
 
-func TestManagerResetCanvasPropagatesRunnerBusyError(t *testing.T) {
+// Aucun verrou du Manager ni d'une session ne doit être tenu pendant l'appel au
+// Runner : celui-ci peut rouvrir une session, transcrire ou fermer sans
+// s'interbloquer. (Canvas.mu, lui, est tenu pendant toute la passe, par conception.)
+func TestManagerResetCanvasHoldsNoManagerOrSessionLockWhileCallingSessions(t *testing.T) {
 	e := newResetEnv(t, nil)
-	_, r := e.open(t)
-	r.err = port.ErrCanvasBusy // le pipeline a vu une délégation que la session ne voyait pas
-	if err := e.m.ResetCanvas(context.Background()); !errors.Is(err, port.ErrCanvasBusy) {
-		t.Fatalf("ResetCanvas = %v, ErrCanvasBusy attendu", err)
-	}
-}
-
-// Aucun verrou (Manager ou session) ne doit être tenu pendant l'appel au Runner :
-// celui-ci peut rouvrir une session, transcrire ou fermer sans s'interbloquer.
-func TestManagerResetCanvasHoldsNoLockWhileCallingSessions(t *testing.T) {
-	e := newResetEnv(t, nil)
+	e.seed(t, "a")
 	s, r := e.open(t)
 	finished := make(chan struct{})
 	r.hook = func() {

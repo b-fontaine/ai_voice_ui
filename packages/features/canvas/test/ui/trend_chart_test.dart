@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:feature_canvas/src/catalog/trend_chart_painter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
@@ -220,6 +221,9 @@ void main() {
                 .painter!
             as TrendChartPainter;
     final allowed = <Color>{
+      theme.chartIos,
+      theme.chartAndroid,
+      theme.chartOther,
       theme.accent,
       theme.okForeground,
       theme.riskForeground,
@@ -232,5 +236,143 @@ void main() {
     }
     expect(allowed, contains(painter.thresholdColor));
     expect(allowed, contains(painter.axisColor));
+  });
+
+  testWidgets('acte 2 : le titre et la légende s affichent en entier', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    final RenderParagraph title = tester.renderObject<RenderParagraph>(
+      h.inCell(find.text('Taux de crash du jour')),
+    );
+    expect(title.didExceedMaxLines, isFalse, reason: 'titre coupé');
+    for (final String name in <String>['Android 3.4', 'Android 3.3']) {
+      final RenderParagraph p = tester.renderObject<RenderParagraph>(
+        h.inCell(find.text(name)),
+      );
+      expect(p.didExceedMaxLines, isFalse, reason: 'légende coupée : $name');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('acte 2 : une entrée de légende par série, couleurs stables', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    final first = find.byKey(const Key('trend-series-Android 3.4'));
+    final second = find.byKey(const Key('trend-series-Android 3.3'));
+    expect(h.inCell(first), findsOneWidget);
+    expect(h.inCell(second), findsOneWidget);
+    expect(
+      tester.getTopLeft(first).dx,
+      lessThan(tester.getTopLeft(second).dx),
+      reason: 'ordre du data model',
+    );
+    expect(
+      find.descendant(of: first, matching: find.text('Android 3.4')),
+      findsOneWidget,
+    );
+
+    TrendChartPainter painter() =>
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    final theme = const SceneTheme.dark();
+    expect(painter().series.map((s) => s.name), <String>[
+      'Android 3.4',
+      'Android 3.3',
+    ]);
+    expect(painter().series.map((s) => s.color), <Color>[
+      theme.chartAndroid,
+      theme.chartAndroid,
+    ], reason: 'même plateforme, même teinte');
+    expect(painter().series.map((s) => s.dashed), <bool>[
+      false,
+      true,
+    ], reason: 'la 3.3 se distingue par le trait pointillé');
+    h.expectTextAtLeast24(tester);
+    expect(tester.takeException(), isNull);
+    expect(h.engineErrors, isEmpty);
+  });
+
+  testWidgets('couleur par plateforme : iOS et Android, jamais de statut', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+    final theme = const SceneTheme.dark();
+    TrendChartPainter painter() =>
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    // Acte 1 : iOS puis Android.
+    expect(painter().series.map((s) => s.name), <String>['iOS', 'Android']);
+    final act1 = painter().series.map((s) => s.color).toList();
+    expect(act1, <Color>[theme.chartIos, theme.chartAndroid]);
+    expect(painter().series.map((s) => s.dashed), <bool>[false, false]);
+
+    // Acte 2 : Android garde la couleur qu'il avait à l'acte 1.
+    await h.sendVariant(tester, 'act2');
+    expect(painter().series.first.color, act1[1]);
+    for (final s in painter().series) {
+      expect(s.color, isNot(theme.okForeground));
+      expect(s.color, isNot(theme.riskForeground));
+      expect(s.color, isNot(theme.blockingForeground));
+    }
+  });
+
+  testWidgets('plateforme inconnue : couleur « autre » sans statut', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+    final data = cloneJson(h.data);
+    data['series'] = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'name': 'Web',
+        'points': <double>[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+      },
+    ];
+    await h.sendData(tester, data);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    expect(painter.series.single.color, const SceneTheme.dark().chartOther);
+  });
+
+  testWidgets('correction iOS : une seule série, la couleur d iOS', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+    await h.sendVariant(tester, 'correction-ios');
+
+    expect(find.byKey(const Key('trend-series-iOS 3.4')), findsOneWidget);
+    expect(find.byKey(const Key('trend-series-Android 3.4')), findsNothing);
+    expect(find.byKey(const Key('trend-series-Android 3.3')), findsNothing);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    expect(painter.series.single.color, const SceneTheme.dark().chartIos);
+    expect(painter.series.single.dashed, isFalse);
+    expect(tester.takeException(), isNull);
   });
 }

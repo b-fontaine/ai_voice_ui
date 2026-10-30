@@ -23,6 +23,7 @@ import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
+        Connecting,
         LiveSessionEventSource,
         OrbLevelController,
         OrbSmoother,
@@ -30,6 +31,7 @@ import 'package:feature_voice_session/feature_voice_session.dart'
         TranscriptSourceSubscribed,
         VoiceSession,
         VoiceSessionBloc,
+        VoiceSessionStatus,
         VoiceSessionSubscribed;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -221,6 +223,15 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       replay == null ? _source.events : A2uiGate.replayEvents(replay),
     );
     if (replay == null) {
+      // Démarrage en mode vivant (pdr-0064, D6) : l'écran est déjà vide, mais
+      // le canevas du backend peut garder des surfaces d'une exécution
+      // précédente ; une mutation par données seules viserait alors une
+      // surface inconnue de l'app. Une seule demande, avant la première
+      // session (le bouton Démarrer n'a pas encore été touché), au mieux :
+      // l'échec est consigné sans bloquer. Aucune remise à vide visuelle.
+      unawaited(_requestBackendReset());
+      _startupResetGeneration = _resetGeneration;
+      _statusSubscription = _session.status.listen(_onSessionStatus);
       if (_snapshot.isActive) {
         // Sans scénario : capture du canevas vide après la première frame.
         WidgetsBinding.instance.addPostFrameCallback(
@@ -259,6 +270,11 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// qu'elle n'est ignorée : l'écran vient d'être revidé, c'est la dernière
   /// demande qui reflète l'état voulu, et il n'y a jamais deux boucles.
   int _resetGeneration = 0;
+
+  /// Génération de la demande lancée au démarrage (mode vivant), `null` hors
+  /// de ce mode.
+  int? _startupResetGeneration;
+  StreamSubscription<VoiceSessionStatus>? _statusSubscription;
   Timer? _retryTimer;
   Completer<void>? _retryWait;
 
@@ -287,6 +303,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       retriesLeft--;
       await _waitBeforeRetry(_settings.canvasResetRetryInterval);
       if (generation != _resetGeneration) return;
+    }
+  }
+
+  /// Au premier passage à `Connecting`, la remise à vide de démarrage, si elle
+  /// est encore en réessai, est abandonnée : elle viderait le tableau en pleine
+  /// démo. Une remise à vide plus récente (manuelle) n'est pas touchée.
+  void _onSessionStatus(VoiceSessionStatus status) {
+    if (status is! Connecting) return;
+    final int? startup = _startupResetGeneration;
+    if (startup == null) return;
+    _startupResetGeneration = null;
+    if (_resetGeneration == startup) {
+      _resetGeneration++;
+      _cancelRetryWait();
     }
   }
 
@@ -353,6 +383,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // Plus de réessai de remise à vide une fois la page fermée.
     _resetGeneration++;
     _cancelRetryWait();
+    unawaited(_statusSubscription?.cancel());
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc

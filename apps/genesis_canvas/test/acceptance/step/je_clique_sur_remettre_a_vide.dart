@@ -13,5 +13,6 @@ Future<void> jeCliqueSurRemettreAVide(WidgetTester tester) async {
     ),
     'le bouton « Remettre à vide » (reset-button) est absent',
   );
+  SessionHarness.resetsBeforeClick = SessionHarness.backend.canvasResets;
   await SessionHarness.tap(tester, AcceptanceKeys.resetButton);
 }
