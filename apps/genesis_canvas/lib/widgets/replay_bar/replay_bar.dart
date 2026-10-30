@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:feature_replay/feature_replay.dart'
     show
         ReplayActive,
@@ -249,9 +251,7 @@ class _PositionSliderState extends State<_PositionSlider> {
     final ReplaySnapshot? snapshot = widget.snapshot;
     final double max = snapshot == null
         ? 1
-        : snapshot.duration.inMilliseconds
-              .clamp(1, double.maxFinite.toInt())
-              .toDouble();
+        : math.max(1, snapshot.duration.inMilliseconds).toDouble();
     final double value = (_dragging ?? snapshot?.position.inMilliseconds ?? 0)
         .toDouble()
         .clamp(0, max);

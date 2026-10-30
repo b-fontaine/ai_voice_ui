@@ -56,7 +56,14 @@ class ReplayPlayer {
     required ReplaySettings settings,
     required this._inject,
     required this._clearStage,
-  }) : _entries = List<JournalEntry>.unmodifiable(entries),
+  }) : assert(settings.tick > Duration.zero, 'tick doit être > 0'),
+       assert(settings.maxGap >= Duration.zero, 'maxGap doit être >= 0'),
+       assert(settings.speeds.isNotEmpty, 'speeds ne doit pas être vide'),
+       assert(
+         settings.speeds.contains(settings.defaultSpeed),
+         'defaultSpeed doit figurer dans speeds',
+       ),
+       _entries = List<JournalEntry>.unmodifiable(entries),
        _settings = settings,
        _speed = settings.defaultSpeed {
     Duration at = Duration.zero;
@@ -147,7 +154,9 @@ class ReplayPlayer {
 
   /// Change la vitesse ; la position continue sans saut.
   void setSpeed(double speed) {
-    if (speed <= 0) throw ArgumentError.value(speed, 'speed', 'doit être > 0');
+    if (!speed.isFinite || speed <= 0) {
+      throw ArgumentError.value(speed, 'speed', 'doit être fini et > 0');
+    }
     if (_disposed || speed == _speed) return;
     _speed = speed;
     _publish();

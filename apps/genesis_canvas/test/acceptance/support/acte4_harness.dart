@@ -32,10 +32,10 @@ abstract final class ReplayKeys {
 
 /// État et aides partagés par les scénarios de l'acte 4 (spec 010).
 ///
-/// Réglages de la spec, tenus ici tant que l'app ne les reçoit pas par
-/// injection (`replayMaxGap`, pas du lecteur) : les steps s'appuient sur ces
-/// valeurs par défaut de pdr-0066 (plafond d'écart 3 s, pas 100 ms, vitesse
-/// initiale 1×).
+/// Réglages de la spec : l'app les reçoit par injection (`GenesisConfig`), mais
+/// les steps s'appuient sur les valeurs par défaut de pdr-0066 (plafond d'écart
+/// 3 s, pas 100 ms, vitesse initiale 1×) et les recopient ici pour calculer
+/// leurs attentes.
 class Acte4Harness {
   Acte4Harness._();
 

@@ -282,4 +282,24 @@ void main() {
 
     expect(resetButton(tester).onPressed, isNotNull);
   });
+
+  testWidgets('en rejeu : un pas du lecteur ne reconstruit pas la barre', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    replay.bloc.add(const ReplayPlayPressed());
+    await tester.pump();
+    await tester.pump();
+    final ReplayState before = replay.bloc.state;
+    final Text label = tester.widget<Text>(find.text('Acte 4 · Rejeu'));
+
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(replay.bloc.state, isNot(before), reason: 'la position a avancé');
+    expect(
+      identical(tester.widget<Text>(find.text('Acte 4 · Rejeu')), label),
+      isTrue,
+      reason: 'le sous-arbre n\'est pas reconstruit à chaque pas',
+    );
+  });
 }

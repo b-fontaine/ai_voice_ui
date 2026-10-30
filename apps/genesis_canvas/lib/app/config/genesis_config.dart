@@ -234,28 +234,29 @@ class GenesisConfig {
   final Duration replayMaxGap;
 
   /// Écart maximal par défaut entre deux messages rejoués (3 s).
-  static const Duration defaultReplayMaxGap = Duration(seconds: 3);
+  static const Duration defaultReplayMaxGap = ReplaySettings.defaultMaxGap;
 
   /// Pas de l'horloge du lecteur de rejeu (`GENESIS_REPLAY_TICK_MS`, 10 à
   /// 1000 ms, défaut 100 ms).
   final Duration replayTick;
 
   /// Pas par défaut du lecteur de rejeu (100 ms).
-  static const Duration defaultReplayTick = Duration(milliseconds: 100);
+  static const Duration defaultReplayTick = ReplaySettings.defaultTick;
 
   /// Plafond du journal des messages A2UI (`GENESIS_REPLAY_JOURNAL_MAX`, 1 à
   /// 100000, défaut 5000) : au-delà, il cesse d'enregistrer.
   final int replayJournalMaxEntries;
 
   /// Plafond par défaut du journal (5000 messages).
-  static const int defaultReplayJournalMaxEntries = 5000;
+  static const int defaultReplayJournalMaxEntries =
+      ReplaySettings.defaultJournalMaxEntries;
 
   /// Vitesse du rejeu au premier démarrage (`GENESIS_REPLAY_SPEED`, l'une des
   /// vitesses proposées par la barre, défaut 1).
   final double replayDefaultSpeed;
 
   /// Vitesse de rejeu par défaut (1x).
-  static const double defaultReplaySpeed = 1.0;
+  static const double defaultReplaySpeed = ReplaySettings.defaultStartSpeed;
 
   /// Position, en fraction de la durée comprimée du rejeu (`GENESIS_REPLAY_AT`,
   /// 0 à 1), où la capture est prise en mode scénario ; `null` : capture de la
@@ -464,10 +465,10 @@ class GenesisConfig {
     final raw = _read(environment, _replaySpeedVariable);
     if (raw == null) return null;
     final speed = _decimalPattern.hasMatch(raw) ? double.parse(raw) : null;
-    if (speed == null || !const ReplaySettings().speeds.contains(speed)) {
+    if (speed == null || !ReplaySettings.defaultSpeeds.contains(speed)) {
       throw GenesisConfigException(
         'La variable $_replaySpeedVariable est invalide : l\'une des vitesses '
-        '${const ReplaySettings().speeds.join(', ')} est attendue.',
+        '${ReplaySettings.defaultSpeeds.join(', ')} est attendue.',
       );
     }
     return speed;

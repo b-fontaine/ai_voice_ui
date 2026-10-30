@@ -144,6 +144,15 @@ void main() {
     });
   });
 
+  test('setSpeed refuse une vitesse NaN ou infinie', () {
+    fakeAsync((FakeAsync async) {
+      final _Rig rig = _Rig(_entries());
+      expect(() => rig.player.setSpeed(double.nan), throwsArgumentError);
+      expect(() => rig.player.setSpeed(double.infinity), throwsArgumentError);
+      rig.player.dispose();
+    });
+  });
+
   test('pause fige la position et annule le minuteur ; play reprend', () {
     fakeAsync((FakeAsync async) {
       final _Rig rig = _Rig(_entries());

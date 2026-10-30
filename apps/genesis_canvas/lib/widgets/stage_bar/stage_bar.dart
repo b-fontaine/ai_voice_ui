@@ -39,9 +39,9 @@ class StageBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            BlocBuilder<ReplayBloc, ReplayState>(
-              builder: (BuildContext context, ReplayState replay) {
-                final bool replaying = replay is ReplayActive;
+            BlocSelector<ReplayBloc, ReplayState, bool>(
+              selector: (ReplayState replay) => replay is ReplayActive,
+              builder: (BuildContext context, bool replaying) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,

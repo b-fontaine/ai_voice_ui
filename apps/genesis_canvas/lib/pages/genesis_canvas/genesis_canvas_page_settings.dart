@@ -17,10 +17,10 @@ class GenesisCanvasPageSettings {
     required this.canvasActionRetries,
     required this.canvasActionRetryInterval,
     required this.canvasActionMaxDuration,
-    this.replayJournalMaxEntries = 5000,
-    this.replayTick = const Duration(milliseconds: 100),
-    this.replayMaxGap = const Duration(seconds: 3),
-    this.replayDefaultSpeed = 1.0,
+    required this.replayJournalMaxEntries,
+    required this.replayTick,
+    required this.replayMaxGap,
+    required this.replayDefaultSpeed,
     this.replayCaptureAt,
   });
 
