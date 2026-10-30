@@ -11,11 +11,12 @@
 | 003 | J2 : backend squelette (relais SDP, sideband, app-channel, compose, CI) | EP-01, EP-02 | J2 | Terminée ✅, publiée (`c193434`) | 2026-10-29 |
 | 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Terminée ✅, publiée (`0d979f9`) | 2026-10-29 |
 | 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | Terminée ⚠️ (essai réel avec micro à faire en répétition), publiée (`33f475f`) | 2026-10-29 |
-| 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | Revue | 2026-10-30 |
+| 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | Refactorisation (5 lots : R1 CI bloquante, agents, planification, contrat/phrases, hygiène) | 2026-10-30 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-30 | 006 : revue d'architecte du code rendue (NON CONFORME : 1 bloquante R1 CI, 5 importantes, 4 mineures) ; refactorisation en 5 lots séquentiels. **Pour le porteur, sans bloquer** : pdr-0023 contre les composeurs déterministes (Q-17) à dire avant la démo ; remise à vide (Q-70). |
 | 2026-10-30 | 006 : **TDD terminé** (T05, T06, T01-T04, T10-T16 : noyau `internal/kit`, jeu de données, agents Qualité / Voix du client / Livraison, planificateur par tags de carte, message `plan`, état `rejected`, surfaces actives, validateur de propriétés, échec partiel honnête, noms dans `AGENTS`, compose à trois agents) ; `gate --full` vert sur arbre propre (40 contrôles) ; passage à la revue d'architecte du code. |
 | 2026-10-30 | 006 : **Gherkin terminé** (T05 déplacement du module `agents` ; T06 fixtures `contracts/a2ui/genesis/v1/` ; G1, G1bis, G2, G2bis, G3, G4 rouges pour la bonne raison ; `gate --unit go` vert sur arbre propre) ; passage au TDD (T10 : noyau `internal/kit`). |
 | 2026-10-30 | 006 : revue du plan rendue (À AMENDER : 1 bloquant, 6 importants) ; amendements A1-A8 intégrés (choix des agents par l'orchestrateur, registre source de vérité, contrat en fixtures, validateur de propriétés, tâches réordonnées) ; passage à Gherkin (T05 d'abord). |
