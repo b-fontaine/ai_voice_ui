@@ -3,6 +3,6 @@ library;
 
 export 'src/model/agent_activity_bloc.dart' show AgentActivityBloc;
 export 'src/model/agent_activity_event.dart'
-    show AgentActivityEvent, AgentActivitySourceSubscribed;
+    show AgentActivityEvent, AgentActivityReset, AgentActivitySourceSubscribed;
 export 'src/model/agent_activity_state.dart'
     show AgentActivityState, AgentRunState, AgentStatus;

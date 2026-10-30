@@ -134,7 +134,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		return nil, err
 	}
 	handler, err := httpapi.NewHandler(httpapi.Options{
-		Sessions: service, App: hub, Clock: clock, Logger: logger,
+		Sessions: service, Canvas: delegations, App: hub, Clock: clock, Logger: logger,
 		RateBurst: cfg.SessionRateBurst, RateWindow: cfg.SessionRateWindow, MaxBodyBytes: maxOfferBytes,
 		AllowedHosts: cfg.AllowedHosts,
 	})

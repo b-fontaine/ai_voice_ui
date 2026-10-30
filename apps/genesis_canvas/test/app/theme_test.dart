@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
@@ -19,13 +20,13 @@ class _FakeBundle extends CachingAssetBundle {
   }
 }
 
-const _catalog =
-    'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
+const _catalog = GenesisContract.defaultCatalogId;
 
 const _replay =
     '''
 {"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s","catalogId":"$_catalog"}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"Text","text":"Sessions sans crash"}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s","path":"/kpi","value":{"label":"Sessions sans crash","value":"99,57 %","trend":"-0,36 pt","threshold":"99,50 %","status":"risk","statusLabel":"Risque"}}}}
 ''';
 
 void main() {
@@ -51,7 +52,9 @@ void main() {
 
     final text = find.descendant(
       of: find.byType(Surface),
-      matching: find.text('Sessions sans crash'),
+      // La valeur (texte principal du KPI) ; le libellé est volontairement
+      // en gris secondaire.
+      matching: find.text('99,57 %'),
     );
     expect(text, findsOneWidget);
 

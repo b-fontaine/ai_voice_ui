@@ -9,6 +9,9 @@ import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
+import 'package:shared_design_system/shared_design_system.dart';
+
+import '../support/paragraphs.dart';
 
 void main() {
   late AgentActivityBloc bloc;
@@ -104,6 +107,48 @@ void main() {
     expect(find.text('en cours'), findsNothing);
   });
 
+  testWidgets(
+    'la couleur du point vient des jetons du thème de scène (RG-09)',
+    (tester) async {
+      await pumpRail(tester);
+      const theme = SceneTheme.dark();
+      Color? dot(String agent) => tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: row(agent),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .map((b) => (b.decoration as BoxDecoration).color)
+          .first;
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 'analyse',
+          state: AgentTaskState.working,
+        ),
+      );
+      expect(dot('Qualité'), theme.agentWorking);
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 'analyse',
+          state: AgentTaskState.completed,
+        ),
+      );
+      expect(dot('Qualité'), theme.okForeground);
+      // L'état reste dit en toutes lettres : la couleur n'est qu'un renfort.
+      expect(
+        find.descendant(of: row('Qualité'), matching: find.text('terminé')),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('un échec affiche son détail', (tester) async {
     await pumpRail(tester);
 
@@ -176,5 +221,179 @@ void main() {
 
     expect(row('Qualité'), findsOneWidget);
     expect(row('Risques'), findsOneWidget);
+  });
+
+  testWidgets(
+    'un plan affiche orchestrateur, agent retenu et agents en veille',
+    (tester) async {
+      await pumpRail(tester);
+      await emit(
+        tester,
+        PlanReceived(
+          delegation: 'd1',
+          selected: const <String>['Voix du client'],
+          idle: const <String>['Qualité', 'Livraison'],
+        ),
+      );
+      expect(row('Orchestrateur'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: row('Voix du client'),
+          matching: find.text('en attente'),
+        ),
+        findsOneWidget,
+      );
+      for (final String name in <String>['Qualité', 'Livraison']) {
+        expect(
+          find.descendant(of: row(name), matching: find.text('en veille')),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('aucun agent retenu'), findsNothing);
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Voix du client',
+          task: 't',
+          state: AgentTaskState.working,
+        ),
+      );
+      expect(
+        find.descendant(
+          of: row('Voix du client'),
+          matching: find.text('en cours'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('un plan vide affiche « aucun agent retenu »', (tester) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd',
+        selected: const <String>[],
+        idle: const <String>['Qualité'],
+      ),
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('agents-rail')),
+        matching: find.text('aucun agent retenu'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('agents-none')), findsOneWidget);
+  });
+
+  testWidgets('un agent qui refuse est « hors périmètre » avec son détail', (
+    tester,
+  ) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd',
+        selected: const <String>['Qualité'],
+        idle: const <String>[],
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't',
+        state: AgentTaskState.rejected,
+        detail: 'hors périmètre',
+      ),
+    );
+    expect(
+      find.descendant(
+        of: row('Qualité'),
+        matching: find.text('hors périmètre'),
+      ),
+      findsOneWidget, // le détail identique au libellé n'est pas répété
+    );
+  });
+
+  testWidgets('tout le texte du rail fait au moins 24 px et reste lisible', (
+    tester,
+  ) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd1',
+        selected: const <String>['Qualité', 'Voix du client'],
+        idle: const <String>['Livraison'],
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.working,
+        label: 'Analyse de la release',
+      ),
+    );
+
+    expect(paragraphsBelowMinimum(tester), isEmpty);
+    const theme = SceneTheme.dark();
+    final Text name = tester.widget<Text>(
+      find.descendant(of: row('Qualité'), matching: find.text('Qualité')),
+    );
+    expect(name.style?.color, theme.textPrimary);
+  });
+
+  testWidgets('un nom d\'agent de 80 caractères s\'abrège sans déborder', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpRail(tester);
+    final String name = 'Agent${' très long'.padRight(75, 'x')}';
+    expect(name, hasLength(80));
+    await emit(
+      tester,
+      AgentActivityReceived(
+        agent: name,
+        task: 't1',
+        state: AgentTaskState.working,
+        label: 'Analyse de la release',
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Text shown = tester.widget<Text>(
+      find.descendant(of: row(name), matching: find.text(name)),
+    );
+    expect(shown.overflow, TextOverflow.ellipsis);
+    expect(shown.maxLines, 1);
+    expect(paragraphsBelowMinimum(tester), isEmpty);
+  });
+
+  testWidgets('un détail très long s\'abrège sans déborder', (tester) async {
+    tester.view.physicalSize = const Size(900, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpRail(tester);
+    await emit(
+      tester,
+      AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.failed,
+        label: 'Analyse de la release ${'très longue ' * 20}',
+        detail: 'délai dépassé ${'encore ' * 30}',
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(row('Qualité'), findsOneWidget);
   });
 }

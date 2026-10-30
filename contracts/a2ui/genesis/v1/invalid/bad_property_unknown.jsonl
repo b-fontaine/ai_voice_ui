@@ -1,0 +1,2 @@
+{"version":"v0.9","createSurface":{"surfaceId":"kpi","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","updateComponents":{"surfaceId":"kpi","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"},"color":"red"}]}}

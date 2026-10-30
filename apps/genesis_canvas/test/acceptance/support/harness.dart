@@ -34,6 +34,10 @@ class Harness {
       GenesisCanvasApp(
         config: GenesisConfig(scenario: scenario, snapshotPath: snapshotPath),
         exitHandler: exitCodes.add,
+        // Frontière « temps » : le rejeu enchaîne ses douze messages sans
+        // attente réelle (le rythme de l'asset est celui d'une démonstration ;
+        // `pumpAndSettle` s'arrêterait entre deux messages espacés de 500 ms).
+        replayDelay: (_) async {},
       ),
     );
     await tester.pump();

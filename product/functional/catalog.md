@@ -4,8 +4,8 @@ title: Catalogue de composants
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
-links: [p-ar-app-channel-contract, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
+sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p11, product/sources/design-example.pdf]
+links: [p-ar-app-channel-contract, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, p-ar-backend, p-rm-roadmap, pdr-0017-source-hierarchy-sheet-over-mockups, genui-data-model, p-fn-business-rules, p-fn-mockups, p-fn-dataset, p-fn-screen, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions, genui-custom-catalog-item, genui-catalog-ids, genui-a2ui-security, ux-genui-catalog-as-ds, ux-genui-errors-validation, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0039-component-voice-interactions-via-fr07]
 tags: [catalogue, composants, a2ui, genui, theme]
 ---
 # Catalogue de composants
@@ -43,9 +43,26 @@ Le catalogue est maintenant un **contrat testé** : `contracts/a2ui/genesis/v1/`
 - **Deux listes** : `components` (4, ceux qui ont un schéma ; valeur de `A2UI_COMPONENTS`) et `catalogComponents` (les **6** de [pdr-0014](../decisions/pdr-0014-six-component-catalog.md)). L'étagère (FR-06, 007) se construit sur `catalogComponents`, le validateur sur `components` ; `ActionBar` et `CrashList` n'ont pas de schéma avant leur fonctionnalité.
 - **Composants plats** : une surface = un composant `root` lié à son chemin (`data: {path}`), sans `Column` ni `Text` ; couleurs et tailles viennent du thème de scène (RG-09).
 - **Statuts** : codes fermés `ok` | `risk` | `blocking` (validé / à risque / bloquant) accompagnés d'un libellé séparé (`statusLabel`, `levelLabel`) ; aucune couleur côté client ne dépend d'un libellé français. Checklist : `items[].level`, `recommendation {level, label}`, `decisionStatus`. Statuts tranchés (Q-35 → [pdr-0054](../decisions/pdr-0054-stage-screen-orb-acts-checklist.md)) ; libellés du statut global : voir [p-fn-dataset](dataset.md).
-- **Trois temps (RG-02)** : squelette (`createSurface` puis composant sans donnée), composants, données (`updateDataModel` du chemin entier). Le backend ne garantit que l'**ordre** ; rendre le squelette visible est à 007. `sendDataModel: false`.
+- **Trois temps (RG-02)** : squelette (`createSurface` puis composant sans donnée), composants, données (`updateDataModel` du chemin entier). Le backend ne garantit que l'**ordre** ; le squelette est rendu visible côté app par 007 (§ ci-dessous). `sendDataModel: false`.
 - **Acte 2 (J4)** : champs facultatifs `comparison {label, value, delta}` réservés (KPI, avis), tolérés par le client ; FR-07 écrira le chemin entier, jamais un sous-chemin ([genui-data-model]).
 - **Valeurs** : chaînes déjà formatées à la française (« 99,57 % », « −0,36 pt »), nombres JSON pour les séries ; calculées par le backend depuis le jeu de données.
+
+## Rendu côté app : trois états par composant (007, 2026-10-30)
+
+Livré par la fonctionnalité 007 ; implémentation : [p-ar-frontend-screen](../architecture/frontend-screen.md). Les quatre composants du contrat (`components`) sont rendus ; `ActionBar` et `CrashList` n'ont pas de schéma et ne sont jamais utilisés (l'étagère les montre « inutilisés »).
+
+| État | Quand | Rendu |
+|---|---|---|
+| **Squelette** (RG-02) | de `createSurface` à `updateComponents` | emplacement de la surface, bloc de chargement du thème de scène, peint à la frame qui suit `createSurface` |
+| **Sans données** | composants reçus, objet lié absent (`updateComponents` sans `updateDataModel`) | cellule vide du thème de scène, distincte du squelette |
+| **Neutre** (RG-10) | objet incomplet, champ de mauvais type, code de statut hors `ok\|risk\|blocking` | état neutre du composant, **sans message d'erreur ni exception** ; la démo continue |
+
+- **Données incomplètes (RG-10)** : un champ requis du contrat (`catalog.json`, y compris dans les `series`, `excerpts`, `items`, `recommendation`) manquant donne l'état neutre ; les champs inconnus (dont `comparison`, acte 2) sont tolérés. Le statut se lit sur le **code** (`ok|risk|blocking`), jamais sur le libellé français.
+- **Troncature honnête de la checklist** : quand tous les critères ne tiennent pas, les critères `blocking` puis `risk` sont gardés en priorité (ordre d'origine conservé) et la dernière ligne annonce **« + N autres critères »** ; jamais de ligne rognée en silence. Acte 1 : 3 critères, qui tiennent.
+- **Autres débordements** : une ligne par libellé, ellipse au-delà (`maxLines`), jamais de réduction sous 24 px (NFR-05).
+- **Emplacements déterministes** (l'app place les surfaces, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : `kpi`, `trend`, `reviews`, `checklist` dans cet ordre, puis les surfaces inconnues dans leur ordre d'arrivée ; **2×2** jusqu'à 4 surfaces, **3×2** pour 5 ou 6 (NFR-06).
+- **Défense en profondeur** : un message hors catalogue (composant, propriété, liaison littérale) est refusé par le validateur client avant le moteur ([pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)) ; le canevas ne montre alors aucune surface pour ce message et le panneau du protocole le marque « refusé ».
+- **Écart consigné** : stories Widgetbook et goldens par composant reportés ([p-ar-frontend-screen](../architecture/frontend-screen.md), coupes C1 et C3 de la roadmap).
 
 ## Historique : les 8 composants de la fiche (§ 7)
 

@@ -10,6 +10,8 @@ void main() {
         orbSpeakingThreshold: threshold,
         sessionCloseTimeout: const Duration(seconds: 10),
         exitCloseTimeout: const Duration(seconds: 12),
+        canvasResetRetries: 8,
+        canvasResetRetryInterval: const Duration(milliseconds: 1500),
       );
 
   test('égalité par valeur', () {

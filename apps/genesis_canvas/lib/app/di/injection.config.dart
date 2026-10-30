@@ -35,6 +35,10 @@ extension GetItInjectableX on _i174.GetIt {
       () => appModule.voiceRelay(gh<_i32.GenesisConfig>()),
       dispose: _i580.closeVoiceRelay,
     );
+    gh.lazySingleton<_i769.CanvasResetClient>(
+      () => appModule.canvasResetClient(gh<_i32.GenesisConfig>()),
+      dispose: _i580.closeCanvasResetClient,
+    );
     gh.lazySingleton<_i769.AppChannel>(
       () => appModule.appChannel(gh<_i32.GenesisConfig>(), gh<StringSink>()),
     );

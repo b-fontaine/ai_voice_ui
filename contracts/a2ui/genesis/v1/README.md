@@ -12,3 +12,7 @@ Ces fixtures sont le **contrat exécutable** entre les agents A2A, l'orchestrate
 Le texte `${CATALOG_ID}` est un placeholder (l'identifiant réel est provisoire, Q-44, et vient de la configuration `A2UI_CATALOG_ID`). Tout consommateur le remplace, **textuellement et partout**, par l'identifiant configuré avant de lire une ligne ou d'attendre une égalité.
 
 Les fixtures ne doivent jamais contenir d'identifiant réel.
+
+## Fixtures négatives (`invalid/`)
+
+Chaque fichier `invalid/*.jsonl` est une séquence de messages (une ligne JSON chacune, `${CATALOG_ID}` à remplacer comme ci-dessus) à rejouer, dans l'ordre, sur un validateur neuf : tous les messages sont acceptés sauf le dernier, qui est refusé avec le code que `invalid/expected.json` associe au nom du fichier (codes fermés du validateur Go ; `too_large.jsonl` dépasse volontairement 64 Kio, la limite d'un message). Le validateur Go et le validateur Dart partagent ces fixtures (parité des refus).

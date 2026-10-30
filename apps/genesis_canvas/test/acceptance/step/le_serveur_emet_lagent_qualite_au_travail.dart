@@ -7,6 +7,8 @@ Future<void> leServeurEmetLagentQualiteAuTravail(WidgetTester tester) async {
   await SessionHarness.emitFixture(
     tester,
     (e) =>
+        // Le plan précède toujours l'activité (A8b).
+        SessionHarness.isType(e, 'plan') ||
         SessionHarness.isActivity(e, 'working') ||
         e['type'] == 'usage' ||
         (e['type'] == 'transcript' &&

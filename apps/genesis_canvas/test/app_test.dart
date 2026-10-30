@@ -3,10 +3,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/app.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 
+/// Taille de l'écran de la démo (six zones, budget de la spec 007).
+void _demoScreen(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1920, 1080);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   testWidgets("l'app démarre et affiche l'orbe et le canevas vide", (
     tester,
   ) async {
+    _demoScreen(tester);
     await tester.pumpWidget(const GenesisCanvasApp());
 
     expect(find.byKey(const Key('voice-orb')), findsOneWidget);
@@ -15,6 +23,7 @@ void main() {
 
   testWidgets('chaque montage a son propre graphe : remontage sans état '
       'résiduel, même avec une autre configuration', (tester) async {
+    _demoScreen(tester);
     await tester.pumpWidget(
       GenesisCanvasApp(
         config: GenesisConfig(backendUrl: Uri.parse('http://127.0.0.1:1')),

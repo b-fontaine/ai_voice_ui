@@ -1,0 +1,114 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+
+import 'canvas_reset_client.dart';
+
+/// [CanvasResetClient] sur HTTP (`package:http`, `dart:io`).
+///
+/// `POST {baseUrl}/canvas/reset`, `Content-Type: application/json`, corps
+/// `{}`. Aucun en-tête `Origin` n'est envoyé : le backend refuse (403) toute
+/// requête qui en porte un (A6). Le client `http` injecté appartient à
+/// l'appelant : [close] ne ferme que celui créé ici.
+///
+/// [baseUrl] doit être une origine (schéma, hôte, port) : ni chemin autre
+/// que `/`, ni requête, ni fragment (sinon [ArgumentError] à la
+/// construction).
+class HttpCanvasResetClient implements CanvasResetClient {
+  HttpCanvasResetClient({
+    required this.baseUrl,
+    required this.timeout,
+    http.Client? client,
+    this.onError,
+  }) : _client = client ?? http.Client(),
+       _ownsClient = client == null {
+    if ((baseUrl.path.isNotEmpty && baseUrl.path != '/') ||
+        baseUrl.hasQuery ||
+        baseUrl.hasFragment) {
+      throw ArgumentError.value(
+        'baseUrl',
+        'baseUrl',
+        'doit être une origine (sans chemin, requête ni fragment)',
+      );
+    }
+  }
+
+  /// Origine du backend (valeur de `GENESIS_BACKEND_URL`).
+  final Uri baseUrl;
+
+  /// Délai maximal de la requête (envoi et lecture de la réponse).
+  final Duration timeout;
+
+  /// Reçoit une phrase fermée à chaque échec (jamais l'URL ni le corps).
+  /// Une exception levée par ce rappel est ignorée.
+  final void Function(String reason)? onError;
+
+  final http.Client _client;
+  final bool _ownsClient;
+  bool _closed = false;
+
+  /// Ferme le client `http` s'il a été créé par cette instance. Les appels
+  /// suivants de [reset] renvoient [CanvasResetResult.unreachable].
+  void close() {
+    _closed = true;
+    if (_ownsClient) _client.close();
+  }
+
+  Uri get _resetUri {
+    final base = baseUrl.path.endsWith('/')
+        ? baseUrl.path.substring(0, baseUrl.path.length - 1)
+        : baseUrl.path;
+    return baseUrl.replace(path: '$base/canvas/reset', query: '');
+  }
+
+  @override
+  Future<CanvasResetResult> reset() async {
+    if (_closed) return _fail(CanvasResetResult.unreachable);
+    final request = http.Request('POST', _resetUri)
+      ..headers['Content-Type'] = 'application/json'
+      ..body = '{}';
+    try {
+      final status = await Future<int>(() async {
+        final response = await _client.send(request);
+        // Le corps n'est pas lu : on le vide pour libérer la connexion.
+        await response.stream.drain<void>();
+        return response.statusCode;
+      }).timeout(timeout);
+      return switch (status) {
+        204 => CanvasResetResult.done,
+        409 => _fail(CanvasResetResult.busy),
+        _ => _fail(CanvasResetResult.rejected),
+      };
+    } on TimeoutException {
+      return _fail(CanvasResetResult.timeout);
+    } on SocketException {
+      return _fail(CanvasResetResult.unreachable);
+    } on http.ClientException {
+      return _fail(CanvasResetResult.unreachable);
+    } on Object {
+      // TLS, client fermé (StateError) : le contrat du port ne lève jamais,
+      // et le message d'origine contient l'URL.
+      return _fail(CanvasResetResult.unreachable);
+    }
+  }
+
+  CanvasResetResult _fail(CanvasResetResult result) {
+    final reason = switch (result) {
+      CanvasResetResult.done => null,
+      CanvasResetResult.busy =>
+        'Remise à vide refusée : le backend est occupé.',
+      CanvasResetResult.rejected => 'Remise à vide refusée par le backend.',
+      CanvasResetResult.timeout => 'Remise à vide : délai dépassé.',
+      CanvasResetResult.unreachable => 'Remise à vide : backend injoignable.',
+    };
+    if (reason != null) {
+      try {
+        onError?.call(reason);
+      } on Object {
+        // Un journal défaillant ne doit pas faire échouer la remise à vide.
+      }
+    }
+    return result;
+  }
+}

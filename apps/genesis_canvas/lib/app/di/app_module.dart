@@ -31,6 +31,11 @@ void closeVoiceRelay(VoiceRelay relay) {
   if (relay is HttpVoiceRelay) relay.close();
 }
 
+/// Libération du client de remise à vide par `getIt.reset()`.
+void closeCanvasResetClient(CanvasResetClient client) {
+  if (client is HttpCanvasResetClient) client.close();
+}
+
 @module
 abstract class AppModule {
   @lazySingleton
@@ -42,6 +47,15 @@ abstract class AppModule {
     createTimeout: config.relayCreateTimeout,
     deleteTimeout: config.relayDeleteTimeout,
   );
+
+  @LazySingleton(dispose: closeCanvasResetClient)
+  CanvasResetClient canvasResetClient(GenesisConfig config) =>
+      // Pas de journal ici : la page consigne l'échec une seule fois, avec le
+      // contexte (réessais épuisés ou refus définitif).
+      HttpCanvasResetClient(
+        baseUrl: config.backendUrl,
+        timeout: config.canvasResetTimeout,
+      );
 
   @lazySingleton
   AppChannel appChannel(GenesisConfig config, StringSink errorSink) =>

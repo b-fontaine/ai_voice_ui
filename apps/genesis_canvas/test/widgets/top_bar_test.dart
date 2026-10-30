@@ -12,8 +12,11 @@ import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
+import 'package:shared_design_system/shared_design_system.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
+
+import '../support/paragraphs.dart';
 
 const Key _start = Key('start-button');
 const Key _stop = Key('stop-button');
@@ -364,6 +367,76 @@ void main() {
 
       expect(find.byKey(const Key('transcript-user')), findsOneWidget);
       expect(find.byKey(const Key('transcript-ai')), findsOneWidget);
+    });
+  });
+
+  group('zone de la barre supérieure (budget 160 px, texte >= 24 px)', () {
+    testWidgets('la barre fait 160 px de haut et accueille la régie', (
+      tester,
+    ) async {
+      await rig.pump(
+        tester,
+        bar: Align(
+          alignment: Alignment.topLeft,
+          child: TopBar(
+            orbLevel: rig.level,
+            stage: const SizedBox(
+              key: Key('stage-slot'),
+              width: 300,
+              height: 90,
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.byType(TopBar)).height, TopBar.height);
+      expect(find.byKey(const Key('stage-slot')), findsOneWidget);
+      // Avant le bouton de session, après la transcription.
+      expect(
+        tester.getTopLeft(find.byKey(const Key('stage-slot'))).dx,
+        lessThan(tester.getTopLeft(find.byKey(_start)).dx),
+      );
+    });
+
+    testWidgets('transcription longue et message d\'état : tout >= 24 px, '
+        'sans débordement', (tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await rig.pump(
+        tester,
+        bar: TopBar(
+          orbLevel: rig.level,
+          stage: const SizedBox(width: 300, height: 90),
+        ),
+      );
+      rig.events
+        ..add(
+          TranscriptDelta(
+            role: TranscriptRole.user,
+            text: 'Prépare la release trois point quatre ' * 12,
+            startMs: 0,
+            endMs: 1,
+          ),
+        )
+        ..add(
+          TranscriptDelta(
+            role: TranscriptRole.ai,
+            text: 'Je lance les trois agents sur la release ' * 12,
+            startMs: 2,
+            endMs: 3,
+          ),
+        );
+      await tester.pump();
+      await tester.pump();
+      await rig.backendUnreachable(tester);
+
+      expect(find.byKey(_status), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      expect(paragraphsBelowMinimum(tester), isEmpty);
+      const theme = SceneTheme.dark();
+      final role = tester.widget<Text>(find.text('Vous'));
+      expect(role.style?.color, theme.textSecondary);
     });
   });
 

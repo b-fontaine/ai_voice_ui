@@ -12,6 +12,8 @@ class GenesisCanvasPageSettings {
     required this.orbSpeakingThreshold,
     required this.sessionCloseTimeout,
     required this.exitCloseTimeout,
+    required this.canvasResetRetries,
+    required this.canvasResetRetryInterval,
   });
 
   /// Temps de montée du lissage de l'orbe.
@@ -32,6 +34,12 @@ class GenesisCanvasPageSettings {
   /// Délai maximal d'attente de l'arrêt de la session à la sortie de l'app.
   final Duration exitCloseTimeout;
 
+  /// Nombre de réessais de la remise à vide quand le backend est occupé.
+  final int canvasResetRetries;
+
+  /// Intervalle entre deux réessais de la remise à vide.
+  final Duration canvasResetRetryInterval;
+
   @override
   bool operator ==(Object other) =>
       other is GenesisCanvasPageSettings &&
@@ -40,7 +48,9 @@ class GenesisCanvasPageSettings {
       other.orbSilenceTimeout == orbSilenceTimeout &&
       other.orbSpeakingThreshold == orbSpeakingThreshold &&
       other.sessionCloseTimeout == sessionCloseTimeout &&
-      other.exitCloseTimeout == exitCloseTimeout;
+      other.exitCloseTimeout == exitCloseTimeout &&
+      other.canvasResetRetries == canvasResetRetries &&
+      other.canvasResetRetryInterval == canvasResetRetryInterval;
 
   @override
   int get hashCode => Object.hash(
@@ -50,5 +60,7 @@ class GenesisCanvasPageSettings {
     orbSpeakingThreshold,
     sessionCloseTimeout,
     exitCloseTimeout,
+    canvasResetRetries,
+    canvasResetRetryInterval,
   );
 }

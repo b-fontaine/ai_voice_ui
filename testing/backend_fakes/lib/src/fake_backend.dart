@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
+
+import 'contract_fixtures.dart';
 
 /// Comportement de `POST /voice/sessions`.
 enum PostMode {
@@ -22,6 +23,19 @@ enum PostMode {
 
   /// 200 avec `X-Session-Id` et une answer de plus de 128 Kio.
   oversizedAnswer,
+}
+
+/// Temps de fabrication d'une surface (RG-02) : chaque temps correspond à un
+/// message du contrat, dans l'ordre.
+enum SurfaceStage {
+  /// `createSurface` : l'app peint le squelette.
+  skeleton,
+
+  /// `updateComponents` : les composants, sans données.
+  components,
+
+  /// `updateDataModel` : les données.
+  data,
 }
 
 /// Faux backend de Genesis Canvas : un vrai serveur `dart:io` (HTTP et
@@ -97,6 +111,10 @@ class FakeBackend {
   /// WebSocket), par exemple 400 ; `null` : comportement normal.
   int? appRejectStatus;
 
+  /// Identifiant de catalogue substitué à `${CATALOG_ID}` dans les fixtures
+  /// du contrat (défaut : celui de la configuration).
+  String catalogId = ContractFixtures.defaultCatalogId;
+
   /// Délai avant la réponse à `DELETE`.
   Duration deleteDelay = Duration.zero;
 
@@ -108,7 +126,13 @@ class FakeBackend {
   final List<String?> appOrigins = <String?>[];
   final List<String> events = <String>[];
 
+  /// Nombre de requêtes `POST /canvas/reset` reçues.
+  int canvasResets = 0;
+
   final List<String> _sessions = <String>[];
+
+  /// Surfaces actives par session, déduites des messages `a2ui` publiés.
+  final Map<String, Set<String>> _activeSurfaces = <String, Set<String>>{};
   final List<_Published> _backlog = <_Published>[];
   final List<_Client> _clients = <_Client>[];
   int _counter = 0;
@@ -140,45 +164,9 @@ class FakeBackend {
     }).toList();
   }
 
-  /// Résout [fixtureUri] : `Isolate.resolvePackageUri` d'abord ; le lanceur
-  /// `flutter_tester` ne le prend pas en charge, on lit alors le
-  /// `package_config.json` de l'espace de travail (remonté depuis le
-  /// répertoire courant), ce qui revient à la même résolution par paquet.
-  static Future<Uri> _resolveFixture() async {
-    final uri = Uri.parse(fixtureUri);
-    try {
-      final resolved = await Isolate.resolvePackageUri(uri);
-      if (resolved != null) return resolved;
-    } on UnsupportedError {
-      // Repli ci-dessous.
-    }
-    var dir = Directory.current.absolute;
-    while (true) {
-      final config = File.fromUri(
-        dir.uri.resolve('.dart_tool/package_config.json'),
-      );
-      if (config.existsSync()) {
-        final packages =
-            (jsonDecode(await config.readAsString())
-                    as Map<String, Object?>)['packages']!
-                as List<Object?>;
-        for (final entry in packages.cast<Map<String, Object?>>()) {
-          if (entry['name'] != uri.pathSegments.first) continue;
-          final rootUri = entry['rootUri']! as String;
-          final root = config.uri.resolve(
-            rootUri.endsWith('/') ? rootUri : '$rootUri/',
-          );
-          final lib = root.resolve(entry['packageUri']! as String);
-          return lib.resolve(uri.pathSegments.skip(1).join('/'));
-        }
-      }
-      final parent = dir.parent;
-      if (parent.path == dir.path) {
-        throw StateError('Fixture introuvable : $fixtureUri');
-      }
-      dir = parent;
-    }
-  }
+  /// Résout [fixtureUri] par paquet (voir [ContractFixtures.resolvePackageFile]).
+  static Future<Uri> _resolveFixture() =>
+      ContractFixtures.resolvePackageFile(fixtureUri);
 
   /// Publie une enveloppe `{v:1,type,session,t_ms,data,agent?,task?}`.
   void emit(
@@ -206,12 +194,123 @@ class FakeBackend {
       envelope['type'] as String,
       jsonEncode(envelope),
     );
+    if (published.type == 'a2ui') _trackSurface(session, envelope['data']);
     if (published.type != 'orb.level') {
       _backlog.add(published);
     }
     for (final client in _clients.where((c) => c.accepts(session))) {
       client.socket.add(published.json);
     }
+  }
+
+  /// Publie la session de l'acte 1 construite depuis les exemples du contrat
+  /// (`contracts/a2ui/genesis/v1/examples/act1-*.jsonl`, [catalogId]
+  /// substitué) : `plan`, `agent.activity working` ×3, les messages `a2ui` des
+  /// quatre surfaces (trois temps chacune), puis `agent.activity completed` ×3.
+  /// Les enveloppes `a2ui` portent `agent` et `task`.
+  Future<void> emitGenesisAct1(String session) async {
+    final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
+    emitGenesisPlan(session, selected: ContractFixtures.act1Agents);
+    await emitGenesisActivity(session, 'working');
+    for (final surface in surfaces) {
+      await emitGenesisSurface(session, surface.surfaceId);
+    }
+    await emitGenesisActivity(session, 'completed');
+  }
+
+  /// Publie l'enveloppe `plan` de l'orchestrateur : [selected] retenus et
+  /// [idle] en veille (par défaut, les autres agents de l'acte 1).
+  void emitGenesisPlan(
+    String session, {
+    required List<String> selected,
+    List<String>? idle,
+    String delegation = 'deleg_1',
+  }) => emit(session, 'plan', <String, Object?>{
+    'delegation': delegation,
+    'selected': selected,
+    'idle':
+        idle ??
+        ContractFixtures.act1Agents
+            .where((a) => !selected.contains(a))
+            .toList(),
+  }, tMs: 2000);
+
+  /// Publie `agent.activity` ([state] : `working`, `completed`…) pour chacun
+  /// des [agents] (par défaut les trois agents de l'acte 1).
+  Future<void> emitGenesisActivity(
+    String session,
+    String state, {
+    List<String>? agents,
+  }) async {
+    final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
+    final tasks = <String, String>{for (final s in surfaces) s.agent: s.task};
+    for (final agent in agents ?? ContractFixtures.act1Agents) {
+      emit(
+        session,
+        'agent.activity',
+        <String, Object?>{
+          'agent': agent,
+          'task': tasks[agent],
+          'state': state,
+          'label': agent,
+        },
+        tMs: 2050,
+        agent: agent,
+        task: tasks[agent],
+      );
+    }
+  }
+
+  /// Publie les messages `a2ui` de la surface [surfaceId] de l'acte 1, du temps
+  /// [from] au temps [upTo] inclus (par défaut les trois temps). Permet de
+  /// montrer le squelette avant les composants, puis les données.
+  Future<void> emitGenesisSurface(
+    String session,
+    String surfaceId, {
+    SurfaceStage from = SurfaceStage.skeleton,
+    SurfaceStage upTo = SurfaceStage.data,
+  }) async {
+    final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
+    final surface = surfaces.firstWhere(
+      (s) => s.surfaceId == surfaceId,
+      orElse: () => throw ArgumentError('Surface inconnue : $surfaceId'),
+    );
+    for (var i = from.index; i <= upTo.index; i++) {
+      emit(
+        session,
+        'a2ui',
+        surface.messages[i],
+        tMs: 3500 + i * 50,
+        agent: surface.agent,
+        task: surface.task,
+      );
+    }
+  }
+
+  /// Publie une fixture négative du contrat (`invalid/<name>.jsonl`) : les
+  /// messages que le client doit refuser (pdr-0053).
+  Future<void> emitGenesisInvalid(
+    String session,
+    String name, {
+    String agent = 'Qualité',
+    String task = 'task_1',
+  }) async {
+    final messages = await ContractFixtures.invalidMessages(
+      name,
+      catalogId: catalogId,
+    );
+    for (final message in messages) {
+      emit(session, 'a2ui', message, tMs: 3500, agent: agent, task: task);
+    }
+  }
+
+  void _trackSurface(String session, Object? data) {
+    if (data is! Map) return;
+    final active = _activeSurfaces.putIfAbsent(session, () => <String>{});
+    final create = data['createSurface'];
+    if (create is Map) active.add(create['surfaceId'] as String);
+    final delete = data['deleteSurface'];
+    if (delete is Map) active.remove(delete['surfaceId']);
   }
 
   /// Publie [text] tel quel (même invalide) aux clients de [session] : pour
@@ -283,6 +382,9 @@ class FakeBackend {
     }
     if (request.method == 'DELETE' && path.startsWith('/voice/sessions/')) {
       return _delete(request, path.substring('/voice/sessions/'.length));
+    }
+    if (request.method == 'POST' && path == '/canvas/reset') {
+      return _canvasReset(request);
     }
     if (request.method == 'GET' && path == '/healthz') {
       request.response
@@ -363,6 +465,27 @@ class FakeBackend {
           : answerSdp,
     );
     await response.close();
+  }
+
+  /// `POST /canvas/reset` : compte la requête, répond 204, puis émet les
+  /// `deleteSurface` de l'orchestrateur pour les surfaces actives de chaque
+  /// session, dans l'ordre trié (comme le vrai backend, A4g).
+  Future<void> _canvasReset(HttpRequest request) async {
+    await request.drain<void>();
+    canvasResets++;
+    _record('canvas reset');
+    request.response.statusCode = HttpStatus.noContent;
+    await request.response.close();
+    for (final session in List<String>.of(_sessions)) {
+      final surfaces = (_activeSurfaces[session] ?? <String>{}).toList()
+        ..sort();
+      for (final id in surfaces) {
+        emit(session, 'a2ui', <String, Object?>{
+          'version': 'v0.9',
+          'deleteSurface': <String, Object?>{'surfaceId': id},
+        }, agent: 'orchestrateur');
+      }
+    }
   }
 
   Future<void> _delete(HttpRequest request, String id) async {

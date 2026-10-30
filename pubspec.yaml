@@ -14,6 +14,11 @@ workspace:
   - packages/shared/backend_channel
   - packages/features/voice_session
   - packages/features/agent_activity
+  - packages/entities/catalog
+  - packages/shared/design_system
+  - packages/features/protocol_feed
+  - packages/features/catalog_shelf
+  - packages/features/stage_controls
   - testing/backend_fakes
   - testing/bloc_harness
   - testing/voice_fakes

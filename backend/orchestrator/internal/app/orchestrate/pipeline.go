@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
@@ -65,6 +66,7 @@ type Pipeline struct {
 	// surfaces (décompte atomique), l'état des tâches en vol et closed.
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
+	running  int  // exécutions de Run en cours (étape de plan comprise) : ResetCanvas refuse
 	inflight []*taskState
 	wg       sync.WaitGroup
 }
@@ -169,6 +171,17 @@ func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
 // ou quand ctx est annulé ; après un ctx annulé par ErrSessionClosed, plus
 // rien n'est publié ni dit.
 func (p *Pipeline) Run(ctx context.Context, d Delegation) {
+	// Le drapeau est posé dès l'entrée, avant la lecture des cartes : l'étape de
+	// plan, qui ne publie encore rien, compte comme une délégation en cours.
+	p.mu.Lock()
+	p.running++
+	p.mu.Unlock()
+	defer func() {
+		p.mu.Lock()
+		p.running--
+		p.mu.Unlock()
+	}()
+
 	if len(p.deps.Agents) == 0 {
 		if p.waitGeneric(ctx, d) {
 			p.say(ctx, d.ID, p.deps.Phrases.NoAgent)
@@ -274,6 +287,32 @@ collect:
 func (p *Pipeline) Close() {
 	p.seal()
 	p.wg.Wait()
+}
+
+// ResetCanvas supprime toutes les surfaces actives de la session : un
+// `deleteSurface` par surface (ordre trié par surfaceId), publié par
+// l'orchestrateur sous le verrou de session, donc sans entrelacement avec le
+// registre. Le hub oublie la rétention de chaque surface ; le journal, lui,
+// garde tout, si bien que le rejeu reste cohérent. Le ContextID de la session
+// est conservé. Session fermée : sans effet. Délégation en cours : ErrCanvasBusy,
+// rien n'est changé. Idempotent : sur un registre vide, rien n'est émis.
+func (p *Pipeline) ResetCanvas() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.closed {
+		return nil
+	}
+	if p.running > 0 {
+		return port.ErrCanvasBusy
+	}
+	if p.deps.Registry == nil { // sans agent, aucune surface n'existe
+		return nil
+	}
+	for _, m := range p.deps.Registry.Reset() {
+		p.publishLocked(domain.TypeA2UI, OrchestratorName, "",
+			domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
+	}
+	return nil
 }
 
 func (p *Pipeline) seal() {

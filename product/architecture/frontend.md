@@ -4,15 +4,15 @@ title: Architecture de l'app Flutter desktop
 area: architecture
 status: draft
 updated: 2026-10-30
-sources: [specs/005-j2-app-voice-orb/status.md, specs/005-j2-app-voice-orb/plan.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf, knowledge:arch-recommended-structure, knowledge:arch-clean-fsd-combo, knowledge:genui-architecture, knowledge:ma-flutter-event-bus, knowledge:adr-0004-ds-visual-base-m3, knowledge:adr-0008-ds-widgetbook-4-beta]
-links: [p-ar-security, p-ar-app-channel-contract, pdr-0038-latency-measured-on-app-clock, pdr-0044-di-deferred-to-j2, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-replay, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-catalog, p-fn-requirements, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, arch-recommended-structure, arch-clean-fsd-combo, arch-fsd-public-api, bloc-no-cubit, bloc-event-transformers, di-no-service-locator, di-get-it-scopes, ma-flutter-event-bus, genui-architecture, genui-multiple-surfaces, genui-user-actions, genui-conversation-events, genui-custom-catalog-item, genui-catalog-ids, rt-provider-abstraction, rt-graceful-close, rt-echo-cancellation, perf-audio-visualizer-60hz, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ds-package-structure, ds-widgetbook-4-genui, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, adr-0001-initial-constraints, arch-pub-workspaces, bloc-emit-foreach, di-micro-packages, di-setup-versions, genui-a2ui-security, genui-custom-llm-adapter, genui-overview, proj-avw-risks, test-mock-boundaries-only, arch-official-use-cases, arch-official-components, rt-openai-webrtc-package, rt-flutter-webrtc-gpt-live-connect, ds-widgetbook-monorepo, ux-desktop-platform-kits, ds-material-ui-decoupling, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, ux-desktop-focus, perf-web-initial-load, proj-avw-genui-bridge, arch-recommended-dependency-rules, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0028-linux-demo-machine, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, rt-gpt-live-sideband]
+sources: [specs/007-j3-act1-frontend/status.md, specs/007-j3-act1-frontend/plan.md, specs/005-j2-app-voice-orb/status.md, specs/005-j2-app-voice-orb/plan.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf, knowledge:arch-recommended-structure, knowledge:arch-clean-fsd-combo, knowledge:genui-architecture, knowledge:ma-flutter-event-bus, knowledge:adr-0004-ds-visual-base-m3, knowledge:adr-0008-ds-widgetbook-4-beta]
+links: [p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, pdr-0055-genesis-catalog-id-versioned-uri, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, p-ar-security, p-ar-app-channel-contract, pdr-0038-latency-measured-on-app-clock, pdr-0044-di-deferred-to-j2, p-fn-business-rules, p-ar-overview, p-ar-agents-protocols, p-ar-replay, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-catalog, p-fn-requirements, p-rm-open-questions, pdr-0002-desktop-platform, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0011-adopt-knowledge-adrs, arch-recommended-structure, arch-clean-fsd-combo, arch-fsd-public-api, bloc-no-cubit, bloc-event-transformers, di-no-service-locator, di-get-it-scopes, ma-flutter-event-bus, genui-architecture, genui-multiple-surfaces, genui-user-actions, genui-conversation-events, genui-custom-catalog-item, genui-catalog-ids, rt-provider-abstraction, rt-graceful-close, rt-echo-cancellation, perf-audio-visualizer-60hz, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ds-package-structure, ds-widgetbook-4-genui, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, adr-0001-initial-constraints, arch-pub-workspaces, bloc-emit-foreach, di-micro-packages, di-setup-versions, genui-a2ui-security, genui-custom-llm-adapter, genui-overview, proj-avw-risks, test-mock-boundaries-only, arch-official-use-cases, arch-official-components, rt-openai-webrtc-package, rt-flutter-webrtc-gpt-live-connect, ds-widgetbook-monorepo, ux-desktop-platform-kits, ds-material-ui-decoupling, ds-color-dark-contrast, ds-widgetbook-a11y-tooling, ux-desktop-focus, perf-web-initial-load, proj-avw-genui-bridge, arch-recommended-dependency-rules, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0028-linux-demo-machine, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, rt-gpt-live-sideband]
 tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, design-system]
 ---
 # Architecture de l'app Flutter desktop
 
-**En bref.** L'app est un écran unique en 6 zones ([p-fn-screen](../functional/screen.md)), découpé en slices FSD dont chacune suit Clean en interne ([arch-clean-fsd-combo]). Toutes les zones lisent **un seul flux d'événements de session**, fourni soit par le backend (direct), soit par le journal (rejeu) : le rejeu de l'acte 4 réutilise donc exactement le même rendu ([p-ar-replay](replay.md)).
+**En bref.** L'app est un écran unique en 6 zones ([p-fn-screen](../functional/screen.md)), découpé en slices FSD dont chacune suit Clean en interne ([arch-clean-fsd-combo]). Toutes les zones lisent **un seul flux d'événements de session**, fourni soit par le backend (direct), soit par le journal (rejeu) : le rejeu de l'acte 4 réutilise donc exactement le même rendu ([p-ar-replay](replay.md)). Écran, catalogue `genesis` et remise à vide tels que livrés par 007 : [p-ar-frontend-screen](frontend-screen.md).
 
-> Statut : **draft**. Tout ce qui suit est une **proposition** de l'assistant (noms de slices, Blocs, arborescence), à valider, sauf les parties marquées « réel » (fonctionnalité 005, 2026-10-30). Les règles non négociables viennent de AGENTS.md §2 et [adr-0001-initial-constraints].
+> Statut : **draft**. Tout ce qui suit est une **proposition** de l'assistant (noms de slices, Blocs, arborescence), à valider, sauf les parties marquées « réel » (fonctionnalités 005 et 007, 2026-10-30). Les règles non négociables viennent de AGENTS.md §2 et [adr-0001-initial-constraints].
 
 ## Règles appliquées
 
@@ -26,26 +26,23 @@ tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, des
 | Config injectée | Modèle, voix, URL backend, `catalogId` lus depuis la config d'environnement | [proj-avw-risks] n°6 |
 | État genui hors des Blocs | Les Blocs ne connaissent que des `surfaceId` et des phases | [genui-conversation-events], [ma-flutter-event-bus] |
 
-## Slices FSD proposées
+## Slices FSD (proposées ; réalisées par 005 et 007 : voir « Arborescence »)
 
 | Couche | Slice | Rôle | Exigences |
 |---|---|---|---|
 | app | `app/` | bootstrap, DI racine, thème de scène, table des raccourcis, config | NFR-05, NFR-12 |
 | pages | `genesis_canvas` | page unique, racine de composition (`BlocProvider`) | — |
 | widgets | `top_bar` | orbe, transcription (répliques du speaker et de l'IA, réplique coupée tronquée : [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)), forme d'onde | FR-02, FR-19, RG-17 |
-| widgets | `canvas_board` | grille des surfaces (6 max) | FR-01, FR-04, FR-07, FR-15 |
 | widgets | `agents_rail` | orchestrateur + agents, liaisons animées | FR-03 |
-| widgets | `protocol_panel` | flux A2UI, repliable, mise en évidence | FR-05 |
-| widgets | `catalog_shelf` | étagère des composants | FR-06 |
-| widgets | `replay_bar` | lecture, pause, vitesse (acte 4) | FR-09 |
+| widgets | `protocol_panel`, `catalog_shelf`, `replay_bar`, `stage_bar` | flux A2UI repliable (FR-05) ; étagère (FR-06) ; lecture, pause, vitesse de l'acte 4 (FR-09, emplacement en 007) ; acte et remise à vide (FR-11) | FR-05, FR-06, FR-09, FR-11 |
 | features | `voice_session` | session voix (port + adaptateur GPT-Live WebRTC) | FR-02, FR-12, FR-13, FR-20 |
-| features | `canvas` | rendu GenUI, catalogue `genesis`, cycle de vie des surfaces, actions | FR-04, FR-07, FR-08, FR-16 |
+| features | `canvas` | rendu GenUI, catalogue `genesis`, `A2uiGate`, `CanvasBoard` (grille, 6 max), cycle de vie des surfaces, actions | FR-01, FR-04, FR-07, FR-08, FR-15, FR-16 |
 | features | `agent_activity` | état des agents à partir des événements d'orchestration | FR-03 |
 | features | `protocol_feed` | journal lisible des messages A2UI | FR-05 |
 | features | `replay` | journal du flux A2UI, lecteur (acte 4) | FR-09 |
 | features | `stage_controls` | contrôles cliquables et raccourcis facultatifs → events Bloc | FR-11, FR-20, NFR-12 |
 | entities | `session` | `SessionEvent` (sealed), port `SessionEventSource`, `TranscriptSegment` | — |
-| entities | `catalog` | descripteur pur Dart du catalogue (noms, ids) partagé par `canvas` et `catalog_shelf` | FR-06 |
+| entities | `catalog` | pur Dart : `GenesisContract` (noms, ids, propriétés, champs requis) et `GenesisMessageValidator`, partagés par `canvas`, `protocol_feed` et `catalog_shelf` | FR-06 |
 | shared | `core`, `backend_channel`, `realtime_transport`, `design_system` | Result, config, horloge ; client WSS app-channel maison (`genui_a2a` hors stack de l'app, [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md)) ; WebRTC ; DS `Ds*` | — |
 
 Les features ne s'importent pas entre elles : elles se coordonnent par les ports de `entities/session` ([arch-clean-fsd-combo]).
@@ -63,75 +60,64 @@ flowchart LR
 
 `SessionEvent` (proposition) : `TranscriptDelta`, `OrbStateChanged`, `AgentActivity`, `A2uiMessageReceived(raw, parsed, seq, ts)`, `UserActionSent`, `SessionClosed`. Le rejeu de l'acte 4 remplace la source branchée sur le port ; les Blocs ne changent pas ([p-ar-replay](replay.md)). Plus de bascule secours ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)).
 
-## Blocs principaux (proposition)
+## Blocs principaux (proposition ; réalisés après 005 et 007, voir la dernière colonne)
 
 | Bloc | Events clés | States clés | Transformer |
 |---|---|---|---|
 | `VoiceSessionBloc` | `VoiceSessionStarted`, `VoiceSessionStopped`, `MicMuteToggled`, `SilenceRequested`, `VoiceEventReceived` | `Idle`, `Connecting`, `Active(orb: repos/écoute/réflexion/parole/interrompue/microCoupé)`, `Failed` | `restartable` (start), `droppable` (toggle), `sequential` (events) |
 | `TranscriptBloc` | `TranscriptDeltaReceived`, `AiReplyTruncated` | lignes `{rôle, texte, tronquée}` | `sequential` |
 | `CanvasBloc` | `A2uiMessageReceived(A2uiMessage)`, `CanvasResetRequested` (commandes), `CanvasSourceSubscribed(Stream<A2uiMessage>)` | `surfaceIds` ordonnés + phase `squelette/composants/données` + statut de source `none/playing/completed/failed` | `sequential` (commandes), `restartable` (source, `emit.onEach`) |
-| `AgentsRailBloc` | `AgentActivityReceived` | par agent : `veille/actif`, tâche, compteur | `sequential` |
-| `ProtocolFeedBloc` | `A2uiMessageLogged`, `PanelToggled`, `MessageHighlighted` | entrées, déplié, id en évidence, total/taille | `sequential` / `droppable` |
-| `CatalogShelfBloc` | `ComponentUsed`, `ComponentReleased` | usage par composant | `sequential` |
+| `AgentActivityBloc` (réel 007) | `AgentActivitySourceSubscribed`, `AgentActivityReset` | lignes du rail (orchestrateur, `selected`, `idle` du dernier `plan`) : `idle/pending/working/completed/failed/rejected/interrupted`, `noAgentSelected`, `anyBusy` | `restartable` (source), `sequential` (reset) |
+| `ProtocolFeedBloc` (réel 007) | `ProtocolSourceSubscribed`, `PanelToggled`, `ProtocolFeedCleared` | entrées horodatées (`AppClock`) avec verdict, `expanded`, `highlightedIndex` / `highlightedSurfaceId` | `restartable` (source), `droppable` (`PanelToggled`), `sequential` |
+| `CatalogShelfBloc` (réel 007) | `CatalogShelfSourceSubscribed`, `CatalogShelfCleared` | 6 composants du contrat, `used`, `usedCount` / `total` | `restartable` (source), `sequential` |
+| `StageBloc` (réel 007) | `StageActAdvanced`, `StageResetRequested` | acte 1 à 3 (« Créer », « Transformer », « Interagir ») | `sequential` ; ne mute aucun autre Bloc : la page relaie la remise à vide |
 | `ReplayBloc` | `FallbackRequested`, `ReplayRequested`, `SpeedChanged`, `Seeked`, `Stepped` | `Live`, `Replaying(position, vitesse 0,25×–2×)` | `restartable` (seek) |
 
-- Les flux sont consommés via `emit.forEach` ([bloc-emit-foreach]).
-- L'**orbe** et la **forme d'onde** ne passent pas par un Bloc : niveau audio dans un `ValueListenable` lu par un `CustomPainter` sous `RepaintBoundary` ([perf-audio-visualizer-60hz], NFR-04).
+- Les flux sont consommés via `emit.forEach` ([bloc-emit-foreach]). L'**orbe** et la **forme d'onde** ne passent pas par un Bloc : niveau audio dans un `ValueListenable` lu par un `CustomPainter` sous `RepaintBoundary` ([perf-audio-visualizer-60hz], NFR-04).
 - Les raccourcis (fiche §6, « à valider », écart E5) sont des `Shortcuts`/`Actions` dont les Actions reçoivent le Bloc par constructeur ([ux-desktop-shortcuts]).
 
 ## DI
 
-- `get_it` 9.3 + `injectable` 3.0 ([di-setup-versions]) ; environnements proposés : `live` (backend réel), `replay` (journal seul, J6), `test` (fakes aux frontières, [test-mock-boundaries-only]). `app/di` est introduit par 005 ([pdr-0044](../decisions/pdr-0044-di-deferred-to-j2.md), Q-66 tranchée).
-- **État réel après 005, écarts assumés** par rapport à la proposition « un module par package » ([di-micro-packages]) :
-  - modules injectable écrits **dans `app/di`** : les paquets ne dépendent pas d'`injectable` ;
-  - graphe `live` **seul**, résolu sans entrée-sortie, **sans fake dans `lib/`** : les tests ne remplacent que la fabrique de transport et pointent `GENESIS_BACKEND_URL` sur un faux backend local réel ;
-  - **un `GetIt` par instance d'app** (`GetIt.asNewInstance()`), pas de variable globale ; **pas de scope par session en J2** (la portée get_it par session, proposée à l'origine pour `VoiceSession`, transport genui et bus d'événements, est reportée) ;
-  - fabriques `VoiceTransport Function()` et `EnvelopeLog Function()` **enregistrées à la main** : injectable ne sait pas enregistrer un type fonction ;
-  - `VoiceSession` résolue **une seule fois** par la page racine de composition, qui construit dessus `LiveSessionEventSource` et `VoiceSessionBloc` ; `getIt` n'est appelé nulle part ailleurs (exception de la racine de composition : pdr-0057) ; le relais HTTP est fermé par `getIt.reset()`.
-- **Fermeture de la page** (ordre testé) : `VoiceSessionBloc.close()`, `VoiceSession.stop()` (borné), `VoiceSession.dispose()`, `LiveSessionEventSource.dispose()`, `CanvasBloc.close()`, `SurfaceController.dispose()`. Sortie de la fenêtre : `AppLifecycleListener(onExitRequested)` + `ExitGuard` (`shared/core`).
-- **Délais par défaut** : `relayDeleteTimeout` 7 s, `channelCloseTimeout` 2 s, `sessionCloseTimeout` 10 s, `exitCloseTimeout` 12 s (invariants testés : 10 s > 7 s + 2 s ; 12 s > 10 s + 1 s). **Réglages posés par l'assistant** (la spec disait « ~8 s ») : à confirmer par le porteur, sans bloquer.
-- ⚠️ Hypothèse non confirmée : démarrage de la session par un bouton « Démarrer » (geste explicite) plutôt qu'automatique ; le raccourci éventuel relève de [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) (facultatif).
+`get_it` 9.3 + `injectable` 3.0 ([di-setup-versions]) ; `app/di` introduit par 005 ([pdr-0044](../decisions/pdr-0044-di-deferred-to-j2.md), Q-66 tranchée). État réel et écarts assumés (modules dans `app/di`, graphe `live` seul sans fake dans `lib/`, un `GetIt` par instance d'app, fabriques enregistrées à la main, `getIt` confiné à la page racine de composition : [pdr-0057](../decisions/pdr-0057-getit-composition-root-exception.md)), ordre de fermeture et délais : [p-ar-frontend-screen](frontend-screen.md) § DI et fermeture. Environnements proposés : `live`, `replay` (J6), `test` ([test-mock-boundaries-only]).
+⚠️ Hypothèse non confirmée : démarrage de la session par un bouton « Démarrer » (geste explicite) plutôt qu'automatique ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) pour un raccourci éventuel).
 
-## Rendu GenUI
+## Rendu GenUI et catalogue `genesis`
 
-- `SurfaceController(catalogs: [genesisCatalog])` : un catalogue métier fermé, sans `BasicCatalogItems` complet ([genui-a2ui-security], [pdr-0007](../decisions/pdr-0007-closed-catalog-stage-theme.md)).
-- Transport maison `BackendA2uiTransport implements Transport` : il pousse les messages déjà parsés (`addMessage`) venus de l'app-channel ou du journal ; aucun LLM côté client ([genui-architecture], [genui-custom-llm-adapter]).
-- Les actions (`controller.onSubmit` / `UiInteractionPart`) repartent en **événements typés** sur l'app-channel ([genui-user-actions]). Un `ActionDelegate` intercepte les actions locales.
-- Un widget `Surface(surfaceContext: controller.contextFor(id), defaultBuilder: squelette DS)` par surface active ; `CanvasBloc` ne garde que les ids ([genui-multiple-surfaces]).
-- Les **3 temps** de FR-04 : squelette (`defaultBuilder` avant définition), composants (`updateComponents`), données (`updateDataModel`). Chaque `CatalogItem` affiche un état squelette tant que ses chemins liés sont vides, et un **état neutre** sur données incomplètes (fiche §7, RG-10). Noms de messages A2UI v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).
-- La disposition des surfaces dans le canevas est tenue par l'app : grille fixe, N surfaces, 6 max (NFR-06). `Grid` n'est pas dans le catalogue et l'IA ne place rien ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md), E11 · Q-29 tranché).
+Détail réel (BoundObject, trois états, squelette peint par `CanvasBoard`, `A2uiGate`, thème de scène) : [p-ar-frontend-screen](frontend-screen.md).
 
-## Catalogue `genesis` et design system
+- `SurfaceController(catalogs: [genesisCatalog])` : catalogue métier fermé de 4 `CatalogItem` ayant un schéma (`ActionBar` et `CrashList` : J5 et hors scénario), sans `BasicCatalogItems` ([genui-a2ui-security], [pdr-0007](../decisions/pdr-0007-closed-catalog-stage-theme.md), [pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)) ; contenu : [p-fn-catalog](../functional/catalog.md), [pdr-0014](../decisions/pdr-0014-six-component-catalog.md).
+- Transport maison `BackendA2uiTransport implements Transport` (proposition) : messages déjà parsés (`addMessage`) venus de l'app-channel ou du journal, aucun LLM côté client ([genui-architecture], [genui-custom-llm-adapter]). Les actions (`controller.onSubmit` / `UiInteractionPart`) repartent en **événements typés** ([genui-user-actions]) : J5.
+- Un `Surface` par surface active ; `CanvasBloc` ne garde que les ids et les phases ([genui-multiple-surfaces]). Grille tenue par l'app, 6 max ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md), NFR-06). Noms A2UI v0.9 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).
+- Chaque `CatalogItem` lit le **thème de scène** (`SceneTheme`, `shared/design_system`), jamais un style de l'agent ([ux-genui-catalog-as-ds]). DS : M3 via `material_ui` ([adr-0004-ds-visual-base-m3]), tokens DTCG ([adr-0005-ds-tokens-style-dictionary]). Widgetbook `4.0.0-beta.14` sans Cloud ([adr-0008-ds-widgetbook-4-beta], [adr-0006-ds-no-widgetbook-cloud], [ds-widgetbook-4-genui]) : **stories et goldens par `CatalogItem` reportés** (écart consigné, voir [p-ar-frontend-screen](frontend-screen.md)).
 
-- Chaque `CatalogItem` **enveloppe un composant `Ds*`** et lit le thème via `itemContext.buildContext` : couleurs et tailles viennent du **thème de scène**, jamais de l'agent ([ux-genui-catalog-as-ds], fiche §7).
-- Contenu du catalogue : 6 `CatalogItem` (Indicateur clé, Courbe de tendance, Sentiment des avis, Checklist go/no-go, Barre d'actions, Liste des crashs), [pdr-0014](../decisions/pdr-0014-six-component-catalog.md) ; voir [p-fn-catalog](../functional/catalog.md). Chacun demande widget, schéma, squelette, état neutre, story Widgetbook, goldens.
-- DS : M3 via `material_ui` ([adr-0004-ds-visual-base-m3]) ; tokens DTCG → Style Dictionary ([adr-0005-ds-tokens-style-dictionary]) avec un thème « scène » (texte ≥ 24 px, contraste WCAG AA, NFR-05) ; maquettes dans Claude Design ([adr-0007-ds-design-tool-claude-design]).
-- Widgetbook `4.0.0-beta.14` exact, sans Cloud ([adr-0008-ds-widgetbook-4-beta], [adr-0006-ds-no-widgetbook-cloud]) : une story par `CatalogItem`, et des scénarios `CachedSurface` alimentés par les **messages A2UI du journal de répétition** ([ds-widgetbook-4-genui]).
-
-## Arborescence (proposée ; réel après 005 en commentaire)
+## Arborescence (proposée ; réel après 007)
 
 ```
 apps/genesis_canvas/                 # app desktop (Linux, pdr-0028)
-  lib/app/{di,bootstrap,theme,shortcuts,config}/   # réel : di, bootstrap, config, lifecycle, scenario
-  lib/pages/genesis_canvas/
-  lib/widgets/{top_bar,canvas_board,agents_rail,protocol_panel,catalog_shelf,replay_bar}/  # réel : top_bar, agents_rail
-packages/features/{voice_session,canvas,agent_activity,protocol_feed,replay,stage_controls}/  # réel : voice_session, canvas, agent_activity
-packages/entities/                   # session/, catalog/ (pur Dart) ; réel : session
-packages/shared/{core,backend_channel,realtime_transport,design_system}/  # réel : core, backend_channel
-packages/shared/design_system/widgetbook/
+  lib/app/{di,bootstrap,theme,shortcuts,config}/   # réel : di, bootstrap, config, lifecycle, scenario, theme
+  lib/pages/genesis_canvas/                        # réel : page (racine de composition), capture, surveillance du moteur
+  lib/widgets/{top_bar,agents_rail,protocol_panel,catalog_shelf,replay_bar,stage_bar}/  # réel : les six
+packages/features/{voice_session,canvas,agent_activity,protocol_feed,catalog_shelf,stage_controls,replay}/  # réel : tous sauf replay (J6)
+packages/entities/{session,catalog}/ # réel : les deux (catalog en Dart pur)
+packages/shared/{core,backend_channel,design_system,realtime_transport}/  # réel : core, backend_channel, design_system
 testing/                             # réel : backend_fakes, voice_fakes, bloc_harness
 ```
 
-**Réel après 005** (les paquets s'importent vers le bas ; test d'architecture : `pages` et `widgets` n'importent pas `app/`) :
+Le dossier `widgets/canvas_board` de la proposition n'existe pas : `CanvasBoard` vit dans `features/canvas` (le canevas est la slice qui porte les surfaces). Pas de `packages/shared/design_system/widgetbook/` (reporté).
+
+**Réel après 007** (les paquets s'importent vers le bas ; tests d'architecture : `pages` et `widgets` n'importent pas `app/` ; **dépendances du workspace** lues dans tous les `pubspec.yaml` : `entities/catalog` sans `flutter` ni `genui`, `shared/*` sans `entities` ni `feature_*`, aucune `feature_*` ne dépend d'une autre, `testing/*` en `dev_dependencies` seulement) :
 
 | Paquet | Contenu |
 |---|---|
-| `entities/session` | `SessionEvent` (sealed), port `SessionEventSource`, enum `AgentTaskState` |
-| `shared/core` | `A2uiDecoder`, `AppClock`, `ExitGuard` |
-| `shared/backend_channel` | `AppChannelEnvelope`, `WebSocketAppChannel`, `HttpVoiceRelay`, `EnvelopeLog` ([contrat](app-channel-contract.md)) |
-| `features/voice_session` | `VoiceSession` (machine à états), `VoiceFailure` fermé, `FlutterWebRtcTransport` derrière la façade `WebRtcPlatform`, `LiveSessionEventSource`, `VoiceSessionBloc`, `TranscriptBloc`, `OrbSmoother`, `OrbLevelController` |
-| `features/agent_activity` | `AgentActivityBloc` |
-| `testing/*` | `backend_fakes` (faux backend HTTP + WebSocket réel), `voice_fakes` (faux transport, `VoiceHarness`), `bloc_harness` |
+| `entities/session` | `SessionEvent` (sealed, dont `PlanReceived`), port `SessionEventSource`, enum `AgentTaskState` (dont `rejected`) |
+| `entities/catalog` | `GenesisContract`, `GenesisMessageValidator`, `ValidationVerdict`, `ValidatedEnvelope`, `ValidationCodes` |
+| `shared/core` | `A2uiDecoder`, `AppClock`, `ExitGuard`, `A2uiReplaySource` (`ReplayedMessage` : ligne brute + message) |
+| `shared/backend_channel` | `AppChannelEnvelope`, `WebSocketAppChannel`, `HttpVoiceRelay`, `EnvelopeLog`, `CanvasResetClient` + `HttpCanvasResetClient` ([contrat](app-channel-contract.md)) |
+| `shared/design_system` | `SceneTheme`, `SceneStatus`, `DsSkeleton`, `DsNeutralState`, `DsStatusChip` |
+| `features/voice_session` | `VoiceSession` (machine à états), `VoiceFailure` fermé, `FlutterWebRtcTransport` derrière `WebRtcPlatform`, `LiveSessionEventSource`, `VoiceSessionBloc`, `TranscriptBloc`, `OrbSmoother`, `OrbLevelController` |
+| `features/canvas` | `genesisCatalog` (4 items), `A2uiGate`, `CanvasBloc`, `CanvasBoard`, `DashedOutlinePainter` |
+| `features/{agent_activity,protocol_feed,catalog_shelf,stage_controls}` | un Bloc chacun (voir tableau des Blocs) |
+| `testing/*` | `backend_fakes` (faux backend HTTP + WebSocket réel, route `POST /canvas/reset`, fixtures du contrat, `tool/gen_replay.dart`), `voice_fakes`, `bloc_harness` |
 
 Adaptée de [arch-recommended-structure] et [ds-package-structure] ; workspace pub ([arch-pub-workspaces]).
 
@@ -159,7 +145,6 @@ Passages propres au projet retirés des notes génériques (souvent antérieurs 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
 - **Source du niveau audio** de l'orbe et de la forme d'onde sans seconde capture micro (statistiques WebRTC ou copie sideband) : copie sideband **mesurée en SP-02** (RMS exploitable : 0 au silence, 0,05–0,17 en parole, blocs de 200 ms) ; `audioLevel` des statistiques WebRTC **non testé** (⚠️) ; retenu (Q-43 tranchée, [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md)) : le backend calcule le RMS de la copie sideband, le pousse à 5 Hz sur l'app-channel et l'orbe interpole à 60 i/s ; ⚠️ Hypothèse non confirmée : 5 Hz suffisent visuellement, à vérifier sur l'orbe réelle en J2 (réexamen prévu par la PDR).
-- **Mise en page du canevas** : tranchée, grille tenue par l'app, N surfaces ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md), Q-29).
 - **`catalogId`** définitif (la maquette affiche `genesis.release`, la convention recommande une URI versionnée, [genui-catalog-ids]) → Q-44 tranchée : `https://genesis-canvas.example/a2ui/catalogs/genesis/v1` (pdr-0055).
 - **genui sous Linux** : build exige les en-têtes GStreamer ; rendu confirmé par SP-10 le 2026-10-29 ([genui-overview], [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)). Q-45 (Windows) sans objet.
-- **Raccourcis** : tranché (Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) : facultatifs, toute action critique à la souris.
+- **Raccourcis** : tranché (Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) : facultatifs, toute action critique à la souris. **Grille du canevas** : tranchée (Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)).

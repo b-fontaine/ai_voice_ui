@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart' show FlutterError;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +20,20 @@ class _FakeBundle extends CachingAssetBundle {
     final text = assets[key];
     if (text == null) throw FlutterError('asset absent : $key');
     return ByteData.sublistView(Uint8List.fromList(text.codeUnits));
+  }
+}
+
+/// Paquet d'assets en octets (l'asset contient de l'UTF-8).
+class _Utf8Bundle extends CachingAssetBundle {
+  _Utf8Bundle(this.assets);
+
+  final Map<String, List<int>> assets;
+
+  @override
+  Future<ByteData> load(String key) async {
+    final bytes = assets[key];
+    if (bytes == null) throw FlutterError('asset absent : $key');
+    return ByteData.sublistView(Uint8List.fromList(bytes));
   }
 }
 
@@ -41,12 +58,13 @@ void main() {
           delay: (d) async => delays.add(d),
         );
 
-        final received = await player.messages('demo').toList();
+        final received = await player.entries('demo').toList();
 
         expect(bundle.requested, <String>['assets/replays/demo.jsonl']);
         expect(
           received.map(
-            (m) => m.toJson().keys.toSet().difference({'version'}).single,
+            (m) =>
+                m.message.toJson().keys.toSet().difference({'version'}).single,
           ),
           <String>['createSurface', 'updateComponents', 'updateDataModel'],
         );
@@ -57,10 +75,32 @@ void main() {
       },
     );
 
+    test('lit l\'asset act1-replay versionné : douze messages que le gate '
+        'valide tous (toJson = ligne brute)', () async {
+      final file = File('assets/replays/act1-replay.jsonl');
+      final bundle = _Utf8Bundle(<String, List<int>>{
+        'assets/replays/act1-replay.jsonl': file.readAsBytesSync(),
+      });
+      final raws = const LineSplitter()
+          .convert(utf8.decode(file.readAsBytesSync()))
+          .map((l) => (jsonDecode(l) as Map<String, Object?>)['message'])
+          .toList();
+
+      final messages = await ScenarioPlayer(
+        bundle: bundle,
+        delay: (_) async {},
+      ).entries('act1-replay').toList();
+
+      expect(messages, hasLength(12));
+      expect(messages.map((m) => m.message.toJson()), raws);
+      // La ligne brute est transmise telle quelle, pour la validation.
+      expect(messages.map((m) => m.raw), raws);
+    });
+
     test('scénario inconnu : l\'erreur remonte', () async {
       final player = ScenarioPlayer(bundle: _FakeBundle(<String, String>{}));
 
-      expect(player.messages('absent').toList(), throwsA(isA<FlutterError>()));
+      expect(player.entries('absent').toList(), throwsA(isA<FlutterError>()));
     });
 
     test('ligne invalide : A2uiReplayFormatException', () async {
@@ -71,7 +111,7 @@ void main() {
       );
 
       expect(
-        player.messages('mauvais').toList(),
+        player.entries('mauvais').toList(),
         throwsA(isA<A2uiReplayFormatException>()),
       );
     });

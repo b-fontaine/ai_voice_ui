@@ -5,6 +5,7 @@ package httpapi
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -22,7 +23,19 @@ import (
 const (
 	sdpContentType = "application/sdp"
 	sessionHeader  = "X-Session-Id"
+
+	jsonContentType = "application/json"
+	// resetMaxBodyBytes borne le corps de POST /canvas/reset (le client envoie `{}`).
+	resetMaxBodyBytes = 1 << 10
 )
+
+// CanvasResetter remet à vide le canevas des sessions ouvertes. Elle renvoie
+// port.ErrCanvasBusy (éventuellement enveloppée) quand une délégation est en
+// cours ou en file : aucune session occupée n'a alors été modifiée, mais d'autres
+// sessions ont pu être vidées (la remise à vide est idempotente).
+type CanvasResetter interface {
+	ResetCanvas(ctx context.Context) error
+}
 
 // Sessions est la partie du service voix dont l'API HTTP dépend.
 type Sessions interface {
@@ -33,6 +46,8 @@ type Sessions interface {
 // Options configure le gestionnaire ; toutes les valeurs sont injectées.
 type Options struct {
 	Sessions Sessions
+	// Canvas sert `POST /canvas/reset`.
+	Canvas CanvasResetter
 	// App sert `GET /app` (hub WSS).
 	App    http.Handler
 	Clock  port.Clock
@@ -53,6 +68,8 @@ func (o Options) validate() error {
 	switch {
 	case o.Sessions == nil:
 		return errors.New("httpapi: Sessions est requis")
+	case o.Canvas == nil:
+		return errors.New("httpapi: Canvas est requis")
 	case o.App == nil:
 		return errors.New("httpapi: App est requis")
 	case o.Clock == nil:
@@ -85,6 +102,7 @@ func NewHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /voice/sessions", a.createSession)
 	mux.HandleFunc("DELETE /voice/sessions/{id}", a.deleteSession)
+	mux.HandleFunc("POST /canvas/reset", a.resetCanvas)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, "ok\n")
@@ -160,6 +178,49 @@ func (a *api) deleteSession(w http.ResponseWriter, r *http.Request) {
 	default:
 		a.opts.Logger.Error("échec de fermeture", "session", id, "error", err)
 		writeError(w, http.StatusBadGateway, "fermeture impossible")
+	}
+}
+
+// resetCanvas remet le canevas à vide. `Host` est déjà gardé (421). Comme une
+// page web locale peut poster une requête « simple » sans pré-vol, la route se
+// protège seule : toute requête portant un en-tête `Origin` est refusée (le
+// client Flutter n'en envoie pas), `Content-Type: application/json` est exigé
+// (ce qui impose un pré-vol aux navigateurs), le corps est borné et aucun
+// en-tête CORS n'est jamais émis.
+func (a *api) resetCanvas(w http.ResponseWriter, r *http.Request) {
+	if len(r.Header.Values("Origin")) > 0 {
+		writeError(w, http.StatusForbidden, "origine non autorisée")
+		return
+	}
+	if mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || mt != jsonContentType {
+		writeError(w, http.StatusUnsupportedMediaType, "Content-Type application/json requis")
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, resetMaxBodyBytes))
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			writeError(w, http.StatusRequestEntityTooLarge, "corps trop volumineux")
+			return
+		}
+		writeError(w, http.StatusBadRequest, "corps illisible")
+		return
+	}
+	// Le contenu est ignoré, mais un corps qui n'est pas un objet JSON est une
+	// requête mal formée (le client envoie `{}`).
+	var ignored map[string]json.RawMessage
+	if err := json.Unmarshal(body, &ignored); err != nil || ignored == nil {
+		writeError(w, http.StatusBadRequest, "corps JSON (objet) attendu")
+		return
+	}
+	switch err := a.opts.Canvas.ResetCanvas(r.Context()); {
+	case err == nil:
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, port.ErrCanvasBusy):
+		writeError(w, http.StatusConflict, "canevas occupé, réessayez quand le travail en cours sera terminé")
+	default:
+		a.opts.Logger.Error("remise à vide du canevas impossible", "error", err)
+		writeError(w, http.StatusInternalServerError, "remise à vide impossible")
 	}
 }
 

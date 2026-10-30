@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 
@@ -91,6 +92,71 @@ void main() {
     }
   });
 
+  group('GenesisConfig.fromEnvironment : catalogue', () {
+    GenesisConfig read(String? id) => GenesisConfig.fromEnvironment(
+      id == null
+          ? const <String, String>{}
+          : <String, String>{'GENESIS_CATALOG_ID': id},
+    );
+
+    test('défaut : celui du contrat', () {
+      expect(read(null).catalogId, GenesisContract.defaultCatalogId);
+      expect(read('  ').catalogId, GenesisContract.defaultCatalogId);
+      expect(const GenesisConfig().catalogId, GenesisContract.defaultCatalogId);
+    });
+
+    test(
+      'A5e : le défaut égale celui de A2UI_CATALOG_ID de docker-compose',
+      () {
+        // docker-compose.yaml est retrouvé en remontant les répertoires.
+        var dir = Directory.current.absolute;
+        File? compose;
+        while (compose == null) {
+          final candidate = File('${dir.path}/docker-compose.yaml');
+          if (candidate.existsSync()) {
+            compose = candidate;
+          } else if (dir.parent.path == dir.path) {
+            fail('docker-compose.yaml introuvable');
+          } else {
+            dir = dir.parent;
+          }
+        }
+        final match = RegExp(r'\$\{A2UI_CATALOG_ID:-([^}]+)\}')
+            .firstMatch(compose.readAsStringSync());
+        expect(match, isNotNull, reason: 'défaut A2UI_CATALOG_ID introuvable');
+        expect(const GenesisConfig().catalogId, match!.group(1));
+      },
+    );
+
+    test('GENESIS_CATALOG_ID est lu et nettoyé', () {
+      expect(
+        read('  https://exemple.test/c/v1 ').catalogId,
+        'https://exemple.test/c/v1',
+      );
+    });
+
+    for (final bad in <String>[
+      'pas une uri',
+      'catalogue-sans-schema',
+      '/chemin',
+    ]) {
+      test('identifiant invalide : exception sans la valeur ($bad)', () {
+        expect(
+          () => read(bad),
+          throwsA(
+            isA<GenesisConfigException>()
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('GENESIS_CATALOG_ID'),
+                )
+                .having((e) => e.message, 'message', isNot(contains(bad))),
+          ),
+        );
+      });
+    }
+  });
+
   group('GenesisConfig : journal, constantes et secrets', () {
     test('GENESIS_APP_LOG : chemin ou null si vide', () {
       expect(
@@ -115,10 +181,126 @@ void main() {
       expect(config.sessionCloseTimeout, const Duration(seconds: 10));
       expect(config.exitCloseTimeout, const Duration(seconds: 12));
       expect(config.iceTimeout, const Duration(seconds: 10));
+      expect(config.canvasResetTimeout, const Duration(seconds: 2));
+      expect(config.canvasResetRetries, 8);
+      expect(
+        config.canvasResetRetryInterval,
+        const Duration(milliseconds: 1500),
+      );
       expect(config.orbSilenceTimeout, const Duration(milliseconds: 600));
       expect(config.orbAttack, const Duration(milliseconds: 80));
       expect(config.orbRelease, const Duration(milliseconds: 250));
       expect(config.orbSpeakingThreshold, 0.03);
+    });
+
+    test('GENESIS_CANVAS_RESET_TIMEOUT_MS : délai en millisecondes', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_RESET_TIMEOUT_MS': ?value},
+      ).canvasResetTimeout;
+
+      expect(read(null), const Duration(seconds: 2));
+      expect(read(''), const Duration(seconds: 2));
+      expect(read(' 1500 '), const Duration(milliseconds: 1500));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test(
+      'GENESIS_CANVAS_RESET_TIMEOUT_MS invalide : erreur sans la valeur',
+      () {
+        for (final raw in <String>[
+          'abc',
+          '-0',
+          '-5',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ]) {
+          expect(
+            () => GenesisConfig.fromEnvironment(<String, String>{
+              'GENESIS_CANVAS_RESET_TIMEOUT_MS': raw,
+            }),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('GENESIS_CANVAS_RESET_TIMEOUT_MS'),
+                  )
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: raw,
+          );
+        }
+      },
+    );
+
+    test('GENESIS_CANVAS_RESET_RETRIES : nombre d\'essais, 0 à 30', () {
+      int read(String? value) => GenesisConfig.fromEnvironment(<String, String>{
+        'GENESIS_CANVAS_RESET_RETRIES': ?value,
+      }).canvasResetRetries;
+
+      expect(read(null), 8);
+      expect(read(''), 8);
+      expect(read(' 12 '), 12);
+      expect(read('0'), 0);
+      expect(read('30'), 30);
+    });
+
+    test('GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS : 100 à 10000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS': ?value},
+      ).canvasResetRetryInterval;
+
+      expect(read(null), const Duration(milliseconds: 1500));
+      expect(read(''), const Duration(milliseconds: 1500));
+      expect(read(' 250 '), const Duration(milliseconds: 250));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test('variables de réessai invalides : erreur sans la valeur', () {
+      const cases = <String, List<String>>{
+        'GENESIS_CANVAS_RESET_RETRIES': <String>[
+          'abc',
+          '-1',
+          '31',
+          '1.5',
+          '1e1',
+          '007007',
+        ],
+        'GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS': <String>[
+          'abc',
+          '-0',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ],
+      };
+      for (final entry in cases.entries) {
+        for (final raw in entry.value) {
+          expect(
+            () =>
+                GenesisConfig.fromEnvironment(<String, String>{entry.key: raw}),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having((e) => e.message, 'message', contains(entry.key))
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: '${entry.key}=$raw',
+          );
+        }
+      }
     });
 
     test('R5 : invariants des délais de fermeture par défaut', () {

@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show VoiceTransport;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
-import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
-import 'package:shared_core/shared_core.dart' show ExitHandler, ReplayDelay;
+import 'package:shared_core/shared_core.dart'
+    show ExitHandler, ReplayDelay, ReplayedMessage;
 
 import '../pages/genesis_canvas/genesis_canvas.dart';
 import '../pages/genesis_canvas/genesis_canvas_page_settings.dart';
@@ -16,6 +17,7 @@ import 'bootstrap/snapshot_service.dart';
 import 'config/genesis_config.dart';
 import 'di/injection.dart';
 import 'scenario/scenario_player.dart';
+import 'theme/genesis_theme.dart';
 
 /// Racine de l'application : couche `app`, qui assemble la configuration, les
 /// assets et la plateforme, puis les passe à la page par constructeur.
@@ -56,7 +58,7 @@ class GenesisCanvasApp extends StatefulWidget {
 
 class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
   late final GetIt _getIt = GetIt.asNewInstance();
-  late final Stream<A2uiMessage>? _replay;
+  late final Stream<ReplayedMessage>? _replay;
   late final StringSink _errorSink = widget.errorSink ?? io.stderr;
   Future<void>? _pageClosing;
 
@@ -75,7 +77,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
         : ScenarioPlayer(
             bundle: widget.assetBundle ?? rootBundle,
             delay: widget.replayDelay,
-          ).messages(scenario);
+          ).entries(scenario);
   }
 
   @override
@@ -93,14 +95,14 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
     final config = widget.config;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark),
+      theme: genesisThemeData(),
       // `Material` transparent : fournit le style de texte du thème (sinon
       // repli rouge souligné) sans changer le fond de la page.
       home: Material(
         type: MaterialType.transparency,
         child: GenesisCanvasPage(
           getIt: _getIt,
-          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          catalogs: <Catalog>[genesisCatalog(catalogId: config.catalogId)],
           replay: _replay,
           onClosing: (closing) => _pageClosing = closing,
           snapshotFactory: (exitHandler) => SnapshotService(
@@ -117,6 +119,8 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
             orbSpeakingThreshold: config.orbSpeakingThreshold,
             sessionCloseTimeout: config.sessionCloseTimeout,
             exitCloseTimeout: config.exitCloseTimeout,
+            canvasResetRetries: config.canvasResetRetries,
+            canvasResetRetryInterval: config.canvasResetRetryInterval,
           ),
         ),
       ),

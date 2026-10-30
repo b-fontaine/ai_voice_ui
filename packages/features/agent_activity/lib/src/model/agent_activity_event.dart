@@ -11,3 +11,9 @@ final class AgentActivitySourceSubscribed extends AgentActivityEvent {
 
   final Stream<SessionEvent> events;
 }
+
+/// Commande : remise à vide du rail (état initial). Utilisée par la remise à
+/// vide de l'écran.
+final class AgentActivityReset extends AgentActivityEvent {
+  const AgentActivityReset();
+}

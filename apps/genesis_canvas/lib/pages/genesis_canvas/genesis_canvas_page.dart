@@ -1,17 +1,26 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
-import 'package:entity_session/entity_session.dart'
-    show A2uiEnvelopeReceived, SessionEvent;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
-    show AgentActivityBloc, AgentActivitySourceSubscribed;
+    show AgentActivityBloc, AgentActivityReset, AgentActivitySourceSubscribed;
 import 'package:feature_canvas/feature_canvas.dart'
     show
+        A2uiGate,
         CanvasBloc,
         CanvasBoard,
+        CanvasResetRequested,
         CanvasSourceStatus,
         CanvasSourceSubscribed,
         CanvasState;
+import 'package:feature_catalog_shelf/feature_catalog_shelf.dart'
+    show CatalogShelfBloc, CatalogShelfCleared, CatalogShelfSourceSubscribed;
+import 'package:feature_protocol_feed/feature_protocol_feed.dart'
+    show
+        ProtocolFeedBloc,
+        ProtocolFeedCleared,
+        ProtocolFeedState,
+        ProtocolSourceSubscribed;
+import 'package:feature_stage_controls/feature_stage_controls.dart'
+    show StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
         LiveSessionEventSource,
@@ -26,9 +35,17 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:get_it/get_it.dart';
-import 'package:shared_core/shared_core.dart' show ExitGuard, ExitHandler;
+import 'package:shared_backend_channel/shared_backend_channel.dart'
+    show CanvasResetClient, CanvasResetResult;
+import 'package:shared_core/shared_core.dart'
+    show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
 import '../../widgets/agents_rail/agents_rail.dart';
+import '../../widgets/catalog_shelf/catalog_shelf.dart';
+import '../../widgets/protocol_panel/protocol_panel.dart';
+import '../../widgets/replay_bar/replay_bar.dart';
+import '../../widgets/stage_bar/stage_bar.dart';
 import '../../widgets/top_bar/top_bar.dart';
 import 'capture_service.dart';
 import 'engine_error_watcher.dart';
@@ -38,8 +55,11 @@ import 'genesis_canvas_page_settings.dart';
 /// finale (code ajusté par les erreurs du moteur).
 typedef SnapshotFactory = CaptureService Function(ExitHandler exitHandler);
 
-/// Page unique : barre du haut (orbe, transcription, bouton), rail des
-/// agents, puis canevas.
+/// Page unique à six zones (écran de 1920 × 1080, budget de `plan.md` de la
+/// spec 007) : barre du haut (orbe, transcription, acte, remise à vide,
+/// bouton), rail des agents, canevas, puis une rangée du bas (étagère du
+/// catalogue, zone Rejeu et panneau du protocole). Le panneau déplié recouvre
+/// le canevas à droite sans le redimensionner.
 ///
 /// **Racine de composition** : seul endroit, avec `app/di`, qui touche à
 /// [GetIt] (reçu par constructeur, jamais lu depuis un widget ni un Bloc). Elle
@@ -47,7 +67,8 @@ typedef SnapshotFactory = CaptureService Function(ExitHandler exitHandler);
 /// d'événements et le `VoiceSessionBloc`, puis branche tous les abonnés avant
 /// toute connexion (le flux est en diffusion : un abonné tardif perdrait des
 /// événements). Elle possède ce qu'elle crée et le ferme dans l'ordre (voir
-/// `_shutdown`).
+/// `_shutdown`). Elle est aussi l'**unique coordinatrice** de la remise à vide
+/// (`_resetStage`) : les features ne se lisent pas entre elles.
 ///
 /// Mode scénario (un flux de rejeu est fourni) : la source vivante n'est pas
 /// branchée au canevas et « Démarrer » est désactivé ; à la fin du rejeu, la
@@ -63,12 +84,23 @@ class GenesisCanvasPage extends StatefulWidget {
     required this.settings,
     this.replay,
     this.onClosing,
-  });
+  }) : assert(
+         catalogs.length == 1,
+         'la page attend exactement un catalogue (source unique de son id)',
+       );
 
   /// Graphe de dépendances de cette app (instance propre, configurée par la
   /// couche `app`).
   final GetIt getIt;
+
+  /// Catalogue du moteur : exactement un.
   final List<Catalog> catalogs;
+
+  /// Identifiant du catalogue que le validateur A2UI exige dans
+  /// `createSurface` : dérivé de [catalogs], jamais fourni à part.
+  String get catalogId =>
+      catalogs.single.catalogId ??
+      (throw StateError("le catalogue de la page n'a pas d'identifiant"));
   final SnapshotFactory snapshotFactory;
   final ExitHandler exitHandler;
 
@@ -78,8 +110,8 @@ class GenesisCanvasPage extends StatefulWidget {
   /// Réglages de l'orbe et délais de fermeture (fournis par la couche `app`).
   final GenesisCanvasPageSettings settings;
 
-  /// Messages A2UI à rejouer ; `null` : source vivante, canevas vide au départ.
-  final Stream<A2uiMessage>? replay;
+  /// Messages A2UI à rejouer (ligne brute et message décodé) ; `null` : source vivante, canevas vide au départ.
+  final Stream<ReplayedMessage>? replay;
 
   /// Reçoit la fermeture asynchrone lancée par le `dispose` de la page, pour
   /// que le propriétaire du graphe ne le libère qu'une fois la page fermée.
@@ -102,6 +134,16 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   late final VoiceSessionBloc _voiceBloc = VoiceSessionBloc(_session);
   late final TranscriptBloc _transcriptBloc = widget.getIt<TranscriptBloc>();
   late final AgentActivityBloc _agentsBloc = widget.getIt<AgentActivityBloc>();
+  // Écran de fabrication : panneau du protocole (horloge de l'app, pdr-0038),
+  // étagère du catalogue et régie des actes.
+  late final ProtocolFeedBloc _protocolBloc = ProtocolFeedBloc(
+    clock: widget.getIt<AppClock>(),
+  );
+  late final CatalogShelfBloc _shelfBloc = CatalogShelfBloc();
+  late final StageBloc _stageBloc = StageBloc();
+  // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
+  // callback.
+  late final CanvasResetClient _resetClient = widget.getIt<CanvasResetClient>();
   // Affecté dans `initState` (abonné de la source, il porte un Ticker).
   late final OrbLevelController _orb;
 
@@ -110,14 +152,23 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     catalogs: widget.catalogs,
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
+  // UNE instance du validateur A2UI pour la session, en direct comme en rejeu.
+  late final A2uiGate _gate = A2uiGate(
+    catalogId: widget.catalogId,
+    onRejected: _onMessageRejected,
+  );
+  // Refus vus : un rejeu qui en contient ne vaut pas succès (comme une erreur
+  // du moteur).
+  int _rejectedCount = 0;
   final GlobalKey _boundaryKey = GlobalKey();
   // Affecté dans `initState` : écoute dès la création (le moteur ne rejoue
   // pas les erreurs passées).
   late final EngineErrorWatcher _engineErrors;
   late final CaptureService _snapshot = widget.snapshotFactory(
     // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
-    (code) =>
-        widget.exitHandler(code == 0 && _engineErrors.count > 0 ? 1 : code),
+    (code) => widget.exitHandler(
+      code == 0 && (_engineErrors.count > 0 || _rejectedCount > 0) ? 1 : code,
+    ),
   );
 
   late final ExitGuard _exitGuard = ExitGuard(
@@ -156,12 +207,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
+    // Panneau et étagère lisent le flux validé (tous les messages, avec leur
+    // verdict) par des branches qui gardent en mémoire ce qui arrive avant
+    // l'abonnement effectif du Bloc.
+    _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
+    _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
+    // Un seul flux de `SessionEvent` entre dans le gate : le flux vivant, ou
+    // le rejeu encapsulé en enveloppes (la source vivante n'alimente alors pas
+    // le canevas). Le Bloc ne reçoit que les messages acceptés.
     final replay = widget.replay;
-    if (replay != null) {
-      _bloc.add(CanvasSourceSubscribed(replay));
-    } else {
-      // Sous-flux dérivé UNE fois, donné une fois au Bloc du canevas.
-      _bloc.add(CanvasSourceSubscribed(_a2uiMessages(_source.events)));
+    _bloc.add(CanvasSourceSubscribed(_gate.accepted));
+    _gate.attach(
+      replay == null ? _source.events : A2uiGate.replayEvents(replay),
+    );
+    if (replay == null) {
       if (_snapshot.isActive) {
         // Sans scénario : capture du canevas vide après la première frame.
         WidgetsBinding.instance.addPostFrameCallback(
@@ -171,10 +230,86 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     }
   }
 
-  static Stream<A2uiMessage> _a2uiMessages(Stream<SessionEvent> events) =>
-      events
-          .where((event) => event is A2uiEnvelopeReceived)
-          .map((event) => (event as A2uiEnvelopeReceived).message);
+  /// Consigne le code fermé du refus, jamais le contenu du message.
+  void _onMessageRejected(String code) {
+    _rejectedCount++;
+    widget.errorSink.writeln('Message A2UI refusé : $code');
+  }
+
+  /// Remise à vide de la scène (FR-11, D4) : l'**unique** coordinatrice, dans
+  /// l'ordre exact de A4a :
+  ///
+  /// 1. le validateur A2UI repart de zéro, de façon synchrone (une surface
+  ///    recréée ensuite n'est pas refusée comme « existante ») ;
+  /// 2. un ordre à chaque Bloc (canevas, panneau, étagère, rail, acte 1) ;
+  /// 3. la demande au backend de retirer les surfaces actives, au mieux et
+  ///    sans attendre : l'écran est déjà vide.
+  void _resetStage() {
+    _gate.reset();
+    _bloc.add(const CanvasResetRequested());
+    _protocolBloc.add(const ProtocolFeedCleared());
+    _shelfBloc.add(const CatalogShelfCleared());
+    _agentsBloc.add(const AgentActivityReset());
+    _stageBloc.add(const StageResetRequested());
+    unawaited(_requestBackendReset());
+  }
+
+  /// Génération de la demande de remise à vide en cours. Une nouvelle demande
+  /// **remplace** la précédente (qui s'arrête à son prochain réveil) plutôt
+  /// qu'elle n'est ignorée : l'écran vient d'être revidé, c'est la dernière
+  /// demande qui reflète l'état voulu, et il n'y a jamais deux boucles.
+  int _resetGeneration = 0;
+  Timer? _retryTimer;
+  Completer<void>? _retryWait;
+
+  /// Demande au backend de retirer ses surfaces. Tant qu'il répond `busy`
+  /// (409 : un tour est en cours), la demande est réessayée, jusqu'à
+  /// `canvasResetRetries` fois, à `canvasResetRetryInterval` d'écart : les
+  /// `deleteSurface` renvoyés par le backend sont ignorés par le validateur,
+  /// le réessai est sans risque. Tout autre refus ou échec est consigné sans
+  /// réessai ; le client ne lève pas d'exception. La boucle s'arrête à la
+  /// fermeture de la page ou quand une demande plus récente la remplace.
+  Future<void> _requestBackendReset() async {
+    final int generation = ++_resetGeneration;
+    _cancelRetryWait();
+    var retriesLeft = _settings.canvasResetRetries;
+    while (true) {
+      final CanvasResetResult result = await _resetClient.reset();
+      if (result == CanvasResetResult.done || generation != _resetGeneration) {
+        return;
+      }
+      if (result != CanvasResetResult.busy || retriesLeft == 0) {
+        widget.errorSink.writeln(
+          'Remise à vide : le backend ne l\'a pas appliquée (${result.name}).',
+        );
+        return;
+      }
+      retriesLeft--;
+      await _waitBeforeRetry(_settings.canvasResetRetryInterval);
+      if (generation != _resetGeneration) return;
+    }
+  }
+
+  /// Attente annulable (un `Timer` conservé, jamais orphelin).
+  Future<void> _waitBeforeRetry(Duration interval) {
+    final wait = Completer<void>();
+    _retryWait = wait;
+    _retryTimer = Timer(interval, () {
+      _retryTimer = null;
+      if (!wait.isCompleted) wait.complete();
+    });
+    return wait.future;
+  }
+
+  /// Annule l'attente en cours : sa boucle se réveille aussitôt et constate
+  /// que sa génération est périmée.
+  void _cancelRetryWait() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    final wait = _retryWait;
+    _retryWait = null;
+    if (wait != null && !wait.isCompleted) wait.complete();
+  }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
     // « Rejeu impossible » ne concerne que le rejeu ; la source vivante ne
@@ -215,6 +350,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   @override
   void dispose() {
+    // Plus de réessai de remise à vide une fois la page fermée.
+    _resetGeneration++;
+    _cancelRetryWait();
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
@@ -233,17 +371,24 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 2. arrêt de la session, borné ;
   /// 3. libération de la session ;
   /// 4. source d'événements (la session ne lui émet plus rien) ;
-  /// 5. Blocs de transcription, d'activité puis du canevas ;
-  /// 6. moteur genui, une fois le Bloc du canevas fermé.
+  /// 5. filtre A2UI (il se nourrit de la source) ;
+  /// 6. Blocs de transcription, d'activité puis du canevas ;
+  /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
+  ///    lisent le gate, donc ils ne se ferment qu'après lui ;
+  /// 8. moteur genui, une fois le Bloc du canevas fermé.
   Future<void> _shutdown() async {
     final bound = _settings.sessionCloseTimeout;
     await _step('Bloc de session', _voiceBloc.close);
     await _step('arrêt de la session', _session.stop, timeout: bound);
     await _step('libération de la session', _session.dispose, timeout: bound);
     await _step('source d\'événements', _source.dispose);
+    await _step('filtre A2UI', _gate.dispose);
     await _step('Bloc de transcription', _transcriptBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
     await _step('Bloc du canevas', _bloc.close);
+    await _step('Bloc du protocole', _protocolBloc.close);
+    await _step('Bloc de l\'étagère', _shelfBloc.close);
+    await _step('Bloc de la régie', _stageBloc.close);
     await _step('surveillance du moteur', _engineErrors.dispose);
     _controller.dispose();
   }
@@ -261,13 +406,28 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     }
   }
 
+  /// Marges et intervalles entre zones (budget de `plan.md` : 60 px au total
+  /// à la verticale).
+  static const double _marginX = 24;
+  static const double _marginY = 18;
+  static const double _gap = 8;
+
+  /// Hauteurs fixes du budget des zones à 1920 × 1080 ; le canevas prend le
+  /// reste (520 px).
+  static const double _railHeight = 200;
+  static const double _bottomRowHeight = 140;
+  static const double _replayWidth = 340;
+
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
-    providers: <BlocProvider<dynamic>>[
+    providers: [
       BlocProvider<VoiceSessionBloc>.value(value: _voiceBloc),
       BlocProvider<TranscriptBloc>.value(value: _transcriptBloc),
       BlocProvider<AgentActivityBloc>.value(value: _agentsBloc),
       BlocProvider<CanvasBloc>.value(value: _bloc),
+      BlocProvider<ProtocolFeedBloc>.value(value: _protocolBloc),
+      BlocProvider<CatalogShelfBloc>.value(value: _shelfBloc),
+      BlocProvider<StageBloc>.value(value: _stageBloc),
     ],
     child: BlocListener<CanvasBloc, CanvasState>(
       listenWhen: (previous, current) =>
@@ -276,25 +436,69 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       child: RepaintBoundary(
         key: _boundaryKey,
         child: ColoredBox(
-          color: const Color(0xFF0B0B14),
-          child: Column(
-            children: <Widget>[
-              TickerMode(
-                enabled: !_animationsOff,
-                child: TopBar(
-                  orbLevel: _orb.level,
-                  speakingThreshold: _settings.orbSpeakingThreshold,
-                  startEnabled: !_replayMode,
+          color: SceneTheme.of(context).background,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: _marginX,
+              vertical: _marginY,
+            ),
+            child: Stack(
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    TickerMode(
+                      enabled: !_animationsOff,
+                      child: TopBar(
+                        orbLevel: _orb.level,
+                        speakingThreshold: _settings.orbSpeakingThreshold,
+                        startEnabled: !_replayMode,
+                        stage: StageBar(onResetPressed: _resetStage),
+                      ),
+                    ),
+                    const SizedBox(height: _gap),
+                    const SizedBox(height: _railHeight, child: AgentsRail()),
+                    const SizedBox(height: _gap),
+                    Expanded(
+                      child:
+                          BlocSelector<
+                            ProtocolFeedBloc,
+                            ProtocolFeedState,
+                            String?
+                          >(
+                            selector: (state) => state.highlightedSurfaceId,
+                            builder: (context, highlighted) => CanvasBoard(
+                              key: const Key('canvas-board'),
+                              controller: _controller,
+                              highlightedSurfaceId: highlighted,
+                            ),
+                          ),
+                    ),
+                    const SizedBox(height: _gap),
+                    SizedBox(
+                      height: _bottomRowHeight,
+                      child: Row(
+                        children: <Widget>[
+                          const Expanded(child: CatalogShelf()),
+                          const SizedBox(width: 16),
+                          const SizedBox(
+                            width: _replayWidth,
+                            child: ReplayBar(),
+                          ),
+                          const SizedBox(width: 16),
+                          // Emplacement du panneau replié : le panneau lui-même
+                          // est posé par-dessus (voir ci-dessous).
+                          SizedBox(width: ProtocolPanel.collapsedSize.width),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const AgentsRail(),
-              Expanded(
-                child: CanvasBoard(
-                  key: const Key('canvas-board'),
-                  controller: _controller,
-                ),
-              ),
-            ],
+                // Replié, le panneau occupe son emplacement ; déplié, il
+                // grandit vers le haut et recouvre le canevas à droite sans le
+                // redimensionner.
+                const Positioned(right: 0, bottom: 0, child: ProtocolPanel()),
+              ],
+            ),
           ),
         ),
       ),

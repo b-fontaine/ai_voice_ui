@@ -124,16 +124,37 @@ func TestValidateRejects(t *testing.T) {
 	}
 }
 
+// TestValidateAcceptsReplayAct1 vérifie que l'asset de rejeu de l'app (acte 1,
+// 007) est un flux que l'orchestrateur accepterait tel quel : le validateur
+// configuré pour le catalogue `genesis` et le registre l'acceptent, message par
+// message, et il reprend exactement les exemples du contrat (le catalogId de
+// l'asset étant celui de l'app, il est remplacé par celui du test).
 func TestValidateAcceptsReplayAct1(t *testing.T) {
+	const assetCatalogID = "https://genesis-canvas.example/a2ui/catalogs/genesis/v1"
 	f, err := os.Open("../../../../../apps/genesis_canvas/assets/replays/act1-replay.jsonl")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	v := newValidator(t)
+	v, err := a2ui.NewValidator(a2ui.Options{
+		CatalogID:              assetCatalogID,
+		Components:             genesisComponents,
+		MaxMessageBytes:        64 * 1024,
+		MaxDepth:               16,
+		MaxComponentsPerUpdate: 50,
+		AllowedProps:           []string{"id", "component", "data"},
+		BindingProps:           []string{"data"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []map[string]any
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 0, 1<<20), 1<<20)
-	var kinds []a2ui.Kind
 	for sc.Scan() {
 		if strings.TrimSpace(sc.Text()) == "" {
 			continue
@@ -148,22 +169,31 @@ func TestValidateAcceptsReplayAct1(t *testing.T) {
 		if err != nil {
 			t.Fatalf("message refusé : %v", err)
 		}
-		if op.SurfaceID != "quality" {
-			t.Errorf("surface = %q", op.SurfaceID)
+		if err := reg.Apply("agent", "task-1", op); err != nil {
+			t.Fatalf("message refusé par le registre : %v", err)
 		}
-		if op.Kind == a2ui.UpdateComponents {
-			if !op.RootPresent || op.ComponentCount != 3 {
-				t.Errorf("op = %+v", op)
-			}
-			if !reflect.DeepEqual(op.Children["root"], []string{"title", "value"}) {
-				t.Errorf("children = %v", op.Children)
-			}
-		}
-		kinds = append(kinds, op.Kind)
+		got = append(got, line.Message)
 	}
-	want := []a2ui.Kind{a2ui.CreateSurface, a2ui.UpdateComponents, a2ui.UpdateDataModel}
-	if !reflect.DeepEqual(kinds, want) {
-		t.Fatalf("kinds = %v", kinds)
+	if err := sc.Err(); err != nil {
+		t.Fatal(err)
+	}
+	var want []map[string]any
+	for _, ex := range genesisExamples {
+		for _, m := range genesisMessages(t, ex.file) {
+			raw, err := json.Marshal(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw = []byte(strings.ReplaceAll(string(raw), genesisTestCatalogID, assetCatalogID))
+			var back map[string]any
+			if err := json.Unmarshal(raw, &back); err != nil {
+				t.Fatal(err)
+			}
+			want = append(want, back)
+		}
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("l'asset de rejeu diffère des exemples du contrat (%d messages lus, %d attendus)", len(got), len(want))
 	}
 }
 
