@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
+import 'package:feature_replay/feature_replay.dart';
 import 'package:feature_stage_controls/feature_stage_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
@@ -13,11 +14,14 @@ import 'package:flutter_test/flutter_test.dart'
 import 'package:genesis_canvas/widgets/stage_bar/stage_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../support/replay_rig.dart';
+
 void main() {
   late StageBloc stage;
   late AgentActivityBloc agents;
   late StreamController<SessionEvent> events;
   late int resets;
+  late ReplayRig replay;
 
   void testWidgets(
     String description,
@@ -27,11 +31,13 @@ void main() {
     agents = AgentActivityBloc();
     events = StreamController<SessionEvent>.broadcast();
     resets = 0;
+    replay = ReplayRig(withJournal: true);
     await body(tester);
     await tester.pumpWidget(const SizedBox());
     unawaited(events.close());
     unawaited(stage.close());
     unawaited(agents.close());
+    replay.dispose();
     await tester.pump();
   });
 
@@ -46,6 +52,7 @@ void main() {
           providers: <BlocProvider<dynamic>>[
             BlocProvider<StageBloc>.value(value: stage),
             BlocProvider<AgentActivityBloc>.value(value: agents),
+            BlocProvider<ReplayBloc>.value(value: replay.bloc),
           ],
           child: Align(
             alignment: Alignment.topRight,
@@ -214,5 +221,65 @@ void main() {
     await tester.pump();
 
     expect(resetButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('en rejeu : « Acte 4 · Rejeu », texte seul non cliquable', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    replay.bloc.add(const ReplayPlayPressed());
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.descendant(of: indicator(), matching: find.text('Acte 4 · Rejeu')),
+      findsOneWidget,
+    );
+    await tester.tap(indicator());
+    await tester.pump();
+    await tester.pump();
+    expect(stage.state.act, 1, reason: 'le clic ne change plus d\'acte');
+    expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+    final style = tester
+        .renderObject<RenderParagraph>(find.text('Acte 4 · Rejeu'))
+        .text
+        .style;
+    expect(style?.fontSize, greaterThanOrEqualTo(24));
+  });
+
+  testWidgets('en rejeu : « Remettre à vide » quitte le rejeu, sans reset', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    replay.bloc.add(const ReplayPlayPressed());
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('reset-button')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(resets, 0, reason: 'la remise à vide classique ne part pas');
+    expect(replay.stage.exits, 1);
+    expect(replay.bloc.state, isA<ReplayLive>());
+    expect(find.text('Acte 1/3 · Créer'), findsOneWidget);
+  });
+
+  testWidgets('en rejeu : « Remettre à vide » reste actif même si occupé', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    replay.bloc.add(const ReplayPlayPressed());
+    await tester.pump();
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.working,
+      ),
+    );
+
+    expect(resetButton(tester).onPressed, isNotNull);
   });
 }

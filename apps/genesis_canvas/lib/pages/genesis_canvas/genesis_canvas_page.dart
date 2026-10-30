@@ -496,7 +496,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 32 px (160 → 128), le rail garde ses 200 px (cinq lignes possibles).
   static const double _railHeight = 200;
   static const double _bottomRowHeight = 140;
-  static const double _replayWidth = 340;
+  static const double _replayWidth = 480;
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(

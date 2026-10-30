@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
 
+import '../../support/replay_rig.dart';
+
 /// État partagé entre les étapes d'un scénario de l'outillage de boucle.
 ///
 /// La sortie du processus est une frontière plateforme : l'app reçoit une
@@ -37,13 +39,15 @@ class Harness {
         ? GenesisConfig.fromEnvironment(environment)
         : GenesisConfig(scenario: scenario, snapshotPath: snapshotPath);
     await tester.pumpWidget(
-      GenesisCanvasApp(
-        config: config,
-        exitHandler: exitCodes.add,
-        // Frontière « temps » : le rejeu enchaîne ses douze messages sans
-        // attente réelle (le rythme de l'asset est celui d'une démonstration ;
-        // `pumpAndSettle` s'arrêterait entre deux messages espacés de 500 ms).
-        replayDelay: (_) async {},
+      ReplayScope(
+        child: GenesisCanvasApp(
+          config: config,
+          exitHandler: exitCodes.add,
+          // Frontière « temps » : le rejeu enchaîne ses douze messages sans
+          // attente réelle (le rythme de l'asset est celui d'une démonstration ;
+          // `pumpAndSettle` s'arrêterait entre deux messages espacés de 500 ms).
+          replayDelay: (_) async {},
+        ),
       ),
     );
     await tester.pump();

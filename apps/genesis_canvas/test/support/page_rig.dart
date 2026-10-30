@@ -22,6 +22,7 @@ import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 import 'page_settings.dart';
+import 'replay_rig.dart';
 
 const rigCatalog = GenesisContract.defaultCatalogId;
 
@@ -174,13 +175,18 @@ class PageRig {
       settings: settings,
     );
     await tester.pumpWidget(
-      themed
-          ? MaterialApp(
-              debugShowCheckedModeBanner: false,
-              theme: genesisThemeData(),
-              home: Material(type: MaterialType.transparency, child: page),
-            )
-          : Directionality(textDirection: TextDirection.ltr, child: page),
+      ReplayScope(
+        child: themed
+            ? MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: genesisThemeData(),
+                home: Material(type: MaterialType.transparency, child: page),
+              )
+            : Directionality(
+                textDirection: TextDirection.ltr,
+                child: withOverlay(page),
+              ),
+      ),
     );
     // Bornés : l'orbe au repos pulse sans fin (jamais `pumpAndSettle`).
     await tester.pump(const Duration(milliseconds: 50));

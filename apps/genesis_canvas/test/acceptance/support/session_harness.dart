@@ -12,6 +12,8 @@ import '../../support/pump_until.dart';
 
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
+import '../../support/replay_rig.dart';
+
 /// État partagé entre les étapes des scénarios de session voix.
 ///
 /// Frontières : réseau local réel (`FakeBackend`) et WebRTC (`FakeTransport`).
@@ -92,18 +94,20 @@ class SessionHarness {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      GenesisCanvasApp(
-        config: GenesisConfig.fromEnvironment(<String, String>{
-          'GENESIS_BACKEND_URL': backend.url,
-          'GENESIS_APP_LOG': ?appLogPath,
-          'GENESIS_SCENARIO': ?scenario,
-        }),
-        voiceTransportFactory: transports.call,
-        exitHandler: (_) {},
-        errorSink: errorSink,
-        clock: clock,
-        // Frontière « temps » : le rejeu enchaîne ses messages sans attente.
-        replayDelay: scenario == null ? null : (_) async {},
+      ReplayScope(
+        child: GenesisCanvasApp(
+          config: GenesisConfig.fromEnvironment(<String, String>{
+            'GENESIS_BACKEND_URL': backend.url,
+            'GENESIS_APP_LOG': ?appLogPath,
+            'GENESIS_SCENARIO': ?scenario,
+          }),
+          voiceTransportFactory: transports.call,
+          exitHandler: (_) {},
+          errorSink: errorSink,
+          clock: clock,
+          // Frontière « temps » : le rejeu enchaîne ses messages sans attente.
+          replayDelay: scenario == null ? null : (_) async {},
+        ),
       ),
     );
     await tester.pump();

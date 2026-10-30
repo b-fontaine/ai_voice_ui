@@ -6,6 +6,8 @@ import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
 import 'package:genui/genui.dart' show Surface;
 
+import '../support/replay_rig.dart';
+
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
   _FakeBundle(this.assets);
@@ -38,13 +40,15 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      GenesisCanvasApp(
-        config: const GenesisConfig(scenario: 'demo'),
-        exitHandler: (_) {},
-        assetBundle: _FakeBundle(<String, String>{
-          'assets/replays/demo.jsonl': _replay,
-        }),
-        replayDelay: (_) async {},
+      ReplayScope(
+        child: GenesisCanvasApp(
+          config: const GenesisConfig(scenario: 'demo'),
+          exitHandler: (_) {},
+          assetBundle: _FakeBundle(<String, String>{
+            'assets/replays/demo.jsonl': _replay,
+          }),
+          replayDelay: (_) async {},
+        ),
       ),
     );
     await tester.pump();
