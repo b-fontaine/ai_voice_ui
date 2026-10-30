@@ -12,7 +12,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## TDD
 - [x] T10a Go — `kit.Intent` / `ParseIntent` (remplace `InScope`), table de A4 + A5 · test d'abord : table complète (cas de `InScope` conservés, verdict inversé où D3 l'exige)
-- [ ] T10b Go — `SurfaceMessages` : mutation par `updateDataModel` seul · test d'abord : `activesurfaces_test` remplacé (surface active → un seul message)
+- [x] T10b Go — `SurfaceMessages` : mutation par `updateDataModel` seul · test d'abord : `activesurfaces_test` remplacé (surface active → un seul message)
 - [ ] T10c Go — tags communs et `texts.rejected` des trois `profile.json`, `failure_rejected` de `phrases.fr.json` ; `planner_test` lit les profils · test d'abord : « Concentre-toi sur Android et compare avec la 3.3 » retient les trois agents, « les avis Android » seulement Voix du client ; `profile_test`, test des phrases de `bootstrap`
 - [ ] T11 Go — composeur Qualité : vues globale / plateforme / comparaison / iOS (`kpi`, `trend`), résumé factuel sans fragment de la demande · test d'abord : sortie égale à `act2-kpi`, `act2-trend`, `correction-ios-kpi`, `correction-ios-trend`
 - [ ] T12 Go — composeur Voix du client (`reviews`) · test d'abord : égal à `act2-reviews`, `correction-ios-reviews`

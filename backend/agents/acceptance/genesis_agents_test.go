@@ -404,7 +404,7 @@ func TestGenesisG4_CompositionMemoryFromOrchestrator(t *testing.T) {
 				t.Fatalf("2e échange : aucun message A2UI (états finaux %q)", stateOf(events[len(events)-1]))
 			}
 			for _, m := range msgs {
-				if k := kindOf(m); k != "updateComponents" && k != "updateDataModel" {
+				if k := kindOf(m); k != "updateDataModel" {
 					t.Errorf("2e échange avec surfaces actives : message %q inattendu", k)
 				}
 			}

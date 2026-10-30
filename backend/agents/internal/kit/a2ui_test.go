@@ -29,7 +29,8 @@ func TestSurfaceMessages(t *testing.T) {
 		t.Errorf("surface absente :\n%v\nattendu\n%v", got, want)
 	}
 	got = kit.SurfaceMessages("cat", []string{"autre", "kpi"}, "kpi", "KeyIndicator", "/kpi", value)
-	if want := update("kpi"); !reflect.DeepEqual(got, want) {
+	// Surface active : le composant root est inchangé, seul le modèle de données est mis à jour.
+	if want := update("kpi")[1:]; !reflect.DeepEqual(got, want) {
 		t.Errorf("surface active : %v, attendu %v", got, want)
 	}
 	got = kit.SurfaceMessages("cat", []string{"autre"}, "kpi", "KeyIndicator", "/kpi", value)

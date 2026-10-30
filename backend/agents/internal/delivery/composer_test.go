@@ -236,7 +236,7 @@ func TestDeliveryCreatesOnlySurfacesNotActive(t *testing.T) {
 	}{
 		{"surfaces actives vides", map[string]any{kit.ActiveSurfacesKey: []any{}}, create},
 		{"metadata absentes", nil, create},
-		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"checklist"}}, create[1:]},
+		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"checklist"}}, create[2:]},
 		{"surface d'un autre agent seulement", map[string]any{kit.ActiveSurfacesKey: []any{"kpi", "reviews"}}, create},
 		{"valeur mal typée ignorée", map[string]any{kit.ActiveSurfacesKey: "checklist"}, create},
 		{"éléments mal typés ignorés", map[string]any{kit.ActiveSurfacesKey: []any{7, nil}}, create},

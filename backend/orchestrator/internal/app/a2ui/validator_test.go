@@ -259,3 +259,16 @@ func TestValidateDoesNotMutate(t *testing.T) {
 		t.Fatal("le résultat partage de la mémoire avec le message")
 	}
 }
+
+// Une surface active ne reçoit plus que l'updateDataModel (pdr-0064, D1) : le
+// validateur, sans état, l'accepte seul, chemin entier compris.
+func TestValidateAcceptsLoneUpdateDataModelOnActiveSurface(t *testing.T) {
+	v := newValidator(t)
+	op, err := v.Validate(parse(t, `{"version":"v0.9","updateDataModel":{"surfaceId":"kpi","path":"/kpi","value":{"label":"x"}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if op.Kind != a2ui.UpdateDataModel || op.SurfaceID != "kpi" {
+		t.Fatalf("op = %+v", op)
+	}
+}

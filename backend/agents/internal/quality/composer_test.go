@@ -170,8 +170,13 @@ func TestSecondRequestAfterPartialCompensationRecreatesOnlyMissing(t *testing.T)
 		if !reflect.DeepEqual(created, tc.created) {
 			t.Errorf("actives %v : createSurface %v, attendu %v", tc.active, created, tc.created)
 		}
-		if updated["kpi"] != 2 || updated["trend"] != 2 {
-			t.Errorf("actives %v : mises à jour %v, attendu 2 par surface", tc.active, updated)
+		// Surface créée : updateComponents + updateDataModel ; surface active : updateDataModel seul.
+		want := map[string]int{"kpi": 2, "trend": 2}
+		for _, a := range tc.active {
+			want[a] = 1
+		}
+		if !reflect.DeepEqual(updated, want) {
+			t.Errorf("actives %v : mises à jour %v, attendu %v", tc.active, updated, want)
 		}
 	}
 }
@@ -270,7 +275,7 @@ func TestComposerCreatesOnlySurfacesNotActive(t *testing.T) {
 	}{
 		{"surfaces actives vides", map[string]any{kit.ActiveSurfacesKey: []any{}}, twoSurfaces},
 		{"metadata absentes", nil, twoSurfaces},
-		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"kpi", "trend"}}, []string{"updateComponents", "updateDataModel", "updateComponents", "updateDataModel"}},
+		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"kpi", "trend"}}, []string{"updateDataModel", "updateDataModel"}},
 		{"surface d'un autre agent seulement", map[string]any{kit.ActiveSurfacesKey: []any{"reviews"}}, twoSurfaces},
 		{"valeur mal typée ignorée", map[string]any{kit.ActiveSurfacesKey: "quality"}, twoSurfaces},
 		{"éléments mal typés ignorés", map[string]any{kit.ActiveSurfacesKey: []any{7, nil}}, twoSurfaces},
