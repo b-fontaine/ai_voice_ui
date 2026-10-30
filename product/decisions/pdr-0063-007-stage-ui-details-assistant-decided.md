@@ -35,7 +35,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 - **D2 — Relation message ↔ composant (FR-05)** : message en cours en évidence dans le panneau ; sa surface reçoit un contour pointillé.
 - **D3 — Zone Rejeu** : emplacement libellé « REJEU », commandes inactives jusqu'à J6.
 - **D4 — Remise à vide (FR-11, RG-23)** : bouton « Remettre à vide » ; vide canevas, panneau, étagère, rail, acte 1 ; demande au backend (`POST /canvas/reset`, au mieux) de retirer les surfaces actives et de vider le registre de la session (pdr-0058). Pas de raccourci `R` en J3. La survie du canevas d'une session voix à l'autre reste à J4.
-- **D5 — Rail** : l'orchestrateur et les trois rôles toujours affichés après le premier `plan` ; absent du plan = « en veille » ; plan vide = « aucun agent retenu » (RG-08, RG-29).
+- **D5 — Rail** : l'orchestrateur puis les agents du dernier `plan` (noms issus des cartes, jamais codés en dur, RG-29) ; agent non retenu = « en veille » ; plan vide = « aucun agent retenu » (RG-08, RG-29).
 - **D6 — Rendu** : composants du catalogue `genesis` au seul thème de scène (RG-09), statuts par codes fermés, courbe en `CustomPainter` sans nouvelle dépendance.
 
 ## Raisons

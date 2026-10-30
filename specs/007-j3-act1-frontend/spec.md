@@ -13,7 +13,7 @@ Fiche muette sur ces détails : la boucle tranche, le porteur peut contester.
 - **D2 — Relation message ↔ composant (FR-05)** : le message en cours est mis en évidence dans le panneau, et sa surface reçoit un **contour pointillé** (le « pointillé » de la fiche, sans tracé de ligne entre zones).
 - **D3 — Zone Rejeu** : emplacement visible avec libellé « REJEU », commandes inactives jusqu'à J6.
 - **D4 — Remise à vide** : bouton « Remettre à vide » dans la régie ; efface le canevas, le panneau, l'étagère et les agents, remet l'acte à 1, et demande au backend de retirer les surfaces actives (`POST /canvas/reset`, au mieux). Raccourci `R` facultatif : non fourni (pdr-0033, souris d'abord).
-- **D5 — Rail** : l'orchestrateur et les trois agents sont toujours visibles ; un agent absent du `plan` est « en veille » ; un `plan` vide affiche « aucun agent retenu » (RG-08, la voix refuse et propose une alternative, côté 006).
+- **D5 — Rail** : l'orchestrateur, puis les agents du dernier `plan` (retenus et en veille), sans nom d'agent codé en dur (RG-29, amendement A4c) ; un agent absent de `selected` est « en veille » ; un `plan` vide affiche « aucun agent retenu » (RG-08, la voix refuse et propose une alternative, côté 006).
 - **D6 — Rendu des composants** : le catalogue `genesis` est un ensemble de `CatalogItem` qui n'utilisent que le **thème de scène** (RG-09) ; aucune couleur ne dépend d'un libellé français (codes `ok|risk|blocking`) ; la courbe est dessinée par `CustomPainter` (aucune nouvelle dépendance).
 
 ## Scénarios (Gherkin)
