@@ -117,7 +117,7 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 	s := h.session(sessionID)
 	h.seq++
 	switch m.Type {
-	case domain.TypeOrbLevel, domain.TypeVoiceInterrupted: // jamais rejouéss
+	case domain.TypeOrbLevel, domain.TypeVoiceInterrupted: // jamais rejoués
 	case domain.TypeA2UI, domain.TypeAgentActivity, domain.TypePlan:
 		h.retain(s, entry{seq: h.seq, payload: payload}, m)
 	default:

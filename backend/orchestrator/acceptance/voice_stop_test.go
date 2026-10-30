@@ -40,6 +40,16 @@ func say(live *fakeDelegatingLive, text string, startMs, endMs int64) {
 	live.clock.Advance(settleAdvance)
 }
 
+// sayWordByWord fait dire une phrase delta par delta (comme le fournisseur), les start_ms
+// croissant de 100 ms, puis laisse passer le délai de confirmation du détecteur.
+func sayWordByWord(live *fakeDelegatingLive, deltas []string, startMs int64) {
+	for i, d := range deltas {
+		at := startMs + int64(i)*100
+		live.Emit(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: d, StartMs: at, EndMs: at + 100})
+	}
+	live.clock.Advance(settleAdvance)
+}
+
 // blockingSurface renvoie les messages A2UI de la surface id : createSurface seul
 // (stage 0), + updateComponents (stage 1, inachevée : pas de données), + updateDataModel
 // de /<id> (stage 2, complète).
@@ -250,5 +260,48 @@ func TestK04_StopInsideWordOrLongSentenceDoesNotTrigger(t *testing.T) {
 		if env, ok := feed.next(noTriggerWait, isInterrupted); ok {
 			t.Fatalf("« %s » ne doit rien déclencher, %s publié : %s", p, eventVoiceInterrupted, env.Data)
 		}
+	}
+}
+
+// K-04 (mot par mot) — Les deltas arrivent mot à mot : MaxWords reste effectif (R2).
+//
+// Étant donné une session sans génération en vol ;
+// quand le speaker dit « Stop, attends, je voudrais… » ou « Annule la décision du
+// blocage » delta par delta ;
+// alors aucun voice.interrupted n'est publié ; « Stop. » (point) et « Stop » (puis le
+// délai de confirmation) déclenchent toujours.
+func TestK04_WordByWordLongUtteranceDoesNotTrigger(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, live, feed := startIdleVoiceApp(t, ctx)
+
+	utterances := [][]string{
+		{"Stop", ",", " attends", ",", " je", " voudrais", " d'abord", " voir", " la", " qualité"},
+		{"Annule", " la", " décision", " du", " blocage"},
+	}
+	for i, u := range utterances {
+		sayWordByWord(live, u, int64(i+1)*30000)
+		if env, ok := feed.next(noTriggerWait, isInterrupted); ok {
+			t.Fatalf("%q ne doit rien déclencher, %s publié : %s", u, eventVoiceInterrupted, env.Data)
+		}
+	}
+}
+
+func TestK04_WordByWordStopStillTriggers(t *testing.T) {
+	for name, deltas := range map[string][]string{
+		"point":  {"Stop", "."},
+		"settle": {"Stop"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_, live, feed := startIdleVoiceApp(t, ctx)
+
+			sayWordByWord(live, deltas, 3000)
+
+			if _, ok := feed.next(genesisWait, isInterrupted); !ok {
+				t.Fatalf("%q dit mot par mot : aucun %s publié en %s", deltas, eventVoiceInterrupted, genesisWait)
+			}
+		})
 	}
 }

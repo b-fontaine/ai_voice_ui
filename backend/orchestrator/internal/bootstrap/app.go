@@ -18,6 +18,7 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/fanout"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/stopword"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -229,7 +230,11 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap: pipeline d'orchestration : %w", err)
 	}
+	// Même liste normalisée que le détecteur vocal : une demande faite uniquement de ces
+	// mots est un « Stop » seul, quel que soit l'ordre des événements.
+	stopMatcher := stopword.New(cfg.VoiceStopWords)
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
+		StopSpan: cfg.VoiceStopSpan, IsStopOnly: stopMatcher.OnlyStopWords,
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
 		Clock: asWaitClock(clock), RequestWindowSettle: cfg.RequestWindowSettle, RequestWindowMargin: cfg.RequestWindowMargin,

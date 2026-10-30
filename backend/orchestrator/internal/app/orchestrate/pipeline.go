@@ -31,9 +31,6 @@ const (
 	DetailSessionClosed = "session fermée"
 	// DetailOutOfScope accompagne l'état `rejected` (refus d'un agent retenu).
 	DetailOutOfScope = "hors périmètre"
-	// DetailCanceled est interne : detailFor le renvoie pour un arrêt demandé
-	// (ErrInterrupted) et failLocked publie alors l'état `canceled`, sans détail.
-	DetailCanceled = "arrêt demandé"
 )
 
 // errNoFinalState qualifie un flux terminé sans état final ; errProtocol une

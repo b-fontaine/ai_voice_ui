@@ -52,15 +52,14 @@ func TestStopDetectorTriggersOnBoundary(t *testing.T) {
 		at     int64
 	}{
 		{"mot suivi d'un point", []delta{{"Stop.", 3000}}, 3000},
-		{"point en tête observé à l'essai", []delta{{". Stop", 3000}, {" ", 3100}}, 3000},
-		{"mot puis espace", []delta{{"stop ", 500}}, 500},
-		{"mot puis mot suivant", []delta{{"stop", 500}, {" attends", 700}}, 500},
+		{"point en tête observé à l'essai", []delta{{". Stop", 3000}, {".", 3100}}, 3000},
+		{"point d'exclamation ou d'interrogation", []delta{{"stop", 500}, {" ?", 700}}, 500},
 		{"mot découpé en deltas : déclencheur = delta qui complète le mot", []delta{{"st", 500}, {"op", 650}, {".", 800}}, 650},
 		{"trait d'union", []delta{{"Tais-toi", 100}, {"!", 200}}, 100},
-		{"trait d'union coupé en deltas", []delta{{"Tais-", 100}, {"toi", 250}, {" ", 300}}, 250},
-		{"majuscule et accent conservé", []delta{{"ANNULE,", 0}}, 0},
-		{"apostrophes ignorées", []delta{{"'Stop'", 40}}, 40},
-		{"apostrophe typographique", []delta{{"« Stop », ", 40}}, 40},
+		{"trait d'union coupé en deltas", []delta{{"Tais-", 100}, {"toi", 250}, {" !", 300}}, 250},
+		{"majuscule et accent conservé", []delta{{"ANNULE.", 0}}, 0},
+		{"apostrophes ignorées", []delta{{"'Stop'.", 40}}, 40},
+		{"apostrophe typographique", []delta{{"« Stop ». ", 40}}, 40},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -92,7 +91,7 @@ func TestStopDetectorDoesNotTrigger(t *testing.T) {
 			d, clk := newTestDetector(t)
 			got := feedAll(d, tc.deltas...)
 			clk.Advance(10 * time.Second)
-			if det, ok := d.Poll(); ok {
+			if det, ok := d.SettleNow(); ok {
 				got = append(got, det)
 			}
 			if len(got) != 0 {
@@ -105,11 +104,11 @@ func TestStopDetectorDoesNotTrigger(t *testing.T) {
 // Plus de MaxWords mots : aucun déclenchement, même avec le mot d'arrêt en tête.
 func TestStopDetectorMaxWordsBoundary(t *testing.T) {
 	d, _ := newTestDetector(t)
-	if got := feedAll(d, delta{"stop un deux trois", 1000}); len(got) != 1 {
+	if got := feedAll(d, delta{"stop. un deux trois", 1000}); len(got) != 1 {
 		t.Fatalf("4 mots (= MaxWords) : détections %+v, attendu 1", got)
 	}
 	d, _ = newTestDetector(t)
-	if got := feedAll(d, delta{"stop un deux trois quatre", 1000}); len(got) != 0 {
+	if got := feedAll(d, delta{"stop. un deux trois quatre", 1000}); len(got) != 0 {
 		t.Fatalf("5 mots (> MaxWords) : détections %+v, attendu aucune", got)
 	}
 }
@@ -120,9 +119,6 @@ func TestStopDetectorConfirmsAfterSettle(t *testing.T) {
 	if got := feedAll(d, delta{"Stop", 2000}); len(got) != 0 {
 		t.Fatalf("mot non confirmé : détections %+v", got)
 	}
-	if _, ok := d.Poll(); ok {
-		t.Fatal("Poll avant le délai : rien attendu")
-	}
 	wait, pending := d.PendingFor()
 	if !pending || wait != 400*time.Millisecond {
 		t.Fatalf("PendingFor = %v, %v ; attendu 400ms, true", wait, pending)
@@ -132,11 +128,11 @@ func TestStopDetectorConfirmsAfterSettle(t *testing.T) {
 		t.Fatalf("PendingFor après 150ms = %v, attendu 250ms", wait)
 	}
 	clk.Advance(250 * time.Millisecond)
-	det, ok := d.Poll()
+	det, ok := d.SettleNow()
 	if !ok || det.AtMs != 2000 {
-		t.Fatalf("Poll après le délai = %+v, %v ; attendu at_ms=2000", det, ok)
+		t.Fatalf("SettleNow après le délai = %+v, %v ; attendu at_ms=2000", det, ok)
 	}
-	if _, ok := d.Poll(); ok {
+	if _, ok := d.SettleNow(); ok {
 		t.Fatal("la détection ne doit partir qu'une fois")
 	}
 	if _, pending := d.PendingFor(); pending {
@@ -152,7 +148,7 @@ func TestStopDetectorSuffixCancelsPending(t *testing.T) {
 	clk.Advance(100 * time.Millisecond)
 	feedAll(d, delta{"pé", 1100})
 	clk.Advance(5 * time.Second)
-	if det, ok := d.Poll(); ok {
+	if det, ok := d.SettleNow(); ok {
 		t.Fatalf("détection %+v pour « stoppé »", det)
 	}
 	if _, pending := d.PendingFor(); pending {
@@ -165,14 +161,17 @@ func TestStopDetectorSettleRunsFromLastDelta(t *testing.T) {
 	d, clk := newTestDetector(t)
 	feedAll(d, delta{"stop", 1000})
 	clk.Advance(300 * time.Millisecond)
-	feedAll(d, delta{"", 1300}) // delta vide : pas de frontière, mais dernier delta
+	feedAll(d, delta{"", 1300}) // delta vide : pas de ponctuation, mais dernier delta
 	clk.Advance(300 * time.Millisecond)
-	if _, ok := d.Poll(); ok {
-		t.Fatal("300ms seulement depuis le dernier delta : rien attendu")
+	if wait, _ := d.PendingFor(); wait != 100*time.Millisecond {
+		t.Fatalf("PendingFor = %v, attendu 100ms (le délai court depuis le dernier delta)", wait)
 	}
 	clk.Advance(100 * time.Millisecond)
-	if det, ok := d.Poll(); !ok || det.AtMs != 1000 {
-		t.Fatalf("Poll = %+v, %v ; attendu at_ms=1000", det, ok)
+	if wait, _ := d.PendingFor(); wait != 0 {
+		t.Fatalf("PendingFor = %v, attendu 0", wait)
+	}
+	if det, ok := d.SettleNow(); !ok || det.AtMs != 1000 {
+		t.Fatalf("SettleNow = %+v, %v ; attendu at_ms=1000", det, ok)
 	}
 }
 
@@ -195,7 +194,7 @@ func TestStopDetectorUtteranceGap(t *testing.T) {
 	// L'écart se mesure entre deltas consécutifs (pas depuis le début de l'énoncé).
 	d, _ = newTestDetector(t)
 	feedAll(d, delta{"Bonjour", 0}, delta{" à", 1000}, delta{" tous", 2000}, delta{" stop", 3000}, delta{".", 3100})
-	if _, ok := d.Poll(); ok {
+	if _, ok := d.SettleNow(); ok {
 		t.Fatal("énoncé continu de 3 s : stop n'est pas le premier mot")
 	}
 }
@@ -238,8 +237,8 @@ func TestStopDetectorDebounceAppliesToSettleToo(t *testing.T) {
 	feedAll(d, delta{"stop.", 10000})
 	feedAll(d, delta{"stop", 11600})
 	clk.Advance(time.Second)
-	if det, ok := d.Poll(); ok {
-		t.Fatalf("anti-rebond : Poll a rendu %+v", det)
+	if det, ok := d.SettleNow(); ok {
+		t.Fatalf("anti-rebond : SettleNow a rendu %+v", det)
 	}
 }
 
@@ -327,14 +326,49 @@ func TestStopDetectorSettleNowConfirmsPendingWithoutClock(t *testing.T) {
 	if feedAll(d, delta{"Stop", 3000}) != nil {
 		t.Fatal("« Stop » sans frontière ne se confirme pas à l'arrivée")
 	}
-	if _, ok := d.Poll(); ok {
-		t.Fatal("Poll ne confirme pas avant Settle")
-	}
 	det, ok := d.SettleNow()
 	if !ok || det.AtMs != 3000 {
 		t.Fatalf("SettleNow = (%+v, %v), attendu at_ms 3000", det, ok)
 	}
 	if _, ok := d.SettleNow(); ok {
 		t.Fatal("rien n'est plus en attente")
+	}
+}
+
+// R2 : les deltas arrivent mot à mot ; MaxWords doit rester effectif. Un mot d'arrêt n'est
+// confirmé qu'à une ponctuation terminale, à Settle ou à l'ouverture d'un nouvel énoncé.
+func TestStopDetectorWordByWordLongUtteranceDoesNotTrigger(t *testing.T) {
+	cases := [][]delta{
+		{{"Stop", 1000}, {",", 1100}, {" attends", 1200}, {",", 1300}, {" je", 1400}, {" voudrais", 1500}, {" d'abord", 1600}},
+		{{"Annule", 1000}, {" la", 1100}, {" décision", 1200}, {" du", 1300}, {" blocage", 1400}},
+	}
+	for _, deltas := range cases {
+		d, clk := newTestDetector(t)
+		got := feedAll(d, deltas...)
+		clk.Advance(10 * time.Second)
+		if det, ok := d.SettleNow(); ok {
+			got = append(got, det)
+		}
+		if len(got) != 0 {
+			t.Fatalf("%v : détections inattendues %+v", deltas, got)
+		}
+	}
+}
+
+func TestStopDetectorWordByWordTerminalAndSettleStillTrigger(t *testing.T) {
+	d, _ := newTestDetector(t)
+	if got := feedAll(d, delta{"Stop", 1000}, delta{".", 1100}); len(got) != 1 || got[0].AtMs != 1000 {
+		t.Fatalf("« Stop » puis « . » : %+v, attendu une détection à 1000", got)
+	}
+	d, _ = newTestDetector(t)
+	if got := feedAll(d, delta{"Stop", 1000}); len(got) != 0 {
+		t.Fatalf("« Stop » seul : %+v avant Settle", got)
+	}
+	if det, ok := d.SettleNow(); !ok || det.AtMs != 1000 {
+		t.Fatalf("« Stop » puis Settle : %+v, %v", det, ok)
+	}
+	d, _ = newTestDetector(t)
+	if got := feedAll(d, delta{"Stop", 1000}, delta{" ", 1100}, delta{"attends", 1200}); len(got) != 0 {
+		t.Fatalf("mot suivant : pas de confirmation sans Settle, %+v", got)
 	}
 }

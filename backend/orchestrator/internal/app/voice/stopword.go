@@ -3,11 +3,10 @@ package voice
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
-	"unicode"
 	"unicode/utf8"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/stopword"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
@@ -40,8 +39,8 @@ type StopConfig struct {
 	UtteranceGap time.Duration
 	// MaxWords : nombre maximal de mots d'un énoncé qui peut déclencher (1 à 32).
 	MaxWords int
-	// Settle : délai, sans nouveau delta, après lequel un mot d'arrêt sans frontière
-	// de mot est confirmé. Zéro : confirmé aussitôt.
+	// Settle : délai, sans nouveau delta, après lequel un mot d'arrêt sans ponctuation
+	// terminale est confirmé. Zéro : confirmé aussitôt.
 	Settle time.Duration
 	// Debounce : écart minimal entre les start_ms de deux déclencheurs.
 	Debounce time.Duration
@@ -57,15 +56,15 @@ type Detection struct {
 // start_ms consécutifs sont espacés de moins de UtteranceGap ; il déclenche si le
 // premier mot significatif de l'énoncé est un mot d'arrêt et si l'énoncé compte au
 // plus MaxWords mots (« bus stop », « stoppé » et les phrases longues ne déclenchent
-// pas). Un mot d'arrêt n'est confirmé qu'à une frontière de mot (un séparateur ou un
-// mot suivant) ou après Settle sans nouveau delta, d'où Poll. Le nombre de mots est
-// celui de l'énoncé au moment de la confirmation : le détecteur ne peut pas attendre
-// la fin d'une phrase pour interrompre.
+// pas). Un mot d'arrêt n'est confirmé qu'à une ponctuation terminale (« . », « ! »,
+// « ? »), après Settle sans nouveau delta (SettleNow, à l'échéance de PendingFor) ou à
+// l'ouverture d'un nouvel énoncé ; le candidat est écarté dès que l'énoncé dépasse
+// MaxWords mots, même quand les deltas arrivent mot à mot.
 //
 // Non sûr pour l'accès concurrent : à appeler depuis une seule goroutine.
 type StopDetector struct {
 	cfg   StopConfig
-	words [][]string // mots d'arrêt normalisés, découpés en mots
+	match *stopword.Matcher
 	clock port.Clock
 
 	// Énoncé courant.
@@ -77,7 +76,7 @@ type StopDetector struct {
 	cand      *int64    // start_ms du delta qui a fait apparaître le mot d'arrêt, en attente
 	nWords    int       // mots de l'énoncé à la dernière évaluation
 
-	ready       *Detection // détection confirmée, à rendre au prochain Poll
+	ready       *Detection // détection confirmée, à rendre au prochain SettleNow
 	hasTrigger  bool
 	lastTrigger int64 // start_ms du dernier déclencheur accepté
 }
@@ -97,12 +96,7 @@ func NewStopDetector(cfg StopConfig, clock port.Clock) (*StopDetector, error) {
 	if err := ValidateStopWords(cfg.Words); err != nil {
 		return nil, err
 	}
-	d := &StopDetector{cfg: cfg, clock: clock}
-	for _, w := range cfg.Words {
-		toks, _ := tokenize(w)
-		d.words = append(d.words, toks)
-	}
-	return d, nil
+	return &StopDetector{cfg: cfg, clock: clock, match: stopword.New(cfg.Words)}, nil
 }
 
 // ValidateStopWords vérifie la liste de mots d'arrêt : au plus MaxStopWords mots, de
@@ -113,7 +107,7 @@ func ValidateStopWords(words []string) error {
 		return fmt.Errorf("au plus %d mots d'arrêt", MaxStopWords)
 	}
 	for _, w := range words {
-		if toks, _ := tokenize(w); len(toks) == 0 || utf8.RuneCountInString(w) > MaxStopWordRunes {
+		if toks, _ := stopword.Tokenize(w); len(toks) == 0 || utf8.RuneCountInString(w) > MaxStopWordRunes {
 			return fmt.Errorf("chaque mot d'arrêt doit contenir une lettre ou un chiffre et au plus %d caractères", MaxStopWordRunes)
 		}
 	}
@@ -121,8 +115,8 @@ func ValidateStopWords(words []string) error {
 }
 
 // Feed ingère un delta de transcript d'entrée. Il rend une détection si le delta
-// confirme un mot d'arrêt (frontière de mot), ou si un mot resté en attente est confirmé
-// parce qu'un nouvel énoncé commence.
+// confirme un mot d'arrêt (ponctuation terminale), ou si un mot resté en attente est
+// confirmé parce qu'un nouvel énoncé commence.
 func (d *StopDetector) Feed(startMs int64, text string) (Detection, bool) {
 	var out *Detection
 	if d.started && absInt64(startMs-d.lastStart) >= d.cfg.UtteranceGap.Milliseconds() {
@@ -138,7 +132,7 @@ func (d *StopDetector) Feed(startMs int64, text string) (Detection, bool) {
 	}
 	if det := d.evaluate(startMs); det != nil {
 		if out != nil {
-			d.ready = det // deux détections d'un coup : la seconde part au prochain Poll
+			d.ready = det // deux détections d'un coup : la seconde part au prochain SettleNow
 		} else {
 			out = det
 		}
@@ -147,23 +141,6 @@ func (d *StopDetector) Feed(startMs int64, text string) (Detection, bool) {
 		return Detection{}, false
 	}
 	return *out, true
-}
-
-// Poll confirme un mot d'arrêt resté en attente une fois Settle écoulé depuis le dernier
-// delta. À appeler à l'échéance donnée par PendingFor.
-func (d *StopDetector) Poll() (Detection, bool) {
-	if d.ready != nil {
-		det := *d.ready
-		d.ready = nil
-		return det, true
-	}
-	if d.cand == nil || d.clock.Now().Sub(d.lastAt) < d.cfg.Settle {
-		return Detection{}, false
-	}
-	if det := d.confirm(); det != nil {
-		return *det, true
-	}
-	return Detection{}, false
 }
 
 // SettleNow confirme un mot d'arrêt resté en attente, sans consulter l'horloge : à
@@ -184,7 +161,7 @@ func (d *StopDetector) SettleNow() (Detection, bool) {
 	return Detection{}, false
 }
 
-// PendingFor donne le temps restant avant que Poll puisse confirmer un mot en attente
+// PendingFor donne le temps restant avant que SettleNow puisse confirmer un mot en attente
 // (0 s'il est déjà échu) ; false si rien n'est en attente.
 func (d *StopDetector) PendingFor() (time.Duration, bool) {
 	if d.ready != nil {
@@ -206,17 +183,20 @@ func (d *StopDetector) evaluate(start int64) *Detection {
 	if d.fired {
 		return nil
 	}
-	toks, closed := tokenize(d.text)
-	d.nWords = len(toks)
-	n := d.matchLen(toks)
-	if n == 0 {
+	lead := d.match.Lead(d.text)
+	d.nWords = lead.Words
+	if lead.Match == 0 {
 		d.cand = nil // « stop » devenu « stoppé », ou pas de mot d'arrêt en tête
+		return nil
+	}
+	if lead.Words > d.cfg.MaxWords {
+		d.cand, d.fired = nil, true // énoncé trop long : écarté, quel que soit le rythme des deltas
 		return nil
 	}
 	if d.cand == nil {
 		d.cand = &start
 	}
-	if len(toks) > n || closed || d.cfg.Settle == 0 {
+	if lead.Terminal || d.cfg.Settle == 0 {
 		return d.confirm()
 	}
 	return nil
@@ -236,27 +216,6 @@ func (d *StopDetector) confirm() *Detection {
 	return &Detection{AtMs: at}
 }
 
-// matchLen rend le nombre de mots du mot d'arrêt qui ouvre l'énoncé, ou 0.
-func (d *StopDetector) matchLen(toks []string) int {
-	for _, w := range d.words {
-		if len(toks) >= len(w) && equalStrings(toks[:len(w)], w) {
-			return len(w)
-		}
-	}
-	return 0
-}
-
-// tokenize normalise un texte : minuscules, accents conservés, tout ce qui n'est ni
-// lettre ni chiffre (ponctuation, apostrophes, traits d'union, guillemets) sépare les
-// mots. closed vaut true si le texte finit par un séparateur : le dernier mot est alors
-// terminé.
-func tokenize(s string) (tokens []string, closed bool) {
-	isSep := func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }
-	tokens = strings.FieldsFunc(strings.ToLower(s), isSep)
-	r, _ := utf8.DecodeLastRuneInString(s)
-	return tokens, s != "" && isSep(r)
-}
-
 func truncateRunes(s string, maxBytes int) string {
 	if len(s) <= maxBytes {
 		return s
@@ -265,15 +224,6 @@ func truncateRunes(s string, maxBytes int) string {
 		maxBytes--
 	}
 	return s[:maxBytes]
-}
-
-func equalStrings(a, b []string) bool {
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return len(a) == len(b)
 }
 
 func absInt64(n int64) int64 {

@@ -62,9 +62,11 @@ func loadPhrases(path string) (orchestrate.Phrases, voice.Phrases, error) {
 		ActionResultTemplate: f.ActionResultTemplate, ActionFailure: f.ActionFailure, Stopped: f.Stopped,
 	}
 	vp := voice.Phrases{AnnounceDone: f.AnnounceInstructionDone, AnnounceFailed: f.AnnounceInstructionFailed}
-	for key, v := range map[string]string{"failure_rejected": f.FailureRejected, "no_summary": f.NoSummary, "out_of_catalog": f.OutOfCatalog, "partial_failure": f.PartialFailure,
-		"action_result_template": f.ActionResultTemplate, "action_failure": f.ActionFailure, "stopped": f.Stopped,
-		"announce_instruction_done": f.AnnounceInstructionDone, "announce_instruction_failed": f.AnnounceInstructionFailed} {
+	// Ordre fixe : l'erreur nomme toujours la première clé absente.
+	for _, kv := range [][2]string{{"failure_rejected", f.FailureRejected}, {"no_summary", f.NoSummary}, {"out_of_catalog", f.OutOfCatalog}, {"partial_failure", f.PartialFailure},
+		{"action_result_template", f.ActionResultTemplate}, {"action_failure", f.ActionFailure}, {"stopped", f.Stopped},
+		{"announce_instruction_done", f.AnnounceInstructionDone}, {"announce_instruction_failed", f.AnnounceInstructionFailed}} {
+		key, v := kv[0], kv[1]
 		if v == "" {
 			return orchestrate.Phrases{}, voice.Phrases{}, errors.New("VOICE_PHRASES_FILE : clé " + key + " requise")
 		}

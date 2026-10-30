@@ -172,6 +172,7 @@ func testOptions() Options {
 		AgentTimeout: 5 * time.Second,
 		GuardTimeout: 500 * time.Millisecond,
 		SeenCap:      16,
+		StopSpan:     3 * time.Second,
 		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 }

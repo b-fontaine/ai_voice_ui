@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/stopword"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -167,7 +168,7 @@ type cancelEnv struct {
 	asked  int64
 }
 
-func newCancelEnv(t *testing.T, agent *stopAgent, gate *gateSink) *cancelEnv {
+func newCancelEnv(t *testing.T, agent *stopAgent, gate *gateSink, tweak ...func(*Options)) *cancelEnv {
 	t.Helper()
 	val, err := a2ui.NewValidator(a2ui.Options{
 		CatalogID: testCatalog, Components: []string{"Column", "Text"},
@@ -183,6 +184,9 @@ func newCancelEnv(t *testing.T, agent *stopAgent, gate *gateSink) *cancelEnv {
 	}
 	opts := testOptions()
 	opts.QueueDepth = 8
+	for _, f := range tweak {
+		f(&opts)
+	}
 	e.canvas = opts.Canvas
 	factory, err := NewPipelineFactory(PipelineConfig{
 		Clock: fixedClock{time.Unix(1000, 0)}, Sink: e.sink, Agents: []port.RemoteAgent{agent},
@@ -431,6 +435,44 @@ func TestDelegationOfStopOnlyRequestSaysStoppedAndSchedulesNothing(t *testing.T)
 	e.awaitIdle()
 	if n := agent.sends.Load(); n != 0 || e.plans() != 0 {
 		t.Fatalf("%d tâche(s) et %d plan(s) pour une demande réduite à « Stop », attendu aucun", n, e.plans())
+	}
+}
+
+// R1 : si la fenêtre de demande se referme avant que le détecteur ait confirmé « Stop »
+// (délégation créée pendant l'attente de confirmation, aucun Interrupt encore), la
+// demande rendue est « Stop » : elle est reconnue comme « Stop seul » d'après la même
+// liste de mots que le détecteur. Aucun plan, phrase « stopped ».
+func TestDelegationOfRequestMadeOnlyOfStopWordsBeforeDetectionSaysStopped(t *testing.T) {
+	agent := newStopAgent(surfaceScript("quality", 2)...)
+	m := stopword.New([]string{"stop", "tais-toi"})
+	e := newCancelEnv(t, agent, nil, func(o *Options) { o.IsStopOnly = m.OnlyStopWords })
+	say(e.s, "Stop", 5000)
+	e.s.Delegate("d1", 5400)
+
+	var got []string
+	for _, c := range e.commentaries(2) {
+		got = append(got, c.Text)
+	}
+	if !slices.Equal(got, []string{pipePhrases.Generic, pipePhrases.Stopped}) {
+		t.Fatalf("commentaires = %v, attendu [générique, stopped]", got)
+	}
+	e.noMoreCommentary()
+	e.awaitIdle()
+	if n := agent.sends.Load(); n != 0 || e.plans() != 0 {
+		t.Fatalf("%d tâche(s) et %d plan(s) pour « Stop » seul, attendu aucun", n, e.plans())
+	}
+}
+
+// StopSpan borne l'écart entre l'arrêt et la délégation d'un « Stop » seul : au-delà,
+// une demande vide reste une demande vide.
+func TestStopSpanBoundsStopOnlyEmptyRequest(t *testing.T) {
+	agent := newStopAgent()
+	e := newCancelEnv(t, agent, nil, func(o *Options) { o.StopSpan = 500 * time.Millisecond })
+	e.s.Interrupt(5000)
+	e.s.Delegate("d1", 5600) // 600 ms après l'arrêt > StopSpan
+	got := e.commentaries(2)
+	if got[1].Text != pipePhrases.NoRequest {
+		t.Fatalf("commentaires = %+v, attendu NoRequest en second (hors StopSpan)", got)
 	}
 }
 

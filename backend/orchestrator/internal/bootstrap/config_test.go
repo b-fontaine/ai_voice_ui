@@ -393,9 +393,10 @@ func TestConfigFromEnv_VoiceStopDefaults(t *testing.T) {
 		t.Errorf("liste par défaut = %q, attendu vide (la liste vient de l'environnement)", cfg.VoiceStopWords)
 	}
 	if cfg.VoiceStopUtteranceGap != 1500*time.Millisecond || cfg.VoiceStopMaxWords != 4 ||
-		cfg.VoiceStopSettle != 400*time.Millisecond || cfg.VoiceStopDebounce != 2*time.Second {
-		t.Fatalf("défauts = gap %v, max %d, settle %v, debounce %v",
-			cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce)
+		cfg.VoiceStopSettle != 400*time.Millisecond || cfg.VoiceStopDebounce != 2*time.Second ||
+		cfg.VoiceStopSpan != 3*time.Second {
+		t.Fatalf("défauts = gap %v, max %d, settle %v, debounce %v, span %v",
+			cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce, cfg.VoiceStopSpan)
 	}
 }
 
@@ -406,6 +407,7 @@ func TestConfigFromEnv_VoiceStopValid(t *testing.T) {
 	env["VOICE_STOP_MAX_WORDS"] = "32"
 	env["VOICE_STOP_SETTLE"] = "0s"
 	env["VOICE_STOP_DEBOUNCE"] = "10s"
+	env["VOICE_STOP_SPAN"] = "10s"
 	cfg, err := load(env)
 	if err != nil {
 		t.Fatal(err)
@@ -414,8 +416,8 @@ func TestConfigFromEnv_VoiceStopValid(t *testing.T) {
 		t.Errorf("mots = %q", cfg.VoiceStopWords)
 	}
 	if cfg.VoiceStopUtteranceGap != 3*time.Second || cfg.VoiceStopMaxWords != 32 ||
-		cfg.VoiceStopSettle != 0 || cfg.VoiceStopDebounce != 10*time.Second {
-		t.Errorf("valeurs = %v %d %v %v", cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce)
+		cfg.VoiceStopSettle != 0 || cfg.VoiceStopDebounce != 10*time.Second || cfg.VoiceStopSpan != 10*time.Second {
+		t.Errorf("valeurs = %v %d %v %v %v", cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce, cfg.VoiceStopSpan)
 	}
 }
 
@@ -457,6 +459,9 @@ func TestConfigFromEnv_VoiceStopInvalid(t *testing.T) {
 		{"VOICE_STOP_DEBOUNCE", "-1ms"},
 		{"VOICE_STOP_DEBOUNCE", "10s1ms"},
 		{"VOICE_STOP_DEBOUNCE", "abc"},
+		{"VOICE_STOP_SPAN", "-1ms"},
+		{"VOICE_STOP_SPAN", "10s1ms"},
+		{"VOICE_STOP_SPAN", "3000"},
 	}
 	for _, c := range cases {
 		if _, err := load(withEnv(c.name, c.value)); err == nil || !strings.Contains(err.Error(), c.name) {

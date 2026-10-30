@@ -48,6 +48,8 @@ const (
 	maxVoiceStopSettle           = 2 * time.Second
 	defaultVoiceStopDebounce     = 2 * time.Second
 	maxVoiceStopDebounce         = 10 * time.Second
+	defaultVoiceStopSpan         = 3 * time.Second
+	maxVoiceStopSpan             = 10 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -100,12 +102,15 @@ type Config struct {
 	// par défaut : aucun arrêt vocal. VoiceStopUtteranceGap (VOICE_STOP_UTTERANCE_GAP,
 	// défaut 1,5 s, de 1 ms à 10 s), VoiceStopMaxWords (VOICE_STOP_MAX_WORDS, défaut 4,
 	// de 1 à 32), VoiceStopSettle (VOICE_STOP_SETTLE, défaut 400 ms, de 0 à 2 s) et
-	// VoiceStopDebounce (VOICE_STOP_DEBOUNCE, défaut 2 s, de 0 à 10 s).
+	// VoiceStopDebounce (VOICE_STOP_DEBOUNCE, défaut 2 s, de 0 à 10 s). VoiceStopSpan
+	// (VOICE_STOP_SPAN, défaut 3 s, de 0 à 10 s) borne l'écart entre l'arrêt et la
+	// délégation vide d'un « Stop » seul (orchestrateur).
 	VoiceStopWords        []string
 	VoiceStopUtteranceGap time.Duration
 	VoiceStopMaxWords     int
 	VoiceStopSettle       time.Duration
 	VoiceStopDebounce     time.Duration
+	VoiceStopSpan         time.Duration
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
@@ -435,7 +440,10 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 	if cfg.VoiceStopSettle, err = parseBoundedDuration(getenv, "VOICE_STOP_SETTLE", defaultVoiceStopSettle, maxVoiceStopSettle); err != nil {
 		return err
 	}
-	cfg.VoiceStopDebounce, err = parseBoundedDuration(getenv, "VOICE_STOP_DEBOUNCE", defaultVoiceStopDebounce, maxVoiceStopDebounce)
+	if cfg.VoiceStopDebounce, err = parseBoundedDuration(getenv, "VOICE_STOP_DEBOUNCE", defaultVoiceStopDebounce, maxVoiceStopDebounce); err != nil {
+		return err
+	}
+	cfg.VoiceStopSpan, err = parseBoundedDuration(getenv, "VOICE_STOP_SPAN", defaultVoiceStopSpan, maxVoiceStopSpan)
 	return err
 }
 
