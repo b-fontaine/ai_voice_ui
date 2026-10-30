@@ -10,7 +10,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [ ] T03 Flutter — **spike manuel** : `track.enabled = false` sur la piste distante, `flutter_webrtc` Linux (résultat dans `status.md` ; échec → repli à documenter, Q-xx)
 
 ## TDD Go (séquentiel)
-- [ ] T10 Go — `RequestWindow` : marge, `consumed = max(…)`, `Take` dans `session.run` après `REQUEST_WINDOW_SETTLE` (jamais d'attente dans `Delegate`) · `window_test.go`, `manager_test.go` (cas réel, delta tardif après la délégation, deux délégations, `Close`)
+- [x] T10 Go — `RequestWindow` : marge, `consumed = max(…)`, `Take` dans `session.run` après `REQUEST_WINDOW_SETTLE` (jamais d'attente dans `Delegate`) · `window_test.go`, `manager_test.go` (cas réel, delta tardif après la délégation, deux délégations, `Close`)
 - [ ] T11 Go — focus : `genesis/intent` (agents → `a2aclient` liste blanche → `AgentUpdate.Intent`), `Canvas.Focus`, `AgentRequest.Focus`, `FocusFrom`, `ParseIntent(text, focus, ds)` dans les trois composeurs, `ResetCanvas` efface · `scope_test.go`, `canvas_test.go`, `a2aclient_test.go`
 - [ ] T12 Go — motif de refus `genesis/scopeReason` (fermé) → slog du `Pipeline` seulement · `pipeline_plan_test.go`
 - [ ] T13 [P] Go — `StopDetector` (règle A5, horloge injectée) + `VOICE_STOP_WORDS` borné · `stopword_test.go`

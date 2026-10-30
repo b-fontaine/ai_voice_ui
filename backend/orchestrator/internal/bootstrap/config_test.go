@@ -341,3 +341,43 @@ func TestHealthcheckHostIsAllowed(t *testing.T) {
 	}
 	t.Fatalf("l'hôte du healthcheck %q n'est pas autorisé : %q", host, cfg.AllowedHosts)
 }
+
+func TestConfigFromEnv_RequestWindowDefaults(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.RequestWindowSettle != 300*time.Millisecond || cfg.RequestWindowMargin != 400*time.Millisecond {
+		t.Fatalf("défauts attendus 300ms et 400ms, obtenu %v et %v", cfg.RequestWindowSettle, cfg.RequestWindowMargin)
+	}
+}
+
+func TestConfigFromEnv_RequestWindowValid(t *testing.T) {
+	env := fullEnv()
+	env["REQUEST_WINDOW_SETTLE"] = "0s"
+	env["REQUEST_WINDOW_MARGIN"] = "2s"
+	cfg, err := load(env)
+	if err != nil || cfg.RequestWindowSettle != 0 || cfg.RequestWindowMargin != 2*time.Second {
+		t.Fatalf("valeurs valides refusées : %v %v %v", err, cfg.RequestWindowSettle, cfg.RequestWindowMargin)
+	}
+}
+
+func TestConfigFromEnv_RequestWindowInvalid(t *testing.T) {
+	cases := []struct{ name, value string }{
+		{"REQUEST_WINDOW_SETTLE", "abc"},
+		{"REQUEST_WINDOW_SETTLE", "300"},
+		{"REQUEST_WINDOW_SETTLE", "-1ms"},
+		{"REQUEST_WINDOW_SETTLE", "2s1ms"},
+		{"REQUEST_WINDOW_MARGIN", "abc"},
+		{"REQUEST_WINDOW_MARGIN", "400"},
+		{"REQUEST_WINDOW_MARGIN", "-1ms"},
+		{"REQUEST_WINDOW_MARGIN", "2s1ms"},
+	}
+	for _, c := range cases {
+		env := fullEnv()
+		env[c.name] = c.value
+		if _, err := load(env); err == nil || !strings.Contains(err.Error(), c.name) {
+			t.Errorf("%s=%q doit être refusée en nommant la variable : %v", c.name, c.value, err)
+		}
+	}
+}

@@ -78,7 +78,7 @@ func TestRequestRebuiltFromTranscript(t *testing.T) {
 				w.Add(ev)
 			}
 			for i, tk := range tc.takes {
-				got, late := w.Take(tk.offset)
+				got, late := w.Take(tk.offset, 0)
 				if got != tk.want || late != tk.wantLate {
 					t.Fatalf("Take #%d(%d) = (%q, %d), attendu (%q, %d)", i, tk.offset, got, late, tk.want, tk.wantLate)
 				}
@@ -90,16 +90,16 @@ func TestRequestRebuiltFromTranscript(t *testing.T) {
 func TestRequestWindowLateDeltaCounted(t *testing.T) {
 	w := NewRequestWindow()
 	w.Add(delta("Première", 0))
-	if got, _ := w.Take(1000); got != "Première" {
+	if got, _ := w.Take(1000, 0); got != "Première" {
 		t.Fatalf("première demande = %q", got)
 	}
 	w.Add(delta(" tardif", 500)) // arrive après consommation, StartMs < offset précédent
 	w.Add(delta("Seconde", 1200))
-	got, late := w.Take(2000)
+	got, late := w.Take(2000, 0)
 	if got != "Seconde" || late != 1 {
 		t.Fatalf("Take = (%q, %d), attendu (\"Seconde\", 1)", got, late)
 	}
-	if _, late := w.Take(3000); late != 0 {
+	if _, late := w.Take(3000, 0); late != 0 {
 		t.Fatalf("le compteur doit être remis à zéro, obtenu %d", late)
 	}
 }
@@ -116,5 +116,103 @@ func TestRequestWindowBufferBounded(t *testing.T) {
 	w2.Add(delta(strings.Repeat("é", 10000), 0))
 	if n := w2.Len(); n != 4096 {
 		t.Fatalf("un seul delta géant : tampon = %d runes, attendu 4096", n)
+	}
+}
+
+func deltaEnd(text string, start, end int64) port.LiveEvent {
+	ev := delta(text, start)
+	ev.EndMs = end
+	return ev
+}
+
+func TestRequestWindowMarginIncludesWordAtOffset(t *testing.T) {
+	// Cas réel de l'essai du 2026-10-30 : « livraison » commence à l'offset.
+	w := NewRequestWindow()
+	w.Add(delta("Montre la qualité, la voix du client et", 20600))
+	w.Add(deltaEnd(" livraison", 21000, 21400))
+	got, late := w.Take(21000, 400)
+	if got != "Montre la qualité, la voix du client et livraison" || late != 0 {
+		t.Fatalf("Take = (%q, %d)", got, late)
+	}
+}
+
+func TestRequestWindowMarginKeepsNextUtterance(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("A", 0))
+	w.Add(deltaEnd(" B", 1100, 1399)) // finit avant offset + marge : dans la demande
+	w.Add(deltaEnd("C", 1100, 1401))  // finit après offset + marge : début de l'énoncé suivant
+	if got, _ := w.Take(1000, 400); got != "A B" {
+		t.Fatalf("première demande = %q", got)
+	}
+	if got, _ := w.Take(3000, 400); got != "C" {
+		t.Fatalf("seconde demande = %q", got)
+	}
+}
+
+func TestRequestWindowMarginUnknownEndIsNotIncluded(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("A", 0))
+	w.Add(delta("suivant", 1100)) // fin inconnue : comportement historique
+	if got, _ := w.Take(1000, 400); got != "A" {
+		t.Fatalf("demande = %q", got)
+	}
+}
+
+func TestRequestWindowLongNextUtteranceStartIsKept(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("Un", 0))
+	w.Add(deltaEnd("Deux", 1600, 3000)) // commence dans la marge mais la dépasse
+	if got, _ := w.Take(1500, 400); got != "Un" {
+		t.Fatalf("première demande = %q", got)
+	}
+	if got, _ := w.Take(3000, 400); got != "Deux" {
+		t.Fatalf("seconde demande = %q", got)
+	}
+}
+
+func TestRequestWindowConsumedCoversMargin(t *testing.T) {
+	w := NewRequestWindow()
+	w.Add(delta("A", 0))
+	w.Take(1000, 400)
+	w.Add(deltaEnd(" tardif", 1300, 1350)) // dans la marge de la demande déjà prise
+	w.Add(delta("B", 1400))
+	got, late := w.Take(3000, 400)
+	if got != "B" || late != 1 {
+		t.Fatalf("Take = (%q, %d), attendu (\"B\", 1)", got, late)
+	}
+}
+
+func TestRequestWindowConsumedNeverDecreases(t *testing.T) {
+	w := NewRequestWindow()
+	w.Take(5000, 400)
+	w.Take(1000, 0) // un offset plus petit ne fait pas reculer la consommation
+	w.Add(delta("x", 5200))
+	if _, late := w.Take(9000, 0); late != 1 {
+		t.Fatalf("late = %d, attendu 1", late)
+	}
+}
+
+func TestRequestWindowBeyondSignalsLaterDelta(t *testing.T) {
+	w := NewRequestWindow()
+	ch, cancel := w.Beyond(1400)
+	defer cancel()
+	w.Add(delta("a", 1400)) // pas strictement au-delà
+	select {
+	case <-ch:
+		t.Fatal("signal prématuré")
+	default:
+	}
+	w.Add(delta("b", 1401))
+	select {
+	case <-ch:
+	default:
+		t.Fatal("signal attendu")
+	}
+	ch2, cancel2 := w.Beyond(1000) // déjà dépassé : signal immédiat
+	defer cancel2()
+	select {
+	case <-ch2:
+	default:
+		t.Fatal("signal immédiat attendu")
 	}
 }

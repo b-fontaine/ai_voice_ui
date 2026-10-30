@@ -35,6 +35,10 @@ const (
 	defaultAppendAckTimeout = 2 * time.Second
 	// Observation d'une parole après une annonce acquittée (VOICE_ANNOUNCE_TIMEOUT).
 	defaultAnnounceObserveTimeout = 4 * time.Second
+	// Fenêtre de demande (REQUEST_WINDOW_SETTLE, REQUEST_WINDOW_MARGIN).
+	defaultRequestWindowSettle = 300 * time.Millisecond
+	defaultRequestWindowMargin = 400 * time.Millisecond
+	maxRequestWindowDuration   = 2 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -74,6 +78,13 @@ type Config struct {
 	// SessionRateWindow : intervalle de recharge d'un jeton de création
 	// (SESSION_RATE_WINDOW) ; défaut 10 s.
 	SessionRateWindow time.Duration
+	// RequestWindowSettle (REQUEST_WINDOW_SETTLE, défaut 300 ms, de 0 à 2 s) :
+	// attente, après une délégation, des deltas de transcript encore en route.
+	// RequestWindowMargin (REQUEST_WINDOW_MARGIN, défaut 400 ms, de 0 à 2 s) :
+	// durée après l'offset de la délégation dont les deltas font partie de la
+	// demande (spec 011, A3).
+	RequestWindowSettle time.Duration
+	RequestWindowMargin time.Duration
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
@@ -329,6 +340,14 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		}
 	}
 
+	var werr error
+	if cfg.RequestWindowSettle, werr = parseBoundedDuration(getenv, "REQUEST_WINDOW_SETTLE", defaultRequestWindowSettle, maxRequestWindowDuration); werr != nil {
+		return werr
+	}
+	if cfg.RequestWindowMargin, werr = parseBoundedDuration(getenv, "REQUEST_WINDOW_MARGIN", defaultRequestWindowMargin, maxRequestWindowDuration); werr != nil {
+		return werr
+	}
+
 	cfg.AppendAckTimeout = defaultAppendAckTimeout
 	if raw := strings.TrimSpace(getenv("VOICE_APPEND_ACK_TIMEOUT")); raw != "" {
 		d, err := time.ParseDuration(raw)
@@ -360,6 +379,19 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 	cfg.Phrases = phrases
 	cfg.VoicePhrases = voicePhrases
 	return nil
+}
+
+// parseBoundedDuration lit une durée facultative comprise entre 0 et max.
+func parseBoundedDuration(getenv func(string) string, name string, def, max time.Duration) (time.Duration, error) {
+	raw := strings.TrimSpace(getenv(name))
+	if raw == "" {
+		return def, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil || d < 0 || d > max {
+		return 0, fmt.Errorf("%s doit être une durée comprise entre 0 et %s (par exemple %s)", name, max, def)
+	}
+	return d, nil
 }
 
 const maxAgentNameRunes = 40

@@ -382,6 +382,11 @@ func TestEmptyRequestNoRunner(t *testing.T) {
 	reply := newFakeReply()
 	s := open(t, r, testOptions(), reply)
 	s.Delegate("d1", 100)
+	// A3 : le commentaire générique part tout de suite, la demande vide est
+	// constatée ensuite dans session.run.
+	if c := reply.next(t); c.ID != "d1" || c.Text != "G" {
+		t.Fatalf("commentaire = %+v, attendu le générique", c)
+	}
 	if c := reply.next(t); c.ID != "d1" || c.Text != "N" {
 		t.Fatalf("commentaire = %+v, attendu NoRequest", c)
 	}

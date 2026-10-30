@@ -44,6 +44,10 @@ type Delegation struct {
 	// jamais un identifiant du fournisseur voix (ni mémorisé dans `seen`, ni
 	// passé à AppendCommentary), Request est vide et GenericDone nil.
 	Action *port.ActionCall
+
+	// queuedAt est l'instant de la délégation (horloge du Manager) : l'attente
+	// de la fenêtre de demande s'en déduit.
+	queuedAt time.Time
 }
 
 // agentContext borne le travail de l'agent : échéance Timeout (cause
@@ -169,6 +173,14 @@ func budget(template, partialFailure string, partial bool) int {
 	return min(b, maxSummaryRunes)
 }
 
+// WaitClock est l'horloge de la fenêtre de demande : l'heure courante et un
+// minuteur injectables (jamais de minuteur réel codé en dur dans le Manager).
+type WaitClock interface {
+	port.Clock
+	// After se déclenche après d.
+	After(d time.Duration) <-chan time.Time
+}
+
 // Options règle le gestionnaire ; toutes les valeurs sont obligatoires.
 type Options struct {
 	QueueDepth   int           // délégations en attente (hors celle en cours)
@@ -179,6 +191,15 @@ type Options struct {
 	// Canvas est le canevas partagé par toutes les sessions, le même que celui
 	// des pipelines (PipelineConfig.Canvas).
 	Canvas *Canvas
+
+	// Clock, RequestWindowSettle et RequestWindowMargin règlent la fenêtre de
+	// demande (spec 011, A3). Settle : attente, après la délégation, des deltas
+	// de transcript encore en route (0 : aucune attente, Clock alors facultative).
+	// Margin : durée après l'offset de la délégation dont les deltas font encore
+	// partie de la demande.
+	Clock               WaitClock
+	RequestWindowSettle time.Duration
+	RequestWindowMargin time.Duration
 }
 
 // Manager implémente port.Delegations.
@@ -214,6 +235,12 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 		return nil, fmt.Errorf("orchestrate : SeenCap doit être > 0 (%d)", opts.SeenCap)
 	case opts.Canvas == nil:
 		return nil, errors.New("orchestrate : canevas manquant")
+	case opts.RequestWindowSettle < 0:
+		return nil, fmt.Errorf("orchestrate : RequestWindowSettle doit être >= 0 (%s)", opts.RequestWindowSettle)
+	case opts.RequestWindowMargin < 0:
+		return nil, fmt.Errorf("orchestrate : RequestWindowMargin doit être >= 0 (%s)", opts.RequestWindowMargin)
+	case opts.RequestWindowSettle > 0 && opts.Clock == nil:
+		return nil, errors.New("orchestrate : Clock requise quand RequestWindowSettle > 0")
 	}
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
@@ -375,18 +402,11 @@ func (s *session) Delegate(id string, offsetMs int64) {
 	}
 	s.mu.Unlock()
 
-	request, late := s.window.Take(offsetMs)
-	if late > 0 {
-		s.log.Warn("deltas de transcript tardifs écartés", "delegation", id, "late", late, "offset_ms", offsetMs)
-	}
-	if request == "" {
-		s.log.Info("demande vide : aucun agent contacté", "delegation", id)
-		s.comment(id, s.m.phrases.NoRequest)
-		return
-	}
-
 	genericDone := make(chan struct{})
-	d := Delegation{ID: id, Request: request, OffsetMs: offsetMs, GenericDone: genericDone}
+	d := Delegation{ID: id, OffsetMs: offsetMs, GenericDone: genericDone}
+	if s.m.opts.Clock != nil {
+		d.queuedAt = s.m.opts.Clock.Now()
+	}
 	// pending est incrémenté AVANT la mise en file : une remise à vide ne peut
 	// pas voir une délégation défilée mais pas encore comptée.
 	s.mu.Lock()
@@ -402,6 +422,35 @@ func (s *session) Delegate(id string, offsetMs int64) {
 		s.log.Warn("file de délégations pleine", "delegation", id)
 		s.comment(id, s.m.phrases.QueueFull)
 	}
+}
+
+func (s *session) marginMs() int64 { return s.m.opts.RequestWindowMargin.Milliseconds() }
+
+// settle attend, sans bloquer le forwarder (on est dans run), le reste de
+// RequestWindowSettle depuis la délégation, ou un delta postérieur à
+// offset + marge, ou la fermeture de la session ; puis prend la demande. ok est
+// faux si la session s'est fermée pendant l'attente.
+func (s *session) settle(d Delegation) (request string, ok bool) {
+	opts := s.m.opts
+	if opts.RequestWindowSettle > 0 {
+		remaining := opts.RequestWindowSettle - opts.Clock.Now().Sub(d.queuedAt)
+		if remaining > 0 {
+			later, cancel := s.window.Beyond(d.OffsetMs + s.marginMs())
+			select {
+			case <-opts.Clock.After(remaining):
+			case <-later:
+			case <-s.ctx.Done():
+				cancel()
+				return "", false
+			}
+			cancel()
+		}
+	}
+	request, late := s.window.Take(d.OffsetMs, s.marginMs())
+	if late > 0 {
+		s.log.Warn("deltas de transcript tardifs écartés", "delegation", d.ID, "late", late, "offset_ms", d.OffsetMs)
+	}
+	return request, true
 }
 
 func (s *session) comment(id, text string) { s.commentThen(id, text, nil) }
@@ -468,6 +517,24 @@ func (s *session) run(d Delegation) {
 	}()
 	if s.ctx.Err() != nil {
 		return
+	}
+	if d.Action == nil {
+		request, ok := s.settle(d)
+		if !ok {
+			return
+		}
+		if request == "" {
+			s.log.Info("demande vide : aucun agent contacté", "delegation", d.ID)
+			// Le commentaire vide part après le générique, pour garder l'ordre.
+			select {
+			case <-d.GenericDone:
+			case <-s.ctx.Done():
+				return
+			}
+			s.comment(d.ID, s.m.phrases.NoRequest)
+			return
+		}
+		d.Request = request
 	}
 	d.Timeout = s.m.opts.AgentTimeout
 	defer func() {

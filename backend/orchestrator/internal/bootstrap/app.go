@@ -67,6 +67,22 @@ type systemClock struct{}
 
 func (systemClock) Now() time.Time { return time.Now() }
 
+// After est le minuteur de production de la fenêtre de demande.
+func (systemClock) After(d time.Duration) <-chan time.Time { return time.After(d) }
+
+// waitClock complète une horloge injectée qui ne sait pas attendre : l'heure
+// vient de l'horloge injectée, le minuteur du système.
+type waitClock struct{ port.Clock }
+
+func (waitClock) After(d time.Duration) <-chan time.Time { return time.After(d) }
+
+func asWaitClock(c port.Clock) orchestrate.WaitClock {
+	if w, ok := c.(orchestrate.WaitClock); ok {
+		return w
+	}
+	return waitClock{c}
+}
+
 // App est l'orchestrateur assemblé.
 type App struct {
 	handler http.Handler
@@ -212,6 +228,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
+		Clock: asWaitClock(clock), RequestWindowSettle: cfg.RequestWindowSettle, RequestWindowMargin: cfg.RequestWindowMargin,
 	})
 }
 
