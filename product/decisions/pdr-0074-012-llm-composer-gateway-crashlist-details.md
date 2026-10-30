@@ -3,7 +3,7 @@ id: pdr-0074-012-llm-composer-gateway-crashlist-details
 title: "PDR-0074 — 012 : passerelle LLM interne, plan de composition structuré, repli et CrashList"
 area: decisions
 status: validated
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/012-llm-composer-crashlist/spec.md, specs/012-llm-composer-crashlist/plan.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md]
 links: [p-rm-open-questions, p-ar-backend, p-ar-security, p-ar-agents-protocols, p-ar-quality, p-fn-catalog, p-fn-dataset, p-fn-business-rules, pdr-0070-llm-composer-and-crashlist-012, pdr-0060-small-openai-text-model-guided-a2ui, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0014-six-component-catalog, pdr-0030-llm-budget-20-eur, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, rt-ephemeral-keys]
 tags: [pdr, decision, llm, composition, crashlist, 012]
@@ -67,3 +67,4 @@ Part de l'assistant : décision contrainte (D1 à D4, D6) et détails sous pdr-0
 |---|---|---|
 | 2026-10-30 | Acceptée (décision contrainte D1 à D4, D6 ; détails D5, D7, D8 sous pdr-0062). | Assistant |
 | 2026-10-30 | Amendée par la revue du plan : D7 remplacée (aucun tag ajouté), D8 précisée, D9 ajoutée (autorité de `ParseIntent`, détails de CrashList, passerelle). | Assistant |
+| 2026-10-31 | Mesure T51 faite (`composer-bench`, 25 appels par modèle) : `gpt-6-luna` retenu (25/25 plans valides, accord 100 %, p50 1,79 s, p90 2,69 s) ; `gpt-6.1-terra` écarté (24/25, p90 3,06 s) ; effort de raisonnement : `minimal` refusé, `low` et `none` sans gain, effort par défaut conservé. NFR-02 non tenu par l'appel seul : **D8 déclenchée et implémentée (T52)**, voie intermédiaire entre le modèle et les écrans fixes de pdr-0060, signalée au porteur. NFR-03 tenu. T35 (modèle sur Voix et Livraison) non retenue. Le repli de pdr-0060 reste le filet : modèle vide = déterministe. | Assistant |

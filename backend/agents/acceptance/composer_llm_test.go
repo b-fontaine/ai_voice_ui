@@ -184,12 +184,30 @@ func deterministic(t *testing.T, question string) (msgs []map[string]any, summar
 	return msgs, summary, stateOf(events[len(events)-1])
 }
 
-// requireSameAsDeterministic : mêmes messages A2UI, même résumé, état completed.
+// perSurface regroupe les messages A2UI par surface en gardant l'ordre interne de chacune.
+// Avec le squelette anticipé (spec 012, T52, RG-03), les createSurface et updateComponents de
+// toutes les surfaces partent avant les updateDataModel : l'entrelacement entre surfaces
+// change, pas l'ordre par surface (createSurface, updateComponents, updateDataModel : NFR-08),
+// ni le contenu. La comparaison au déterministe se fait donc par surface.
+func perSurface(msgs []map[string]any) map[string][]map[string]any {
+	out := map[string][]map[string]any{}
+	for _, m := range msgs {
+		for _, k := range []string{"createSurface", "updateComponents", "updateDataModel", "deleteSurface"} {
+			if body, ok := m[k].(map[string]any); ok {
+				id, _ := body["surfaceId"].(string)
+				out[id] = append(out[id], m)
+			}
+		}
+	}
+	return out
+}
+
+// requireSameAsDeterministic : mêmes messages A2UI (par surface), même résumé, état completed.
 func requireSameAsDeterministic(t *testing.T, events []a2a.Event, question string) {
 	t.Helper()
 	wantMsgs, wantSummary, _ := deterministic(t, question)
 	gotMsgs, gotSummary := streamContent(events)
-	if !reflect.DeepEqual(gotMsgs, wantMsgs) {
+	if len(gotMsgs) != len(wantMsgs) || !reflect.DeepEqual(perSurface(gotMsgs), perSurface(wantMsgs)) {
 		t.Errorf("messages A2UI différents de la composition déterministe :\n got  %v\n want %v", gotMsgs, wantMsgs)
 	}
 	if gotSummary != wantSummary {
@@ -440,7 +458,10 @@ func TestC05_CrashListWithoutGateway(t *testing.T) {
 	}
 }
 
-// requireViewUnavailable : état rejected, motif view_unavailable, ni A2UI ni résumé.
+// requireViewUnavailable : état rejected, motif view_unavailable, ni donnée ni résumé d'une
+// autre vue. Un squelette (createSurface, updateComponents) peut précéder un refus du
+// modèle (T52) : l'orchestrateur le retire par la compensation de la tâche rejetée ; l'agent
+// n'émet jamais de deleteSurface.
 func requireViewUnavailable(t *testing.T, events []a2a.Event) {
 	t.Helper()
 	last := events[len(events)-1]
@@ -462,8 +483,17 @@ func requireViewUnavailable(t *testing.T, events []a2a.Event) {
 	if text.Len() == 0 {
 		t.Errorf("pas de texte d'explication dans le refus")
 	}
-	if msgs, summary := streamContent(events); len(msgs) != 0 || summary != "" {
-		t.Errorf("refus accompagné de messages A2UI %v ou d'un résumé %q d'une autre vue", msgs, summary)
+	msgs, summary := streamContent(events)
+	for _, m := range msgs {
+		if _, bad := m["updateDataModel"]; bad {
+			t.Errorf("refus accompagné de données A2UI %v d'une autre vue", m)
+		}
+		if _, bad := m["deleteSurface"]; bad {
+			t.Errorf("deleteSurface émis par l'agent : %v", m)
+		}
+	}
+	if summary != "" {
+		t.Errorf("refus accompagné d'un résumé %q d'une autre vue", summary)
 	}
 }
 

@@ -173,6 +173,23 @@ func (v *Validator) resolve(c Component, p Params, intent kit.Intent) (Params, e
 	return out, nil
 }
 
+// Expected renvoie, dans l'ordre du profil, les composants que le composeur déterministe
+// produirait pour cette intention : l'ensemble exact de la vue nommée, sinon la vue globale.
+// C'est l'ensemble dont le squelette est anticipé avant l'appel au modèle (spec 012, T52).
+func (v *Validator) Expected(intent kit.Intent) []Component {
+	names := v.cfg.Global
+	if intent.View != "" {
+		names = v.cfg.Views[intent.View]
+	}
+	var out []Component
+	for _, c := range v.cfg.Components {
+		if slices.Contains(names, c.Name) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // IsGlobal dit si le composant fait partie de la vue globale (rafraîchie par toute
 // demande sans vue nommée).
 func (v *Validator) IsGlobal(name string) bool { return slices.Contains(v.cfg.Global, name) }

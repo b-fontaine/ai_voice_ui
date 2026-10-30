@@ -26,7 +26,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T32 Go — `llmcompose` (rangé dans `shared` de `arch_test.go`) : `Plan` sans champ `surface`/`Refusal`, `Validator` (table de décision A2), `FallbackReason` · `validator_test.go` (listes fermées, tailles, `ActionBar` refusée, acte 1 à 5 surfaces refusé, plateforme contradictoire)
 - [x] T33 Go — couture `emit` de `kit.Composer`/`executor` (A1) ; `llmcompose.Client` (URL validée, `CheckRedirect`, corps borné, un essai, délai) et `Composer` (`ParseIntent` avant l'appel, plan → builders, surfaces actives rafraîchies, repli, parent annulé ≠ délai) · `composer_test.go` (C-01 à C-05, `Summary` comparé), `executor_test.go` (ordre inchangé)
 - [x] T34 Go — `Prompt` et `internal/llmcompose/examples.json` embarqué (demande → plan, sans valeurs ; préfixe statique) · test qui rejoue chaque plan d'exemple par les builders et compare aux fixtures `act1-*`, `act2-*`, `correction-ios-*`, `crashlist-*` ; test d'absence de valeurs
-- [ ] T35 Go — builders pour Voix du client et Livraison ; modèle branché dessus **seulement si la mesure par agent (T51) le justifie** (actions toujours déterministes) · tests de profil et d'équivalence
+- [x] T35 (NON RETENUE : la mesure ne justifie pas le modèle sur Voix et Livraison, un seul composant choisissable chacun ; ils restent déterministes) Go — builders pour Voix du client et Livraison ; modèle branché dessus **seulement si la mesure par agent (T51) le justifie** (actions toujours déterministes) · tests de profil et d'équivalence
 - [x] T36 Go — `kit.Main` prend une fabrique `func(Settings, *slog.Logger) (Composer, error)` ; `Settings.ComposerLLMURL`/`ComposerTimeout` ; décoration dans `cmd/agent-*/main.go` (absent = déterministe) ; motifs de repli journalisés · `env_test.go`, `main_test.go`
 - [x] T37 Go — consignes vocales (`voice-instructions.fr.md`) : la liste des crashs existe, vue inconnue refusée avec alternative (après T25) · test du texte
 
@@ -40,7 +40,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 ## Mesure et vérification réelle
 - [x] T50 Go — `cmd/composer-bench` (agents, dans le réseau `agents`) : p50/p90 au premier octet et au total, par agent ; validité ; taux d'accord avec le plan attendu ; coût · test d'unité de l'agrégation (faux client)
 - [x] T51 manuel payant — exécuter T50 une fois sous `openai-budget.sh` (estimation d'abord), fixer `COMPOSER_MODEL` (ou déclarer le repli définitif) et verser le fait dans `knowledge/` (kb-curate)
-- [ ] T52 conditionnel — si p90 de la base 011 + p90 de la passerelle > 1,5 s : squelette du plan déterministe émis avant l'appel (via `emit`) ; plan du modèle à surfaces différentes = `invalid_plan` ; jamais de `deleteSurface` · tests d'ordre des messages et d'absence de `deleteSurface`
+- [x] T52 conditionnel — si p90 de la base 011 + p90 de la passerelle > 1,5 s : squelette du plan déterministe émis avant l'appel (via `emit`) ; plan du modèle à surfaces différentes = `invalid_plan` ; jamais de `deleteSurface` · tests d'ordre des messages et d'absence de `deleteSurface`
 
 ## Clôture
 - [ ] T90 product — scénarios `features/llm-composer-012.feature`, corrections de pdr-0014, `catalog.md`, `dataset.md`, `backend.md`, `security.md`, `agents-protocols.md`, `quality.md`, roadmap/backlog, `open-questions.md`

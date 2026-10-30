@@ -14,16 +14,25 @@ func SurfaceMessages(catalogID string, active []string, id, component, path stri
 	if slices.Contains(active, id) {
 		return []map[string]any{data}
 	}
+	return append(SurfaceSkeleton(catalogID, active, id, component, path), data)
+}
+
+// SurfaceSkeleton renvoie le squelette d'une surface, c'est-à-dire les deux premiers messages
+// de SurfaceMessages (createSurface puis updateComponents), ou rien si la surface est déjà
+// ouverte chez le client. Il permet d'afficher la surface avant d'avoir ses données (RG-03).
+func SurfaceSkeleton(catalogID string, active []string, id, component, path string) []map[string]any {
+	if slices.Contains(active, id) {
+		return nil
+	}
 	return []map[string]any{
 		{"version": "v0.9", "createSurface": map[string]any{
 			"surfaceId": id, "catalogId": catalogID, "sendDataModel": false,
 		}},
-		map[string]any{"version": "v0.9", "updateComponents": map[string]any{
+		{"version": "v0.9", "updateComponents": map[string]any{
 			"surfaceId": id,
 			"components": []any{
 				map[string]any{"id": "root", "component": component, "data": map[string]any{"path": path}},
 			},
 		}},
-		data,
 	}
 }

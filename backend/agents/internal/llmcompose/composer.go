@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
@@ -63,7 +64,22 @@ func NewComposer(cfg Config) (*Composer, error) {
 // comparaison et des refus, avant tout appel) ; action de l'interface → déterministe sans
 // appel ; sinon un seul appel au modèle, validation, builders. Tout échec (hors annulation
 // du parent) bascule sur le déterministe sans second appel, avec un motif fermé journalisé.
-// emit est transmis au repli : ce composeur n'émet pas lui-même progressivement.
+//
+// Squelette anticipé (spec 012, T52, plan A1(b), RG-03). Avec un émetteur, après ParseIntent
+// et avant l'appel (1,8 s au p50 mesuré, plus que NFR-02), le composeur émet createSurface et
+// updateComponents des surfaces du plan DÉTERMINISTE qui ne sont pas déjà actives. Ensuite :
+//   - plan valide dont les surfaces à créer sont exactement les surfaces anticipées : seuls
+//     les updateDataModel restent à envoyer (les surfaces anticipées comptent comme actives) ;
+//   - plan valide à surfaces différentes : invalid_plan, repli déterministe qui n'émet que
+//     les updateDataModel des surfaces anticipées ;
+//   - jamais de deleteSurface correctif ni de second createSurface ;
+//   - refus view_unavailable : la ScopeError remonte, le squelette déjà émis reste dans le
+//     flux ; l'orchestrateur le retire en compensant les surfaces de la tâche sur l'état
+//     rejected (Registry.Compensation) ;
+//   - parent annulé : ctx.Err(), sans repli.
+//
+// Sans émetteur (nil), il n'y a pas d'anticipation : comportement inchangé. Une action de
+// l'interface reste déterministe, sans anticipation.
 func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset, emit func(map[string]any) error) (kit.Composition, error) {
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
@@ -75,6 +91,15 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err != nil {
 		return kit.Composition{}, err
 	}
+
+	// Le squelette part avant l'appel au modèle. Ensuite req porte les surfaces anticipées
+	// comme actives : ni la composition du modèle ni le repli ne les recréent.
+	anticipated, err := c.emitSkeleton(req, intent, emit)
+	if err != nil {
+		return kit.Composition{}, err
+	}
+	active0 := req.ActiveSurfaces
+	req.ActiveSurfaces = append(slices.Clone(active0), anticipated...)
 
 	raw, err := c.cfg.Completer.Complete(ctx, CompletionRequest{
 		Instructions: c.cfg.Instructions,
@@ -109,12 +134,63 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err != nil {
 		return c.fallback(ctx, ReasonInvalidPlan, req, ds, emit)
 	}
+	if emit != nil && !sameSurfaces(c.surfacesToCreate(plan, active0), anticipated) {
+		// Le plan crée d'autres surfaces que celles du squelette déjà émis : pas de
+		// deleteSurface correctif, repli sur le déterministe.
+		return c.fallback(ctx, ReasonInvalidPlan, req, ds, emit)
+	}
 	comp, err := c.build(plan, intent, req, ds)
 	if err != nil {
 		// Les builders sont purs : l'échec vient de paramètres que le jeu refuse.
 		return c.fallback(ctx, ReasonInvalidPlan, req, ds, emit)
 	}
 	return comp, nil
+}
+
+// emitSkeleton émet le squelette (createSurface, updateComponents) des surfaces du plan
+// déterministe non encore actives et renvoie leurs identifiants. Sans émetteur, rien n'est
+// émis ; sans surface à créer non plus.
+func (c *Composer) emitSkeleton(req kit.Request, intent kit.Intent, emit func(map[string]any) error) ([]string, error) {
+	if emit == nil {
+		return nil, nil
+	}
+	var created []string
+	for _, comp := range c.cfg.Validator.Expected(intent) {
+		skeleton := kit.SurfaceSkeleton(c.cfg.CatalogID, req.ActiveSurfaces, comp.Surface, comp.Name, comp.Path)
+		for _, m := range skeleton {
+			if err := emit(m); err != nil {
+				return nil, err
+			}
+		}
+		if len(skeleton) > 0 {
+			created = append(created, comp.Surface)
+		}
+	}
+	return created, nil
+}
+
+// surfacesToCreate donne les surfaces du plan qui ne sont pas actives chez le client.
+func (c *Composer) surfacesToCreate(plan Plan, active []string) []string {
+	var out []string
+	for _, s := range plan.Surfaces {
+		if comp, _ := c.cfg.Validator.Component(s.Component); !contains(active, comp.Surface) {
+			out = append(out, comp.Surface)
+		}
+	}
+	return out
+}
+
+// sameSurfaces compare deux listes sans doublon, sans tenir compte de l'ordre.
+func sameSurfaces(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for _, v := range a {
+		if !contains(b, v) {
+			return false
+		}
+	}
+	return true
 }
 
 // build construit la composition d'un plan validé. Les surfaces sont traitées dans l'ordre

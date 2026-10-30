@@ -84,15 +84,20 @@ services:
       VOICE_INSTRUCTIONS_FILE: /etc/genesis/voice-instructions.fr.md
       # Passerelle LLM interne (pdr-0074 D1) : écouteur sur l'IP fixe de l'orchestrateur dans `agents`
       # (jamais 0.0.0.0), non publié, sources limitées aux agents branchés. `COMPOSER_MODEL` vide
-      # = passerelle désactivée (503) et composition déterministe : le modèle est fixé par la mesure (T51).
+      # = passerelle désactivée (503) et composition déterministe. Modèle fixé par la mesure du
+      # 2026-10-30 (T51 : 25/25 plans valides, p50 1,8 s, p90 2,7 s) ; le squelette part avant l'appel (T52).
+      # Attention : une commande `docker compose` lancée sans ce modèle dans l'environnement recrée
+      # l'orchestrateur avec la valeur par défaut ci-dessous.
       LLM_GATEWAY_ADDR: ${LLM_GATEWAY_ADDR:-172.30.77.10:8081}
       LLM_GATEWAY_ALLOWED_SOURCES: ${LLM_GATEWAY_ALLOWED_SOURCES:-172.30.77.21,172.30.77.30}
-      COMPOSER_MODEL: ${COMPOSER_MODEL:-}
+      COMPOSER_MODEL: ${COMPOSER_MODEL:-gpt-6-luna}
       COMPOSER_TIMEOUT: *composer_gateway_timeout
       COMPOSER_MAX_OUTPUT_TOKENS: ${COMPOSER_MAX_OUTPUT_TOKENS:-1024}
       COMPOSER_REASONING_EFFORT: ${COMPOSER_REASONING_EFFORT:-}
       COMPOSER_RATE_BURST: ${COMPOSER_RATE_BURST:-10}
-      COMPOSER_RATE_WINDOW: ${COMPOSER_RATE_WINDOW:-10s}
+      # Débit : `COMPOSER_RATE_BURST` appels d'un coup, puis UN jeton rendu toutes les `COMPOSER_RATE_WINDOW`
+      # (2 s = 30 appels par minute au plus : plafond de coût, très au-delà du rythme d'un orateur).
+      COMPOSER_RATE_WINDOW: ${COMPOSER_RATE_WINDOW:-2s}
     ports:
       - "127.0.0.1:8080:8080"
     networks:

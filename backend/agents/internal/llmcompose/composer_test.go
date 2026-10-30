@@ -595,3 +595,293 @@ func TestNewComposerRejectsMissingParts(t *testing.T) {
 		})
 	}
 }
+
+// --- Squelette anticipé (spec 012, T52, plan A1(b)) -----------------------------------------
+
+// recorder est l'émetteur de test : il garde les messages dans l'ordre et peut échouer.
+type recorder struct {
+	mu   sync.Mutex
+	msgs []map[string]any
+}
+
+func (r *recorder) emit(m map[string]any) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.msgs = append(r.msgs, m)
+	return nil
+}
+
+func (r *recorder) snapshot() []map[string]any {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]map[string]any(nil), r.msgs...)
+}
+
+// op donne l'opération A2UI d'un message et sa surface.
+func op(m map[string]any) (kind, surface string) {
+	for _, k := range []string{"createSurface", "updateComponents", "updateDataModel", "deleteSurface"} {
+		if body, ok := m[k].(map[string]any); ok {
+			s, _ := body["surfaceId"].(string)
+			return k, s
+		}
+	}
+	return "", ""
+}
+
+func kinds(msgs []map[string]any) []string {
+	out := make([]string, len(msgs))
+	for i, m := range msgs {
+		k, s := op(m)
+		out[i] = k + ":" + s
+	}
+	return out
+}
+
+// bySurface regroupe les messages par surface (ordre de première apparition), l'ordre
+// interne de chaque surface étant conservé : NFR-08 impose l'ordre PAR SURFACE
+// (createSurface, updateComponents, updateDataModel), pas l'entrelacement des surfaces.
+func bySurface(msgs []map[string]any) map[string][]map[string]any {
+	out := map[string][]map[string]any{}
+	for _, m := range msgs {
+		_, s := op(m)
+		out[s] = append(out[s], m)
+	}
+	return out
+}
+
+// requireSameAsDeterministicPerSurface : tout ce qui a été émis, puis le reste de la
+// composition, égale le déterministe surface par surface ; aucun deleteSurface ; au plus un
+// createSurface par surface.
+func (r *rig) requireSameAsDeterministicPerSurface(t *testing.T, rec *recorder, got kit.Composition, rq kit.Request) {
+	t.Helper()
+	all := append(rec.snapshot(), got.Messages...)
+	want := r.deterministic(t, rq)
+	if !reflect.DeepEqual(bySurface(all), bySurface(want.Messages)) {
+		t.Errorf("messages par surface différents du déterministe :\n got  %v\n want %v", kinds(all), kinds(want.Messages))
+	}
+	if got.Summary != want.Summary || !reflect.DeepEqual(got.Intent, want.Intent) {
+		t.Errorf("Summary %q / Intent %+v, attendus %q / %+v", got.Summary, got.Intent, want.Summary, want.Intent)
+	}
+	creates := map[string]int{}
+	for _, m := range all {
+		k, s := op(m)
+		if k == "deleteSurface" {
+			t.Errorf("deleteSurface émis pour %s", s)
+		}
+		if k == "createSurface" {
+			creates[s]++
+		}
+	}
+	for s, n := range creates {
+		if n != 1 {
+			t.Errorf("%d createSurface pour %s", n, s)
+		}
+	}
+}
+
+// Le squelette du plan déterministe part AVANT l'appel au modèle : pendant l'appel (bloqué),
+// createSurface et updateComponents des deux surfaces sont déjà émis, aucune donnée.
+func TestSkeletonIsEmittedBeforeTheModelCall(t *testing.T) {
+	started, release := make(chan struct{}), make(chan struct{})
+	c := &fakeCompleter{fn: func(context.Context, llmcompose.CompletionRequest) (json.RawMessage, error) {
+		close(started)
+		<-release
+		return json.RawMessage(act1Plan), nil
+	}}
+	r := newRig(t, c)
+	rec := &recorder{}
+	type result struct {
+		comp kit.Composition
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		comp, err := r.composer.Compose(context.Background(), req(utterAct1), r.ds, rec.emit)
+		done <- result{comp, err}
+	}()
+	<-started
+	want := []string{"createSurface:kpi", "updateComponents:kpi", "createSurface:trend", "updateComponents:trend"}
+	if got := kinds(rec.snapshot()); !reflect.DeepEqual(got, want) {
+		t.Fatalf("pendant l'appel au modèle : %v émis, attendu %v", got, want)
+	}
+	close(release)
+	res := <-done
+	if res.err != nil {
+		t.Fatal(res.err)
+	}
+	if got := kinds(res.comp.Messages); !reflect.DeepEqual(got, []string{"updateDataModel:kpi", "updateDataModel:trend"}) {
+		t.Errorf("reste de la composition %v : seulement les updateDataModel attendus", got)
+	}
+	r.requireSameAsDeterministicPerSurface(t, rec, res.comp, req(utterAct1))
+	if c.count() != 1 || r.fallback.n != 0 {
+		t.Errorf("%d appel(s) au modèle, %d au repli : 1 et 0 attendus", c.count(), r.fallback.n)
+	}
+}
+
+// Une surface déjà active n'est ni anticipée ni recréée ; si toutes le sont, rien n'est émis
+// avant l'appel.
+func TestSkeletonSkipsActiveSurfaces(t *testing.T) {
+	cases := []struct {
+		name   string
+		active []string
+		want   []string
+	}{
+		{"kpi active", []string{"kpi"}, []string{"createSurface:trend", "updateComponents:trend"}},
+		{"toutes actives", []string{"kpi", "trend"}, []string{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			started, release := make(chan struct{}), make(chan struct{})
+			c := &fakeCompleter{fn: func(context.Context, llmcompose.CompletionRequest) (json.RawMessage, error) {
+				close(started)
+				<-release
+				return json.RawMessage(act1Plan), nil
+			}}
+			r := newRig(t, c)
+			rec := &recorder{}
+			rq := kit.Request{Text: androidQ, ContextID: "ctx", ActiveSurfaces: tc.active}
+			done := make(chan kit.Composition, 1)
+			go func() {
+				comp, err := r.composer.Compose(context.Background(), rq, r.ds, rec.emit)
+				if err != nil {
+					t.Error(err)
+				}
+				done <- comp
+			}()
+			<-started
+			if got := kinds(rec.snapshot()); !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("avant la réponse : %v, attendu %v", got, tc.want)
+			}
+			close(release)
+			r.requireSameAsDeterministicPerSurface(t, rec, <-done, rq)
+		})
+	}
+}
+
+// Sans squelette à créer (demande à action) ou sans émetteur, rien ne change : l'action va
+// au déterministe, sans anticipation.
+func TestActionRequestsAreNotAnticipated(t *testing.T) {
+	c := replies(act1Plan)
+	r := newRig(t, c)
+	rec := &recorder{}
+	_, _ = r.composer.Compose(context.Background(), kit.Request{ContextID: "ctx", Action: kit.ActionCall{Name: "publish_release"}}, r.ds, rec.emit)
+	if c.count() != 0 {
+		t.Errorf("%d appel(s) au modèle pour une action", c.count())
+	}
+	for _, m := range rec.snapshot() {
+		if k, _ := op(m); k == "createSurface" || k == "updateComponents" {
+			t.Errorf("squelette anticipé pour une action : %v", m)
+		}
+	}
+}
+
+// Plan du modèle dont l'ensemble de surfaces à créer diffère de l'ensemble anticipé :
+// invalid_plan, repli ; les données des surfaces anticipées sont émises, jamais de second
+// createSurface ni de deleteSurface.
+func TestPlanWithDifferentSurfaceSetFallsBackWithoutSecondCreate(t *testing.T) {
+	cases := []struct{ name, text, plan string }{
+		{"sous-ensemble du global", androidQ, `{"surfaces":[{"component":"KeyIndicator","params":{}}]}`},
+		{"liste au lieu du global", utterAct1, listPlan},
+		{"global au lieu de la liste", "Affiche la liste des crashs", act1Plan},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := replies(tc.plan)
+			r := newRig(t, c)
+			rec := &recorder{}
+			rq := req(tc.text)
+			got, err := r.composer.Compose(context.Background(), rq, r.ds, rec.emit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r.requireFallbackLog(t, llmcompose.ReasonInvalidPlan)
+			if c.count() != 1 || r.fallback.n != 1 {
+				t.Errorf("%d appel(s) au modèle, %d au repli : 1 et 1 attendus", c.count(), r.fallback.n)
+			}
+			r.requireSameAsDeterministicPerSurface(t, rec, got, rq)
+			for _, m := range got.Messages {
+				if k, s := op(m); k != "updateDataModel" {
+					t.Errorf("le repli rejoue %s:%s après le squelette", k, s)
+				}
+			}
+		})
+	}
+}
+
+// Les défaillances du modèle (délai, transport) après le squelette donnent le repli
+// déterministe, qui n'émet que les données.
+func TestFailureAfterSkeletonFallsBackWithDataOnly(t *testing.T) {
+	r := newRig(t, fails(&llmcompose.CompleteError{Reason: llmcompose.ReasonTimeout}))
+	rec := &recorder{}
+	got, err := r.composer.Compose(context.Background(), req(utterAct1), r.ds, rec.emit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.requireFallbackLog(t, llmcompose.ReasonTimeout)
+	r.requireSameAsDeterministicPerSurface(t, rec, got, req(utterAct1))
+	if got := kinds(rec.snapshot()); len(got) != 4 {
+		t.Errorf("émis avant le repli : %v, attendu 4 messages de squelette", got)
+	}
+}
+
+// Refus view_unavailable du modèle après le squelette : la ScopeError remonte, sans repli.
+// Le squelette émis reste côté flux : l'orchestrateur le retire (compensation du registre
+// sur l'état rejected). Le composeur n'émet jamais de deleteSurface.
+func TestViewUnavailableAfterSkeletonIsAScopeError(t *testing.T) {
+	r := newRig(t, replies(`{"refusal":{"reason":"view_unavailable"}}`))
+	rec := &recorder{}
+	_, err := r.composer.Compose(context.Background(), req("Affiche les crashs en fonction de la météo"), r.ds, rec.emit)
+	var se *kit.ScopeError
+	if !errors.As(err, &se) || se.Reason != kit.ReasonViewUnavailable {
+		t.Fatalf("erreur %v, attendu ScopeError view_unavailable", err)
+	}
+	if r.fallback.n != 0 {
+		t.Errorf("%d repli(s)", r.fallback.n)
+	}
+	for _, m := range rec.snapshot() {
+		if k, _ := op(m); k == "deleteSurface" || k == "updateDataModel" {
+			t.Errorf("%s émis avant un refus", k)
+		}
+	}
+}
+
+// Parent annulé (« Stop ») pendant l'appel, après le squelette : ctx.Err(), ni repli ni journal.
+func TestParentCancellationAfterSkeletonReturnsCtxErr(t *testing.T) {
+	started := make(chan struct{})
+	c := &fakeCompleter{fn: func(ctx context.Context, _ llmcompose.CompletionRequest) (json.RawMessage, error) {
+		close(started)
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}}
+	r := newRig(t, c)
+	rec := &recorder{}
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { <-started; cancel() }()
+	_, err := r.composer.Compose(ctx, req(utterAct1), r.ds, rec.emit)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("erreur %v, attendu context.Canceled", err)
+	}
+	if len(rec.snapshot()) != 4 || r.fallback.n != 0 || strings.Contains(r.logs.String(), "fallback") {
+		t.Errorf("%d message(s) émis, %d repli(s), journal %q", len(rec.snapshot()), r.fallback.n, r.logs.String())
+	}
+}
+
+// Une erreur d'émission du squelette (client parti) remonte telle quelle, sans appel au modèle.
+func TestSkeletonEmitErrorStopsBeforeTheModelCall(t *testing.T) {
+	c := replies(act1Plan)
+	r := newRig(t, c)
+	boom := errors.New("client parti")
+	_, err := r.composer.Compose(context.Background(), req(utterAct1), r.ds, func(map[string]any) error { return boom })
+	if !errors.Is(err, boom) || c.count() != 0 {
+		t.Fatalf("erreur %v, %d appel(s) au modèle", err, c.count())
+	}
+}
+
+// Les journaux ne contiennent ni la demande ni la sortie du modèle, squelette compris.
+func TestLogsStayClosedWithSkeleton(t *testing.T) {
+	r := newRig(t, replies(listPlan))
+	_, _ = r.composer.Compose(context.Background(), req("Prépare la release 3.4 secret-xyz"), r.ds, (&recorder{}).emit)
+	if out := r.logs.String(); strings.Contains(out, "secret-xyz") || strings.Contains(out, "CrashList") {
+		t.Errorf("journal avec contenu : %s", out)
+	}
+}
