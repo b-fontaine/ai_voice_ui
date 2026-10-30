@@ -7,7 +7,9 @@ import (
 )
 
 // ErrCanvasBusy signale qu'une remise à vide du canevas est refusée parce
-// qu'une délégation est en cours ou en file : rien n'a été changé.
+// qu'une délégation est en cours ou en file : aucune session occupée n'a été
+// modifiée, mais d'autres sessions ont pu être vidées avant le refus (la remise
+// à vide est idempotente).
 var ErrCanvasBusy = errors.New("canevas occupé")
 
 // VoiceReply est la part du sideband dont l'orchestrateur a besoin : faire

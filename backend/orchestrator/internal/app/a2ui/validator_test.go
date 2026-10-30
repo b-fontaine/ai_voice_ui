@@ -142,6 +142,8 @@ func TestValidateAcceptsReplayAct1(t *testing.T) {
 		MaxMessageBytes:        64 * 1024,
 		MaxDepth:               16,
 		MaxComponentsPerUpdate: 50,
+		AllowedProps:           []string{"id", "component", "data"},
+		BindingProps:           []string{"data"},
 	})
 	if err != nil {
 		t.Fatal(err)

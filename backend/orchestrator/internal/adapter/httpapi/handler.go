@@ -31,7 +31,8 @@ const (
 
 // CanvasResetter remet à vide le canevas des sessions ouvertes. Elle renvoie
 // port.ErrCanvasBusy (éventuellement enveloppée) quand une délégation est en
-// cours ou en file : rien n'a alors été changé.
+// cours ou en file : aucune session occupée n'a alors été modifiée, mais d'autres
+// sessions ont pu être vidées (la remise à vide est idempotente).
 type CanvasResetter interface {
 	ResetCanvas(ctx context.Context) error
 }
