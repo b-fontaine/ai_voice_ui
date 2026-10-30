@@ -154,6 +154,9 @@ type Manager struct {
 	factory RunnerFactory
 	phrases Phrases
 	opts    Options
+
+	mu       sync.Mutex // protège sessions ; jamais tenu pendant un appel à une session
+	sessions map[*session]struct{}
 }
 
 var _ port.Delegations = (*Manager)(nil)
@@ -178,7 +181,7 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
-	return &Manager{factory: factory, phrases: phrases, opts: opts}, nil
+	return &Manager{factory: factory, phrases: phrases, opts: opts, sessions: map[*session]struct{}{}}, nil
 }
 
 // Open démarre la gestion d'une session et construit son Runner par la
@@ -201,7 +204,61 @@ func (m *Manager) Open(sessionID string, start time.Time, reply port.VoiceReply)
 	}
 	s.wg.Add(1)
 	go s.work()
+	m.mu.Lock()
+	m.sessions[s] = struct{}{}
+	m.mu.Unlock()
 	return s
+}
+
+// openSessions renvoie le nombre de sessions suivies (diagnostic et tests).
+func (m *Manager) openSessions() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.sessions)
+}
+
+// canvasResetter est implémentée par le Runner qui sait vider son canevas
+// (le Pipeline) ; un Runner qui ne l'implémente pas n'a rien à vider.
+type canvasResetter interface{ ResetCanvas() error }
+
+// ResetCanvas remet à vide le canevas de toutes les sessions ouvertes.
+//
+// Tout ou rien : une première passe vérifie qu'aucune session n'a de délégation
+// en cours ou en file ; s'il y en a une, ErrCanvasBusy est renvoyée sans rien
+// changer nulle part. Annuler après coup des deleteSurface déjà publiés est
+// impossible, d'où cette vérification préalable. Une délégation qui démarrerait
+// entre les deux passes est tout de même refusée par le Pipeline (ErrCanvasBusy) :
+// seules les sessions déjà vidées le restent, ce qui est inoffensif car la
+// remise à vide est idempotente. La table est copiée sous verrou, puis chaque
+// session est appelée sans aucun verrou du Manager ni de la session.
+func (m *Manager) ResetCanvas(ctx context.Context) error {
+	m.mu.Lock()
+	snapshot := make([]*session, 0, len(m.sessions))
+	for s := range m.sessions {
+		snapshot = append(snapshot, s)
+	}
+	m.mu.Unlock()
+
+	for _, s := range snapshot {
+		if s.busy() {
+			return port.ErrCanvasBusy
+		}
+	}
+	for _, s := range snapshot {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := s.resetCanvas(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *Manager) forget(s *session) {
+	m.mu.Lock()
+	delete(m.sessions, s)
+	m.mu.Unlock()
 }
 
 type session struct {
@@ -217,8 +274,9 @@ type session struct {
 	queue  chan Delegation
 	sends  chan struct{} // jetons des envois de commentaire en vol
 
-	mu      sync.Mutex // protège closed, seen, order et wg.Add
+	mu      sync.Mutex // protège closed, pending, seen, order et wg.Add
 	closed  bool
+	pending int // délégations en file ou en cours d'exécution
 	seen    map[string]struct{}
 	order   []string // ordre d'arrivée des identifiants, pour l'éviction
 	wg      sync.WaitGroup
@@ -267,10 +325,18 @@ func (s *session) Delegate(id string, offsetMs int64) {
 
 	genericDone := make(chan struct{})
 	d := Delegation{ID: id, Request: request, OffsetMs: offsetMs, GenericDone: genericDone}
+	// pending est incrémenté AVANT la mise en file : une remise à vide ne peut
+	// pas voir une délégation défilée mais pas encore comptée.
+	s.mu.Lock()
+	s.pending++
+	s.mu.Unlock()
 	select {
 	case s.queue <- d:
 		s.commentThen(id, s.m.phrases.Generic, func() { close(genericDone) })
 	default:
+		s.mu.Lock()
+		s.pending--
+		s.mu.Unlock()
 		s.log.Warn("file de délégations pleine", "delegation", id)
 		s.comment(id, s.m.phrases.QueueFull)
 	}
@@ -333,6 +399,11 @@ func (s *session) work() {
 }
 
 func (s *session) run(d Delegation) {
+	defer func() {
+		s.mu.Lock()
+		s.pending--
+		s.mu.Unlock()
+	}()
 	if s.ctx.Err() != nil {
 		return
 	}
@@ -345,6 +416,31 @@ func (s *session) run(d Delegation) {
 	s.runner.Run(s.ctx, d)
 }
 
+// busy indique une délégation en file ou en cours (session fermée : jamais).
+func (s *session) busy() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return !s.closed && s.pending > 0
+}
+
+// resetCanvas vide le canevas de la session, sans effet si elle est fermée.
+// Le verrou de session n'est pas tenu pendant l'appel au Runner.
+func (s *session) resetCanvas() error {
+	if s.busy() {
+		return port.ErrCanvasBusy
+	}
+	s.mu.Lock()
+	closed := s.closed
+	s.mu.Unlock()
+	if closed {
+		return nil
+	}
+	if r, ok := s.runner.(canvasResetter); ok {
+		return r.ResetCanvas()
+	}
+	return nil
+}
+
 // Close annule le travail en cours puis attend, au plus GuardTimeout (ou
 // ctx), la fin de la goroutine de traitement et des envois. Un Runner qui
 // ignore son contexte n'est pas attendu au-delà.
@@ -352,6 +448,7 @@ func (s *session) Close(ctx context.Context) {
 	s.mu.Lock()
 	s.closed = true
 	s.mu.Unlock()
+	s.m.forget(s)
 	s.cancel(ErrSessionClosed)
 	s.drain.Do(func() {
 		go func() {

@@ -2,8 +2,13 @@ package port
 
 import (
 	"context"
+	"errors"
 	"time"
 )
+
+// ErrCanvasBusy signale qu'une remise à vide du canevas est refusée parce
+// qu'une délégation est en cours ou en file : rien n'a été changé.
+var ErrCanvasBusy = errors.New("canevas occupé")
 
 // VoiceReply est la part du sideband dont l'orchestrateur a besoin : faire
 // dire un commentaire à la voix pour une délégation.

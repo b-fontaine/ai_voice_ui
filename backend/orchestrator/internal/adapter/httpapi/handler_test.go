@@ -82,6 +82,7 @@ func newFixture(t *testing.T, mutate func(*Options)) fixture {
 	logs := &bytes.Buffer{}
 	opts := Options{
 		Sessions:     sess,
+		Canvas:       &fakeCanvas{},
 		App:          http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "hub") }),
 		Clock:        clock,
 		Logger:       slog.New(slog.NewTextHandler(logs, nil)),
@@ -113,6 +114,7 @@ func (f fixture) do(method, target, contentType, body string) *httptest.Response
 func TestNewHandler_RejectsInvalidOptions(t *testing.T) {
 	cases := map[string]func(*Options){
 		"Sessions":     func(o *Options) { o.Sessions = nil },
+		"Canvas":       func(o *Options) { o.Canvas = nil },
 		"App":          func(o *Options) { o.App = nil },
 		"Clock":        func(o *Options) { o.Clock = nil },
 		"Logger":       func(o *Options) { o.Logger = nil },
@@ -124,7 +126,7 @@ func TestNewHandler_RejectsInvalidOptions(t *testing.T) {
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
 			opts := Options{
-				Sessions: &fakeSessions{}, App: http.NotFoundHandler(), Clock: &fakeClock{},
+				Sessions: &fakeSessions{}, Canvas: &fakeCanvas{}, App: http.NotFoundHandler(), Clock: &fakeClock{},
 				Logger: slog.Default(), RateBurst: 1, RateWindow: time.Second, MaxBodyBytes: 1,
 				AllowedHosts: []string{"example.com"},
 			}

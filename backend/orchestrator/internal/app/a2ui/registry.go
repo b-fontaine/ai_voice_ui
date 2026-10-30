@@ -159,6 +159,29 @@ func (r *Registry) Compensation(taskID string) []map[string]any {
 	return out
 }
 
+// Reset renvoie les messages deleteSurface de TOUTES les surfaces actives, quel
+// qu'en soit le propriétaire, triés par surfaceId (ordre déterministe), et vide
+// le registre. Idempotent : un registre vide renvoie une liste vide. Le suivi des
+// tâches (compteurs de messages) n'est pas touché : Forget le libère.
+func (r *Registry) Reset() []map[string]any {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ids := make([]string, 0, len(r.surfaces))
+	for id := range r.surfaces {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]map[string]any, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, map[string]any{
+			"version":       "v0.9",
+			"deleteSurface": map[string]any{"surfaceId": id},
+		})
+	}
+	r.surfaces = map[string]*surface{}
+	return out
+}
+
 // Forget libère les données de suivi de la tâche (compteur, liste des surfaces
 // créées). Les surfaces actives restent dans le registre jusqu'à leur suppression.
 func (r *Registry) Forget(taskID string) {
