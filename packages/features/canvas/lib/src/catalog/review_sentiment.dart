@@ -130,18 +130,26 @@ class _ReviewsView extends StatelessWidget {
             negative: reviews.negativePct,
           ),
           const SizedBox(height: 4),
+          // Chaque pourcentage cède de la place à l'autre dans une cellule
+          // étroite (3 × 2) au lieu de déborder.
           Row(
             children: <Widget>[
-              Text(
-                '${reviews.positivePct} % positifs',
-                style: theme.body.copyWith(color: theme.okForeground),
-                maxLines: 1,
+              Flexible(
+                child: Text(
+                  '${reviews.positivePct} % positifs',
+                  style: theme.body.copyWith(color: theme.okForeground),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const Spacer(),
-              Text(
-                '${reviews.negativePct} % négatifs',
-                style: theme.body.copyWith(color: theme.blockingForeground),
-                maxLines: 1,
+              Flexible(
+                child: Text(
+                  '${reviews.negativePct} % négatifs',
+                  style: theme.body.copyWith(color: theme.blockingForeground),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

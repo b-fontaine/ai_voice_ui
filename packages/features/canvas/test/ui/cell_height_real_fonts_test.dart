@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart' show Key;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -53,6 +54,7 @@ Future<void> loadRealFonts() async {
 
 void main() {
   setUpAll(loadRealFonts);
+  defineCrashListFit();
 
   // Surface, fixture, variantes jouées après l'acte 1 (acte 2 = comparaisons).
   const cases = <(String, String)>[
@@ -80,4 +82,43 @@ void main() {
       expect(h.engineErrors, isEmpty);
     });
   }
+}
+
+/// Cellule 3 × 2 à 1920 × 1080 : (1920 − 2 × 24 − 2 × 8) / 3 = 618 de large.
+const Size gridCell3x2 = Size(618, 250);
+
+void defineCrashListFit() {
+  testWidgets('CrashList : cinq lignes dans une cellule 3 × 2 de 250 px, polices '
+      'réelles, sans débordement ni chevauchement', (tester) async {
+    final h = CatalogHarness(
+      'crashes',
+      'global',
+      variant: 'crashlist',
+      size: gridCell3x2,
+      fontFamily: 'Noto Sans',
+      fontFamilyFallback: const <String>['DejaVu Sans'],
+    );
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+    for (var rank = 1; rank <= 5; rank++) {
+      final row = tester.getRect(find.byKey(Key('crash-row-$rank')));
+      final label = tester.getRect(find.byKey(Key('crash-label-$rank')));
+      expect(
+        label.height,
+        lessThanOrEqualTo(row.height + 0.5),
+        reason:
+            'libellé $rank : ${label.height} px dans une ligne de ${row.height} px',
+      );
+      if (rank < 5) {
+        expect(
+          row.bottom,
+          lessThanOrEqualTo(
+            tester.getTopLeft(find.byKey(Key('crash-row-${rank + 1}'))).dy +
+                0.5,
+          ),
+        );
+      }
+    }
+    expect(tester.takeException(), isNull);
+  });
 }

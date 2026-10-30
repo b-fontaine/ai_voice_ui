@@ -2,7 +2,7 @@
 
 - **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : T41+T42 (Flutter)
+- **Tâche en cours** : T22+T23+T25 (Go orchestrateur)
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
 - **Backlog** : EP-03, EP-04, EP-09
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | TDD | T40 (faite par T11), T41 (`CrashList`, trois états, 6 items du catalogue) et T42 (grille à parent unique `CustomMultiChildLayout`, `State` conservés à l'arrivée de `crashes`, étagère) faites ; F-01 et F-02 verts (5 scénarios) ; `gate --unit flutter` vert. Correctif collatéral : `ReviewSentiment` débordait en 3 colonnes (Flexible + ellipse). **Pour le porteur / 013, sans bloquer (pdr-0062)** : avec les polices réelles, cinq lignes se partagent ~187 px dans une cellule 3×2 de 250 px (~37 px par ligne) : un libellé sur deux lignes serait rogné (`ClipRect`, `maxLines: 2` conservé) ; choix à faire en 013 entre cellule plus haute, libellé sur une ligne ou moins de lignes ; unité « sess. » choisie sans la fiche. Pas de golden dans le dépôt : tests de géométrie à polices réelles (`cell_height_real_fonts_test`). | `gates/20261030-231307-unit-flutter.log` |
 | 2026-10-30 | TDD | T20 (port `LlmText`, adaptateur `openaitext` Responses strict, erreurs fermées) et T21 (passerelle `llmgateway`, gardes C-07, serveur à délais) faites, `gate --unit go` vert. Formes fixées : `BaseURL` de l'adaptateur inclut `/v1` (T22 transmet `OPENAI_BASE_URL` tel quel, défaut `https://api.openai.com/v1`) ; erreurs de la passerelle `{"error":motif}` (503 disabled, 504 timeout, 502 transport/upstream_status/incomplete/refusal/invalid) ; `AllowedHosts` déduit de `LLM_GATEWAY_ADDR` en T22 ; bornes de champs et de profondeur par défaut à fixer en T22. | `gates/20261030-230959-unit-go.log` |
 | 2026-10-30 | TDD | T19 : notes `ma-openai-responses-structured-request` et `-response` (doc officielle, `kb_lint` 0 erreur). À retenir pour T20 : les jetons de raisonnement comptent dans `max_output_tokens` (réponse `incomplete` sans texte possible) ; `reasoning.effort` à rendre configurable (`none` refusé par certains modèles) ; la page Models liste `gpt-6-luna`, `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-astra` (pas de « mini »), choix par la mesure T51 ; l'override de base URL n'est pas documenté pour Go : la base est une configuration de l'adaptateur. | `kb_lint.py` |
 | 2026-10-30 | TDD | T10 (`dataset.json` `crashes`, `TopCrashes`, contrôles de cohérence) et T11 (`CrashList` en 6ᵉ composant du contrat, fixtures `crashlist-global|android`, parité Go/Dart, compose à 6 composants) faites ; `check-compose.sh` OK. Note : `genesis_catalog_test.dart` exclut `CrashList` de la comparaison au contrat jusqu'à T41. | `gates/20261030-230235-unit-go.log`, `gates/20261030-230237-unit-flutter.log` |

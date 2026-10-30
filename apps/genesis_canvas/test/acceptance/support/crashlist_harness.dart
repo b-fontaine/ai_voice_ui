@@ -65,9 +65,11 @@ class CrashListHarness {
     'sessions': sessions,
   };
 
-  /// Session pour laquelle des temps ont déjà été émis, et leur nombre : un
-  /// temps n'est jamais renvoyé deux fois dans le même scénario.
-  static String? _session;
+  /// Faux backend (un par scénario) pour lequel des temps ont déjà été émis,
+  /// et leur nombre : un temps n'est jamais renvoyé deux fois dans le même
+  /// scénario. L'identifiant de session ne distingue pas les scénarios (il est
+  /// réutilisé d'un faux backend à l'autre).
+  static Object? _emittedFor;
   static int _emitted = 0;
 
   /// Les trois messages, [catalogId] substitué ; [value] remplace le modèle de
@@ -116,8 +118,8 @@ class CrashListHarness {
   }) async {
     final backend = SessionHarness.backend;
     final session = backend.lastSessionId!;
-    if (_session != session) {
-      _session = session;
+    if (!identical(_emittedFor, backend)) {
+      _emittedFor = backend;
       _emitted = 0;
     }
     final all = messages(backend.catalogId, value: value);

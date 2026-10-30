@@ -254,10 +254,8 @@ void main() {
     expect(genesisCatalog().catalogId, GenesisContract.defaultCatalogId);
     expect(
       catalog.items.map((i) => i.name),
-      GenesisContract.components.where((c) => c != 'CrashList'),
-      reason:
-          'les 5 composants rendus, dans l ordre ; le widget CrashList '
-          'arrive avec la tâche T41 (le contrat le déclare déjà)',
+      GenesisContract.components,
+      reason: 'les 6 composants du contrat, dans l ordre',
     );
   });
 }

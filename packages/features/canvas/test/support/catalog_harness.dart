@@ -47,11 +47,16 @@ class CatalogHarness {
     this.size = const Size(940, 255),
     this.fontFamily,
     this.fontFamilyFallback,
+    this.variant = 'act1',
   }) {
     controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
     bloc = CanvasBloc(controller);
     _sub = controller.onSubmit.listen((m) => engineErrors.add(m.toString()));
-    fixture = contractFixture(fixtureName, GenesisContract.defaultCatalogId);
+    fixture = contractFixture(
+      fixtureName,
+      GenesisContract.defaultCatalogId,
+      variant: variant,
+    );
     addTearDown(() async {
       await _sub.cancel();
       await bloc.close();
@@ -62,6 +67,10 @@ class CatalogHarness {
   final String surface;
   final String fixtureName;
   final Size size;
+
+  /// Préfixe de la fixture du contrat (`act1`, ou `crashlist` pour
+  /// `crashlist-global.jsonl`).
+  final String variant;
 
   /// Famille (et familles de repli) du thème Material : par défaut la police
   /// de test (Ahem) ; un test de budget de hauteur y met des polices réelles.
@@ -179,11 +188,12 @@ void defineCommonStateTests({
   required String fixtureName,
   required String completeText,
   Map<String, Object?> badValues = const <String, Object?>{},
+  String variant = 'act1',
 }) {
   testWidgets('$component : squelette puis sans données puis complet', (
     tester,
   ) async {
-    final h = CatalogHarness(surface, fixtureName);
+    final h = CatalogHarness(surface, fixtureName, variant: variant);
     await h.pump(tester);
 
     await h.sendFixtureTo(tester, 1);
@@ -208,7 +218,7 @@ void defineCommonStateTests({
     testWidgets('$component sans le champ requis $field : état neutre', (
       tester,
     ) async {
-      final h = CatalogHarness(surface, fixtureName);
+      final h = CatalogHarness(surface, fixtureName, variant: variant);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendData(tester, cloneJson(h.data)..remove(field));
@@ -228,7 +238,7 @@ void defineCommonStateTests({
     testWidgets('$component, ${bad.key} : état neutre sans exception', (
       tester,
     ) async {
-      final h = CatalogHarness(surface, fixtureName);
+      final h = CatalogHarness(surface, fixtureName, variant: variant);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendData(tester, bad.value);
@@ -242,7 +252,7 @@ void defineCommonStateTests({
   testWidgets('$component : textes >= 24 px, sans débordement à 940 x 255', (
     tester,
   ) async {
-    final h = CatalogHarness(surface, fixtureName);
+    final h = CatalogHarness(surface, fixtureName, variant: variant);
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
@@ -254,7 +264,7 @@ void defineCommonStateTests({
   testWidgets('$component : l état neutre ne déborde pas non plus', (
     tester,
   ) async {
-    final h = CatalogHarness(surface, fixtureName);
+    final h = CatalogHarness(surface, fixtureName, variant: variant);
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     await h.sendData(tester, cloneJson(h.data)..remove('title'));
