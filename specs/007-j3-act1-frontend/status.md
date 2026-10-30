@@ -1,7 +1,7 @@
 # 007 — État
 
-- **Étape** : Revue
-- **Tentatives** : 1/3
+- **Étape** : Refactorisation
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/007-j3-act1-frontend
@@ -29,6 +29,22 @@
 | 2026-10-30 | TDD | **T90 : `gate --full` VERT, 55 contrôles, arbre propre, HEAD `b924fb9`** (premier passage ROUGE : `TestValidateAcceptsReplayAct1` de 004 validait l'ancien asset `Column`/`Text` surface `quality` que T12b a régénéré ; test mis à jour pour valider l'asset au catalogue `genesis` et exiger l'égalité avec les exemples du contrat, commit `b924fb9`). **TDD terminé** : toutes les tâches T01…T17 et T90 cochées ; passage à la revue d'architecte du code. | `.omc/state/loop/gates/20261030-111216-full.log` (rouge), `.omc/state/loop/gates/20261030-111555-full.log` (vert) |
 
 ## Revue d'architecte
+
+### Revue du code (mode CODE, 2026-10-30, architect-reviewer Opus) — verdict : À REFACTORISER (aucun défaut bloquant)
+Architecture conforme (Clean + FSD, `getIt` confiné, pas de Cubit, ordre de `_shutdown` testé, route Go correcte sous `-race`). Lots prévus : **L1** R1 ; **L2** R2+R3 ; **L3** R4 ; **L4** R5 ; **L5** R6, R7, R8, R10 (mineures Flutter) ; **LG** R9 (Go, parallèle de L1).
+- [ ] **R1 important (Flutter)** — désynchronisation app/backend sur un 409 : le bouton n'est inactif que si un agent est `working` alors que le backend répond `busy` pendant tout `Pipeline.Run` (étape `plan`, agents `pending`, commentaire final). `anyWorking` doit couvrir `pending` ; `_requestBackendReset` réessaie sur `busy` (essais et intervalle injectés par `GenesisConfig`) ; test de page `busy` puis `done` = 2 appels.
+- [ ] **R2 important (Flutter)** — `CatalogShelfBloc` ignore `compensations` : après un refus sur une surface active, l'étagère affiche 4/6 pour 3 surfaces (FR-06). Retirer les surfaces compensées ; tests dont « Cleared vide la table interne ».
+- [ ] **R3 important (Flutter)** — `surface_exists` détruit une surface valide par compensation (le Go laisse l'état intact) : pas de compensation pour `surface_exists`. Tests validateur + gate.
+- [ ] **R4 important (Flutter)** — le panneau montre le même JSON (`{` puis `"version": "v0.9",`) : stocker le JSON compact du corps de l'opération sans `version`, borné ; test `protocol-json-<n>`.
+- [ ] **R5 important (Flutter)** — débordements : `ReleaseChecklist` `ClipRect` cache des lignes (dont une bloquante) → « + N autres critères » ; légende de `TrendChart` sans `Flexible` ; nom d'agent du rail sans ellipse ; tests à données longues/nombreuses.
+- [ ] **R6 mineur (Flutter)** — couleurs `Colors.*` du rail et `fontSize: 28` hors `SceneTheme` (RG-09) ; paires graphiques sur `surface` au test de contraste (3:1, WCAG 1.4.11).
+- [ ] **R7 mineur (Flutter)** — code mort et API réservées aux tests : `keyIndicatorRequiredFields`, flux `validated` en diffusion et `RepositoryProvider<A2uiGate>`, `MessageHighlighted`, `ProtocolPanel.visibleEntries`, `CatalogShelfState.empty()` recopié, paramètre `path` de `boundCatalogItem`, double journal de l'échec de remise à vide, états en `final class` + `@immutable`.
+- [ ] **R8 mineur (Flutter)** — migration V1/V5/H-02 : retrouver la preuve que le texte est rendu par `Surface` (`find.descendant(of: find.descendant(of: surface-kpi, matching: Surface), matching: …)`).
+- [ ] **R9 mineur (Go)** — contrat de `ErrCanvasBusy` inexact (« rien n'a été changé » : d'autres sessions ont pu être vidées, idempotent) ; `TestValidateAcceptsReplayAct1` sans `AllowedProps`/`BindingProps` comme en production.
+- [ ] **R10 mineur (Flutter)** — le rejeu valide `message.toJson()` et non la ligne brute (risque pour J6) ; `catalogs` et `catalogId` passés tous deux à la page (dériver ou `assert`).
+- **Conflit avec une décision (remonté, pas de code)** : pdr-0058 + pdr-0052 contre l'état transitoire de 007 (registre backend encore par session jusqu'à J4, canevas conservé par l'app d'une session voix à l'autre) → **Q-73** pour le porteur, non bloquante (consigne de régie « remettre à vide avant toute nouvelle session voix » en attendant).
+- **Écart consigné** : stories Widgetbook et goldens par `CatalogItem` (frontend.md) reportés (A8e).
+- **Documentation à mettre à jour à la clôture (T92)** : `app-channel-contract.md` (route `/canvas/reset`), `security.md`, `backend.md`, `frontend.md` (arborescence réelle, `A2uiGate`, `GENESIS_CATALOG_ID`, `GENESIS_CANVAS_RESET_TIMEOUT_MS`, écart Widgetbook), `agents-protocols.md` (validation client), `screen.md` (six zones livrées, D1-D6), `catalog.md` (trois états), `stage-runtime.md` (remise à vide entre sessions), roadmap/backlog/progress (J3-B, levée de RD-9), note `genui-custom-catalog-item` (`BoundObject`, piège du `defaultBuilder`, `json_schema_builder`).
 ### Revue du plan (mode PLAN, 2026-10-30) — verdict : À AMENDER
 - [x] **A1 bloquant** — squelette peint par `CanvasBoard` (le `defaultBuilder` de genui 0.10.4 ne s'affiche jamais) ; liaison par `BoundObject`, jamais `dataContext.subscribe` dans un builder.
 - [x] **A2 bloquant** — `GenesisMessageValidator` à état dans `entities/catalog`, une instance dans le flux unique (direct et rejeu), compensation locale, codes fermés.
