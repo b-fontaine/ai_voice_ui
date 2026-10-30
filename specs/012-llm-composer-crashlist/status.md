@@ -1,7 +1,7 @@
 # 012 — État
 
-- **Étape** : TDD
-- **Tentatives** : 0/3
+- **Étape** : Revue
+- **Tentatives** : 1/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-31 | TDD (fin) | **TDD terminé** (toutes les tâches cochées sauf T90, clôture) ; **`gate --full` VERT, 58 contrôles** (acceptation comprise : C-01 à C-08, F-01, F-02). Passage à la revue d'architecte du code. | `gates/20261031-000055-full.log` |
 | 2026-10-31 | TDD | T52 faite (squelette anticipé : `kit.SurfaceSkeleton`, `Validator.Expected`, squelette des surfaces du plan déterministe émis AVANT l'appel, surfaces anticipées traitées comme actives, plan à surfaces différentes = `invalid_plan` sans second `createSurface`, aucun `deleteSurface` de l'agent ; mutation vérifiée) ; acceptations agents adaptées par surface (l'entrelacement change : squelettes d'abord) ; `gate --unit go` vert. **Refus `view_unavailable` après squelette** : l'orchestrateur publie lui-même les `deleteSurface` de compensation pour tout `rejected`/`failed` (lecture de `task.go`) : le speaker voit brièvement les cadres avant leur retrait. T35 non retenue. Compose : `COMPOSER_MODEL` par défaut `gpt-6-luna`, `COMPOSER_RATE_WINDOW` 2 s. NFR-02 avec squelette : par construction (émission avant l'appel) ; à remesurer sur l'horloge de l'app en répétition. | `gates/20261030-235956-unit-go.log` |
 | 2026-10-30 | TDD | **T51 mesure réelle** (`composer-bench` dans le réseau `agents`, 5 répétitions × 5 demandes, budget vérifié avant chaque campagne, dépense totale de la mesure ≈ 0,13 € estimée par excès, registre `specs/openai-spend.tsv`) : **gpt-6-luna** 25/25 plans valides, 100 % d'accord avec le plan attendu, p50 1,79 s, p90 2,69 s (≈ 936 jetons en entrée, ≈ 68 en sortie par appel) ; **gpt-6.1-terra** 24/25 valides, 1 délai dépassé, p50 1,97 s, p90 3,06 s ; effort de raisonnement de luna : `minimal` refusé (400), `low` et `none` acceptés sans gain (p50 2,1-2,3 s). **Choix : `gpt-6-luna`, effort par défaut.** **NFR-02 (premier squelette < 1,5 s) NON tenu par l'appel seul (p50 1,8 s)** : le squelette anticipé (D8, T52) est donc déclenché ; NFR-03 (< 8 s) tenu. Découvertes : `COMPOSER_RATE_WINDOW` est la durée de recharge d'un jeton (défaut 10 s = 6 appels/min soutenus) : le banc passe en 500 ms ; une commande `docker compose` sans `COMPOSER_MODEL` exporté recrée l'orchestrateur avec la passerelle désactivée (503). | `specs/openai-spend.tsv` |
 | 2026-10-30 | TDD | T44 faite : `CrashList` lisible à 1920×1080 (libellé sur une ligne avec ellipse, plateforme et volume à droite, `sessions` non affiché, sans `ClipRect`), scénarios F-02 ajustés ; capture `.omc/state/loop/snapshots/20261030-234838-crashlist-replay.png` relue : cinq libellés lisibles, ellipse en fin de ligne seulement ; `gate --unit flutter` vert. **Découverte de la mesure réelle (T51, premier essai à blanc, aucun appel amont, aucune dépense)** : toute requête agent → passerelle était refusée en 400, le schéma de production a 9 niveaux d'imbrication et la passerelle en acceptait 8 ; chaque côté était testé séparément. Corrigé : défaut `COMPOSER_MAX_SCHEMA_DEPTH` = 12 (test rouge puis vert) et test de garde côté agents (`schema_depth_test.go`) qui échoue si le schéma dépasse le défaut de la passerelle. Le limiteur compte aussi les requêtes invalides : sans conséquence ici. | `gates/20261030-234742-unit-flutter.log` |
