@@ -35,7 +35,7 @@ services:
     environment:
       # Agents A2A joignables (réseau interne `agents`) : `Nom=URL de la carte`, séparés par des virgules.
       AGENTS: Qualité=http://agent-quality:8090/.well-known/agent-card.json,Voix du client=http://agent-voice:8091/.well-known/agent-card.json,Livraison=http://agent-delivery:8092/.well-known/agent-card.json
-      # Catalogue A2UI partagé avec les agents : les 4 composants du catalogue Genesis J3 (sans Column ni Text).
+      # Catalogue A2UI partagé avec les agents : les 5 composants à schéma du catalogue Genesis (sans Column ni Text).
       A2UI_CATALOG_ID: *a2ui_catalog
       A2UI_COMPONENTS: ${A2UI_COMPONENTS:-KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist,ActionBar}
       A2UI_ALLOWED_PROPS: ${A2UI_ALLOWED_PROPS:-id,component,data}
