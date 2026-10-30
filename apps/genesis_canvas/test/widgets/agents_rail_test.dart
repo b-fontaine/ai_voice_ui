@@ -9,6 +9,9 @@ import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
+import 'package:shared_design_system/shared_design_system.dart';
+
+import '../support/paragraphs.dart';
 
 void main() {
   late AgentActivityBloc bloc;
@@ -272,5 +275,55 @@ void main() {
       ),
       findsOneWidget, // le détail identique au libellé n'est pas répété
     );
+  });
+
+  testWidgets('tout le texte du rail fait au moins 24 px et reste lisible', (
+    tester,
+  ) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd1',
+        selected: const <String>['Qualité', 'Voix du client'],
+        idle: const <String>['Livraison'],
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.working,
+        label: 'Analyse de la release',
+      ),
+    );
+
+    expect(paragraphsBelowMinimum(tester), isEmpty);
+    const theme = SceneTheme.dark();
+    final Text name = tester.widget<Text>(
+      find.descendant(of: row('Qualité'), matching: find.text('Qualité')),
+    );
+    expect(name.style?.color, theme.textPrimary);
+  });
+
+  testWidgets('un détail très long s\'abrège sans déborder', (tester) async {
+    tester.view.physicalSize = const Size(900, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpRail(tester);
+    await emit(
+      tester,
+      AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.failed,
+        label: 'Analyse de la release ${'très longue ' * 20}',
+        detail: 'délai dépassé ${'encore ' * 30}',
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(row('Qualité'), findsOneWidget);
   });
 }

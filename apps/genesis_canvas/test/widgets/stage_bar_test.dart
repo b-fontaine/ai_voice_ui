@@ -1,0 +1,184 @@
+import 'dart:async';
+
+import 'package:entity_session/entity_session.dart';
+import 'package:feature_agent_activity/feature_agent_activity.dart';
+import 'package:feature_stage_controls/feature_stage_controls.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart' hide testWidgets;
+import 'package:flutter_test/flutter_test.dart'
+    as flutter_test
+    show testWidgets;
+import 'package:genesis_canvas/widgets/stage_bar/stage_bar.dart';
+
+void main() {
+  late StageBloc stage;
+  late AgentActivityBloc agents;
+  late StreamController<SessionEvent> events;
+  late int resets;
+
+  void testWidgets(
+    String description,
+    Future<void> Function(WidgetTester tester) body,
+  ) => flutter_test.testWidgets(description, (tester) async {
+    stage = StageBloc();
+    agents = AgentActivityBloc();
+    events = StreamController<SessionEvent>.broadcast();
+    resets = 0;
+    await body(tester);
+    await tester.pumpWidget(const SizedBox());
+    unawaited(events.close());
+    unawaited(stage.close());
+    unawaited(agents.close());
+    await tester.pump();
+  });
+
+  Future<void> pumpBar(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: MultiBlocProvider(
+          providers: <BlocProvider<dynamic>>[
+            BlocProvider<StageBloc>.value(value: stage),
+            BlocProvider<AgentActivityBloc>.value(value: agents),
+          ],
+          child: Align(
+            alignment: Alignment.topRight,
+            child: StageBar(onResetPressed: () => resets++),
+          ),
+        ),
+      ),
+    );
+    agents.add(AgentActivitySourceSubscribed(events.stream));
+    await tester.pump();
+  }
+
+  Future<void> emit(WidgetTester tester, SessionEvent event) async {
+    events.add(event);
+    await tester.pump();
+    await tester.pump();
+  }
+
+  Finder indicator() => find.byKey(const Key('act-indicator'));
+  FilledButton resetButton(WidgetTester tester) =>
+      tester.widget<FilledButton>(find.byKey(const Key('reset-button')));
+
+  testWidgets('acte 1 par défaut : « Acte 1/3 · Créer »', (tester) async {
+    await pumpBar(tester);
+
+    expect(
+      find.descendant(of: indicator(), matching: find.text('Acte 1/3 · Créer')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'un clic sur l\'indicateur passe à l\'acte suivant, cycliquement',
+    (tester) async {
+      await pumpBar(tester);
+
+      Future<void> clickAndExpect(String text) async {
+        await tester.tap(indicator());
+        await tester.pump();
+        await tester.pump();
+        expect(
+          find.descendant(of: indicator(), matching: find.text(text)),
+          findsOneWidget,
+        );
+      }
+
+      await clickAndExpect('Acte 2/3 · Transformer');
+      await clickAndExpect('Acte 3/3 · Interagir');
+      await clickAndExpect('Acte 1/3 · Créer');
+    },
+  );
+
+  testWidgets('l\'indicateur suit une remise à zéro du Bloc d\'acte', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    await tester.tap(indicator());
+    await tester.pump();
+    await tester.pump();
+
+    stage.add(const StageResetRequested());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+  });
+
+  testWidgets('« Remettre à vide » appelle onResetPressed, une fois par clic', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('reset-button')),
+        matching: find.text('Remettre à vide'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('reset-button')));
+    await tester.pump();
+
+    expect(resets, 1);
+  });
+
+  testWidgets('inactif tant qu\'un agent travaille, actif ensuite', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    expect(resetButton(tester).onPressed, isNotNull);
+
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.working,
+      ),
+    );
+    expect(resetButton(tester).onPressed, isNull);
+    await tester.tap(
+      find.byKey(const Key('reset-button')),
+      warnIfMissed: false,
+    );
+    await tester.pump();
+    expect(resets, 0);
+
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.completed,
+      ),
+    );
+    expect(resetButton(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('l\'indicateur d\'acte reste cliquable pendant le travail', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't1',
+        state: AgentTaskState.working,
+      ),
+    );
+
+    await tester.tap(indicator());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Acte 2/3'), findsOneWidget);
+  });
+}

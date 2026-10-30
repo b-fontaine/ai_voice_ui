@@ -17,6 +17,7 @@ import 'bootstrap/snapshot_service.dart';
 import 'config/genesis_config.dart';
 import 'di/injection.dart';
 import 'scenario/scenario_player.dart';
+import 'theme/genesis_theme.dart';
 
 /// Racine de l'application : couche `app`, qui assemble la configuration, les
 /// assets et la plateforme, puis les passe à la page par constructeur.
@@ -94,7 +95,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
     final config = widget.config;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark),
+      theme: genesisThemeData(),
       // `Material` transparent : fournit le style de texte du thème (sinon
       // repli rouge souligné) sans changer le fond de la page.
       home: Material(

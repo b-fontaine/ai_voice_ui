@@ -1,0 +1,78 @@
+import 'package:feature_agent_activity/feature_agent_activity.dart'
+    show AgentActivityBloc, AgentActivityState;
+import 'package:feature_stage_controls/feature_stage_controls.dart'
+    show StageActAdvanced, StageBloc, StageState;
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+
+/// Régie de scène : l'indicateur d'acte (D1) et la remise à vide (D4).
+///
+/// - `act-indicator` : « Acte n/3 · nom » ; un clic passe à l'acte suivant
+///   (cyclique), souris d'abord (pdr-0033) ;
+/// - `reset-button` : « Remettre à vide » ; il n'agit pas lui-même, il appelle
+///   [onResetPressed] (la page coordonne tous les Blocs, A4a du plan 007).
+///   Inactif tant qu'un agent travaille : le backend refuserait (409) de
+///   retirer des surfaces en cours de fabrication.
+class StageBar extends StatelessWidget {
+  const StageBar({super.key, required this.onResetPressed});
+
+  final VoidCallback onResetPressed;
+
+  /// Largeur maximale : au-delà, les libellés s'abrègent avec une ellipse.
+  static const double maxWidth = 520;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return Material(
+      type: MaterialType.transparency,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: maxWidth),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            BlocBuilder<StageBloc, StageState>(
+              builder: (BuildContext context, StageState stage) => TextButton(
+                key: const Key('act-indicator'),
+                onPressed: () =>
+                    context.read<StageBloc>().add(const StageActAdvanced()),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.accent,
+                  textStyle: theme.title.copyWith(fontSize: 28),
+                  minimumSize: const Size(0, 44),
+                ),
+                child: Text(
+                  'Acte ${stage.act}/${StageState.actCount} · ${stage.actName}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            BlocSelector<AgentActivityBloc, AgentActivityState, bool>(
+              selector: (AgentActivityState state) => state.anyWorking,
+              builder: (BuildContext context, bool working) => FilledButton(
+                key: const Key('reset-button'),
+                onPressed: working ? null : onResetPressed,
+                style: FilledButton.styleFrom(
+                  textStyle: theme.label,
+                  minimumSize: const Size(0, 44),
+                  // Inactif mais lisible : paire neutre du thème de scène.
+                  disabledBackgroundColor: theme.neutralBackground,
+                  disabledForegroundColor: theme.neutralForeground,
+                ),
+                child: const Text(
+                  'Remettre à vide',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

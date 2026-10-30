@@ -18,6 +18,12 @@ dependencies:
     path: ../../packages/features/agent_activity
   feature_canvas:
     path: ../../packages/features/canvas
+  feature_catalog_shelf:
+    path: ../../packages/features/catalog_shelf
+  feature_protocol_feed:
+    path: ../../packages/features/protocol_feed
+  feature_stage_controls:
+    path: ../../packages/features/stage_controls
   feature_voice_session:
     path: ../../packages/features/voice_session
   flutter:
@@ -31,6 +37,8 @@ dependencies:
     path: ../../packages/shared/backend_channel
   shared_core:
     path: ../../packages/shared/core
+  shared_design_system:
+    path: ../../packages/shared/design_system
 
 dev_dependencies:
   bdd_widget_test: 3.0.4

@@ -237,4 +237,80 @@ void main() {
     expect(input.hasListener, isTrue); // celui du gate de `setUp`.
     other.reset(); // sans effet ni exception après fermeture.
   });
+
+  group('validatedBranch : branche à abonné unique, mise en mémoire', () {
+    test(
+      'reçoit les messages émis AVANT son écoute, avec leur verdict',
+      () async {
+        final other = A2uiGate(catalogId: _catalog);
+        final branch = other.validatedBranch();
+        final source = StreamController<SessionEvent>();
+        other.attach(source.stream);
+        source
+          ..add(_event(_create('kpi')))
+          ..add(_event(_components('kpi', component: 'Column')));
+        await settle();
+
+        // Le consommateur (un Bloc) ne s'abonne qu'après quelques tours.
+        final seen = <ValidatedEnvelope>[];
+        branch.listen(seen.add);
+        await settle();
+
+        expect(seen, hasLength(2));
+        expect(seen.first.verdict, isA<ValidationAccepted>());
+        expect(seen.last.verdict, isA<ValidationRejected>());
+        await other.dispose();
+        await source.close();
+      },
+    );
+
+    test('deux branches reçoivent chacune tous les messages', () async {
+      final a = <ValidatedEnvelope>[];
+      final b = <ValidatedEnvelope>[];
+      gate.validatedBranch().listen(a.add);
+      gate.validatedBranch().listen(b.add);
+
+      input.add(_event(_create('kpi')));
+      await settle();
+
+      expect(a, hasLength(1));
+      expect(b, hasLength(1));
+    });
+
+    test('la fin du gate ferme la branche écoutée', () async {
+      final other = A2uiGate(catalogId: _catalog);
+      final done = <String>[];
+      other.validatedBranch().listen(null, onDone: () => done.add('fin'));
+      other.attach(input.stream);
+
+      await other.dispose();
+      await settle();
+
+      expect(done, <String>['fin']);
+    });
+
+    test('une branche demandée après la fermeture est déjà terminée', () async {
+      final other = A2uiGate(catalogId: _catalog);
+      await other.dispose();
+      final done = <String>[];
+
+      other.validatedBranch().listen(null, onDone: () => done.add('fin'));
+      await settle();
+
+      expect(done, <String>['fin']);
+    });
+
+    test(
+      'une branche annulée ne retient rien et n\'empêche pas la suite',
+      () async {
+        final branch = gate.validatedBranch().listen((_) {});
+        await branch.cancel();
+
+        input.add(_event(_create('kpi')));
+        await settle();
+
+        expect(validated, hasLength(1));
+      },
+    );
+  });
 }

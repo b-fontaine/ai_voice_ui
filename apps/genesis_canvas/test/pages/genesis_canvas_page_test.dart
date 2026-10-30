@@ -83,7 +83,7 @@ void main() {
     bool withReplay = true,
     List<Catalog>? catalogs,
   }) async {
-    tester.view.physicalSize = const Size(800, 600);
+    tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -204,7 +204,7 @@ void main() {
   testWidgets('page démontée avant la capture : message et sortie 1', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(800, 600);
+    tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final messages = StreamController<A2uiMessage>();
