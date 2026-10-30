@@ -40,7 +40,7 @@ tags: [meta, readme, entree, carte]
 | [architecture/](architecture/index.yaml) | [vue d'ensemble](architecture/overview.md), [frontend](architecture/frontend.md) et [écran livré](architecture/frontend-screen.md), [backend](architecture/backend.md), [agents et protocoles](architecture/agents-protocols.md), [contrat de l'app-channel](architecture/app-channel-contract.md) | Comment est-il construit, qui parle à qui ? |
 | | [stack](architecture/stack.md), [rejeu](architecture/replay.md), [sécurité](architecture/security.md), [qualité](architecture/quality.md), [scène](architecture/stage-runtime.md) | Avec quelles versions, comment tient-il sans réseau, comment le teste-t-on et le joue-t-on en salle ? |
 | [roadmap/](roadmap/index.yaml) | [roadmap](roadmap/roadmap.md), [backlog](roadmap/backlog.md), [spikes](roadmap/spikes.md), [questions ouvertes](roadmap/open-questions.md), [au-delà](roadmap/beyond.md), [plan backend de production](roadmap/backend-production-plan.md) | Dans quel ordre le construire, que reste-t-il à décider, que faire après le talk ? |
-| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0063`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
+| [decisions/](decisions/index.yaml) | `pdr-0001` … `pdr-0064`, ADR hérités de `knowledge/` | Qu'a-t-on décidé, pourquoi, qui l'a décidé ? |
 | méta | [conventions](_conventions.md), [sources](sources/README.md), [`index.yaml`](index.yaml) | Comment écrire ici, d'où viennent les faits ? |
 
 ## État au 2026-10-30

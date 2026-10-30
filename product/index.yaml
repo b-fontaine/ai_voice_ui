@@ -120,4 +120,4 @@ requirement_index:
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-10 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0063": decisions/index.yaml
+  "pdr-0001..pdr-0064": decisions/index.yaml
