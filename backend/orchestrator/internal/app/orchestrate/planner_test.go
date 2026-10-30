@@ -106,16 +106,16 @@ func TestActionPlannerSelectsAgentsAcceptingAction(t *testing.T) {
 		{Name: "Voix", Tags: []string{"voix"}},
 	}
 	cases := []struct {
-		action        string
-		selected, idl []int
+		action   string
+		selected []int
 	}{
-		{"block_release", []int{1}, []int{0, 2}},
-		{"validate_release", []int{1}, []int{0, 2}},
+		{"block_release", []int{1}},
+		{"validate_release", []int{1}},
 	}
 	for _, c := range cases {
-		sel, idle, err := (ActionPlanner{}).Plan(c.action, cards)
-		if err != nil || !reflect.DeepEqual(sel, c.selected) || !reflect.DeepEqual(idle, c.idl) {
-			t.Errorf("Plan(%q) = %v, %v, %v", c.action, sel, idle, err)
+		sel, err := (ActionPlanner{}).Plan(c.action, cards)
+		if err != nil || !reflect.DeepEqual(sel, c.selected) {
+			t.Errorf("Plan(%q) = %v, %v", c.action, sel, err)
 		}
 	}
 }
@@ -126,13 +126,13 @@ func TestActionPlannerRejectsUnknownOrInvalidName(t *testing.T) {
 		"", "unknown_action", "Block_release", "block-release", "1block", "block release",
 		"block_release\n", "other", "", strings.Repeat("a", 41), "../x", "action:block_release",
 	} {
-		sel, idle, err := (ActionPlanner{}).Plan(name, cards)
-		if !errors.Is(err, port.ErrUnknownAction) || sel != nil || idle != nil {
-			t.Errorf("Plan(%q) = %v, %v, %v", name, sel, idle, err)
+		sel, err := (ActionPlanner{}).Plan(name, cards)
+		if !errors.Is(err, port.ErrUnknownAction) || sel != nil {
+			t.Errorf("Plan(%q) = %v, %v", name, sel, err)
 		}
 	}
 	// 40 caractères valides mais aucun agent : toujours inconnu.
-	if _, _, err := (ActionPlanner{}).Plan(strings.Repeat("a", 40), cards); !errors.Is(err, port.ErrUnknownAction) {
+	if _, err := (ActionPlanner{}).Plan(strings.Repeat("a", 40), cards); !errors.Is(err, port.ErrUnknownAction) {
 		t.Errorf("err = %v", err)
 	}
 }

@@ -215,17 +215,20 @@ func TestActFailureAnnouncesHonestSentenceWithoutSummary(t *testing.T) {
 	}
 }
 
-// Un refus de l'agent (`rejected`) n'est pas mentionné à la voix, comme pour une délégation.
-func TestActRejectedSaysNothing(t *testing.T) {
+// Un refus de l'agent (`rejected`) est dit à la voix par la phrase d'échec
+// honnête (pdr-0065 D6), jamais par une confirmation ; `rejected` reste publié.
+func TestActRejectedSaysHonestFailure(t *testing.T) {
 	e := newActionEnv(t, failedSteps(&port.AgentError{Kind: port.AgentRejected})...)
 	if err := e.act(actionBlock); err != nil {
 		t.Fatal(err)
 	}
-	e.sink.await(t, 1)
+	if got := e.reply.nextAnnounce(t); got != pipePhrases.ActionFailure {
+		t.Fatalf("annonce = %q, attendu la phrase d'échec %q", got, pipePhrases.ActionFailure)
+	}
 	waitIdle(t, e.m)
 	expectSeq(t, e.sink.snapshot(), "activity:rejected:hors périmètre")
-	if got := e.reply.announces(); len(got) != 0 {
-		t.Fatalf("annonce(s) après un refus : %q", got)
+	if n := len(e.reply.announces()); n != 1 || e.reply.count() != 0 {
+		t.Fatalf("%d annonce(s), %d commentaire(s) : une seule annonce attendue", n, e.reply.count())
 	}
 }
 

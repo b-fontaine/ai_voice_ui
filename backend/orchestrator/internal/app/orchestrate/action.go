@@ -26,7 +26,8 @@ type actionRunner interface {
 //
 // Tout se décide sous Canvas.mu, sans fenêtre entre les contrôles et la mise en
 // file : deux Act concurrents ne réussissent jamais ensemble (ordre des verrous :
-// Canvas.mu → m.mu → session.mu). Erreurs, dans l'ordre :
+// Canvas.mu → m.mu → session.mu ; m.mu n'est jamais tenu pendant un appel à une
+// session). Erreurs, dans l'ordre des refus :
 //   - ErrUnknownAction : nom hors de ^[a-z][a-z_]{0,39}$ ;
 //   - ErrNoSession : aucune session ouverte ;
 //   - ErrUnknownAction : aucun agent n'annonce `action:<nom>` (dernières cartes
@@ -34,6 +35,10 @@ type actionRunner interface {
 //     possédée par cet agent ;
 //   - ErrCanvasBusy : une exécution de Run est en cours (Canvas.running) ou une
 //     session ouverte a une délégation, vocale ou d'action, en file ou en cours.
+//
+// Conséquence de cet ordre : sans session ouverte, même un nom valide mais
+// inconnu donne ErrNoSession (409) et non ErrUnknownAction (422), car la
+// validation par le Runner de la session cible vient après la recherche de cible.
 func (m *Manager) Act(ctx context.Context, name, surface string) error {
 	if !actionNamePattern.MatchString(name) {
 		return port.ErrUnknownAction
@@ -67,13 +72,16 @@ func (m *Manager) Act(ctx context.Context, name, surface string) error {
 	return target.enqueueAction(d)
 }
 
-// openAndTarget copie la table des sessions sous m.mu et désigne la cible : la
-// session ouverte au numéro d'ouverture le plus grand (nil si aucune).
+// openAndTarget copie la table des sessions sous m.mu, la relâche, puis désigne
+// la cible : la session non fermée au numéro d'ouverture le plus grand (nil si
+// aucune). open contient toutes les sessions de la table, fermées ou non.
 func (m *Manager) openAndTarget() (open []*session, target *session) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	for s := range m.sessions {
 		open = append(open, s)
+	}
+	m.mu.Unlock()
+	for _, s := range open {
 		if (target == nil || s.opened > target.opened) && !s.isClosed() {
 			target = s
 		}

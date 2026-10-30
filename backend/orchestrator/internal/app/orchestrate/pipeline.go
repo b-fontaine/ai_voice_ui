@@ -1,8 +1,8 @@
 package orchestrate
 
 // Pipeline d'une session : types publics, construction, exécution d'une
-// délégation (Run) et fermeture. Les étapes sont dans plan_step.go, task.go et
-// commentary.go.
+// délégation (Run) et fermeture. Les étapes sont dans plan_step.go, task.go,
+// commentary.go, action.go (Act, file d'une action) et action_run.go (Run d'une action).
 
 import (
 	"context"
@@ -229,27 +229,37 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		p.say(ctx, d.ID, failure)
 		return
 	}
-	// Chaque résumé est borné à (budget / agents retenus) runes, sans jamais couper
-	// son début ; le budget tient compte de la phrase d'échec partiel éventuelle.
+	text, ok := p.composeResult(p.deps.Phrases.ResultTemplate, p.deps.Phrases.summaryBudget, tasks, succeeded)
+	if !ok {
+		p.log.Info("résumé vide : commentaire « sans résumé »", "delegation", d.ID)
+		p.say(ctx, d.ID, p.deps.Phrases.NoSummary)
+		return
+	}
+	p.say(ctx, d.ID, text)
+}
+
+// composeResult compose la phrase de résultat commune aux délégations et aux
+// actions : chaque résumé est borné à (budget / agents retenus) runes, sans
+// jamais couper son début ; le budget tient compte de la phrase d'échec partiel
+// éventuelle. ok est faux si tous les résumés sont vides (dire « sans résumé »).
+func (p *Pipeline) composeResult(template string, budget func(partial bool) int, tasks []*taskState, succeeded []string) (text string, ok bool) {
 	failed := p.failedNames(tasks)
 	partial := len(failed) > 0
 	var parts []string
-	limit := p.deps.Phrases.summaryBudget(partial) / n
-	for _, s := range oks {
+	limit := budget(partial) / len(tasks)
+	for _, s := range succeeded {
 		if c := sanitizeSummary(s, limit); c != "" {
 			parts = append(parts, c)
 		}
 	}
 	if len(parts) == 0 {
-		p.log.Info("résumé vide : commentaire « sans résumé »", "delegation", d.ID)
-		p.say(ctx, d.ID, p.deps.Phrases.NoSummary)
-		return
+		return "", false
 	}
-	text := fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " "))
+	text = fmt.Sprintf(template, strings.Join(parts, " "))
 	if partial {
 		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
 	}
-	p.say(ctx, d.ID, text)
+	return text, true
 }
 
 // runTasks lance une tâche par agent retenu, attend leur fin (ou l'échéance

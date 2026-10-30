@@ -19,26 +19,23 @@ var actionNamePattern = regexp.MustCompile(`^[a-z][a-z_]{0,39}$`)
 // d'un tag `action:*` (les deux vocabulaires restent séparés).
 type ActionPlanner struct{}
 
-// Plan renvoie les indices (croissants) des cartes retenues et ceux des cartes
-// inactives. Un nom invalide, ou qu'aucune carte n'annonce, donne
-// port.ErrUnknownAction (et des listes nil).
-func (ActionPlanner) Plan(name string, cards []port.AgentCard) (selected, idle []int, err error) {
+// Plan renvoie les indices (croissants) des cartes retenues. Un nom invalide,
+// ou qu'aucune carte n'annonce, donne port.ErrUnknownAction (et une liste nil).
+func (ActionPlanner) Plan(name string, cards []port.AgentCard) (selected []int, err error) {
 	if !actionNamePattern.MatchString(name) {
-		return nil, nil, port.ErrUnknownAction
+		return nil, port.ErrUnknownAction
 	}
 	want := actionTagPrefix + name
-	selected, idle = []int{}, []int{}
+	selected = []int{}
 	for i, c := range cards {
 		if hasTag(c.Tags, want) {
 			selected = append(selected, i)
-		} else {
-			idle = append(idle, i)
 		}
 	}
 	if len(selected) == 0 {
-		return nil, nil, port.ErrUnknownAction
+		return nil, port.ErrUnknownAction
 	}
-	return selected, idle, nil
+	return selected, nil
 }
 
 // hasTag compare exactement : les tags d'action sont en minuscules.

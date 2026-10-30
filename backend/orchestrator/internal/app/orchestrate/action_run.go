@@ -8,9 +8,7 @@ package orchestrate
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -63,34 +61,21 @@ func (p *Pipeline) runAction(ctx context.Context, d Delegation) {
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
-	n := len(selected)
 	if len(succeeded) == 0 {
-		if rejections == n {
-			// Refus de l'agent : `rejected` est publié, la voix ne le mentionne pas
-			// (comme pour une délégation, pas de phrase propre à l'action).
+		// Un refus de l'agent (`rejected`, déjà publié) est dit comme tout échec :
+		// la phrase d'action_failure (« cette décision n'a pas pu être enregistrée »)
+		// convient aussi au refus, d'où l'absence de phrase dédiée (pdr-0065 D6).
+		if len(tasks) == rejections {
 			p.log.Info("action refusée par l'agent", "operation", d.ID)
-			return
 		}
 		p.announce(ctx, d.ID, p.deps.Phrases.ActionFailure, port.AnnounceFailed)
 		return
 	}
-	failed := p.failedNames(tasks)
-	partial := len(failed) > 0
-	var parts []string
-	limit := p.deps.Phrases.actionSummaryBudget(partial) / n
-	for _, s := range succeeded {
-		if c := sanitizeSummary(s, limit); c != "" {
-			parts = append(parts, c)
-		}
-	}
-	if len(parts) == 0 {
+	text, ok := p.composeResult(p.deps.Phrases.ActionResultTemplate, p.deps.Phrases.actionSummaryBudget, tasks, succeeded)
+	if !ok {
 		p.log.Info("résumé vide : annonce « sans résumé »", "operation", d.ID)
 		p.announce(ctx, d.ID, p.deps.Phrases.NoSummary, port.AnnounceDone)
 		return
-	}
-	text := fmt.Sprintf(p.deps.Phrases.ActionResultTemplate, strings.Join(parts, " "))
-	if partial {
-		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
 	}
 	p.announce(ctx, d.ID, text, port.AnnounceDone)
 }
@@ -112,7 +97,7 @@ func (p *Pipeline) selectActionAgents(name string, cards []port.AgentCard, errs 
 		planned = append(planned, c)
 		index = append(index, i)
 	}
-	picked, _, err := ActionPlanner{}.Plan(name, planned)
+	picked, err := ActionPlanner{}.Plan(name, planned)
 	if err != nil {
 		return []int{}
 	}
