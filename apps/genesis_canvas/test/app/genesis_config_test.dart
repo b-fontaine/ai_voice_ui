@@ -181,11 +181,59 @@ void main() {
       expect(config.sessionCloseTimeout, const Duration(seconds: 10));
       expect(config.exitCloseTimeout, const Duration(seconds: 12));
       expect(config.iceTimeout, const Duration(seconds: 10));
+      expect(config.canvasResetTimeout, const Duration(seconds: 2));
       expect(config.orbSilenceTimeout, const Duration(milliseconds: 600));
       expect(config.orbAttack, const Duration(milliseconds: 80));
       expect(config.orbRelease, const Duration(milliseconds: 250));
       expect(config.orbSpeakingThreshold, 0.03);
     });
+
+    test('GENESIS_CANVAS_RESET_TIMEOUT_MS : délai en millisecondes', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_RESET_TIMEOUT_MS': ?value},
+      ).canvasResetTimeout;
+
+      expect(read(null), const Duration(seconds: 2));
+      expect(read(''), const Duration(seconds: 2));
+      expect(read(' 1500 '), const Duration(milliseconds: 1500));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test(
+      'GENESIS_CANVAS_RESET_TIMEOUT_MS invalide : erreur sans la valeur',
+      () {
+        for (final raw in <String>[
+          'abc',
+          '-0',
+          '-5',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ]) {
+          expect(
+            () => GenesisConfig.fromEnvironment(<String, String>{
+              'GENESIS_CANVAS_RESET_TIMEOUT_MS': raw,
+            }),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('GENESIS_CANVAS_RESET_TIMEOUT_MS'),
+                  )
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: raw,
+          );
+        }
+      },
+    );
 
     test('R5 : invariants des délais de fermeture par défaut', () {
       const config = GenesisConfig();

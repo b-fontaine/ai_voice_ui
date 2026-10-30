@@ -31,6 +31,11 @@ void closeVoiceRelay(VoiceRelay relay) {
   if (relay is HttpVoiceRelay) relay.close();
 }
 
+/// Libération du client de remise à vide par `getIt.reset()`.
+void closeCanvasResetClient(CanvasResetClient client) {
+  if (client is HttpCanvasResetClient) client.close();
+}
+
 @module
 abstract class AppModule {
   @lazySingleton
@@ -41,6 +46,16 @@ abstract class AppModule {
     baseUrl: config.backendUrl,
     createTimeout: config.relayCreateTimeout,
     deleteTimeout: config.relayDeleteTimeout,
+  );
+
+  @LazySingleton(dispose: closeCanvasResetClient)
+  CanvasResetClient canvasResetClient(
+    GenesisConfig config,
+    StringSink errorSink,
+  ) => HttpCanvasResetClient(
+    baseUrl: config.backendUrl,
+    timeout: config.canvasResetTimeout,
+    onError: errorSink.writeln,
   );
 
   @lazySingleton

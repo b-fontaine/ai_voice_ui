@@ -46,6 +46,7 @@ void main() {
     expect(getIt<GenesisConfig>().backendUrl.port, 1);
     expect(getIt<AppClock>(), isA<SystemClock>());
     expect(getIt<VoiceRelay>(), isA<HttpVoiceRelay>());
+    expect(getIt<CanvasResetClient>(), isA<HttpCanvasResetClient>());
     expect(getIt<AppChannel>(), isA<WebSocketAppChannel>());
     expect(getIt<WebRtcPlatform>(), isA<FlutterWebRtcPlatform>());
     expect(getIt<VoiceTransport Function()>()(), isA<FlutterWebRtcTransport>());
@@ -77,6 +78,7 @@ void main() {
 
     expect(getIt<AppClock>(), same(getIt<AppClock>()));
     expect(getIt<VoiceRelay>(), same(getIt<VoiceRelay>()));
+    expect(getIt<CanvasResetClient>(), same(getIt<CanvasResetClient>()));
     expect(getIt<AppChannel>(), same(getIt<AppChannel>()));
     expect(getIt<VoiceSession>(), isNot(same(getIt<VoiceSession>())));
     expect(getIt<TranscriptBloc>(), isNot(same(getIt<TranscriptBloc>())));
@@ -156,6 +158,43 @@ void main() {
     await relay.deleteSession('sess-2').then<void>((_) {}, onError: (_) {});
 
     expect(backend.deletes, <String>['sess-1']);
+  });
+
+  test('client de remise à vide : URL, délai et journal injectés', () async {
+    final sink = StringBuffer();
+    final getIt = build(
+      withConfig: GenesisConfig(
+        backendUrl: Uri.parse('http://127.0.0.1:1'),
+        canvasResetTimeout: const Duration(milliseconds: 700),
+      ),
+      errorSink: sink,
+    );
+
+    final client = getIt<CanvasResetClient>() as HttpCanvasResetClient;
+    expect(client.baseUrl, Uri.parse('http://127.0.0.1:1'));
+    expect(client.timeout, const Duration(milliseconds: 700));
+    expect(await client.reset(), CanvasResetResult.unreachable);
+    expect(sink.toString(), contains('Remise à vide'));
+  });
+
+  test('reset ferme le client de remise à vide', () async {
+    HttpOverrides.global = null;
+    final backend = await FakeBackend.start();
+    addTearDown(backend.close);
+    final getIt = GetIt.asNewInstance();
+    configureDependencies(
+      getIt,
+      config: GenesisConfig(backendUrl: Uri.parse(backend.url)),
+      errorSink: StringBuffer(),
+    );
+    final client = getIt<CanvasResetClient>();
+    expect(await client.reset(), CanvasResetResult.done);
+    expect(backend.canvasResets, 1);
+
+    await getIt.reset();
+
+    expect(await client.reset(), CanvasResetResult.unreachable);
+    expect(backend.canvasResets, 1);
   });
 
   test('deux GetIt.asNewInstance sont indépendants', () {

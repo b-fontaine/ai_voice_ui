@@ -36,6 +36,7 @@ class GenesisConfig {
     this.sessionCloseTimeout = const Duration(seconds: 10),
     this.exitCloseTimeout = const Duration(seconds: 12),
     this.iceTimeout = const Duration(seconds: 10),
+    Duration? canvasResetTimeout,
     this.orbSilenceTimeout = const Duration(milliseconds: 600),
     this.orbAttack = const Duration(milliseconds: 80),
     this.orbRelease = const Duration(milliseconds: 250),
@@ -44,15 +45,17 @@ class GenesisConfig {
     // ignore: prefer_initializing_formals
   }) : _backendUrl = backendUrl,
        // ignore: prefer_initializing_formals
-       _catalogId = catalogId;
+       _catalogId = catalogId,
+       // ignore: prefer_initializing_formals
+       _canvasResetTimeout = canvasResetTimeout;
 
   /// Construit la configuration à partir d'un environnement (en prod
   /// `Platform.environment`). Une variable absente ou vide vaut `null`
   /// (ou la valeur par défaut). Les constantes (délais, orbe) ne sont pas
-  /// lues dans l'environnement.
+  /// lues dans l'environnement, sauf `GENESIS_CANVAS_RESET_TIMEOUT_MS`.
   ///
   /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` ou
-  /// `GENESIS_CATALOG_ID` est invalide.
+  /// `GENESIS_CATALOG_ID` ou `GENESIS_CANVAS_RESET_TIMEOUT_MS` est invalide.
   factory GenesisConfig.fromEnvironment(Map<String, String> environment) =>
       GenesisConfig(
         scenario: _read(environment, 'GENESIS_SCENARIO'),
@@ -60,6 +63,7 @@ class GenesisConfig {
         backendUrl: _readBackendUrl(environment),
         catalogId: _readCatalogId(environment),
         appLogPath: _read(environment, 'GENESIS_APP_LOG'),
+        canvasResetTimeout: _readCanvasResetTimeout(environment),
       );
 
   static const String _backendUrlVariable = 'GENESIS_BACKEND_URL';
@@ -112,6 +116,17 @@ class GenesisConfig {
   /// Délai maximal de collecte des candidats ICE.
   final Duration iceTimeout;
 
+  /// Délai maximal de `POST /canvas/reset`
+  /// (`GENESIS_CANVAS_RESET_TIMEOUT_MS`, 100 à 10000 ms). La remise à vide
+  /// locale n'attend pas le backend : ce délai ne borne que la requête.
+  Duration get canvasResetTimeout =>
+      _canvasResetTimeout ?? defaultCanvasResetTimeout;
+
+  /// Délai par défaut de la remise à vide (2 s).
+  static const Duration defaultCanvasResetTimeout = Duration(seconds: 2);
+
+  final Duration? _canvasResetTimeout;
+
   /// Silence au-delà duquel l'orbe retombe au repos.
   final Duration orbSilenceTimeout;
 
@@ -150,6 +165,23 @@ class GenesisConfig {
       throw _invalidBackendUrl();
     }
     return uri;
+  }
+
+  static const String _canvasResetTimeoutVariable =
+      'GENESIS_CANVAS_RESET_TIMEOUT_MS';
+  static final RegExp _millisecondsPattern = RegExp(r'^\d{1,5}$');
+
+  static Duration? _readCanvasResetTimeout(Map<String, String> environment) {
+    final raw = _read(environment, _canvasResetTimeoutVariable);
+    if (raw == null) return null;
+    final millis = _millisecondsPattern.hasMatch(raw) ? int.parse(raw) : 0;
+    if (millis < 100 || millis > 10000) {
+      throw const GenesisConfigException(
+        'La variable $_canvasResetTimeoutVariable est invalide : un nombre '
+        'entier de millisecondes compris entre 100 et 10000 est attendu.',
+      );
+    }
+    return Duration(milliseconds: millis);
   }
 
   static String? _readCatalogId(Map<String, String> environment) {

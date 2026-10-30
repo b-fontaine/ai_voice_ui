@@ -9,8 +9,10 @@ export 'src/app_channel_envelope.dart'
         AppChannelFormatException,
         AppChannelTypes,
         maxEnvelopeLength;
+export 'src/canvas_reset_client.dart' show CanvasResetClient, CanvasResetResult;
 export 'src/envelope_log.dart' show EnvelopeLog;
 export 'src/web_socket_app_channel.dart' show WebSocketAppChannel;
+export 'src/http_canvas_reset_client.dart' show HttpCanvasResetClient;
 export 'src/http_voice_relay.dart' show HttpVoiceRelay;
 export 'src/voice_relay.dart'
     show RelayAnswer, RelayFailure, RelayFailureKind, VoiceRelay;

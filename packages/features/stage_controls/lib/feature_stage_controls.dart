@@ -1,4 +1,7 @@
 /// API publique de feature_stage_controls.
-///
-/// Squelette : rien à exporter pour l'instant (voir specs/007).
 library;
+
+export 'src/model/stage_bloc.dart' show StageBloc;
+export 'src/model/stage_event.dart'
+    show StageActAdvanced, StageEvent, StageResetRequested;
+export 'src/model/stage_state.dart' show StageState;
