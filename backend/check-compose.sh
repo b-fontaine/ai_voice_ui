@@ -7,7 +7,8 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-docker compose config --no-env-resolution --format json | python3 -I -c '
+# Le profil bench (composer-bench) est contrôlé comme le reste.
+COMPOSE_PROFILES=bench docker compose config --no-env-resolution --format json | python3 -I -c '
 import json, sys
 
 cfg = json.load(sys.stdin)
@@ -185,9 +186,22 @@ for name in agent_names:
         check(t >= gw_timeout + 0.5, name + " : COMPOSER_TIMEOUT doit depasser celui de la passerelle d au moins 500 ms")
     if t is not None and agent_timeout_cap is not None:
         check(t < agent_timeout_cap, name + " : COMPOSER_TIMEOUT doit rester sous AGENT_TIMEOUT (le repli doit tenir)")
+source_names = agent_names + (["composer-bench"] if "composer-bench" in services else [])
 for ip in allowed:
-    check(any(((services[n].get("networks") or {}).get("agents") or {}).get("ipv4_address") == ip for n in agent_names),
-          "LLM_GATEWAY_ALLOWED_SOURCES : " + ip + " n est l IP d aucun agent")
+    check(any(((services[n].get("networks") or {}).get("agents") or {}).get("ipv4_address") == ip for n in source_names),
+          "LLM_GATEWAY_ALLOWED_SOURCES : " + ip + " n est l IP d aucun agent ni du banc")
+bench = services.get("composer-bench")
+if bench is not None:
+    check(not bench.get("ports"), "composer-bench ne doit publier aucun port")
+    check("env_file" not in bench, "composer-bench ne doit pas recevoir env_file")
+    check(set((bench.get("networks") or {}).keys()) == {"agents"}, "composer-bench doit etre uniquement sur le reseau agents")
+    bench_env = bench.get("environment") or {}
+    for key in bench_env:
+        check(not key.startswith("OPENAI_") and key != "COMPOSER_MODEL", "composer-bench : " + key + " ne doit pas lui etre fourni")
+    check(default_value(bench_env.get("COMPOSER_LLM_URL", "")).startswith("http://" + gw_host + ":" + gw_port + "/"),
+          "composer-bench : COMPOSER_LLM_URL doit viser la passerelle de l orchestrateur sur agents")
+    check(((bench.get("networks") or {}).get("agents") or {}).get("ipv4_address") in allowed,
+          "composer-bench : son IP doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES")
 burst = default_value(env.get("COMPOSER_RATE_BURST", "0"))
 check(burst.isdigit() and int(burst) >= max(1, len(wired)), "orchestrator : COMPOSER_RATE_BURST doit couvrir les agents branches")
 

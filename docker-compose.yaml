@@ -86,7 +86,7 @@ services:
       # (jamais 0.0.0.0), non publié, sources limitées aux agents branchés. `COMPOSER_MODEL` vide
       # = passerelle désactivée (503) et composition déterministe : le modèle est fixé par la mesure (T51).
       LLM_GATEWAY_ADDR: ${LLM_GATEWAY_ADDR:-172.30.77.10:8081}
-      LLM_GATEWAY_ALLOWED_SOURCES: ${LLM_GATEWAY_ALLOWED_SOURCES:-172.30.77.21}
+      LLM_GATEWAY_ALLOWED_SOURCES: ${LLM_GATEWAY_ALLOWED_SOURCES:-172.30.77.21,172.30.77.30}
       COMPOSER_MODEL: ${COMPOSER_MODEL:-}
       COMPOSER_TIMEOUT: *composer_gateway_timeout
       COMPOSER_MAX_OUTPUT_TOKENS: ${COMPOSER_MAX_OUTPUT_TOKENS:-1024}
@@ -171,6 +171,36 @@ services:
     networks:
       agents:
         ipv4_address: 172.30.77.23
+
+  # Banc de mesure du compositeur (T50, pdr-0074 D4) : lancé à la main, une fois, sous `openai-budget.sh`.
+  #   BENCH_DRY_RUN=1 docker compose --profile bench run --rm composer-bench    (estime les appels)
+  #   docker compose --profile bench run --rm composer-bench                    (campagne réelle)
+  # Même réseau interne que les agents : la passerelle n'est joignable de nulle part ailleurs. Aucune clé,
+  # aucun port, aucun `env_file` ; le modèle est celui que la passerelle impose (`COMPOSER_MODEL`).
+  composer-bench:
+    profiles: [bench]
+    build:
+      context: backend/agents
+      args:
+        CMD: composer-bench
+    environment:
+      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY:-http://172.30.77.10:8081/v1/complete}
+      COMPOSER_TIMEOUT: *composer_agent_timeout
+      BENCH_REPEATS: ${BENCH_REPEATS:-5}
+      BENCH_PAUSE: ${BENCH_PAUSE:-1s}
+      BENCH_DRY_RUN: ${BENCH_DRY_RUN:-}
+      BENCH_JSON: ${BENCH_JSON:-}
+      BENCH_PRICE_IN_PER_MTOK: ${BENCH_PRICE_IN_PER_MTOK:-}
+      BENCH_PRICE_OUT_PER_MTOK: ${BENCH_PRICE_OUT_PER_MTOK:-}
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    <<: *agent
+    networks:
+      agents:
+        ipv4_address: 172.30.77.30
+    healthcheck:
+      disable: true
 
 networks:
   agents:

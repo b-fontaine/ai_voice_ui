@@ -38,7 +38,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [ ] T44 Flutter — lisibilité de `CrashList` à 1920×1080 (capture `crashlist-replay`) : libellé sur UNE ligne avec ellipse, plateforme et volume à droite, `sessions` conservé dans les données mais non affiché (D10) ; scénarios F-02 et tests ajustés · rouge : `maxLines: 2`, « N sess. » encore affichés
 
 ## Mesure et vérification réelle
-- [ ] T50 Go — `cmd/composer-bench` (agents, dans le réseau `agents`) : p50/p90 au premier octet et au total, par agent ; validité ; taux d'accord avec le plan attendu ; coût · test d'unité de l'agrégation (faux client)
+- [x] T50 Go — `cmd/composer-bench` (agents, dans le réseau `agents`) : p50/p90 au premier octet et au total, par agent ; validité ; taux d'accord avec le plan attendu ; coût · test d'unité de l'agrégation (faux client)
 - [ ] T51 manuel payant — exécuter T50 une fois sous `openai-budget.sh` (estimation d'abord), fixer `COMPOSER_MODEL` (ou déclarer le repli définitif) et verser le fait dans `knowledge/` (kb-curate)
 - [ ] T52 conditionnel — si p90 de la base 011 + p90 de la passerelle > 1,5 s : squelette du plan déterministe émis avant l'appel (via `emit`) ; plan du modèle à surfaces différentes = `invalid_plan` ; jamais de `deleteSurface` · tests d'ordre des messages et d'absence de `deleteSurface`
 

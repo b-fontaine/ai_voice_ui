@@ -1,0 +1,4 @@
+services:
+  composer-bench:
+    environment:
+      OPENAI_API_KEY: refus
