@@ -9,11 +9,14 @@
 //	surface  contrôle de 004 : delegation, agent.activity, trois messages a2ui (surface « quality »),
 //	         mesures NFR-02/NFR-03 ; la question audio (-file1) doit demander l'état de la release.
 //	act1     contrôle de 006 : plan (3 agents), 3 working/completed, 4 surfaces, voix citant 99,57 et 24.
+//	act3     contrôle de 009 : actes 1 et 2 (deux questions audio, UNE session), puis clic
+//	         POST /canvas/actions « block_release » ; observe plan, Livraison, « Bloquée » et la voix (Q-75).
 //
 // Exemples (CHECK_SECRET = clé à chercher dans les sorties, lue dans l'environnement) :
 //
 //	go run . -file1 question.ogg                                   # voice
 //	go run . -scenario surface -file1 question.ogg -duration 45s   # surface
+//	go run . -scenario act3 -file1 q1.ogg -file2 q2.ogg -click-window 20s   # act3 (payant, un seul essai)
 package main
 
 import (
@@ -176,18 +179,32 @@ func main() {
 	duration := flag.Duration("duration", 30*time.Second, "durée d'observation après file1")
 	logPath := flag.String("log", "live-check.jsonl", "journal JSONL")
 	stun := flag.String("stun", "", "serveur STUN optionnel")
-	scenario := flag.String("scenario", "voice", "scénario évalué : voice (003), surface (004) ou act1 (006)")
+	scenario := flag.String("scenario", "voice", "scénario évalué : voice (003), surface (004), act1 (006) ou act3 (009)")
+	file2 := flag.String("file2", "", "Ogg/Opus de la 2e question (act3)")
+	clickWindow := flag.Duration("click-window", 20*time.Second, "act3 : observation après le clic")
+	actTimeout := flag.Duration("act-timeout", 60*time.Second, "act3 : attente maximale de la fin de chaque acte")
+	settle := flag.Duration("settle", 4*time.Second, "act3 : silence de la voix exigé avant la 2e question et avant le clic")
+	maxSession := flag.Duration("max-session", 4*time.Minute, "act3 : plafond dur de la durée de la session")
 	flag.Parse()
-	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" {
-		log.Fatalf("-scenario inconnu %q (voice, surface ou act1)", *scenario)
+	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" && *scenario != "act3" {
+		log.Fatalf("-scenario inconnu %q (voice, surface, act1 ou act3)", *scenario)
 	}
 	if *file1 == "" {
 		log.Fatal("-file1 requis")
+	}
+	if *scenario == "act3" && *file2 == "" {
+		log.Fatal("-file2 requis pour act3")
 	}
 	secret := os.Getenv("CHECK_SECRET") // jamais affiché
 	pk1, err := readOggOpus(*file1)
 	if err != nil {
 		log.Fatal(err)
+	}
+	var pk2 []opusPacket
+	if *scenario == "act3" {
+		if pk2, err = readOggOpus(*file2); err != nil {
+			log.Fatal(err)
+		}
 	}
 	lf, err := os.OpenFile(*logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
@@ -279,10 +296,18 @@ func main() {
 	j.write(map[string]any{"type": "http.post", "status": resp.StatusCode, "answer_bytes": len(answer),
 		"session": obs.SessionID})
 
+	var a3 act3Observations
 	finish := func(c1, c2 *collector) {
 		obs.Filtered, obs.Global = c1.snapshot(), c2.snapshot()
 		var failed []string
-		if *scenario == "act1" {
+		if *scenario == "act3" {
+			a3.observations = obs
+			s := summarizeAct3(a3)
+			fmt.Print(s.render())
+			fmt.Println("RAPPORT JSON:")
+			fmt.Println(s.JSON())
+			failed = s.Failed
+		} else if *scenario == "act1" {
 			s := summarizeAct1(obs)
 			fmt.Print(s.render())
 			failed = s.Failed
@@ -337,34 +362,49 @@ func main() {
 	j.write(map[string]any{"type": "local.file1", "packets": len(pk1)})
 	pl.play(pk1)
 
-	select {
-	case <-time.After(*duration):
-	case <-filtered.closed: // fermeture initiée par le serveur (plafond, coupure)
-	case <-ctx.Done():
-	}
-
-	// 5. Clôture propre puis attente de closed (10 s max).
-	delReq, _ := http.NewRequestWithContext(context.Background(), http.MethodDelete,
-		baseURL+"/voice/sessions/"+url.PathEscape(obs.SessionID), nil)
-	if dr, err := http.DefaultClient.Do(delReq); err == nil {
-		db, _ := io.ReadAll(io.LimitReader(dr.Body, 1<<20))
-		dr.Body.Close()
-		obs.DeleteStatus = dr.StatusCode
-		obs.Bodies = append(obs.Bodies, string(db))
-		j.write(map[string]any{"type": "http.delete", "status": dr.StatusCode})
+	if *scenario == "act3" {
+		capCtx, capCancel := context.WithTimeout(ctx, *maxSession)
+		a3 = runAct3(capCtx, act3Params{j: j, filtered: filtered, pl: pl, pk2: pk2, baseURL: baseURL,
+			actTimeout: *actTimeout, settle: *settle, clickWindow: *clickWindow})
+		capCancel()
 	} else {
-		j.write(map[string]any{"type": "http.delete", "error": errText(err)})
-	}
-	for _, c := range []*collector{filtered, global} {
 		select {
-		case <-c.closed:
-		case <-time.After(10 * time.Second):
-			j.write(map[string]any{"type": "closed.timeout", "sub": c.name})
+		case <-time.After(*duration):
+		case <-filtered.closed: // fermeture initiée par le serveur (plafond, coupure)
+		case <-ctx.Done():
 		}
 	}
-	time.Sleep(300 * time.Millisecond) // laisse arriver d'éventuels derniers messages
-	j.write(map[string]any{"type": "client.end"})
-	_ = c1.Close(websocket.StatusNormalClosure, "")
-	_ = c2.Close(websocket.StatusNormalClosure, "")
+
+	// 5. Clôture propre puis attente de closed (10 s max) ; en defer aussi, une seule fois.
+	var closeOnce sync.Once
+	closeSession := func() {
+		closeOnce.Do(func() {
+			delReq, _ := http.NewRequestWithContext(context.Background(), http.MethodDelete,
+				baseURL+"/voice/sessions/"+url.PathEscape(obs.SessionID), nil)
+			if dr, err := http.DefaultClient.Do(delReq); err == nil {
+				db, _ := io.ReadAll(io.LimitReader(dr.Body, 1<<20))
+				dr.Body.Close()
+				obs.DeleteStatus = dr.StatusCode
+				a3.DeleteUnixMs = time.Now().UnixMilli()
+				obs.Bodies = append(obs.Bodies, string(db))
+				j.write(map[string]any{"type": "http.delete", "status": dr.StatusCode})
+			} else {
+				j.write(map[string]any{"type": "http.delete", "error": errText(err)})
+			}
+			for _, c := range []*collector{filtered, global} {
+				select {
+				case <-c.closed:
+				case <-time.After(10 * time.Second):
+					j.write(map[string]any{"type": "closed.timeout", "sub": c.name})
+				}
+			}
+			time.Sleep(300 * time.Millisecond) // laisse arriver d'éventuels derniers messages
+			j.write(map[string]any{"type": "client.end"})
+			_ = c1.Close(websocket.StatusNormalClosure, "")
+			_ = c2.Close(websocket.StatusNormalClosure, "")
+		})
+	}
+	defer closeSession()
+	closeSession()
 	finish(filtered, global)
 }
