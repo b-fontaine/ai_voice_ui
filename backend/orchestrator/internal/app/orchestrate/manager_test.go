@@ -19,7 +19,7 @@ const wait = 3 * time.Second
 
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
-	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", ResultTemplate: "R:%s",
+	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -181,7 +181,10 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.FailureRejected = "" }),
 		blank(func(p *Phrases) { p.NoSummary = " " }),
 		blank(func(p *Phrases) { p.NoAgent = "\n" }),
+		blank(func(p *Phrases) { p.OutOfCatalog = "" }),
+		blank(func(p *Phrases) { p.OutOfCatalog = strings.Repeat("é", MaxCommentaryRunes+1) }),
 		blank(func(p *Phrases) { p.ResultTemplate = "" }),
+		blank(func(p *Phrases) { p.PartialFailure = "" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "sans verbe" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "%s et %s" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "%d" }),

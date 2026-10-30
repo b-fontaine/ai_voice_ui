@@ -8,6 +8,7 @@
 //	voice    (défaut) contrôle de 003 : session, transcripts, orb.level, usage, fermeture.
 //	surface  contrôle de 004 : delegation, agent.activity, trois messages a2ui (surface « quality »),
 //	         mesures NFR-02/NFR-03 ; la question audio (-file1) doit demander l'état de la release.
+//	act1     contrôle de 006 : plan (3 agents), 3 working/completed, 4 surfaces, voix citant 99,57 et 24.
 //
 // Exemples (CHECK_SECRET = clé à chercher dans les sorties, lue dans l'environnement) :
 //
@@ -175,10 +176,10 @@ func main() {
 	duration := flag.Duration("duration", 30*time.Second, "durée d'observation après file1")
 	logPath := flag.String("log", "live-check.jsonl", "journal JSONL")
 	stun := flag.String("stun", "", "serveur STUN optionnel")
-	scenario := flag.String("scenario", "voice", "scénario évalué : voice (003) ou surface (004)")
+	scenario := flag.String("scenario", "voice", "scénario évalué : voice (003), surface (004) ou act1 (006)")
 	flag.Parse()
-	if *scenario != "voice" && *scenario != "surface" {
-		log.Fatalf("-scenario inconnu %q (voice ou surface)", *scenario)
+	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" {
+		log.Fatalf("-scenario inconnu %q (voice, surface ou act1)", *scenario)
 	}
 	if *file1 == "" {
 		log.Fatal("-file1 requis")
@@ -281,7 +282,11 @@ func main() {
 	finish := func(c1, c2 *collector) {
 		obs.Filtered, obs.Global = c1.snapshot(), c2.snapshot()
 		var failed []string
-		if *scenario == "surface" {
+		if *scenario == "act1" {
+			s := summarizeAct1(obs)
+			fmt.Print(s.render())
+			failed = s.Failed
+		} else if *scenario == "surface" {
 			s := summarizeSurface(obs)
 			fmt.Print(s.render())
 			failed = s.Failed

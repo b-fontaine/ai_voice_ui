@@ -57,7 +57,7 @@ func startSeqAgent(t *testing.T) string {
 		SupportedInterfaces: []*a2a.AgentInterface{a2a.NewAgentInterface(srv.URL, a2a.TransportProtocolJSONRPC)},
 		DefaultInputModes:   []string{"text/plain"}, DefaultOutputModes: []string{"text/plain", "application/json"},
 		Capabilities: a2a.AgentCapabilities{Streaming: true},
-		Skills:       []a2a.AgentSkill{{ID: "quality-kpi", Name: "Qualité", Description: "KPI.", Tags: []string{"a2ui"}}},
+		Skills:       []a2a.AgentSkill{{ID: "quality-kpi", Name: "Qualité", Description: "KPI.", Tags: []string{"a2ui", "release"}}},
 	})
 	return srv.URL + a2asrv.WellKnownAgentCardPath
 }
@@ -68,7 +68,7 @@ func TestJournalSequenceDelegationWorkingA2UI(t *testing.T) {
 	rsb := &recordingSideband{stubSideband: stubSideband{events: make(chan port.LiveEvent, 8)}}
 	live := &recordingLive{rsb: rsb}
 	cfg := testConfig(t)
-	cfg.Agents = []string{startSeqAgent(t)}
+	cfg.Agents = []AgentSpec{{CardURL: startSeqAgent(t)}}
 	cfg.A2UICatalogID = seqCatalog
 	cfg.A2UIComponents = []string{"Column", "Text"}
 	cfg.AgentTimeout = 5 * time.Second

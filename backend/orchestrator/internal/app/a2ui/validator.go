@@ -9,7 +9,12 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
+
+// maxBindingPathRunes borne la longueur du JSON Pointer d'une liaison de données.
+const maxBindingPathRunes = 128
 
 // Kind est le type d'opération d'un message A2UI.
 type Kind string
@@ -36,6 +41,7 @@ const (
 	CodeComponentNotAllowed = "component_not_allowed"
 	CodeBadChildren         = "bad_children"
 	CodeBadPointer          = "bad_pointer"
+	CodeBadProperty         = "bad_property"
 	CodeSurfaceExists       = "surface_exists"
 	CodeSurfaceLimit        = "surface_limit"
 	CodeUnknownSurface      = "unknown_surface"
@@ -66,6 +72,13 @@ type Options struct {
 	MaxMessageBytes        int
 	MaxDepth               int
 	MaxComponentsPerUpdate int
+	// AllowedProps : propriétés qu'un composant peut porter (liste blanche,
+	// `id` et `component` comprises). Vide : aucun contrôle des propriétés.
+	AllowedProps []string
+	// BindingProps : propriétés qui ne peuvent être qu'une liaison
+	// {"path": "<JSON Pointer>"}, jamais une valeur littérale. Sous-ensemble de
+	// AllowedProps ; vide : aucune liaison imposée.
+	BindingProps []string
 }
 
 // Operation est le résultat d'une validation réussie. Elle ne partage aucune
@@ -83,6 +96,7 @@ type Operation struct {
 type Validator struct {
 	opts    Options
 	allowed map[string]struct{}
+	props   map[string]struct{} // nil : propriétés non contrôlées
 }
 
 // NewValidator valide les options et construit le validateur.
@@ -101,7 +115,24 @@ func NewValidator(o Options) (*Validator, error) {
 		allowed[c] = struct{}{}
 	}
 	o.Components = append([]string(nil), o.Components...)
-	return &Validator{opts: o, allowed: allowed}, nil
+	o.AllowedProps = append([]string(nil), o.AllowedProps...)
+	o.BindingProps = append([]string(nil), o.BindingProps...)
+	var props map[string]struct{}
+	if len(o.AllowedProps) > 0 {
+		props = make(map[string]struct{}, len(o.AllowedProps))
+		for _, p := range o.AllowedProps {
+			if p == "" {
+				return nil, errors.New("a2ui: AllowedProps contient un nom vide")
+			}
+			props[p] = struct{}{}
+		}
+	}
+	for _, p := range o.BindingProps {
+		if _, ok := props[p]; !ok {
+			return nil, errors.New("a2ui: BindingProps doit être inclus dans AllowedProps")
+		}
+	}
+	return &Validator{opts: o, allowed: allowed, props: props}, nil
 }
 
 var surfaceIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
@@ -200,6 +231,9 @@ func (v *Validator) validateComponents(body map[string]any, op *Operation) error
 		if _, allowed := v.allowed[name]; !allowed {
 			return fail(CodeComponentNotAllowed, "composant hors liste blanche")
 		}
+		if err := v.validateProps(c); err != nil {
+			return err
+		}
 		refs, err := childRefs(c)
 		if err != nil {
 			return err
@@ -214,6 +248,48 @@ func (v *Validator) validateComponents(body map[string]any, op *Operation) error
 	}
 	op.ComponentCount = len(op.ComponentIDs)
 	return nil
+}
+
+// validateProps applique la liste blanche de propriétés et les liaisons
+// imposées. Les messages n'incluent jamais le nom ni la valeur reçus.
+func (v *Validator) validateProps(c map[string]any) error {
+	if v.props == nil {
+		return nil
+	}
+	for k := range c {
+		if _, ok := v.props[k]; !ok {
+			return fail(CodeBadProperty, "propriété hors liste blanche")
+		}
+	}
+	for _, k := range v.opts.BindingProps {
+		val, present := c[k]
+		if !present {
+			continue
+		}
+		if !validBinding(val) {
+			return fail(CodeBadProperty, "une propriété de données doit être une liaison {path}")
+		}
+	}
+	return nil
+}
+
+// validBinding vérifie exactement {"path": "<JSON Pointer>"} : une seule clé,
+// pointeur non vide commençant par « / », borné, sans caractère de contrôle.
+func validBinding(val any) bool {
+	m, ok := val.(map[string]any)
+	if !ok || len(m) != 1 {
+		return false
+	}
+	path, ok := m["path"].(string)
+	if !ok || !strings.HasPrefix(path, "/") || utf8.RuneCountInString(path) > maxBindingPathRunes || !validPointer(path) {
+		return false
+	}
+	for _, r := range path {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			return false
+		}
+	}
+	return true
 }
 
 // childRefs extrait les identifiants référencés par child/children.

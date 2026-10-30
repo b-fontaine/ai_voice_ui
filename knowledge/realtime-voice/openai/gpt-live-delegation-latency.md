@@ -3,9 +3,9 @@ id: rt-gpt-live-delegation-latency
 title: GPT-Live — délégation mesurée (délais, paraphrase, modes client et responses)
 tags: [openai, gpt-live, delegation, latency, measurement, tools]
 status: verified
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [https://developers.openai.com/api/docs/guides/live-delegation.md, https://github.com/openai/openai-go/tree/main/live]
-links: [rt-gpt-live-delegation, rt-gpt-live-lifecycle, ma-filler-acknowledgements, rt-latency]
+links: [rt-gpt-live-delegation, rt-gpt-live-lifecycle, ma-filler-acknowledgements, rt-latency, rt-openai-tts-test-audio]
 ---
 # GPT-Live : délégation, ce qui a été mesuré
 
@@ -15,6 +15,7 @@ Essais réels du 2026-10-29 sur `gpt-live-1` (openai-go/v3 v3.90.0, relais SDP G
 - Le modèle **ne délègue que si les `instructions` le demandent**. Sans consigne, il a répondu seul (« Je n'ai pas accès à l'état de tes releases »).
 - Avec consigne : `session.delegation.created` arrive **1,0 s après la fin de la parole** de l'utilisateur. Il ne contient que `delegation.id`, `target` et `offset_ms` : le texte de la demande est à reconstruire depuis `session.input_transcript.delta`.
 - `session.commentary.append` envoyé par le backend est acquitté (`…appended`) en **0,7 s**. L'IA le dit **0,6 s** après la délégation, en le **paraphrasant** (envoyé « Je regarde, un instant. », dit « Je vérifie, un instant. »).
+- **Essai du 2026-10-30** (question « Prépare la release 3.4 », trois agents, commentaire final de ~400 caractères) : le modèle délègue (consigne présente), dit un accusé puis lit le commentaire en le **réécrivant** : un mot parasite est apparu (« Je m'en occupe, un voici ce que je constate. ») et le texte entre guillemets a été lu comme une liste. Les chiffres du commentaire (99,57 ; 24) ont été repris fidèlement. Session de 43 s, contexte à 2,5 %.
 
 ## Mode `responses` (backend `gpt-6-luna`)
 - `session.delegation.created` porte en plus `delegation.response_id`.
@@ -24,7 +25,7 @@ Essais réels du 2026-10-29 sur `gpt-live-1` (openai-go/v3 v3.90.0, relais SDP G
 
 ## Enseignements
 - Entre la fin de parole et le premier son utile, compter environ 1 à 1,6 s avant tout accusé : prévoir un indicateur visuel dès `session.delegation.created` ([[ma-filler-acknowledgements]]).
-- Une phrase passée en `commentary.append` n'est jamais garantie mot pour mot ; ne pas s'appuyer sur sa formulation exacte.
+- Une phrase passée en `commentary.append` n'est jamais garantie mot pour mot ; ne pas s'appuyer sur sa formulation exacte, et garder les commentaires courts (un long commentaire est lu comme une liste et peut recevoir des mots parasites).
 
 ## ⚠️ Pièges
 - Mesures non répétées, une langue (français), une machine, un réseau : à refaire avant de dimensionner un budget de latence ([[rt-latency]]).

@@ -2,7 +2,7 @@
 # Procédure : tasks → ids ; sinon keywords → zone → index de la zone → documents ; suivre links sur 1 niveau.
 # Savoir réutilisable (faits vérifiés, patterns, ADR génériques) : knowledge/index.yaml (skill kb-lookup).
 version: 1
-updated: 2026-10-29
+updated: 2026-10-30
 product: "Genesis Canvas — cas d'usage Release Copilot"
 conventions: _conventions.md
 readme: README.md
@@ -18,7 +18,7 @@ zones:
     prefix: p-ar-
     index: architecture/index.yaml
     description: "Architecture du produit : vue d'ensemble C4, app Flutter desktop Linux (Clean + FSD, Bloc), backend Go hexagonal en docker compose local, agents A2A réels et protocoles, stack et versions, rejeu A2UI (acte 4), sécurité, qualité, environnement de scène"
-    keywords: [architecture, C4, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition]
+    keywords: [architecture, C4, plan, planificateur, rejected, catalogue genesis, contrat exécutable, agent A2A, tags, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition]
   - name: roadmap
     prefix: p-rm-
     index: roadmap/index.yaml
@@ -80,6 +80,9 @@ tasks:
   - task: "Concevoir ou modifier le backend orchestrateur et les agents A2A"
     docs: [p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-stack, p-fn-dataset, pdr-0011-adopt-knowledge-adrs, pdr-0029-local-docker-compose-hosting, pdr-0036-real-a2a-agents-produce-a2ui, p-rm-backend-production-plan]
     knowledge: [adr-0002-orchestrator-backend, adr-0003-backend-go, ma-target-architecture, ma-backend-sdk-go, proto-a2a-overview, proto-a2a-agent-card]
+  - task: "Ajouter un agent A2A ou faire évoluer le contrat du catalogue genesis (contracts/a2ui/genesis/v1)"
+    docs: [p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-catalog, p-fn-dataset, p-ar-quality, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui]
+    knowledge: [proto-a2a-agent-card, genui-catalog-ids, genui-a2ui-messages, genui-data-model]
   - task: "Écrire ou faire évoluer un scénario BDD"
     docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-requirements, p-ar-quality]
     knowledge: [test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-app-running-fixture, test-tdd-red-green-refactor]

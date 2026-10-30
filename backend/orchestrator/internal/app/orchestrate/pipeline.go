@@ -1,5 +1,9 @@
 package orchestrate
 
+// Pipeline d'une session : types publics, construction, exécution d'une
+// délégation (Run) et fermeture. Les étapes sont dans plan_step.go, task.go et
+// commentary.go.
+
 import (
 	"context"
 	"errors"
@@ -8,10 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
-	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
@@ -26,19 +28,8 @@ const (
 	DetailInvalidA2UI   = "A2UI invalide"
 	DetailAgentFailed   = "échec de l'agent"
 	DetailSessionClosed = "session fermée"
-)
-
-const (
-	// maxSummaryRunes borne le résumé de l'agent cité dans le commentaire final
-	// (réparti entre les agents quand il y en a plusieurs).
-	maxSummaryRunes = 600
-	// maxRawSummaryRunes borne le résumé concaténé des textes de l'agent,
-	// avant nettoyage.
-	maxRawSummaryRunes = 4000
-	// commentaryCap borne l'envoi d'un commentaire, y compris après un délai
-	// dépassé (l'échéance de l'agent n'est pas celle de la session) ; la
-	// fermeture de la session l'interrompt.
-	commentaryCap = 10 * time.Second
+	// DetailOutOfScope accompagne l'état `rejected` (refus d'un agent retenu).
+	DetailOutOfScope = "hors périmètre"
 )
 
 // errNoFinalState qualifie un flux terminé sans état final ; errProtocol une
@@ -56,6 +47,7 @@ type PipelineDeps struct {
 	Sink      port.Sink
 	Reply     port.VoiceReply
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
+	Planner   Planner            // nil : TagPlanner
 	Validator *a2ui.Validator    // nil permis sans agent
 	Registry  *a2ui.Registry     // propre à la session ; nil permis sans agent
 	Phrases   Phrases
@@ -74,26 +66,10 @@ type Pipeline struct {
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
 	inflight []*taskState
-	// renewals : nombre de compensations par agent (identité stable), pour
-	// renouveler le ContextID après le retrait de ses surfaces.
-	renewals map[string]int
 	wg       sync.WaitGroup
 }
 
 var _ Runner = (*Pipeline)(nil)
-
-// taskState suit une exécution d'agent ; ses champs sont protégés par mu.
-type taskState struct {
-	agent  string // nom d'affichage
-	owner  string // identité stable de l'agent : propriétaire des surfaces
-	label  string
-	taskID string
-	done   bool
-	// Issue, consignée sous mu au moment de `completed`/`failed`.
-	ok       bool
-	summary  string
-	rejected bool // l'agent a refusé la demande (hors délai et fermeture)
-}
 
 // NewPipeline valide ses dépendances. Validator et Registry ne sont exigés que
 // si Agents n'est pas vide (sans agent, ils ne servent jamais) ; Logger nil :
@@ -141,7 +117,10 @@ func newPipeline(d PipelineDeps) *Pipeline {
 		d.Logger = slog.Default()
 	}
 	d.Agents = append([]port.RemoteAgent(nil), d.Agents...)
-	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}
+	if d.Planner == nil {
+		d.Planner = TagPlanner{}
+	}
+	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID)}
 }
 
 // PipelineConfig est la configuration partagée par les pipelines de toutes les
@@ -150,6 +129,7 @@ type PipelineConfig struct {
 	Clock     port.Clock
 	Sink      port.Sink
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
+	Planner   Planner            // choisit les agents de chaque délégation ; nil : TagPlanner
 	Validator *a2ui.Validator    // exigé si Agents n'est pas vide
 	Limits    a2ui.Limits        // limites du registre de chaque session
 	Phrases   Phrases
@@ -161,7 +141,7 @@ type PipelineConfig struct {
 // surfaces neuf par session, limites déjà validées).
 func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
 	deps := PipelineDeps{
-		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Validator: cfg.Validator,
+		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Planner: cfg.Planner, Validator: cfg.Validator,
 		Phrases: cfg.Phrases, Logger: cfg.Logger,
 	}
 	if err := deps.validateShared(); err != nil {
@@ -201,17 +181,34 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	agentCtx, cancelAgents := d.agentContext(ctx)
 	defer cancelAgents()
 
-	n := len(p.deps.Agents)
+	// La carte de chaque agent est lue une seule fois, avant la planification
+	// (en parallèle, bornée par le délai d'agent), puis réutilisée par Send.
+	cards, cardErrs := p.readCards(agentCtx)
+	if sessionClosed(ctx) {
+		p.seal()
+		return
+	}
+	selected := p.selectAgents(d.Request, cards, cardErrs)
+	p.publishPlan(d.ID, selected)
+	if len(selected) == 0 {
+		if p.waitGeneric(ctx, d) {
+			p.say(ctx, d.ID, p.deps.Phrases.OutOfCatalog)
+		}
+		return
+	}
+
+	n := len(selected)
 	tasks := make([]*taskState, n)
-	for i, a := range p.deps.Agents {
-		tasks[i] = &taskState{agent: a.Name(), owner: a.ID()}
+	for k, i := range selected {
+		a := p.deps.Agents[i]
+		tasks[k] = &taskState{agent: a.Name(), owner: a.ID(), card: cards[i], cardErr: cardErrs[i]}
 	}
 	finished := make(chan struct{}, n)
 	p.wg.Add(n)
-	for i, a := range p.deps.Agents {
+	for k, i := range selected {
 		go func() {
 			defer p.wg.Done()
-			p.runAgent(agentCtx, a, tasks[i], d)
+			p.runAgent(agentCtx, p.deps.Agents[i], tasks[k], d)
 			finished <- struct{}{}
 		}()
 	}
@@ -230,13 +227,13 @@ collect:
 			break collect
 		}
 	}
-	succeeded, rejections := p.outcomes(tasks)
+	succeeded, rejections := p.outcomes(agentCtx, tasks)
 
 	if sessionClosed(ctx) {
 		p.seal()
 		return
 	}
-	allRejected := rejections == n
+	allRejected := rejections == n // n : agents retenus seulement
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
@@ -249,8 +246,12 @@ collect:
 		p.say(ctx, d.ID, failure)
 		return
 	}
+	// Chaque résumé est borné à (budget / agents retenus) runes, sans jamais couper
+	// son début ; le budget tient compte de la phrase d'échec partiel éventuelle.
+	failed := p.failedNames(tasks)
+	partial := len(failed) > 0
 	var parts []string
-	limit := maxSummaryRunes / len(oks)
+	limit := p.deps.Phrases.summaryBudget(partial) / n
 	for _, s := range oks {
 		if c := sanitizeSummary(s, limit); c != "" {
 			parts = append(parts, c)
@@ -261,7 +262,11 @@ collect:
 		p.say(ctx, d.ID, p.deps.Phrases.NoSummary)
 		return
 	}
-	p.say(ctx, d.ID, fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " ")))
+	text := fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " "))
+	if partial {
+		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
+	}
+	p.say(ctx, d.ID, text)
 }
 
 // Close empêche toute publication ultérieure et attend les goroutines des
@@ -287,53 +292,6 @@ func sessionClosed(ctx context.Context) bool {
 	return errors.Is(context.Cause(ctx), ErrSessionClosed)
 }
 
-// waitGeneric attend la fin du commentaire générique (ordre générique puis
-// final). Elle renvoie false si la session est fermée : rien ne doit alors
-// être dit.
-func (p *Pipeline) waitGeneric(ctx context.Context, d Delegation) bool {
-	if d.GenericDone != nil {
-		select {
-		case <-d.GenericDone:
-		case <-ctx.Done():
-			if sessionClosed(ctx) {
-				return false
-			}
-			<-d.GenericDone // délai dépassé : le générique finit toujours
-		}
-	}
-	return !sessionClosed(ctx) && !p.isClosed()
-}
-
-// say envoie un commentaire, une seule fois : l'échec est journalisé.
-func (p *Pipeline) say(ctx context.Context, delegationID, text string) {
-	ctx, cancel := context.WithTimeout(ctx, commentaryCap)
-	defer cancel()
-	if err := p.deps.Reply.AppendCommentary(ctx, delegationID, text); err != nil {
-		p.log.Warn("commentaire non transmis", "delegation", delegationID, "err", err)
-	}
-}
-
-// sanitizeSummary traite le résumé d'un agent comme une donnée non fiable :
-// caractères de format retirés, caractères de contrôle (sauts de ligne
-// compris) remplacés par une espace, espaces réduites, coupé à limit runes.
-func sanitizeSummary(s string, limit int) string {
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case unicode.Is(unicode.Cf, r):
-		case unicode.IsControl(r) || r == '\u2028' || r == '\u2029':
-			b.WriteByte(' ')
-		default:
-			b.WriteRune(r)
-		}
-	}
-	runes := []rune(strings.Join(strings.Fields(b.String()), " "))
-	if len(runes) > limit {
-		runes = runes[:limit]
-	}
-	return strings.TrimSpace(string(runes))
-}
-
 // runAgent suit une tâche d'agent de la carte à l'état final ; l'issue est
 // consignée dans ts.
 func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskState, d Delegation) {
@@ -341,8 +299,15 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 		return
 	}
 
+	if ts.cardErr != nil {
+		p.fail(ctx, ts, ts.cardErr)
+		return
+	}
 	var summary string
-	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.contextFor(ts.owner)}) {
+	card := ts.card
+	for u, err := range a.Send(ctx, port.AgentRequest{
+		Text: d.Request, ContextID: p.deps.SessionID, Card: &card, ActiveSurfaces: p.activeSurfaces(ts.owner),
+	}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
 			return
@@ -376,28 +341,27 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 	p.fail(ctx, ts, errNoFinalState)
 }
 
-// contextFor donne le ContextID à envoyer à un agent : l'identifiant de session,
-// renouvelé (`session#n`) après une compensation de ses surfaces, pour que
-// l'agent ne croie pas à une surface retirée.
-func (p *Pipeline) contextFor(owner string) string {
+// activeSurfaces donne les surfaces ouvertes qui appartiennent à owner, lues
+// dans le registre sous le verrou de session au moment de l'envoi : le registre
+// de l'orchestrateur est la source de vérité de la composition (A2).
+func (p *Pipeline) activeSurfaces(owner string) []string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if n := p.renewals[owner]; n > 0 {
-		return fmt.Sprintf("%s#%d", p.deps.SessionID, n)
-	}
-	return p.deps.SessionID
+	return p.deps.Registry.ActiveFor(owner)
 }
 
-// outcomes lit les issues sous le verrou : une tâche encore ouverte (jamais
-// suivie, agent sourd) est close sans publication, pour qu'elle ne puisse plus
-// contredire le commentaire. Les résumés suivent l'ordre des agents.
-func (p *Pipeline) outcomes(tasks []*taskState) (summaries []string, rejections int) {
+// outcomes lit les issues sous le verrou. Invariant : tout agent retenu reçoit
+// un agent.activity terminal. Une tâche encore ouverte (jamais suivie : la
+// goroutine de l'agent n'a pas démarré avant l'échéance) est donc publiée en
+// échec (détail tiré de agentCtx), sans compensation (aucun taskID), et close
+// pour qu'elle ne puisse plus contredire le commentaire. Les résumés suivent
+// l'ordre des agents.
+func (p *Pipeline) outcomes(agentCtx context.Context, tasks []*taskState) (summaries []string, rejections int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, ts := range tasks {
 		if !ts.done {
-			ts.done = true
-			p.untrackLocked(ts)
+			p.failLocked(ts, detailFor(agentCtx, nil))
 		}
 		switch {
 		case ts.ok:
@@ -407,219 +371,4 @@ func (p *Pipeline) outcomes(tasks []*taskState) (summaries []string, rejections 
 		}
 	}
 	return summaries, rejections
-}
-
-// appendSummary concatène les textes successifs (séparés par une espace),
-// bornés à maxRawSummaryRunes avant nettoyage.
-func appendSummary(cur, add string) string {
-	if cur != "" && add != "" {
-		cur += " "
-	}
-	cur += add
-	if r := []rune(cur); len(r) > maxRawSummaryRunes {
-		cur = string(r[:maxRawSummaryRunes])
-	}
-	return cur
-}
-
-// track enregistre la tâche en vol ; faux si le pipeline est déjà fermé.
-func (p *Pipeline) track(ts *taskState) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.closed {
-		ts.done = true
-		return false
-	}
-	p.inflight = append(p.inflight, ts)
-	return true
-}
-
-// begin publie `working` à la réception de `submitted`, jamais avant.
-func (p *Pipeline) begin(ts *taskState, u port.AgentUpdate) bool {
-	taskID := u.TaskID
-	p.mu.Lock()
-	if ts.done || p.closed {
-		p.mu.Unlock()
-		return false
-	}
-	if taskID == "" || ts.taskID != "" {
-		p.failLocked(ts, DetailAgentFailed)
-		p.mu.Unlock()
-		p.log.Warn("identifiant de tâche absent ou répété", "agent", ts.agent)
-		return false
-	}
-	ts.taskID = taskID
-	if u.Name != "" {
-		ts.agent = u.Name
-	}
-	ts.label = u.Label
-	p.publishActivityLocked(ts, domain.ActivityWorking, "")
-	p.mu.Unlock()
-	return true
-}
-
-// relay valide puis relaie un message A2UI, tel quel, dès qu'il est valide.
-func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
-	op, err := p.deps.Validator.Validate(msg)
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if ts.done || p.closed {
-		return false
-	}
-	if ts.taskID == "" {
-		p.failLocked(ts, DetailAgentFailed)
-		p.log.Warn("message A2UI avant « submitted »", "agent", ts.agent)
-		return false
-	}
-	if err == nil {
-		err = p.deps.Registry.Apply(ts.owner, ts.taskID, op)
-	}
-	if err != nil {
-		p.failLocked(ts, DetailInvalidA2UI)
-		p.log.Warn("message A2UI refusé", "agent", ts.agent, "task", ts.taskID, "err", err)
-		return false
-	}
-	p.publishLocked(domain.TypeA2UI, ts.agent, ts.taskID,
-		domain.A2UI{Message: msg, Op: string(op.Kind), SurfaceID: op.SurfaceID})
-	return true
-}
-
-// complete vérifie que les surfaces sont complètes, puis publie `completed`.
-func (p *Pipeline) complete(ts *taskState, summary string) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if ts.done || p.closed {
-		return false
-	}
-	if ts.taskID == "" {
-		p.failLocked(ts, DetailAgentFailed)
-		return false
-	}
-	if err := p.deps.Registry.Complete(ts.taskID); err != nil {
-		p.failLocked(ts, DetailInvalidA2UI)
-		p.log.Warn("surface incomplète à la fin de la tâche", "agent", ts.agent, "task", ts.taskID, "err", err)
-		return false
-	}
-	ts.done = true
-	ts.ok, ts.summary = true, summary
-	p.untrackLocked(ts)
-	p.deps.Registry.Forget(ts.taskID)
-	p.publishActivityLocked(ts, domain.ActivityCompleted, "")
-	return true
-}
-
-// fail termine la tâche en échec : compensation, `failed`, sans erreur brute.
-func (p *Pipeline) fail(ctx context.Context, ts *taskState, err error) {
-	detail := detailFor(ctx, err)
-	p.mu.Lock()
-	if !ts.done {
-		ts.rejected = isRejected(ctx, err)
-	}
-	p.failLocked(ts, detail)
-	p.mu.Unlock()
-	p.log.Warn("tâche d'agent en échec", "agent", ts.agent, "task", ts.taskID, "detail", detail, "err", err)
-}
-
-// failInflight termine en échec toutes les tâches encore en vol, quelle que
-// soit la bonne volonté de l'agent à rendre la main.
-func (p *Pipeline) failInflight(ctx context.Context) {
-	detail := detailFor(ctx, nil)
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	for _, ts := range append([]*taskState(nil), p.inflight...) {
-		p.failLocked(ts, detail)
-	}
-}
-
-// failLocked (mu tenu) : (1) compense les surfaces créées, dans l'ordre
-// inverse, (2) oublie la tâche, (3) publie `failed` ; idempotent.
-func (p *Pipeline) failLocked(ts *taskState, detail string) {
-	if ts.done {
-		return
-	}
-	ts.done = true
-	p.untrackLocked(ts)
-	if ts.taskID != "" {
-		compensation := p.deps.Registry.Compensation(ts.taskID)
-		if len(compensation) > 0 {
-			p.renewals[ts.owner]++
-		}
-		for _, m := range compensation {
-			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
-				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
-		}
-		p.deps.Registry.Forget(ts.taskID)
-	}
-	p.publishActivityLocked(ts, domain.ActivityFailed, detail)
-}
-
-// deletedSurface extrait la surface d'un message de compensation `deleteSurface`
-// construit par le registre.
-func deletedSurface(m map[string]any) string {
-	body, _ := m[domain.OpDeleteSurface].(map[string]any)
-	id, _ := body["surfaceId"].(string)
-	return id
-}
-
-func (p *Pipeline) untrackLocked(ts *taskState) {
-	for i, t := range p.inflight {
-		if t == ts {
-			p.inflight = append(p.inflight[:i], p.inflight[i+1:]...)
-			return
-		}
-	}
-}
-
-func (p *Pipeline) publishActivityLocked(ts *taskState, state, detail string) {
-	p.publishLocked(domain.TypeAgentActivity, ts.agent, ts.taskID, domain.AgentActivity{
-		Agent: ts.agent, Task: ts.taskID, State: state, Label: ts.label, Detail: detail,
-	})
-}
-
-func (p *Pipeline) publishLocked(typ, agent, task string, data domain.Payload) {
-	if p.closed {
-		return
-	}
-	p.deps.Sink.Publish(p.deps.SessionID, domain.Message{
-		Type:  typ,
-		TMs:   p.deps.Clock.Now().Sub(p.deps.Start).Milliseconds(),
-		Agent: agent,
-		Task:  task,
-		Data:  data,
-	})
-}
-
-// detailFor associe une cause à un détail de l'ensemble fermé. La cause du
-// contexte (session fermée, délai) prime sur l'erreur de l'agent.
-func detailFor(ctx context.Context, err error) string {
-	switch cause := context.Cause(ctx); {
-	case errors.Is(cause, ErrSessionClosed):
-		return DetailSessionClosed
-	case errors.Is(cause, ErrAgentTimeout):
-		return DetailTimeout
-	}
-	var ve *a2ui.ValidationError
-	if errors.As(err, &ve) {
-		return DetailInvalidA2UI
-	}
-	var ae *port.AgentError
-	if errors.As(err, &ae) {
-		switch ae.Kind {
-		case port.AgentUnreachable:
-			return DetailUnreachable
-		case port.AgentTimeout:
-			return DetailTimeout
-		}
-	}
-	return DetailAgentFailed
-}
-
-// isRejected indique que l'agent a refusé la demande ; la cause du contexte
-// (session fermée, délai) prime, comme pour le détail.
-func isRejected(ctx context.Context, err error) bool {
-	if context.Cause(ctx) != nil {
-		return false
-	}
-	var ae *port.AgentError
-	return errors.As(err, &ae) && ae.Kind == port.AgentRejected
 }

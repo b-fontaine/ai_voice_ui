@@ -1,0 +1,19 @@
+{
+  "name": "Voix du client",
+  "description": "Agent Voix du client de Genesis Canvas : sentiment des avis des stores de la version 3.4 sur 7 jours (part de positifs et de négatifs, note moyenne, extraits) sous forme de surface A2UI et de résumé factuel.",
+  "listenPort": 8091,
+  "skill": {
+    "id": "voice-of-customer",
+    "name": "Sentiment des avis",
+    "tags": ["avis", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"],
+    "examples": [
+      "Prépare la release 3.4",
+      "Que disent les clients de la 3.4 ?",
+      "Montre-moi les avis"
+    ]
+  },
+  "texts": {
+    "rejected": "Demande refusée : l'agent Voix du client ne traite que la vue globale de la version 3.4, sans comparaison ni plateforme précise.",
+    "failed": "L'agent Voix du client n'a pas pu produire la réponse."
+  }
+}

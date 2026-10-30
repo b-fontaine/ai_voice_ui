@@ -50,6 +50,12 @@ func WireData(d domain.Payload) any {
 			ID       string `json:"id"`
 			OffsetMs int64  `json:"offset_ms"`
 		}{v.ID, v.OffsetMs}
+	case domain.Plan:
+		return struct {
+			Delegation string   `json:"delegation"`
+			Selected   []string `json:"selected"`
+			Idle       []string `json:"idle"`
+		}{v.Delegation, nonNil(v.Selected), nonNil(v.Idle)}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil
@@ -59,4 +65,12 @@ func WireData(d domain.Payload) any {
 // DataJSON sérialise les données de m avec les noms de champs de l'enveloppe v1.
 func DataJSON(m domain.Message) ([]byte, error) {
 	return json.Marshal(WireData(m.Data))
+}
+
+// nonNil garantit un tableau JSON (`[]`) et jamais `null`.
+func nonNil(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
 }

@@ -15,15 +15,32 @@ type AgentCard struct {
 	// (`label`) de l'événement `agent.activity`. Vide si la carte n'annonce
 	// aucun skill.
 	Label string
+	// Tags est l'union dédupliquée (ordre de première apparition) des tags de
+	// tous les skills annoncés : le planificateur de l'orchestrateur s'en sert
+	// pour choisir les agents d'une délégation.
+	Tags []string
+	// Handle est une poignée opaque propre à l'adaptateur qui a lu la carte :
+	// l'orchestrateur la transmet telle quelle dans AgentRequest.Card pour que
+	// Send réutilise cette lecture sans relire la carte. Il ne l'inspecte pas.
+	Handle any
 }
 
 // AgentRequest est une demande confiée à un agent distant : Text est la
 // demande en langage naturel, ContextID rattache les échanges d'une même
-// conversation (l'identifiant de la session voix ; vide pour une première
-// demande).
+// conversation (l'identifiant de la session voix).
+//
+// Card est la carte déjà lue par Card() pour cette délégation (nil : Send lit la
+// carte lui-même). Une carte qui ne vient pas de l'adaptateur est ignorée.
+//
+// ActiveSurfaces liste les identifiants des surfaces actuellement ouvertes qui
+// appartiennent à cet agent (celles qu'il a créées), d'après le registre de
+// l'orchestrateur : l'agent s'en sert pour ne recréer aucune surface déjà
+// affichée. Liste vide : aucune surface.
 type AgentRequest struct {
-	Text      string
-	ContextID string
+	Text           string
+	ContextID      string
+	Card           *AgentCard
+	ActiveSurfaces []string
 }
 
 // AgentUpdateKind identifie la nature d'une AgentUpdate.
@@ -40,7 +57,7 @@ const (
 // AgentUpdate est un élément du flux d'une tâche d'agent. A2UI ne contient que
 // des map[string]any et des []any. TaskID est l'identifiant de tâche A2A, dès
 // qu'il est connu. Name et Label ne sont renseignés que sur UpdateSubmitted :
-// ils viennent de l'unique lecture de la carte faite par Send (Name vide si la
+// ils viennent de l'unique lecture de la carte de la délégation (Name vide si la
 // carte n'a pas de nom, Label vide si elle n'annonce aucun skill).
 type AgentUpdate struct {
 	Kind   AgentUpdateKind
@@ -84,11 +101,17 @@ type RemoteAgent interface {
 	// configurée) : elle sert de propriétaire des surfaces, jamais à
 	// l'affichage.
 	ID() string
-	// Name est le dernier nom valide de carte, sinon l'hôte de l'URL de carte :
+	// Name est le nom d'affichage configuré s'il existe, sinon le dernier nom
+	// valide de carte (nettoyé), sinon l'hôte de l'URL de carte :
 	// il sert à l'affichage et aux échecs survenus avant toute lecture de carte.
 	Name() string
-	// Card relit la carte de l'agent à chaque appel (diagnostic : Send fait sa
-	// propre lecture, unique, de la carte).
+	// LastTags renvoie une copie des tags de la dernière carte VALIDE lue, nil
+	// si aucune carte valide n'a jamais été lue : l'orchestrateur s'en sert pour
+	// planifier un agent dont la carte est momentanément illisible.
+	LastTags() []string
+	// Card relit la carte de l'agent à chaque appel. L'orchestrateur la lit une
+	// seule fois par délégation et par agent, avant la planification, puis la
+	// rend dans AgentRequest.Card : Send ne relit pas la carte dans ce cas.
 	Card(ctx context.Context) (AgentCard, error)
 	// Send confie une demande et renvoie le flux des mises à jour, sans
 	// goroutine d'adaptateur : le travail se fait dans l'itération. Le flux se

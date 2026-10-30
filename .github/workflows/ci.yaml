@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [backend/orchestrator, backend/agents/quality]
+        module: [backend/orchestrator, backend/agents]
     defaults:
       run:
         working-directory: ${{ matrix.module }}
@@ -26,7 +26,12 @@ jobs:
       - run: go vet -tags acceptance ./...
       - run: go test -race ./...
       - run: go test -race -tags acceptance ./...
-      - run: docker build .
+      - name: Image de l'orchestrateur
+        if: matrix.module == 'backend/orchestrator'
+        run: docker build .
+      - name: Images des agents (un binaire par agent, ARG AGENT obligatoire)
+        if: matrix.module == 'backend/agents'
+        run: for a in quality voice delivery; do docker build --build-arg AGENT=$a -t genesis-agent-$a . || exit 1; done
       - name: Contrôle statique du compose (sans .env, sans secret)
         if: matrix.module == 'backend/orchestrator'
         working-directory: .

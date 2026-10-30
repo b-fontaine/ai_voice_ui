@@ -167,8 +167,8 @@ func newOpenAI(cfg Config, logger *slog.Logger) (port.LiveProvider, error) {
 // et, par session, un registre de surfaces et un pipeline.
 func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.Logger) (*orchestrate.Manager, error) {
 	agents := make([]port.RemoteAgent, 0, len(cfg.Agents))
-	for _, cardURL := range cfg.Agents {
-		a, err := a2aclient.New(a2aclient.Options{CardURL: cardURL, Timeout: agentConnectTimeout, Logger: logger})
+	for _, spec := range cfg.Agents {
+		a, err := a2aclient.New(a2aclient.Options{CardURL: spec.CardURL, Name: spec.Name, Timeout: agentConnectTimeout, Logger: logger})
 		if err != nil {
 			return nil, fmt.Errorf("bootstrap: agent A2A : %w", err)
 		}
@@ -180,6 +180,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 		validator, err = a2ui.NewValidator(a2ui.Options{
 			CatalogID: cfg.A2UICatalogID, Components: cfg.A2UIComponents,
 			MaxMessageBytes: a2uiMaxMessageBytes, MaxDepth: a2uiMaxDepth, MaxComponentsPerUpdate: a2uiMaxComponents,
+			AllowedProps: cfg.A2UIAllowedProps, BindingProps: cfg.A2UIBindingProps,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)
@@ -191,7 +192,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	}
 	// Toute la configuration du pipeline est validée ici, une seule fois.
 	factory, err := orchestrate.NewPipelineFactory(orchestrate.PipelineConfig{
-		Clock: clock, Sink: sink, Agents: agents, Validator: validator,
+		Clock: clock, Sink: sink, Agents: agents, Planner: orchestrate.TagPlanner{}, Validator: validator,
 		Limits:  a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages},
 		Phrases: cfg.Phrases, Logger: logger,
 	})

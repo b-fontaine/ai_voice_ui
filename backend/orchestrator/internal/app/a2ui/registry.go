@@ -2,6 +2,7 @@ package a2ui
 
 import (
 	"errors"
+	"sort"
 	"sync"
 )
 
@@ -164,6 +165,21 @@ func (r *Registry) Forget(taskID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.tasks, taskID)
+}
+
+// ActiveFor renvoie, triés, les identifiants des surfaces actives dont owner est
+// le propriétaire (l'agent qui les a créées). Liste vide si aucune.
+func (r *Registry) ActiveFor(owner string) []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := []string{}
+	for id, s := range r.surfaces {
+		if s.owner == owner {
+			out = append(out, id)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // TaskCount renvoie le nombre de tâches suivies (diagnostic et tests de fuite).

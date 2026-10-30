@@ -25,6 +25,7 @@ func TestWireDataCoversAllPayloads(t *testing.T) {
 		{"A2UI", domain.A2UI{Message: map[string]any{"version": "v0.9"}}, `{"version":"v0.9"}`},
 		{"AgentActivity", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking}, `{"agent":"Qualité","task":"t1","state":"working"}`},
 		{"Delegation", domain.Delegation{ID: "d1", OffsetMs: 1234}, `{"id":"d1","offset_ms":1234}`},
+		{"Plan", domain.Plan{Delegation: "d1", Selected: []string{"Qualité"}, Idle: []string{"Livraison"}}, `{"delegation":"d1","selected":["Qualité"],"idle":["Livraison"]}`},
 		{"AgentActivityLabel", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}, `{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}`},
 	}
 	for _, c := range cases {
@@ -95,5 +96,19 @@ func TestWireA2UIAndActivity(t *testing.T) {
 	if domain.TypeA2UI != "a2ui" || domain.TypeAgentActivity != "agent.activity" ||
 		domain.ActivityCompleted != "completed" {
 		t.Error("constantes de type ou d'état inattendues")
+	}
+}
+
+// Les listes du plan sont toujours des tableaux JSON, jamais null.
+func TestWirePlanListsAreNeverNull(t *testing.T) {
+	got, err := wire.DataJSON(domain.Message{Type: domain.TypePlan, Data: domain.Plan{Delegation: "d1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"delegation":"d1","selected":[],"idle":[]}`; string(got) != want {
+		t.Errorf("plan vide = %s, attendu %s", got, want)
+	}
+	if domain.TypePlan != "plan" || domain.ActivityRejected != "rejected" {
+		t.Errorf("constantes : %q, %q", domain.TypePlan, domain.ActivityRejected)
 	}
 }

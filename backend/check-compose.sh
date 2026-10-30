@@ -22,41 +22,97 @@ def check(ok, message):
 
 
 orch = services.get("orchestrator")
-agent = services.get("agent-quality")
 check(orch is not None, "service orchestrator absent")
-check(agent is not None, "service agent-quality absent")
 orch = orch or {}
-agent = agent or {}
 
-check(not agent.get("ports"), "agent-quality ne doit publier aucun port")
-check(set((agent.get("networks") or {}).keys()) == {"agents"},
-      "agent-quality doit etre uniquement sur le reseau agents")
+# Tous les services agent-* sont contrôlés de la même façon (A8 e).
+agent_names = sorted(n for n in services if n.startswith("agent-"))
+for required in ("agent-quality", "agent-voice", "agent-delivery"):
+    check(required in services, "service " + required + " absent")
+
 check(bool((networks.get("agents") or {}).get("internal")), "le reseau agents doit etre internal: true")
 check({"default", "agents"} <= set((orch.get("networks") or {"default": None}).keys()),
       "orchestrator doit etre sur les reseaux default et agents")
-check("env_file" not in agent, "agent-quality ne doit pas recevoir env_file")
 
-for name, svc in (("orchestrator", orch), ("agent-quality", agent)):
+env = orch.get("environment") or {}
+depends = orch.get("depends_on") or {}
+
+for name in ["orchestrator"] + agent_names:
+    svc = services[name]
     check(svc.get("read_only") is True, name + " : read_only requis")
     check("ALL" in (svc.get("cap_drop") or []), name + " : cap_drop ALL requis")
     check("no-new-privileges:true" in (svc.get("security_opt") or []),
           name + " : no-new-privileges:true requis")
     check(bool(svc.get("healthcheck")), name + " : healthcheck requis")
 
+for name in agent_names:
+    agent = services[name]
+    agent_env = agent.get("environment") or {}
+    check(not agent.get("ports"), name + " ne doit publier aucun port")
+    check(set((agent.get("networks") or {}).keys()) == {"agents"},
+          name + " doit etre uniquement sur le reseau agents")
+    check("env_file" not in agent, name + " ne doit pas recevoir env_file")
+    # R1 : le Dockerfile des agents impose ARG AGENT (sans défaut) ; le compose doit le fournir.
+    build_args = (agent.get("build") or {}).get("args") or {}
+    check(build_args.get("AGENT") == name[len("agent-"):],
+          name + " : build.args.AGENT doit valoir " + name[len("agent-"):])
+    # R6(d) : une seule valeur de catalogue A2UI, partagée (ancre YAML) par orchestrateur et chaque agent.
+    check(bool(env.get("A2UI_CATALOG_ID")) and env.get("A2UI_CATALOG_ID") == agent_env.get("A2UI_CATALOG_ID"),
+          "A2UI_CATALOG_ID doit etre identique (ancre) pour orchestrator et " + name)
+    dep = depends.get(name) or {}
+    check(dep.get("condition") == "service_healthy",
+          "orchestrator : depends_on " + name + " service_healthy requis")
+
 for port in orch.get("ports") or []:
     check(isinstance(port, dict) and port.get("host_ip") == "127.0.0.1",
           "orchestrator : port publie hors de 127.0.0.1")
 
-env = orch.get("environment") or {}
-check(str(env.get("AGENTS", "")).startswith("http://agent-quality:8090/"),
-      "orchestrator : AGENTS doit pointer vers http://agent-quality:8090/")
-# R6(d) : une seule valeur de catalogue A2UI, partagée (ancre YAML) par orchestrator et agent-quality.
-agent_env = agent.get("environment") or {}
-check(bool(env.get("A2UI_CATALOG_ID")) and env.get("A2UI_CATALOG_ID") == agent_env.get("A2UI_CATALOG_ID"),
-      "A2UI_CATALOG_ID doit etre identique (ancre) pour orchestrator et agent-quality")
-dep = (orch.get("depends_on") or {}).get("agent-quality") or {}
-check(dep.get("condition") == "service_healthy",
-      "orchestrator : depends_on agent-quality service_healthy requis")
+# Cartes agents : nom et URL de chaque agent dans AGENTS.
+agents_cfg = str(env.get("AGENTS", ""))
+for label, url in (
+    ("Qualité", "http://agent-quality:8090/.well-known/agent-card.json"),
+    ("Voix du client", "http://agent-voice:8091/.well-known/agent-card.json"),
+    ("Livraison", "http://agent-delivery:8092/.well-known/agent-card.json"),
+):
+    check((label + "=" + url) in agents_cfg.split(","),
+          "orchestrator : AGENTS doit contenir la carte " + label)
+
+# A8 f : composants autorisés = exactement le catalogue Genesis J3, jamais Column ni Text.
+with open("contracts/a2ui/genesis/v1/catalog.json", encoding="utf-8") as fh:
+    catalog = json.load(fh)
+catalog_components = catalog["components"]  # liste blanche J3, pas catalogComponents (étagère de l app)
+raw_components = str(env.get("A2UI_COMPONENTS", ""))
+default_components = raw_components
+if default_components.startswith("${A2UI_COMPONENTS:-") and default_components.endswith("}"):
+    default_components = default_components[len("${A2UI_COMPONENTS:-"):-1]
+listed = [c.strip() for c in default_components.split(",") if c.strip()]
+check(listed == catalog_components,
+      "A2UI_COMPONENTS (defaut) doit etre exactement la liste components du catalogue genesis/v1")
+check("Column" not in listed and "Text" not in listed,
+      "A2UI_COMPONENTS ne doit contenir ni Column ni Text")
+check(bool(env.get("A2UI_ALLOWED_PROPS")), "orchestrator : A2UI_ALLOWED_PROPS requis")
+check(bool(env.get("A2UI_BINDING_PROPS")), "orchestrator : A2UI_BINDING_PROPS requis")
+
+
+def default_of(name):
+    raw = str(env.get(name, ""))
+    prefix = "${" + name + ":-"
+    if raw.startswith(prefix) and raw.endswith("}"):
+        raw = raw[len(prefix):-1]
+    return {x.strip() for x in raw.split(",") if x.strip()}
+
+
+# R5 (c) : propriétés admises et propriétés liées = unions déclarées par le catalogue (égalité d ensembles).
+definitions = catalog.get("definitions", {})
+catalog_props = set()
+catalog_binding = set()
+for definition in definitions.values():
+    catalog_props.update(definition.get("properties", []))
+    catalog_binding.update((definition.get("binding") or {}).keys())
+check(default_of("A2UI_ALLOWED_PROPS") == catalog_props,
+      "A2UI_ALLOWED_PROPS (defaut) doit egaler l union des properties du catalogue genesis/v1")
+check(default_of("A2UI_BINDING_PROPS") == catalog_binding,
+      "A2UI_BINDING_PROPS (defaut) doit egaler l union des cles binding du catalogue genesis/v1")
 
 check("sk-" not in json.dumps(cfg), "une valeur contient sk- (secret possible)")
 

@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
 )
@@ -28,6 +32,14 @@ const (
 	// Attente d'acquittement d'un commentaire vocal (VOICE_APPEND_ACK_TIMEOUT).
 	defaultAppendAckTimeout = 2 * time.Second
 )
+
+// AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
+// option, son nom d'affichage (`Nom=URL`). Le nom configuré prime sur le nom de
+// la carte et sert tant que la carte n'a jamais été lue.
+type AgentSpec struct {
+	Name    string
+	CardURL string
+}
 
 // Config est la configuration de l'orchestrateur, lue depuis l'environnement.
 // La clé API est privée : elle n'apparaît dans aucun affichage.
@@ -63,9 +75,10 @@ type Config struct {
 	// (liste séparée par des virgules) en ajoute.
 	AllowedHosts []string
 
-	// Agents : URL des cartes d'agent A2A (AGENTS, séparées par des virgules,
-	// http ou https). Vide : l'orchestrateur démarre et répond « aucun agent ».
-	Agents []string
+	// Agents : cartes d'agent A2A (AGENTS, séparées par des virgules ; chaque
+	// entrée est `URL` ou `Nom=URL`, URL en http ou https). Vide : l'orchestrateur
+	// démarre et répond « aucun agent ».
+	Agents []AgentSpec
 	// A2UICatalogID, A2UIComponents et AgentTimeout (A2UI_CATALOG_ID,
 	// A2UI_COMPONENTS, AGENT_TIMEOUT) sont obligatoires si Agents est non vide.
 	// AgentTimeout vaut 0 quand il est absent (le câblage applique alors une
@@ -73,6 +86,11 @@ type Config struct {
 	A2UICatalogID  string
 	A2UIComponents []string
 	AgentTimeout   time.Duration
+	// A2UIAllowedProps (A2UI_ALLOWED_PROPS) : propriétés qu'un composant peut
+	// porter ; A2UIBindingProps (A2UI_BINDING_PROPS) : celles qui doivent être une
+	// liaison {path}. Listes facultatives : vides, aucun contrôle de propriétés.
+	A2UIAllowedProps []string
+	A2UIBindingProps []string
 	// AppendAckTimeout : attente de l'acquittement d'un commentaire vocal
 	// (VOICE_APPEND_ACK_TIMEOUT) ; défaut 2 s, documenté ici.
 	AppendAckTimeout time.Duration
@@ -247,16 +265,33 @@ func splitList(raw string) []string {
 // parseOrchestration lit les variables des agents, des commentaires vocaux et
 // du délai d'acquittement. Les erreurs nomment la variable sans en afficher la valeur.
 func parseOrchestration(getenv func(string) string, cfg *Config) error {
-	cfg.Agents = splitList(getenv("AGENTS"))
-	for _, a := range cfg.Agents {
-		u, err := url.Parse(a)
-		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-			return errors.New("AGENTS doit être une liste d'URL de carte http ou https séparées par des virgules")
+	for _, entry := range splitList(getenv("AGENTS")) {
+		spec, err := parseAgentEntry(entry)
+		if err != nil {
+			return err
 		}
+		for _, prev := range cfg.Agents {
+			if prev.CardURL == spec.CardURL || (spec.Name != "" && prev.Name == spec.Name) {
+				return errors.New("AGENTS : entrée en double (même URL de carte ou même nom d'affichage)")
+			}
+		}
+		cfg.Agents = append(cfg.Agents, spec)
 	}
 
 	cfg.A2UICatalogID = strings.TrimSpace(getenv("A2UI_CATALOG_ID"))
 	cfg.A2UIComponents = splitList(getenv("A2UI_COMPONENTS"))
+	var err error
+	if cfg.A2UIAllowedProps, err = parsePropList(getenv, "A2UI_ALLOWED_PROPS"); err != nil {
+		return err
+	}
+	if cfg.A2UIBindingProps, err = parsePropList(getenv, "A2UI_BINDING_PROPS"); err != nil {
+		return err
+	}
+	for _, p := range cfg.A2UIBindingProps {
+		if !slices.Contains(cfg.A2UIAllowedProps, p) {
+			return errors.New("A2UI_BINDING_PROPS doit être inclus dans A2UI_ALLOWED_PROPS")
+		}
+	}
 	if raw := strings.TrimSpace(getenv("AGENT_TIMEOUT")); raw != "" {
 		d, err := time.ParseDuration(raw)
 		if err != nil || d <= 0 {
@@ -297,4 +332,55 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 	}
 	cfg.Phrases = phrases
 	return nil
+}
+
+const maxAgentNameRunes = 40
+
+// propNamePattern est la forme d'un nom de propriété de composant A2UI.
+var propNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+
+// parsePropList lit une liste facultative de noms de propriété séparés par des
+// virgules ; l'erreur nomme la variable sans afficher de valeur.
+func parsePropList(getenv func(string) string, name string) ([]string, error) {
+	list := splitList(getenv(name))
+	for _, p := range list {
+		if !propNamePattern.MatchString(p) {
+			return nil, errors.New(name + " doit être une liste de noms de propriété (lettres et chiffres, commençant par une lettre) séparés par des virgules")
+		}
+	}
+	return list, nil
+}
+
+// parseAgentEntry lit une entrée de AGENTS : `URL` ou `Nom=URL`. Un nom n'est
+// reconnu que si le texte avant le premier « = » ne contient ni « / » ni « : »
+// (sinon le « = » appartient à l'URL, par exemple `http://h/c?a=b`). Les
+// erreurs nomment AGENTS sans afficher la valeur.
+func parseAgentEntry(entry string) (AgentSpec, error) {
+	var spec AgentSpec
+	rawURL := entry
+	if i := strings.Index(entry, "="); i >= 0 && !strings.ContainsAny(entry[:i], "/:") {
+		spec.Name = strings.TrimSpace(entry[:i])
+		rawURL = strings.TrimSpace(entry[i+1:])
+		if !validAgentName(spec.Name) {
+			return AgentSpec{}, errors.New("AGENTS : nom d'affichage invalide (1 à 40 caractères : lettres, chiffres, espace, « . _ ' - »)")
+		}
+	}
+	u, err := url.Parse(rawURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return AgentSpec{}, errors.New("AGENTS doit être une liste d'entrées `URL` ou `Nom=URL` (URL de carte http ou https) séparées par des virgules")
+	}
+	spec.CardURL = rawURL
+	return spec, nil
+}
+
+func validAgentName(n string) bool {
+	if c := utf8.RuneCountInString(n); c < 1 || c > maxAgentNameRunes {
+		return false
+	}
+	for _, r := range n {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) && !strings.ContainsRune(" ._'-", r) {
+			return false
+		}
+	}
+	return true
 }

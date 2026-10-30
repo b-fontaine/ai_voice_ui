@@ -1,10 +1,12 @@
 {
   "generic": "Je regarde ça, un instant.",
   "failure": "Je n'ai pas pu obtenir cette information.",
-  "failure_rejected": "Cette demande n'est pas prise en charge pour l'instant.",
+  "failure_rejected": "Cette demande n'est pas encore prise en charge : je peux afficher la vue globale de la release 3.4, avec stabilité, avis et checklist. Voulez-vous la voir ?",
   "no_summary": "Le résultat est affiché.",
   "queue_full": "Je termine d'abord la demande en cours.",
   "no_request": "Je n'ai pas bien saisi la demande, pouvez-vous répéter ?",
   "no_agent": "Aucun agent n'est disponible pour le moment.",
+  "out_of_catalog": "Je ne peux pas afficher cela : je compose seulement avec des indicateurs de stabilité, des courbes de crashs, des avis clients et une checklist de release. Voulez-vous l'un d'eux ?",
+  "partial_failure": "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
   "result_template": "Voici ce que je constate : « %s »"
 }
