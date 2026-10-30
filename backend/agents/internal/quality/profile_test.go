@@ -13,13 +13,16 @@ func TestQualityProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("profil embarqué invalide : %v", err)
 	}
-	if p.Name != "Qualité" || p.ListenPort != 8090 || p.Skill.ID == "" {
+	if p.Name != "Qualité" || p.ListenPort != 8090 || p.Skill.ID != "quality-kpi" {
 		t.Errorf("profil %+v", p)
 	}
 	for _, tag := range []string{"release", "version", "crash", "crashs", "stabilité", "sessions", "tendance", "courbe", "qualité", "plantage", "3.4"} {
 		if !slices.Contains(p.Skill.Tags, tag) {
 			t.Errorf("le tag %q manque : %v", tag, p.Skill.Tags)
 		}
+	}
+	if slices.Contains(p.Skill.Tags, "a2ui") {
+		t.Errorf("le tag %q n'est jamais demandé par un utilisateur : à retirer", "a2ui")
 	}
 	for _, tag := range p.Skill.Tags {
 		if tag != strings.ToLower(tag) || strings.ContainsAny(tag, " \t") {

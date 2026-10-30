@@ -36,6 +36,18 @@ func TestInScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"la qualité sur iOS", false},
 		{"la qualité sur ios", false},
 		{"radios et studios", true},
+		// Un nombre décimal n'est une version que si sa partie entière a un seul
+		// chiffre et s'il n'est pas suivi de %, pt ou point(s) (R8 a).
+		{"montre les sessions sans crash sous 99,5 %", true},
+		{"montre les sessions sans crash sous 99,5%", true},
+		{"montre les sessions sans crash sous 99,5 pt", true},
+		{"une marge de 0,1 point", true},
+		{"une marge de 2.5 points", true},
+		{"3.3", false},
+		{"3,4", true},
+		{"3.5", false},
+		{"version 10.2", true},
+		{"la 3.3 à 99,5 %", false},
 	}
 	for _, tc := range cases {
 		if got := kit.InScope(tc.text, "3.4"); got != tc.ok {

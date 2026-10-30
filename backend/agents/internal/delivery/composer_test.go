@@ -136,8 +136,8 @@ func TestRecommendationAtRisk(t *testing.T) {
 	if reco["level"] != "risk" || reco["label"] != "À RISQUE" {
 		t.Errorf("recommandation %v, attendu risk / À RISQUE", reco)
 	}
-	if v["decisionStatus"] != dataset.DecisionStatusPending {
-		t.Errorf("statut de décision %v, attendu %q", v["decisionStatus"], dataset.DecisionStatusPending)
+	if v["decisionStatus"] != "En attente de décision" {
+		t.Errorf("statut de décision %v, attendu %q", v["decisionStatus"], "En attente de décision")
 	}
 }
 

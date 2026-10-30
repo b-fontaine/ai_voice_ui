@@ -32,7 +32,7 @@ func serve(t *testing.T, p kit.Profile, composer kit.Composer) string {
 		t.Fatal(err)
 	}
 	base := "http://" + ln.Addr().String()
-	h, err := kit.NewServer(kit.Config{PublicURL: base, CatalogID: catalogID, Profile: p, Composer: composer})
+	h, err := kit.NewServer(kit.Config{PublicURL: base, CatalogID: catalogID, Profile: p, Composer: composer, Dataset: testDataset(t)})
 	if err != nil {
 		t.Fatalf("NewServer : %v", err)
 	}
@@ -42,6 +42,15 @@ func serve(t *testing.T, p kit.Profile, composer kit.Composer) string {
 	srv.Start()
 	t.Cleanup(srv.Close)
 	return base
+}
+
+func testDataset(t *testing.T) dataset.Dataset {
+	t.Helper()
+	ds, err := dataset.Load()
+	if err != nil {
+		t.Fatalf("dataset.Load : %v", err)
+	}
+	return ds
 }
 
 func newClient(ctx context.Context, t *testing.T, base string) *a2aclient.Client {
@@ -288,7 +297,7 @@ func TestCancelStopsExecutor(t *testing.T) {
 
 func newHandler(t *testing.T, publicURL string) http.Handler {
 	t.Helper()
-	h, err := kit.NewServer(kit.Config{PublicURL: publicURL, CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}})
+	h, err := kit.NewServer(kit.Config{PublicURL: publicURL, CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}, Dataset: testDataset(t)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -398,14 +407,15 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestNewServerRejectsInvalidConfig(t *testing.T) {
-	p := testProfile(t)
+	p, ds := testProfile(t), testDataset(t)
 	for _, cfg := range []kit.Config{
-		{PublicURL: "", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
-		{PublicURL: "ftp://x:1", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
-		{PublicURL: "pas une url", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
-		{PublicURL: "http://127.0.0.1:1", CatalogID: "", Profile: p, Composer: fakeComposer{}},
-		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Profile: p},               // composeur absent
-		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Composer: fakeComposer{}}, // profil non chargé
+		{PublicURL: "", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}, Dataset: ds},
+		{PublicURL: "ftp://x:1", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}, Dataset: ds},
+		{PublicURL: "pas une url", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}, Dataset: ds},
+		{PublicURL: "http://127.0.0.1:1", CatalogID: "", Profile: p, Composer: fakeComposer{}, Dataset: ds},
+		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Profile: p, Dataset: ds},               // composeur absent
+		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Composer: fakeComposer{}, Dataset: ds}, // profil non chargé
+		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},  // jeu de données vide
 	} {
 		if _, err := kit.NewServer(cfg); err == nil {
 			t.Errorf("config %+v acceptée à tort", cfg)
@@ -418,7 +428,7 @@ func TestRunStopsOnContextCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := kit.Settings{Config: kit.Config{PublicURL: "http://" + ln.Addr().String(), CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}}}
+	s := kit.Settings{Config: kit.Config{PublicURL: "http://" + ln.Addr().String(), CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}, Dataset: testDataset(t)}}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- kit.Run(ctx, ln, s) }()

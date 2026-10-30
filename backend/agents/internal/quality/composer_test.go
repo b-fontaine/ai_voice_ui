@@ -217,6 +217,12 @@ func TestQualityScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"la qualité sur iOS", false},
 		{"la qualité sur ios", false},
 		{"radios et studios", true},
+		{"montre les sessions sans crash sous 99,5 %", true},
+		{"montre les sessions sans crash sous 99,5 pt", true},
+		{"3.3", false},
+		{"3,4", true},
+		{"3.5", false},
+		{"version 10.2", true},
 	}
 	for _, tc := range cases {
 		c := quality.NewComposer(testCatalog)

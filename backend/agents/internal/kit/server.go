@@ -26,12 +26,14 @@ const (
 	a2uiExtensionURI = "https://a2ui.org/a2a-extension/a2ui/v0.9"
 )
 
-// Config configure le serveur. Profile (chargé par LoadProfile) et Composer sont obligatoires.
+// Config configure le serveur. Profile (chargé par LoadProfile), Composer et Dataset sont obligatoires.
 type Config struct {
 	PublicURL string
 	CatalogID string
 	Profile   Profile
 	Composer  Composer
+	// Dataset est le jeu de données fourni au composeur (rempli par Main) ; vide, il est refusé.
+	Dataset dataset.Dataset
 }
 
 // NewServer construit le handler HTTP de l'agent.
@@ -43,9 +45,8 @@ func NewServer(cfg Config) (http.Handler, error) {
 	if cfg.CatalogID == "" {
 		return nil, errors.New("identifiant de catalogue A2UI vide")
 	}
-	ds, err := dataset.Load()
-	if err != nil {
-		return nil, err
+	if len(cfg.Dataset.Rows) == 0 {
+		return nil, errors.New("jeu de données absent")
 	}
 	if cfg.Composer == nil {
 		return nil, errors.New("composeur absent")
@@ -54,7 +55,7 @@ func NewServer(cfg Config) (http.Handler, error) {
 		return nil, fmt.Errorf("profil non chargé ou invalide : %w", err)
 	}
 	card := newCard(cfg.Profile, cfg.PublicURL, cfg.CatalogID)
-	rpc := a2asrv.NewJSONRPCHandler(a2asrv.NewHandler(newExecutor(cfg.Profile, cfg.Composer, ds, slog.Default())))
+	rpc := a2asrv.NewJSONRPCHandler(a2asrv.NewHandler(newExecutor(cfg.Profile, cfg.Composer, cfg.Dataset, slog.Default())))
 
 	mux := http.NewServeMux()
 	mux.Handle("GET "+a2asrv.WellKnownAgentCardPath, a2asrv.NewStaticAgentCardHandler(card))

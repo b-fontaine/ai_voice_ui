@@ -4,6 +4,7 @@
   "riskMarginPt": 0.1,
   "reviewNegativeMaxPct": 25,
   "reviewRiskMarginPt": 2,
+  "decisionStatus": "En attente de décision",
   "rows": [
     {"day": "J1", "platform": "iOS", "version": "3.4", "sessions": 9800, "crashes": 22},
     {"day": "J1", "platform": "Android", "version": "3.4", "sessions": 12000, "crashes": 36},

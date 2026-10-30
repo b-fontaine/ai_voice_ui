@@ -3,13 +3,10 @@ package delivery
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
-
-const targetVersion = "3.4"
 
 // Composer répond par la surface « Checklist go/no-go » de l'acte 1 (`checklist`,
 // ReleaseChecklist) pour la version 3.4. Il est sans état, donc sûr pour un usage
@@ -33,10 +30,10 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, targetVersion) {
+	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
-	cl, err := ds.Checklist(targetVersion)
+	cl, err := ds.Checklist(dataset.ScenarioVersion)
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -61,7 +58,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 		"decisionStatus": cl.DecisionStatus,
 	}
 
-	msgs := c.surface(nil, req, "checklist", "ReleaseChecklist", "/checklist", value)
+	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "checklist", "ReleaseChecklist", "/checklist", value)
 	return kit.Composition{Messages: msgs, Summary: summary(cl)}, nil
 }
 
@@ -97,25 +94,4 @@ func summary(cl dataset.Checklist) string {
 			cl.Criteria[0].Value, cl.Criteria[1].Value, cl.Criteria[2].LevelLabel, cl.Criteria[2].Value)
 	}
 	return fmt.Sprintf("Recommandation %s : %s, %s%s.", cl.Recommendation.Label, riskText, blockingText, figures)
-}
-
-// surface ajoute les messages d'une surface : createSurface seulement si elle n'est
-// pas déjà active chez le client.
-func (c *Composer) surface(msgs []map[string]any, req kit.Request, id, component, path string, value map[string]any) []map[string]any {
-	if !slices.Contains(req.ActiveSurfaces, id) {
-		msgs = append(msgs, map[string]any{"version": "v0.9", "createSurface": map[string]any{
-			"surfaceId": id, "catalogId": c.catalogID, "sendDataModel": false,
-		}})
-	}
-	return append(msgs,
-		map[string]any{"version": "v0.9", "updateComponents": map[string]any{
-			"surfaceId": id,
-			"components": []any{
-				map[string]any{"id": "root", "component": component, "data": map[string]any{"path": path}},
-			},
-		}},
-		map[string]any{"version": "v0.9", "updateDataModel": map[string]any{
-			"surfaceId": id, "path": path, "value": value,
-		}},
-	)
 }

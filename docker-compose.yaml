@@ -10,6 +10,21 @@
 # une question ouverte du porteur (Q-44).
 x-a2ui-catalog: &a2ui_catalog ${A2UI_CATALOG_ID:-https://genesis-canvas.example/a2ui/catalogs/genesis/v1}
 
+# Durcissement et santé communs aux agents A2A (R7) : réseau interne seul, aucun port publié,
+# aucun secret, système de fichiers en lecture seule. `build` et `environment` restent par service.
+x-agent: &agent
+  networks: [agents]
+  healthcheck:
+    test: ["CMD", "/agent", "healthcheck"]
+    interval: 10s
+    timeout: 5s
+    retries: 3
+  restart: "no"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
 services:
   orchestrator:
     build:
@@ -83,17 +98,7 @@ services:
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-quality:8090
       A2UI_CATALOG_ID: *a2ui_catalog
-    networks: [agents]
-    healthcheck:
-      test: ["CMD", "/agent", "healthcheck"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: "no"
-    read_only: true
-    cap_drop: [ALL]
-    security_opt:
-      - no-new-privileges:true
+    <<: *agent
 
   agent-voice:
     build:
@@ -106,17 +111,7 @@ services:
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-voice:8091
       A2UI_CATALOG_ID: *a2ui_catalog
-    networks: [agents]
-    healthcheck:
-      test: ["CMD", "/agent", "healthcheck"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: "no"
-    read_only: true
-    cap_drop: [ALL]
-    security_opt:
-      - no-new-privileges:true
+    <<: *agent
 
   agent-delivery:
     build:
@@ -129,17 +124,7 @@ services:
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-delivery:8092
       A2UI_CATALOG_ID: *a2ui_catalog
-    networks: [agents]
-    healthcheck:
-      test: ["CMD", "/agent", "healthcheck"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: "no"
-    read_only: true
-    cap_drop: [ALL]
-    security_opt:
-      - no-new-privileges:true
+    <<: *agent
 
 networks:
   agents:

@@ -362,3 +362,33 @@ func TestFormatPtUsesMinusSign(t *testing.T) {
 		t.Errorf("FormatMargin conservé : %q", got)
 	}
 }
+
+// TestDecisionStatusComesFromDataset : le libellé du statut de décision (Q-35,
+// hypothèse non confirmée) est une donnée du jeu, pas une constante de code.
+func TestDecisionStatusComesFromDataset(t *testing.T) {
+	ds := dataset.Dataset{
+		App: "x", CrashFreeThresholdPct: 99.5, RiskMarginPt: 0.1,
+		ReviewNegativeMaxPct: 25, ReviewRiskMarginPt: 2,
+		DecisionStatus: "Autre libellé",
+		Rows:           []dataset.Row{{Day: "J1", Platform: "iOS", Version: "3.4", Sessions: 1000000, Crashes: 1}},
+		ReviewRows:     []dataset.ReviewRow{{Platform: "iOS", Version: "3.4", Stars: [5]int{100, 0, 0, 0, 900}}},
+		Changelog:      []dataset.ChangelogEntry{{Area: "a", Kind: "feat", PRs: 1}},
+	}
+	cl, err := ds.Checklist("3.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cl.DecisionStatus != "Autre libellé" {
+		t.Errorf("DecisionStatus = %q, attendu le libellé du jeu", cl.DecisionStatus)
+	}
+	loaded := mustLoad(t)
+	if loaded.DecisionStatus != "En attente de décision" {
+		t.Errorf("jeu embarqué : DecisionStatus = %q", loaded.DecisionStatus)
+	}
+}
+
+func TestScenarioVersion(t *testing.T) {
+	if dataset.ScenarioVersion != "3.4" {
+		t.Errorf("ScenarioVersion = %q, attendu 3.4", dataset.ScenarioVersion)
+	}
+}

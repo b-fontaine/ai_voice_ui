@@ -36,13 +36,6 @@ func RecommendationLabel(l Level) string {
 	}
 }
 
-// DecisionStatusPending est le statut global de la décision.
-//
-// ⚠️ Hypothèse non confirmée (fiche dataset.md, « Différences avec l'illustration
-// et points ouverts » ; Q-35) : le libellé « En attente de décision » est en
-// attente de confirmation par le porteur.
-const DecisionStatusPending = "En attente de décision"
-
 // ClassifyMargin classe un critère d'après sa marge non arrondie par rapport au
 // seuil : bloquant si marge < 0, à risque si 0 ≤ marge < riskBelow, validé sinon.
 // Fonction pure : les bords (marge = riskBelow) relèvent de « validé ».
@@ -124,6 +117,6 @@ func (d Dataset) Checklist(version string) (Checklist, error) {
 		Version:        version,
 		Criteria:       criteria,
 		Recommendation: Recommendation{Level: reco, Label: RecommendationLabel(reco)},
-		DecisionStatus: DecisionStatusPending,
+		DecisionStatus: d.DecisionStatus,
 	}, nil
 }

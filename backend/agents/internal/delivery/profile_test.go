@@ -19,10 +19,13 @@ func TestDeliveryProfile(t *testing.T) {
 	if p.Name != "Livraison" || p.ListenPort != 8092 || p.Skill.ID != "delivery-checklist" {
 		t.Errorf("profil %+v", p)
 	}
-	for _, tag := range []string{"checklist", "décision", "livraison", "no-go", "release", "version", "prête", "valider", "3.4"} {
+	for _, tag := range []string{"checklist", "décision", "livraison", "release", "version", "prête", "valider", "3.4"} {
 		if !slices.Contains(p.Skill.Tags, tag) {
 			t.Errorf("le tag %q manque : %v", tag, p.Skill.Tags)
 		}
+	}
+	if slices.Contains(p.Skill.Tags, "no-go") {
+		t.Errorf("le tag %q n'est jamais demandé par un utilisateur : à retirer", "no-go")
 	}
 	for _, tag := range p.Skill.Tags {
 		if tag != strings.ToLower(tag) || strings.ContainsAny(tag, " \t") {

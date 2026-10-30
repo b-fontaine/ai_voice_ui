@@ -3,13 +3,10 @@ package quality
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
-
-const targetVersion = "3.4"
 
 // Composer répond par les deux surfaces de l'acte 1 : l'indicateur « Sessions sans
 // crash » (`kpi`, KeyIndicator) et la courbe du taux de crash (`trend`, TrendChart),
@@ -36,14 +33,14 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, targetVersion) {
+	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
-	kpi, err := ds.CrashFree(targetVersion)
+	kpi, err := ds.CrashFree(dataset.ScenarioVersion)
 	if err != nil {
 		return kit.Composition{}, err
 	}
-	trendPt, err := ds.Trend(targetVersion, "")
+	trendPt, err := ds.Trend(dataset.ScenarioVersion, "")
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -60,7 +57,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	series := make([]any, 0, len(platforms))
 	crossing := ""
 	for _, p := range platforms {
-		rates, err := ds.DailyCrashRates(targetVersion, p)
+		rates, err := ds.DailyCrashRates(dataset.ScenarioVersion, p)
 		if err != nil {
 			return kit.Composition{}, err
 		}
@@ -86,8 +83,8 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	}
 
 	var msgs []map[string]any
-	msgs = c.surface(msgs, req, "kpi", "KeyIndicator", "/kpi", kpiValue)
-	msgs = c.surface(msgs, req, "trend", "TrendChart", "/trend", trendValue)
+	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "kpi", "KeyIndicator", "/kpi", kpiValue)...)
+	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "trend", "TrendChart", "/trend", trendValue)...)
 
 	summary := fmt.Sprintf("%s de sessions sans crash sur 7 jours (seuil \u2265 %s, %s, marge %s)",
 		dataset.FormatPct(kpi.CrashFreePct, 2), dataset.FormatPct(kpi.ThresholdPct, 2), kpi.Status, dataset.FormatMargin(kpi.MarginPt))
@@ -95,27 +92,6 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 		summary += " ; " + crossing
 	}
 	return kit.Composition{Messages: msgs, Summary: summary + "."}, nil
-}
-
-// surface ajoute les messages d'une surface : createSurface seulement si elle n'est
-// pas déjà active chez le client.
-func (c *Composer) surface(msgs []map[string]any, req kit.Request, id, component, path string, value map[string]any) []map[string]any {
-	if !slices.Contains(req.ActiveSurfaces, id) {
-		msgs = append(msgs, map[string]any{"version": "v0.9", "createSurface": map[string]any{
-			"surfaceId": id, "catalogId": c.catalogID, "sendDataModel": false,
-		}})
-	}
-	return append(msgs,
-		map[string]any{"version": "v0.9", "updateComponents": map[string]any{
-			"surfaceId": id,
-			"components": []any{
-				map[string]any{"id": "root", "component": component, "data": map[string]any{"path": path}},
-			},
-		}},
-		map[string]any{"version": "v0.9", "updateDataModel": map[string]any{
-			"surfaceId": id, "path": path, "value": value,
-		}},
-	)
 }
 
 // statusLabel met la première lettre du libellé en capitale : « À risque ».

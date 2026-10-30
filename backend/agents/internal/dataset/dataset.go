@@ -17,6 +17,10 @@ import (
 //go:embed dataset.json
 var raw []byte
 
+// ScenarioVersion est la version de l'application fictive que raconte la démo
+// (product/functional/dataset.md) : les agents Genesis ne traitent que celle-ci.
+const ScenarioVersion = "3.4"
+
 // Libellés français d'un statut de critère (fiche, § Règles de calcul et seuils).
 const (
 	StatusValidated = "validé"
@@ -43,6 +47,13 @@ type Dataset struct {
 	ReviewNegativeMaxPct float64 `json:"reviewNegativeMaxPct"`
 	ReviewRiskMarginPt   float64 `json:"reviewRiskMarginPt"`
 
+	// DecisionStatus est le statut global de la décision affiché par la checklist.
+	//
+	// ⚠️ Hypothèse non confirmée (fiche dataset.md, « Différences avec l'illustration
+	// et points ouverts » ; Q-35) : le libellé « En attente de décision » attend la
+	// confirmation du porteur. Trancher Q-35 ne touche que cette donnée (dataset.json).
+	DecisionStatus string `json:"decisionStatus"`
+
 	Rows       []Row            `json:"rows"`
 	ReviewRows []ReviewRow      `json:"reviews"`
 	Excerpts   []Excerpt        `json:"excerpts"`
@@ -57,6 +68,9 @@ func Load() (Dataset, error) {
 	}
 	if len(d.Rows) == 0 || len(d.ReviewRows) == 0 || len(d.Changelog) == 0 {
 		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (sessions, avis ou changelog manquant)")
+	}
+	if strings.TrimSpace(d.DecisionStatus) == "" {
+		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (decisionStatus vide)")
 	}
 	return d, nil
 }
