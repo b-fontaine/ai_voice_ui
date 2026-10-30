@@ -403,7 +403,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 			if err == nil {
 				err = errProtocol
 			}
-			p.fail(ctx, ts, err)
+			p.failWithReason(ctx, ts, err, u.ScopeReason)
 			return
 		default:
 			p.fail(ctx, ts, errProtocol)

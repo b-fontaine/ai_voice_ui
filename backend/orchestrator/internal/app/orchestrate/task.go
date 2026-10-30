@@ -117,6 +117,12 @@ func (p *Pipeline) complete(ts *taskState, summary string, intent *port.Focus) b
 
 // fail termine la tâche en échec : compensation, `failed`, sans erreur brute.
 func (p *Pipeline) fail(ctx context.Context, ts *taskState, err error) {
+	p.failWithReason(ctx, ts, err, "")
+}
+
+// failWithReason est fail avec le motif de refus de l'agent (ensemble fermé). Le motif
+// n'est journalisé qu'en slog (clé scope_reason) : jamais dans le détail d'agent.activity.
+func (p *Pipeline) failWithReason(ctx context.Context, ts *taskState, err error, scopeReason string) {
 	detail := detailFor(ctx, err)
 	p.mu.Lock()
 	if !ts.done {
@@ -124,7 +130,11 @@ func (p *Pipeline) fail(ctx context.Context, ts *taskState, err error) {
 	}
 	p.failLocked(ts, detail)
 	p.mu.Unlock()
-	p.log.Warn("tâche d'agent en échec", "agent", ts.agent, "task", ts.taskID, "detail", detail, "err", err)
+	attrs := []any{"agent", ts.agent, "task", ts.taskID, "detail", detail, "err", err}
+	if scopeReason != "" {
+		attrs = append(attrs, "scope_reason", scopeReason)
+	}
+	p.log.Warn("tâche d'agent en échec", attrs...)
 }
 
 // failInflight termine en échec toutes les tâches encore en vol, quelle que

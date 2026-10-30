@@ -33,6 +33,10 @@ const (
 	// l'agent renvoie l'intention résolue : {"platform", "compareTo"}.
 	IntentKey = "genesis/intent"
 
+	// ScopeReasonKey est la clé de metadata du message de l'état rejected par laquelle
+	// l'agent renvoie le motif du refus (ensemble fermé de ScopeError, jamais de texte libre).
+	ScopeReasonKey = "genesis/scopeReason"
+
 	// actionTagPrefix préfixe, dans les tags du profil, les actions qu'un agent accepte.
 	actionTagPrefix = "action:"
 
@@ -96,8 +100,9 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			return
 		case errors.Is(err, ErrOutOfScope):
 			// Seuls le motif (ensemble fermé) et la tâche sont journalisés : jamais la demande.
-			e.log.Info("demande refusée", "task", string(ec.TaskID), "reason", scopeReason(err))
-			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
+			reason := scopeReason(err)
+			e.log.Info("demande refusée", "task", string(ec.TaskID), "reason", reason)
+			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, rejectedMessage(e.profile.Texts.Rejected, err)), nil)
 			return
 		case err != nil:
 			e.log.Error("composition en échec", "task", string(ec.TaskID), "error", err)
@@ -131,6 +136,17 @@ func completedMessage(in *Intent) *a2a.Message {
 	m := a2a.NewMessage(a2a.MessageRoleAgent)
 	m.Metadata = map[string]any{IntentKey: map[string]any{"platform": in.Platform, "compareTo": in.CompareTo}}
 	return m
+}
+
+// rejectedMessage est le message de l'état rejected : le texte du profil et, si l'erreur
+// est une ScopeError, son motif en metadata.
+func rejectedMessage(text string, err error) *a2a.Message {
+	msg := agentText(text)
+	var se *ScopeError
+	if msg != nil && errors.As(err, &se) && se.Reason != "" {
+		msg.Metadata = map[string]any{ScopeReasonKey: se.Reason}
+	}
+	return msg
 }
 
 // scopeReason donne le motif d'un refus hors périmètre, ou "unspecified" sans ScopeError.

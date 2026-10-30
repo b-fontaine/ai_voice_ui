@@ -381,3 +381,92 @@ func TestConfigFromEnv_RequestWindowInvalid(t *testing.T) {
 		}
 	}
 }
+
+// Mots d'arrêt (spec 011, T13/T19, plan A5) : VOICE_STOP_* bornés.
+
+func TestConfigFromEnv_VoiceStopDefaults(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.VoiceStopWords) != 0 {
+		t.Errorf("liste par défaut = %q, attendu vide (la liste vient de l'environnement)", cfg.VoiceStopWords)
+	}
+	if cfg.VoiceStopUtteranceGap != 1500*time.Millisecond || cfg.VoiceStopMaxWords != 4 ||
+		cfg.VoiceStopSettle != 400*time.Millisecond || cfg.VoiceStopDebounce != 2*time.Second {
+		t.Fatalf("défauts = gap %v, max %d, settle %v, debounce %v",
+			cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce)
+	}
+}
+
+func TestConfigFromEnv_VoiceStopValid(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_STOP_WORDS"] = " stop, tais-toi ,Annule "
+	env["VOICE_STOP_UTTERANCE_GAP"] = "3s"
+	env["VOICE_STOP_MAX_WORDS"] = "32"
+	env["VOICE_STOP_SETTLE"] = "0s"
+	env["VOICE_STOP_DEBOUNCE"] = "10s"
+	cfg, err := load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(cfg.VoiceStopWords, []string{"stop", "tais-toi", "Annule"}) {
+		t.Errorf("mots = %q", cfg.VoiceStopWords)
+	}
+	if cfg.VoiceStopUtteranceGap != 3*time.Second || cfg.VoiceStopMaxWords != 32 ||
+		cfg.VoiceStopSettle != 0 || cfg.VoiceStopDebounce != 10*time.Second {
+		t.Errorf("valeurs = %v %d %v %v", cfg.VoiceStopUtteranceGap, cfg.VoiceStopMaxWords, cfg.VoiceStopSettle, cfg.VoiceStopDebounce)
+	}
+}
+
+func TestConfigFromEnv_VoiceStopWordsBounds(t *testing.T) {
+	sixteen := strings.TrimSuffix(strings.Repeat("mot,", 16), ",")
+	if _, err := load(withEnv("VOICE_STOP_WORDS", sixteen)); err != nil {
+		t.Errorf("16 mots refusés : %v", err)
+	}
+	if _, err := load(withEnv("VOICE_STOP_WORDS", strings.Repeat("é", 32))); err != nil {
+		t.Errorf("mot de 32 runes refusé : %v", err)
+	}
+	for name, value := range map[string]string{
+		"17 mots":         sixteen + ",de-trop",
+		"mot de 33 runes": strings.Repeat("é", 33),
+		"mot vide":        "stop,,annule",
+		"mot espace":      "stop, ,annule",
+		"virgule finale":  "stop,",
+		"mot sans lettre": "stop,...",
+	} {
+		if _, err := load(withEnv("VOICE_STOP_WORDS", value)); err == nil || !strings.Contains(err.Error(), "VOICE_STOP_WORDS") {
+			t.Errorf("%s : doit être refusé en nommant la variable : %v", name, err)
+		}
+	}
+}
+
+func TestConfigFromEnv_VoiceStopInvalid(t *testing.T) {
+	cases := []struct{ name, value string }{
+		{"VOICE_STOP_UTTERANCE_GAP", "abc"},
+		{"VOICE_STOP_UTTERANCE_GAP", "1500"},
+		{"VOICE_STOP_UTTERANCE_GAP", "0s"},
+		{"VOICE_STOP_UTTERANCE_GAP", "10s1ms"},
+		{"VOICE_STOP_MAX_WORDS", "0"},
+		{"VOICE_STOP_MAX_WORDS", "33"},
+		{"VOICE_STOP_MAX_WORDS", "-1"},
+		{"VOICE_STOP_MAX_WORDS", "trois"},
+		{"VOICE_STOP_SETTLE", "-1ms"},
+		{"VOICE_STOP_SETTLE", "2s1ms"},
+		{"VOICE_STOP_SETTLE", "400"},
+		{"VOICE_STOP_DEBOUNCE", "-1ms"},
+		{"VOICE_STOP_DEBOUNCE", "10s1ms"},
+		{"VOICE_STOP_DEBOUNCE", "abc"},
+	}
+	for _, c := range cases {
+		if _, err := load(withEnv(c.name, c.value)); err == nil || !strings.Contains(err.Error(), c.name) {
+			t.Errorf("%s=%q doit être refusée en nommant la variable : %v", c.name, c.value, err)
+		}
+	}
+}
+
+func withEnv(name, value string) map[string]string {
+	env := fullEnv()
+	env[name] = value
+	return env
+}

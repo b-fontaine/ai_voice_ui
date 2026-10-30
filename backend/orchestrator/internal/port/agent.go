@@ -94,6 +94,9 @@ type AgentUpdate struct {
 	// Intent n'est renseigné que sur UpdateCompleted : l'intention résolue par l'agent,
 	// déjà validée par l'adaptateur. nil : l'agent n'en a pas renvoyé (ou invalide).
 	Intent *Focus
+	// ScopeReason n'est renseigné que sur UpdateFailed d'un refus (AgentRejected) : le
+	// motif, ensemble fermé validé par l'adaptateur. Réservé au journal technique.
+	ScopeReason string
 }
 
 // AgentErrorKind est la nature, fermée, d'un échec d'agent distant.

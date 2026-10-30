@@ -2,6 +2,7 @@ package a2aclient_test
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 	"sync"
@@ -83,6 +84,53 @@ func TestCompletedIntentIsReadAndValidated(t *testing.T) {
 			got := completedWithIntent(t, tc.meta).Intent
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("Intent = %+v, attendu %+v", got, tc.want)
+			}
+		})
+	}
+}
+
+// Motif de refus (T12) : lu dans les metadata de l'état rejected, validé contre la
+// liste blanche, placé dans AgentUpdate.ScopeReason de la mise à jour d'échec.
+func TestRejectedScopeReasonIsReadAndValidated(t *testing.T) {
+	cases := []struct {
+		name string
+		meta map[string]any
+		want string
+	}{
+		{"sans metadata", nil, ""},
+		{"version", map[string]any{"genesis/scopeReason": "version"}, "version"},
+		{"deux plateformes", map[string]any{"genesis/scopeReason": "two_platforms"}, "two_platforms"},
+		{"comparaison sans plateforme", map[string]any{"genesis/scopeReason": "compare_without_platform"}, "compare_without_platform"},
+		{"comparaison indisponible", map[string]any{"genesis/scopeReason": "compare_unavailable"}, "compare_unavailable"},
+		{"motif hors liste", map[string]any{"genesis/scopeReason": "Android 3.4 demandé"}, ""},
+		{"motif mal typé", map[string]any{"genesis/scopeReason": 3}, ""},
+		{"motif trop long", map[string]any{"genesis/scopeReason": strings.Repeat("v", 5000)}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+				msg := a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewTextPart("refusée"))
+				msg.Metadata = tc.meta
+				emit(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, msg))
+			})
+			var failed *port.AgentUpdate
+			for u := range newAgent(t, s).Send(context.Background(), port.AgentRequest{Text: "q", ContextID: "c"}) {
+				if u.Kind == port.UpdateFailed {
+					failed = &u
+				}
+			}
+			if failed == nil {
+				t.Fatal("aucun UpdateFailed")
+			}
+			var ae *port.AgentError
+			if !errors.As(failed.Err, &ae) || ae.Kind != port.AgentRejected {
+				t.Fatalf("erreur %v, attendu AgentRejected", failed.Err)
+			}
+			if failed.ScopeReason != tc.want {
+				t.Fatalf("ScopeReason = %q, attendu %q", failed.ScopeReason, tc.want)
+			}
+			if tc.want != "" && strings.Contains(ae.Reason, tc.want) {
+				t.Errorf("le motif ne doit pas entrer dans l'erreur : %q", ae.Reason)
 			}
 		})
 	}

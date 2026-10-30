@@ -47,6 +47,13 @@ const FocusKey = "genesis/focus"
 // renvoie l'intention résolue : {"platform", "compareTo"}.
 const IntentKey = "genesis/intent"
 
+// ScopeReasonKey est la clé de metadata du message de l'état rejected qui porte le motif
+// du refus (ensemble fermé).
+const ScopeReasonKey = "genesis/scopeReason"
+
+// scopeReasons est la liste blanche des motifs de refus d'un agent.
+var scopeReasons = []string{"version", "two_platforms", "compare_without_platform", "compare_unavailable"}
+
 // Listes blanches de l'intention renvoyée par un agent (valeurs fermées, pdr-0071) :
 // les plateformes et la version de comparaison du jeu de données de la démo. Une
 // valeur hors liste fait écarter toute l'intention (le focus reste inchangé).
@@ -342,8 +349,10 @@ type stream struct {
 }
 
 // fail émet UpdateFailed (et l'erreur) ; renvoie false : l'itération s'arrête.
-func (s *stream) fail(err *port.AgentError) bool {
-	s.yield(port.AgentUpdate{Kind: port.UpdateFailed, TaskID: string(s.taskID), Err: err}, err)
+func (s *stream) fail(err *port.AgentError) bool { return s.failWith(err, "") }
+
+func (s *stream) failWith(err *port.AgentError, scopeReason string) bool {
+	s.yield(port.AgentUpdate{Kind: port.UpdateFailed, TaskID: string(s.taskID), Err: err, ScopeReason: scopeReason}, err)
 	return false
 }
 
@@ -509,7 +518,7 @@ func (s *stream) status(st a2a.TaskState, msg *a2a.Message) bool {
 		return s.fail(&port.AgentError{Kind: port.AgentFailed, Reason: "tâche échouée"})
 	case a2a.TaskStateRejected:
 		s.done = true
-		return s.fail(&port.AgentError{Kind: port.AgentRejected, Reason: "demande refusée"})
+		return s.failWith(&port.AgentError{Kind: port.AgentRejected, Reason: "demande refusée"}, scopeReasonFrom(msg))
 	case a2a.TaskStateCanceled:
 		s.done = true
 		return s.fail(&port.AgentError{Kind: port.AgentCanceled, Reason: "tâche annulée"})
@@ -551,4 +560,17 @@ func intentFrom(msg *a2a.Message) *port.Focus {
 		return nil
 	}
 	return &port.Focus{Platform: platform, CompareTo: compareTo}
+}
+
+// scopeReasonFrom lit le motif de refus dans les metadata du message de l'état rejected ;
+// "" s'il est absent, mal typé ou hors de la liste blanche.
+func scopeReasonFrom(msg *a2a.Message) string {
+	if msg == nil {
+		return ""
+	}
+	r, _ := msg.Metadata[ScopeReasonKey].(string)
+	if !slices.Contains(scopeReasons, r) {
+		return ""
+	}
+	return r
 }
