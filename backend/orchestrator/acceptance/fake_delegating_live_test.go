@@ -36,7 +36,8 @@ type fakeDelegatingLive struct {
 	thinking    []appended
 	commentSeen chan struct{} // signalé à chaque nouveau commentaire
 	script      []port.LiveEvent
-	afterClose  []appended // commentaires reçus après Close du sideband
+	afterClose  []appended              // commentaires reçus après Close du sideband
+	last        *fakeDelegatingSideband // dernier sideband ouvert (pour Emit)
 }
 
 // SetScript remplace la séquence d'événements émise par le sideband une fois
@@ -66,8 +67,20 @@ func (f *fakeDelegatingLive) Sideband(_ context.Context, _ string) (port.Sideban
 		events: make(chan port.LiveEvent, 64),
 		closed: make(chan struct{}),
 	}
+	f.mu.Lock()
+	f.last = sb
+	f.mu.Unlock()
 	go sb.run()
 	return sb, nil
+}
+
+// Emit envoie un événement Live supplémentaire par le dernier sideband ouvert
+// (par exemple une seconde délégation, après la première). À appeler après Release.
+func (f *fakeDelegatingLive) Emit(ev port.LiveEvent) {
+	f.mu.Lock()
+	sb := f.last
+	f.mu.Unlock()
+	sb.events <- ev
 }
 
 // Commentaries renvoie, dans l'ordre, les commentaires dits reçus.
