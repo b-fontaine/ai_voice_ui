@@ -120,8 +120,15 @@ func freeAddr(t *testing.T) string {
 // Voix du client, Livraison (valeur de AGENTS).
 type genesisAgentURLs [3]string
 
-// List renvoie les trois URL, pour startDelegatingAppWith.
-func (u genesisAgentURLs) List() []string { return u[:] }
+// List renvoie les trois entrées `Nom=URL` de AGENTS (A9) : le nom d'affichage est
+// fourni par la configuration, même pour un agent injoignable (G3).
+func (u genesisAgentURLs) List() []string {
+	out := make([]string, len(u))
+	for i, url := range u {
+		out[i] = genesisBinaries[i].Name + "=" + url
+	}
+	return out
+}
 
 // startGenesisAgents compile (une fois) puis lance les vrais binaires d'agent.
 // Les agents dont le nom est dans skip ne sont NI compilés NI lancés : leur URL de

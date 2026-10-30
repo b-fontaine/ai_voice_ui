@@ -72,7 +72,7 @@ func TestNew_DelegationWithoutAgentSaysNoAgent(t *testing.T) {
 
 func TestNew_RejectsAgentsWithoutA2UISettings(t *testing.T) {
 	cfg := testConfig(t)
-	cfg.Agents = []string{"http://agent:8090/card"} // sans catalogue : incohérent
+	cfg.Agents = []AgentSpec{{CardURL: "http://agent:8090/card"}} // sans catalogue : incohérent
 	if _, err := New(cfg, Deps{Live: newStubLive(), JournalDir: t.TempDir()}); err == nil {
 		t.Fatal("agents sans catalogue A2UI : New doit échouer")
 	}

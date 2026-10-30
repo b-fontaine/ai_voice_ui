@@ -68,7 +68,7 @@ func TestJournalSequenceDelegationWorkingA2UI(t *testing.T) {
 	rsb := &recordingSideband{stubSideband: stubSideband{events: make(chan port.LiveEvent, 8)}}
 	live := &recordingLive{rsb: rsb}
 	cfg := testConfig(t)
-	cfg.Agents = []string{startSeqAgent(t)}
+	cfg.Agents = []AgentSpec{{CardURL: startSeqAgent(t)}}
 	cfg.A2UICatalogID = seqCatalog
 	cfg.A2UIComponents = []string{"Column", "Text"}
 	cfg.AgentTimeout = 5 * time.Second

@@ -28,7 +28,7 @@ func TestConfig_AgentsParsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg.Agents) != 2 || cfg.Agents[0] != "http://a:1/card" || cfg.Agents[1] != "https://b:2/card" {
+	if len(cfg.Agents) != 2 || cfg.Agents[0] != (AgentSpec{CardURL: "http://a:1/card"}) || cfg.Agents[1] != (AgentSpec{CardURL: "https://b:2/card"}) {
 		t.Fatalf("Agents = %q", cfg.Agents)
 	}
 	if cfg.A2UICatalogID != "https://example.test/catalog.json" {
@@ -145,6 +145,9 @@ func TestConfig_EmbeddedPhrasesByDefault(t *testing.T) {
 	if err := p.Validate(); err != nil {
 		t.Fatalf("phrases embarquées invalides : %v", err)
 	}
+	if p.PartialFailure == "" || strings.ContainsAny(p.PartialFailure, "0123456789") {
+		t.Fatalf("partial_failure embarquée absente ou chiffrée : %q", p.PartialFailure)
+	}
 	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog} {
 		if strings.ContainsAny(v, "0123456789%") {
 			t.Fatalf("%s ne doit contenir ni chiffre ni « %% » : %q", name, v)
@@ -161,7 +164,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -171,7 +174,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := cfg.Phrases
-	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.ResultTemplate != "r %s" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -179,12 +182,12 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
-		"json cassé":       `{"generic": "` + secret,
-		"champ inconnu":    `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
-		"deux %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
+		"json cassé":       `{"partial_failure":"pf %s","generic": "` + secret,
+		"champ inconnu":    `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
+		"deux %s":          `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -209,6 +212,7 @@ func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
 		"failure_rejected": `"failure_rejected":"fr",`,
 		"no_summary":       `"no_summary":"ns",`,
 		"out_of_catalog":   `"out_of_catalog":"oc",`,
+		"partial_failure":  `"partial_failure":"pf %s",`,
 	} {
 		env := fullEnv()
 		env["VOICE_PHRASES_FILE"] = writePhrases(t, strings.Replace(customPhrases, absent, "", 1))
@@ -233,5 +237,131 @@ func TestFinalCommentaryQuotesSummary(t *testing.T) {
 	got := fmt.Sprintf(cfg.Phrases.ResultTemplate, "RÉSUMÉ")
 	if !strings.Contains(got, "« RÉSUMÉ »") {
 		t.Fatalf("le résumé doit être encadré de « » : %q", got)
+	}
+}
+
+func TestAgentsEntryWithNameParsed(t *testing.T) {
+	env := orchEnv()
+	env["AGENTS"] = "Qualité=http://agent-quality:8090/.well-known/agent-card.json, Voix du client = http://agent-voice:8091/c ,https://x:3/card, Livraison=http://agent-delivery:8092/.well-known/agent-card.json"
+	cfg, err := load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []AgentSpec{
+		{Name: "Qualité", CardURL: "http://agent-quality:8090/.well-known/agent-card.json"},
+		{Name: "Voix du client", CardURL: "http://agent-voice:8091/c"},
+		{CardURL: "https://x:3/card"},
+		{Name: "Livraison", CardURL: "http://agent-delivery:8092/.well-known/agent-card.json"},
+	}
+	if len(cfg.Agents) != len(want) {
+		t.Fatalf("Agents = %+v", cfg.Agents)
+	}
+	for i := range want {
+		if cfg.Agents[i] != want[i] {
+			t.Fatalf("Agents[%d] = %+v, attendu %+v", i, cfg.Agents[i], want[i])
+		}
+	}
+}
+
+func TestAgentsEntryRejectsBadName(t *testing.T) {
+	for name, entry := range map[string]string{
+		"nom vide":      "=http://a:1/card",
+		"nom blanc":     "  =http://a:1/card",
+		"trop long":     strings.Repeat("N", 41) + "=http://a:1/card",
+		"caractère < >": "<b>=http://a:1/card",
+		"retour ligne":  "Liv\nraison=http://a:1/card",
+		"guillemet":     "Li\"v=http://a:1/card",
+		"point-virgule": "Li;v=http://a:1/card",
+		"URL invalide":  "Livraison=ftp://a/card",
+		"URL absente":   "Livraison=",
+	} {
+		env := orchEnv()
+		env["AGENTS"] = entry
+		_, err := load(env)
+		if err == nil || !strings.Contains(err.Error(), "AGENTS") {
+			t.Fatalf("%s : erreur nommant AGENTS attendue, obtenu %v", name, err)
+		}
+		for _, leak := range []string{"http://a:1/card", "Livraison", strings.Repeat("N", 41)} {
+			if strings.Contains(err.Error(), leak) {
+				t.Fatalf("%s : l'erreur %q affiche la valeur", name, err)
+			}
+		}
+	}
+	// 40 caractères exactement et les signes admis.
+	env := orchEnv()
+	env["AGENTS"] = strings.Repeat("N", 40) + "=http://a:1/card,L'équipe n2 v1.0_x-y=http://b:1/card"
+	if _, err := load(env); err != nil {
+		t.Fatalf("noms valides refusés : %v", err)
+	}
+}
+
+// Un « = » dans l'URL (paramètre de requête) n'est pas un séparateur de nom.
+func TestAgentsURLWithQueryNotMistakenForName(t *testing.T) {
+	for _, u := range []string{
+		"http://a:1/card?a=b",
+		"http://a:1/card?token=x&y=z",
+		"https://b/c?next=/x",
+		"http://a:1/card?a=b=c",
+	} {
+		env := orchEnv()
+		env["AGENTS"] = u
+		cfg, err := load(env)
+		if err != nil {
+			t.Fatalf("%q refusée : %v", u, err)
+		}
+		if len(cfg.Agents) != 1 || cfg.Agents[0] != (AgentSpec{CardURL: u}) {
+			t.Fatalf("%q : Agents = %+v, attendu l'URL sans nom", u, cfg.Agents)
+		}
+	}
+	// Nom + URL avec requête.
+	env := orchEnv()
+	env["AGENTS"] = "Livraison=http://a:1/card?a=b"
+	cfg, err := load(env)
+	if err != nil || len(cfg.Agents) != 1 || cfg.Agents[0] != (AgentSpec{Name: "Livraison", CardURL: "http://a:1/card?a=b"}) {
+		t.Fatalf("nom + requête : %+v, %v", cfg.Agents, err)
+	}
+}
+
+func TestConfig_PropertyListsParsed(t *testing.T) {
+	cfg, err := load(orchEnv())
+	if err != nil || len(cfg.A2UIAllowedProps) != 0 || len(cfg.A2UIBindingProps) != 0 {
+		t.Fatalf("par défaut : vides attendues, obtenu %v %v %v", cfg.A2UIAllowedProps, cfg.A2UIBindingProps, err)
+	}
+	env := orchEnv()
+	env["A2UI_ALLOWED_PROPS"] = "id, component,data"
+	env["A2UI_BINDING_PROPS"] = " data "
+	cfg, err = load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(cfg.A2UIAllowedProps, "|"); got != "id|component|data" {
+		t.Fatalf("A2UI_ALLOWED_PROPS = %q", got)
+	}
+	if got := strings.Join(cfg.A2UIBindingProps, "|"); got != "data" {
+		t.Fatalf("A2UI_BINDING_PROPS = %q", got)
+	}
+}
+
+func TestConfig_PropertyListsRejectBadNames(t *testing.T) {
+	for _, tc := range []struct{ name, allowed, binding string }{
+		{"A2UI_ALLOWED_PROPS", "id,1abc", ""},
+		{"A2UI_ALLOWED_PROPS", "id,da-ta", ""},
+		{"A2UI_ALLOWED_PROPS", "id,a b", ""},
+		{"A2UI_ALLOWED_PROPS", "id,données", ""},
+		{"A2UI_BINDING_PROPS", "id,data", "da.ta"},
+		{"A2UI_BINDING_PROPS", "id,data", "other"}, // hors de A2UI_ALLOWED_PROPS
+		{"A2UI_BINDING_PROPS", "", "data"},         // liaison sans liste blanche
+	} {
+		env := orchEnv()
+		env["A2UI_ALLOWED_PROPS"], env["A2UI_BINDING_PROPS"] = tc.allowed, tc.binding
+		_, err := load(env)
+		if err == nil || !strings.Contains(err.Error(), tc.name) {
+			t.Fatalf("%+v : erreur nommant %s attendue, obtenu %v", tc, tc.name, err)
+		}
+		for _, leak := range []string{"1abc", "da-ta", "données", "da.ta"} {
+			if strings.Contains(err.Error(), leak) {
+				t.Fatalf("%+v : l'erreur %q affiche la valeur", tc, err)
+			}
+		}
 	}
 }

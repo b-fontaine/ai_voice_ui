@@ -259,3 +259,30 @@ func TestRegistryForgetFrees(t *testing.T) {
 		t.Fatalf("tâches retenues = %d", n)
 	}
 }
+
+func TestActiveForListsOnlyOwnedSurfacesSorted(t *testing.T) {
+	r := newRegistry(t)
+	for _, c := range []struct{ owner, task, surface string }{
+		{"a", "t1", "trend"}, {"b", "t2", "reviews"}, {"a", "t1", "kpi"},
+	} {
+		if err := r.Apply(c.owner, c.task, create(c.surface)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := r.ActiveFor("a"); !reflect.DeepEqual(got, []string{"kpi", "trend"}) {
+		t.Fatalf("ActiveFor(a) = %v", got)
+	}
+	if got := r.ActiveFor("b"); !reflect.DeepEqual(got, []string{"reviews"}) {
+		t.Fatalf("ActiveFor(b) = %v", got)
+	}
+	if got := r.ActiveFor("inconnu"); len(got) != 0 {
+		t.Fatalf("ActiveFor(inconnu) = %v, attendu vide", got)
+	}
+	// Une surface supprimée n'est plus active.
+	if err := r.Apply("a", "t3", del("kpi")); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.ActiveFor("a"); !reflect.DeepEqual(got, []string{"trend"}) {
+		t.Fatalf("après deleteSurface : ActiveFor(a) = %v", got)
+	}
+}

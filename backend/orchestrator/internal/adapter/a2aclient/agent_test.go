@@ -761,3 +761,81 @@ func TestSendIgnoresForeignCard(t *testing.T) {
 		t.Fatalf("%d lectures de carte, attendu 1 (relecture par Send)", n)
 	}
 }
+
+// metadataSeen lance un envoi et rend les metadata du message reçu par le serveur.
+func metadataSeen(t *testing.T, surfaces []string) map[string]any {
+	t.Helper()
+	var mu sync.Mutex
+	var got map[string]any
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		mu.Lock()
+		got = ec.Message.Metadata
+		mu.Unlock()
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	for range a.Send(context.Background(), port.AgentRequest{Text: "q", ContextID: "c", ActiveSurfaces: surfaces}) {
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	return got
+}
+
+func TestActiveSurfacesSentInMetadata(t *testing.T) {
+	got := metadataSeen(t, []string{"kpi", "reviews"})
+	if want := []any{"kpi", "reviews"}; !reflect.DeepEqual(got["genesis/activeSurfaces"], want) {
+		t.Fatalf("metadata = %#v, attendu genesis/activeSurfaces = %v", got, want)
+	}
+
+	// Liste vide : la clé est présente avec une liste vide (« aucune surface »,
+	// et non « information absente »).
+	for _, none := range [][]string{nil, {}} {
+		got := metadataSeen(t, none)
+		list, ok := got["genesis/activeSurfaces"].([]any)
+		if !ok || len(list) != 0 {
+			t.Fatalf("sans surface : metadata = %#v, attendu une liste vide", got)
+		}
+	}
+}
+
+func TestConfiguredNameWinsOverCardName(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a, err := a2aclient.New(a2aclient.Options{CardURL: s.CardURL(), Name: "Livraison", Timeout: 3 * time.Second, Logger: quiet})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Name() != "Livraison" {
+		t.Fatalf("Name avant lecture de la carte = %q, attendu le nom configuré", a.Name())
+	}
+	card, err := a.Card(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Name() != "Livraison" || a.LastName() != "Qualité" {
+		t.Fatalf("Name = %q, LastName = %q : le nom configuré prime, la carte reste lisible", a.Name(), a.LastName())
+	}
+	var submitted *port.AgentUpdate
+	for u := range a.Send(context.Background(), port.AgentRequest{Text: "q", Card: &card}) {
+		if u.Kind == port.UpdateSubmitted {
+			submitted = &u
+		}
+	}
+	if submitted == nil || submitted.Name != "Livraison" {
+		t.Fatalf("UpdateSubmitted = %+v, attendu le nom configuré", submitted)
+	}
+}
+
+func TestConfiguredNameEmptyFallsBackToCard(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	if _, err := a.Card(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if a.Name() != "Qualité" {
+		t.Fatalf("Name = %q, attendu le nom de la carte", a.Name())
+	}
+}

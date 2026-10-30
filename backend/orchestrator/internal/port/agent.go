@@ -32,10 +32,16 @@ type AgentCard struct {
 //
 // Card est la carte déjà lue par Card() pour cette délégation (nil : Send lit la
 // carte lui-même). Une carte qui ne vient pas de l'adaptateur est ignorée.
+//
+// ActiveSurfaces liste les identifiants des surfaces actuellement ouvertes qui
+// appartiennent à cet agent (celles qu'il a créées), d'après le registre de
+// l'orchestrateur : l'agent s'en sert pour ne recréer aucune surface déjà
+// affichée. Liste vide : aucune surface.
 type AgentRequest struct {
-	Text      string
-	ContextID string
-	Card      *AgentCard
+	Text           string
+	ContextID      string
+	Card           *AgentCard
+	ActiveSurfaces []string
 }
 
 // AgentUpdateKind identifie la nature d'une AgentUpdate.

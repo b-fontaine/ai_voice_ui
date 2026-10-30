@@ -37,6 +37,7 @@ var pipePhrases = Phrases{
 	NoSummary:       "Le résultat est affiché.",
 	NoAgent:         "Aucun agent n'est disponible pour le moment.",
 	OutOfCatalog:    "Je ne peux pas afficher cela : je compose avec des indicateurs, des courbes, des avis et une checklist.",
+	PartialFailure:  "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
 	ResultTemplate:  "Voici ce que l'agent rapporte : %s",
 }
 
@@ -1026,8 +1027,9 @@ func TestSurfaceCapAcrossAgents(t *testing.T) {
 	if !failedBeta || !completedAlpha {
 		t.Fatalf("failedBeta=%v completedAlpha=%v : %q", failedBeta, completedAlpha, describeAll(e.sink.snapshot()))
 	}
-	// Un seul commentaire final : les agents réussis seulement.
-	if want := []string{pipePhrases.Generic, "Voici ce que l'agent rapporte : Résumé Alpha."}; !reflect.DeepEqual(e.texts(), want) {
+	// Un seul commentaire final : le résultat des agents réussis, puis l'échec de Beta (A6).
+	if want := []string{pipePhrases.Generic,
+		"Voici ce que l'agent rapporte : Résumé Alpha. Attention : Beta n'a pas pu répondre, je n'affiche donc pas cette partie."}; !reflect.DeepEqual(e.texts(), want) {
 		t.Fatalf("commentaires = %q", e.texts())
 	}
 }
@@ -1226,23 +1228,6 @@ func failingThenOKAgent(failFirst bool) *fakeAgent {
 		}
 	}
 	return agent
-}
-
-func TestContextRenewedAfterCompensation(t *testing.T) {
-	agent := failingThenOKAgent(true)
-	e := newEnv(t, agent)
-	e.p.Run(context.Background(), e.delegation(t))
-	e.p.Run(context.Background(), e.delegation(t))
-	reqs := agent.sent()
-	if len(reqs) != 2 {
-		t.Fatalf("%d requêtes", len(reqs))
-	}
-	if reqs[0].ContextID != testSession {
-		t.Fatalf("1re requête : ContextID = %q", reqs[0].ContextID)
-	}
-	if reqs[1].ContextID == reqs[0].ContextID || !strings.HasPrefix(reqs[1].ContextID, testSession+"#") {
-		t.Fatalf("2e requête : ContextID = %q, attendu un identifiant renouvelé", reqs[1].ContextID)
-	}
 }
 
 func TestContextStableWithoutCompensation(t *testing.T) {

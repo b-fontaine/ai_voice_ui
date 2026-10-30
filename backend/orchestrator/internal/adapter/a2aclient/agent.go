@@ -27,6 +27,11 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
+// ActiveSurfacesKey est la clé de metadata du message A2A qui porte les surfaces
+// actives de l'agent (valeur : []any de chaînes, jamais []string : les metadata
+// ne contiennent que map[string]any et []any).
+const ActiveSurfacesKey = "genesis/activeSurfaces"
+
 // cancelTimeout borne l'appel CancelTask, émis avec un contexte neuf.
 const cancelTimeout = time.Second
 
@@ -34,6 +39,9 @@ const cancelTimeout = time.Second
 type Options struct {
 	// CardURL est l'URL de la carte d'agent : http ou https uniquement.
 	CardURL string
+	// Name est le nom d'affichage configuré (facultatif) : il prime sur le nom de
+	// la carte et sert aussi quand la carte n'a jamais pu être lue.
+	Name string
 	// Timeout borne la lecture de la carte et l'établissement de la connexion ;
 	// il est obligatoire (> 0). Le délai global d'une tâche relève de l'appelant
 	// (via le contexte de Send).
@@ -48,6 +56,7 @@ type Options struct {
 // Agent implémente port.RemoteAgent.
 type Agent struct {
 	cardURL  *url.URL
+	name     string // nom d'affichage configuré ; vide : nom de la carte
 	timeout  time.Duration
 	client   *http.Client // flux de tâche : pas de délai global
 	resolver *agentcard.Resolver
@@ -88,6 +97,7 @@ func New(opts Options) (*Agent, error) {
 	hc.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	return &Agent{
 		cardURL:  u,
+		name:     opts.Name,
 		timeout:  opts.Timeout,
 		client:   &hc,
 		resolver: agentcard.NewResolver(&hc),
@@ -110,8 +120,11 @@ func (a *Agent) ID() string {
 	return u.String()
 }
 
-// Name renvoie LastName, sinon l'hôte de l'URL de la carte.
+// Name renvoie le nom configuré, sinon LastName, sinon l'hôte de l'URL de la carte.
 func (a *Agent) Name() string {
+	if a.name != "" {
+		return a.name
+	}
 	if n := a.LastName(); n != "" {
 		return n
 	}
@@ -265,6 +278,9 @@ func (s *stream) run(req port.AgentRequest) {
 		}
 	}
 	s.name, s.label = card.Name, cardLabel(card)
+	if s.a.name != "" {
+		s.name = s.a.name
+	}
 	cctx, cancel := context.WithTimeout(s.ctx, s.a.timeout)
 	client, err := sdk.NewFromCard(cctx, card, sdk.WithDefaultsDisabled(), sdk.WithJSONRPCTransport(s.a.client))
 	cancel()
@@ -285,6 +301,11 @@ func (s *stream) run(req port.AgentRequest) {
 
 	msg := a2a.NewMessage(a2a.MessageRoleUser, a2a.NewTextPart(req.Text))
 	msg.ContextID = req.ContextID
+	active := make([]any, 0, len(req.ActiveSurfaces))
+	for _, id := range req.ActiveSurfaces {
+		active = append(active, id)
+	}
+	msg.Metadata = map[string]any{ActiveSurfacesKey: active}
 	for ev, err := range client.SendStreamingMessage(s.ctx, &a2a.SendMessageRequest{Message: msg}) {
 		if err != nil {
 			s.a.log.Debug("a2aclient : erreur de flux", "err", err)

@@ -78,6 +78,10 @@ type Phrases struct {
 	// OutOfCatalog est dite quand aucun agent n'est retenu pour la demande :
 	// refus honnête, avec une alternative. Aucun chiffre.
 	OutOfCatalog string
+	// PartialFailure est ajoutée au commentaire de résultat quand au moins un
+	// agent a réussi et au moins un a échoué (hors refus). Un seul `%s` : les
+	// noms des agents en échec, nettoyés et joints par « , ». Aucun chiffre.
+	PartialFailure string
 	// ResultTemplate contient un seul `%s`, remplacé par le résumé de l'agent
 	// (donnée non fiable, nettoyée et bornée).
 	ResultTemplate string
@@ -95,7 +99,7 @@ func (p Phrases) Validate() error {
 	for name, v := range map[string]string{
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
 		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
-		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "ResultTemplate": p.ResultTemplate,
+		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "PartialFailure": p.PartialFailure, "ResultTemplate": p.ResultTemplate,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)
@@ -104,14 +108,36 @@ func (p Phrases) Validate() error {
 			return fmt.Errorf("orchestrate : phrase %s trop longue (%d runes, maximum %d)", name, n, MaxCommentaryRunes)
 		}
 	}
-	if strings.Count(p.ResultTemplate, "%s") != 1 ||
-		strings.Contains(strings.ReplaceAll(strings.ReplaceAll(p.ResultTemplate, "%%", ""), "%s", ""), "%") {
-		return errors.New("orchestrate : ResultTemplate doit contenir un seul %s et aucun autre verbe")
+	for name, v := range map[string]string{"ResultTemplate": p.ResultTemplate, "PartialFailure": p.PartialFailure} {
+		if strings.Count(v, "%s") != 1 ||
+			strings.Contains(strings.ReplaceAll(strings.ReplaceAll(v, "%%", ""), "%s", ""), "%") {
+			return fmt.Errorf("orchestrate : %s doit contenir un seul %%s et aucun autre verbe", name)
+		}
 	}
 	if n := utf8.RuneCountInString(p.ResultTemplate) - 2 + maxSummaryRunes; n > MaxCommentaryRunes {
 		return fmt.Errorf("orchestrate : ResultTemplate trop long (%d runes avec un résumé de %d, maximum %d)", n, maxSummaryRunes, MaxCommentaryRunes)
 	}
+	// Avec la phrase d'échec partiel, il doit rester de la place pour les résumés.
+	if p.summaryBudget(true) < minPartialSummaryRunes {
+		return fmt.Errorf("orchestrate : ResultTemplate et PartialFailure trop longs ensemble (moins de %d runes restent pour les résumés)", minPartialSummaryRunes)
+	}
 	return nil
+}
+
+// minPartialSummaryRunes est la place minimale exigée pour les résumés quand le
+// commentaire de résultat est suivi de la phrase d'échec partiel.
+const minPartialSummaryRunes = 200
+
+// summaryBudget est le nombre total de runes de résumé admis dans le commentaire
+// de résultat : maxSummaryRunes, réduit si besoin pour que le tout (gabarit, et
+// avec partial une espace, la phrase d'échec et des noms de longueur maximale)
+// tienne dans MaxCommentaryRunes.
+func (p Phrases) summaryBudget(partial bool) int {
+	budget := MaxCommentaryRunes - (utf8.RuneCountInString(p.ResultTemplate) - 2)
+	if partial {
+		budget -= 1 + utf8.RuneCountInString(p.PartialFailure) - 2 + maxFailedNamesRunes
+	}
+	return min(budget, maxSummaryRunes)
 }
 
 // Options règle le gestionnaire ; toutes les valeurs sont obligatoires.

@@ -34,6 +34,9 @@ const (
 	// maxSummaryRunes borne le résumé de l'agent cité dans le commentaire final
 	// (réparti entre les agents quand il y en a plusieurs).
 	maxSummaryRunes = 600
+	// maxFailedNamesRunes borne la liste des noms d'agents en échec citée dans
+	// la phrase d'échec partiel.
+	maxFailedNamesRunes = 120
 	// maxRawSummaryRunes borne le résumé concaténé des textes de l'agent,
 	// avant nettoyage.
 	maxRawSummaryRunes = 4000
@@ -77,9 +80,6 @@ type Pipeline struct {
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
 	inflight []*taskState
-	// renewals : nombre de compensations par agent (identité stable), pour
-	// renouveler le ContextID après le retrait de ses surfaces.
-	renewals map[string]int
 	wg       sync.WaitGroup
 }
 
@@ -149,7 +149,7 @@ func newPipeline(d PipelineDeps) *Pipeline {
 	if d.Planner == nil {
 		d.Planner = TagPlanner{}
 	}
-	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}
+	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID)}
 }
 
 // PipelineConfig est la configuration partagée par les pipelines de toutes les
@@ -275,8 +275,12 @@ collect:
 		p.say(ctx, d.ID, failure)
 		return
 	}
+	// Chaque résumé est borné à (budget / agents retenus) runes, sans jamais couper
+	// son début ; le budget tient compte de la phrase d'échec partiel éventuelle.
+	failed := p.failedNames(tasks)
+	partial := len(failed) > 0
 	var parts []string
-	limit := maxSummaryRunes / len(oks)
+	limit := p.deps.Phrases.summaryBudget(partial) / n
 	for _, s := range oks {
 		if c := sanitizeSummary(s, limit); c != "" {
 			parts = append(parts, c)
@@ -287,7 +291,38 @@ collect:
 		p.say(ctx, d.ID, p.deps.Phrases.NoSummary)
 		return
 	}
-	p.say(ctx, d.ID, fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " ")))
+	text := fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " "))
+	if partial {
+		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
+	}
+	p.say(ctx, d.ID, text)
+}
+
+// failedNames renvoie, dans l'ordre des agents, le nom des agents retenus qui ont
+// échoué (ni réussi ni refusé). À appeler après outcomes : toutes les tâches
+// sont alors closes et leur issue figée.
+func (p *Pipeline) failedNames(tasks []*taskState) []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var names []string
+	for _, ts := range tasks {
+		if !ts.ok && !ts.rejected {
+			names = append(names, ts.agent)
+		}
+	}
+	return names
+}
+
+// failedList nettoie les noms (donnée non fiable : un nom vient d'une carte),
+// les joint par « , » et borne le résultat à maxFailedNamesRunes.
+func failedList(names []string) string {
+	var clean []string
+	for _, n := range names {
+		if c := sanitizeSummary(n, maxFailedNamesRunes); c != "" {
+			clean = append(clean, c)
+		}
+	}
+	return sanitizeSummary(strings.Join(clean, ", "), maxFailedNamesRunes)
 }
 
 // readCards lit en parallèle la carte de chaque agent (une lecture par agent),
@@ -440,7 +475,9 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 	}
 	var summary string
 	card := ts.card
-	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.contextFor(ts.owner), Card: &card}) {
+	for u, err := range a.Send(ctx, port.AgentRequest{
+		Text: d.Request, ContextID: p.deps.SessionID, Card: &card, ActiveSurfaces: p.activeSurfaces(ts.owner),
+	}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
 			return
@@ -474,16 +511,13 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 	p.fail(ctx, ts, errNoFinalState)
 }
 
-// contextFor donne le ContextID à envoyer à un agent : l'identifiant de session,
-// renouvelé (`session#n`) après une compensation de ses surfaces, pour que
-// l'agent ne croie pas à une surface retirée.
-func (p *Pipeline) contextFor(owner string) string {
+// activeSurfaces donne les surfaces ouvertes qui appartiennent à owner, lues
+// dans le registre sous le verrou de session au moment de l'envoi : le registre
+// de l'orchestrateur est la source de vérité de la composition (A2).
+func (p *Pipeline) activeSurfaces(owner string) []string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if n := p.renewals[owner]; n > 0 {
-		return fmt.Sprintf("%s#%d", p.deps.SessionID, n)
-	}
-	return p.deps.SessionID
+	return p.deps.Registry.ActiveFor(owner)
 }
 
 // outcomes lit les issues sous le verrou : une tâche encore ouverte (jamais
@@ -640,9 +674,6 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 	p.untrackLocked(ts)
 	if ts.taskID != "" {
 		compensation := p.deps.Registry.Compensation(ts.taskID)
-		if len(compensation) > 0 {
-			p.renewals[ts.owner]++
-		}
 		for _, m := range compensation {
 			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
 				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
