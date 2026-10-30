@@ -1,7 +1,7 @@
 # 010 — État
 
-- **Étape** : Gherkin
-- **Tentatives** : 1/3
+- **Étape** : TDD
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/010-j6-act4-replay
@@ -16,6 +16,7 @@
 | 2026-10-30 | Gherkin | T03a faite (squelette `packages/features/replay`, workspace racine, dépendance de l'app, règle de dépendances) ; `gate --unit flutter` vert (10 contrôles). Restent T05, T11, T12, T13 puis T01. | `.omc/state/loop/gates/20261030-173139-unit-flutter.log` |
 | 2026-10-30 | Gherkin | **T05 faite : sonde VERTE** (genui 0.10.4 : remise à vide, `gate.reset()` puis réinjection de `act1-replay.jsonl` redonne mêmes surfaces, phases, textes, deux tours de suite, aucun refus ; elle rougit sans `gate.reset()` et avec une valeur fausse). Pas de blocage. | `.omc/state/loop/gates/20261030-173531-unit-flutter.log` (VERT) |
 | 2026-10-30 | Gherkin | T11 (compteur de toutes les requêtes HTTP du faux backend, `GET /app` exclu), T12 (`GenesisCanvasApp(clock:)`, remplacement de `AppClock` après `getIt.init()`) et T13 (`ProtocolFeedEntriesCleared`, garde `expanded`) faites, un test rouge puis vert chacune ; `gate --unit flutter` vert (25 contrôles). Reste T01 (scénarios R-01 à R-09). | `.omc/state/loop/gates/20261030-174431-unit-flutter.log` |
+| 2026-10-30 | Gherkin | **T01 faite — étape Gherkin terminée.** `acte4_rejouer.feature` (15 scénarios : R-01 à R-09, démontage pendant une lecture, glisser = un seul seek, plus les variantes de R-02 à R-05) + H-04 (`GENESIS_REPLAY_AT`) dans `loop_harness.feature`. **Rouges pour la bonne raison** (16 en échec, revérifié) : `widget [<'replay-play'>] introuvable : la zone Rejeu ne l'expose pas` à l'étape « je clique sur Lecture » (R-01…R-06, R-08, R-09, démontage), même message à « le bouton Lecture est inactif » (R-07), et H-04 : « l'indicateur d'acte doit afficher « Acte 4 · Rejeu » : 0 widget trouvé ». Les 42 autres scénarios d'acceptation restent verts. Précisions tranchées : voir `plan.md`. Passage au TDD (T02 d'abord). | `.omc/state/loop/gates/20261030-180107-unit-flutter.log` (VERT, 8 contrôles ; `gates.tsv` 18:01:38) |
 
 ## Revue d'architecte
 **Mode PLAN : À AMENDER.** A1 [bloquant] ordre remise à vide / réinjection (barrière d'un tour de boucle, routeur `sync`, `enterReplay` atomique) ; A2 [bloquant] cycle de vie (`ReplayBloc` à deux handlers, `ReplayStage` réduit à `clear`/`exit`, lecteur arrêté de façon synchrone dans `dispose`) ; A3 mode scénario et capture (`GENESIS_REPLAY_AT`, `liveDone`) ; A4 temps testable (lecteur à pas fixe, paramètre `clock`) ; A5 erreurs (remise à vide en rejeu, `canPlay`, messages écartés comptés) ; A6 budget de la zone Rejeu (480 px, deux rangées) ; A7 pas de sérialisation du journal, plafond, panneau resté déplié ; A8 tâches. Tous appliqués dans `plan.md`.

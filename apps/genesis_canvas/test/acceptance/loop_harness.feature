@@ -19,3 +19,10 @@ Fonctionnalité: Outillage de boucle dans l'app
     Quand le rejeu se termine
     Alors un PNG non vide est écrit à ce chemin
     Et l'app se ferme avec le code 0
+
+  Scénario: H-04 Capture à mi-parcours du rejeu (GENESIS_REPLAY_AT)
+    Étant donné l'app lancée avec GENESIS_SNAPSHOT vers un fichier temporaire et GENESIS_REPLAY_AT {0.5}
+    Quand le rejeu se termine
+    Alors un PNG non vide est écrit à ce chemin
+    Et l'app se ferme avec le code 0
+    Et la zone Rejeu est en pause à mi-parcours

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/app.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
+import 'package:shared_core/shared_core.dart' show AppClock;
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
 import '../../support/pump_until.dart';
@@ -85,6 +86,7 @@ class SessionHarness {
     String? appLogPath,
     StringSink? errorSink,
     String? scenario,
+    AppClock? clock,
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -99,6 +101,7 @@ class SessionHarness {
         voiceTransportFactory: transports.call,
         exitHandler: (_) {},
         errorSink: errorSink,
+        clock: clock,
         // Frontière « temps » : le rejeu enchaîne ses messages sans attente.
         replayDelay: scenario == null ? null : (_) async {},
       ),

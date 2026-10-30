@@ -45,3 +45,10 @@ Verdict PLAN de l'architecte : **À AMENDER** (2 bloquants, 6 importants). Les a
 - **A8 (tâches).** Voir `tasks.md` réordonné : sonde genui en tête (si elle échoue : **Bloquée**, remontée au porteur ; la remise à vide est le seul mécanisme, pas de repli), T03 scindé (workspace par la session principale), compteur de requêtes du faux backend, `clock` de l'app, T09 en quatre, R-09, démontage pendant une lecture, glisser du curseur = un seul seek (`Slider.onChangeEnd`).
 
 **Alignement des documents** : `product/architecture/replay.md` (format `kind/payload/corr`, « nouvelle portée `SurfaceController` », « même port `SessionEventSource` ») contredit pdr-0066 : il est aligné par la session principale (product-curate) avant le TDD.
+
+## Précisions issues de l'étape Gherkin (tranchées par la boucle, pdr-0062)
+- **Journal utile** : `canPlay` exige au moins un `createSurface` dans le journal. Les échos du backend après une remise à vide (`deleteSurface` ignorés par le validateur) ne rendent donc pas « Lecture » actif (R-06, R-09).
+- **« Recommencer »** garde la vitesse choisie ; `defaultSpeed` (1×) ne vaut qu'au premier démarrage du rejeu. Les pastilles de vitesse restent actives à l'état « terminé ».
+- **Position** : le curseur est un `Slider` (`replay-slider`) dont la valeur va de 0 à la durée comprimée ; les entrées à `t = 0` sont émises dès le départ du lecteur. L'état « terminé » = curseur au maximum et libellé sémantique « Lecture ».
+- **Réglages** : le harnais de test fixe `replayMaxGap` = 3 s et `tick` = 100 ms ; T09d les passe à l'app ; la ligne « Rejeu : n messages vivants écartés » (A5) est testée en test unitaire de la page, pas en acceptation.
+- **Panneau du protocole** : le débordement de 39 px du panneau déplié avec des entrées « actions » est préexistant (007/009) ; à traiter à la revue d'architecte ou à J7 s'il gêne la capture.

@@ -12,7 +12,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T13 Flutter — `feature_protocol_feed` : `ProtocolFeedEntriesCleared` (vide les entrées, garde `expanded`) · test d'abord : `protocol_feed_bloc_test.dart`
 
 ## Gherkin (acceptation Flutter, `bdd_widget_test`)
-- [ ] T01 Flutter — `acte4_rejouer.feature` : R-01 à R-09 (R-09 : « Remettre à vide » pendant un rejeu = Direct), démontage de la page pendant une lecture sans minuteur actif, curseur glissé = un seul seek ; acte 1 depuis les fixtures, `pump(durée)`, compteur de requêtes (T11) · rouges pour la bonne raison : commandes de la zone Rejeu inactives (`onPressed: null`), aucun journal ; `loop_harness.feature` : capture à `GENESIS_REPLAY_AT` (A3)
+- [x] T01 Flutter — `acte4_rejouer.feature` : R-01 à R-09 (R-09 : « Remettre à vide » pendant un rejeu = Direct), démontage de la page pendant une lecture sans minuteur actif, curseur glissé = un seul seek ; acte 1 depuis les fixtures, `pump(durée)`, compteur de requêtes (T11) · rouges pour la bonne raison : commandes de la zone Rejeu inactives (`onPressed: null`), aucun journal ; `loop_harness.feature` : capture à `GENESIS_REPLAY_AT` (A3)
 
 ## TDD
 - [ ] T02 Flutter — `entity_session` : `A2uiJournal`/`JournalEntry` (copie profonde non modifiable, `t_ms` relatif au premier message et croissant, `seq`, plafond `maxEntries`, `toString` sans contenu) · test d'abord : `a2ui_journal_test.dart`
