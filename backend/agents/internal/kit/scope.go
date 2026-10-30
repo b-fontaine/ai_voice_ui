@@ -71,11 +71,12 @@ var displayVerbs = []string{
 }
 
 // unknownViewNouns : lexique fermé de noms de vues que le profil Qualité ne produit pas
-// (aucun composant de carte, de tableau ou de diagramme). Un verbe d'affichage suivi de
-// l'un d'eux donne ReasonViewUnavailable ; tout autre mot laisse la vue globale.
-// « carte bancaire » et « tableau de bord » n'en sont pas (voir isUnknownView).
+// (aucun composant de carte ou de diagramme). Un verbe d'affichage suivi de l'un d'eux
+// donne ReasonViewUnavailable ; tout autre mot laisse la vue globale. « carte bancaire »
+// n'en est pas. « tableau » seul n'en est pas non plus (« le tableau de release » est
+// l'acte 1) : seules les formes explicites le sont (voir isTableForm).
 var unknownViewNouns = []string{
-	"carte", "cartes", "cartographie", "tableau", "tableaux", "camembert", "camemberts",
+	"carte", "cartes", "cartographie", "camembert", "camemberts",
 	"histogramme", "histogrammes", "diagramme", "diagrammes", "heatmap", "heatmaps",
 }
 
@@ -224,10 +225,11 @@ func isUnknownView(words []string) bool {
 			}
 			switch {
 			case slices.Contains(unknownViewNouns, words[j]):
-				if (words[j] == "carte" && next == "bancaire") ||
-					(words[j] == "tableau" && next == "de" && j+2 < len(words) && words[j+2] == "bord") {
+				if words[j] == "carte" && next == "bancaire" {
 					continue
 				}
+				return true
+			case isTableForm(words, j):
 				return true
 			case words[j] == "par" && slices.Contains(unknownViewGroups, next):
 				return true
@@ -235,6 +237,21 @@ func isUnknownView(words []string) bool {
 		}
 	}
 	return false
+}
+
+// isTableForm indique une forme explicite de tableau en j : « sous forme de tableau »,
+// « en tableau », « tableau croisé ». « tableau » seul n'est pas une vue inconnue.
+func isTableForm(words []string, j int) bool {
+	if words[j] != "tableau" {
+		return false
+	}
+	if j+1 < len(words) && (words[j+1] == "croisé" || words[j+1] == "croise") {
+		return true
+	}
+	if j >= 1 && words[j-1] == "en" {
+		return true
+	}
+	return j >= 2 && words[j-1] == "de" && words[j-2] == "forme"
 }
 
 // splitWords découpe un texte en mots (suites de lettres et de chiffres).

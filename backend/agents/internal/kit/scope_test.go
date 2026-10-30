@@ -195,7 +195,9 @@ func TestParseIntentUnknownViewLexicon(t *testing.T) {
 	refused := []string{
 		"Montre-moi la carte des crashs par pays",
 		"Affiche la carte",
-		"affiche un tableau des crashs",
+		"Affiche les crashs sous forme de tableau",
+		"Montre-moi les crashs en tableau",
+		"Affiche un tableau croisé des crashs",
 		"Donne-moi un camembert des crashs",
 		"Fais-moi voir l'histogramme des sessions",
 		"Montre un diagramme en barres",
@@ -204,7 +206,7 @@ func TestParseIntentUnknownViewLexicon(t *testing.T) {
 		"Je voudrais voir une carte thermique",
 		"Affiche la liste des crashs par pays",
 		"Présente-moi les crashs sur une carte",
-		"Affiche le tableau des crashs sur Android",
+		"Affiche les crashs Android sous forme de tableau",
 	}
 	for _, text := range refused {
 		got, err := kit.ParseIntent(text, kit.Focus{}, ds)
@@ -214,12 +216,15 @@ func TestParseIntentUnknownViewLexicon(t *testing.T) {
 		}
 	}
 	served := []string{
-		"Fais-moi un camembert des ventes",    // pas de verbe d'affichage
-		"Un camembert",                        // idem
-		"Affiche la courbe des crashs",        // courbe : vue produite
-		"Montre-moi la stabilité de la 3.4",   // aucun nom du lexique
-		"Affiche le tableau de bord",          // le canevas lui-même
-		"Prépare la release 3.4",              // acte 1
+		"Fais-moi un camembert des ventes",  // pas de verbe d'affichage
+		"Un camembert",                      // idem
+		"Affiche la courbe des crashs",      // courbe : vue produite
+		"Montre-moi la stabilité de la 3.4", // aucun nom du lexique
+		"Affiche le tableau de bord",        // le canevas lui-même
+		"Prépare la release 3.4",            // acte 1
+		"Affiche le tableau de release 3.4", // « tableau de release » : l'acte 1
+		"Montre-moi le tableau Android",
+		"Fais-moi voir le tableau de la 3.4",
 		"Montre la carte bancaire 3-D Secure", // hors lexique de vues : « carte bancaire »
 	}
 	for _, text := range served {

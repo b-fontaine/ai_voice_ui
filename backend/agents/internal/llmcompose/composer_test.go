@@ -435,6 +435,19 @@ func TestC06ViewUnavailableRefusalIsAScopeErrorWithoutFallback(t *testing.T) {
 	}
 }
 
+// R3 — ParseIntent reste seul juge : si une vue nommée est reconnue, un refus
+// view_unavailable du modèle devient un repli déterministe (refused_unknown).
+func TestC06ViewUnavailableRefusalWithNamedViewFallsBack(t *testing.T) {
+	c := replies(`{"refusal":{"reason":"view_unavailable"}}`)
+	r := newRig(t, c)
+	got, err := r.compose(t, req("Affiche la liste des crashs"))
+	if err != nil {
+		t.Fatalf("erreur %v, attendu un repli déterministe", err)
+	}
+	r.requireEqualDeterministic(t, got, req("Affiche la liste des crashs"))
+	r.requireFallbackLog(t, llmcompose.ReasonRefusedUnknown)
+}
+
 // ParseIntent s'exécute AVANT l'appel et reste seul juge : ses refus remontent tels quels,
 // sans appel au modèle (une action de l'interface va au déterministe, sans appel non plus).
 func TestParseIntentRefusalsNeverCallTheModel(t *testing.T) {

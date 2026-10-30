@@ -125,7 +125,8 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 		return c.fallback(ctx, ReasonInvalidJSON, req, ds, emit)
 	case err != nil:
 		return c.fallback(ctx, ReasonInvalidPlan, req, ds, emit)
-	case refusal != nil && refusal.Reason == ReasonViewUnavailable:
+	case refusal != nil && refusal.Reason == ReasonViewUnavailable && intent.View == "":
+		// Sans vue nommée reconnue par ParseIntent (seul juge, A2) : le refus du modèle vaut.
 		return kit.Composition{}, &kit.ScopeError{Reason: kit.ReasonViewUnavailable}
 	case refusal != nil:
 		return c.fallback(ctx, ReasonRefusedUnknown, req, ds, emit)
