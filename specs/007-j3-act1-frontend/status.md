@@ -2,8 +2,8 @@
 
 - **Étape** : Refactorisation
 - **Tentatives** : 1/3
-- **Tâche en cours** : L1 (R1, Flutter), LG (R9, Go)
-- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/lib/{pages,widgets/stage_bar,app/config}, packages/features/agent_activity ; backend/orchestrator/internal/{port,adapter/httpapi,app/a2ui}
+- **Tâche en cours** : L2 (R2+R3, Flutter)
+- **Fichiers touchés** (tâche en cours) : packages/features/catalog_shelf, packages/entities/catalog, packages/features/canvas/lib/src/model/a2ui_gate.dart
 - **Branche** : feat/007-j3-act1-frontend
 - **Backlog** : EP-03, EP-04, EP-05, EP-08
 - **Mis à jour** : 2026-10-30
@@ -32,7 +32,7 @@
 
 ### Revue du code (mode CODE, 2026-10-30, architect-reviewer Opus) — verdict : À REFACTORISER (aucun défaut bloquant)
 Architecture conforme (Clean + FSD, `getIt` confiné, pas de Cubit, ordre de `_shutdown` testé, route Go correcte sous `-race`). Lots prévus : **L1** R1 ; **L2** R2+R3 ; **L3** R4 ; **L4** R5 ; **L5** R6, R7, R8, R10 (mineures Flutter) ; **LG** R9 (Go, parallèle de L1).
-- [ ] **R1 important (Flutter)** — désynchronisation app/backend sur un 409 : le bouton n'est inactif que si un agent est `working` alors que le backend répond `busy` pendant tout `Pipeline.Run` (étape `plan`, agents `pending`, commentaire final). `anyWorking` doit couvrir `pending` ; `_requestBackendReset` réessaie sur `busy` (essais et intervalle injectés par `GenesisConfig`) ; test de page `busy` puis `done` = 2 appels.
+- [x] **R1 important (Flutter)** — désynchronisation app/backend sur un 409 : le bouton n'est inactif que si un agent est `working` alors que le backend répond `busy` pendant tout `Pipeline.Run` (étape `plan`, agents `pending`, commentaire final). `anyWorking` doit couvrir `pending` ; `_requestBackendReset` réessaie sur `busy` (essais et intervalle injectés par `GenesisConfig`) ; test de page `busy` puis `done` = 2 appels.
 - [ ] **R2 important (Flutter)** — `CatalogShelfBloc` ignore `compensations` : après un refus sur une surface active, l'étagère affiche 4/6 pour 3 surfaces (FR-06). Retirer les surfaces compensées ; tests dont « Cleared vide la table interne ».
 - [ ] **R3 important (Flutter)** — `surface_exists` détruit une surface valide par compensation (le Go laisse l'état intact) : pas de compensation pour `surface_exists`. Tests validateur + gate.
 - [ ] **R4 important (Flutter)** — le panneau montre le même JSON (`{` puis `"version": "v0.9",`) : stocker le JSON compact du corps de l'opération sans `version`, borné ; test `protocol-json-<n>`.
@@ -40,7 +40,7 @@ Architecture conforme (Clean + FSD, `getIt` confiné, pas de Cubit, ordre de `_s
 - [ ] **R6 mineur (Flutter)** — couleurs `Colors.*` du rail et `fontSize: 28` hors `SceneTheme` (RG-09) ; paires graphiques sur `surface` au test de contraste (3:1, WCAG 1.4.11).
 - [ ] **R7 mineur (Flutter)** — code mort et API réservées aux tests : `keyIndicatorRequiredFields`, flux `validated` en diffusion et `RepositoryProvider<A2uiGate>`, `MessageHighlighted`, `ProtocolPanel.visibleEntries`, `CatalogShelfState.empty()` recopié, paramètre `path` de `boundCatalogItem`, double journal de l'échec de remise à vide, états en `final class` + `@immutable`.
 - [ ] **R8 mineur (Flutter)** — migration V1/V5/H-02 : retrouver la preuve que le texte est rendu par `Surface` (`find.descendant(of: find.descendant(of: surface-kpi, matching: Surface), matching: …)`).
-- [ ] **R9 mineur (Go)** — contrat de `ErrCanvasBusy` inexact (« rien n'a été changé » : d'autres sessions ont pu être vidées, idempotent) ; `TestValidateAcceptsReplayAct1` sans `AllowedProps`/`BindingProps` comme en production.
+- [x] **R9 mineur (Go)** — contrat de `ErrCanvasBusy` inexact (« rien n'a été changé » : d'autres sessions ont pu être vidées, idempotent) ; `TestValidateAcceptsReplayAct1` sans `AllowedProps`/`BindingProps` comme en production.
 - [ ] **R10 mineur (Flutter)** — le rejeu valide `message.toJson()` et non la ligne brute (risque pour J6) ; `catalogs` et `catalogId` passés tous deux à la page (dériver ou `assert`).
 - **Conflit avec une décision (remonté, pas de code)** : pdr-0058 + pdr-0052 contre l'état transitoire de 007 (registre backend encore par session jusqu'à J4, canevas conservé par l'app d'une session voix à l'autre) → **Q-73** pour le porteur, non bloquante (consigne de régie « remettre à vide avant toute nouvelle session voix » en attendant).
 - **Écart consigné** : stories Widgetbook et goldens par `CatalogItem` (frontend.md) reportés (A8e).
