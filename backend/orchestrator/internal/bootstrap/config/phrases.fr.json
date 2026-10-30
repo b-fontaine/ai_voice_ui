@@ -11,5 +11,6 @@
   "result_template": "Voici ce que je constate : « %s »",
   "action_result_template": "C'est fait. %s",
   "action_failure": "Je n'ai pas pu enregistrer cette décision : la checklist reste inchangée.",
-  "announce_instruction": "L'utilisateur vient de prendre une décision sur la checklist ; confirme-la brièvement et factuellement, sans rien ajouter."
+  "announce_instruction_done": "L'utilisateur vient de prendre une décision sur la checklist ; confirme-la brièvement et factuellement, une seule fois, sans rien ajouter.",
+  "announce_instruction_failed": "L'action demandée par l'utilisateur sur la checklist n'a pas abouti ; dis-le brièvement et factuellement : la checklist est inchangée. Ne le dis qu'une seule fois, sans rien ajouter."
 }

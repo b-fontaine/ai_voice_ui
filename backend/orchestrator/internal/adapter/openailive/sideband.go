@@ -108,8 +108,8 @@ func (s *sideband) route(raw []byte) {
 		s.resolve(f.ClientEventID, f.Type, nil)
 	case "error":
 		msg := strings.ReplaceAll(f.Error.Message, s.p.secret, "[masquée]")
-		s.resolve(f.ClientEventID, "", fmt.Errorf("envoi vocal refusé par le fournisseur (code %q, type %q) : %s",
-			f.Error.Code, f.Error.Type, msg))
+		s.resolve(f.ClientEventID, "", fmt.Errorf("%w (code %q, type %q) : %s",
+			port.ErrVoiceRefused, f.Error.Code, f.Error.Type, msg))
 	}
 }
 
@@ -237,11 +237,16 @@ func (s *sideband) appendCommand(ctx context.Context, prefix, ackType, text stri
 		return errors.New("commentaire vocal non acquitté : la session voix s'est terminée")
 	case <-timer.C:
 		s.p.log.Warn("commentaire vocal non acquitté", "event_id", eventID, "delai", s.p.ackTimeout)
-		return fmt.Errorf("commentaire vocal non acquitté en %s", s.p.ackTimeout)
+		return fmt.Errorf("%w en %s", port.ErrVoiceNoAck, s.p.ackTimeout)
 	case <-ctx.Done():
 		return s.p.wrap("attente de l'acquittement du commentaire", ctx.Err())
 	}
 }
+
+// Les erreurs rendues par appendCommand se classent pour la couche application :
+// port.ErrVoiceRefused (événement error corrélé : la commande n'a pas été prise
+// en compte) et port.ErrVoiceNoAck (délai dépassé : elle a pu être reçue). Les
+// autres (envoi, session terminée, contexte) n'autorisent aucun repli.
 
 // resolve livre l'acquittement (err nil) ou l'erreur d'une commande en attente.
 // ackType est le type de l'événement d'acquittement (vide pour une erreur, qui

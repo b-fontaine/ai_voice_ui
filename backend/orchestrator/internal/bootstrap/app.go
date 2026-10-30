@@ -127,7 +127,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		DelegationsCloseTimeout: delegationsCloseTimeout,
 		AttachAttempts:          cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
 		Delegations:            delegations,
-		AnnounceInstruction:    cfg.Phrases.AnnounceInstruction,
+		Phrases:                cfg.VoicePhrases,
 		AnnounceObserveTimeout: cfg.AnnounceObserveTimeout,
 		Logger:                 logger,
 	})

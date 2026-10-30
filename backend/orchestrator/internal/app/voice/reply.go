@@ -2,6 +2,7 @@ package voice
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -22,23 +23,28 @@ const (
 // la voix hors délégation :
 //
 //  1. un commentaire à `delegation_id` nul ;
-//  2. seulement si l'acquittement est refusé, le même texte rattaché à la
-//     dernière délégation de la session, s'il en existe une ;
-//  3. sinon, une consigne dont le texte est celui de l'orchestrateur (jamais le
-//     résumé d'un agent : une consigne est un canal de confiance).
+//  2. seulement si la commande est refusée (port.ErrVoiceRefused), le même
+//     texte rattaché à la dernière délégation de la session, s'il en existe une ;
+//  3. sinon, une consigne dont le texte est l'une des deux consignes fixes de
+//     l'orchestrateur, choisie par l'issue de l'annonce : confirmation pour un
+//     succès, constat d'échec pour un échec (jamais le résumé d'un agent : une
+//     consigne est un canal de confiance, et un échec ne confirme jamais une
+//     décision qui n'a pas eu lieu).
 //
-// Un envoi acquitté est définitif : la voix qui se tait ensuite n'entraîne
-// jamais de second envoi (elle pourrait dire la confirmation deux fois). Le
-// silence n'est qu'observé, de façon asynchrone, pour le journal (Q-75). Si
-// toutes les stratégies sont refusées, l'échec est journalisé et Announce rend
-// nil : rien n'est inventé.
+// On ne passe à la stratégie suivante que sur un refus : un délai
+// d'acquittement (port.ErrVoiceNoAck) ou une erreur d'envoi laissent la
+// commande possiblement reçue, un second envoi ferait dire la confirmation deux
+// fois. Un envoi acquitté est définitif : la voix qui se tait ensuite n'entraîne
+// jamais de second envoi. Le silence n'est qu'observé, de façon asynchrone,
+// pour le journal (Q-75). Si la remise échoue, l'échec est journalisé et
+// Announce rend nil : rien n'est inventé.
 type sidebandReply struct {
-	sb          port.Sideband
-	log         *slog.Logger
-	session     string
-	instruction string        // texte de la consigne (phrases de l'orchestrateur)
-	observe     time.Duration // 0 : pas d'observation
-	closing     func() bool   // la fermeture de la session est demandée
+	sb      port.Sideband
+	log     *slog.Logger
+	session string
+	phrases Phrases       // consignes fixes de la stratégie 3 (phrases de l'orchestrateur)
+	observe time.Duration // 0 : pas d'observation
+	closing func() bool   // la fermeture de la session est demandée
 
 	mu       sync.Mutex
 	lastDele string          // dernière `session.delegation.created` de cette session
@@ -53,7 +59,7 @@ var _ port.VoiceReply = (*sidebandReply)(nil)
 func newSidebandReply(sb port.Sideband, session string, o Options, closing func() bool) *sidebandReply {
 	return &sidebandReply{
 		sb: sb, log: o.Logger, session: session,
-		instruction: o.AnnounceInstruction, observe: o.AnnounceObserveTimeout,
+		phrases: o.Phrases, observe: o.AnnounceObserveTimeout,
 		closing: closing, quit: make(chan struct{}),
 	}
 }
@@ -116,7 +122,30 @@ func (r *sidebandReply) lastDelegation() string {
 	return r.lastDele
 }
 
-func (r *sidebandReply) Announce(ctx context.Context, text string) error {
+// instructionFor choisit la consigne fixe selon l'issue ; toute issue autre que
+// la réussite (dont la valeur nulle) donne la consigne d'échec.
+func (r *sidebandReply) instructionFor(o port.AnnounceOutcome) string {
+	if o == port.AnnounceDone {
+		return r.phrases.AnnounceDone
+	}
+	return r.phrases.AnnounceFailed
+}
+
+// next dit si la stratégie suivante peut être tentée après l'erreur err de
+// strategy : seulement sur un refus ; sinon l'échec est journalisé et la
+// politique s'arrête, sans second envoi.
+func (r *sidebandReply) next(strategy string, err error) bool {
+	if errors.Is(err, port.ErrVoiceRefused) {
+		r.log.Warn("annonce vocale refusée", "session", r.session, "strategy", strategy, "error", err)
+		return true
+	}
+	r.log.Warn("annonce vocale non remise : aucun repli, la commande a pu être reçue",
+		"session", r.session, "strategy", strategy, "error", err)
+	return false
+}
+
+func (r *sidebandReply) Announce(ctx context.Context, a port.Announcement) error {
+	text := a.Text
 	if !r.available(ctx) {
 		return nil
 	}
@@ -125,22 +154,28 @@ func (r *sidebandReply) Announce(ctx context.Context, text string) error {
 		r.watch(strategyGeneral)
 		return nil
 	}
-	r.log.Warn("annonce vocale refusée", "session", r.session, "strategy", strategyGeneral, "error", err)
+	if !r.next(strategyGeneral, err) {
+		return nil
+	}
 
 	if id := r.lastDelegation(); id != "" && r.available(ctx) {
 		if err = r.sb.AppendCommentary(ctx, id, text); err == nil {
 			r.watch(strategyDelegated)
 			return nil
 		}
-		r.log.Warn("annonce vocale refusée", "session", r.session, "strategy", strategyDelegated, "error", err)
+		if !r.next(strategyDelegated, err) {
+			return nil
+		}
 	}
 
-	if r.instruction != "" && r.available(ctx) {
-		if err = r.sb.AppendInstructions(ctx, r.instruction); err == nil {
+	if instruction := r.instructionFor(a.Outcome); instruction != "" && r.available(ctx) {
+		if err = r.sb.AppendInstructions(ctx, instruction); err == nil {
 			r.watch(strategyInstructions)
 			return nil
 		}
-		r.log.Warn("annonce vocale refusée", "session", r.session, "strategy", strategyInstructions, "error", err)
+		if !r.next(strategyInstructions, err) {
+			return nil
+		}
 	}
 	if r.available(ctx) {
 		r.log.Warn("annonce vocale non remise : toutes les stratégies sont refusées", "session", r.session)

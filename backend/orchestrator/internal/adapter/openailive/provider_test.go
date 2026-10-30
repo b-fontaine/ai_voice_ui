@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -912,5 +913,46 @@ func TestAppendInstructionsNotAckedByCommentaryAck(t *testing.T) {
 	sb := openSideband(t, opts)
 	if err := sb.AppendInstructions(ctxT(t), "texte"); err == nil {
 		t.Fatal("la consigne a été acquittée par session.commentary.appended")
+	}
+}
+
+// R2 : un refus du fournisseur (événement error corrélé) enveloppe port.ErrVoiceRefused,
+// pour les trois commandes ; seul le refus autorise un repli de la couche application.
+func TestVoiceCommandRefusalWrapsErrVoiceRefused(t *testing.T) {
+	srv := newReactiveServer(t, nil, func(cmd map[string]any) []string {
+		id, _ := cmd["event_id"].(string)
+		return []string{`{"type":"error","event_id":"srv","client_event_id":"` + id +
+			`","error":{"type":"invalid_request_error","code":"bad","message":"refusé"}}`}
+	})
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 3 * time.Second
+	sb := openSideband(t, opts)
+	for name, send := range map[string]func() error{
+		"commentaire rattaché": func() error { return sb.AppendCommentary(ctxT(t), "dlg_1", "texte") },
+		"commentaire général":  func() error { return sb.AppendGeneralCommentary(ctxT(t), "texte") },
+		"consigne":             func() error { return sb.AppendInstructions(ctxT(t), "texte") },
+	} {
+		err := send()
+		if !errors.Is(err, port.ErrVoiceRefused) {
+			t.Errorf("%s : %v n'enveloppe pas ErrVoiceRefused", name, err)
+		}
+		if errors.Is(err, port.ErrVoiceNoAck) {
+			t.Errorf("%s : un refus n'est pas un délai d'acquittement", name)
+		}
+	}
+}
+
+// R2 : le délai d'acquittement enveloppe port.ErrVoiceNoAck (jamais ErrVoiceRefused).
+func TestVoiceCommandAckTimeoutWrapsErrVoiceNoAck(t *testing.T) {
+	srv := newReactiveServer(t, nil, nil) // jamais d'acquittement
+	opts := testOptions(srv.URL)
+	opts.AppendAckTimeout = 100 * time.Millisecond
+	sb := openSideband(t, opts)
+	err := sb.AppendGeneralCommentary(ctxT(t), "texte")
+	if !errors.Is(err, port.ErrVoiceNoAck) {
+		t.Fatalf("%v n'enveloppe pas ErrVoiceNoAck", err)
+	}
+	if errors.Is(err, port.ErrVoiceRefused) {
+		t.Fatalf("%v : un délai n'est pas un refus", err)
 	}
 }

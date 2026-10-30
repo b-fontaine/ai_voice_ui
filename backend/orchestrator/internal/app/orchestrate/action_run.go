@@ -50,7 +50,7 @@ func (p *Pipeline) runAction(ctx context.Context, d Delegation) {
 	if len(selected) == 0 {
 		p.log.Warn("action sans agent : tag disparu", "operation", d.ID)
 		if p.waitGeneric(ctx, d) {
-			p.announce(ctx, d.ID, p.deps.Phrases.ActionFailure)
+			p.announce(ctx, d.ID, p.deps.Phrases.ActionFailure, port.AnnounceFailed)
 		}
 		return
 	}
@@ -71,7 +71,7 @@ func (p *Pipeline) runAction(ctx context.Context, d Delegation) {
 			p.log.Info("action refusée par l'agent", "operation", d.ID)
 			return
 		}
-		p.announce(ctx, d.ID, p.deps.Phrases.ActionFailure)
+		p.announce(ctx, d.ID, p.deps.Phrases.ActionFailure, port.AnnounceFailed)
 		return
 	}
 	failed := p.failedNames(tasks)
@@ -85,14 +85,14 @@ func (p *Pipeline) runAction(ctx context.Context, d Delegation) {
 	}
 	if len(parts) == 0 {
 		p.log.Info("résumé vide : annonce « sans résumé »", "operation", d.ID)
-		p.announce(ctx, d.ID, p.deps.Phrases.NoSummary)
+		p.announce(ctx, d.ID, p.deps.Phrases.NoSummary, port.AnnounceDone)
 		return
 	}
 	text := fmt.Sprintf(p.deps.Phrases.ActionResultTemplate, strings.Join(parts, " "))
 	if partial {
 		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
 	}
-	p.announce(ctx, d.ID, text)
+	p.announce(ctx, d.ID, text, port.AnnounceDone)
 }
 
 // selectActionAgents renvoie les indices des agents dont la carte (lue, ou à
@@ -125,10 +125,10 @@ func (p *Pipeline) selectActionAgents(name string, cards []port.AgentCard, errs 
 
 // announce dit un texte hors délégation, une seule fois : l'échec est journalisé
 // (jamais de second envoi : la voix pourrait le dire deux fois).
-func (p *Pipeline) announce(ctx context.Context, operation, text string) {
+func (p *Pipeline) announce(ctx context.Context, operation, text string, outcome port.AnnounceOutcome) {
 	ctx, cancel := context.WithTimeout(ctx, commentaryCap)
 	defer cancel()
-	if err := p.deps.Reply.Announce(ctx, text); err != nil {
+	if err := p.deps.Reply.Announce(ctx, port.Announcement{Text: text, Outcome: outcome}); err != nil {
 		p.log.Warn("annonce non transmise", "operation", operation, "err", err)
 	}
 }

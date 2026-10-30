@@ -42,7 +42,6 @@ var pipePhrases = Phrases{
 	// Confirmation et échec d'une action de l'interface.
 	ActionResultTemplate: "C'est fait. %s",
 	ActionFailure:        "Je n'ai pas pu enregistrer cette décision, la checklist reste inchangée.",
-	AnnounceInstruction:  "L'utilisateur vient de prendre une décision sur la checklist ; confirme-la brièvement.",
 }
 
 type fixedClock struct{ t time.Time }
@@ -1308,7 +1307,7 @@ type slowReply struct {
 	said     []string
 }
 
-func (r *slowReply) Announce(context.Context, string) error { return nil }
+func (r *slowReply) Announce(context.Context, port.Announcement) error { return nil }
 
 func (r *slowReply) AppendCommentary(ctx context.Context, _ string, text string) error {
 	if text != pipePhrases.Generic {

@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 )
 
 const (
@@ -105,6 +106,9 @@ type Config struct {
 	AckDelayMs *int64
 	// Phrases : commentaires vocaux (VOICE_PHRASES_FILE, sinon fichier embarqué).
 	Phrases orchestrate.Phrases
+	// VoicePhrases : consignes fixes de la voix (même fichier), choisies selon
+	// l'issue d'une annonce.
+	VoicePhrases voice.Phrases
 
 	apiKey string
 }
@@ -340,11 +344,12 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		cfg.AckDelayMs = &n
 	}
 
-	phrases, err := loadPhrases(strings.TrimSpace(getenv("VOICE_PHRASES_FILE")))
+	phrases, voicePhrases, err := loadPhrases(strings.TrimSpace(getenv("VOICE_PHRASES_FILE")))
 	if err != nil {
 		return err
 	}
 	cfg.Phrases = phrases
+	cfg.VoicePhrases = voicePhrases
 	return nil
 }
 

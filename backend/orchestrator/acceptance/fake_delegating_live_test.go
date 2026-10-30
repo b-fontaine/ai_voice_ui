@@ -5,6 +5,7 @@ package acceptance
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -144,7 +145,8 @@ func (s *fakeDelegatingSideband) record(ctx context.Context, kind, delegationID,
 		}
 	}
 	if refuse {
-		return errors.New("acquittement refusé (faux fournisseur)")
+		// Comme l'adaptateur : le refus enveloppe port.ErrVoiceRefused (seul cas de repli).
+		return fmt.Errorf("acquittement refusé (faux fournisseur) : %w", port.ErrVoiceRefused)
 	}
 	return nil
 }

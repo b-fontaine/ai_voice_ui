@@ -151,7 +151,7 @@ func TestDelegationsOpenedOnceWhenActive(t *testing.T) {
 	if err := calls[0].reply.AppendCommentary(context.Background(), "deleg_1", "bonjour"); err != nil {
 		t.Fatal(err)
 	}
-	if err := calls[0].reply.Announce(context.Background(), "c'est fait"); err != nil {
+	if err := calls[0].reply.Announce(context.Background(), announceDone("c'est fait")); err != nil {
 		t.Fatal(err)
 	}
 	if commentary, general := sb.sent(); !slices.Equal(commentary, []string{"deleg_1:bonjour"}) || !slices.Equal(general, []string{"c'est fait"}) {

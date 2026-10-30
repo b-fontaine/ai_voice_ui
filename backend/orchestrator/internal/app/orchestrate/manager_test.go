@@ -21,7 +21,7 @@ const wait = 3 * time.Second
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
 	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
-	ActionResultTemplate: "AR:%s", ActionFailure: "AF", AnnounceInstruction: "AI",
+	ActionResultTemplate: "AR:%s", ActionFailure: "AF",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -41,6 +41,7 @@ type fakeReply struct {
 	// Annonces (hors délégation) : texte dit, appelé avant l'enregistrement
 	// par onAnnounce (instantané de l'état au moment de la prise de parole).
 	announced      []string
+	outcomes       []port.AnnounceOutcome
 	announceNotify chan string
 	announceErr    error
 	onAnnounce     func(text string)
@@ -50,7 +51,8 @@ func newFakeReply() *fakeReply {
 	return &fakeReply{notify: make(chan commentary, 100), announceNotify: make(chan string, 100)}
 }
 
-func (f *fakeReply) Announce(_ context.Context, text string) error {
+func (f *fakeReply) Announce(_ context.Context, a port.Announcement) error {
+	text := a.Text
 	f.mu.Lock()
 	hook := f.onAnnounce
 	f.mu.Unlock()
@@ -59,6 +61,7 @@ func (f *fakeReply) Announce(_ context.Context, text string) error {
 	}
 	f.mu.Lock()
 	f.announced = append(f.announced, text)
+	f.outcomes = append(f.outcomes, a.Outcome)
 	f.mu.Unlock()
 	f.announceNotify <- text
 	return f.announceErr
@@ -69,6 +72,13 @@ func (f *fakeReply) announces() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]string(nil), f.announced...)
+}
+
+// announceOutcomes renvoie les issues transmises avec les annonces.
+func (f *fakeReply) announceOutcomes() []port.AnnounceOutcome {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]port.AnnounceOutcome(nil), f.outcomes...)
 }
 
 // nextAnnounce attend la prochaine annonce.
@@ -244,8 +254,6 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.ActionResultTemplate = "%s et %s" }),
 		blank(func(p *Phrases) { p.ActionResultTemplate = "100 % de %s" }),
 		blank(func(p *Phrases) { p.ActionResultTemplate = strings.Repeat("é", MaxCommentaryRunes) + "%s" }),
-		blank(func(p *Phrases) { p.AnnounceInstruction = " " }),
-		blank(func(p *Phrases) { p.AnnounceInstruction = strings.Repeat("é", MaxCommentaryRunes+1) }),
 		blank(func(p *Phrases) { p.ActionFailure = " " }),
 		blank(func(p *Phrases) { p.ActionFailure = strings.Repeat("é", MaxCommentaryRunes+1) }),
 	} {

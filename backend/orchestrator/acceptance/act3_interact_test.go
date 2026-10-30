@@ -464,6 +464,49 @@ func TestAct3_C4_DeliveryFailureKeepsChecklistAndSaysSo(t *testing.T) {
 	}
 }
 
+// C4 (variante) — L'agent échoue, le commentaire général est refusé et la session n'a aucune
+// délégation (pdr-0065 D6, R1).
+//
+// Étant donné une nouvelle session sans délégation, un fournisseur qui refuse delegation_id
+// nul et l'agent Livraison injoignable ;
+// quand l'app envoie block_release ;
+// alors Livraison passe `failed`, la checklist n'est pas modifiée et le dernier recours est la
+// consigne d'ÉCHEC de l'orchestrateur (acquittée) : elle dit que l'action n'a pas abouti et
+// ne confirme jamais une décision qui n'a pas eu lieu.
+func TestAct3_C4_GeneralRefusedFailureInstructionNeverConfirms(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	fx := startAct3(t, ctx)
+	closeSession(t, fx.srv.URL, fx.feed, fx.sess)
+	fx.live.SetEmptyScript()
+	fx.live.Refuse(sendGeneral)
+	postSession(t, fx.srv.URL)
+	fx.mark = len(fx.live.VoiceSends())
+	fx.proxy.SetMode(proxyDown)
+
+	requireActionStatus(t, postAction(t, fx.srv.URL, blockBody, nil), http.StatusAccepted, "block_release")
+	envs := collectEvery(t, fx.feed, "plan puis failed de Livraison", untilDeliveryEnds)
+	if states := deliveryStates(t, envs, "échec"); countState(envs, "completed") != 0 || len(states) == 0 || states[len(states)-1] != "failed" {
+		t.Fatalf("états de Livraison %v, attendu un état final failed et aucun completed", states)
+	}
+	if a := a2uiEnvelopes(envs); len(a) != 0 {
+		t.Fatalf("%d message(s) a2ui, la checklist doit rester inchangée : %s", len(a), describe(envs))
+	}
+
+	sent := fx.settledSends(t, "consigne d'échec")
+	if len(sent) != 2 || sent[0].Kind != sendGeneral || !sent[0].Refused {
+		t.Fatalf("envois %+v, attendu le commentaire hors délégation (refusé) puis une consigne", sent)
+	}
+	got := sent[1]
+	if got.Kind != sendInstructions || got.Refused || !containsAny(got.Text, []string{"pas abouti"}) {
+		t.Fatalf("2e envoi %+v, attendu la consigne d'échec acquittée (l'action n'a pas abouti)", got)
+	}
+	if containsAny(got.Text, []string{"confirme", "bloquée", "validée", summaryBlocked}) {
+		t.Fatalf("la consigne d'échec confirme une décision qui n'a pas eu lieu : %q", got.Text)
+	}
+	requireNoActionIDSent(t, sent)
+}
+
 // C5 — Un commentaire hors délégation acquitté n'est pas répété sur silence (pdr-0065 D5).
 //
 // Étant donné block_release traité et le commentaire à delegation_id nul acquitté, sans

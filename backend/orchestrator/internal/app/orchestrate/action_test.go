@@ -281,6 +281,53 @@ func TestActAnnounceErrorIsNotRetried(t *testing.T) {
 	}
 }
 
+// R1 : l'issue transmise avec l'annonce est celle de l'action (jamais une
+// confirmation pour un échec).
+func TestActAnnounceCarriesOutcome(t *testing.T) {
+	unreachable := &port.AgentError{Kind: port.AgentUnreachable}
+	cases := []struct {
+		name  string
+		steps []step
+		text  string
+		want  port.AnnounceOutcome
+	}{
+		{"succès", resultSteps(), "", port.AnnounceDone},
+		{"absence de résumé", []step{submitted("t1"), a2uiStep(dataMsg("checklist")), completedStep()}, pipePhrases.NoSummary, port.AnnounceDone},
+		{"échec d'agent", append([]step{submitted("t1")}, failedSteps(unreachable)...), pipePhrases.ActionFailure, port.AnnounceFailed},
+		{"A2UI invalide", []step{submitted("t1"), a2uiStep(buttonMsg("checklist")), completedStep()}, pipePhrases.ActionFailure, port.AnnounceFailed},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			e := newActionEnv(t, c.steps...)
+			if err := e.act(actionBlock); err != nil {
+				t.Fatal(err)
+			}
+			got := e.reply.nextAnnounce(t)
+			if c.text != "" && got != c.text {
+				t.Fatalf("annonce = %q, attendu %q", got, c.text)
+			}
+			waitIdle(t, e.m)
+			if out := e.reply.announceOutcomes(); len(out) != 1 || out[0] != c.want {
+				t.Fatalf("issues transmises = %v, attendu [%v]", out, c.want)
+			}
+		})
+	}
+}
+
+// R1 : sans agent retenu (tag disparu), l'issue est un échec.
+func TestActNoAgentAnnouncesFailedOutcome(t *testing.T) {
+	e := newActionEnv(t, resultSteps()...)
+	e.agent.card.Tags = []string{"release"} // le tag n'est plus annoncé à la relecture
+	if err := e.act(actionBlock); err != nil {
+		t.Fatal(err)
+	}
+	e.reply.nextAnnounce(t)
+	waitIdle(t, e.m)
+	if out := e.reply.announceOutcomes(); len(out) != 1 || out[0] != port.AnnounceFailed {
+		t.Fatalf("issues transmises = %v, attendu [échec]", out)
+	}
+}
+
 // (c) Close pendant l'action : rien n'est dit.
 func TestActCloseDuringActionSaysNothing(t *testing.T) {
 	started, gate := make(chan struct{}), make(chan struct{})

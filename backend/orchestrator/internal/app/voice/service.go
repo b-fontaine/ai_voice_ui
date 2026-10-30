@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/level"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
@@ -47,17 +49,51 @@ type Options struct {
 	// Delegations gère les délégations de chaque session (A1) ; nil : aucune
 	// délégation n'est traitée.
 	Delegations port.Delegations
-	// AnnounceInstruction est le texte de la consigne envoyée en dernier recours
-	// à une annonce vocale hors délégation (phrases de l'orchestrateur, canal de
-	// confiance : jamais une donnée d'agent ni du client). Vide : cette stratégie
-	// est désactivée.
-	AnnounceInstruction string
+	// Phrases porte les consignes de dernier recours d'une annonce vocale hors
+	// délégation (canal de confiance). Valeur nulle : cette stratégie est
+	// désactivée.
+	Phrases Phrases
 	// AnnounceObserveTimeout borne l'observation (journal seulement) d'une
 	// parole sortante après une annonce acquittée ; 0 : pas d'observation.
 	AnnounceObserveTimeout time.Duration
 }
 
+// MaxAnnounceInstructionRunes borne une consigne de la voix. Elle duplique celle
+// des commentaires de l'adaptateur (sans l'importer) ; bootstrap teste l'égalité.
+const MaxAnnounceInstructionRunes = 1000
+
+// Phrases sont les deux consignes fixes de la stratégie de dernier recours
+// (`session.instructions.append`) d'une annonce vocale. Ce sont des textes de
+// l'orchestrateur : jamais composés d'une donnée d'agent ni du client, sans
+// gabarit. AnnounceDone confirme brièvement la décision de la checklist, une
+// seule fois ; AnnounceFailed dit que l'action n'a pas abouti et que la
+// checklist est inchangée, une seule fois. Le choix dépend de
+// port.Announcement.Outcome : un échec ne reçoit jamais la consigne de
+// confirmation.
+type Phrases struct {
+	AnnounceDone   string
+	AnnounceFailed string
+}
+
+// Validate vérifie que les deux consignes sont renseignées et bornées.
+func (p Phrases) Validate() error {
+	for name, v := range map[string]string{"AnnounceDone": p.AnnounceDone, "AnnounceFailed": p.AnnounceFailed} {
+		if strings.TrimSpace(v) == "" {
+			return fmt.Errorf("voice: phrase %s requise", name)
+		}
+		if n := utf8.RuneCountInString(v); n > MaxAnnounceInstructionRunes {
+			return fmt.Errorf("voice: phrase %s trop longue (%d runes, maximum %d)", name, n, MaxAnnounceInstructionRunes)
+		}
+	}
+	return nil
+}
+
 func (o Options) validate() error {
+	if o.Phrases != (Phrases{}) {
+		if err := o.Phrases.Validate(); err != nil {
+			return err
+		}
+	}
 	switch {
 	case o.SampleRate <= 0:
 		return errors.New("voice: SampleRate doit être > 0")

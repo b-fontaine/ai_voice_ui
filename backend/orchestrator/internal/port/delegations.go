@@ -20,14 +20,49 @@ var ErrNoSession = errors.New("aucune session voix")
 // n'accepte.
 var ErrUnknownAction = errors.New("action inconnue")
 
+// ErrVoiceRefused signale qu'une commande vocale a été refusée par le
+// fournisseur (événement `error` corrélé à la commande par `client_event_id`) :
+// elle n'a pas été prise en compte, un autre canal peut être tenté.
+var ErrVoiceRefused = errors.New("envoi vocal refusé par le fournisseur")
+
+// ErrVoiceNoAck signale qu'une commande vocale envoyée n'a pas été acquittée
+// dans le délai borné : elle a pu être reçue, donc rien ne doit être renvoyé
+// (la voix pourrait dire la confirmation deux fois).
+var ErrVoiceNoAck = errors.New("commentaire vocal non acquitté")
+
+// AnnounceOutcome est l'issue de l'action annoncée à la voix. L'ensemble est
+// fermé ; toute autre valeur (dont la valeur nulle) est traitée comme un échec,
+// jamais comme une confirmation.
+type AnnounceOutcome int
+
+const (
+	// AnnounceDone : l'action a abouti (la décision est enregistrée).
+	AnnounceDone AnnounceOutcome = iota + 1
+	// AnnounceFailed : l'action n'a pas abouti (la checklist est inchangée).
+	AnnounceFailed
+)
+
+// Announcement est une annonce vocale hors délégation : le texte réel de
+// l'orchestrateur et l'issue qu'il décrit.
+type Announcement struct {
+	Text    string
+	Outcome AnnounceOutcome
+}
+
 // VoiceReply est la part du sideband dont l'orchestrateur a besoin : faire
 // dire un commentaire à la voix pour une délégation.
 type VoiceReply interface {
 	AppendCommentary(ctx context.Context, delegationID, text string) error
-	// Announce dit un texte HORS de toute délégation (action de l'interface) :
-	// il n'est jamais rattaché à un identifiant de délégation, ni à un
-	// identifiant d'opération interne. nil n'est que l'acquittement.
-	Announce(ctx context.Context, text string) error
+	// Announce dit une annonce HORS de toute délégation (action de l'interface) :
+	// son texte n'est jamais rattaché à un identifiant de délégation, ni à un
+	// identifiant d'opération interne. Contrat : l'implémentation tente ses
+	// canaux dans l'ordre de sa politique et ne passe au suivant que sur
+	// ErrVoiceRefused ; elle n'envoie jamais deux fois sur une commande qui a pu
+	// être reçue (ErrVoiceNoAck, erreur d'envoi). Un échec de remise est journalisé
+	// par l'implémentation, qui rend nil : l'appelant n'a rien d'autre à tenter.
+	// Une erreur non nil (contexte, défaut interne) est journalisée par l'appelant,
+	// sans nouvel envoi.
+	Announce(ctx context.Context, a Announcement) error
 }
 
 // Delegations ouvre la gestion des délégations d'une session voix (A1). Elle
