@@ -46,6 +46,9 @@ const (
 
 var actionName = regexp.MustCompile(`^[a-z][a-z_]{0,39}$`)
 
+// errConsumerGone : le consommateur du flux est parti pendant une émission progressive.
+var errConsumerGone = errors.New("consommateur du flux parti")
+
 // executor traduit la composition de l'agent en événements A2A.
 type executor struct {
 	profile  Profile
@@ -93,8 +96,25 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
 			return
 		}
-		comp, err := e.composer.Compose(ctx, req, e.ds)
+		consumerGone := false
+		emit := func(m map[string]any) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if consumerGone {
+				return errConsumerGone
+			}
+			msg := a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewDataPart(m))
+			if !yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateWorking, msg), nil) {
+				consumerGone = true
+				return errConsumerGone
+			}
+			return nil
+		}
+		comp, err := e.composer.Compose(ctx, req, e.ds, emit)
 		switch {
+		case consumerGone:
+			return
 		case ctx.Err() != nil:
 			// Annulée : l'événement terminal vient de Cancel ou le consommateur est parti.
 			return
@@ -110,10 +130,10 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			return
 		}
 
-		// Un message A2UI par status-update : le client ne lit les parts A2UI que là.
+		// Un message A2UI par status-update : le client ne lit les parts A2UI que là. Les
+		// messages déjà émis par emit ne sont pas rejoués : Messages ne porte que la suite.
 		for _, m := range comp.Messages {
-			msg := a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewDataPart(m))
-			if ctx.Err() != nil || !yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateWorking, msg), nil) {
+			if emit(m) != nil {
 				return
 			}
 		}

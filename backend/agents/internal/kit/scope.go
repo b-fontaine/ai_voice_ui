@@ -13,6 +13,10 @@ import (
 // maxRequestRunes borne le texte analysé par ParseIntent.
 const maxRequestRunes = 1000
 
+// MaxRequestRunes est cette borne, exportée pour borner de la même façon le texte transmis
+// à un modèle de composition.
+const MaxRequestRunes = maxRequestRunes
+
 // Motifs de refus d'une ScopeError : ensemble fermé, sans fragment de la demande.
 const (
 	ReasonVersion                = "version"

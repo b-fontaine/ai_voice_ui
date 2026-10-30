@@ -15,7 +15,7 @@ func TestComposeCompareInheritsFocus(t *testing.T) {
 	c := delivery.NewComposer(testCatalog)
 	got, err := c.Compose(context.Background(), kit.Request{
 		Text: "Compare avec la 3.3", ContextID: "ctx", Focus: kit.Focus{Platform: "Android"},
-	}, load(t))
+	}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose avec focus Android : %v", err)
 	}
@@ -27,7 +27,7 @@ func TestComposeCompareInheritsFocus(t *testing.T) {
 
 func TestComposeCompareWithoutFocusIsRejected(t *testing.T) {
 	c := delivery.NewComposer(testCatalog)
-	_, err := c.Compose(context.Background(), kit.Request{Text: "Compare avec la 3.3", ContextID: "ctx"}, load(t))
+	_, err := c.Compose(context.Background(), kit.Request{Text: "Compare avec la 3.3", ContextID: "ctx"}, load(t), nil)
 	var se *kit.ScopeError
 	if !errors.As(err, &se) || se.Reason != kit.ReasonCompareWithoutPlatform {
 		t.Fatalf("Compose sans focus : %v, attendu compare_without_platform", err)
@@ -38,7 +38,7 @@ func TestComposeSwitchPlatformKeepsNoComparison(t *testing.T) {
 	c := delivery.NewComposer(testCatalog)
 	got, err := c.Compose(context.Background(), kit.Request{
 		Text: "Plutôt iOS", ContextID: "ctx", Focus: kit.Focus{Platform: "Android"},
-	}, load(t))
+	}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose « plutôt iOS » : %v", err)
 	}

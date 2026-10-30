@@ -27,7 +27,7 @@ var _ kit.Composer = (*Composer)(nil)
 
 // Compose implémente kit.Composer : createSurface (si la surface n'est pas active)
 // → updateComponents → updateDataModel.
-func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
+func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset, _ func(map[string]any) error) (kit.Composition, error) {
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}

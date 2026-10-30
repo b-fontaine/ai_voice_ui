@@ -130,7 +130,7 @@ func TestActionOutsideProfileTagsIsRejectedBeforeComposer(t *testing.T) {
 		composer := ag.composer
 		base := serve(t, p, fakeComposer{fn: func(ctx context.Context, req kit.Request) (kit.Composition, error) {
 			rec.record(req)
-			return composer.Compose(ctx, req, testDataset(t))
+			return composer.Compose(ctx, req, testDataset(t), nil)
 		}})
 		for _, name := range []string{"inconnue", "block_release_et_plus"} {
 			last := sendAction(t, base, actionMeta(name))

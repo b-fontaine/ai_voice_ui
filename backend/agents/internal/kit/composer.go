@@ -49,6 +49,15 @@ type Composition struct {
 // particulier ; il ne lit aucun fichier, le jeu de données lui est fourni. Une
 // implémentation est sans état entre deux appels (la mémoire des surfaces est
 // côté orchestrateur) et sûre pour un usage concurrent.
+//
+// Émission progressive (spec 012, A1). emit envoie sur-le-champ un message A2UI au client
+// (un status-update « working » par message). Règle : ce qui a été émis par emit n'est PAS
+// rejoué depuis Composition.Messages, qui ne porte que les messages restant à envoyer, après
+// ceux déjà émis. Un composeur qui n'émet pas progressivement renvoie tous ses messages dans
+// Composition.Messages et n'appelle jamais emit. emit se rappelle depuis la goroutine de
+// Compose uniquement ; son erreur (contexte annulé, client parti) doit être renvoyée telle
+// quelle. L'exécuteur passe toujours un emit non nil ; les tests qui n'émettent pas peuvent
+// passer nil.
 type Composer interface {
-	Compose(ctx context.Context, req Request, ds dataset.Dataset) (Composition, error)
+	Compose(ctx context.Context, req Request, ds dataset.Dataset, emit func(map[string]any) error) (Composition, error)
 }

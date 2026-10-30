@@ -56,7 +56,7 @@ func fixtureMessages(t *testing.T, surface string) []map[string]any {
 func compose(t *testing.T, text string, active ...string) kit.Composition {
 	t.Helper()
 	got, err := quality.NewComposer(testCatalog).Compose(context.Background(),
-		kit.Request{Text: text, ContextID: "c1", ActiveSurfaces: active}, load(t))
+		kit.Request{Text: text, ContextID: "c1", ActiveSurfaces: active}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose : %v", err)
 	}
@@ -231,7 +231,7 @@ func TestQualityScopeKeepsDefensiveRefusals(t *testing.T) {
 	}
 	for _, tc := range cases {
 		c := quality.NewComposer(testCatalog)
-		_, err := c.Compose(context.Background(), kit.Request{Text: tc.text, ContextID: "c"}, load(t))
+		_, err := c.Compose(context.Background(), kit.Request{Text: tc.text, ContextID: "c"}, load(t), nil)
 		if tc.ok && err != nil {
 			t.Errorf("%q devrait être accepté : %v", tc.text, err)
 		}
@@ -245,12 +245,12 @@ func TestRequestTextTruncatedBeforeAnalysis(t *testing.T) {
 	// « Android » placé après la 1 000ᵉ rune : ignoré.
 	text := strings.Repeat("é", 1000) + " Android"
 	c := quality.NewComposer(testCatalog)
-	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t)); err != nil {
+	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t), nil); err != nil {
 		t.Errorf("le texte doit être coupé à 1 000 runes avant analyse : %v", err)
 	}
 	// Dans les 1 000 premières runes : pris en compte (vue Android).
 	text = strings.Repeat("é", 900) + " Android"
-	got, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c2"}, load(t))
+	got, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c2"}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Android avant la 1 000ᵉ rune doit être servi : %v", err)
 	}
@@ -259,7 +259,7 @@ func TestRequestTextTruncatedBeforeAnalysis(t *testing.T) {
 	}
 	// Une plateforme en trop après 1 000 runes est ignorée, avant elle est refusée.
 	text = "iOS " + strings.Repeat("é", 900) + " Android"
-	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c3"}, load(t)); !errors.Is(err, kit.ErrOutOfScope) {
+	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c3"}, load(t), nil); !errors.Is(err, kit.ErrOutOfScope) {
 		t.Errorf("deux plateformes dans les 1 000 premières runes doivent être refusées, obtenu %v", err)
 	}
 }
@@ -294,7 +294,7 @@ func TestComposerCreatesOnlySurfacesNotActive(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c := quality.NewComposer(testCatalog)
 			req := kit.Request{Text: "qualité", ContextID: "ctx", ActiveSurfaces: kit.ActiveSurfacesFrom(tc.meta)}
-			got, err := c.Compose(context.Background(), req, ds)
+			got, err := c.Compose(context.Background(), req, ds, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -310,7 +310,7 @@ func TestComposerKeepsNoStateBetweenCalls(t *testing.T) {
 	c := quality.NewComposer(testCatalog)
 	ds := load(t)
 	for i := 0; i < 3; i++ {
-		r, err := c.Compose(context.Background(), kit.Request{Text: "qualité", ContextID: "ctx"}, ds)
+		r, err := c.Compose(context.Background(), kit.Request{Text: "qualité", ContextID: "ctx"}, ds, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

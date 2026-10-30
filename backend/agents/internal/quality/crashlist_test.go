@@ -73,7 +73,7 @@ func TestCrashListIgnoresFocus(t *testing.T) {
 	c := quality.NewComposer(testCatalog)
 	got, err := c.Compose(t.Context(), kit.Request{
 		Text: "Affiche la liste des crashs", ContextID: "c", Focus: kit.Focus{Platform: "Android", CompareTo: "3.3"},
-	}, load(t))
+	}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose : %v", err)
 	}
@@ -98,7 +98,7 @@ func TestCrashListSummaryOnlyRepeatsDisplayedValues(t *testing.T) {
 
 func TestQualityRefusesUnknownViewWithReason(t *testing.T) {
 	_, err := quality.NewComposer(testCatalog).Compose(t.Context(),
-		kit.Request{Text: "Montre-moi la carte des crashs par pays", ContextID: "c"}, load(t))
+		kit.Request{Text: "Montre-moi la carte des crashs par pays", ContextID: "c"}, load(t), nil)
 	var se *kit.ScopeError
 	if !asScope(err, &se) || se.Reason != kit.ReasonViewUnavailable {
 		t.Fatalf("erreur %v, attendu view_unavailable", err)

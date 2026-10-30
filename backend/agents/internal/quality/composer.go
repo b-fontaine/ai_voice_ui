@@ -30,7 +30,7 @@ var platforms = []string{"iOS", "Android"}
 
 // Compose implémente kit.Composer. Ordre des messages : surface par surface (kpi puis
 // trend), createSurface → updateComponents → updateDataModel (G4).
-func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
+func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset, _ func(map[string]any) error) (kit.Composition, error) {
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
