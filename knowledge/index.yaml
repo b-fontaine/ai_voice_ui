@@ -124,6 +124,8 @@ tasks:
     notes: [perf-web-wasm-build, perf-web-renderers, perf-web-coop-coep, perf-web-initial-load, perf-web-multi-view, perf-web-no-isolates, perf-web-profiling]
   - task: "Concevoir / faire évoluer le backend orchestrateur"
     notes: [adr-0003-backend-go, adr-0002-orchestrator-backend, ma-backend-stack-recommendation, ma-backend-stack-options, ma-backend-sdk-landscape, ma-backend-sdk-go, ma-backend-sdk-rust, proj-sk-backend, ma-target-architecture, ma-where-to-run-agents, rt-gpt-live-sideband, rt-gpt-live-delegation, rt-ephemeral-keys, rt-gemini-ephemeral-tokens, proto-stack-recommendation, genui-a2ui-security, ma-mcp-security, ma-otel-genai-spans]
+  - task: "Générer du texte structuré (JSON schema) avec l'API Responses depuis le backend Go"
+    notes: [ma-openai-responses-structured-request, ma-openai-responses-structured-response, ma-backend-sdk-go, rt-ephemeral-keys, ma-prompt-injection-tools]
   - task: "Observabilité et évaluation des agents"
     notes: [ma-otel-genai-spans, ma-voice-agent-evals, ma-guardrails, bloc-observer]
   - task: "CI, lints et couverture"

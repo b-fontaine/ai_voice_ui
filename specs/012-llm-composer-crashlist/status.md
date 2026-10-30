@@ -2,7 +2,7 @@
 
 - **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tâche en cours** : T41+T42 (Flutter)
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
 - **Backlog** : EP-03, EP-04, EP-09
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | TDD | T19 : notes `ma-openai-responses-structured-request` et `-response` (doc officielle, `kb_lint` 0 erreur). À retenir pour T20 : les jetons de raisonnement comptent dans `max_output_tokens` (réponse `incomplete` sans texte possible) ; `reasoning.effort` à rendre configurable (`none` refusé par certains modèles) ; la page Models liste `gpt-6-luna`, `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-astra` (pas de « mini »), choix par la mesure T51 ; l'override de base URL n'est pas documenté pour Go : la base est une configuration de l'adaptateur. | `kb_lint.py` |
 | 2026-10-30 | TDD | T10 (`dataset.json` `crashes`, `TopCrashes`, contrôles de cohérence) et T11 (`CrashList` en 6ᵉ composant du contrat, fixtures `crashlist-global|android`, parité Go/Dart, compose à 6 composants) faites ; `check-compose.sh` OK. Note : `genesis_catalog_test.dart` exclut `CrashList` de la comparaison au contrat jusqu'à T41. | `gates/20261030-230235-unit-go.log`, `gates/20261030-230237-unit-flutter.log` |
 | 2026-10-30 | Gherkin | T01 (agents C-01 à C-06), T02 (orchestrateur C-07, C-08), T03 (Flutter F-01, F-02). Rouges pour la bonne raison — Go : `0 appel(s) à la passerelle, attendu exactement 1` (C-01 à C-03, C-06 repli), surface `crashes` absente (C-04, C-05), écouteur de la passerelle absent (C-07), `crashes` refusé / `failure_rejected_view` absente (C-08) ; Flutter : 5 échecs sur 5, `component_not_allowed` puis `unknown_surface` (validateur client). `gate --unit` go et flutter verts. | `.omc/state/loop/gates/20261030-225637-unit-go.log`, `20261030-225625-unit-flutter.log` |
 | 2026-10-30 | Revue du plan | architect-reviewer (Opus) : À AMENDER (3 bloquants, 4 importants, 1 mineur, 3 conflits) ; amendements A1 à A8 intégrés (`plan.md` § Amendements, `tasks.md` 28 tâches, `spec.md`, pdr-0074 D7/D8/D9) | `product_lint` |
