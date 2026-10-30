@@ -8,3 +8,4 @@
 2026-10-29T19:56:25+01:00	0.03	003 essai réel unique (backend compose, 28 s de session)
 2026-10-29T22:24:17+01:00	0.04	004 essai réel unique (compose orchestrateur + agent, 43 s de session)
 2026-10-30T03:28:07+01:00	0.05	006 essai réel unique (43 s facturées x 0,05 $/min + TTS 0,01, arrondi)
+2026-10-30T16:49:31+01:00	0.03	009 essai réel unique (15 s facturées x 0,05 $/min = 0,0125 $ + 2 TTS courts, arrondi) : actes 1 et 2 OK, clic refusé 409 busy
