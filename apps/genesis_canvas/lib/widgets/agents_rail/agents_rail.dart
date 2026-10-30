@@ -88,10 +88,13 @@ class _AgentRow extends StatelessWidget {
             child: const SizedBox.square(dimension: 14),
           ),
           const SizedBox(width: 12),
-          Text(
-            agent.agent,
-            style: theme.label.copyWith(color: theme.textPrimary),
-            maxLines: 1,
+          Flexible(
+            child: Text(
+              agent.agent,
+              style: theme.label.copyWith(color: theme.textPrimary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           if (label != null) ...<Widget>[
             const SizedBox(width: 12),

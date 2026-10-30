@@ -307,6 +307,34 @@ void main() {
     expect(name.style?.color, theme.textPrimary);
   });
 
+  testWidgets('un nom d\'agent de 80 caractères s\'abrège sans déborder', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpRail(tester);
+    final String name = 'Agent${' très long'.padRight(75, 'x')}';
+    expect(name, hasLength(80));
+    await emit(
+      tester,
+      AgentActivityReceived(
+        agent: name,
+        task: 't1',
+        state: AgentTaskState.working,
+        label: 'Analyse de la release',
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Text shown = tester.widget<Text>(
+      find.descendant(of: row(name), matching: find.text(name)),
+    );
+    expect(shown.overflow, TextOverflow.ellipsis);
+    expect(shown.maxLines, 1);
+    expect(paragraphsBelowMinimum(tester), isEmpty);
+  });
+
   testWidgets('un détail très long s\'abrège sans déborder', (tester) async {
     tester.view.physicalSize = const Size(900, 400);
     tester.view.devicePixelRatio = 1;

@@ -126,10 +126,14 @@ class _TrendView extends StatelessWidget {
                 ),
               ),
               for (final TrendSeries s in series)
-                _LegendEntry(color: s.color, text: s.name),
-              _LegendEntry(
-                color: theme.blockingForeground,
-                text: 'Seuil ${_pct(trend.thresholdPct)}',
+                Flexible(
+                  child: _LegendEntry(color: s.color, text: s.name),
+                ),
+              Flexible(
+                child: _LegendEntry(
+                  color: theme.blockingForeground,
+                  text: 'Seuil ${_pct(trend.thresholdPct)}',
+                ),
               ),
             ],
           ),
@@ -177,11 +181,13 @@ class _LegendEntry extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: theme.body,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Flexible(
+            child: Text(
+              text,
+              style: theme.body,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

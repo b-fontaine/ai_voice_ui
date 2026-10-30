@@ -104,6 +104,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('légende de 4 séries aux noms longs : sans débordement', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    final data = cloneJson(h.data);
+    data['series'] = <Map<String, dynamic>>[
+      for (var i = 1; i <= 4; i++)
+        <String, dynamic>{
+          'name': 'Plateforme numéro $i avec un nom vraiment très long',
+          'points': <double>[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+        },
+    ];
+    await h.sendData(tester, data);
+
+    expect(tester.takeException(), isNull);
+    expect(h.engineErrors, isEmpty);
+    expect(
+      h.inCell(find.byKey(const Key('trend-chart-paint'))),
+      findsOneWidget,
+    );
+    h.expectTextAtLeast24(tester);
+  });
+
   group('TrendChartPainter', () {
     TrendChartPainter build({
       double yMax = 1.0,

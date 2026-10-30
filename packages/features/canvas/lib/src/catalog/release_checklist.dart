@@ -125,21 +125,88 @@ class _ChecklistView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          // Les lignes en trop sont rognées, jamais de débordement.
-          Expanded(
-            child: ClipRect(
-              child: ListView(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  for (final _Item item in checklist.items)
-                    _ItemRow(item: item),
-                ],
-              ),
-            ),
-          ),
+          Expanded(child: _ItemList(items: checklist.items)),
         ],
       ),
+    );
+  }
+}
+
+/// Liste des critères : jamais de troncature muette. Quand tous ne tiennent
+/// pas, les critères bloquants (puis à risque) sont gardés en priorité, dans
+/// leur ordre d'origine, et la dernière ligne annonce « + N autres critères ».
+class _ItemList extends StatelessWidget {
+  const _ItemList({required this.items});
+
+  final List<_Item> items;
+
+  static int _priority(_Item item) => switch (item.level) {
+    SceneStatus.blocking => 0,
+    SceneStatus.risk => 1,
+    _ => 2,
+  };
+
+  /// Hauteur d'une ligne : la plus haute de la ligne de texte et de la puce,
+  /// plus le remplissage vertical de la ligne.
+  static double _rowHeight(SceneTheme theme) {
+    final double text = (theme.body.fontSize ?? 24) * (theme.body.height ?? 1);
+    final double chip =
+        (theme.label.fontSize ?? 24) * (theme.label.height ?? 1) + 12;
+    return (text > chip ? text : chip) + 4;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    final double rowH = _rowHeight(theme);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final int capacity = constraints.hasBoundedHeight
+            ? (constraints.maxHeight / rowH).floor()
+            : items.length;
+        final bool all = items.length <= capacity;
+        final int shown = all
+            ? items.length
+            : (capacity > 1 ? capacity - 1 : 0);
+        final List<int> kept = List<int>.generate(items.length, (int i) => i);
+        if (!all) {
+          // Tri par priorité de niveau (départage par rang d'origine), puis
+          // retour à l'ordre d'origine parmi les lignes gardées.
+          kept.sort((int a, int b) {
+            final int byLevel = _priority(items[a])
+                .compareTo(_priority(items[b]));
+            return byLevel != 0 ? byLevel : a.compareTo(b);
+          });
+          kept
+            ..removeRange(shown, kept.length)
+            ..sort();
+        }
+        final int hidden = items.length - shown;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (final int i in kept)
+              SizedBox(
+                height: rowH,
+                child: _ItemRow(item: items[i]),
+              ),
+            if (!all && capacity > 0)
+              SizedBox(
+                height: rowH,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '+ $hidden autres critères',
+                    key: const Key('checklist-more'),
+                    style: theme.body.copyWith(color: theme.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
