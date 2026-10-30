@@ -6,7 +6,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## Sonde et socle
 - [ ] T05 Flutter — **sonde genui 0.10.4** : `deleteSurface` puis `createSurface` du même identifiant, validateur remis à zéro, redonne le même rendu (surfaces de l'acte 1) · test d'abord : le test lui-même ; **s'il échoue : fonctionnalité Bloquée, Q-xx pour le porteur** (pas de repli)
-- [ ] T03a session principale — workspace racine, `packages/features/replay/pubspec.yaml`, dépendance `feature_replay` dans `apps/genesis_canvas/pubspec.yaml`, ajout à `workspace_dependency_rules_test.dart` · test d'abord : le test de règles de dépendances
+- [x] T03a session principale — workspace racine, `packages/features/replay/pubspec.yaml`, dépendance `feature_replay` dans `apps/genesis_canvas/pubspec.yaml`, ajout à `workspace_dependency_rules_test.dart` · test d'abord : le test de règles de dépendances
 - [ ] T11 Flutter — `testing/backend_fakes` : compteur de **toutes** les requêtes HTTP du `FakeBackend` (aujourd'hui seulement `canvasResets`) · test d'abord : `fake_backend_test.dart`
 - [ ] T12 Flutter — `GenesisApp` : paramètre `clock` (frontière « temps ») vers `AppClock` de la DI · test d'abord : une app lancée avec une horloge fausse l'utilise
 - [ ] T13 Flutter — `feature_protocol_feed` : `ProtocolFeedEntriesCleared` (vide les entrées, garde `expanded`) · test d'abord : `protocol_feed_bloc_test.dart`

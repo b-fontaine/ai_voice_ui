@@ -22,6 +22,8 @@ dependencies:
     path: ../../packages/features/catalog_shelf
   feature_protocol_feed:
     path: ../../packages/features/protocol_feed
+  feature_replay:
+    path: ../../packages/features/replay
   feature_stage_controls:
     path: ../../packages/features/stage_controls
   feature_voice_session:

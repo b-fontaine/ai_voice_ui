@@ -88,6 +88,7 @@ void main() {
       'packages/features/protocol_feed': 'feature_protocol_feed',
       'packages/features/catalog_shelf': 'feature_catalog_shelf',
       'packages/features/stage_controls': 'feature_stage_controls',
+      'packages/features/replay': 'feature_replay',
     };
     final actual = {for (final p in pkgs) p.dir: p.name};
     for (final e in expected.entries) {
