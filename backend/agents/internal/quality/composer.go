@@ -3,27 +3,13 @@ package quality
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"slices"
-	"strings"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
-const (
-	// maxRequestRunes borne le texte analysé.
-	maxRequestRunes = 1000
-
-	targetVersion = "3.4"
-)
-
-var (
-	numericVersion = regexp.MustCompile(`(\d+)\s*[.,]\s*(\d+)`)
-	spokenVersion  = regexp.MustCompile(`trois\s+point\s+(\p{L}+)`)
-	compareWord    = regexp.MustCompile(`compar`)
-	platformWord   = regexp.MustCompile(`\b(android|ios)\b`)
-)
+const targetVersion = "3.4"
 
 // Composer répond par les deux surfaces de l'acte 1 : l'indicateur « Sessions sans
 // crash » (`kpi`, KeyIndicator) et la courbe du taux de crash (`trend`, TrendChart),
@@ -50,7 +36,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !inScope(req.Text) {
+	if !kit.InScope(req.Text, targetVersion) {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
 	kpi, err := ds.CrashFree(targetVersion)
@@ -133,29 +119,4 @@ func (c *Composer) surface(msgs []map[string]any, req kit.Request, id, component
 }
 
 // statusLabel met la première lettre du libellé en capitale : « À risque ».
-func statusLabel(l dataset.Level) string {
-	r := []rune(l.Label())
-	if len(r) == 0 {
-		return ""
-	}
-	return strings.ToUpper(string(r[0])) + string(r[1:])
-}
-
-// inScope refuse : une autre version que la 3.4, une comparaison, une plateforme.
-func inScope(text string) bool {
-	if r := []rune(text); len(r) > maxRequestRunes {
-		text = string(r[:maxRequestRunes])
-	}
-	text = strings.ToLower(text)
-	for _, m := range numericVersion.FindAllStringSubmatch(text, -1) {
-		if m[1]+"."+m[2] != targetVersion {
-			return false
-		}
-	}
-	for _, m := range spokenVersion.FindAllStringSubmatch(text, -1) {
-		if m[1] != "quatre" {
-			return false
-		}
-	}
-	return !compareWord.MatchString(text) && !platformWord.MatchString(text)
-}
+func statusLabel(l dataset.Level) string { return kit.CapitalizeFirst(l.Label()) }
