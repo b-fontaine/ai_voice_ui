@@ -1,12 +1,12 @@
 # 009 — État
 
-- **Étape** : Gherkin
+- **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : T03, T04
-- **Fichiers touchés** (tâche en cours) : backend/orchestrator/acceptance/act3_*_test.go ; apps/genesis_canvas/test/acceptance/acte3_interagir* ; testing/backend_fakes/** ; tests d'acceptation de 008 (restriction aux quatre surfaces)
+- **Tâche en cours** : —
+- **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/009-j5-act3-interact
 - **Backlog** : EP-03, EP-04, EP-02, EP-06
-- **Mis à jour** : 2026-10-30 15:10
+- **Mis à jour** : 2026-10-30 15:15
 
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
@@ -15,6 +15,7 @@
 | 2026-10-30 | Revue du plan | architect-reviewer (Opus, mode PLAN) : **À AMENDER** (3 bloquants, 3 importants, 1 mineur…). Amendements A1 à A8 intégrés dans `plan.md` (bloc « Amendements », prioritaire) et `tasks.md` (T06 régressions de 008, T17 `CanvasBoard`, T14 refaite, T16 avant T15) ; pdr-0065 amendée (D5, D7) ; **Q-76** ouverte. | verdict ci-dessous |
 | 2026-10-30 | Gherkin | T01 faite (`9889631` : `dataset.json` `decisions`, `Dataset.Decision`) ; T02 faite (`58243eb` : `ActionBar` au contrat, 5 `components`, fixtures `act2-actions` et `act3-*`, README du contrat, `GenesisContract` Dart, `actionBarItem` minimal, compose à 5 composants, tests de 008 liés au catalogue corrigés à force égale) ; fixtures négatives `ActionBar` non ajoutées dans `invalid/` (les validateurs ne contrôlent pas le data model ; tests de widget à la place, parité à décider en T15). | `.omc/state/loop/gates/20261030-144817-unit-go.log`, `…144820-unit-flutter.log` : VERT |
 
+| 2026-10-30 | Gherkin | **T03 et T04 faites — étape Gherkin terminée.** T03 (Go, `backend/orchestrator/acceptance/act3_*_test.go`, `a44ee4f`) : S-03, C1 ×2, C2 ×3, C3 ×3, C4 ×2, C5 ×4 ; rouges pour la bonne raison : `POST /canvas/actions = 404` (route absente) pour tous sauf C2 (`acte 2 : createSurface = [], attendu [actions] seule`, `0 failed et 3 completed, attendu Livraison failed…`) ; `TestAct3_C2_IOSCorrectionDoesNotRecreateActions` passe (garde de non-régression) ; assertions « zéro createSurface » de 008 restreintes aux quatre surfaces (helper `createdAmong`). T04 (Flutter, `acte3_interagir.feature`, `26f8392`) : S-03, C1 ×2, C3 ×3, C6 ×3, A1 : rouges : `aucune requête POST /canvas/actions reçue par le faux backend` (boutons `onPressed: null`), `les deux boutons de la Barre d'actions doivent être actifs`, `la Barre d'actions n'est pas sous la grille` (654 attendu ≥ 914) ; le scénario C6 « état neutre » ne rougit que par le débordement de la grille à 5 surfaces (`RenderFlex overflowed by 39 pixels`) et verdira avec T17 seul. `gate --unit` (Go et Flutter) VERT, 54 contrôles, arbre propre. Reste à traiter en T06 : `requireOnlyUpdates`, `requireAttribution`, `len(got) != 4` de 008, `delivery/views_test.go`. | `.omc/state/loop/gates/20261030-150559-unit.log` : VERT |
 ## Revue d'architecte
 
 ### Revue du plan (mode PLAN, 2026-10-30) — verdict : À AMENDER
