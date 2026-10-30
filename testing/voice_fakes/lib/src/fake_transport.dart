@@ -22,6 +22,10 @@ class FakeTransport implements VoiceTransport {
   final List<String> calls = <String>[];
   final List<String> appliedAnswers = <String>[];
 
+  /// État de la piste audio distante (lecture de la voix de l'IA) ; coupée
+  /// par [setRemoteAudioEnabled] à `voice.interrupted` (spec 011).
+  bool remoteAudioEnabled = true;
+
   /// Remplacent le comportement par défaut (retard, échec, attente).
   Future<String> Function()? offerHook;
   Future<void> Function(String sdp)? answerHook;
@@ -49,6 +53,12 @@ class FakeTransport implements VoiceTransport {
     _record('applyAnswer');
     appliedAnswers.add(sdp);
     await answerHook?.call(sdp);
+  }
+
+  /// Coupe ou rétablit la piste distante (frontière WebRTC, spec 011).
+  Future<void> setRemoteAudioEnabled(bool enabled) async {
+    _record('setRemoteAudioEnabled($enabled)');
+    remoteAudioEnabled = enabled;
   }
 
   @override
