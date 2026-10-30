@@ -52,6 +52,11 @@ while true; do
     restart "fin de la pause longue"   # la boucle s'était arrêtée en écrivant paused_until
   else
     hb=$(cat "$STATE/heartbeat" 2>/dev/null); is_int "$hb" || hb=0
+    if tmux capture-pane -p -t "$LOOP_TMUX_SESSION" 2>/dev/null | tail -n 15 | grep -qiE 'enter to confirm|do you want'; then
+      [ -f "$STATE/dialog_logged" ] || { slog "boîte de dialogue en attente d'une réponse humaine (tmux attach -t $LOOP_TMUX_SESSION)"; touch "$STATE/dialog_logged"; }
+    else
+      rm -f "$STATE/dialog_logged"
+    fi
     if [ $(( now - hb )) -gt "$LOOP_STALE_S" ] && ! pane_busy; then
       restart "aucune activité depuis $(( (now - hb) / 60 )) min et session inactive"
     fi
