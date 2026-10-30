@@ -30,7 +30,9 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, ds.TargetVersion) {
+	// Tant que l'agent ne sert pas de plateforme ni de comparaison, il refuse toute
+	// intention non nulle (pdr-0064 D3).
+	if intent, err := kit.ParseIntent(req.Text, ds); err != nil || !intent.IsZero() {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
 	cl, err := ds.Checklist(ds.TargetVersion)

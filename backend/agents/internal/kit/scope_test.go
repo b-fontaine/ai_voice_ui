@@ -1,76 +1,127 @@
 package kit_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
-// TestInScopeKeepsDefensiveRefusals fige le refus défensif partagé par les trois
-// agents Genesis : autre version que la cible, comparaison, plateforme précise.
-func TestInScopeKeepsDefensiveRefusals(t *testing.T) {
+// TestParseIntentTable porte tous les cas de l'ancien test d'InScope (A4), avec le
+// verdict inversé là où pdr-0064 D3 l'exige : Android seul, iOS seul et Android +
+// comparaison avec 3.3 sont des intentions acceptées.
+func TestParseIntentTable(t *testing.T) {
+	zero := kit.Intent{}
+	android := kit.Intent{Platform: "android"}
+	ios := kit.Intent{Platform: "ios"}
+	cmp := kit.Intent{Platform: "android", CompareTo: "3.3"}
 	cases := []struct {
 		text string
+		want kit.Intent
 		ok   bool
 	}{
-		{"Prépare la release 3.4", true},
-		{"Où en est la qualité ?", true},
-		{"trois point quatre", true},
-		{"Où en est la qualité de la 3.4 ?", true},
-		{"", true},
-		{"Compare avec la 3.3 sur Android", false},
-		{"la release 3.5", false},
-		{"compare avec la 3.3", false},
-		{"uniquement sur Android", false},
-		{"Montre-moi la stabilité de la 3.4", true},
-		{"où en est la 3.4 ?", true},
-		{"Fais-moi un camembert des ventes", true},
-		{"la version 3.3", false},
-		{"la version 3,3", false},
-		{"trois point trois", false},
-		{"compare", false},
-		{"Je voudrais comparer", false},
-		{"une comparaison s'il te plaît", false},
-		{"la qualité sur Android", false},
-		{"la qualité sur iOS", false},
-		{"la qualité sur ios", false},
-		{"radios et studios", true},
-		// Un nombre décimal n'est une version que si sa partie entière a un seul
-		// chiffre et s'il n'est pas suivi de %, pt ou point(s) (R8 a).
-		{"montre les sessions sans crash sous 99,5 %", true},
-		{"montre les sessions sans crash sous 99,5%", true},
-		{"montre les sessions sans crash sous 99,5 pt", true},
-		{"une marge de 0,1 point", true},
-		{"une marge de 2.5 points", true},
-		{"3.3", false},
-		{"3,4", true},
-		{"3.5", false},
-		{"version 10.2", true},
-		{"la 3.3 à 99,5 %", false},
+		// Acte 1 : demandes sans intention particulière.
+		{"Prépare la release 3.4", zero, true},
+		{"Où en est la qualité ?", zero, true},
+		{"trois point quatre", zero, true},
+		{"Où en est la qualité de la 3.4 ?", zero, true},
+		{"", zero, true},
+		{"Montre-moi la stabilité de la 3.4", zero, true},
+		{"où en est la 3.4 ?", zero, true},
+		{"Fais-moi un camembert des ventes", zero, true},
+		{"3,4", zero, true},
+		{"radios et studios", zero, true},
+		// Versions refusées.
+		{"la release 3.5", zero, false},
+		{"3.5", zero, false},
+		{"Compare avec la 3.3", zero, false},
+		{"la version 3.3", zero, false},
+		{"la version 3,3", zero, false},
+		{"trois point trois", zero, false},
+		{"3.3", zero, false},
+		{"la 3.3 sur Android", zero, false},
+		{"la 3.3 à 99,5 %", zero, false},
+		// Comparaison : mot « compar… » ou « par rapport à » ; plateforme requise.
+		{"compare", zero, false},
+		{"Je voudrais comparer", zero, false},
+		{"une comparaison s'il te plaît", zero, false},
+		{"par rapport à la 3.3", zero, false},
+		{"Compare Android avec la 3.3", cmp, true},
+		{"Compare Android avec trois point trois", cmp, true},
+		{"Compare Android avec la 3,3", cmp, true},
+		{"COMPARE ANDROID AVEC LA 3.3", cmp, true},
+		{"Android par rapport à la 3.3", cmp, true},
+		{"Android par rapport a la 3.3", cmp, true},
+		{"Compare Android", cmp, true},
+		{"Compare Android avec la 3.4 et la 3.3", cmp, true},
+		{"Compare Android avec la 3.2", zero, false},
+		{"Compare Android avec trois point deux", zero, false},
+		{"Compare iOS avec la 3.3", zero, false},
+		{"Compare iOS", zero, false},
+		{"Compare Android et iOS avec la 3.3", zero, false},
+		// Plateformes.
+		{"uniquement sur Android", android, true},
+		{"la qualité sur Android", android, true},
+		{"la qualité sur iOS", ios, true},
+		{"la qualité sur ios", ios, true},
+		{"Android et iOS", zero, false},
+		{"Android, Android", android, true},
+		// Mesures et nombres qui ne sont pas des versions (R8 a).
+		{"montre les sessions sans crash sous 99,5 %", zero, true},
+		{"montre les sessions sans crash sous 99,5%", zero, true},
+		{"montre les sessions sans crash sous 99,5 pt", zero, true},
+		{"une marge de 0,1 pt", zero, true},
+		{"une marge de 0,1 point", zero, true},
+		{"une marge de 2.5 points", zero, true},
+		{"version 10.2", zero, true},
+		{"Android sous 99,5 %", android, true},
 	}
+	ds := testDataset(t)
 	for _, tc := range cases {
-		if got := kit.InScope(tc.text, "3.4"); got != tc.ok {
-			t.Errorf("InScope(%q) = %v, attendu %v", tc.text, got, tc.ok)
+		got, err := kit.ParseIntent(tc.text, ds)
+		if tc.ok {
+			if err != nil || got != tc.want {
+				t.Errorf("ParseIntent(%q) = %+v, %v ; attendu %+v", tc.text, got, err, tc.want)
+			}
+			continue
+		}
+		if !errors.Is(err, kit.ErrOutOfScope) || got != (kit.Intent{}) {
+			t.Errorf("ParseIntent(%q) = %+v, %v ; attendu ErrOutOfScope", tc.text, got, err)
 		}
 	}
 }
 
-func TestInScopeTruncatesAtOneThousandRunes(t *testing.T) {
-	if !kit.InScope(strings.Repeat("é", 1000)+" Android", "3.4") {
-		t.Error("« Android » après la 1 000ᵉ rune doit être ignoré")
+func TestParseIntentTruncatesAtOneThousandRunes(t *testing.T) {
+	ds := testDataset(t)
+	if got, err := kit.ParseIntent(strings.Repeat("é", 1000)+" Android", ds); err != nil || got != (kit.Intent{}) {
+		t.Errorf("« Android » après la 1 000ᵉ rune doit être ignoré, obtenu %+v, %v", got, err)
 	}
-	if kit.InScope(strings.Repeat("é", 900)+" Android", "3.4") {
-		t.Error("« Android » avant la 1 000ᵉ rune doit être refusé")
+	if got, err := kit.ParseIntent(strings.Repeat("é", 900)+" Android", ds); err != nil || got.Platform != "android" {
+		t.Errorf("« Android » avant la 1 000ᵉ rune doit être reconnu, obtenu %+v, %v", got, err)
+	}
+	if _, err := kit.ParseIntent(strings.Repeat("é", 1000)+" la 3.5", ds); err != nil {
+		t.Errorf("une version après la 1 000ᵉ rune doit être ignorée, obtenu %v", err)
+	}
+	if _, err := kit.ParseIntent(strings.Repeat("é", 900)+" la 3.5", ds); !errors.Is(err, kit.ErrOutOfScope) {
+		t.Errorf("une version avant la 1 000ᵉ rune doit être refusée, obtenu %v", err)
 	}
 }
 
-func TestInScopeUsesTargetVersion(t *testing.T) {
-	if !kit.InScope("la release 3.5", "3.5") {
-		t.Error("3.5 doit être acceptée quand c'est la version cible")
+func TestParseIntentUsesDatasetVersions(t *testing.T) {
+	ds := testDataset(t)
+	ds.TargetVersion = "3.5"
+	if _, err := kit.ParseIntent("la release 3.5", ds); err != nil {
+		t.Errorf("3.5 doit être acceptée quand c'est la version cible : %v", err)
 	}
-	if kit.InScope("la release 3.4", "3.5") {
-		t.Error("3.4 doit être refusée quand la cible est 3.5")
+	if _, err := kit.ParseIntent("la release 3.4", ds); !errors.Is(err, kit.ErrOutOfScope) {
+		t.Errorf("3.4 doit être refusée quand la cible est 3.5, obtenu %v", err)
+	}
+}
+
+func TestIntentIsZero(t *testing.T) {
+	if !(kit.Intent{}).IsZero() || (kit.Intent{Platform: "ios"}).IsZero() || (kit.Intent{Platform: "android", CompareTo: "3.3"}).IsZero() {
+		t.Error("IsZero doit n'être vrai que pour l'intention nulle")
 	}
 }
 
