@@ -38,6 +38,7 @@ class _Stage implements ReplayStage {
       'exit(player=${rig.player?.snapshot.status.name},'
       'mode=${rig.router.mode.name})',
     );
+    rig.router.clearJournal(); // comme la page (`_resetStage`)
   }
 }
 
@@ -284,11 +285,7 @@ void main() {
         ], reason: 'le lecteur est arrêté avant exit, le mode change après');
         expect(rig.router.mode, ReplayRouterMode.live);
         expect(rig.bloc.state, const ReplayLive(canPlay: false));
-        expect(
-          rig.router.hasPlayableJournal,
-          isFalse,
-          reason: 'journal vidé par exitReplay',
-        );
+        expect(rig.router.hasPlayableJournal, isFalse);
         async.elapse(const Duration(seconds: 5));
         expect(rig.log, hasLength(1), reason: 'plus aucune injection');
         unawaited(rig.bloc.close());

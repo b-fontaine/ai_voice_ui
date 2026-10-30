@@ -223,6 +223,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // Seul flux qui entre dans le gate : vivant (ou scénario), enregistré au
   // passage ; le lecteur de rejeu s'y substituera. Créé dans `initState`.
   late final ReplayRouter _router;
+  StreamSubscription<int>? _journalFullSubscription;
   // Pilote du rejeu de l'acte 4 : seul appelant du routeur (mode) et du port
   // `ReplayStage` (créé dans `initState`, après le routeur).
   late final ReplayBloc _replayBloc;
@@ -310,6 +311,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       nowMs: widget.getIt<AppClock>().nowUnixMs,
     );
     _gate.attach(_router.events);
+    _journalFullSubscription = _router.journalFull.listen(
+      (count) => widget.errorSink.writeln(
+        'Rejeu : journal plein ($count messages), '
+        'la suite n\'est pas enregistrée',
+      ),
+    );
     final replaySettings = ReplaySettings(
       tick: _settings.replayTick,
       maxGap: _settings.replayMaxGap,
@@ -592,6 +599,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _cancelRetryWait();
     unawaited(_statusSubscription?.cancel());
     unawaited(_activitySubscription?.cancel());
+    unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle

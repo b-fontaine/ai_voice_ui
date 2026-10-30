@@ -59,12 +59,12 @@ void main() {
     expect(rig.router.hasPlayableJournal, isTrue);
   });
 
-  test('en direct : les autres événements passent sans être enregistrés', () {
+  test('en direct : les autres événements ne sont ni transmis ni '
+      'enregistrés', () {
     final _Rig rig = _Rig();
-    const SessionEvent other = OrbLevelChanged(0.5);
-    rig.live.add(other);
+    rig.live.add(const OrbLevelChanged(0.5));
 
-    expect(rig.out, <SessionEvent>[other]);
+    expect(rig.out, isEmpty);
     expect(rig.journal.length, 0);
     expect(rig.router.hasPlayableJournal, isFalse);
   });
@@ -92,7 +92,7 @@ void main() {
     expect(rig.journal.length, 1);
   });
 
-  test('en rejeu : les événements vivants sont jetés et comptés', () {
+  test('en rejeu : les messages A2UI vivants sont jetés et comptés', () {
     final _Rig rig = _Rig();
     rig.live.add(_create('a'));
     rig.out.clear();
@@ -103,7 +103,11 @@ void main() {
 
     expect(rig.out, isEmpty);
     expect(rig.journal.length, 1);
-    expect(rig.router.discardedLiveCount, 2);
+    expect(
+      rig.router.discardedLiveCount,
+      1,
+      reason: 'seuls les messages A2UI sont comptés',
+    );
   });
 
   test('message vivant dans la même pile que enterReplay : ni rendu ni '
@@ -148,8 +152,8 @@ void main() {
     expect(rig.journal.length, 0);
   });
 
-  test('exitReplay : retour en direct, journal vidé, compteur rendu et remis '
-      'à zéro', () {
+  test('exitReplay : retour en direct, compteur remis à zéro, journal '
+      'conservé', () {
     final _Rig rig = _Rig();
     rig.live.add(_create('a'));
     rig.router.enterReplay();
@@ -157,9 +161,11 @@ void main() {
     rig.live.add(_delete('b'));
     rig.out.clear();
 
-    expect(rig.router.exitReplay(), 2);
+    expect(rig.router.discardedLiveCount, 2);
+    rig.router.exitReplay();
     expect(rig.router.discardedLiveCount, 0);
-    expect(rig.journal.length, 0);
+    expect(rig.journal.length, 1, reason: 'seule la page vide le journal');
+    rig.router.clearJournal();
     expect(rig.router.hasPlayableJournal, isFalse);
 
     rig.now = 5000;
@@ -168,6 +174,39 @@ void main() {
     expect(rig.out, <SessionEvent>[c]);
     expect(rig.journal.entries.single.tMs, 0); // t0 remis à zéro
     expect(rig.router.mode, ReplayRouterMode.live);
+  });
+
+  test('journalFull : un seul signal au premier ajout refusé, avec le '
+      'nombre d\'entrées', () async {
+    final _Rig rig = _Rig(maxEntries: 2);
+    final List<int> full = <int>[];
+    rig.router.journalFull.listen(full.add);
+
+    rig.live.add(_create('a'));
+    rig.live.add(_delete('a')); // atteint le plafond, rien n'est refusé
+    await Future<void>.delayed(Duration.zero);
+    expect(full, isEmpty, reason: 'pas avant le premier refus');
+
+    rig.live.add(_delete('b'));
+    rig.live.add(_delete('c'));
+    await Future<void>.delayed(Duration.zero);
+    expect(full, <int>[2]);
+  });
+
+  test('journalFull : clearJournal remet à zéro, un nouveau remplissage '
+      're-signale', () async {
+    final _Rig rig = _Rig(maxEntries: 1);
+    final List<int> full = <int>[];
+    rig.router.journalFull.listen(full.add);
+
+    rig.live.add(_create('a'));
+    rig.live.add(_delete('a'));
+    rig.router.clearJournal();
+    rig.live.add(_create('b'));
+    rig.live.add(_delete('b'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(full, <int>[1, 1]);
   });
 
   test(

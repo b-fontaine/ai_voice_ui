@@ -10,9 +10,10 @@ enum ReplayRouterMode { live, replay }
 ///
 /// Un seul flux ([events]) entre dans le gate, en direct comme en rejeu :
 /// - mode `live` : chaque enveloppe A2UI vivante est enregistrée dans le
-///   journal puis transmise ; les autres événements sont transmis tels quels ;
-/// - mode `replay` : les événements vivants sont jetés et comptés ; seul le
-///   lecteur alimente le flux, par [inject].
+///   journal puis transmise ; les autres événements (niveaux d'orbe,
+///   transcription…) ne sont ni transmis ni enregistrés ;
+/// - mode `replay` : les enveloppes A2UI vivantes sont jetées et comptées ;
+///   seul le lecteur alimente le flux, par [inject].
 ///
 /// La sortie est synchrone (`sync: true`) : aucun message vivant n'est « en
 /// transit » au passage en rejeu, la décision de mode se prend dans l'ordre
@@ -39,18 +40,25 @@ class ReplayRouter {
     sync: true,
   );
   final StreamController<int> _sizes = StreamController<int>.broadcast();
+  final StreamController<int> _full = StreamController<int>.broadcast();
   final Completer<void> _liveDone = Completer<void>();
   late final StreamSubscription<SessionEvent> _subscription;
 
   ReplayRouterMode _mode = ReplayRouterMode.live;
   int _discarded = 0;
   bool _disposed = false;
+  bool _fullSignaled = false;
 
   /// Flux unique vers le gate (abonné une seule fois).
   Stream<SessionEvent> get events => _output.stream;
 
   /// Taille du journal, à chaque ajout ou vidage.
   Stream<int> get journalSize => _sizes.stream;
+
+  /// Un seul événement, au premier ajout refusé parce que le journal est
+  /// plein : le nombre d'entrées conservées (jamais leur contenu). Se réarme
+  /// par [clearJournal].
+  Stream<int> get journalFull => _full.stream;
 
   /// Au moins un `createSurface` enregistré : un rejeu a un sens.
   bool get hasPlayableJournal => _journal.hasCreateSurface;
@@ -64,15 +72,18 @@ class ReplayRouter {
   Future<void> get liveDone => _liveDone.future;
 
   void _onLive(SessionEvent event) {
-    if (_disposed) return;
+    if (_disposed || event is! A2uiEnvelopeReceived) return;
     if (_mode == ReplayRouterMode.replay) {
       _discarded++;
       return;
     }
-    if (event is A2uiEnvelopeReceived) {
-      final int before = _journal.length;
-      _journal.append(event, _nowMs());
-      if (_journal.length != before) _emitSize();
+    final int before = _journal.length;
+    _journal.append(event, _nowMs());
+    if (_journal.length != before) {
+      _emitSize();
+    } else if (!_fullSignaled && !_full.isClosed) {
+      _fullSignaled = true;
+      _full.add(_journal.length);
     }
     _output.add(event);
   }
@@ -84,19 +95,17 @@ class ReplayRouter {
     return List<JournalEntry>.unmodifiable(_journal.entries);
   }
 
-  /// Revient en direct, vide le journal et renvoie le nombre de messages
-  /// vivants écartés pendant le rejeu (remis à zéro).
-  int exitReplay() {
-    final int discarded = _discarded;
+  /// Revient en direct et remet à zéro le compteur de messages écartés. Le
+  /// journal n'est pas touché : seule la page appelle [clearJournal].
+  void exitReplay() {
     _discarded = 0;
     _mode = ReplayRouterMode.live;
-    clearJournal();
-    return discarded;
   }
 
   /// Vide le journal (remise à vide en direct) ; t0 repart de zéro.
   void clearJournal() {
     _journal.clear();
+    _fullSignaled = false;
     _emitSize();
   }
 
@@ -117,5 +126,6 @@ class ReplayRouter {
     unawaited(_subscription.cancel());
     unawaited(_output.close());
     unawaited(_sizes.close());
+    unawaited(_full.close());
   }
 }

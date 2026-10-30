@@ -8,10 +8,8 @@ export 'src/model/replay_event.dart'
         ReplayCommand,
         ReplayDirectPressed,
         ReplayEvent,
-        ReplayJournalSubscribed,
         ReplayPausePressed,
         ReplayPlayPressed,
-        ReplayPlayerSubscribed,
         ReplayRestartPressed,
         ReplaySeeked,
         ReplaySpeedSelected;

@@ -94,6 +94,7 @@ void main() {
     String scenario = 'demo',
     bool withReplay = true,
     List<Catalog>? catalogs,
+    GenesisConfig config = const GenesisConfig(),
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -120,7 +121,7 @@ void main() {
             ),
             exitHandler: exitCodes.add,
             errorSink: errors,
-            settings: pageSettingsOf(),
+            settings: pageSettingsOf(config),
           ),
         ),
       ),
@@ -229,6 +230,22 @@ void main() {
 
     expect(exitCodes, isEmpty);
     expect(errors.toString(), isEmpty);
+  });
+
+  testWidgets('journal plein : une seule ligne, le nombre sans le contenu', (
+    tester,
+  ) async {
+    await launch(
+      tester,
+      _valid,
+      config: const GenesisConfig(replayJournalMaxEntries: 1),
+    );
+
+    expect(
+      errors.toString(),
+      'Rejeu : journal plein (1 messages), la suite n\'est pas enregistrée\n',
+    );
+    expect(errors.toString(), isNot(contains('kpi')));
   });
 
   testWidgets('capture active sans scénario : PNG non vide et sortie 0', (
