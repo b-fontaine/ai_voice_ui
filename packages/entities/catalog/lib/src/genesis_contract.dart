@@ -32,6 +32,63 @@ abstract final class GenesisContract {
     'data',
   ];
 
+  /// Champs obligatoires de l'objet lié, par composant. `comparison` (acte 2)
+  /// est optionnel et toléré : il n'apparaît pas ici.
+  static const Map<String, List<String>> requiredFields =
+      <String, List<String>>{
+        'KeyIndicator': <String>[
+          'label',
+          'value',
+          'trend',
+          'threshold',
+          'status',
+          'statusLabel',
+        ],
+        'TrendChart': <String>[
+          'title',
+          'thresholdPct',
+          'yMaxPct',
+          'days',
+          'series',
+        ],
+        'ReviewSentiment': <String>[
+          'title',
+          'count',
+          'positivePct',
+          'negativePct',
+          'average',
+          'excerpts',
+        ],
+        'ReleaseChecklist': <String>[
+          'title',
+          'items',
+          'recommendation',
+          'decisionStatus',
+        ],
+      };
+
+  /// Champs obligatoires des éléments ou sous-objets, par composant puis par
+  /// champ parent (`series` → `name`, `points`, etc.).
+  static const Map<String, Map<String, List<String>>> requiredNestedFields =
+      <String, Map<String, List<String>>>{
+        'TrendChart': <String, List<String>>{
+          'series': <String>['name', 'points'],
+        },
+        'ReviewSentiment': <String, List<String>>{
+          'excerpts': <String>['stars', 'platform', 'text'],
+        },
+        'ReleaseChecklist': <String, List<String>>{
+          'items': <String>[
+            'label',
+            'threshold',
+            'value',
+            'level',
+            'levelLabel',
+          ],
+          'recommendation': <String>['level', 'label'],
+        },
+      };
+
   static const Map<String, String> _surfaceByComponent = <String, String>{
     'KeyIndicator': 'kpi',
     'TrendChart': 'trend',

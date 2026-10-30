@@ -252,8 +252,10 @@ void main() {
     final catalog = genesisCatalog(catalogId: 'https://example.test/c');
     expect(catalog.catalogId, 'https://example.test/c');
     expect(genesisCatalog().catalogId, GenesisContract.defaultCatalogId);
-    expect(catalog.items.map((i) => i.name), <String>[
-      GenesisContract.components.first,
-    ]);
+    expect(
+      catalog.items.map((i) => i.name),
+      GenesisContract.components,
+      reason: 'ActionBar et CrashList n ont pas de schéma : hors catalogue',
+    );
   });
 }

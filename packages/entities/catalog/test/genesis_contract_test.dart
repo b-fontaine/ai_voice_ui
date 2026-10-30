@@ -52,6 +52,38 @@ void main() {
     }
   });
 
+  test('les champs requis (racine et imbriqués) suivent catalog.json', () {
+    final definitions = catalog['definitions'] as Map<String, dynamic>;
+    List<String> requiredOf(Map<String, dynamic> fields) => <String>[
+      for (final e in fields.entries)
+        if ((e.value as Map<String, dynamic>)['required'] == true) e.key,
+    ];
+    for (final name in GenesisContract.components) {
+      final fields =
+          ((definitions[name] as Map<String, dynamic>)['dataModel']
+                  as Map<String, dynamic>)['fields']
+              as Map<String, dynamic>;
+      expect(
+        GenesisContract.requiredFields[name],
+        requiredOf(fields),
+        reason: name,
+      );
+      final nested = <String, List<String>>{};
+      for (final e in fields.entries) {
+        final spec = e.value as Map<String, dynamic>;
+        final sub = spec['fields'] ?? spec['items'];
+        if (sub is Map<String, dynamic> && e.key != 'comparison') {
+          nested[e.key] = requiredOf(sub);
+        }
+      }
+      expect(
+        GenesisContract.requiredNestedFields[name] ?? <String, List<String>>{},
+        nested,
+        reason: name,
+      );
+    }
+  });
+
   test('un composant inconnu n a ni surface ni chemin lié', () {
     expect(GenesisContract.surfaceOf('Text'), isNull);
     expect(GenesisContract.boundPathOf('ActionBar'), isNull);
