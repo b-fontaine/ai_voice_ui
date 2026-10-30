@@ -38,10 +38,10 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
+	if !kit.InScope(req.Text, ds.TargetVersion) {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
-	rv, err := ds.Reviews(dataset.ScenarioVersion)
+	rv, err := ds.Reviews(ds.TargetVersion)
 	if err != nil {
 		return kit.Composition{}, err
 	}

@@ -33,14 +33,14 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	if !kit.InScope(req.Text, dataset.ScenarioVersion) {
+	if !kit.InScope(req.Text, ds.TargetVersion) {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
-	kpi, err := ds.CrashFree(dataset.ScenarioVersion)
+	kpi, err := ds.CrashFree(ds.TargetVersion)
 	if err != nil {
 		return kit.Composition{}, err
 	}
-	trendPt, err := ds.Trend(dataset.ScenarioVersion, "")
+	trendPt, err := ds.Trend(ds.TargetVersion, "")
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -57,7 +57,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	series := make([]any, 0, len(platforms))
 	crossing := ""
 	for _, p := range platforms {
-		rates, err := ds.DailyCrashRates(dataset.ScenarioVersion, p)
+		rates, err := ds.DailyCrashRates(ds.TargetVersion, p)
 		if err != nil {
 			return kit.Composition{}, err
 		}

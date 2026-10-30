@@ -2,6 +2,8 @@ package dataset
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 )
 
 // ReviewRow est une ligne brute d'avis : les comptes 1★ à 5★ d'une plateforme
@@ -17,7 +19,42 @@ type Excerpt struct {
 	Version  string `json:"version"`
 	Stars    int    `json:"stars"`
 	Platform string `json:"platform"`
-	Text     string `json:"text"`
+	// Views liste les vues où l'extrait est affiché (global, android, ios).
+	Views []string `json:"views"`
+	Text  string   `json:"text"`
+}
+
+// Vues d'extraits connues ; chacune compte exactement ExcerptsPerView extraits
+// (le composant d'avis en exige trois).
+const (
+	ViewGlobal  = "global"
+	ViewAndroid = "android"
+	ViewIOS     = "ios"
+
+	ExcerptsPerView = 3
+)
+
+// Views est la liste fermée des vues d'extraits.
+var Views = []string{ViewGlobal, ViewAndroid, ViewIOS}
+
+// ViewOf renvoie la vue d'extraits d'une plateforme ("" = vue globale).
+func ViewOf(platform string) string {
+	if platform == "" {
+		return ViewGlobal
+	}
+	return strings.ToLower(platform)
+}
+
+// ExcerptsByView renvoie, dans l'ordre du jeu, les extraits d'une version portés
+// par une vue ; vide pour une vue inconnue.
+func (d Dataset) ExcerptsByView(version, view string) []Excerpt {
+	var out []Excerpt
+	for _, e := range d.Excerpts {
+		if e.Version == version && slices.Contains(e.Views, view) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 // ReviewSummary est la synthèse calculée des avis d'une version. Négatifs = 1 à
@@ -41,8 +78,8 @@ func (d Dataset) Reviews(version string) (ReviewSummary, error) {
 }
 
 // PlatformReviews synthétise les avis d'une version pour une plateforme ("" =
-// toutes). Les extraits de la version sont joints à la synthèse globale ou à
-// celle de la plateforme concernée, dans l'ordre de la fiche.
+// toutes). Les extraits de la vue correspondante (globale, android, ios) sont
+// joints à la synthèse, dans l'ordre de la fiche.
 func (d Dataset) PlatformReviews(version, platform string) (ReviewSummary, error) {
 	s := ReviewSummary{Version: version, Platform: platform}
 	for _, r := range d.ReviewRows {
@@ -69,11 +106,7 @@ func (d Dataset) PlatformReviews(version, platform string) (ReviewSummary, error
 	s.NegativePct = 100 * float64(s.Negative) / float64(s.Count)
 	s.PositivePct = 100 * float64(s.Positive) / float64(s.Count)
 	s.Average = float64(weighted) / float64(s.Count)
-	for _, e := range d.Excerpts {
-		if e.Version == version && (platform == "" || e.Platform == platform) {
-			s.Excerpts = append(s.Excerpts, e)
-		}
-	}
+	s.Excerpts = d.ExcerptsByView(version, ViewOf(platform))
 	return s, nil
 }
 

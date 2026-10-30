@@ -1,7 +1,7 @@
 # 008 — État
 
 - **Étape** : Gherkin
-- **Tentatives** : 0/3
+- **Tentatives** : 1/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/008-j4-act2-transform
@@ -13,6 +13,7 @@
 |---|---|---|---|
 | 2026-10-30 | Définir | `spec.md`, `plan.md`, `tasks.md` rédigés ; **pdr-0064** (D1 à D5, détails tranchés sous pdr-0062) créée et indexée (`product_lint` 0 erreur). Périmètre : FR-07 complet ; FR-17 en premier temps seulement (correction de plateforme ; « l'IA se tait » et annulation en vol : J7). Q-73 résolue par construction (registre partagé, pdr-0058). | commit de cette étape |
 | 2026-10-30 | Revue du plan | architect-reviewer (Opus, mode PLAN) : **À AMENDER** (2 bloquants, 5 importants, 1 mineur). Amendements A1 à A8 intégrés dans `plan.md` (bloc « Amendements », prioritaire) et `tasks.md` (T10 scindée en T10a/b/c ; T14 renforcée ; T04 et T16 étendues). Détails tranchés ajoutés sous pdr-0062 : **vue iOS** définie dans `dataset.md` (GO iOS, 3 extraits iOS inventés par l'assistant, pdr-0040) ; **D6** remise à vide au démarrage de l'app en mode vivant ; **D7** `comparison` incomplet = ligne omise, couleur neutre. Fait corrigé : l'origine de la demande des agents est la transcription d'entrée, pas un texte de délégation. Passage à Gherkin (T01, T02 d'abord, puis T03 et T04). | commit de cette étape |
+| 2026-10-30 | Gherkin | T01 faite : `dataset.json` (`targetVersion`, `compareVersion`, avis Android 3.3, extraits par vue `global`/`android`/`ios`), `LoadFrom`, `ExcerptsByView`, `PlatformChecklist` (NO-GO Android / GO iOS), `Comparison` (refusée sans lignes 3.3, donc pour iOS), `FormatPts` ; la constante `ScenarioVersion` est remplacée par les champs du jeu (composeurs adaptés a minima). Rouge initial : `ds.TargetVersion undefined` (compilation). Libellés repris par T13 : « Sessions sans crash Android (7 j) », « Avis négatifs Android (7 j) ». | `.omc/state/loop/gates/20261030-124914-unit-go.log` (10 contrôles verts) |
 
 ## Revue d'architecte
 

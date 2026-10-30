@@ -17,10 +17,6 @@ import (
 //go:embed dataset.json
 var raw []byte
 
-// ScenarioVersion est la version de l'application fictive que raconte la démo
-// (product/functional/dataset.md) : les agents Genesis ne traitent que celle-ci.
-const ScenarioVersion = "3.4"
-
 // Libellés français d'un statut de critère (fiche, § Règles de calcul et seuils).
 const (
 	StatusValidated = "validé"
@@ -39,7 +35,12 @@ type Row struct {
 
 // Dataset est le jeu de données complet.
 type Dataset struct {
-	App                   string  `json:"app"`
+	App string `json:"app"`
+	// TargetVersion est la version que raconte la démo (3.4) : les agents Genesis
+	// ne traitent que celle-ci. CompareVersion est la version de comparaison de
+	// l'acte 2 (3.3). Les deux viennent de la donnée (amendement A8).
+	TargetVersion         string  `json:"targetVersion"`
+	CompareVersion        string  `json:"compareVersion"`
 	CrashFreeThresholdPct float64 `json:"crashFreeThresholdPct"`
 	RiskMarginPt          float64 `json:"riskMarginPt"`
 	// ReviewNegativeMaxPct est le seuil go des avis négatifs (≤ 25 %) ;
@@ -61,9 +62,12 @@ type Dataset struct {
 }
 
 // Load décode le jeu embarqué ; chaque appel renvoie une copie indépendante.
-func Load() (Dataset, error) {
+func Load() (Dataset, error) { return LoadFrom(raw) }
+
+// LoadFrom décode et valide un jeu de données JSON.
+func LoadFrom(data []byte) (Dataset, error) {
 	var d Dataset
-	if err := json.Unmarshal(raw, &d); err != nil {
+	if err := json.Unmarshal(data, &d); err != nil {
 		return Dataset{}, fmt.Errorf("jeu de données embarqué invalide : %w", err)
 	}
 	if len(d.Rows) == 0 || len(d.ReviewRows) == 0 || len(d.Changelog) == 0 {
@@ -71,6 +75,14 @@ func Load() (Dataset, error) {
 	}
 	if strings.TrimSpace(d.DecisionStatus) == "" {
 		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (decisionStatus vide)")
+	}
+	if strings.TrimSpace(d.TargetVersion) == "" || strings.TrimSpace(d.CompareVersion) == "" {
+		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (targetVersion ou compareVersion vide)")
+	}
+	for _, view := range Views {
+		if n := len(d.ExcerptsByView(d.TargetVersion, view)); n != ExcerptsPerView {
+			return Dataset{}, fmt.Errorf("jeu de données embarqué invalide : la vue %q compte %d extraits, attendu %d", view, n, ExcerptsPerView)
+		}
 	}
 	return d, nil
 }
@@ -204,5 +216,25 @@ func FormatPt(v float64) string {
 		return "\u2212" + body + " pt"
 	default:
 		return "+" + body + " pt"
+	}
+}
+
+// FormatPts formate un écart en points de pourcentage, arrondi à l'entier, avec
+// un signe explicite (vrai signe moins U+2212) : « +16 pts », « −5 pts ».
+// « pt » au singulier pour 0 et ±1 ; une valeur qui s'arrondit à zéro n'a pas de
+// signe : « 0 pt ». Distinct de FormatPt (points avec décimales).
+func FormatPts(v float64) string {
+	n := int(math.Round(v))
+	unit := " pts"
+	if n >= -1 && n <= 1 {
+		unit = " pt"
+	}
+	switch {
+	case n == 0:
+		return "0 pt"
+	case n < 0:
+		return "\u2212" + strconv.Itoa(-n) + unit
+	default:
+		return "+" + strconv.Itoa(n) + unit
 	}
 }

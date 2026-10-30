@@ -1,5 +1,7 @@
 {
   "app": "Release Copilot",
+  "targetVersion": "3.4",
+  "compareVersion": "3.3",
   "crashFreeThresholdPct": 99.5,
   "riskMarginPt": 0.1,
   "reviewNegativeMaxPct": 25,
@@ -30,12 +32,19 @@
   ],
   "reviews": [
     {"platform": "iOS", "version": "3.4", "stars": [16, 8, 13, 95, 240]},
-    {"platform": "Android", "version": "3.4", "stars": [140, 56, 44, 190, 362]}
+    {"platform": "Android", "version": "3.4", "stars": [140, 56, 44, 190, 362]},
+    {"platform": "Android", "version": "3.3", "stars": [50, 30, 28, 236, 430]}
   ],
   "excerpts": [
-    {"version": "3.4", "stars": 1, "platform": "Android", "text": "L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour."},
-    {"version": "3.4", "stars": 5, "platform": "iOS", "text": "La validation bancaire est enfin rapide, plus besoin de ressaisir ma carte."},
-    {"version": "3.4", "stars": 2, "platform": "Android", "text": "Après le code reçu par SMS, retour à l'accueil et panier vide."}
+    {"version": "3.4", "stars": 1, "platform": "Android", "views": ["global"], "text": "L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour."},
+    {"version": "3.4", "stars": 5, "platform": "iOS", "views": ["global"], "text": "La validation bancaire est enfin rapide, plus besoin de ressaisir ma carte."},
+    {"version": "3.4", "stars": 2, "platform": "Android", "views": ["global"], "text": "Après le code reçu par SMS, retour à l'accueil et panier vide."},
+    {"version": "3.4", "stars": 1, "platform": "Android", "views": ["android"], "text": "L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour."},
+    {"version": "3.4", "stars": 2, "platform": "Android", "views": ["android"], "text": "Je valide dans l'app de ma banque, je reviens : l'app redémarre et mon panier est vide."},
+    {"version": "3.4", "stars": 4, "platform": "Android", "views": ["android"], "text": "Le panier hors ligne est pratique, mais le paiement plante encore de temps en temps."},
+    {"version": "3.4", "stars": 5, "platform": "iOS", "views": ["ios"], "text": "La validation bancaire est enfin rapide, plus besoin de ressaisir ma carte."},
+    {"version": "3.4", "stars": 4, "platform": "iOS", "views": ["ios"], "text": "Le panier hors ligne me sauve dans le métro, bien vu."},
+    {"version": "3.4", "stars": 3, "platform": "iOS", "views": ["ios"], "text": "La galerie photos est plus belle, mais l'ouverture d'une notification plante parfois."}
   ],
   "changelog": [
     {"area": "Paiement : flux 3-D Secure 2", "kind": "feat", "prs": 11},
