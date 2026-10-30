@@ -2,11 +2,13 @@
 # Usage : `docker compose up --build`, après avoir créé `.env`.
 # `.env` est requis (clé OPENAI_API_KEY) et ne doit JAMAIS être commité.
 # Les valeurs VOICE_* ci-dessous sont des défauts de configuration, surchargeables par `.env`.
-# Un service par agent A2A (ici `agent-quality` ; J3 ajoutera les autres). Les agents
+# Un service par agent A2A (`agent-quality`, `agent-voice`, `agent-delivery`). Les agents
 # vivent sur le réseau interne `agents` : aucun port publié, aucune sortie réseau, aucun secret.
 # Identifiant du catalogue A2UI : une seule valeur, partagée par l'orchestrateur
-# (liste blanche) et l'agent (createSurface).
-x-a2ui-catalog: &a2ui_catalog ${A2UI_CATALOG_ID:-https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json}
+# (liste blanche) et les agents (createSurface).
+# Valeur par défaut PROVISOIRE : l'identifiant définitif du catalogue Genesis est
+# une question ouverte du porteur (Q-44).
+x-a2ui-catalog: &a2ui_catalog ${A2UI_CATALOG_ID:-https://genesis-canvas.example/a2ui/catalogs/genesis/v1}
 
 services:
   orchestrator:
@@ -16,10 +18,13 @@ services:
       - path: .env
         required: false
     environment:
-      # Agents A2A joignables (réseau interne `agents`) et catalogue A2UI, partagé avec l'agent.
-      AGENTS: http://agent-quality:8090/.well-known/agent-card.json
+      # Agents A2A joignables (réseau interne `agents`) : `Nom=URL de la carte`, séparés par des virgules.
+      AGENTS: Qualité=http://agent-quality:8090/.well-known/agent-card.json,Voix du client=http://agent-voice:8091/.well-known/agent-card.json,Livraison=http://agent-delivery:8092/.well-known/agent-card.json
+      # Catalogue A2UI partagé avec les agents : les 4 composants du catalogue Genesis J3 (sans Column ni Text).
       A2UI_CATALOG_ID: *a2ui_catalog
-      A2UI_COMPONENTS: ${A2UI_COMPONENTS:-Column,Text}
+      A2UI_COMPONENTS: ${A2UI_COMPONENTS:-KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist}
+      A2UI_ALLOWED_PROPS: ${A2UI_ALLOWED_PROPS:-id,component,data}
+      A2UI_BINDING_PROPS: ${A2UI_BINDING_PROPS:-data}
       # Délai maximal d'une délégation à un agent (NFR-03) et d'acquittement d'un commentaire vocal.
       AGENT_TIMEOUT: ${AGENT_TIMEOUT:-8s}
       VOICE_APPEND_ACK_TIMEOUT: ${VOICE_APPEND_ACK_TIMEOUT:-2s}
@@ -49,6 +54,10 @@ services:
     depends_on:
       agent-quality:
         condition: service_healthy
+      agent-voice:
+        condition: service_healthy
+      agent-delivery:
+        condition: service_healthy
     volumes:
       - journal:/var/lib/genesis/journal
       - ./backend/orchestrator/config/voice-instructions.fr.md:/etc/genesis/voice-instructions.fr.md:ro
@@ -73,6 +82,52 @@ services:
       AGENT_LISTEN_ADDR: 0.0.0.0:8090
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-quality:8090
+      A2UI_CATALOG_ID: *a2ui_catalog
+    networks: [agents]
+    healthcheck:
+      test: ["CMD", "/agent", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  agent-voice:
+    build:
+      context: backend/agents
+      args:
+        AGENT: voice
+    # Pas de env_file : l'agent n'a pas besoin de la clé OpenAI. Aucun port publié.
+    environment:
+      AGENT_LISTEN_ADDR: 0.0.0.0:8091
+      AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
+      AGENT_PUBLIC_URL: http://agent-voice:8091
+      A2UI_CATALOG_ID: *a2ui_catalog
+    networks: [agents]
+    healthcheck:
+      test: ["CMD", "/agent", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  agent-delivery:
+    build:
+      context: backend/agents
+      args:
+        AGENT: delivery
+    # Pas de env_file : l'agent n'a pas besoin de la clé OpenAI. Aucun port publié.
+    environment:
+      AGENT_LISTEN_ADDR: 0.0.0.0:8092
+      AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
+      AGENT_PUBLIC_URL: http://agent-delivery:8092
       A2UI_CATALOG_ID: *a2ui_catalog
     networks: [agents]
     healthcheck:
