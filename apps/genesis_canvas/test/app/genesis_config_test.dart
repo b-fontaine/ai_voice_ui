@@ -187,6 +187,10 @@ void main() {
         config.canvasResetRetryInterval,
         const Duration(milliseconds: 1500),
       );
+      expect(config.canvasActionTimeout, const Duration(seconds: 2));
+      expect(config.canvasActionRetries, 6);
+      expect(config.canvasActionRetryInterval, const Duration(seconds: 1));
+      expect(config.canvasActionMaxDuration, const Duration(seconds: 60));
       expect(config.orbSilenceTimeout, const Duration(milliseconds: 600));
       expect(config.orbAttack, const Duration(milliseconds: 80));
       expect(config.orbRelease, const Duration(milliseconds: 250));

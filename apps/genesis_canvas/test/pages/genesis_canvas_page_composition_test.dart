@@ -17,7 +17,7 @@ import '../support/page_rig.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart'
-    show CanvasResetResult;
+    show CanvasActionResult, CanvasResetResult;
 
 const _catalog = rigCatalog;
 
@@ -50,6 +50,10 @@ void main() {
     ctx.read<TranscriptBloc>().stream.listen(
       null,
       onDone: () => journal.add('bloc.transcript closed'),
+    );
+    ctx.read<CanvasActionBloc>().stream.listen(
+      null,
+      onDone: () => journal.add('bloc.action closed'),
     );
     ctx.read<AgentActivityBloc>().stream.listen(
       null,
@@ -100,6 +104,9 @@ void main() {
       't1.dispose',
       'source disposed',
       'bloc.transcript closed',
+      // Le Bloc d'action lit l'activité des agents (relayée par la page) : il
+      // se ferme avant le Bloc des agents.
+      'bloc.action closed',
       'bloc.agents closed',
       'bloc.canvas closed',
       // Les Blocs de l'écran de fabrication se ferment après la source et le
@@ -453,6 +460,7 @@ void main() {
         'CatalogShelfCleared',
         'AgentActivityReset',
         'StageResetRequested',
+        'ActionStageReset',
         'client.reset',
       ]);
       expect(rig.resetClient.calls, 1);
@@ -669,6 +677,127 @@ void main() {
       expect(rig.resetClient.calls, 0);
     });
   });
+
+  group('acte 3 : Bloc d\'action branché par la page', () {
+    Map<String, Object?> activity(String state) => <String, Object?>{
+      'v': 1,
+      'type': 'agent.activity',
+      'session': 's1',
+      't_ms': 10,
+      'data': <String, Object?>{
+        'agent': 'Livraison',
+        'task': 't1',
+        'state': state,
+      },
+      'agent': 'Livraison',
+      'task': 't1',
+    };
+
+    Future<void> pumpMessages(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('un clic envoie l\'action ; inactif jusqu\'à la fin de '
+        'l\'activité des agents', (tester) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(rig.actionClient.calls, <String>['block_release@actions']);
+      expect(bloc.state, isA<ActionRunning>());
+
+      rig.receiveEnvelope(activity('working'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      rig.receiveEnvelope(activity('completed'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('la remise à vide réinitialise le Bloc d\'action', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('la fermeture de la session libère l\'action en cours', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      unawaited(rig.harness.session.stop());
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('un refus du backend est consigné, les boutons redeviennent '
+        'actifs', (tester) async {
+      final rig = PageRig(tester);
+      rig.actionClient.script.add(CanvasActionResult.rejected);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+
+      expect(bloc.state, isA<ActionIdle>());
+      expect(rig.errors.toString(), contains('Action'));
+      expect(rig.errors.toString(), contains('rejected'));
+    });
+
+    testWidgets('mode rejeu : les actions ne sont pas disponibles', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester, replay: const Stream<ReplayedMessage>.empty());
+      await drain(tester);
+
+      final availability = tester.widget<ActionAvailability>(
+        find.byType(ActionAvailability),
+      );
+      expect(availability.enabled, isFalse);
+      expect(rig.actionClient.calls, isEmpty);
+    });
+
+    testWidgets('mode vivant : les actions sont disponibles au repos', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      final availability = tester.widget<ActionAvailability>(
+        find.byType(ActionAvailability),
+      );
+      expect(availability.enabled, isTrue);
+    });
+  });
 }
 
 /// Consigne le type de chaque événement de Bloc dans le journal des faux.
@@ -683,6 +812,7 @@ class _JournalObserver extends BlocObserver {
     'CatalogShelfCleared',
     'AgentActivityReset',
     'StageResetRequested',
+    'ActionStageReset',
   };
 
   @override

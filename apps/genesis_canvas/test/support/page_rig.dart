@@ -60,6 +60,24 @@ class FakeResetClient implements CanvasResetClient {
   }
 }
 
+/// Faux client d'action du backend (frontière réseau) : il consigne les appels
+/// et rend les résultats scriptés, puis `accepted`.
+class FakeActionClient implements CanvasActionClient {
+  final List<String> calls = <String>[];
+  final List<CanvasActionResult> script = <CanvasActionResult>[];
+
+  @override
+  Future<CanvasActionResult> send({
+    required String action,
+    required String surface,
+  }) {
+    calls.add('$action@$surface');
+    return Future<CanvasActionResult>.value(
+      script.isEmpty ? CanvasActionResult.accepted : script.removeAt(0),
+    );
+  }
+}
+
 /// Banc : la page, la vraie `VoiceSession` (et son `VoiceSessionBloc`) sur les
 /// faux de frontière (transport WebRTC, relais, canal, client de remise à
 /// vide). Les enveloppes sont poussées par le faux canal ; la fermeture
@@ -88,6 +106,8 @@ class PageRig {
     });
     getIt.unregister<CanvasResetClient>();
     getIt.registerSingleton<CanvasResetClient>(resetClient);
+    getIt.unregister<CanvasActionClient>();
+    getIt.registerSingleton<CanvasActionClient>(actionClient);
     addTearDown(() async {
       for (final controller in harness.channel.controllers) {
         await controller.close();
@@ -100,6 +120,7 @@ class PageRig {
   late final GenesisCanvasPageSettings settings;
   late final VoiceHarness harness;
   late final FakeResetClient resetClient;
+  final FakeActionClient actionClient = FakeActionClient();
   int resolved = 0;
   final StringBuffer errors = StringBuffer();
 
@@ -172,7 +193,7 @@ class PageRig {
 /// `emit.forEach` est en cours demande un tour de la boucle d'événements
 /// RÉELLE, que `pump` seul (zone FakeAsync) ne donne pas.
 Future<void> drain(WidgetTester tester) async {
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 14; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );

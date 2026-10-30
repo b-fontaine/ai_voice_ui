@@ -1,10 +1,22 @@
 import 'dart:async';
 
 import 'package:feature_agent_activity/feature_agent_activity.dart'
-    show AgentActivityBloc, AgentActivityReset, AgentActivitySourceSubscribed;
+    show
+        AgentActivityBloc,
+        AgentActivityReset,
+        AgentActivitySourceSubscribed,
+        AgentActivityState;
 import 'package:feature_canvas/feature_canvas.dart'
     show
         A2uiGate,
+        ActionActivityChanged,
+        ActionFailed,
+        ActionSessionClosed,
+        ActionStageReset,
+        CanvasActionBloc,
+        CanvasActionScope,
+        CanvasActionSettings,
+        CanvasActionState,
         CanvasBloc,
         CanvasBoard,
         CanvasResetRequested,
@@ -24,9 +36,12 @@ import 'package:feature_stage_controls/feature_stage_controls.dart'
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
         Connecting,
+        Failed,
+        Idle,
         LiveSessionEventSource,
         OrbLevelController,
         OrbSmoother,
+        Stopping,
         TranscriptBloc,
         TranscriptSourceSubscribed,
         VoiceSession,
@@ -38,7 +53,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart'
-    show CanvasResetClient, CanvasResetResult;
+    show CanvasActionClient, CanvasResetClient, CanvasResetResult;
 import 'package:shared_core/shared_core.dart'
     show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
@@ -146,6 +161,19 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
   // callback.
   late final CanvasResetClient _resetClient = widget.getIt<CanvasResetClient>();
+  // Actions des composants générés (Barre d'actions) : le client est résolu
+  // ici (racine de composition), le Bloc ne voit qu'un port.
+  late final CanvasActionBloc _actionBloc = CanvasActionBloc(
+    client: widget.getIt<CanvasActionClient>(),
+    settings: CanvasActionSettings(
+      retries: _settings.canvasActionRetries,
+      retryInterval: _settings.canvasActionRetryInterval,
+      maxDuration: _settings.canvasActionMaxDuration,
+    ),
+  );
+  // Relais de l'activité des agents vers le Bloc d'action : les slices ne se
+  // lisent pas entre elles, c'est la page qui les relie.
+  StreamSubscription<bool>? _activitySubscription;
   // Affecté dans `initState` (abonné de la source, il porte un Ticker).
   late final OrbLevelController _orb;
 
@@ -209,6 +237,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
+    _activitySubscription = _agentsBloc.stream
+        .map((AgentActivityState state) => state.anyBusy)
+        .distinct()
+        .listen(
+          (bool busy) => _actionBloc.add(ActionActivityChanged(busy: busy)),
+        );
     // Panneau et étagère lisent le flux validé (tous les messages, avec leur
     // verdict) par des branches qui gardent en mémoire ce qui arrive avant
     // l'abonnement effectif du Bloc.
@@ -255,6 +289,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 2. un ordre à chaque Bloc (canevas, panneau, étagère, rail, acte 1) ;
   /// 3. la demande au backend de retirer les surfaces actives, au mieux et
   ///    sans attendre : l'écran est déjà vide.
+  ///
+  /// Le Bloc d'action abandonne l'action en cours (étape 2, avec les autres
+  /// Blocs) : les boutons redeviennent actifs.
   void _resetStage() {
     _gate.reset();
     _bloc.add(const CanvasResetRequested());
@@ -262,6 +299,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _shelfBloc.add(const CatalogShelfCleared());
     _agentsBloc.add(const AgentActivityReset());
     _stageBloc.add(const StageResetRequested());
+    _actionBloc.add(const ActionStageReset());
     unawaited(_requestBackendReset());
   }
 
@@ -309,7 +347,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// Au premier passage à `Connecting`, la remise à vide de démarrage, si elle
   /// est encore en réessai, est abandonnée : elle viderait le tableau en pleine
   /// démo. Une remise à vide plus récente (manuelle) n'est pas touchée.
+  ///
+  /// Une session qui se ferme (arrêt, échec) libère aussi l'action en cours :
+  /// plus rien n'arrivera pour elle.
   void _onSessionStatus(VoiceSessionStatus status) {
+    if (status is Idle || status is Stopping || status is Failed) {
+      _actionBloc.add(const ActionSessionClosed());
+    }
     if (status is! Connecting) return;
     final int? startup = _startupResetGeneration;
     if (startup == null) return;
@@ -384,6 +428,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _resetGeneration++;
     _cancelRetryWait();
     unawaited(_statusSubscription?.cancel());
+    unawaited(_activitySubscription?.cancel());
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
@@ -403,7 +448,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 3. libération de la session ;
   /// 4. source d'événements (la session ne lui émet plus rien) ;
   /// 5. filtre A2UI (il se nourrit de la source) ;
-  /// 6. Blocs de transcription, d'activité puis du canevas ;
+  /// 6. Blocs de transcription, d'action, d'activité (que le Bloc d'action
+  ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
   ///    lisent le gate, donc ils ne se ferment qu'après lui ;
   /// 8. moteur genui, une fois le Bloc du canevas fermé.
@@ -415,6 +461,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     await _step('source d\'événements', _source.dispose);
     await _step('filtre A2UI', _gate.dispose);
     await _step('Bloc de transcription', _transcriptBloc.close);
+    await _step('Bloc d\'action', _actionBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
     await _step('Bloc du canevas', _bloc.close);
     await _step('Bloc du protocole', _protocolBloc.close);
@@ -455,15 +502,29 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       BlocProvider<VoiceSessionBloc>.value(value: _voiceBloc),
       BlocProvider<TranscriptBloc>.value(value: _transcriptBloc),
       BlocProvider<AgentActivityBloc>.value(value: _agentsBloc),
+      BlocProvider<CanvasActionBloc>.value(value: _actionBloc),
       BlocProvider<CanvasBloc>.value(value: _bloc),
       BlocProvider<ProtocolFeedBloc>.value(value: _protocolBloc),
       BlocProvider<CatalogShelfBloc>.value(value: _shelfBloc),
       BlocProvider<StageBloc>.value(value: _stageBloc),
     ],
-    child: BlocListener<CanvasBloc, CanvasState>(
-      listenWhen: (previous, current) =>
-          previous.sourceStatus != current.sourceStatus,
-      listener: _onSourceChanged,
+    child: MultiBlocListener(
+      listeners: [
+        BlocListener<CanvasBloc, CanvasState>(
+          listenWhen: (previous, current) =>
+              previous.sourceStatus != current.sourceStatus,
+          listener: _onSourceChanged,
+        ),
+        // Seule la cause fermée de l'échec est consignée, jamais le détail du
+        // backend.
+        BlocListener<CanvasActionBloc, CanvasActionState>(
+          listenWhen: (previous, current) => current is ActionFailed,
+          listener: (context, state) => widget.errorSink.writeln(
+            'Action : le backend ne l\'a pas appliquée '
+            '(${(state as ActionFailed).reason.name}).',
+          ),
+        ),
+      ],
       child: RepaintBoundary(
         key: _boundaryKey,
         child: ColoredBox(
@@ -497,11 +558,16 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             String?
                           >(
                             selector: (state) => state.highlightedSurfaceId,
-                            builder: (context, highlighted) => CanvasBoard(
-                              key: const Key('canvas-board'),
-                              controller: _controller,
-                              highlightedSurfaceId: highlighted,
-                            ),
+                            builder: (context, highlighted) =>
+                                CanvasActionScope(
+                                  // Rejeu : aucune requête ne part.
+                                  enabled: !_replayMode,
+                                  child: CanvasBoard(
+                                    key: const Key('canvas-board'),
+                                    controller: _controller,
+                                    highlightedSurfaceId: highlighted,
+                                  ),
+                                ),
                           ),
                     ),
                     const SizedBox(height: _gap),

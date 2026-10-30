@@ -39,6 +39,10 @@ class GenesisConfig {
     Duration? canvasResetTimeout,
     int? canvasResetRetries,
     Duration? canvasResetRetryInterval,
+    this.canvasActionTimeout = const Duration(seconds: 2),
+    this.canvasActionRetries = 6,
+    this.canvasActionRetryInterval = const Duration(seconds: 1),
+    this.canvasActionMaxDuration = const Duration(seconds: 60),
     this.orbSilenceTimeout = const Duration(milliseconds: 600),
     this.orbAttack = const Duration(milliseconds: 80),
     this.orbRelease = const Duration(milliseconds: 250),
@@ -160,6 +164,20 @@ class GenesisConfig {
   );
 
   final Duration? _canvasResetRetryInterval;
+
+  /// Délai maximal de `POST /canvas/actions` (un essai).
+  final Duration canvasActionTimeout;
+
+  /// Nombre de réessais d'une action quand le backend répond « occupé » ou
+  /// « sans session » (6 réessais : 7 requêtes au plus).
+  final int canvasActionRetries;
+
+  /// Intervalle entre deux essais d'une action.
+  final Duration canvasActionRetryInterval;
+
+  /// Durée maximale pendant laquelle les boutons d'action restent inactifs
+  /// après un 202, si la fin de l'activité des agents n'est pas vue.
+  final Duration canvasActionMaxDuration;
 
   /// Silence au-delà duquel l'orbe retombe au repos.
   final Duration orbSilenceTimeout;

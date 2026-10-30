@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/action_availability.dart';
 import 'bound_item.dart';
 
 /// `ActionBar` : la Barre d'actions (titre et boutons de décision) liée à
@@ -10,8 +11,9 @@ import 'bound_item.dart';
 /// `GenesisContract.actionIds` ou un `tone` hors de
 /// `GenesisContract.actionTones` donnent l'état neutre (RG-10).
 ///
-/// Ce composant affiche la barre ; l'envoi du clic à l'orchestrateur (T15 et
-/// T16) n'y est pas encore branché : les boutons sont inactifs.
+/// Les boutons ne sont actifs que si un [ActionAvailability] au-dessus les y
+/// autorise ; le clic appelle son `onAction(id, surface)` (la barre ne connaît
+/// ni Bloc ni backend). Sans fournisseur, ils restent inactifs.
 final CatalogItem actionBarItem = boundCatalogItem<_ActionBar>(
   name: 'ActionBar',
   description: 'Barre d\'actions liée à /actions.',
@@ -56,6 +58,9 @@ class _ActionBar {
   }
 }
 
+/// Surface qui porte la Barre d'actions (le contrat n'en admet qu'une).
+final String _surfaceId = GenesisContract.surfaceOf('ActionBar')!;
+
 class _ActionBarView extends StatelessWidget {
   const _ActionBarView({required this.bar});
 
@@ -64,6 +69,10 @@ class _ActionBarView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    final ActionAvailability? availability = ActionAvailability.maybeOf(
+      context,
+    );
+    final bool enabled = availability?.enabled ?? false;
     return CellFrame(
       child: Wrap(
         spacing: 16,
@@ -74,7 +83,9 @@ class _ActionBarView extends StatelessWidget {
           for (final _Action action in bar.actions)
             OutlinedButton(
               key: Key('action-${action.id}'),
-              onPressed: null,
+              onPressed: enabled
+                  ? () => availability!.onAction(action.id, _surfaceId)
+                  : null,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 48),
                 disabledForegroundColor: action.tone == 'danger'

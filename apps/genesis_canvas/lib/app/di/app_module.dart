@@ -36,6 +36,11 @@ void closeCanvasResetClient(CanvasResetClient client) {
   if (client is HttpCanvasResetClient) client.close();
 }
 
+/// Libération du client d'action par `getIt.reset()`.
+void closeCanvasActionClient(CanvasActionClient client) {
+  if (client is HttpCanvasActionClient) client.close();
+}
+
 @module
 abstract class AppModule {
   @lazySingleton
@@ -55,6 +60,13 @@ abstract class AppModule {
       HttpCanvasResetClient(
         baseUrl: config.backendUrl,
         timeout: config.canvasResetTimeout,
+      );
+
+  @LazySingleton(dispose: closeCanvasActionClient)
+  CanvasActionClient canvasActionClient(GenesisConfig config) =>
+      HttpCanvasActionClient(
+        baseUrl: config.backendUrl,
+        timeout: config.canvasActionTimeout,
       );
 
   @lazySingleton
