@@ -12,6 +12,7 @@ class GenesisCanvasPageSettings {
     required this.orbSpeakingThreshold,
     required this.interruptResumeSilence,
     required this.interruptMaxDuration,
+    required this.interruptStopSpan,
     required this.sessionCloseTimeout,
     required this.exitCloseTimeout,
     required this.canvasResetRetries,
@@ -43,6 +44,9 @@ class GenesisCanvasPageSettings {
 
   /// Durée maximale d'une interruption vocale.
   final Duration interruptMaxDuration;
+
+  /// Écart maximal entre la coupure et la délégation du « Stop » lui-même.
+  final Duration interruptStopSpan;
 
   /// Délai maximal d'arrêt et de libération de la session à la fermeture.
   final Duration sessionCloseTimeout;
@@ -92,6 +96,7 @@ class GenesisCanvasPageSettings {
       other.orbSpeakingThreshold == orbSpeakingThreshold &&
       other.interruptResumeSilence == interruptResumeSilence &&
       other.interruptMaxDuration == interruptMaxDuration &&
+      other.interruptStopSpan == interruptStopSpan &&
       other.sessionCloseTimeout == sessionCloseTimeout &&
       other.exitCloseTimeout == exitCloseTimeout &&
       other.canvasResetRetries == canvasResetRetries &&
@@ -113,6 +118,7 @@ class GenesisCanvasPageSettings {
     orbSpeakingThreshold,
     interruptResumeSilence,
     interruptMaxDuration,
+    interruptStopSpan,
     sessionCloseTimeout,
     exitCloseTimeout,
     canvasResetRetries,

@@ -417,6 +417,27 @@ void main() {
       final fromEmpty = GenesisConfig.fromEnvironment(const <String, String>{});
       expect(fromEmpty.interruptResumeSilence, config.interruptResumeSilence);
       expect(fromEmpty.interruptMaxDuration, config.interruptMaxDuration);
+      expect(config.interruptStopSpan, const Duration(seconds: 3));
+      expect(fromEmpty.interruptStopSpan, config.interruptStopSpan);
+    });
+
+    test('GENESIS_INTERRUPT_STOP_SPAN_MS : 0 à 10000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_INTERRUPT_STOP_SPAN_MS': ?value},
+      ).interruptStopSpan;
+
+      expect(read(null), const Duration(seconds: 3));
+      expect(read('0'), Duration.zero);
+      expect(read('10000'), const Duration(seconds: 10));
+      for (final raw in <String>['10001', '-1', 'abc']) {
+        expect(
+          () => GenesisConfig.fromEnvironment(<String, String>{
+            'GENESIS_INTERRUPT_STOP_SPAN_MS': raw,
+          }),
+          throwsA(isA<GenesisConfigException>()),
+          reason: raw,
+        );
+      }
     });
 
     test('GENESIS_INTERRUPT_RESUME_SILENCE_MS : 100 à 60000 ms', () {

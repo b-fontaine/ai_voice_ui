@@ -59,6 +59,7 @@ class _Rig {
     speakingThreshold: 0.03,
     resumeSilence: const Duration(seconds: 3),
     maxInterruption: const Duration(seconds: 10),
+    stopSpan: const Duration(seconds: 3),
   );
   final StreamController<SessionEvent> events =
       StreamController<SessionEvent>.broadcast();

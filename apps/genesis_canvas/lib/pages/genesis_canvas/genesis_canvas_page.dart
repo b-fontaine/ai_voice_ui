@@ -180,6 +180,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     speakingThreshold: _settings.orbSpeakingThreshold,
     resumeSilence: _settings.interruptResumeSilence,
     maxInterruption: _settings.interruptMaxDuration,
+    stopSpan: _settings.interruptStopSpan,
   );
   StreamSubscription<OrbPhase>? _phaseSubscription;
   bool _wasInterrupted = false;
@@ -676,6 +677,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // sa partie synchrone détruit le lecteur (minuteurs coupés) sans attendre
     // la fermeture asynchrone, et il n'écoute plus le routeur ni la scène.
     unawaited(_replayBloc.close());
+    // Le minuteur d'une action en cours (60 s) dort dans `_sleep` : la remise à
+    // zéro, synchrone, le réveille avant que le teardown n'attende le Bloc.
+    _actionBloc.add(const ActionStageReset());
     final closing = _shutdown();
     unawaited(closing);
     widget.onClosing?.call(closing);

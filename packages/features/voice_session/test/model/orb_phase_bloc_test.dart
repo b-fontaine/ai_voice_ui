@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 const Duration _resume = Duration(seconds: 3);
 const Duration _max = Duration(seconds: 10);
+const Duration _stopSpan = Duration(seconds: 3);
 const double _threshold = 0.03;
 
 class _Rig {
@@ -14,6 +15,7 @@ class _Rig {
       speakingThreshold: _threshold,
       resumeSilence: _resume,
       maxInterruption: _max,
+      stopSpan: _stopSpan,
     );
     bloc.stream.listen(phases.add);
     bloc.add(OrbPhaseSourceSubscribed(source.stream));
@@ -131,8 +133,50 @@ void main() {
   ) async {
     final _Rig rig = _Rig();
     await rig.send(tester, interrupt);
-    await rig.send(tester, const DelegationStarted(id: 'd2', offsetMs: 0));
+    await rig.send(tester, const DelegationStarted(id: 'd2', offsetMs: 5501));
     expect(rig.bloc.state, listening);
+    await rig.close(tester);
+  });
+
+  testWidgets('la délégation datée du « Stop » laisse l\'interruption', (
+    tester,
+  ) async {
+    final _Rig rig = _Rig();
+    await rig.send(tester, interrupt);
+    await rig.send(tester, const DelegationStarted(id: 'd1', offsetMs: 0));
+    await rig.send(tester, const DelegationStarted(id: 'd2', offsetMs: 5500));
+    expect(rig.bloc.state, interrupted);
+    expect(rig.phases, <OrbPhase>[interrupted]);
+    await rig.close(tester);
+  });
+
+  testWidgets('une échéance périmée ne termine pas l\'interruption suivante', (
+    tester,
+  ) async {
+    final _Rig rig = _Rig();
+    await rig.send(tester, interrupt);
+    await tester.pump(_resume - const Duration(milliseconds: 1));
+    // L'échéance tombe dans la file au moment où une nouvelle interruption
+    // la remplace.
+    rig.source.add(interrupt);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(rig.bloc.state, interrupted, reason: 'délai neuf');
+    await tester.pump(_resume - const Duration(milliseconds: 2));
+    expect(rig.bloc.state, interrupted);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(rig.bloc.state, listening);
+    await rig.close(tester);
+  });
+
+  testWidgets('ChannelLost : écoute, plus de reprise en attente', (
+    tester,
+  ) async {
+    final _Rig rig = _Rig();
+    await rig.send(tester, interrupt);
+    await rig.send(tester, const ChannelLost('connection_lost'));
+    expect(rig.phases, <OrbPhase>[interrupted, listening]);
+    await tester.pump(_max);
+    expect(rig.phases, hasLength(2));
     await rig.close(tester);
   });
 

@@ -79,6 +79,10 @@ class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
           _onDelta(sessionEvent, emit);
         case VoiceInterrupted(:final int atMs):
           _truncateFromMs = atMs;
+        case SessionStateChanged(state: SessionState.closed) || ChannelLost():
+          // Fin de session ou perte du canal : plus d'interruption en cours
+          // (les lignes restent affichées).
+          _truncateFromMs = null;
         case SessionStateChanged(state: SessionState.connecting):
           _lastRole = null;
           _truncateFromMs = null;

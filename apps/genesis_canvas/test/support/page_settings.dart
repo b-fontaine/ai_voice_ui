@@ -11,6 +11,7 @@ GenesisCanvasPageSettings pageSettingsOf([
   orbSpeakingThreshold: config.orbSpeakingThreshold,
   interruptResumeSilence: config.interruptResumeSilence,
   interruptMaxDuration: config.interruptMaxDuration,
+  interruptStopSpan: config.interruptStopSpan,
   sessionCloseTimeout: config.sessionCloseTimeout,
   exitCloseTimeout: config.exitCloseTimeout,
   canvasResetRetries: config.canvasResetRetries,

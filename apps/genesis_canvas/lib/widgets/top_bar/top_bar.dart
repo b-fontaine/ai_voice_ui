@@ -61,11 +61,15 @@ class TopBar extends StatelessWidget {
                     previous.anyWorking != current.anyWorking,
                 builder: (context, agents) =>
                     BlocBuilder<OrbPhaseBloc, OrbPhase>(
+                      // Seule l'interruption change l'orbe : la distinction
+                      // parole/écoute vient du niveau lissé (NFR-04).
+                      buildWhen: (previous, current) =>
+                          (previous is Interrupted) != (current is Interrupted),
                       builder: (context, phase) => VoiceOrb(
                         level: orbLevel,
                         thinking: status is Active && agents.anyWorking,
                         interrupted: status is Active && phase is Interrupted,
-                        listening: status is Active && phase is Listening,
+                        listening: status is Active,
                         speakingThreshold: speakingThreshold,
                       ),
                     ),

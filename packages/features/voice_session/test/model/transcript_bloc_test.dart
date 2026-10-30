@@ -175,5 +175,20 @@ void main() {
 
       expect(states.last, _line('', 'Bonjour'));
     });
+
+    test('la fin de session ou la perte du canal lève la troncature', () async {
+      for (final SessionEvent end in <SessionEvent>[
+        const SessionStateChanged(state: SessionState.closed),
+        const ChannelLost('connection_lost'),
+      ]) {
+        final List<TranscriptState> states = await _play(<SessionEvent>[
+          const VoiceInterrupted(atMs: 2500),
+          end,
+          at(ai, 'Bonjour', 3000),
+        ]);
+
+        expect(states.last, _line('', 'Bonjour'), reason: '$end');
+      }
+    });
   });
 }

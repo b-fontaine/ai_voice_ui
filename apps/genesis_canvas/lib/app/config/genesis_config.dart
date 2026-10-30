@@ -50,6 +50,7 @@ class GenesisConfig {
     this.orbSpeakingThreshold = 0.03,
     this.interruptResumeSilence = defaultInterruptResumeSilence,
     this.interruptMaxDuration = defaultInterruptMaxDuration,
+    this.interruptStopSpan = defaultInterruptStopSpan,
     this.replayMaxGap = defaultReplayMaxGap,
     this.replayTick = defaultReplayTick,
     this.replayJournalMaxEntries = defaultReplayJournalMaxEntries,
@@ -122,6 +123,14 @@ class GenesisConfig {
           max: 120000,
         ) ??
         defaultInterruptMaxDuration,
+    interruptStopSpan:
+        _readMillis(
+          environment,
+          _interruptStopSpanVariable,
+          min: 0,
+          max: 10000,
+        ) ??
+        defaultInterruptStopSpan,
     replayMaxGap:
         _readMillis(environment, _replayMaxGapVariable, min: 100, max: 60000) ??
         defaultReplayMaxGap,
@@ -309,6 +318,15 @@ class GenesisConfig {
   /// Défaut de [interruptMaxDuration] (15 s).
   static const Duration defaultInterruptMaxDuration = Duration(seconds: 15);
 
+  /// Écart maximal entre la coupure de l'IA et la délégation que crée le
+  /// « Stop » lui-même : cette délégation ne rétablit pas la voix
+  /// (`GENESIS_INTERRUPT_STOP_SPAN_MS`, 0 à 10000 ms, défaut 3 s ; même
+  /// réglage que `VOICE_STOP_SPAN` côté backend).
+  final Duration interruptStopSpan;
+
+  /// Défaut de [interruptStopSpan] (3 s).
+  static const Duration defaultInterruptStopSpan = Duration(seconds: 3);
+
   static String? _read(Map<String, String> environment, String name) {
     final value = environment[name]?.trim();
     return (value == null || value.isEmpty) ? null : value;
@@ -459,6 +477,8 @@ class GenesisConfig {
   static const String _interruptResumeSilenceVariable =
       'GENESIS_INTERRUPT_RESUME_SILENCE_MS';
   static const String _interruptMaxVariable = 'GENESIS_INTERRUPT_MAX_MS';
+  static const String _interruptStopSpanVariable =
+      'GENESIS_INTERRUPT_STOP_SPAN_MS';
   static const String _replayMaxGapVariable = 'GENESIS_REPLAY_MAX_GAP_MS';
   static const String _replayTickVariable = 'GENESIS_REPLAY_TICK_MS';
   static const String _replayJournalMaxVariable = 'GENESIS_REPLAY_JOURNAL_MAX';

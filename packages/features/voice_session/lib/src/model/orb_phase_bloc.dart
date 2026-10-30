@@ -37,9 +37,13 @@ final class OrbPhaseSourceSubscribed extends OrbPhaseEvent {
   final Stream<SessionEvent> events;
 }
 
-// Délai de reprise ou durée maximale écoulé (posé par les minuteries).
+// Délai de reprise ou durée maximale écoulé (posé par les minuteries) ;
+// [generation] numérote l'interruption qui l'a armé : une échéance déjà en
+// file ne termine pas une interruption plus récente.
 final class _InterruptionEnded extends OrbPhaseEvent {
-  const _InterruptionEnded();
+  const _InterruptionEnded(this.generation);
+
+  final int generation;
 }
 
 /// Phase de l'orbe : `Listening | Speaking | Interrupted`.
@@ -47,7 +51,9 @@ final class _InterruptionEnded extends OrbPhaseEvent {
 /// `VoiceInterrupted` passe en [Interrupted]. On en sort quand `orb.level`
 /// reste sous [speakingThreshold] pendant [resumeSilence] (un niveau au-dessus
 /// du seuil repousse l'échéance), au bout de [maxInterruption], à la
-/// délégation suivante ou à la fin de la session. Pendant l'interruption, le
+/// délégation suivante ou à la fin de la session (`closed`, `connecting`,
+/// [ChannelLost]). Une délégation datée au plus de [stopSpan] après la coupure
+/// est celle du « Stop » lui-même : elle n'y met pas fin. Pendant l'interruption, le
 /// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée.
 ///
 /// Le Bloc ne rétablit pas lui-même le son : la page de composition relie le
@@ -57,13 +63,13 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
     required this.speakingThreshold,
     required this.resumeSilence,
     required this.maxInterruption,
+    required this.stopSpan,
   }) : super(const Listening()) {
     // Une nouvelle source remplace la précédente.
     on<OrbPhaseSourceSubscribed>(_onSubscribed, transformer: restartable());
-    on<_InterruptionEnded>(
-      (event, emit) => _endInterruption(emit),
-      transformer: sequential(),
-    );
+    on<_InterruptionEnded>((event, emit) {
+      if (event.generation == _generation) _endInterruption(emit);
+    }, transformer: sequential());
   }
 
   /// Niveau (0..1) à partir duquel l'IA est dite « parle ».
@@ -75,6 +81,14 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   /// Durée au bout de laquelle l'interruption prend fin quoi qu'il arrive.
   final Duration maxInterruption;
 
+  /// Écart maximal entre la coupure et la délégation que crée le « Stop »
+  /// lui-même (même réglage que `VOICE_STOP_SPAN` côté backend).
+  final Duration stopSpan;
+
+  // Numéro de l'interruption en cours ; incrémenté à chaque fin ou début.
+  int _generation = 0;
+  int _interruptedAtMs = 0;
+
   Timer? _silenceTimer;
   Timer? _maxTimer;
 
@@ -85,9 +99,12 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
     event.events,
     onData: (sessionEvent) {
       switch (sessionEvent) {
-        case VoiceInterrupted():
+        case VoiceInterrupted(:final int atMs):
           _maxTimer?.cancel();
-          _maxTimer = Timer(maxInterruption, _signalEnd);
+          _generation++;
+          _interruptedAtMs = atMs;
+          final int generation = _generation;
+          _maxTimer = Timer(maxInterruption, () => _signalEnd(generation));
           _armSilence();
           emit(const Interrupted());
         case OrbLevelChanged(:final double level):
@@ -97,10 +114,14 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
           } else {
             emit(loud ? const Speaking() : const Listening());
           }
-        case DelegationStarted():
-          _endInterruption(emit);
+        case DelegationStarted(:final int offsetMs):
+          final bool ofStop =
+              state is Interrupted &&
+              offsetMs <= _interruptedAtMs + stopSpan.inMilliseconds;
+          if (!ofStop) _endInterruption(emit);
         case SessionStateChanged(state: SessionState.closed) ||
-            SessionStateChanged(state: SessionState.connecting):
+            SessionStateChanged(state: SessionState.connecting) ||
+            ChannelLost():
           _endInterruption(emit);
         default:
           break;
@@ -110,14 +131,16 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
 
   void _armSilence() {
     _silenceTimer?.cancel();
-    _silenceTimer = Timer(resumeSilence, _signalEnd);
+    final int generation = _generation;
+    _silenceTimer = Timer(resumeSilence, () => _signalEnd(generation));
   }
 
-  void _signalEnd() {
-    if (!isClosed) add(const _InterruptionEnded());
+  void _signalEnd(int generation) {
+    if (!isClosed) add(_InterruptionEnded(generation));
   }
 
   void _endInterruption(Emitter<OrbPhase> emit) {
+    _generation++;
     _cancelTimers();
     if (state is Interrupted) emit(const Listening());
   }

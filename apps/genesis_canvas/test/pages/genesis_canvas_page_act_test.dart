@@ -70,12 +70,6 @@ void main() {
     ActionRequested(GenesisContract.actionIds.first, 'actions'),
   );
 
-  /// Épuise la durée maximale d'une action (aucun minuteur en attente).
-  Future<void> expire(WidgetTester tester, PageRig rig) async {
-    await tester.pump(rig.settings.canvasActionMaxDuration);
-    await tester.pump();
-  }
-
   testWidgets('l\'acte 2 arrive avec la surface actions, pas avant', (
     tester,
   ) async {
@@ -113,7 +107,6 @@ void main() {
       await emit(tester, rig, updateData('actions'));
       await emit(tester, rig, createSurface('kpi'));
       expect(act(rig), 3);
-      await expire(tester, rig);
     },
   );
 
@@ -123,7 +116,6 @@ void main() {
     click(rig);
     await settle(tester);
     expect(act(rig), 3);
-    await expire(tester, rig);
   });
 
   testWidgets('le clic manuel corrige l\'acte, sans que la surface '

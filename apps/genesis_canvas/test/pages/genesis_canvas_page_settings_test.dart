@@ -16,6 +16,7 @@ void main() {
     orbSpeakingThreshold: threshold,
     interruptResumeSilence: const Duration(seconds: 3),
     interruptMaxDuration: const Duration(seconds: 15),
+    interruptStopSpan: const Duration(seconds: 3),
     sessionCloseTimeout: const Duration(seconds: 10),
     exitCloseTimeout: const Duration(seconds: 12),
     canvasResetRetries: 8,
