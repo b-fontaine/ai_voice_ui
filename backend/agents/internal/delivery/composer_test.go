@@ -196,12 +196,13 @@ func TestDeliveryScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"Montre-moi la checklist go/no-go", true},
 		{"", true},
 		{"Fais-moi un camembert des ventes", true},
-		{"Compare avec la 3.3 sur Android", false},
+		{"Compare avec la 3.3 sur Android", true},
 		{"la release 3.5", false},
 		{"compare avec la 3.3", false},
-		{"uniquement sur Android", false},
-		{"la checklist sur iOS", false},
+		{"uniquement sur Android", true},
+		{"la checklist sur iOS", true},
 		{"trois point trois", false},
+		{"la checklist sur Android et iOS", false},
 	}
 	ds := load(t)
 	for _, tc := range cases {

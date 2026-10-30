@@ -205,10 +205,10 @@ func TestQualityScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"trois point quatre", true},
 		{"Où en est la qualité de la 3.4 ?", true},
 		{"", true},
-		{"Compare avec la 3.3 sur Android", false},
+		{"Compare avec la 3.3 sur Android", true},
 		{"la release 3.5", false},
 		{"compare avec la 3.3", false},
-		{"uniquement sur Android", false},
+		{"uniquement sur Android", true},
 		{"Montre-moi la stabilité de la 3.4", true},
 		{"où en est la 3.4 ?", true},
 		{"Fais-moi un camembert des ventes", true},
@@ -218,9 +218,9 @@ func TestQualityScopeKeepsDefensiveRefusals(t *testing.T) {
 		{"compare", false},
 		{"Je voudrais comparer", false},
 		{"une comparaison s'il te plaît", false},
-		{"la qualité sur Android", false},
-		{"la qualité sur iOS", false},
-		{"la qualité sur ios", false},
+		{"la qualité sur Android", true},
+		{"la qualité sur iOS", true},
+		{"la qualité sur ios", true},
 		{"radios et studios", true},
 		{"montre les sessions sans crash sous 99,5 %", true},
 		{"montre les sessions sans crash sous 99,5 pt", true},
@@ -248,10 +248,19 @@ func TestRequestTextTruncatedBeforeAnalysis(t *testing.T) {
 	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t)); err != nil {
 		t.Errorf("le texte doit être coupé à 1 000 runes avant analyse : %v", err)
 	}
-	// Dans les 1 000 premières runes : refusé.
+	// Dans les 1 000 premières runes : pris en compte (vue Android).
 	text = strings.Repeat("é", 900) + " Android"
-	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c2"}, load(t)); !errors.Is(err, kit.ErrOutOfScope) {
-		t.Errorf("Android avant la 1 000ᵉ rune doit être refusé, obtenu %v", err)
+	got, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c2"}, load(t))
+	if err != nil {
+		t.Fatalf("Android avant la 1 000ᵉ rune doit être servi : %v", err)
+	}
+	if v := got.Messages[2]["updateDataModel"].(map[string]any)["value"].(map[string]any)["label"]; v != "Sessions sans crash · Android" {
+		t.Errorf("Android avant la 1 000ᵉ rune : libellé %v", v)
+	}
+	// Une plateforme en trop après 1 000 runes est ignorée, avant elle est refusée.
+	text = "iOS " + strings.Repeat("é", 900) + " Android"
+	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c3"}, load(t)); !errors.Is(err, kit.ErrOutOfScope) {
+		t.Errorf("deux plateformes dans les 1 000 premières runes doivent être refusées, obtenu %v", err)
 	}
 }
 

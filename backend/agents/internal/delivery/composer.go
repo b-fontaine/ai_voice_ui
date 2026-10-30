@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
@@ -30,12 +31,16 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	// Tant que l'agent ne sert pas de plateforme ni de comparaison, il refuse toute
-	// intention non nulle (pdr-0064 D3).
-	if intent, err := kit.ParseIntent(req.Text, ds); err != nil || !intent.IsZero() {
+	intent, err := kit.ParseIntent(req.Text, ds)
+	if err != nil {
 		return kit.Composition{}, kit.ErrOutOfScope
 	}
-	cl, err := ds.Checklist(ds.TargetVersion)
+	var cl dataset.Checklist
+	if intent.IsZero() {
+		cl, err = ds.Checklist(ds.TargetVersion)
+	} else {
+		cl, err = platformChecklist(ds, intent)
+	}
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -96,4 +101,41 @@ func summary(cl dataset.Checklist) string {
 			cl.Criteria[0].Value, cl.Criteria[1].Value, cl.Criteria[2].LevelLabel, cl.Criteria[2].Value)
 	}
 	return fmt.Sprintf("Recommandation %s : %s, %s%s.", cl.Recommendation.Label, riskText, blockingText, figures)
+}
+
+// platformChecklist calcule la checklist d'une plateforme. En vue comparaison, les
+// valeurs des deux critères mesurés portent la valeur de la version de comparaison :
+// « 99,43 % (3.3 : 99,71 %) ». Le jeu ne fournit que des nombres : le texte est
+// formaté ici.
+func platformChecklist(ds dataset.Dataset, intent kit.Intent) (dataset.Checklist, error) {
+	platform := ""
+	for _, r := range ds.Rows {
+		if strings.EqualFold(r.Platform, intent.Platform) {
+			platform = r.Platform
+			break
+		}
+	}
+	if platform == "" {
+		return dataset.Checklist{}, kit.ErrOutOfScope
+	}
+	cl, err := ds.PlatformChecklist(ds.TargetVersion, platform)
+	if err != nil {
+		return dataset.Checklist{}, err
+	}
+	if intent.CompareTo == "" {
+		return cl, nil
+	}
+	cmp, err := ds.Comparison(ds.TargetVersion, platform)
+	if err != nil {
+		return dataset.Checklist{}, kit.ErrOutOfScope
+	}
+	if len(cl.Criteria) < 2 {
+		return dataset.Checklist{}, fmt.Errorf("checklist de plateforme incomplète : %d critères", len(cl.Criteria))
+	}
+	with := func(value string, previous float64, decimals int) string {
+		return fmt.Sprintf("%s (%s : %s)", value, cmp.CompareVersion, dataset.FormatPct(previous, decimals))
+	}
+	cl.Criteria[0].Value = with(cl.Criteria[0].Value, cmp.Previous.CrashFreePct, 2)
+	cl.Criteria[1].Value = with(cl.Criteria[1].Value, cmp.PreviousReviews.NegativePct, 0)
+	return cl, nil
 }
