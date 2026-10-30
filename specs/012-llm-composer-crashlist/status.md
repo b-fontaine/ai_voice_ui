@@ -1,8 +1,8 @@
 # 012 — État
 
-- **Étape** : Refactorisation
-- **Tentatives** : 1/3
-- **Tâche en cours** : Lot 1 (Go agents R1 R3), Lot 5 (Flutter R9 R10)
+- **Étape** : Vérification
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
 - **Backlog** : EP-03, EP-04, EP-09
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-31 | Refactorisation | R1 à R10 appliquées en 6 lots (`6954249` R1 R3 ; `381376b` R4 R6 R10 agents ; `5e990e9` R5 R7 R10 orchestrateur ; `cc016aa` R9 R10 Flutter ; `cc1aa60` R2 R8 compose ; `23ccd77` documents : D10 et D11 dans pdr-0074, README du contrat, spec). Mutations vérifiées : fixture du contrat (F-02 « données » échoue), compensation après squelette (R5). Observation : une exécution des acceptations de l'orchestrateur a échoué une fois (panique et délai dépassé dans `testing`, ~88 s) pendant qu'une autre porte chargeait la machine ; trois réexécutions vertes, non reproduite. **`gate --full` VERT, 58 contrôles** après le dernier lot. Les conflits (a) D10 enregistrée, (b) liste des vues refusées, (c) A3/A2, (d) D8 sont **signalés au porteur** (progress.md). | `gates/20261031-004731-full.log` |
 | 2026-10-31 | Revue | architect-reviewer (Opus) : À REFACTORISER (0 bloquante, 5 importantes, 5 mineures, 4 conflits) ; rapport collé plus bas ; 6 lots. | § Revue d'architecte |
 | 2026-10-31 | TDD (fin) | **TDD terminé** (toutes les tâches cochées sauf T90, clôture) ; **`gate --full` VERT, 58 contrôles** (acceptation comprise : C-01 à C-08, F-01, F-02). Passage à la revue d'architecte du code. | `gates/20261031-000055-full.log` |
 | 2026-10-31 | TDD | T52 faite (squelette anticipé : `kit.SurfaceSkeleton`, `Validator.Expected`, squelette des surfaces du plan déterministe émis AVANT l'appel, surfaces anticipées traitées comme actives, plan à surfaces différentes = `invalid_plan` sans second `createSurface`, aucun `deleteSurface` de l'agent ; mutation vérifiée) ; acceptations agents adaptées par surface (l'entrelacement change : squelettes d'abord) ; `gate --unit go` vert. **Refus `view_unavailable` après squelette** : l'orchestrateur publie lui-même les `deleteSurface` de compensation pour tout `rejected`/`failed` (lecture de `task.go`) : le speaker voit brièvement les cadres avant leur retrait. T35 non retenue. Compose : `COMPOSER_MODEL` par défaut `gpt-6-luna`, `COMPOSER_RATE_WINDOW` 2 s. NFR-02 avec squelette : par construction (émission avant l'appel) ; à remesurer sur l'horloge de l'app en répétition. | `gates/20261030-235956-unit-go.log` |
@@ -34,7 +35,7 @@
 **Revue du plan : À AMENDER → amendée.** A1 couture d'émission `emit` et critère de latence calculable (banc dans le réseau `agents`) ; A2 autorité de `ParseIntent`, `ActionBar` jamais choisie, acte 1 à quatre surfaces, `Intent.View` hors metadata ; A3 refus `view_unavailable` jusqu'à la voix (T25) ; A4 passerelle joignable des seuls agents ; A5 délais, débit, auto-test de `check-compose.sh` ; A6 paquets (`arch_test`, fabrique de composeur, `examples.json` embarqué, note Responses T19) ; A7 grille à parent unique, libellés sur deux lignes ; A8 contrat (négatives, fichiers à mettre à jour). Conflits : D7 remplacée (aucun tag), D8 voie intermédiaire signalée, pdr-0023 lue comme « sélection fermée ».
 
 
-**Revue du code (architect-reviewer, Opus) : À REFACTORISER** — 0 bloquante, 5 importantes, 5 mineures, 4 conflits signalés. Conforme : passerelle (gardes dans l'ordre, schéma borné, appel sous `r.Context()`, journaux fermés), adaptateur OpenAI, arrêt conjoint des serveurs, autorité de `ParseIntent`, squelette anticipé, couture `emit`, arch_test, Flutter (parent unique, `same(state)`, trois états, ≥ 24 px, aucune couleur en dur).
+**Revue du code (architect-reviewer, Opus) : À REFACTORISER → refactorisée (R1 à R10 appliquées, voir le journal).** — 0 bloquante, 5 importantes, 5 mineures, 4 conflits signalés. Conforme : passerelle (gardes dans l'ordre, schéma borné, appel sous `r.Context()`, journaux fermés), adaptateur OpenAI, arrêt conjoint des serveurs, autorité de `ParseIntent`, squelette anticipé, couture `emit`, arch_test, Flutter (parent unique, `same(state)`, trois états, ≥ 24 px, aucune couleur en dur).
 - R1 [importante] le lexique fermé de vues inconnues contient « tableau(x) » : « Affiche le tableau de release 3.4 » serait refusé chez tous les agents (vocabulaire du produit, S-01) → retirer, ne garder que des formes explicites (`kit/scope.go`, `llmcompose/examples.json`).
 - R2 [importante] `${COMPOSER_MODEL:-gpt-6-luna}` remplace aussi une valeur vide : le filet « modèle vide = déterministe » n'est pas atteignable → `${VAR-défaut}` (sans deux-points), `default_value()` adapté, contrôle positif dans l'auto-test.
 - R3 [importante] un `Refusal view_unavailable` du modèle devient `ScopeError` même quand `ParseIntent` a reconnu une vue nommée (contredit A2) → seulement si `intent.View == ""`, sinon repli `refused_unknown`.
