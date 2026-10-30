@@ -332,6 +332,20 @@ void main() {
       );
     });
 
+    test(
+      'canceled : la ligne passe à interrupted et l\'app n\'est plus occupée',
+      () async {
+        final states = await run([
+          plan(['A'], []),
+          activity('A', 't', AgentTaskState.working),
+          activity('A', 't', AgentTaskState.canceled),
+        ]);
+        expect(states[states.length - 2].anyBusy, isTrue);
+        expect(states.last.agents.last.state, AgentRunState.interrupted);
+        expect(states.last.anyBusy, isFalse);
+      },
+    );
+
     test('rejected garde le détail « hors périmètre »', () async {
       final states = await run([
         plan(['A'], []),

@@ -122,6 +122,22 @@ void main() {
           detail: 'hors périmètre',
         ),
       ),
+      'agent.activity canceled': (
+        _env('agent.activity', <String, Object?>{
+          'agent': 'Qualité',
+          'task': 't',
+          'state': 'canceled',
+        }),
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 't',
+          state: AgentTaskState.canceled,
+        ),
+      ),
+      'voice.interrupted': (
+        _env('voice.interrupted', <String, Object?>{'at_ms': 4200}),
+        const VoiceInterrupted(atMs: 4200),
+      ),
       'plan': (
         _env('plan', <String, Object?>{
           'delegation': 'd1',
@@ -263,11 +279,15 @@ void main() {
             _env('delegation', <String, Object?>{'offset_ms': 3}),
             'champ manquant ou mal typé',
           ),
+          'voice.interrupted sans at_ms': (
+            _env('voice.interrupted', <String, Object?>{}),
+            'champ manquant ou mal typé',
+          ),
           'agent.activity état inconnu': (
             _env('agent.activity', <String, Object?>{
               'agent': 'a',
               'task': 't',
-              'state': 'canceled',
+              'state': 'paused',
             }),
             'valeur d\'énumération inconnue',
           ),

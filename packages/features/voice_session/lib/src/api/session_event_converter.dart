@@ -77,10 +77,13 @@ class SessionEventConverter {
             'completed': AgentTaskState.completed,
             'failed': AgentTaskState.failed,
             'rejected': AgentTaskState.rejected,
+            'canceled': AgentTaskState.canceled,
           }),
           label: _optionalString(data, 'label'),
           detail: _optionalString(data, 'detail'),
         );
+      case AppChannelTypes.voiceInterrupted:
+        return VoiceInterrupted(atMs: _int(data, 'at_ms'));
       case AppChannelTypes.plan:
         return PlanReceived(
           delegation: _string(data, 'delegation'),

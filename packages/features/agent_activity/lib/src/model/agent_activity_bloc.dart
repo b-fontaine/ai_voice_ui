@@ -60,6 +60,7 @@ class AgentActivityBloc extends Bloc<AgentActivityEvent, AgentActivityState> {
         AgentTaskState.completed => AgentRunState.completed,
         AgentTaskState.failed => AgentRunState.failed,
         AgentTaskState.rejected => AgentRunState.rejected,
+        AgentTaskState.canceled => AgentRunState.interrupted,
       },
       label: received.label,
       detail: received.detail,

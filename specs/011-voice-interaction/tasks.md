@@ -21,7 +21,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [ ] T17 Go — consignes vocales (`voice-instructions.fr.md`) · test du texte (trois règles)
 
 ## TDD Flutter
-- [ ] T20 Flutter — `voice.interrupted` et `canceled` : `entities/session`, convertisseur, `AgentRunState.interrupted` · tests de codec et de `agent_activity_bloc`
+- [x] T20 Flutter — `voice.interrupted` et `canceled` : `entities/session`, convertisseur, `AgentRunState.interrupted` · tests de codec et de `agent_activity_bloc`
 - [ ] T21 Flutter — Bloc de phase de l'orbe (`Listening | Speaking | Interrupted`), troncature de la réplique, remise du son sur silence, `VoiceSession` direct seulement · `voice_orb_phase_bloc_test.dart` (après T03)
 - [ ] T22 Flutter — `VoiceTransport.setRemoteAudioEnabled`, `RtcPeer`, `onTrack` tardif · `flutter_web_rtc_transport_test.dart` (faux `RtcPeer`)
 - [ ] T23 [P] Flutter — `StageActReached` monotone · `stage_bloc_test.dart`
