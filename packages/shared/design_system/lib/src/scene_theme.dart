@@ -27,6 +27,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.agentIdle,
     required this.agentRejected,
     required this.agentInterrupted,
+    required this.chartIos,
+    required this.chartAndroid,
+    required this.chartOther,
     required this.body,
     required this.label,
     required this.value,
@@ -54,6 +57,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       agentIdle = const Color(0xFF90A4AE),
       agentRejected = const Color(0xFFFFAB40),
       agentInterrupted = const Color(0xFFB0B0BC),
+      chartIos = const Color(0xFFB39DFF),
+      chartAndroid = const Color(0xFF6CB6FF),
+      chartOther = const Color(0xFF5EEAD4),
       body = const TextStyle(
         fontSize: 24,
         height: 1.3,
@@ -109,6 +115,12 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   final Color agentRejected;
   final Color agentInterrupted;
 
+  /// Palette des séries de graphique, par plateforme (jamais une couleur de
+  /// statut `ok/risk/blocking`) : stable d'un acte à l'autre.
+  final Color chartIos;
+  final Color chartAndroid;
+  final Color chartOther;
+
   final TextStyle body;
   final TextStyle label;
 
@@ -159,6 +171,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     Color? agentIdle,
     Color? agentRejected,
     Color? agentInterrupted,
+    Color? chartIos,
+    Color? chartAndroid,
+    Color? chartOther,
     TextStyle? body,
     TextStyle? label,
     TextStyle? value,
@@ -184,6 +199,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       agentIdle: agentIdle ?? this.agentIdle,
       agentRejected: agentRejected ?? this.agentRejected,
       agentInterrupted: agentInterrupted ?? this.agentInterrupted,
+      chartIos: chartIos ?? this.chartIos,
+      chartAndroid: chartAndroid ?? this.chartAndroid,
+      chartOther: chartOther ?? this.chartOther,
       body: body ?? this.body,
       label: label ?? this.label,
       value: value ?? this.value,
@@ -216,6 +234,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       agentIdle: c(agentIdle, other.agentIdle),
       agentRejected: c(agentRejected, other.agentRejected),
       agentInterrupted: c(agentInterrupted, other.agentInterrupted),
+      chartIos: c(chartIos, other.chartIos),
+      chartAndroid: c(chartAndroid, other.chartAndroid),
+      chartOther: c(chartOther, other.chartOther),
       body: s(body, other.body),
       label: s(label, other.label),
       value: s(value, other.value),
@@ -245,6 +266,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.agentIdle == agentIdle &&
       other.agentRejected == agentRejected &&
       other.agentInterrupted == agentInterrupted &&
+      other.chartIos == chartIos &&
+      other.chartAndroid == chartAndroid &&
+      other.chartOther == chartOther &&
       other.body == body &&
       other.label == label &&
       other.value == value &&
@@ -271,6 +295,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     agentIdle,
     agentRejected,
     agentInterrupted,
+    chartIos,
+    chartAndroid,
+    chartOther,
     body,
     label,
     value,

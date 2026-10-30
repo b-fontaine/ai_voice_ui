@@ -71,6 +71,9 @@ void main() {
         'agent en veille': theme.agentIdle,
         'agent hors périmètre': theme.agentRejected,
         'agent interrompu': theme.agentInterrupted,
+        'graphique iOS': theme.chartIos,
+        'graphique Android': theme.chartAndroid,
+        'graphique autre plateforme': theme.chartOther,
       };
       graphics.forEach((name, color) {
         test('$name / surface', () {
@@ -80,6 +83,19 @@ void main() {
       });
     },
   );
+
+  test('la palette de graphique ne reprend aucune couleur de statut', () {
+    final chart = <Color>{theme.chartIos, theme.chartAndroid, theme.chartOther};
+    expect(chart, hasLength(3));
+    expect(
+      chart.intersection(<Color>{
+        theme.okForeground,
+        theme.riskForeground,
+        theme.blockingForeground,
+      }),
+      isEmpty,
+    );
+  });
 
   test('toutes les tailles de texte sont >= 24 px', () {
     final styles = {

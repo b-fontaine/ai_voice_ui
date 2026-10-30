@@ -306,6 +306,34 @@ void main() {
       expect(rig.errors.toString(), contains('unreachable'));
     });
 
+    testWidgets('remise à vide de démarrage occupée : plus aucune demande '
+        'après le début de la première session', (tester) async {
+      final rig = PageRig(tester);
+      rig.resetClient.startupResult = CanvasResetResult.busy;
+      rig.resetClient.script.addAll(<CanvasResetResult>[
+        CanvasResetResult.busy,
+        CanvasResetResult.busy,
+        CanvasResetResult.busy,
+      ]);
+      await rig.mount(tester);
+      expect(rig.resetClient.startupCalls, 1);
+
+      // Un réessai a eu lieu (busy), puis la session démarre.
+      await tester.pump(rig.settings.canvasResetRetryInterval);
+      await drain(tester);
+      expect(rig.resetClient.calls, 1);
+      await rig.start(tester);
+
+      await tester.pump(rig.settings.canvasResetRetryInterval * 5);
+      await drain(tester);
+      expect(
+        rig.resetClient.calls,
+        1,
+        reason: 'aucune demande après Connecting',
+      );
+      expect(rig.errors.toString(), isEmpty);
+    });
+
     testWidgets('démarrage en mode rejeu : aucune remise à vide', (
       tester,
     ) async {

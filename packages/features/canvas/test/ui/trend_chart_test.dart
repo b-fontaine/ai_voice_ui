@@ -220,6 +220,9 @@ void main() {
                 .painter!
             as TrendChartPainter;
     final allowed = <Color>{
+      theme.chartIos,
+      theme.chartAndroid,
+      theme.chartOther,
       theme.accent,
       theme.okForeground,
       theme.riskForeground,
@@ -267,20 +270,69 @@ void main() {
       'Android 3.3',
     ]);
     expect(painter().series.map((s) => s.color), <Color>[
-      theme.accent,
-      theme.okForeground,
-    ]);
-    expect(
-      painter().series[0].color,
-      isNot(painter().series[1].color),
-      reason: 'une couleur distincte par série',
-    );
+      theme.chartAndroid,
+      theme.chartAndroid,
+    ], reason: 'même plateforme, même teinte');
+    expect(painter().series.map((s) => s.dashed), <bool>[
+      false,
+      true,
+    ], reason: 'la 3.3 se distingue par le trait pointillé');
     h.expectTextAtLeast24(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });
 
-  testWidgets('correction iOS : une seule série, la couleur de rang 0', (
+  testWidgets('couleur par plateforme : iOS et Android, jamais de statut', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+    final theme = const SceneTheme.dark();
+    TrendChartPainter painter() =>
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    // Acte 1 : iOS puis Android.
+    expect(painter().series.map((s) => s.name), <String>['iOS', 'Android']);
+    final act1 = painter().series.map((s) => s.color).toList();
+    expect(act1, <Color>[theme.chartIos, theme.chartAndroid]);
+    expect(painter().series.map((s) => s.dashed), <bool>[false, false]);
+
+    // Acte 2 : Android garde la couleur qu'il avait à l'acte 1.
+    await h.sendVariant(tester, 'act2');
+    expect(painter().series.first.color, act1[1]);
+    for (final s in painter().series) {
+      expect(s.color, isNot(theme.okForeground));
+      expect(s.color, isNot(theme.riskForeground));
+      expect(s.color, isNot(theme.blockingForeground));
+    }
+  });
+
+  testWidgets('plateforme inconnue : couleur « autre » sans statut', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+    final data = cloneJson(h.data);
+    data['series'] = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'name': 'Web',
+        'points': <double>[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+      },
+    ];
+    await h.sendData(tester, data);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    expect(painter.series.single.color, const SceneTheme.dark().chartOther);
+  });
+
+  testWidgets('correction iOS : une seule série, la couleur d iOS', (
     tester,
   ) async {
     final h = CatalogHarness('trend', 'trend');
@@ -297,7 +349,8 @@ void main() {
                 .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
                 .painter!
             as TrendChartPainter;
-    expect(painter.series.single.color, const SceneTheme.dark().accent);
+    expect(painter.series.single.color, const SceneTheme.dark().chartIos);
+    expect(painter.series.single.dashed, isFalse);
     expect(tester.takeException(), isNull);
   });
 }

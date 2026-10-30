@@ -87,6 +87,13 @@ class _Trend {
 /// « 0.5 » donne « 0,50 % » (format français de la fiche).
 String _pct(double v) => '${v.toStringAsFixed(2).replaceAll('.', ',')} %';
 
+Color _platformColor(SceneTheme theme, String name) {
+  final String lower = name.toLowerCase();
+  if (lower.startsWith('ios')) return theme.chartIos;
+  if (lower.startsWith('android')) return theme.chartAndroid;
+  return theme.chartOther;
+}
+
 class _TrendView extends StatelessWidget {
   const _TrendView({required this.trend});
 
@@ -95,19 +102,16 @@ class _TrendView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    // Couleurs de séries prises dans le thème, par rang ; le seuil prend la
+    // Couleur par plateforme (préfixe du nom), jamais une couleur de statut ;
+    // la série « 3.3 » se distingue par le trait pointillé. Le seuil prend la
     // couleur « bloquant ».
-    final List<Color> palette = <Color>[
-      theme.accent,
-      theme.okForeground,
-      theme.riskForeground,
-    ];
     final List<TrendSeries> series = <TrendSeries>[
-      for (int i = 0; i < trend.series.length; i++)
+      for (final _RawSeries raw in trend.series)
         TrendSeries(
-          name: trend.series[i].name,
-          points: trend.series[i].points,
-          color: palette[i % palette.length],
+          name: raw.name,
+          points: raw.points,
+          color: _platformColor(theme, raw.name),
+          dashed: raw.name.endsWith('3.3'),
         ),
     ];
     return CellFrame(

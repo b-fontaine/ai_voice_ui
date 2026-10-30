@@ -7,21 +7,36 @@ class TrendSeries {
     required this.name,
     required this.points,
     required this.color,
+    this.dashed = false,
   });
 
   final String name;
   final List<double> points;
   final Color color;
 
+  /// Trait pointillé : distingue deux séries de même teinte.
+  final bool dashed;
+
   @override
   bool operator ==(Object other) =>
       other is TrendSeries &&
       other.name == name &&
       other.color == color &&
+      other.dashed == dashed &&
       _sameList(other.points, points);
 
   @override
-  int get hashCode => Object.hash(name, color, Object.hashAll(points));
+  int get hashCode => Object.hash(name, color, dashed, Object.hashAll(points));
+}
+
+/// Dessine `path` en tirets (12 px tracés, 8 px vides).
+void _drawDashed(Canvas canvas, Path path, Paint paint) {
+  for (final metric in path.computeMetrics()) {
+    for (double d = 0; d < metric.length; d += 20) {
+      final double end = d + 12 > metric.length ? metric.length : d + 12;
+      canvas.drawPath(metric.extractPath(d, end), paint);
+    }
+  }
 }
 
 bool _sameList<T>(List<T> a, List<T> b) {
@@ -130,7 +145,11 @@ class TrendChartPainter extends CustomPainter {
         }
         canvas.drawCircle(p, 4, Paint()..color = s.color);
       }
-      canvas.drawPath(path, line);
+      if (s.dashed) {
+        _drawDashed(canvas, path, line);
+      } else {
+        canvas.drawPath(path, line);
+      }
     }
 
     for (int i = 0; i < labels.length; i++) {

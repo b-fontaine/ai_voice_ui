@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
 import '../support/page_rig.dart';
 import '../support/paragraphs.dart';
@@ -92,6 +93,44 @@ void main() {
       Theme.of(rig.context).extension<SceneTheme>(),
       const SceneTheme.dark(),
     );
+  });
+
+  testWidgets('acte 2 après l\'acte 1 : lignes de comparaison, deux entrées de '
+      'légende, aucun débordement, texte >= 24 px', (tester) async {
+    final rig = await playAct1(tester);
+    final surfaces = (await tester.runAsync(
+      () => ContractFixtures.followUpSurfaces(
+        GenesisFollowUp.act2,
+        catalogId: rigCatalog,
+      ),
+    ))!;
+    for (final surface in surfaces) {
+      for (final message in surface.messages) {
+        rig.receiveEnvelope(<String, Object?>{
+          'v': 1,
+          'type': 'a2ui',
+          'session': 's1',
+          't_ms': 10,
+          'data': message,
+          'agent': surface.agent,
+          'task': surface.task,
+        });
+        await tester.pump();
+        await tester.pump();
+      }
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expectCleanScreen(tester, rig);
+    expect(find.byKey(const Key('comparison-kpi')), findsOneWidget);
+    expect(find.byKey(const Key('comparison-reviews')), findsOneWidget);
+    expect(find.byKey(const Key('trend-series-Android 3.4')), findsOneWidget);
+    expect(find.byKey(const Key('trend-series-Android 3.3')), findsOneWidget);
+    for (final key in const ['comparison-kpi', 'comparison-reviews']) {
+      final r = rectOf(tester, key);
+      expect(r.right, lessThanOrEqualTo(1920), reason: key);
+      expect(r.bottom, lessThanOrEqualTo(1080), reason: key);
+    }
   });
 
   testWidgets('panneau déplié : recouvre le canevas à droite sans le '
