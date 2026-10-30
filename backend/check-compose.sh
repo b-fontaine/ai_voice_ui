@@ -79,7 +79,8 @@ for label, url in (
 
 # A8 f : composants autorisés = exactement le catalogue Genesis J3, jamais Column ni Text.
 with open("contracts/a2ui/genesis/v1/catalog.json", encoding="utf-8") as fh:
-    catalog_components = json.load(fh)["components"]
+    catalog = json.load(fh)
+catalog_components = catalog["components"]  # liste blanche J3, pas catalogComponents (étagère de l app)
 raw_components = str(env.get("A2UI_COMPONENTS", ""))
 default_components = raw_components
 if default_components.startswith("${A2UI_COMPONENTS:-") and default_components.endswith("}"):
@@ -91,6 +92,27 @@ check("Column" not in listed and "Text" not in listed,
       "A2UI_COMPONENTS ne doit contenir ni Column ni Text")
 check(bool(env.get("A2UI_ALLOWED_PROPS")), "orchestrator : A2UI_ALLOWED_PROPS requis")
 check(bool(env.get("A2UI_BINDING_PROPS")), "orchestrator : A2UI_BINDING_PROPS requis")
+
+
+def default_of(name):
+    raw = str(env.get(name, ""))
+    prefix = "${" + name + ":-"
+    if raw.startswith(prefix) and raw.endswith("}"):
+        raw = raw[len(prefix):-1]
+    return {x.strip() for x in raw.split(",") if x.strip()}
+
+
+# R5 (c) : propriétés admises et propriétés liées = unions déclarées par le catalogue (égalité d ensembles).
+definitions = catalog.get("definitions", {})
+catalog_props = set()
+catalog_binding = set()
+for definition in definitions.values():
+    catalog_props.update(definition.get("properties", []))
+    catalog_binding.update((definition.get("binding") or {}).keys())
+check(default_of("A2UI_ALLOWED_PROPS") == catalog_props,
+      "A2UI_ALLOWED_PROPS (defaut) doit egaler l union des properties du catalogue genesis/v1")
+check(default_of("A2UI_BINDING_PROPS") == catalog_binding,
+      "A2UI_BINDING_PROPS (defaut) doit egaler l union des cles binding du catalogue genesis/v1")
 
 check("sk-" not in json.dumps(cfg), "une valeur contient sk- (secret possible)")
 

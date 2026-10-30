@@ -8,6 +8,14 @@
     "ReviewSentiment",
     "ReleaseChecklist"
   ],
+  "catalogComponents": [
+    "KeyIndicator",
+    "TrendChart",
+    "ReviewSentiment",
+    "ReleaseChecklist",
+    "ActionBar",
+    "CrashList"
+  ],
   "definitions": {
     "KeyIndicator": {
       "surface": "kpi",
