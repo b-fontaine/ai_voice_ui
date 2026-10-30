@@ -8,6 +8,10 @@ import 'package:flutter/material.dart' show FilledButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/page_settings.dart';
+
+import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas_page_settings.dart';
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
@@ -77,7 +81,12 @@ class _ObservedSession extends VoiceSession {
 class _Rig {
   _Rig(WidgetTester tester, {GenesisConfig? config, bool stopNeverEnds = false})
     : getIt = GetIt.asNewInstance() {
-    configureDependencies(getIt, config: config ?? const GenesisConfig());
+    configureDependencies(
+      getIt,
+      config: config ?? const GenesisConfig(),
+      errorSink: errors,
+    );
+    settings = pageSettingsOf(config ?? const GenesisConfig());
     final closeTimeout = (config ?? const GenesisConfig()).sessionCloseTimeout;
     session = _ObservedSession(
       getIt,
@@ -97,6 +106,7 @@ class _Rig {
   }
 
   final GetIt getIt;
+  late final GenesisCanvasPageSettings settings;
   final List<String> journal = <String>[];
   late final _ObservedSession session;
   int resolved = 0;
@@ -120,6 +130,7 @@ class _Rig {
           ),
           exitHandler: (_) {},
           errorSink: errors,
+          settings: settings,
         ),
       ),
     );

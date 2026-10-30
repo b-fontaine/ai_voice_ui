@@ -11,6 +11,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_core/shared_core.dart' show ExitHandler, ReplayDelay;
 
 import '../pages/genesis_canvas/genesis_canvas.dart';
+import '../pages/genesis_canvas/genesis_canvas_page_settings.dart';
 import 'bootstrap/snapshot_service.dart';
 import 'config/genesis_config.dart';
 import 'di/injection.dart';
@@ -56,6 +57,7 @@ class GenesisCanvasApp extends StatefulWidget {
 class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
   late final GetIt _getIt = GetIt.asNewInstance();
   late final Stream<A2uiMessage>? _replay;
+  late final StringSink _errorSink = widget.errorSink ?? io.stderr;
   Future<void>? _pageClosing;
 
   @override
@@ -64,6 +66,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
     configureDependencies(
       _getIt,
       config: widget.config,
+      errorSink: _errorSink,
       voiceTransportFactory: widget.voiceTransportFactory,
     );
     final scenario = widget.config.scenario;
@@ -86,7 +89,8 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
 
   @override
   Widget build(BuildContext context) {
-    final sink = widget.errorSink ?? io.stderr;
+    final sink = _errorSink;
+    final config = widget.config;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(brightness: Brightness.dark),
@@ -106,6 +110,14 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
           ),
           exitHandler: widget.exitHandler ?? io.exit,
           errorSink: sink,
+          settings: GenesisCanvasPageSettings(
+            orbAttack: config.orbAttack,
+            orbRelease: config.orbRelease,
+            orbSilenceTimeout: config.orbSilenceTimeout,
+            orbSpeakingThreshold: config.orbSpeakingThreshold,
+            sessionCloseTimeout: config.sessionCloseTimeout,
+            exitCloseTimeout: config.exitCloseTimeout,
+          ),
         ),
       ),
     );

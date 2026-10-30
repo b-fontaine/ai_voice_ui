@@ -212,6 +212,21 @@ void main() {
     },
   );
 
+  test('WSS : emitRaw publie un texte tel quel, hors backlog', () async {
+    await read(await post('v=0'));
+    final socket = await WebSocket.connect(
+      'ws://127.0.0.1:${backend.port}/app?session=sess-1',
+    );
+    final received = <String>[];
+    socket.listen((m) => received.add(m as String));
+    await _until(() => backend.appClientCount('sess-1') == 1);
+
+    backend.emitRaw('sess-1', 'pas du JSON');
+
+    await _until(() => received.contains('pas du JSON'));
+    await socket.close();
+  });
+
   test('WSS : closeApp coupe le canal côté client', () async {
     await read(await post('v=0'));
     final socket = await WebSocket.connect(

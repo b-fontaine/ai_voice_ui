@@ -12,12 +12,19 @@ String voiceFailureMessage(VoiceFailure failure) => switch (failure) {
   MicUnavailable() => 'Micro indisponible',
   IceTimeout() => 'Connexion WebRTC trop lente',
   ConnectionLost() => 'Connexion perdue',
-  SessionClosed(:final reason) =>
-    reason == 'expired'
-        ? 'Session expirée'
-        : reason == null
-        ? 'Session terminée'
-        : 'Session terminée ($reason)',
+  SessionClosed(:final reason) => _closedMessage(reason),
+};
+
+// Raisons du contrat : textes fixes. Toute autre valeur reçue du backend est
+// ignorée, jamais affichée.
+String _closedMessage(String? reason) => switch (reason) {
+  'expired' => 'Session expirée',
+  'max_session' => 'Durée maximale de la session atteinte',
+  'remote_hangup' => 'Session terminée par le service',
+  'attach_failed' => 'Session indisponible',
+  'connection_lost' => 'Connexion perdue',
+  'content' => 'Session terminée (contenu refusé)',
+  _ => 'Session terminée',
 };
 
 // Arrondi à la seconde supérieure, au moins 1 s.

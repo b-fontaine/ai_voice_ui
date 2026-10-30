@@ -14,6 +14,12 @@ class GenesisConfigException implements Exception {
 /// injectée par constructeur jusqu'à la page.
 ///
 /// Aucune clé d'API ici : la clé OpenAI reste côté backend (AGENTS.md § 2).
+///
+/// **Invariant des délais de fermeture** (chaque niveau borne celui qu'il
+/// enveloppe) : `sessionCloseTimeout > relayDeleteTimeout +
+/// channelCloseTimeout` et `exitCloseTimeout > sessionCloseTimeout + 1 s`.
+/// `relayDeleteTimeout` dépasse lui-même le `VOICE_CLOSE_GUARD` (5 s) du
+/// backend. Ce sont des réglages, pas des décisions produit.
 class GenesisConfig {
   const GenesisConfig({
     this.scenario,
@@ -22,8 +28,10 @@ class GenesisConfig {
     this.appLogPath,
     this.relayCreateTimeout = const Duration(seconds: 20),
     this.relayDeleteTimeout = const Duration(seconds: 7),
-    this.sessionCloseTimeout = const Duration(seconds: 8),
-    this.exitCloseTimeout = const Duration(seconds: 8),
+    this.channelConnectTimeout = const Duration(seconds: 5),
+    this.channelCloseTimeout = const Duration(seconds: 2),
+    this.sessionCloseTimeout = const Duration(seconds: 10),
+    this.exitCloseTimeout = const Duration(seconds: 12),
     this.iceTimeout = const Duration(seconds: 10),
     this.orbSilenceTimeout = const Duration(milliseconds: 600),
     this.orbAttack = const Duration(milliseconds: 80),
@@ -74,6 +82,12 @@ class GenesisConfig {
   /// Délai maximal du `DELETE` au relais.
   final Duration relayDeleteTimeout;
 
+  /// Délai maximal de connexion du canal WSS `/app`.
+  final Duration channelConnectTimeout;
+
+  /// Délai maximal de fermeture du canal WSS `/app`.
+  final Duration channelCloseTimeout;
+
   /// Délai maximal de fermeture d'une session voix.
   final Duration sessionCloseTimeout;
 
@@ -110,7 +124,14 @@ class GenesisConfig {
       throw _invalidBackendUrl();
     }
     final validScheme = uri.scheme == 'http' || uri.scheme == 'https';
-    if (!validScheme || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+    final isOrigin =
+        (uri.path.isEmpty || uri.path == '/') &&
+        !uri.hasQuery &&
+        !uri.hasFragment;
+    if (!validScheme ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        !isOrigin) {
       throw _invalidBackendUrl();
     }
     return uri;
@@ -119,7 +140,8 @@ class GenesisConfig {
   static GenesisConfigException _invalidBackendUrl() =>
       const GenesisConfigException(
         'La variable $_backendUrlVariable est invalide : une URL http ou '
-        'https avec un hôte et sans identifiants est attendue '
+        'https avec un hôte, sans identifiants, chemin, requête ni fragment '
+        'est attendue '
         '(par exemple http://127.0.0.1:8080).',
       );
 }

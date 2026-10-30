@@ -8,6 +8,7 @@ import 'package:genesis_canvas/app/di/injection.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:shared_core/shared_core.dart';
+import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
 void main() {
   // Port 1 : rien n'écoute ; toute connexion à la construction échouerait.
@@ -18,20 +19,18 @@ void main() {
   GetIt build({
     GenesisConfig? withConfig,
     VoiceTransport Function()? voiceTransportFactory,
+    StringSink? errorSink,
   }) {
     final getIt = GetIt.asNewInstance();
     configureDependencies(
       getIt,
       config: withConfig ?? config,
+      errorSink: errorSink ?? StringBuffer(),
       voiceTransportFactory: voiceTransportFactory,
     );
     addTearDown(getIt.reset);
     return getIt;
   }
-
-  test('l\'environnement du câblage réel s\'appelle live', () {
-    expect(liveEnvironment.name, 'live');
-  });
 
   test('résout tous les types sans entrée-sortie', () {
     final dir = Directory.systemTemp.createTempSync('genesis_di_');
@@ -117,6 +116,46 @@ void main() {
     expect(getIt<VoiceTransport Function()>(), same(substitute));
     getIt<VoiceTransport Function()>()();
     expect(calls, 1);
+  });
+
+  test('le puits de diagnostic fourni est enregistré dans le graphe', () {
+    final sink = StringBuffer();
+    final getIt = build(errorSink: sink);
+
+    expect(getIt<StringSink>(), same(sink));
+  });
+
+  test('délais du canal injectés depuis la configuration', () {
+    final getIt = build(
+      withConfig: const GenesisConfig(
+        channelConnectTimeout: Duration(seconds: 3),
+        channelCloseTimeout: Duration(seconds: 4),
+      ),
+    );
+
+    final channel = getIt<AppChannel>() as WebSocketAppChannel;
+    expect(channel.connectTimeout, const Duration(seconds: 3));
+    expect(channel.closeTimeout, const Duration(seconds: 4));
+  });
+
+  test('reset ferme le relais : plus aucune requête ne part', () async {
+    HttpOverrides.global = null;
+    final backend = await FakeBackend.start();
+    addTearDown(backend.close);
+    final getIt = GetIt.asNewInstance();
+    configureDependencies(
+      getIt,
+      config: GenesisConfig(backendUrl: Uri.parse(backend.url)),
+      errorSink: StringBuffer(),
+    );
+    final relay = getIt<VoiceRelay>();
+    await relay.deleteSession('sess-1').then<void>((_) {}, onError: (_) {});
+    expect(backend.deletes, <String>['sess-1']);
+
+    await getIt.reset();
+    await relay.deleteSession('sess-2').then<void>((_) {}, onError: (_) {});
+
+    expect(backend.deletes, <String>['sess-1']);
   });
 
   test('deux GetIt.asNewInstance sont indépendants', () {

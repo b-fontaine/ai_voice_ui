@@ -49,6 +49,10 @@ void main() {
       );
     });
 
+    test('un chemin « / » est accepté', () {
+      expect(read('http://127.0.0.1:8080/').backendUrl.port, 8080);
+    });
+
     test('URL http et https valides', () {
       expect(read('http://localhost:9000').backendUrl.port, 9000);
       expect(read('https://example.org').backendUrl.scheme, 'https');
@@ -60,6 +64,9 @@ void main() {
       '/seulement/un/chemin',
       'http://user:secret@127.0.0.1:8080',
       'http://[::1',
+      'http://127.0.0.1:8080/api',
+      'http://127.0.0.1:8080/?x=1',
+      'http://127.0.0.1:8080#frag',
     ]) {
       test('URL invalide : GenesisConfigException sans la valeur ($bad)', () {
         expect(
@@ -103,13 +110,28 @@ void main() {
       const config = GenesisConfig();
       expect(config.relayCreateTimeout, const Duration(seconds: 20));
       expect(config.relayDeleteTimeout, const Duration(seconds: 7));
-      expect(config.sessionCloseTimeout, const Duration(seconds: 8));
-      expect(config.exitCloseTimeout, const Duration(seconds: 8));
+      expect(config.channelConnectTimeout, const Duration(seconds: 5));
+      expect(config.channelCloseTimeout, const Duration(seconds: 2));
+      expect(config.sessionCloseTimeout, const Duration(seconds: 10));
+      expect(config.exitCloseTimeout, const Duration(seconds: 12));
       expect(config.iceTimeout, const Duration(seconds: 10));
       expect(config.orbSilenceTimeout, const Duration(milliseconds: 600));
       expect(config.orbAttack, const Duration(milliseconds: 80));
       expect(config.orbRelease, const Duration(milliseconds: 250));
       expect(config.orbSpeakingThreshold, 0.03);
+    });
+
+    test('R5 : invariants des délais de fermeture par défaut', () {
+      const config = GenesisConfig();
+      // Chaque niveau borne celui qu'il enveloppe, avec une marge.
+      expect(
+        config.sessionCloseTimeout,
+        greaterThan(config.relayDeleteTimeout + config.channelCloseTimeout),
+      );
+      expect(
+        config.exitCloseTimeout,
+        greaterThan(config.sessionCloseTimeout + const Duration(seconds: 1)),
+      );
     });
 
     test(

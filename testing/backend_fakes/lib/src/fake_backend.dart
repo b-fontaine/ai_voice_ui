@@ -214,6 +214,14 @@ class FakeBackend {
     }
   }
 
+  /// Publie [text] tel quel (même invalide) aux clients de [session] : pour
+  /// tester le rejet d'une enveloppe illisible. Jamais mis en backlog.
+  void emitRaw(String session, String text) {
+    for (final client in _clients.where((c) => c.accepts(session))) {
+      client.socket.add(text);
+    }
+  }
+
   /// Ferme proprement (ou avec [code]) tous les clients WebSocket de la
   /// session : coupure du canal, vue de l'app comme une perte de connexion.
   Future<void> closeApp(

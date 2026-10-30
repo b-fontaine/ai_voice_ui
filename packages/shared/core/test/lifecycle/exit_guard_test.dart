@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genesis_canvas/app/lifecycle/exit_guard.dart';
+import 'package:shared_core/shared_core.dart';
 
 void main() {
   const timeout = Duration(seconds: 8);

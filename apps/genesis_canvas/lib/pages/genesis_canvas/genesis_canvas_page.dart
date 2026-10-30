@@ -26,14 +26,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:get_it/get_it.dart';
-import 'package:shared_core/shared_core.dart' show ExitHandler;
+import 'package:shared_core/shared_core.dart' show ExitGuard, ExitHandler;
 
-import '../../app/config/genesis_config.dart';
-import '../../app/lifecycle/exit_guard.dart';
 import '../../widgets/agents_rail/agents_rail.dart';
 import '../../widgets/top_bar/top_bar.dart';
 import 'capture_service.dart';
 import 'engine_error_watcher.dart';
+import 'genesis_canvas_page_settings.dart';
 
 /// Fabrique du service de capture : la page lui fournit la fonction de sortie
 /// finale (code ajusté par les erreurs du moteur).
@@ -61,6 +60,7 @@ class GenesisCanvasPage extends StatefulWidget {
     required this.snapshotFactory,
     required this.exitHandler,
     required this.errorSink,
+    required this.settings,
     this.replay,
     this.onClosing,
   });
@@ -75,6 +75,9 @@ class GenesisCanvasPage extends StatefulWidget {
   /// Destination des erreurs de rejeu et de capture (`stderr` en prod).
   final StringSink errorSink;
 
+  /// Réglages de l'orbe et délais de fermeture (fournis par la couche `app`).
+  final GenesisCanvasPageSettings settings;
+
   /// Messages A2UI à rejouer ; `null` : source vivante, canevas vide au départ.
   final Stream<A2uiMessage>? replay;
 
@@ -88,23 +91,19 @@ class GenesisCanvasPage extends StatefulWidget {
 
 class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     with TickerProviderStateMixin {
-  late final GenesisConfig _config = widget.getIt<GenesisConfig>();
+  GenesisCanvasPageSettings get _settings => widget.settings;
 
   // Voix : UNE session, partagée par la source d'événements et le Bloc.
   late final VoiceSession _session = widget.getIt<VoiceSession>();
-  late final LiveSessionEventSource _source = LiveSessionEventSource(_session);
+  late final LiveSessionEventSource _source = LiveSessionEventSource(
+    _session,
+    onIgnored: (reason) => widget.errorSink.writeln('Message ignoré : $reason'),
+  );
   late final VoiceSessionBloc _voiceBloc = VoiceSessionBloc(_session);
   late final TranscriptBloc _transcriptBloc = widget.getIt<TranscriptBloc>();
   late final AgentActivityBloc _agentsBloc = widget.getIt<AgentActivityBloc>();
-  late final OrbLevelController _orb = OrbLevelController(
-    vsync: this,
-    events: _source.events,
-    smoother: OrbSmoother(
-      attack: _config.orbAttack,
-      release: _config.orbRelease,
-    ),
-    silenceTimeout: _config.orbSilenceTimeout,
-  );
+  // Affecté dans `initState` (abonné de la source, il porte un Ticker).
+  late final OrbLevelController _orb;
 
   // Canevas.
   late final SurfaceController _controller = SurfaceController(
@@ -112,10 +111,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
   final GlobalKey _boundaryKey = GlobalKey();
-  late final EngineErrorWatcher _engineErrors = EngineErrorWatcher(
-    onSubmit: _controller.onSubmit,
-    errorSink: widget.errorSink,
-  );
+  // Affecté dans `initState` : écoute dès la création (le moteur ne rejoue
+  // pas les erreurs passées).
+  late final EngineErrorWatcher _engineErrors;
   late final CaptureService _snapshot = widget.snapshotFactory(
     // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
     (code) =>
@@ -124,11 +122,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   late final ExitGuard _exitGuard = ExitGuard(
     _session.stop,
-    _config.exitCloseTimeout,
+    _settings.exitCloseTimeout,
   );
-  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
-    onExitRequested: _exitGuard.onExitRequested,
-  );
+  late final AppLifecycleListener _lifecycle;
 
   bool get _replayMode => widget.replay != null;
 
@@ -140,9 +136,22 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   void initState() {
     super.initState();
     // Écoute dès la création : le moteur ne rejoue pas les erreurs passées.
-    _engineErrors;
-    _lifecycle;
-    _orb;
+    _engineErrors = EngineErrorWatcher(
+      onSubmit: _controller.onSubmit,
+      errorSink: widget.errorSink,
+    );
+    _lifecycle = AppLifecycleListener(
+      onExitRequested: _exitGuard.onExitRequested,
+    );
+    _orb = OrbLevelController(
+      vsync: this,
+      events: _source.events,
+      smoother: OrbSmoother(
+        attack: _settings.orbAttack,
+        release: _settings.orbRelease,
+      ),
+      silenceTimeout: _settings.orbSilenceTimeout,
+    );
     // Tous les abonnés se branchent avant toute connexion.
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
@@ -227,7 +236,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 5. Blocs de transcription, d'activité puis du canevas ;
   /// 6. moteur genui, une fois le Bloc du canevas fermé.
   Future<void> _shutdown() async {
-    final bound = _config.sessionCloseTimeout;
+    final bound = _settings.sessionCloseTimeout;
     await _step('Bloc de session', _voiceBloc.close);
     await _step('arrêt de la session', _session.stop, timeout: bound);
     await _step('libération de la session', _session.dispose, timeout: bound);
@@ -274,7 +283,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                 enabled: !_animationsOff,
                 child: TopBar(
                   orbLevel: _orb.level,
-                  speakingThreshold: _config.orbSpeakingThreshold,
+                  speakingThreshold: _settings.orbSpeakingThreshold,
                   startEnabled: !_replayMode,
                 ),
               ),

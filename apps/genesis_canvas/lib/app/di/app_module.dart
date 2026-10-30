@@ -26,12 +26,17 @@ typedef VoiceTransportFactory = VoiceTransport Function();
 /// Alias de `EnvelopeLog Function()` (voir [VoiceTransportFactory]).
 typedef EnvelopeLogFactory = EnvelopeLog Function();
 
+/// Libération du relais par `getIt.reset()` : ferme son client HTTP.
+void closeVoiceRelay(VoiceRelay relay) {
+  if (relay is HttpVoiceRelay) relay.close();
+}
+
 @module
 abstract class AppModule {
   @lazySingleton
   AppClock clock() => SystemClock();
 
-  @lazySingleton
+  @LazySingleton(dispose: closeVoiceRelay)
   VoiceRelay voiceRelay(GenesisConfig config) => HttpVoiceRelay(
     baseUrl: config.backendUrl,
     createTimeout: config.relayCreateTimeout,
@@ -39,8 +44,14 @@ abstract class AppModule {
   );
 
   @lazySingleton
-  AppChannel appChannel(GenesisConfig config) =>
-      WebSocketAppChannel(baseUrl: config.backendUrl);
+  AppChannel appChannel(GenesisConfig config, StringSink errorSink) =>
+      WebSocketAppChannel(
+        baseUrl: config.backendUrl,
+        connectTimeout: config.channelConnectTimeout,
+        closeTimeout: config.channelCloseTimeout,
+        onInvalid: (error) =>
+            errorSink.writeln('Enveloppe ignorée : ${error.reason}'),
+      );
 
   @lazySingleton
   WebRtcPlatform webRtcPlatform() => const FlutterWebRtcPlatform();
@@ -84,18 +95,23 @@ void registerFactoryFunctions(
   GetIt getIt, {
   VoiceTransport Function()? voiceTransportFactory,
 }) {
-  getIt.registerLazySingleton<VoiceTransport Function()>(
-    () =>
-        voiceTransportFactory ??
-        () => FlutterWebRtcTransport(
-          platform: getIt<WebRtcPlatform>(),
-          iceTimeout: getIt<GenesisConfig>().iceTimeout,
-        ),
-  );
+  getIt.registerLazySingleton<VoiceTransport Function()>(() {
+    final substitute = voiceTransportFactory;
+    if (substitute != null) return substitute;
+    final platform = getIt<WebRtcPlatform>();
+    final iceTimeout = getIt<GenesisConfig>().iceTimeout;
+    return () =>
+        FlutterWebRtcTransport(platform: platform, iceTimeout: iceTimeout);
+  });
   getIt.registerLazySingleton<EnvelopeLog Function()>(() {
     final config = getIt<GenesisConfig>();
     final clock = getIt<AppClock>();
-    return () =>
-        EnvelopeLog(path: config.appLogPath, nowUnixMs: clock.nowUnixMs);
+    final sink = getIt<StringSink>();
+    return () => EnvelopeLog(
+      path: config.appLogPath,
+      nowUnixMs: clock.nowUnixMs,
+      onError: (_) =>
+          sink.writeln("Journal de l'app désactivé (erreur d'E/S)."),
+    );
   });
 }

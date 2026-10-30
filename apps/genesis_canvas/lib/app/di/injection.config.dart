@@ -33,9 +33,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i679.WebRtcPlatform>(() => appModule.webRtcPlatform());
     gh.lazySingleton<_i769.VoiceRelay>(
       () => appModule.voiceRelay(gh<_i32.GenesisConfig>()),
+      dispose: _i580.closeVoiceRelay,
     );
     gh.lazySingleton<_i769.AppChannel>(
-      () => appModule.appChannel(gh<_i32.GenesisConfig>()),
+      () => appModule.appChannel(gh<_i32.GenesisConfig>(), gh<StringSink>()),
     );
     gh.factory<_i679.VoiceSession>(
       () => appModule.voiceSession(

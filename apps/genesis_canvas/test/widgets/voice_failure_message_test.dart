@@ -18,10 +18,32 @@ void main() {
     ('SessionClosed expired', SessionClosed('expired'), 'Session expirée'),
     ('SessionClosed sans raison', SessionClosed(null), 'Session terminée'),
     (
-      'SessionClosed autre raison',
-      SessionClosed('quota'),
-      'Session terminée (quota)',
+      'SessionClosed max_session',
+      SessionClosed('max_session'),
+      'Durée maximale de la session atteinte',
     ),
+    (
+      'SessionClosed remote_hangup',
+      SessionClosed('remote_hangup'),
+      'Session terminée par le service',
+    ),
+    (
+      'SessionClosed attach_failed',
+      SessionClosed('attach_failed'),
+      'Session indisponible',
+    ),
+    (
+      'SessionClosed connection_lost',
+      SessionClosed('connection_lost'),
+      'Connexion perdue',
+    ),
+    (
+      'SessionClosed content',
+      SessionClosed('content'),
+      'Session terminée (contenu refusé)',
+    ),
+    // Une raison hors contrat n'est jamais affichée.
+    ('SessionClosed inconnue', SessionClosed('quota'), 'Session terminée'),
   ];
 
   for (final (name, failure, expected) in table) {

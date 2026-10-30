@@ -70,7 +70,11 @@ class SessionHarness {
     await tester.runAsync(backend.close);
   }
 
-  static Future<void> launchApp(WidgetTester tester) async {
+  static Future<void> launchApp(
+    WidgetTester tester, {
+    String? appLogPath,
+    StringSink? errorSink,
+  }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -78,9 +82,11 @@ class SessionHarness {
       GenesisCanvasApp(
         config: GenesisConfig.fromEnvironment(<String, String>{
           'GENESIS_BACKEND_URL': backend.url,
+          'GENESIS_APP_LOG': ?appLogPath,
         }),
         voiceTransportFactory: transports.call,
         exitHandler: (_) {},
+        errorSink: errorSink,
       ),
     );
     await tester.pump();

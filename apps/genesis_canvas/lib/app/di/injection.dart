@@ -7,10 +7,6 @@ import '../config/genesis_config.dart';
 import 'app_module.dart';
 import 'injection.config.dart';
 
-/// Environnement du câblage réel : c'est le seul graphe, il n'y a ni
-/// environnement `test` ni faux dans `lib/`.
-const Environment liveEnvironment = Environment('live');
-
 /// Enregistre les dépendances dans l'instance de [GetIt] passée en paramètre
 /// (aucune variable globale : l'injection se fait par constructeur, et
 /// chaque app crée sa propre instance, sans état résiduel).
@@ -18,14 +14,17 @@ const Environment liveEnvironment = Environment('live');
 /// [config] est enregistrée AVANT l'`init` généré, dont les modules la
 /// consomment. [voiceTransportFactory] est la seule substitution permise
 /// (frontière plateforme, pour les tests) : elle tient lieu de fabrique de
-/// transport du graphe (voir `registerFactoryFunctions`).
+/// transport du graphe (voir `registerFactoryFunctions`). [errorSink] reçoit
+/// les diagnostics (phrases fermées) et est enregistré dans le graphe.
 @InjectableInit(initializerName: 'init', asExtension: true)
 void configureDependencies(
   GetIt getIt, {
   required GenesisConfig config,
+  required StringSink errorSink,
   VoiceTransport Function()? voiceTransportFactory,
 }) {
   getIt.registerSingleton<GenesisConfig>(config);
-  getIt.init(environment: liveEnvironment.name);
+  getIt.registerSingleton<StringSink>(errorSink);
+  getIt.init();
   registerFactoryFunctions(getIt, voiceTransportFactory: voiceTransportFactory);
 }

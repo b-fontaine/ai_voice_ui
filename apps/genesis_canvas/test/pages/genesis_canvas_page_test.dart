@@ -5,6 +5,9 @@ import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/page_settings.dart';
+
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
@@ -52,7 +55,11 @@ void main() {
   /// Graphe réel de l'app (aucune E/S à la résolution), propre à chaque test.
   GetIt newGetIt() {
     final getIt = GetIt.asNewInstance();
-    configureDependencies(getIt, config: const GenesisConfig());
+    configureDependencies(
+      getIt,
+      config: const GenesisConfig(),
+      errorSink: StringBuffer(),
+    );
     addTearDown(getIt.reset);
     return getIt;
   }
@@ -94,6 +101,7 @@ void main() {
           ),
           exitHandler: exitCodes.add,
           errorSink: errors,
+          settings: pageSettingsOf(),
         ),
       ),
     );
@@ -194,6 +202,7 @@ void main() {
           ),
           exitHandler: exitCodes.add,
           errorSink: errors,
+          settings: pageSettingsOf(),
         ),
       ),
     );

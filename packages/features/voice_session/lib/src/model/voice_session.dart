@@ -248,6 +248,9 @@ class VoiceSession {
 
     if (deleteRemote && sessionId != null) {
       try {
+        // Filet de sécurité : le relais borne déjà son `DELETE` par son propre
+        // délai (plus court) ; ce `.timeout` externe n'agit que si ce
+        // délai n'est pas respecté.
         await _relay.deleteSession(sessionId).timeout(_closeTimeout);
       } on Object {
         // 204, 404, 504, délai, réseau : on libère quand même.
