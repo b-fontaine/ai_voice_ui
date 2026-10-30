@@ -37,7 +37,26 @@ func TestQualityProfile(t *testing.T) {
 	if !strings.Contains(p.Texts.Rejected, "Demande refusée") {
 		t.Errorf("le refus doit dire que la demande est refusée : %q", p.Texts.Rejected)
 	}
-	if !strings.Contains(p.Texts.Rejected, "l'agent Qualité ne traite que la vue globale de la version 3.4") {
+	if !strings.Contains(p.Texts.Rejected, "l'agent Qualité") {
 		t.Errorf("texte de refus %q", p.Texts.Rejected)
+	}
+	for _, tag := range []string{"android", "ios", "compare", "comparer", "comparaison", "3.3"} {
+		if !slices.Contains(p.Skill.Tags, tag) {
+			t.Errorf("le tag commun de l'acte 2 %q manque : %v", tag, p.Skill.Tags)
+		}
+	}
+	for _, ex := range []string{"Concentre-toi sur Android et compare avec la 3.3", "Non, plutôt iOS"} {
+		if !slices.Contains(p.Skill.Examples, ex) {
+			t.Errorf("l'exemple d'acte 2 %q manque : %v", ex, p.Skill.Examples)
+		}
+	}
+	if strings.Contains(strings.ToLower(p.Description), "sans comparaison") || strings.Contains(strings.ToLower(p.Texts.Rejected), "sans comparaison") {
+		t.Errorf("description ou refus périmés (« sans comparaison ») : %q / %q", p.Description, p.Texts.Rejected)
+	}
+	if !strings.Contains(p.Texts.Rejected, "une plateforme à la fois") || !strings.Contains(p.Texts.Rejected, "seulement avec Android") {
+		t.Errorf("le refus doit énoncer une plateforme à la fois et la comparaison seulement avec Android : %q", p.Texts.Rejected)
+	}
+	if strings.ContainsAny(p.Texts.Rejected, "0123456789%") {
+		t.Errorf("le refus ne doit contenir aucun chiffre : %q", p.Texts.Rejected)
 	}
 }

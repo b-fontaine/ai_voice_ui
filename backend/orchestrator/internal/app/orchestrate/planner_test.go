@@ -1,6 +1,9 @@
 package orchestrate
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -8,20 +11,27 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
-// Copie des tags des profils réels des trois agents de l'acte 1
-// (backend/agents/internal/{quality,voice,delivery}/profile.json).
-var (
-	tagsQuality  = []string{"release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "3.4"}
-	tagsVoice    = []string{"avis", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"}
-	tagsDelivery = []string{"checklist", "décision", "livraison", "release", "version", "prête", "valider", "3.4"}
-)
-
+// realCards lit les trois profils réels des agents (source unique des tags),
+// par chemin relatif, comme les fixtures de contrat.
 func realCards() []port.AgentCard {
-	return []port.AgentCard{
-		{Name: "Qualité", Tags: tagsQuality},
-		{Name: "Voix du client", Tags: tagsVoice},
-		{Name: "Livraison", Tags: tagsDelivery},
+	var cards []port.AgentCard
+	for _, dir := range []string{"quality", "voice", "delivery"} {
+		raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "agents", "internal", dir, "profile.json"))
+		if err != nil {
+			panic(err)
+		}
+		var p struct {
+			Name  string `json:"name"`
+			Skill struct {
+				Tags []string `json:"tags"`
+			} `json:"skill"`
+		}
+		if err := json.Unmarshal(raw, &p); err != nil {
+			panic(err)
+		}
+		cards = append(cards, port.AgentCard{Name: p.Name, Tags: p.Skill.Tags})
 	}
+	return cards
 }
 
 func TestPlannerSelectsByCardTags(t *testing.T) {
@@ -34,6 +44,11 @@ func TestPlannerSelectsByCardTags(t *testing.T) {
 	}{
 		{"acte 1 : release 3.4", "Prépare la release 3.4", realCards(), []int{0, 1, 2}},
 		{"nombre décimal = un mot", "Où en est la 3.4 ?", realCards(), []int{0, 1, 2}},
+		{"acte 2 : Android et comparaison 3.3", "Concentre-toi sur Android et compare avec la 3.3", realCards(), []int{0, 1, 2}},
+		{"acte 2 : correction iOS", "Non, plutôt iOS", realCards(), []int{0, 1, 2}},
+		{"avis Android : Voix du client seule", "les avis Android", realCards(), []int{1}},
+		{"3.2 seule : hors catalogue", "la 3.2", realCards(), []int{}},
+		{"release 3.4 : les trois", "Prépare la release 3.4", realCards(), []int{0, 1, 2}},
 		{"avis seuls", "Montre-moi les avis", realCards(), []int{1}},
 		{"checklist seule", "checklist", realCards(), []int{2}},
 		{"hors catalogue", "Fais-moi un camembert des ventes", realCards(), []int{}},

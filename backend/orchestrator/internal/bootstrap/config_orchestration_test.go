@@ -149,9 +149,6 @@ func TestConfig_EmbeddedPhrasesByDefault(t *testing.T) {
 		t.Fatalf("partial_failure embarquée absente ou chiffrée : %q", p.PartialFailure)
 	}
 	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog} {
-		if name == "FailureRejected" {
-			v = strings.ReplaceAll(v, "3.4", "") // R6 : seule la release « 3.4 » est tolérée
-		}
 		if strings.ContainsAny(v, "0123456789%") {
 			t.Fatalf("%s ne doit contenir ni chiffre ni « %% » : %q", name, v)
 		}
