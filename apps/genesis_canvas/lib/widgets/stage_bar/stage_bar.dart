@@ -52,7 +52,7 @@ class StageBar extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             BlocSelector<AgentActivityBloc, AgentActivityState, bool>(
-              selector: (AgentActivityState state) => state.anyWorking,
+              selector: (AgentActivityState state) => state.anyBusy,
               builder: (BuildContext context, bool working) => FilledButton(
                 key: const Key('reset-button'),
                 onPressed: working ? null : onResetPressed,

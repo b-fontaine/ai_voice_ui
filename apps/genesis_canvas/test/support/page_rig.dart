@@ -32,13 +32,18 @@ class FakeResetClient implements CanvasResetClient {
 
   final List<String> journal;
   CanvasResetResult result = CanvasResetResult.done;
+
+  /// Résultats rendus dans l'ordre, un par appel ; vide : [result].
+  final List<CanvasResetResult> script = <CanvasResetResult>[];
   int calls = 0;
 
   @override
   Future<CanvasResetResult> reset() {
     calls++;
     journal.add('client.reset');
-    return Future<CanvasResetResult>.value(result);
+    return Future<CanvasResetResult>.value(
+      script.isEmpty ? result : script.removeAt(0),
+    );
   }
 }
 

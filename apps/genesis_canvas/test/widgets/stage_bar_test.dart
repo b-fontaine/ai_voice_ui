@@ -181,4 +181,23 @@ void main() {
 
     expect(find.textContaining('Acte 2/3'), findsOneWidget);
   });
+
+  testWidgets('« Remettre à vide » est inactif quand un agent est en attente', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    expect(resetButton(tester).onPressed, isNotNull);
+
+    events.add(
+      PlanReceived(
+        delegation: 'deleg_1',
+        selected: const <String>['Qualité'],
+        idle: const <String>[],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(resetButton(tester).onPressed, isNull);
+  });
 }

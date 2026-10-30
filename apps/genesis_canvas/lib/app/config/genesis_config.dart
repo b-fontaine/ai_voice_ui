@@ -37,6 +37,8 @@ class GenesisConfig {
     this.exitCloseTimeout = const Duration(seconds: 12),
     this.iceTimeout = const Duration(seconds: 10),
     Duration? canvasResetTimeout,
+    int? canvasResetRetries,
+    Duration? canvasResetRetryInterval,
     this.orbSilenceTimeout = const Duration(milliseconds: 600),
     this.orbAttack = const Duration(milliseconds: 80),
     this.orbRelease = const Duration(milliseconds: 250),
@@ -47,15 +49,22 @@ class GenesisConfig {
        // ignore: prefer_initializing_formals
        _catalogId = catalogId,
        // ignore: prefer_initializing_formals
-       _canvasResetTimeout = canvasResetTimeout;
+       _canvasResetTimeout = canvasResetTimeout,
+       // ignore: prefer_initializing_formals
+       _canvasResetRetries = canvasResetRetries,
+       // ignore: prefer_initializing_formals
+       _canvasResetRetryInterval = canvasResetRetryInterval;
 
   /// Construit la configuration à partir d'un environnement (en prod
   /// `Platform.environment`). Une variable absente ou vide vaut `null`
   /// (ou la valeur par défaut). Les constantes (délais, orbe) ne sont pas
-  /// lues dans l'environnement, sauf `GENESIS_CANVAS_RESET_TIMEOUT_MS`.
+  /// lues dans l'environnement, sauf `GENESIS_CANVAS_RESET_TIMEOUT_MS`,
+  /// `GENESIS_CANVAS_RESET_RETRIES` et `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS`.
   ///
   /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` ou
-  /// `GENESIS_CATALOG_ID` ou `GENESIS_CANVAS_RESET_TIMEOUT_MS` est invalide.
+  /// `GENESIS_CATALOG_ID`, `GENESIS_CANVAS_RESET_TIMEOUT_MS`,
+  /// `GENESIS_CANVAS_RESET_RETRIES` ou `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS`
+  /// est invalide.
   factory GenesisConfig.fromEnvironment(Map<String, String> environment) =>
       GenesisConfig(
         scenario: _read(environment, 'GENESIS_SCENARIO'),
@@ -64,6 +73,8 @@ class GenesisConfig {
         catalogId: _readCatalogId(environment),
         appLogPath: _read(environment, 'GENESIS_APP_LOG'),
         canvasResetTimeout: _readCanvasResetTimeout(environment),
+        canvasResetRetries: _readCanvasResetRetries(environment),
+        canvasResetRetryInterval: _readCanvasResetRetryInterval(environment),
       );
 
   static const String _backendUrlVariable = 'GENESIS_BACKEND_URL';
@@ -127,6 +138,29 @@ class GenesisConfig {
 
   final Duration? _canvasResetTimeout;
 
+  /// Nombre de réessais de la remise à vide quand le backend répond « occupé »
+  /// (`GENESIS_CANVAS_RESET_RETRIES`, 0 à 30, défaut 8). Le backend refuse
+  /// pendant tout un tour (plan, agents, commentaire final).
+  int get canvasResetRetries =>
+      _canvasResetRetries ?? defaultCanvasResetRetries;
+
+  /// Nombre de réessais par défaut.
+  static const int defaultCanvasResetRetries = 8;
+
+  final int? _canvasResetRetries;
+
+  /// Intervalle entre deux réessais
+  /// (`GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS`, 100 à 10000 ms, défaut 1,5 s).
+  Duration get canvasResetRetryInterval =>
+      _canvasResetRetryInterval ?? defaultCanvasResetRetryInterval;
+
+  /// Intervalle de réessai par défaut (1,5 s).
+  static const Duration defaultCanvasResetRetryInterval = Duration(
+    milliseconds: 1500,
+  );
+
+  final Duration? _canvasResetRetryInterval;
+
   /// Silence au-delà duquel l'orbe retombe au repos.
   final Duration orbSilenceTimeout;
 
@@ -179,6 +213,41 @@ class GenesisConfig {
       throw const GenesisConfigException(
         'La variable $_canvasResetTimeoutVariable est invalide : un nombre '
         'entier de millisecondes compris entre 100 et 10000 est attendu.',
+      );
+    }
+    return Duration(milliseconds: millis);
+  }
+
+  static const String _canvasResetRetriesVariable =
+      'GENESIS_CANVAS_RESET_RETRIES';
+  static const String _canvasResetRetryIntervalVariable =
+      'GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS';
+  static final RegExp _retriesPattern = RegExp(r'^\d{1,2}$');
+
+  static int? _readCanvasResetRetries(Map<String, String> environment) {
+    final raw = _read(environment, _canvasResetRetriesVariable);
+    if (raw == null) return null;
+    final count = _retriesPattern.hasMatch(raw) ? int.parse(raw) : -1;
+    if (count < 0 || count > 30) {
+      throw const GenesisConfigException(
+        'La variable $_canvasResetRetriesVariable est invalide : un nombre '
+        'entier compris entre 0 et 30 est attendu.',
+      );
+    }
+    return count;
+  }
+
+  static Duration? _readCanvasResetRetryInterval(
+    Map<String, String> environment,
+  ) {
+    final raw = _read(environment, _canvasResetRetryIntervalVariable);
+    if (raw == null) return null;
+    final millis = _millisecondsPattern.hasMatch(raw) ? int.parse(raw) : 0;
+    if (millis < 100 || millis > 10000) {
+      throw const GenesisConfigException(
+        'La variable $_canvasResetRetryIntervalVariable est invalide : un '
+        'nombre entier de millisecondes compris entre 100 et 10000 est '
+        'attendu.',
       );
     }
     return Duration(milliseconds: millis);

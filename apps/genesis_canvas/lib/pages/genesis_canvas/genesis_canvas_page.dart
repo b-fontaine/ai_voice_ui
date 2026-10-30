@@ -249,15 +249,61 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_requestBackendReset());
   }
 
-  /// Un refus (`busy`, 409) ou un échec du backend est consigné, jamais
-  /// bloquant : le client ne lève pas d'exception.
+  /// Génération de la demande de remise à vide en cours. Une nouvelle demande
+  /// **remplace** la précédente (qui s'arrête à son prochain réveil) plutôt
+  /// qu'elle n'est ignorée : l'écran vient d'être revidé, c'est la dernière
+  /// demande qui reflète l'état voulu, et il n'y a jamais deux boucles.
+  int _resetGeneration = 0;
+  Timer? _retryTimer;
+  Completer<void>? _retryWait;
+
+  /// Demande au backend de retirer ses surfaces. Tant qu'il répond `busy`
+  /// (409 : un tour est en cours), la demande est réessayée, jusqu'à
+  /// `canvasResetRetries` fois, à `canvasResetRetryInterval` d'écart : les
+  /// `deleteSurface` renvoyés par le backend sont ignorés par le validateur,
+  /// le réessai est sans risque. Tout autre refus ou échec est consigné sans
+  /// réessai ; le client ne lève pas d'exception. La boucle s'arrête à la
+  /// fermeture de la page ou quand une demande plus récente la remplace.
   Future<void> _requestBackendReset() async {
-    final CanvasResetResult result = await _resetClient.reset();
-    if (result != CanvasResetResult.done) {
-      widget.errorSink.writeln(
-        'Remise à vide : le backend ne l\'a pas appliquée (${result.name}).',
-      );
+    final int generation = ++_resetGeneration;
+    _cancelRetryWait();
+    var retriesLeft = _settings.canvasResetRetries;
+    while (true) {
+      final CanvasResetResult result = await _resetClient.reset();
+      if (result == CanvasResetResult.done || generation != _resetGeneration) {
+        return;
+      }
+      if (result != CanvasResetResult.busy || retriesLeft == 0) {
+        widget.errorSink.writeln(
+          'Remise à vide : le backend ne l\'a pas appliquée (${result.name}).',
+        );
+        return;
+      }
+      retriesLeft--;
+      await _waitBeforeRetry(_settings.canvasResetRetryInterval);
+      if (generation != _resetGeneration) return;
     }
+  }
+
+  /// Attente annulable (un `Timer` conservé, jamais orphelin).
+  Future<void> _waitBeforeRetry(Duration interval) {
+    final wait = Completer<void>();
+    _retryWait = wait;
+    _retryTimer = Timer(interval, () {
+      _retryTimer = null;
+      if (!wait.isCompleted) wait.complete();
+    });
+    return wait.future;
+  }
+
+  /// Annule l'attente en cours : sa boucle se réveille aussitôt et constate
+  /// que sa génération est périmée.
+  void _cancelRetryWait() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    final wait = _retryWait;
+    _retryWait = null;
+    if (wait != null && !wait.isCompleted) wait.complete();
   }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
@@ -299,6 +345,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   @override
   void dispose() {
+    // Plus de réessai de remise à vide une fois la page fermée.
+    _resetGeneration++;
+    _cancelRetryWait();
     _lifecycle.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc

@@ -74,9 +74,18 @@ class AgentActivityState {
   /// retenu »).
   final bool noAgentSelected;
 
-  /// Vrai si au moins un agent travaille.
+  /// Vrai si au moins un agent travaille (orbe « réflexion »).
   bool get anyWorking =>
       agents.any((AgentStatus a) => a.state == AgentRunState.working);
+
+  /// Vrai si au moins un agent travaille **ou** est retenu sans activité
+  /// encore reçue (`pending`) : le backend est alors occupé et refuserait une
+  /// remise à vide. La ligne de l'orchestrateur n'en fait pas partie : elle
+  /// reste affichée après la fin du plan.
+  bool get anyBusy => agents.any(
+    (AgentStatus a) =>
+        a.state == AgentRunState.working || a.state == AgentRunState.pending,
+  );
 
   @override
   bool operator ==(Object other) {

@@ -185,6 +185,25 @@ void main() {
     );
   });
 
+  test('anyBusy : travail en cours ou agent retenu en attente', () {
+    bool busy(AgentRunState state) =>
+        AgentActivityState([status('a', 't', state)]).anyBusy;
+    expect(busy(AgentRunState.working), isTrue);
+    expect(busy(AgentRunState.pending), isTrue);
+    expect(busy(AgentRunState.completed), isFalse);
+    expect(busy(AgentRunState.failed), isFalse);
+    expect(busy(AgentRunState.interrupted), isFalse);
+    // La ligne de l'orchestrateur reste après le plan : elle n'est pas
+    // du travail en cours.
+    expect(busy(AgentRunState.orchestrating), isFalse);
+    expect(const AgentActivityState.empty().anyBusy, isFalse);
+    // `anyWorking` ne couvre pas `pending` (orbe « réflexion »).
+    expect(
+      AgentActivityState([status('a', 't', AgentRunState.pending)]).anyWorking,
+      isFalse,
+    );
+  });
+
   test('la liste exposée n\'est pas modifiable', () {
     final s = AgentActivityState([status('a', 't', AgentRunState.working)]);
     expect(

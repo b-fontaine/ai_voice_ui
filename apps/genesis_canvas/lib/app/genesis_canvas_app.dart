@@ -120,6 +120,8 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
             orbSpeakingThreshold: config.orbSpeakingThreshold,
             sessionCloseTimeout: config.sessionCloseTimeout,
             exitCloseTimeout: config.exitCloseTimeout,
+            canvasResetRetries: config.canvasResetRetries,
+            canvasResetRetryInterval: config.canvasResetRetryInterval,
           ),
         ),
       ),

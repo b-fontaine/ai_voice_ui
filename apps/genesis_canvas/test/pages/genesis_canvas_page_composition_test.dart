@@ -433,7 +433,12 @@ void main() {
       'backend occupé ou en échec : consigné, l\'écran est vidé quand '
       'même',
       (tester) async {
-        final rig = PageRig(tester);
+        // Sans réessai : la consigne est immédiate (les réessais ont leurs
+        // propres tests).
+        final rig = PageRig(
+          tester,
+          config: const GenesisConfig(canvasResetRetries: 0),
+        );
         rig.resetClient.result = CanvasResetResult.busy;
         await rig.mount(tester);
         await rig.start(tester);
@@ -449,6 +454,118 @@ void main() {
         expect(rig.context.read<ProtocolFeedBloc>().state.entries, isEmpty);
       },
     );
+
+    testWidgets('backend occupé puis disponible : réessai, une fois fini', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      rig.resetClient.script.addAll(<CanvasResetResult>[
+        CanvasResetResult.busy,
+        CanvasResetResult.done,
+      ]);
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+      expect(rig.resetClient.calls, 1);
+
+      await tester.pump(rig.settings.canvasResetRetryInterval);
+      await pumpMessages(tester);
+      expect(rig.resetClient.calls, 2);
+
+      // Aucun réessai après `done`.
+      await tester.pump(rig.settings.canvasResetRetryInterval * 3);
+      expect(rig.resetClient.calls, 2);
+      expect(rig.errors.toString(), isEmpty);
+    });
+
+    testWidgets(
+      'backend toujours occupé : s\'arrête après N réessais, consigné',
+      (tester) async {
+        final rig = PageRig(
+          tester,
+          config: const GenesisConfig(
+            canvasResetRetries: 3,
+            canvasResetRetryInterval: Duration(milliseconds: 100),
+          ),
+        );
+        rig.resetClient.result = CanvasResetResult.busy;
+        await rig.mount(tester);
+        await rig.start(tester);
+
+        await tester.tap(find.byKey(const Key('reset-button')));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+
+        // Un essai initial puis trois réessais.
+        expect(rig.resetClient.calls, 4);
+        expect(rig.errors.toString(), contains('Remise à vide'));
+        expect(rig.errors.toString(), contains('busy'));
+      },
+    );
+
+    testWidgets('résultat autre que busy : pas de réessai', (tester) async {
+      final rig = PageRig(tester);
+      rig.resetClient.result = CanvasResetResult.unreachable;
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+      await tester.pump(rig.settings.canvasResetRetryInterval * 3);
+
+      expect(rig.resetClient.calls, 1);
+      expect(rig.errors.toString(), contains('unreachable'));
+    });
+
+    testWidgets('fermeture de la page pendant un réessai : plus d\'appel', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      rig.resetClient.result = CanvasResetResult.busy;
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+      expect(rig.resetClient.calls, 1);
+
+      await tester.pumpWidget(const SizedBox());
+      await drain(tester);
+      await tester.pump(rig.settings.canvasResetRetryInterval * 3);
+
+      expect(rig.resetClient.calls, 1);
+    });
+
+    testWidgets('seconde remise à vide pendant un réessai : une seule boucle', (
+      tester,
+    ) async {
+      final rig = PageRig(
+        tester,
+        config: const GenesisConfig(
+          canvasResetRetries: 2,
+          canvasResetRetryInterval: Duration(milliseconds: 100),
+        ),
+      );
+      rig.resetClient.result = CanvasResetResult.busy;
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+      expect(rig.resetClient.calls, 2);
+
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      // La seconde boucle remplace la première : 2 essais initiaux + 2
+      // réessais, pas 2 + 2 + 2.
+      expect(rig.resetClient.calls, 4);
+    });
 
     testWidgets('backend joignable : rien n\'est consigné', (tester) async {
       final rig = PageRig(tester);

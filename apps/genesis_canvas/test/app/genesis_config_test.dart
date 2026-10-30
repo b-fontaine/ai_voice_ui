@@ -182,6 +182,11 @@ void main() {
       expect(config.exitCloseTimeout, const Duration(seconds: 12));
       expect(config.iceTimeout, const Duration(seconds: 10));
       expect(config.canvasResetTimeout, const Duration(seconds: 2));
+      expect(config.canvasResetRetries, 8);
+      expect(
+        config.canvasResetRetryInterval,
+        const Duration(milliseconds: 1500),
+      );
       expect(config.orbSilenceTimeout, const Duration(milliseconds: 600));
       expect(config.orbAttack, const Duration(milliseconds: 80));
       expect(config.orbRelease, const Duration(milliseconds: 250));
@@ -234,6 +239,69 @@ void main() {
         }
       },
     );
+
+    test('GENESIS_CANVAS_RESET_RETRIES : nombre d\'essais, 0 à 30', () {
+      int read(String? value) => GenesisConfig.fromEnvironment(<String, String>{
+        'GENESIS_CANVAS_RESET_RETRIES': ?value,
+      }).canvasResetRetries;
+
+      expect(read(null), 8);
+      expect(read(''), 8);
+      expect(read(' 12 '), 12);
+      expect(read('0'), 0);
+      expect(read('30'), 30);
+    });
+
+    test('GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS : 100 à 10000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS': ?value},
+      ).canvasResetRetryInterval;
+
+      expect(read(null), const Duration(milliseconds: 1500));
+      expect(read(''), const Duration(milliseconds: 1500));
+      expect(read(' 250 '), const Duration(milliseconds: 250));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test('variables de réessai invalides : erreur sans la valeur', () {
+      const cases = <String, List<String>>{
+        'GENESIS_CANVAS_RESET_RETRIES': <String>[
+          'abc',
+          '-1',
+          '31',
+          '1.5',
+          '1e1',
+          '007007',
+        ],
+        'GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS': <String>[
+          'abc',
+          '-0',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ],
+      };
+      for (final entry in cases.entries) {
+        for (final raw in entry.value) {
+          expect(
+            () =>
+                GenesisConfig.fromEnvironment(<String, String>{entry.key: raw}),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having((e) => e.message, 'message', contains(entry.key))
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: '${entry.key}=$raw',
+          );
+        }
+      }
+    });
 
     test('R5 : invariants des délais de fermeture par défaut', () {
       const config = GenesisConfig();
