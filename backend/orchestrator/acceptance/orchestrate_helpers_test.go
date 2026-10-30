@@ -298,8 +298,14 @@ type agentScript func(ctx context.Context, ec *a2asrv.ExecutorContext, emit func
 
 func startTestAgent(t *testing.T, script agentScript) *testAgent {
 	t.Helper()
-	return startTestAgentTagged(t, script, []string{"a2ui"})
+	return startTestAgentTagged(t, script, defaultTestAgentTags)
 }
+
+// defaultTestAgentTags : mots présents dans les demandes des scénarios de 004
+// (« Prépare la release 3.4 », « Et le détail du crash global »). Le
+// planificateur retient l'agent d'après les tags de sa carte ; il n'existe pas
+// de tag joker en production.
+var defaultTestAgentTags = []string{"release", "crash"}
 
 // startTestAgentTagged comme startTestAgent, avec les tags du skill de la carte
 // (le planificateur de l'orchestrateur choisit les agents d'après ces tags).

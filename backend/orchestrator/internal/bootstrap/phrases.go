@@ -25,6 +25,7 @@ type phrasesFile struct {
 	QueueFull       string `json:"queue_full"`
 	NoRequest       string `json:"no_request"`
 	NoAgent         string `json:"no_agent"`
+	OutOfCatalog    string `json:"out_of_catalog"`
 	ResultTemplate  string `json:"result_template"`
 }
 
@@ -42,13 +43,13 @@ func loadPhrases(path string) (orchestrate.Phrases, error) {
 	dec.DisallowUnknownFields()
 	var f phrasesFile
 	if err := dec.Decode(&f); err != nil {
-		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, failure_rejected, no_summary, queue_full, no_request, no_agent, result_template attendu)")
+		return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, failure_rejected, no_summary, queue_full, no_request, no_agent, out_of_catalog, result_template attendu)")
 	}
 	p := orchestrate.Phrases{
 		Generic: f.Generic, Failure: f.Failure, FailureRejected: f.FailureRejected, NoSummary: f.NoSummary, QueueFull: f.QueueFull,
-		NoRequest: f.NoRequest, NoAgent: f.NoAgent, ResultTemplate: f.ResultTemplate,
+		NoRequest: f.NoRequest, NoAgent: f.NoAgent, OutOfCatalog: f.OutOfCatalog, ResultTemplate: f.ResultTemplate,
 	}
-	for key, v := range map[string]string{"failure_rejected": f.FailureRejected, "no_summary": f.NoSummary} {
+	for key, v := range map[string]string{"failure_rejected": f.FailureRejected, "no_summary": f.NoSummary, "out_of_catalog": f.OutOfCatalog} {
 		if v == "" {
 			return orchestrate.Phrases{}, errors.New("VOICE_PHRASES_FILE : clé " + key + " requise")
 		}

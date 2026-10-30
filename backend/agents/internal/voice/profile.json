@@ -5,7 +5,7 @@
   "skill": {
     "id": "voice-of-customer",
     "name": "Sentiment des avis",
-    "tags": ["avis", "notes", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version"],
+    "tags": ["avis", "notes", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"],
     "examples": [
       "Prépare la release 3.4",
       "Que disent les clients de la 3.4 ?",

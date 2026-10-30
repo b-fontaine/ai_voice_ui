@@ -16,7 +16,7 @@ func TestQualityProfile(t *testing.T) {
 	if p.Name != "Qualité" || p.ListenPort != 8090 || p.Skill.ID == "" {
 		t.Errorf("profil %+v", p)
 	}
-	for _, tag := range []string{"release", "version", "crash", "crashs", "stabilité", "sessions", "tendance", "courbe", "qualité", "plantage"} {
+	for _, tag := range []string{"release", "version", "crash", "crashs", "stabilité", "sessions", "tendance", "courbe", "qualité", "plantage", "3.4"} {
 		if !slices.Contains(p.Skill.Tags, tag) {
 			t.Errorf("le tag %q manque : %v", tag, p.Skill.Tags)
 		}

@@ -92,8 +92,8 @@ func startServer(t *testing.T, sc script) *testServer {
 				DefaultOutputModes:  []string{"text/plain", "application/json"},
 				Capabilities:        a2a.AgentCapabilities{Streaming: true},
 				Skills: []a2a.AgentSkill{
-					{ID: "quality-kpi", Name: "Qualité", Description: "KPI."},
-					{ID: "other", Name: "Autre", Description: "Autre."},
+					{ID: "quality-kpi", Name: "Qualité", Description: "KPI.", Tags: []string{"release", "crash"}},
+					{ID: "other", Name: "Autre", Description: "Autre.", Tags: []string{"crash", "avis"}},
 				},
 			}, nil
 		})))
@@ -707,5 +707,57 @@ func (d *idRewriter) Flush() { d.ResponseWriter.(http.Flusher).Flush() }
 func TestNewNilLoggerUsesDefault(t *testing.T) {
 	if _, err := a2aclient.New(a2aclient.Options{CardURL: "http://agent.test/card", Timeout: time.Second}); err != nil {
 		t.Fatalf("Logger nil refusé : %v", err)
+	}
+}
+
+// Les tags de la carte sont l'union dédupliquée de ceux des skills, dans l'ordre
+// de première apparition (le planificateur de l'orchestrateur les lit).
+func TestCardTagsAreDedupedUnion(t *testing.T) {
+	s := startServer(t, func(context.Context, *a2asrv.ExecutorContext, func(a2a.Event) bool) {})
+	card, err := newAgent(t, s).Card(context.Background())
+	if err != nil {
+		t.Fatalf("Card: %v", err)
+	}
+	if want := []string{"release", "crash", "avis"}; !reflect.DeepEqual(card.Tags, want) {
+		t.Fatalf("Tags = %v, attendu %v", card.Tags, want)
+	}
+}
+
+// Send réutilise la carte déjà lue (AgentRequest.Card) : aucune seconde lecture.
+func TestSendReusesCardAlreadyRead(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	card, err := a.Card(context.Background())
+	if err != nil {
+		t.Fatalf("Card: %v", err)
+	}
+	var us []port.AgentUpdate
+	for u, err := range a.Send(context.Background(), port.AgentRequest{Text: "q", ContextID: "ctx", Card: &card}) {
+		if err != nil && u.Kind != port.UpdateFailed {
+			t.Fatalf("erreur : %v", err)
+		}
+		us = append(us, u)
+	}
+	if n := s.cardReads.Load(); n != 1 {
+		t.Fatalf("%d lectures de carte (Card + Send), attendu 1", n)
+	}
+	if len(us) < 2 || us[0].Kind != port.UpdateSubmitted || us[0].Name != "Qualité" || us[0].Label != "Qualité" || us[len(us)-1].Kind != port.UpdateCompleted {
+		t.Fatalf("mises à jour = %v (%+v)", kinds(us), us)
+	}
+}
+
+// Une carte construite par ailleurs (sans poignée de l'adaptateur) n'est pas
+// crue : Send relit la carte.
+func TestSendIgnoresForeignCard(t *testing.T) {
+	s := startServer(t, func(_ context.Context, ec *a2asrv.ExecutorContext, emit func(a2a.Event) bool) {
+		emit(state(ec, a2a.TaskStateCompleted))
+	})
+	a := newAgent(t, s)
+	for range a.Send(context.Background(), port.AgentRequest{Text: "q", Card: &port.AgentCard{Name: "X"}}) {
+	}
+	if n := s.cardReads.Load(); n != 1 {
+		t.Fatalf("%d lectures de carte, attendu 1 (relecture par Send)", n)
 	}
 }

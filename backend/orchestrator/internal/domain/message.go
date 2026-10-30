@@ -15,6 +15,9 @@ const (
 	// TypeDelegation signale la création d'une délégation par le modèle vocal :
 	// il rend NFR-02 mesurable (offset du fournisseur, t_ms de réception).
 	TypeDelegation = "delegation"
+	// TypePlan est le choix des agents par l'orchestrateur pour une délégation
+	// (pdr-0013, RG-29) : publié avant toute activité de la délégation.
+	TypePlan = "plan"
 )
 
 // Rôles d'un transcript.
@@ -79,6 +82,9 @@ const (
 	ActivityWorking   = "working"
 	ActivityCompleted = "completed"
 	ActivityFailed    = "failed"
+	// ActivityRejected : l'agent retenu a refusé la demande (hors de son
+	// périmètre). Ce n'est pas un échec : aucune compensation vocale.
+	ActivityRejected = "rejected"
 )
 
 // OpDeleteSurface est l'opération A2UI qui retire une surface.
@@ -108,6 +114,15 @@ type Delegation struct {
 	OffsetMs int64
 }
 
+// Plan est le choix des agents pour la délégation Delegation : Selected et Idle
+// sont des noms d'agent (jamais nil à la sérialisation : `[]`).
+type Plan struct {
+	Delegation string
+	Selected   []string
+	Idle       []string
+}
+
+func (Plan) isPayload()          {}
 func (A2UI) isPayload()          {}
 func (Delegation) isPayload()    {}
 func (AgentActivity) isPayload() {}

@@ -36,6 +36,7 @@ var pipePhrases = Phrases{
 	FailureRejected: "Cette demande n'est pas prise en charge pour l'instant.",
 	NoSummary:       "Le résultat est affiché.",
 	NoAgent:         "Aucun agent n'est disponible pour le moment.",
+	OutOfCatalog:    "Je ne peux pas afficher cela : je compose avec des indicateurs, des courbes, des avis et une checklist.",
 	ResultTemplate:  "Voici ce que l'agent rapporte : %s",
 }
 
@@ -43,7 +44,9 @@ type fixedClock struct{ t time.Time }
 
 func (c fixedClock) Now() time.Time { return c.t }
 
-// recSink enregistre les messages publiés.
+// recSink enregistre les messages publiés. snapshot() ne montre pas les
+// messages `plan` (les tests d'avant le planificateur comptent les messages
+// d'activité et A2UI) ; snapshotAll() les inclut.
 type recSink struct {
 	mu       sync.Mutex
 	msgs     []domain.Message
@@ -58,6 +61,18 @@ func (s *recSink) Publish(id string, m domain.Message) {
 }
 
 func (s *recSink) snapshot() []domain.Message {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []domain.Message
+	for _, m := range s.msgs {
+		if m.Type != domain.TypePlan {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+func (s *recSink) snapshotAll() []domain.Message {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]domain.Message(nil), s.msgs...)
@@ -96,6 +111,8 @@ func describe(m domain.Message) string {
 		return "activity:" + d.State
 	case domain.A2UI:
 		return "a2ui:" + a2uiOp(d.Message) + "@" + m.Agent
+	case domain.Plan:
+		return "plan"
 	}
 	return "?"
 }
@@ -160,7 +177,9 @@ type fakeAgent struct {
 
 func newAgent(name string, steps ...step) *fakeAgent {
 	return &fakeAgent{
-		card: port.AgentCard{Name: name, Label: "KPI " + strings.ToLower(name), Skills: []string{"quality-kpi"}},
+		// Tags : « release » figure dans la demande par défaut des tests
+		// (« Prépare la release 3.4 »), donc l'agent est retenu.
+		card: port.AgentCard{Name: name, Label: "KPI " + strings.ToLower(name), Skills: []string{"quality-kpi"}, Tags: []string{"release"}},
 		script: func(_ context.Context, yield func(port.AgentUpdate, error) bool) {
 			for _, s := range steps {
 				if !yield(s.u, s.err) {
@@ -194,10 +213,15 @@ func (a *fakeAgent) Name() string {
 
 func (a *fakeAgent) Send(ctx context.Context, req port.AgentRequest) iter.Seq2[port.AgentUpdate, error] {
 	return func(yield func(port.AgentUpdate, error) bool) {
-		// Comme l'adaptateur : l'unique lecture de la carte se fait dans Send.
-		if a.cardErr != nil {
-			yield(port.AgentUpdate{Kind: port.UpdateFailed, Err: a.cardErr}, a.cardErr)
-			return
+		// Comme l'adaptateur : sans carte déjà lue, Send la lit lui-même.
+		if req.Card == nil {
+			a.mu.Lock()
+			a.cards++
+			a.mu.Unlock()
+			if a.cardErr != nil {
+				yield(port.AgentUpdate{Kind: port.UpdateFailed, Err: a.cardErr}, a.cardErr)
+				return
+			}
 		}
 		a.mu.Lock()
 		a.requests = append(a.requests, req)
@@ -610,7 +634,6 @@ func TestFailureDetailMapping(t *testing.T) {
 	}{
 		{"injoignable", &port.AgentError{Kind: port.AgentUnreachable, Reason: "r"}, "injoignable"},
 		{"délai de l'adaptateur", &port.AgentError{Kind: port.AgentTimeout, Reason: "r"}, "délai dépassé"},
-		{"refusée", &port.AgentError{Kind: port.AgentRejected, Reason: "r"}, "échec de l'agent"},
 		{"échouée", &port.AgentError{Kind: port.AgentFailed, Reason: "r"}, "échec de l'agent"},
 		{"annulée", &port.AgentError{Kind: port.AgentCanceled, Reason: "r"}, "échec de l'agent"},
 		{"protocole", &port.AgentError{Kind: port.AgentProtocol, Reason: "r"}, "échec de l'agent"},
@@ -813,7 +836,7 @@ func TestGenericBeforeFinalEvenIfAgentFaster(t *testing.T) {
 		textStep("Résumé rapide."), completedStep())
 	e := newEnv(t, agent)
 	gen := make(chan struct{}) // le générique n'est pas encore parti
-	d := Delegation{ID: "d1", Request: "x", GenericDone: gen}
+	d := Delegation{ID: "d1", Request: "release", GenericDone: gen}
 	done := runAsync(e.p, context.Background(), d)
 
 	e.sink.await(t, 4) // l'agent a fini
@@ -1060,7 +1083,7 @@ func TestFailurePhraseMatchesCause(t *testing.T) {
 				t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
 			}
 			// le détail de l'activité reste dans l'ensemble fermé
-			if got := e.sink.snapshot(); len(got) != 2 || activityOf(t, got[1]).Detail != DetailAgentFailed && activityOf(t, got[1]).Detail != DetailUnreachable {
+			if got := e.sink.snapshot(); len(got) != 2 || activityOf(t, got[1]).Detail != DetailAgentFailed && activityOf(t, got[1]).Detail != DetailUnreachable && activityOf(t, got[1]).Detail != DetailOutOfScope {
 				t.Fatalf("messages = %q", describeAll(got))
 			}
 		})
@@ -1119,18 +1142,6 @@ func TestForeignSurfaceSameDisplayNameRejected(t *testing.T) {
 	}
 	if !failedB {
 		t.Fatalf("échec « A2UI invalide » attendu pour le second agent : %q", describeAll(e.sink.snapshot()))
-	}
-}
-
-func TestPipelineDoesNotReadCard(t *testing.T) {
-	agent := newAgent(agentQuality, submitted("t1"), textStep("ok"), completedStep())
-	e := newEnv(t, agent)
-	e.p.Run(context.Background(), e.delegation(t))
-	if agent.cards != 0 {
-		t.Fatalf("Card appelée %d fois : la carte est lue une seule fois, dans Send", agent.cards)
-	}
-	if f := activityOf(t, e.sink.snapshot()[0]); f.Agent != agentQuality || f.Label != "KPI qualité" {
-		t.Fatalf("working = %+v, attendu Name et Label issus de submitted", f)
 	}
 }
 
@@ -1285,7 +1296,7 @@ func TestTimeoutFailureCommentaryAbortedOnSessionClose(t *testing.T) {
 	close(gen)
 	sessionCtx, closeSession := context.WithCancelCause(context.Background())
 	defer closeSession(nil)
-	d := Delegation{ID: "d1", Request: "x", GenericDone: gen, Timeout: 40 * time.Millisecond}
+	d := Delegation{ID: "d1", Request: "release", GenericDone: gen, Timeout: 40 * time.Millisecond}
 	done := runAsync(e.p, sessionCtx, d)
 
 	select {

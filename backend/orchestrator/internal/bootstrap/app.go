@@ -191,7 +191,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	}
 	// Toute la configuration du pipeline est validée ici, une seule fois.
 	factory, err := orchestrate.NewPipelineFactory(orchestrate.PipelineConfig{
-		Clock: clock, Sink: sink, Agents: agents, Validator: validator,
+		Clock: clock, Sink: sink, Agents: agents, Planner: orchestrate.TagPlanner{}, Validator: validator,
 		Limits:  a2ui.Limits{MaxSurfaces: a2uiMaxSurfaces, MaxComponentsPerSurface: a2uiMaxSurfaceWidgets, MaxMessagesPerTask: a2uiMaxTaskMessages},
 		Phrases: cfg.Phrases, Logger: logger,
 	})

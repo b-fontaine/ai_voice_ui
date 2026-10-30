@@ -17,7 +17,7 @@ func TestVoiceProfile(t *testing.T) {
 	if p.Name != "Voix du client" || p.ListenPort != 8091 || p.Skill.ID != "voice-of-customer" {
 		t.Errorf("profil %+v", p)
 	}
-	for _, tag := range []string{"avis", "notes", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version"} {
+	for _, tag := range []string{"avis", "notes", "note", "sentiment", "store", "stores", "clients", "client", "retours", "release", "version", "3.4"} {
 		if !slices.Contains(p.Skill.Tags, tag) {
 			t.Errorf("le tag %q manque : %v", tag, p.Skill.Tags)
 		}

@@ -145,7 +145,7 @@ func TestConfig_EmbeddedPhrasesByDefault(t *testing.T) {
 	if err := p.Validate(); err != nil {
 		t.Fatalf("phrases embarquées invalides : %v", err)
 	}
-	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent} {
+	for name, v := range map[string]string{"Generic": p.Generic, "Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest, "NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog} {
 		if strings.ContainsAny(v, "0123456789%") {
 			t.Fatalf("%s ne doit contenir ni chiffre ni « %% » : %q", name, v)
 		}
@@ -161,7 +161,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -171,7 +171,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := cfg.Phrases
-	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.ResultTemplate != "r %s" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.ResultTemplate != "r %s" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -180,11 +180,11 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
 		"json cassé":       `{"generic": "` + secret,
-		"champ inconnu":    `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","result_template":"%s"}`,
-		"deux %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","no_agent":"a","result_template":"` + secret + `"}`,
+		"champ inconnu":    `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
+		"deux %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -208,6 +208,7 @@ func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
 	for key, absent := range map[string]string{
 		"failure_rejected": `"failure_rejected":"fr",`,
 		"no_summary":       `"no_summary":"ns",`,
+		"out_of_catalog":   `"out_of_catalog":"oc",`,
 	} {
 		env := fullEnv()
 		env["VOICE_PHRASES_FILE"] = writePhrases(t, strings.Replace(customPhrases, absent, "", 1))

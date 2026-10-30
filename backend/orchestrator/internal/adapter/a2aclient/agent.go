@@ -3,8 +3,9 @@
 //
 // Aucune goroutine n'appartient à l'adaptateur : Send renvoie un itérateur dont
 // le travail (carte, connexion, lecture du flux, annulation) se fait dans la
-// boucle de l'appelant. La carte est relue à chaque appel : un agent redémarré
-// est pris en compte.
+// boucle de l'appelant. La carte est relue à chaque appel de Card : un agent
+// redémarré est pris en compte. Send réutilise la carte lue par Card quand
+// l'appelant la lui rend (AgentRequest.Card) ; sinon il la lit lui-même.
 package a2aclient
 
 import (
@@ -123,11 +124,19 @@ func (a *Agent) Card(ctx context.Context) (port.AgentCard, error) {
 	if err != nil {
 		return port.AgentCard{}, err
 	}
-	out := port.AgentCard{Name: card.Name, Description: card.Description}
+	// Handle porte la carte brute (déjà validée) pour que Send ne la relise pas.
+	out := port.AgentCard{Name: card.Name, Description: card.Description, Handle: card}
+	seen := map[string]bool{}
 	for i, s := range card.Skills {
 		out.Skills = append(out.Skills, s.ID)
 		if i == 0 {
 			out.Label = s.Name
+		}
+		for _, tag := range s.Tags {
+			if !seen[tag] {
+				seen[tag] = true
+				out.Tags = append(out.Tags, tag)
+			}
 		}
 	}
 	return out, nil
@@ -245,12 +254,15 @@ func (s *stream) emit(u port.AgentUpdate) bool {
 }
 
 func (s *stream) run(req port.AgentRequest) {
-	card, err := s.a.fetchCard(s.ctx)
-	if err != nil {
-		var ae *port.AgentError
-		errors.As(err, &ae)
-		s.fail(ae)
-		return
+	card := readCard(req.Card)
+	if card == nil {
+		var err error
+		if card, err = s.a.fetchCard(s.ctx); err != nil {
+			var ae *port.AgentError
+			errors.As(err, &ae)
+			s.fail(ae)
+			return
+		}
 	}
 	s.name, s.label = card.Name, cardLabel(card)
 	cctx, cancel := context.WithTimeout(s.ctx, s.a.timeout)
@@ -292,6 +304,16 @@ func (s *stream) run(req port.AgentRequest) {
 		return
 	}
 	s.fail(&port.AgentError{Kind: port.AgentProtocol, Reason: "flux terminé sans état final"})
+}
+
+// readCard extrait la carte brute d'une carte lue par Card ; nil si la carte est
+// absente ou ne vient pas de cet adaptateur (poignée absente ou d'un autre type).
+func readCard(c *port.AgentCard) *a2a.AgentCard {
+	if c == nil {
+		return nil
+	}
+	raw, _ := c.Handle.(*a2a.AgentCard)
+	return raw
 }
 
 // handle convertit un événement ; renvoie false quand l'itération doit s'arrêter.

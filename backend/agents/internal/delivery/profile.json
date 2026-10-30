@@ -5,7 +5,7 @@
   "skill": {
     "id": "delivery-checklist",
     "name": "Checklist go/no-go",
-    "tags": ["checklist", "décision", "livraison", "no-go", "release", "version", "prête", "valider"],
+    "tags": ["checklist", "décision", "livraison", "no-go", "release", "version", "prête", "valider", "3.4"],
     "examples": [
       "Prépare la release 3.4",
       "La 3.4 est-elle prête à partir ?",

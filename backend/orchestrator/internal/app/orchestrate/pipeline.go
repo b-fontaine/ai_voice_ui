@@ -26,6 +26,8 @@ const (
 	DetailInvalidA2UI   = "A2UI invalide"
 	DetailAgentFailed   = "échec de l'agent"
 	DetailSessionClosed = "session fermée"
+	// DetailOutOfScope accompagne l'état `rejected` (refus d'un agent retenu).
+	DetailOutOfScope = "hors périmètre"
 )
 
 const (
@@ -56,6 +58,7 @@ type PipelineDeps struct {
 	Sink      port.Sink
 	Reply     port.VoiceReply
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
+	Planner   Planner            // nil : TagPlanner
 	Validator *a2ui.Validator    // nil permis sans agent
 	Registry  *a2ui.Registry     // propre à la session ; nil permis sans agent
 	Phrases   Phrases
@@ -84,11 +87,13 @@ var _ Runner = (*Pipeline)(nil)
 
 // taskState suit une exécution d'agent ; ses champs sont protégés par mu.
 type taskState struct {
-	agent  string // nom d'affichage
-	owner  string // identité stable de l'agent : propriétaire des surfaces
-	label  string
-	taskID string
-	done   bool
+	agent   string         // nom d'affichage
+	card    port.AgentCard // carte lue pour cette délégation
+	cardErr error          // lecture de la carte impossible : l'agent échoue sans Send
+	owner   string         // identité stable de l'agent : propriétaire des surfaces
+	label   string
+	taskID  string
+	done    bool
 	// Issue, consignée sous mu au moment de `completed`/`failed`.
 	ok       bool
 	summary  string
@@ -141,6 +146,9 @@ func newPipeline(d PipelineDeps) *Pipeline {
 		d.Logger = slog.Default()
 	}
 	d.Agents = append([]port.RemoteAgent(nil), d.Agents...)
+	if d.Planner == nil {
+		d.Planner = TagPlanner{}
+	}
 	return &Pipeline{deps: d, log: d.Logger.With("session", d.SessionID), renewals: map[string]int{}}
 }
 
@@ -150,6 +158,7 @@ type PipelineConfig struct {
 	Clock     port.Clock
 	Sink      port.Sink
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
+	Planner   Planner            // choisit les agents de chaque délégation ; nil : TagPlanner
 	Validator *a2ui.Validator    // exigé si Agents n'est pas vide
 	Limits    a2ui.Limits        // limites du registre de chaque session
 	Phrases   Phrases
@@ -161,7 +170,7 @@ type PipelineConfig struct {
 // surfaces neuf par session, limites déjà validées).
 func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
 	deps := PipelineDeps{
-		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Validator: cfg.Validator,
+		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Planner: cfg.Planner, Validator: cfg.Validator,
 		Phrases: cfg.Phrases, Logger: cfg.Logger,
 	}
 	if err := deps.validateShared(); err != nil {
@@ -201,17 +210,34 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	agentCtx, cancelAgents := d.agentContext(ctx)
 	defer cancelAgents()
 
-	n := len(p.deps.Agents)
+	// La carte de chaque agent est lue une seule fois, avant la planification
+	// (en parallèle, bornée par le délai d'agent), puis réutilisée par Send.
+	cards, cardErrs := p.readCards(agentCtx)
+	if sessionClosed(ctx) {
+		p.seal()
+		return
+	}
+	selected := p.selectAgents(d.Request, cards, cardErrs)
+	p.publishPlan(d.ID, selected)
+	if len(selected) == 0 {
+		if p.waitGeneric(ctx, d) {
+			p.say(ctx, d.ID, p.deps.Phrases.OutOfCatalog)
+		}
+		return
+	}
+
+	n := len(selected)
 	tasks := make([]*taskState, n)
-	for i, a := range p.deps.Agents {
-		tasks[i] = &taskState{agent: a.Name(), owner: a.ID()}
+	for k, i := range selected {
+		a := p.deps.Agents[i]
+		tasks[k] = &taskState{agent: a.Name(), owner: a.ID(), card: cards[i], cardErr: cardErrs[i]}
 	}
 	finished := make(chan struct{}, n)
 	p.wg.Add(n)
-	for i, a := range p.deps.Agents {
+	for k, i := range selected {
 		go func() {
 			defer p.wg.Done()
-			p.runAgent(agentCtx, a, tasks[i], d)
+			p.runAgent(agentCtx, p.deps.Agents[i], tasks[k], d)
 			finished <- struct{}{}
 		}()
 	}
@@ -236,7 +262,7 @@ collect:
 		p.seal()
 		return
 	}
-	allRejected := rejections == n
+	allRejected := rejections == n // n : agents retenus seulement
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
@@ -262,6 +288,73 @@ collect:
 		return
 	}
 	p.say(ctx, d.ID, fmt.Sprintf(p.deps.Phrases.ResultTemplate, strings.Join(parts, " ")))
+}
+
+// readCards lit en parallèle la carte de chaque agent (une lecture par agent),
+// bornée par ctx ; les erreurs sont rendues à l'indice de l'agent.
+func (p *Pipeline) readCards(ctx context.Context) ([]port.AgentCard, []error) {
+	cards := make([]port.AgentCard, len(p.deps.Agents))
+	errs := make([]error, len(p.deps.Agents))
+	var wg sync.WaitGroup
+	for i, a := range p.deps.Agents {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cards[i], errs[i] = a.Card(ctx)
+		}()
+	}
+	wg.Wait()
+	return cards, errs
+}
+
+// selectAgents renvoie les indices des agents retenus, dans l'ordre de
+// configuration. Un agent dont la carte est illisible est retenu : il échouera
+// (« injoignable ») au lieu de disparaître en silence. Le planificateur ne voit
+// que les cartes lues.
+func (p *Pipeline) selectAgents(request string, cards []port.AgentCard, errs []error) []int {
+	var readable []port.AgentCard
+	var index []int // indice d'agent de chaque carte lisible
+	for i, c := range cards {
+		if errs[i] == nil {
+			readable = append(readable, c)
+			index = append(index, i)
+		}
+	}
+	keep := make([]bool, len(cards))
+	for i, e := range errs {
+		keep[i] = e != nil
+	}
+	for _, k := range p.deps.Planner.Plan(request, readable) {
+		if k >= 0 && k < len(index) {
+			keep[index[k]] = true
+		}
+	}
+	selected := []int{}
+	for i, k := range keep {
+		if k {
+			selected = append(selected, i)
+		}
+	}
+	return selected
+}
+
+// publishPlan publie le message `plan` : noms d'agent retenus et inactifs.
+func (p *Pipeline) publishPlan(delegationID string, selected []int) {
+	plan := domain.Plan{Delegation: delegationID, Selected: []string{}, Idle: []string{}}
+	chosen := map[int]bool{}
+	for _, i := range selected {
+		chosen[i] = true
+	}
+	for i, a := range p.deps.Agents {
+		if chosen[i] {
+			plan.Selected = append(plan.Selected, a.Name())
+		} else {
+			plan.Idle = append(plan.Idle, a.Name())
+		}
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.publishLocked(domain.TypePlan, "", "", plan)
 }
 
 // Close empêche toute publication ultérieure et attend les goroutines des
@@ -341,8 +434,13 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 		return
 	}
 
+	if ts.cardErr != nil {
+		p.fail(ctx, ts, ts.cardErr)
+		return
+	}
 	var summary string
-	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.contextFor(ts.owner)}) {
+	card := ts.card
+	for u, err := range a.Send(ctx, port.AgentRequest{Text: d.Request, ContextID: p.contextFor(ts.owner), Card: &card}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
 			return
@@ -532,7 +630,8 @@ func (p *Pipeline) failInflight(ctx context.Context) {
 }
 
 // failLocked (mu tenu) : (1) compense les surfaces créées, dans l'ordre
-// inverse, (2) oublie la tâche, (3) publie `failed` ; idempotent.
+// inverse, (2) oublie la tâche, (3) publie `failed` (ou `rejected`, détail
+// « hors périmètre », si l'agent a refusé la demande) ; idempotent.
 func (p *Pipeline) failLocked(ts *taskState, detail string) {
 	if ts.done {
 		return
@@ -550,7 +649,11 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 		}
 		p.deps.Registry.Forget(ts.taskID)
 	}
-	p.publishActivityLocked(ts, domain.ActivityFailed, detail)
+	state := domain.ActivityFailed
+	if ts.rejected {
+		state, detail = domain.ActivityRejected, DetailOutOfScope
+	}
+	p.publishActivityLocked(ts, state, detail)
 }
 
 // deletedSurface extrait la surface d'un message de compensation `deleteSurface`

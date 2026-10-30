@@ -75,6 +75,9 @@ type Phrases struct {
 	// NoSummary est dite quand la tâche est terminée avec une surface valide
 	// mais sans résumé exploitable : vraie, sans chiffre.
 	NoSummary string
+	// OutOfCatalog est dite quand aucun agent n'est retenu pour la demande :
+	// refus honnête, avec une alternative. Aucun chiffre.
+	OutOfCatalog string
 	// ResultTemplate contient un seul `%s`, remplacé par le résumé de l'agent
 	// (donnée non fiable, nettoyée et bornée).
 	ResultTemplate string
@@ -92,7 +95,7 @@ func (p Phrases) Validate() error {
 	for name, v := range map[string]string{
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
 		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
-		"NoAgent": p.NoAgent, "ResultTemplate": p.ResultTemplate,
+		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "ResultTemplate": p.ResultTemplate,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)

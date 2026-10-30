@@ -786,3 +786,30 @@ func TestNoDuplicateBetweenReplayAndLive(t *testing.T) {
 		}
 	}
 }
+
+// Un abonné tardif reçoit le plan, rejoué dans l'ordre de publication, et un
+// deleteSurface ne l'efface pas.
+func TestLateSubscriberGetsPlan(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 50, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	h.Publish("s1", domain.Message{Type: domain.TypePlan, TMs: 1, Data: domain.Plan{Delegation: "d1", Selected: []string{"Qualité"}, Idle: []string{}}})
+	h.Publish("s1", a2uiMsg(2, "createSurface", "kpi"))
+	h.Publish("s1", a2uiMsg(3, "deleteSurface", "kpi"))
+	for i := 0; i < 200; i++ { // le backlog ordinaire ne doit pas évincer le plan
+		h.Publish("s1", transcript(i))
+	}
+	for _, id := range []string{"s1", ""} {
+		c := dial(t, srv, id)
+		e := read(t, c)
+		if e.Type != domain.TypePlan {
+			t.Fatalf("abonné %q : reçu %s %s, attendu plan en premier", id, e.Type, e.Data)
+		}
+		var d struct {
+			Delegation string   `json:"delegation"`
+			Selected   []string `json:"selected"`
+			Idle       []string `json:"idle"`
+		}
+		if err := json.Unmarshal(e.Data, &d); err != nil || d.Delegation != "d1" || len(d.Selected) != 1 || d.Idle == nil {
+			t.Fatalf("abonné %q : plan %s (%v)", id, e.Data, err)
+		}
+	}
+}

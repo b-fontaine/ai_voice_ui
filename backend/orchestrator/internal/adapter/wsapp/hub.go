@@ -32,7 +32,7 @@ type Options struct {
 	// WriteTimeout borne chaque écriture vers un client ; au-delà, l'abonné est
 	// jugé bloqué, sa connexion est coupée et son gestionnaire libéré.
 	WriteTimeout time.Duration
-	// RetainedMax borne, par session, les messages a2ui et agent.activity
+	// RetainedMax borne, par session, les messages a2ui, agent.activity et plan
 	// retenus à part du Backlog (les transcripts ne les évincent pas) et rejoués
 	// à la connexion ; le plus ancien est évincé en premier.
 	RetainedMax int
@@ -70,7 +70,7 @@ const (
 
 type session struct {
 	backlog  []entry // transcripts, session.state, usage… (borné par Options.Backlog)
-	retained []entry // a2ui et agent.activity (borné par Options.RetainedMax)
+	retained []entry // a2ui, agent.activity et plan (borné par Options.RetainedMax)
 	subs     map[*subscriber]struct{}
 	closed   bool // session.state{closed} publié
 }
@@ -118,7 +118,7 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 	h.seq++
 	switch m.Type {
 	case domain.TypeOrbLevel: // jamais rejoué
-	case domain.TypeA2UI, domain.TypeAgentActivity:
+	case domain.TypeA2UI, domain.TypeAgentActivity, domain.TypePlan:
 		h.retain(s, entry{seq: h.seq, payload: payload}, m)
 	default:
 		s.backlog = append(s.backlog, entry{seq: h.seq, payload: payload})
@@ -138,11 +138,12 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 	}
 }
 
-// retain conserve un message a2ui ou agent.activity à part du backlog ordinaire,
+// retain conserve un message a2ui, agent.activity ou plan à part du backlog ordinaire,
 // pour qu'un abonné tardif reçoive toujours la surface avant ses mises à jour.
 // Un deleteSurface fait oublier tous les messages retenus de la surface et n'est
 // pas retenu lui-même : un abonné tardif ne reconstruit jamais une surface
-// supprimée. Au-delà de RetainedMax, l'éviction retire d'abord les
+// supprimée. Un `plan` (sans surface) est retenu comme un agent.activity, avec
+// les mêmes bornes, et n'est jamais effacé par un deleteSurface. Au-delà de RetainedMax, l'éviction retire d'abord les
 // agent.activity les plus anciens, puis les mises à jour les plus anciennes ;
 // le createSurface d'une surface vivante n'est évincé qu'en dernier recours,
 // quand il ne reste que des createSurface (plus de RetainedMax surfaces

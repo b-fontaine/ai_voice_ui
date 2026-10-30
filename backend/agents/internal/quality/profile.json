@@ -5,7 +5,7 @@
   "skill": {
     "id": "quality-kpi",
     "name": "Indicateur de qualité",
-    "tags": ["release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "a2ui"],
+    "tags": ["release", "version", "crash", "crashs", "plantage", "plantages", "stabilité", "sessions", "tendance", "courbe", "qualité", "a2ui", "3.4"],
     "examples": [
       "Prépare la release 3.4",
       "Montre-moi la stabilité de la 3.4",
