@@ -370,8 +370,8 @@ void main() {
     });
   });
 
-  group('zone de la barre supérieure (budget 160 px, texte >= 24 px)', () {
-    testWidgets('la barre fait 160 px de haut et accueille la régie', (
+  group('zone de la barre supérieure (budget 128 px, texte >= 24 px)', () {
+    testWidgets('la barre fait 128 px de haut et accueille la régie', (
       tester,
     ) async {
       await rig.pump(

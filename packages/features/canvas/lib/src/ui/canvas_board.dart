@@ -37,7 +37,7 @@ class CanvasBoard extends StatelessWidget {
   });
 
   /// Hauteur réservée au bandeau de la Barre d'actions.
-  static const double actionsBandHeight = 80;
+  static const double actionsBandHeight = 72;
 
   final SurfaceController controller;
 
