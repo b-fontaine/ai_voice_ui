@@ -5,7 +5,7 @@ tags: [golden, alchemist, golden_toolkit, visual]
 status: verified
 updated: 2026-10-26
 sources: [https://pub.dev/packages/alchemist, https://pub.dev/packages/golden_toolkit, https://github.com/Betterment/alchemist]
-links: [test-pyramid-flutter, test-bdd-hooks-steps, test-coverage-ci, ds-widgetbook-testing]
+links: [test-pyramid-flutter, test-bdd-hooks-steps, test-coverage-ci, ds-widgetbook-testing, test-flutter-real-fonts-overflow]
 ---
 # Utiliser alchemist : golden_toolkit est marqué « discontinued »
 

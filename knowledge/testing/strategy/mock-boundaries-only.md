@@ -5,7 +5,7 @@ tags: [mock, fake, architecture, tdd]
 status: opinion
 updated: 2026-10-26
 sources: []
-links: [test-mocktail-vs-mockito, test-realtime-fake-runner, proj-sk-patterns, proj-avw-voice-runners, di-testing]
+links: [test-mocktail-vs-mockito, test-realtime-fake-runner, proj-sk-patterns, proj-avw-voice-runners, di-testing, test-flutter-real-fonts-overflow]
 ---
 # Les doublures ne remplacent que ce qui sort du processus ou n'est pas déterministe
 

@@ -3,7 +3,7 @@ id: rt-gpt-live-delegation
 title: GPT-Live — délégation (responses vs client) et tool calling
 tags: [openai, gpt-live, tools, function-calling, delegation, orchestrator, multi-agent]
 status: verified
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [https://developers.openai.com/api/docs/guides/live-delegation.md, https://developers.openai.com/api/docs/guides/live, https://developers.openai.com/api/docs/guides/live-conversations]
 links: [rt-gpt-live-delegation-latency, rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-gpt-live-session-config, rt-tool-calling-voice, ma-target-architecture, ma-filler-acknowledgements, ma-real-tool-results, ma-realtime-handoff-limits, proj-avw-risks, proj-avw-voice-runners]
 ---
@@ -40,7 +40,10 @@ Sans `response.create`, le backend ne reprend pas. Résultat manquant → `tool_
   - `session.thinking.append` : contexte silencieux ;
   - `session.instructions.append` : consignes globales (`delegation_id: null`).
 - **Vérifié le 2026-10-29 (essai réel, mode `client`) :** `session.delegation.created` porte bien `offset_ms` (7 000 pour une phrase terminée vers 7 s : même timeline de session que les `start_ms`/`end_ms` des transcripts) ; un `commentary.append` est dit presque mot pour mot, **guillemets compris** (« Voici ce que je constate : « … » ») ; un premier commentaire générique, puis le commentaire fondé sur le résultat, sont dits dans cet ordre.
-- Chacun est acquitté par `…appended` : l'accusé confirme l'injection, pas la diction.
+- Chacun est acquitté par `…appended` : l'accusé confirme l'injection, pas la diction. Un refus du fournisseur arrive en événement `error` portant le `client_event_id` de la commande ; un délai sans accusé ne prouve pas que la commande n'a pas été reçue : ne pas la renvoyer.
+- **`delegation_id` est nullable** pour `session.commentary.append` (SDK openai-go v3.90.0, `live/live.go` : « Required, nullable. Set null for general session context, or use the ID from session.delegation.created »). Un commentaire à `delegation_id` nul s'adresse à la session, hors de toute délégation ; un identifiant non nul est refusé en mode `responses`. La commande est aussi rejetée tant qu'une fixture audio est active. `session.instructions.append` est acquittée par `session.instructions.appended`.
+- ⚠️ **Non observé** : qu'un commentaire à `delegation_id` nul fasse effectivement parler le modèle hors délégation (seul le SDK le documente ; l'essai réel du 2026-10-30 n'est pas allé jusque-là).
+- **Observé (un essai, 2026-10-30)** : un second énoncé de l'utilisateur prononcé pendant que le modèle disait son accusé (« Je m'en occupe, je regarde ») a bien créé une seconde délégation, environ 0,4 s après la fin de l'énoncé ; chaque délégation reste ouverte tant que son commentaire n'est pas acquitté côté application.
 - `delegation.acknowledgement_delay_ms` (ex. 800) règle l'accusé vocal automatique. Tout `thinking.append` ou `commentary.append` (même à `content` vide) annule **tous** les accusés en attente de la session ([[ma-filler-acknowledgements]]).
 
 ## ⚠️ Pièges
