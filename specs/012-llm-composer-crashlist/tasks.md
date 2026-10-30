@@ -34,7 +34,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T40 Flutter — `genesis_contract.dart` : `CrashList` dans `components`, schéma, parité Go/Dart sur les fixtures positives et négatives · `genesis_contract_test.dart`
 - [x] T41 Flutter — `CrashList` (`CatalogItem`, `BoundObject`, trois états, texte ≥ 24 px, libellé sur deux lignes au plus puis ellipse ; ligne incomplète → état neutre) et enregistrement dans `genesis_catalog.dart` · `genesis_catalog_test.dart`, goldens
 - [x] T42 Flutter — grille à parent unique (`CustomMultiChildLayout` ou `Stack`), `crashes` en 5ᵉ cellule (3×2) ; `State` des quatre `Surface` conservés (`same(state)`) ; étagère « utilisée » · `canvas_board_test.dart`, `catalog_shelf_bloc_test.dart`
-- [ ] T43 Flutter — faux backend et rejeu : fixture `crashlist-*` dans le mode scénario, panneau du protocole · `acte_crashlist` vert
+- [x] T43 Flutter — faux backend et rejeu : fixture `crashlist-*` dans le mode scénario, panneau du protocole · `acte_crashlist` vert
+- [ ] T44 Flutter — lisibilité de `CrashList` à 1920×1080 (capture `crashlist-replay`) : libellé sur UNE ligne avec ellipse, plateforme et volume à droite, `sessions` conservé dans les données mais non affiché (D10) ; scénarios F-02 et tests ajustés · rouge : `maxLines: 2`, « N sess. » encore affichés
 
 ## Mesure et vérification réelle
 - [ ] T50 Go — `cmd/composer-bench` (agents, dans le réseau `agents`) : p50/p90 au premier octet et au total, par agent ; validité ; taux d'accord avec le plan attendu ; coût · test d'unité de l'agrégation (faux client)

@@ -295,6 +295,27 @@ abstract final class ContractFixtures {
     return buffer.toString();
   }
 
+  /// Contenu de `assets/replays/crashlist-replay.jsonl` dérivé du contrat
+  /// (spec 012, T43) : l'acte 1 à l'identique ([act1ReplayJsonl]), puis les
+  /// trois messages de `examples/crashlist-global.jsonl` (surface `crashes`),
+  /// 500 ms après la dernière surface de l'acte 1, espacés de 50 ms.
+  static Future<String> crashlistReplayJsonl({
+    String catalogId = defaultCatalogId,
+  }) async {
+    final buffer = StringBuffer(await act1ReplayJsonl(catalogId: catalogId));
+    final crashes = await _exampleMessages('crashlist-global.jsonl', catalogId);
+    final start = act1Files.length * 500;
+    for (var m = 0; m < crashes.length; m++) {
+      buffer.writeln(
+        jsonEncode(<String, Object?>{
+          't_ms': start + m * 50,
+          'message': crashes[m],
+        }),
+      );
+    }
+    return buffer.toString();
+  }
+
   /// Résout une URI `package:` : `Isolate.resolvePackageUri` d'abord ; le
   /// lanceur `flutter_tester` ne le prend pas en charge, on lit alors le
   /// `package_config.json` de l'espace de travail (remonté depuis le
