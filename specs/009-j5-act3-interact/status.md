@@ -2,8 +2,8 @@
 
 - **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tâche en cours** : T10 (Go), T05 (Flutter)
+- **Fichiers touchés** (tâche en cours) : backend/agents/** (noyau, delivery, profils) et tests de 008 qui en dépendent (backend/orchestrator/acceptance/act2_*, act3_helpers) ; packages/features/canvas/test/** (sonde de propagation)
 - **Branche** : feat/009-j5-act3-interact
 - **Backlog** : EP-03, EP-04, EP-02, EP-06
 - **Mis à jour** : 2026-10-30 15:15
