@@ -2,7 +2,7 @@
 
 - **Étape** : Gherkin
 - **Tentatives** : 1/3
-- **Tâche en cours** : T01-T03
+- **Tâche en cours** : T04
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
@@ -15,6 +15,7 @@
 | 2026-10-30 | Revue du plan | architect-reviewer (Opus, mode PLAN) : **À AMENDER** (1 bloquant, 6 importants, mineurs). A1 vérifié dans le code (`pipeline.go:204-217` lance tous les agents ; `executor.go` : `rejected` après `submitted` devient `failed`). Amendements A1-A8 intégrés dans `plan.md` (bloc « Amendements de la revue », prioritaire), `tasks.md` (T05, T06, T15a-c ajoutées, ordre corrigé) et `spec.md` (G2, G2bis, latences). | commit de cette étape |
 | 2026-10-30 | Gherkin (préparation) | T05 faite : déplacement pur `backend/agents/quality` → `backend/agents` (module, imports, Dockerfile `ARG AGENT`, compose, CI). Rouge initial attendu : `go build ./...` échoue (`no required module provides package …/backend/agents/quality/internal/{agent,compose,dataset}`). Écarts : deux chemins relatifs de tests (un niveau de moins), une chaîne de filtre de `TestNoFileAccess` ; aucune assertion modifiée. `gate --unit go` et `--full` verts (40 contrôles). | `.omc/state/loop/gates/20261030-020503-unit-go.log`, `…/20261030-020506-full.log` |
 | 2026-10-30 | Gherkin (préparation) | T06 faite : fixtures `contracts/a2ui/genesis/v1/` (`catalog.json`, 4 exemples en trois temps, README) et test vert `genesis_fixtures_test.go` (rouge initial : fixtures absentes). Choix de l'agent : `catalog.json` en format maison (pas JSON Schema) ; avis en nombres bruts (`count`, `positivePct`, `negativePct`, `average`) ; `levelLabel` ajouté aux items de checklist. | `.omc/state/loop/gates/20261030-020810-unit-go.log` |
+| 2026-10-30 | Gherkin | T01-T03 faites : G1, G1bis, G2, G2bis, G3 (`backend/orchestrator/acceptance/genesis_*_test.go`, vrais binaires compilés à la demande, sans `TestMain`). **Sortie rouge attendue** : G1, G1bis, G2, G3 : `compilation de agent-voice impossible (le binaire d'agent doit exister) : go build ./cmd/agent-voice : exit status 1` ; G2bis : `aucun message plan publié ; reçu activity(Qualité:working), activity(Qualité:failed)` (vrai défaut : pas de planificateur, le refus devient `failed`). Tests de 004 toujours verts. Hypothèses des tests : `plan.data = {delegation, selected, idle}` (noms ou objets `name`/`agent`), `plan` en tête d'une délégation ; mots de refus et d'alternative de `out_of_catalog` testés par mots-clés (la phrase n'existe pas encore). Dette mineure : le dossier temporaire des binaires n'est jamais supprimé (`/tmp/genesis-agents-*`). | `.omc/state/loop/gates/20261030-021221-unit-go.log` |
 
 ## Revue d'architecte
 **Revue du plan (2026-10-30) : À AMENDER.** Amendements, tous intégrés au plan (voir `plan.md`) :

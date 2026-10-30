@@ -298,6 +298,13 @@ type agentScript func(ctx context.Context, ec *a2asrv.ExecutorContext, emit func
 
 func startTestAgent(t *testing.T, script agentScript) *testAgent {
 	t.Helper()
+	return startTestAgentTagged(t, script, []string{"a2ui"})
+}
+
+// startTestAgentTagged comme startTestAgent, avec les tags du skill de la carte
+// (le planificateur de l'orchestrateur choisit les agents d'après ces tags).
+func startTestAgentTagged(t *testing.T, script agentScript, tags []string) *testAgent {
+	t.Helper()
 	agent := &testAgent{canceled: make(chan struct{})}
 	run := a2asrv.AgentExecutorFunc(func(ctx context.Context, ec *a2asrv.ExecutorContext) iter.Seq2[a2a.Event, error] {
 		return func(yield func(a2a.Event, error) bool) {
@@ -353,7 +360,7 @@ func startTestAgent(t *testing.T, script agentScript) *testAgent {
 		Capabilities:        a2a.AgentCapabilities{Streaming: true},
 		Skills: []a2a.AgentSkill{{
 			ID: "quality-kpi", Name: "Qualité", Description: "Indicateurs de qualité d'une release.",
-			Tags: []string{"a2ui"},
+			Tags: tags,
 		}},
 	})
 	return agent
