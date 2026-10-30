@@ -635,3 +635,26 @@ func TestLoadRequiresThreeExcerptsPerView(t *testing.T) {
 		t.Error("une vue à deux extraits doit faire échouer Load")
 	}
 }
+
+func TestChecklistCriteriaCarryTheirKind(t *testing.T) {
+	ds := mustLoad(t)
+	want := []dataset.CriterionKind{dataset.CriterionCrashFree, dataset.CriterionReviews, dataset.CriterionChangelog}
+	global, err := ds.Checklist("3.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	platform, err := ds.PlatformChecklist("3.4", "Android")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, cl := range map[string]dataset.Checklist{"globale": global, "plateforme": platform} {
+		if len(cl.Criteria) != len(want) {
+			t.Fatalf("checklist %s : %d critères", name, len(cl.Criteria))
+		}
+		for i, cr := range cl.Criteria {
+			if cr.Kind != want[i] {
+				t.Errorf("checklist %s, critère %d : Kind %q, attendu %q", name, i, cr.Kind, want[i])
+			}
+		}
+	}
+}

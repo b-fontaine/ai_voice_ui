@@ -40,15 +40,9 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	}
 	intent, err := kit.ParseIntent(req.Text, ds)
 	if err != nil {
-		return kit.Composition{}, kit.ErrOutOfScope
+		return kit.Composition{}, err
 	}
-	platform := ""
-	if !intent.IsZero() {
-		var ok bool
-		if platform, ok = datasetPlatform(ds, intent.Platform); !ok {
-			return kit.Composition{}, kit.ErrOutOfScope
-		}
-	}
+	platform := intent.Platform
 	rv, err := ds.PlatformReviews(ds.TargetVersion, platform)
 	if err != nil {
 		return kit.Composition{}, err
@@ -86,7 +80,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if intent.CompareTo != "" {
 		cmp, err := ds.Comparison(ds.TargetVersion, platform)
 		if err != nil {
-			return kit.Composition{}, kit.ErrOutOfScope
+			return kit.Composition{}, fmt.Errorf("comparaison acceptée par ParseIntent mais impossible : %w", err)
 		}
 		delta := dataset.FormatPts(cmp.NegativeDeltaPts)
 		value["comparison"] = map[string]any{
@@ -99,17 +93,6 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 
 	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "reviews", "ReviewSentiment", "/reviews", value)
 	return kit.Composition{Messages: msgs, Summary: summary + "."}, nil
-}
-
-// datasetPlatform renvoie le nom de plateforme du jeu (« Android », « iOS ») dont
-// l'intention porte la forme en minuscules.
-func datasetPlatform(ds dataset.Dataset, lower string) (string, bool) {
-	for _, r := range ds.Rows {
-		if strings.EqualFold(r.Platform, lower) {
-			return r.Platform, true
-		}
-	}
-	return "", false
 }
 
 // groupThousands écrit un entier avec une espace entre les milliers : 1164 → « 1 164 ».

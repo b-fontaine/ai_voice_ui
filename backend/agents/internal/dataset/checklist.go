@@ -50,8 +50,19 @@ func ClassifyMargin(margin, riskBelow float64) Level {
 	}
 }
 
+// CriterionKind identifie la nature d'un critère de la checklist, pour que les
+// consommateurs ne dépendent pas de sa position.
+type CriterionKind string
+
+const (
+	CriterionCrashFree CriterionKind = "crash_free"
+	CriterionReviews   CriterionKind = "reviews"
+	CriterionChangelog CriterionKind = "changelog"
+)
+
 // Criterion est une ligne de la checklist go/no-go.
 type Criterion struct {
+	Kind       CriterionKind
 	Label      string  // « Sessions sans crash (global, 7 j) »
 	Threshold  string  // « ≥ 99,50 % »
 	Value      string  // « 99,57 % »
@@ -96,13 +107,13 @@ func (d Dataset) Checklist(version string) (Checklist, error) {
 		clLevel = LevelBlocking
 	}
 
-	crit := func(label, threshold, value string, margin float64, l Level) Criterion {
-		return Criterion{Label: label, Threshold: threshold, Value: value, MarginPt: margin, Level: l, LevelLabel: l.Label()}
+	crit := func(kind CriterionKind, label, threshold, value string, margin float64, l Level) Criterion {
+		return Criterion{Kind: kind, Label: label, Threshold: threshold, Value: value, MarginPt: margin, Level: l, LevelLabel: l.Label()}
 	}
 	criteria := []Criterion{
-		crit("Sessions sans crash (global, 7 j)", "≥ "+FormatPct(d.CrashFreeThresholdPct, 2), FormatPct(kpi.CrashFreePct, 2), kpi.MarginPt, kpi.Level),
-		crit("Avis négatifs (global, 7 j)", "≤ "+FormatPct(d.ReviewNegativeMaxPct, 0), FormatPct(rv.NegativePct, 0), revMargin, revLevel),
-		crit("Changelog validé", "revue faite", fmt.Sprintf("%d PR", prs), 0, clLevel),
+		crit(CriterionCrashFree, "Sessions sans crash (global, 7 j)", "≥ "+FormatPct(d.CrashFreeThresholdPct, 2), FormatPct(kpi.CrashFreePct, 2), kpi.MarginPt, kpi.Level),
+		crit(CriterionReviews, "Avis négatifs (global, 7 j)", "≤ "+FormatPct(d.ReviewNegativeMaxPct, 0), FormatPct(rv.NegativePct, 0), revMargin, revLevel),
+		crit(CriterionChangelog, "Changelog validé", "revue faite", fmt.Sprintf("%d PR", prs), 0, clLevel),
 	}
 
 	reco := worstLevel(criteria)
@@ -139,13 +150,13 @@ func (d Dataset) PlatformChecklist(version, platform string) (Checklist, error) 
 		clLevel = LevelBlocking
 	}
 
-	crit := func(label, threshold, value string, margin float64, l Level) Criterion {
-		return Criterion{Label: label, Threshold: threshold, Value: value, MarginPt: margin, Level: l, LevelLabel: l.Label()}
+	crit := func(kind CriterionKind, label, threshold, value string, margin float64, l Level) Criterion {
+		return Criterion{Kind: kind, Label: label, Threshold: threshold, Value: value, MarginPt: margin, Level: l, LevelLabel: l.Label()}
 	}
 	criteria := []Criterion{
-		crit("Sessions sans crash "+platform+" (7 j)", "≥ "+FormatPct(d.CrashFreeThresholdPct, 2), FormatPct(kpi.CrashFreePct, 2), kpi.MarginPt, kpi.Level),
-		crit("Avis négatifs "+platform+" (7 j)", "≤ "+FormatPct(d.ReviewNegativeMaxPct, 0), FormatPct(rv.NegativePct, 0), revMargin, revLevel),
-		crit("Changelog validé", "revue faite", fmt.Sprintf("%d PR", prs), 0, clLevel),
+		crit(CriterionCrashFree, "Sessions sans crash "+platform+" (7 j)", "≥ "+FormatPct(d.CrashFreeThresholdPct, 2), FormatPct(kpi.CrashFreePct, 2), kpi.MarginPt, kpi.Level),
+		crit(CriterionReviews, "Avis négatifs "+platform+" (7 j)", "≤ "+FormatPct(d.ReviewNegativeMaxPct, 0), FormatPct(rv.NegativePct, 0), revMargin, revLevel),
+		crit(CriterionChangelog, "Changelog validé", "revue faite", fmt.Sprintf("%d PR", prs), 0, clLevel),
 	}
 	reco := worstLevel(criteria)
 	return Checklist{

@@ -3,7 +3,6 @@ package quality
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
@@ -36,7 +35,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	}
 	intent, err := kit.ParseIntent(req.Text, ds)
 	if err != nil {
-		return kit.Composition{}, kit.ErrOutOfScope
+		return kit.Composition{}, err
 	}
 	var (
 		kpiValue, trendValue map[string]any
@@ -111,10 +110,7 @@ func globalView(ds dataset.Dataset) (kpiValue, trendValue map[string]any, summar
 // comparaison si intent.CompareTo est renseigné). Le résumé ne reprend que des
 // valeurs déjà affichées.
 func platformView(ds dataset.Dataset, intent kit.Intent) (kpiValue, trendValue map[string]any, summary string, err error) {
-	platform, ok := datasetPlatform(ds, intent.Platform)
-	if !ok {
-		return nil, nil, "", kit.ErrOutOfScope
-	}
+	platform := intent.Platform
 	kpi, err := ds.CrashFreeByPlatform(ds.TargetVersion, platform)
 	if err != nil {
 		return nil, nil, "", err
@@ -142,7 +138,7 @@ func platformView(ds dataset.Dataset, intent kit.Intent) (kpiValue, trendValue m
 	if intent.CompareTo != "" {
 		cmp, err := ds.Comparison(ds.TargetVersion, platform)
 		if err != nil {
-			return nil, nil, "", kit.ErrOutOfScope
+			return nil, nil, "", fmt.Errorf("comparaison acceptée par ParseIntent mais impossible : %w", err)
 		}
 		prevRates, err := ds.DailyCrashRates(cmp.CompareVersion, platform)
 		if err != nil {
@@ -178,15 +174,4 @@ func points(rates []float64) []any {
 		out[i] = r
 	}
 	return out
-}
-
-// datasetPlatform renvoie le nom de plateforme du jeu (« Android », « iOS ») dont
-// l'intention porte la forme en minuscules.
-func datasetPlatform(ds dataset.Dataset, lower string) (string, bool) {
-	for _, r := range ds.Rows {
-		if strings.EqualFold(r.Platform, lower) {
-			return r.Platform, true
-		}
-	}
-	return "", false
 }

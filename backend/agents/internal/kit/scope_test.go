@@ -13,9 +13,9 @@ import (
 // comparaison avec 3.3 sont des intentions acceptées.
 func TestParseIntentTable(t *testing.T) {
 	zero := kit.Intent{}
-	android := kit.Intent{Platform: "android"}
-	ios := kit.Intent{Platform: "ios"}
-	cmp := kit.Intent{Platform: "android", CompareTo: "3.3"}
+	android := kit.Intent{Platform: "Android"}
+	ios := kit.Intent{Platform: "iOS"}
+	cmp := kit.Intent{Platform: "Android", CompareTo: "3.3"}
 	cases := []struct {
 		text string
 		want kit.Intent
@@ -76,6 +76,18 @@ func TestParseIntentTable(t *testing.T) {
 		{"une marge de 2.5 points", zero, true},
 		{"version 10.2", zero, true},
 		{"Android sous 99,5 %", android, true},
+		// R2 : mesures et énumérations qui ne sont pas des versions.
+		{"Pourquoi la note Android est à 3,7 ?", android, true},
+		{"une note de 3,7 étoiles", zero, true},
+		{"les points 1, 2 et 3 sur Android", android, true},
+		{"Android : 1.000 avis", android, true},
+		{"2,5 millions d'utilisateurs", zero, true},
+		{"un écart de 0,5 pts sur Android", android, true},
+		{"la moyenne est de 3,7", zero, true},
+		{"3,7 sur 5", zero, true},
+		{"3,7/5", zero, true},
+		{"la 3.5/la 3.4", zero, false},
+		{"la note de la 3.5", zero, false},
 	}
 	ds := testDataset(t)
 	for _, tc := range cases {
@@ -92,12 +104,33 @@ func TestParseIntentTable(t *testing.T) {
 	}
 }
 
+func TestParseIntentReasons(t *testing.T) {
+	ds := testDataset(t)
+	cases := []struct {
+		text   string
+		reason string
+	}{
+		{"la release 3.5", kit.ReasonVersion},
+		{"trois point trois", kit.ReasonVersion},
+		{"Android et iOS", kit.ReasonTwoPlatforms},
+		{"compare", kit.ReasonCompareWithoutPlatform},
+		{"Compare iOS", kit.ReasonCompareUnavailable},
+	}
+	for _, tc := range cases {
+		_, err := kit.ParseIntent(tc.text, ds)
+		var se *kit.ScopeError
+		if !errors.Is(err, kit.ErrOutOfScope) || !errors.As(err, &se) || se.Reason != tc.reason {
+			t.Errorf("ParseIntent(%q) : erreur %v, motif attendu %q", tc.text, err, tc.reason)
+		}
+	}
+}
+
 func TestParseIntentTruncatesAtOneThousandRunes(t *testing.T) {
 	ds := testDataset(t)
 	if got, err := kit.ParseIntent(strings.Repeat("é", 1000)+" Android", ds); err != nil || got != (kit.Intent{}) {
 		t.Errorf("« Android » après la 1 000ᵉ rune doit être ignoré, obtenu %+v, %v", got, err)
 	}
-	if got, err := kit.ParseIntent(strings.Repeat("é", 900)+" Android", ds); err != nil || got.Platform != "android" {
+	if got, err := kit.ParseIntent(strings.Repeat("é", 900)+" Android", ds); err != nil || got.Platform != "Android" {
 		t.Errorf("« Android » avant la 1 000ᵉ rune doit être reconnu, obtenu %+v, %v", got, err)
 	}
 	if _, err := kit.ParseIntent(strings.Repeat("é", 1000)+" la 3.5", ds); err != nil {
@@ -120,7 +153,7 @@ func TestParseIntentUsesDatasetVersions(t *testing.T) {
 }
 
 func TestIntentIsZero(t *testing.T) {
-	if !(kit.Intent{}).IsZero() || (kit.Intent{Platform: "ios"}).IsZero() || (kit.Intent{Platform: "android", CompareTo: "3.3"}).IsZero() {
+	if !(kit.Intent{}).IsZero() || (kit.Intent{Platform: "iOS"}).IsZero() || (kit.Intent{Platform: "Android", CompareTo: "3.3"}).IsZero() {
 		t.Error("IsZero doit n'être vrai que pour l'intention nulle")
 	}
 }
