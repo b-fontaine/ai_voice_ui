@@ -5,7 +5,7 @@ import 'package:shared_design_system/shared_design_system.dart';
 import 'bound_item.dart';
 
 /// `CrashList` : les principaux crashs d'une release (rang, libellé,
-/// plateforme, volume, sessions), liée à `/crashes` (spec 012).
+/// plateforme, volume), liée à `/crashes` (spec 012).
 ///
 /// Trois états comme les autres composants liés : squelette (cellule du
 /// board), sans données (objet absent, aucune ligne) et état neutre (RG-10)
@@ -119,50 +119,32 @@ class _CrashRowView extends StatelessWidget {
           maxLines: 1,
         ),
         const SizedBox(width: 12),
-        // Deux lignes au plus (pdr-0062 D9). Dans une cellule de 250 px les
-        // cinq lignes se partagent environ 187 px : la hauteur d'une ligne
-        // est alors bornée, le rognage évite que le texte déborde sur la
-        // ligne suivante.
+        // Une seule ligne avec ellipse, sur toute la largeur restante
+        // (pdr-0062 D10) : cinq lignes se partagent environ 187 px dans une
+        // cellule 3 x 2, soit de quoi loger 24 px sans rognage.
         Expanded(
-          flex: 4,
-          child: ClipRect(
-            child: Text(
-              row.label,
-              key: Key('crash-label-${row.rank}'),
-              style: theme.body.copyWith(color: theme.textPrimary),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Plateforme et sessions prennent la place dont elles ont besoin,
-        // dans la limite de leur part : une cellule étroite les tronque au
-        // lieu de déborder.
-        Flexible(
-          flex: 2,
           child: Text(
-            row.platform,
-            style: theme.body.copyWith(color: theme.textSecondary),
+            row.label,
+            key: Key('crash-label-${row.rank}'),
+            style: theme.body.copyWith(color: theme.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+        const SizedBox(width: 12),
+        // Plateforme et volume à droite ; `sessions` reste dans les données
+        // du contrat mais n'est pas affiché.
+        Text(
+          row.platform,
+          style: theme.body.copyWith(color: theme.textSecondary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(width: 12),
         Text(
           '${row.volume}',
           style: theme.label.copyWith(color: theme.textPrimary),
           maxLines: 1,
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          flex: 2,
-          child: Text(
-            '${row.sessions} sess.',
-            style: theme.body.copyWith(color: theme.textSecondary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
         ),
       ],
     );

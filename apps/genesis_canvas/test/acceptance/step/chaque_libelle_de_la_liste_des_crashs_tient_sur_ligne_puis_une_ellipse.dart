@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/keys.dart';
 
-/// Usage: chaque libellé de la liste des crashs tient sur {2} lignes au plus puis une ellipse
+/// Usage: chaque libellé de la liste des crashs tient sur {1} ligne puis une ellipse
 ///
 /// Le `Text` du libellé borne `maxLines` et coupe par une ellipse ; le rendu
-/// réel ne dépasse pas ce nombre de lignes (pdr-0062 D9, A7).
-Future<void> chaqueLibelleDeLaListeDesCrashsTientSurLignesAuPlusPuisUneEllipse(
+/// réel ne dépasse pas ce nombre de lignes (pdr-0062 D10).
+Future<void> chaqueLibelleDeLaListeDesCrashsTientSurLignePuisUneEllipse(
   WidgetTester tester,
   num maxLines,
 ) async {

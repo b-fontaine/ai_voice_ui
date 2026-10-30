@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart' show Key;
+import 'package:flutter/material.dart' show Key, RichText, Text;
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -108,6 +109,38 @@ void defineCrashListFit() {
         lessThanOrEqualTo(row.height + 0.5),
         reason:
             'libellé $rank : ${label.height} px dans une ligne de ${row.height} px',
+      );
+      // Une seule ligne de texte, jamais rognée par la hauteur de ligne.
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find
+            .descendant(
+              of: find.byKey(Key('crash-label-$rank')),
+              matching: find.byType(RichText),
+            )
+            .first,
+      );
+      final oneLine = paragraph.getFullHeightForCaret(
+        const TextPosition(offset: 0),
+      );
+      expect(label.height, lessThanOrEqualTo(oneLine + 0.5));
+      expect(row.height, greaterThanOrEqualTo(oneLine - 0.5));
+      // Plateforme et volume visibles, à droite du libellé, dans la ligne.
+      final tail = tester.getRect(
+        find
+            .descendant(
+              of: find.byKey(Key('crash-row-$rank')),
+              matching: find.byType(Text),
+            )
+            .last,
+      );
+      expect(tail.left, greaterThanOrEqualTo(label.right - 0.5));
+      expect(tail.right, lessThanOrEqualTo(row.right + 0.5));
+      expect(
+        find.descendant(
+          of: find.byKey(Key('crash-row-$rank')),
+          matching: find.textContaining('sess.'),
+        ),
+        findsNothing,
       );
       if (rank < 5) {
         expect(

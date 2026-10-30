@@ -23,7 +23,7 @@ import './step/la_surface_naffiche_pas_letat_neutre.dart';
 import './step/la_liste_des_crashs_affiche_lignes.dart';
 import './step/aucune_erreur_nest_signalee.dart';
 import './step/le_texte_de_la_liste_des_crashs_fait_au_moins_px.dart';
-import './step/chaque_libelle_de_la_liste_des_crashs_tient_sur_lignes_au_plus_puis_une_ellipse.dart';
+import './step/chaque_libelle_de_la_liste_des_crashs_tient_sur_ligne_puis_une_ellipse.dart';
 import './step/le_serveur_emet_la_liste_des_crashs_dont_le_champ_est_une_chaine.dart';
 import './step/la_surface_affiche_letat_neutre.dart';
 import './step/le_serveur_emet_la_liste_des_crashs_dont_une_ligne_na_pas_de_libelle.dart';
@@ -96,7 +96,7 @@ void main() {
       tags: ['F-02', 'FR-01', 'RG-10'],
     );
     testWidgets(
-      '''F-02 Le texte de la liste est lisible et les libellés longs tiennent sur deux lignes au plus''',
+      '''F-02 Le texte de la liste est lisible et les libellés longs tiennent sur une ligne puis une ellipse''',
       (tester) async {
         try {
           await bddSetUp(tester);
@@ -104,9 +104,9 @@ void main() {
           await leServeurEmetLaListeDesCrashsJusquauTemps(tester, 'data');
           await laListeDesCrashsAfficheLignes(tester, 5);
           await leTexteDeLaListeDesCrashsFaitAuMoinsPx(tester, 24);
-          await chaqueLibelleDeLaListeDesCrashsTientSurLignesAuPlusPuisUneEllipse(
+          await chaqueLibelleDeLaListeDesCrashsTientSurLignePuisUneEllipse(
             tester,
-            2,
+            1,
           );
           await aucuneErreurNestSignalee(tester);
         } finally {

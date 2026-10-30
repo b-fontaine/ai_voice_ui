@@ -78,46 +78,47 @@ void main() {
     },
   );
 
-  testWidgets('cinq lignes : rang, libellé, plateforme, volume, sessions', (
-    tester,
-  ) async {
-    final h = _harness();
-    await h.pump(tester);
-    await h.sendFixtureTo(tester, 3);
+  testWidgets(
+    'cinq lignes : rang, libellé, plateforme, volume (sessions non affichées)',
+    (tester) async {
+      final h = _harness();
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 3);
 
-    expect(h.inCell(find.text('Principaux crashs · 3.4')), findsOneWidget);
-    expect(h.inCell(_allRows()), findsNWidgets(5));
-    for (var rank = 1; rank <= 5; rank++) {
-      expect(h.inCell(_rowByRank(rank)), findsOneWidget);
+      expect(h.inCell(find.text('Principaux crashs · 3.4')), findsOneWidget);
+      expect(h.inCell(_allRows()), findsNWidgets(5));
+      for (var rank = 1; rank <= 5; rank++) {
+        expect(h.inCell(_rowByRank(rank)), findsOneWidget);
+        expect(
+          find.descendant(
+            of: _rowByRank(rank),
+            matching: find.byKey(Key('crash-label-$rank')),
+          ),
+          findsOneWidget,
+        );
+      }
+      final first = _rowByRank(1);
+      Finder inFirst(String text) =>
+          find.descendant(of: first, matching: find.text(text));
+      expect(inFirst('1'), findsOneWidget);
       expect(
-        find.descendant(
-          of: _rowByRank(rank),
-          matching: find.byKey(Key('crash-label-$rank')),
-        ),
+        inFirst('Plantage à la validation du panier (3-D Secure 2)'),
         findsOneWidget,
       );
-    }
-    final first = _rowByRank(1);
-    Finder inFirst(String text) =>
-        find.descendant(of: first, matching: find.text(text));
-    expect(inFirst('1'), findsOneWidget);
-    expect(
-      inFirst('Plantage à la validation du panier (3-D Secure 2)'),
-      findsOneWidget,
-    );
-    expect(inFirst('Android'), findsOneWidget);
-    expect(inFirst('371'), findsOneWidget);
-    expect(inFirst('352 sess.'), findsOneWidget);
-    // Ordre de lecture : les rangs se suivent de haut en bas.
-    for (var rank = 1; rank < 5; rank++) {
-      expect(
-        tester.getTopLeft(_rowByRank(rank + 1)).dy,
-        greaterThan(tester.getTopLeft(_rowByRank(rank)).dy),
-      );
-    }
-    expect(h.engineErrors, isEmpty);
-    expect(tester.takeException(), isNull);
-  });
+      expect(inFirst('Android'), findsOneWidget);
+      expect(inFirst('371'), findsOneWidget);
+      expect(find.textContaining('sess.'), findsNothing);
+      // Ordre de lecture : les rangs se suivent de haut en bas.
+      for (var rank = 1; rank < 5; rank++) {
+        expect(
+          tester.getTopLeft(_rowByRank(rank + 1)).dy,
+          greaterThan(tester.getTopLeft(_rowByRank(rank)).dy),
+        );
+      }
+      expect(h.engineErrors, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('les lignes sont des descendantes simples de la cellule', (
     tester,
@@ -169,10 +170,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('libellé de 60 caractères : deux lignes au plus puis ellipse', (
+  testWidgets('libellé de 60 caractères : une ligne puis ellipse', (
     tester,
   ) async {
-    final h = _harness(size: const Size(940, 330));
+    final h = _harness(size: const Size(940, 255));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     await h.sendData(tester, <String, Object>{
@@ -182,7 +183,7 @@ void main() {
 
     final label = find.byKey(const Key('crash-label-1'));
     final text = tester.widget<Text>(label);
-    expect(text.maxLines, 2);
+    expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     final paragraph = tester.renderObject<RenderParagraph>(
       find.descendant(of: label, matching: find.byType(RichText)).first,

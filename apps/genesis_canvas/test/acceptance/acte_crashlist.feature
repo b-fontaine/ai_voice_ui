@@ -47,12 +47,12 @@ Fonctionnalité: Liste des crashs - cinquième surface du canevas
     Et aucun message A2UI n'est refusé
 
   @F-02 @NFR-03
-  Scénario: F-02 Le texte de la liste est lisible et les libellés longs tiennent sur deux lignes au plus
+  Scénario: F-02 Le texte de la liste est lisible et les libellés longs tiennent sur une ligne puis une ellipse
     Soit le tableau de la release 3.4 est affiché
     Quand le serveur émet la liste des crashs jusqu'au temps {'data'}
     Alors la liste des crashs affiche {5} lignes
     Et le texte de la liste des crashs fait au moins {24} px
-    Et chaque libellé de la liste des crashs tient sur {2} lignes au plus puis une ellipse
+    Et chaque libellé de la liste des crashs tient sur {1} ligne puis une ellipse
     Et aucune erreur n'est signalée
 
   @F-02 @RG-10
