@@ -1,0 +1,5 @@
+services:
+  agent-quality:
+    env_file:
+      - path: .env
+        required: false

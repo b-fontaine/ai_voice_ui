@@ -1,0 +1,4 @@
+services:
+  agent-quality:
+    environment:
+      COMPOSER_TIMEOUT: 9s

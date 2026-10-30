@@ -125,6 +125,72 @@ for name in agent_names:
     check("A2UI_WRITABLE_SUBPATHS" not in (services[name].get("environment") or {}),
           name + " : A2UI_WRITABLE_SUBPATHS ne concerne que l orchestrateur")
 
+# pdr-0074 (012) : passerelle LLM interne. Seul l orchestrateur porte la cle et sort ;
+# les agents l appellent par son IP fixe sur le reseau agents.
+import re
+
+
+def default_value(raw):
+    raw = str(raw)
+    if raw.startswith("${") and ":-" in raw and raw.endswith("}"):
+        return raw[raw.index(":-") + 2:-1]
+    return raw
+
+
+def seconds(raw, label):
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(ms|s|m)", default_value(raw).strip())
+    if not m:
+        errors.append(label + " : duree invalide")
+        return None
+    return float(m.group(1)) * {"ms": 0.001, "s": 1, "m": 60}[m.group(2)]
+
+
+gw_addr = default_value(env.get("LLM_GATEWAY_ADDR", ""))
+check(bool(gw_addr), "orchestrator : LLM_GATEWAY_ADDR requis")
+gw_host, _, gw_port = gw_addr.rpartition(":")
+check(gw_host not in ("", "0.0.0.0", "::"), "orchestrator : LLM_GATEWAY_ADDR doit etre l IP fixe sur agents, jamais 0.0.0.0")
+orch_agents_ip = ((orch.get("networks") or {}).get("agents") or {}).get("ipv4_address")
+check(orch_agents_ip == gw_host, "orchestrator : LLM_GATEWAY_ADDR doit etre son ipv4_address sur le reseau agents")
+subnets = [c.get("subnet") for c in (((networks.get("agents") or {}).get("ipam") or {}).get("config") or [])]
+check(bool(subnets), "le reseau agents doit declarer un sous-reseau (ipam) fixe")
+for port in orch.get("ports") or []:
+    check(str(port.get("target")) != gw_port and str(port.get("published")) != gw_port,
+          "orchestrator : le port de la passerelle LLM ne doit jamais etre publie")
+for name in agent_names:
+    for port in services[name].get("ports") or []:
+        check(str(port.get("target")) != gw_port, name + " : port de la passerelle LLM publie")
+
+allowed = {x.strip() for x in default_value(env.get("LLM_GATEWAY_ALLOWED_SOURCES", "")).split(",") if x.strip()}
+gw_timeout = seconds(env.get("COMPOSER_TIMEOUT", ""), "orchestrator : COMPOSER_TIMEOUT") if env.get("COMPOSER_TIMEOUT") else None
+check(gw_timeout is not None, "orchestrator : COMPOSER_TIMEOUT requis")
+agent_timeout_cap = seconds(env.get("AGENT_TIMEOUT", ""), "orchestrator : AGENT_TIMEOUT")
+wired = []
+for name in agent_names:
+    agent_env = services[name].get("environment") or {}
+    for key in agent_env:
+        check(not key.startswith("OPENAI_") and key != "COMPOSER_MODEL",
+              name + " : " + key + " ne doit pas etre fourni a un agent")
+    url = default_value(agent_env.get("COMPOSER_LLM_URL", ""))
+    if not url:
+        continue
+    wired.append(name)
+    ip = ((services[name].get("networks") or {}).get("agents") or {}).get("ipv4_address")
+    check(bool(ip), name + " : ipv4_address fixe requis sur agents (sources autorisees de la passerelle)")
+    check(ip in allowed, name + " : son IP doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES")
+    check(url.startswith("http://" + gw_host + ":" + gw_port + "/"),
+          name + " : COMPOSER_LLM_URL doit viser la passerelle de l orchestrateur sur agents")
+    t = seconds(agent_env.get("COMPOSER_TIMEOUT", ""), name + " : COMPOSER_TIMEOUT") if agent_env.get("COMPOSER_TIMEOUT") else None
+    check(t is not None, name + " : COMPOSER_TIMEOUT requis avec COMPOSER_LLM_URL")
+    if t is not None and gw_timeout is not None:
+        check(t >= gw_timeout + 0.5, name + " : COMPOSER_TIMEOUT doit depasser celui de la passerelle d au moins 500 ms")
+    if t is not None and agent_timeout_cap is not None:
+        check(t < agent_timeout_cap, name + " : COMPOSER_TIMEOUT doit rester sous AGENT_TIMEOUT (le repli doit tenir)")
+for ip in allowed:
+    check(any(((services[n].get("networks") or {}).get("agents") or {}).get("ipv4_address") == ip for n in agent_names),
+          "LLM_GATEWAY_ALLOWED_SOURCES : " + ip + " n est l IP d aucun agent")
+burst = default_value(env.get("COMPOSER_RATE_BURST", "0"))
+check(burst.isdigit() and int(burst) >= max(1, len(wired)), "orchestrator : COMPOSER_RATE_BURST doit couvrir les agents branches")
+
 check("sk-" not in json.dumps(cfg), "une valeur contient sk- (secret possible)")
 
 if errors:

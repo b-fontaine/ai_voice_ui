@@ -1,0 +1,4 @@
+services:
+  agent-quality:
+    environment:
+      OPENAI_API_KEY: refus

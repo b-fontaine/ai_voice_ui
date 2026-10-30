@@ -1,0 +1,4 @@
+services:
+  orchestrator:
+    environment:
+      LLM_GATEWAY_ADDR: 0.0.0.0:8081

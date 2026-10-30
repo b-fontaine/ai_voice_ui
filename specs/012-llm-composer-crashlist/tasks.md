@@ -3,9 +3,9 @@
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. `[P]` = indépendante. Go et Flutter peuvent avancer en parallèle (piles distinctes) ; `product/`, `specs/`, `docker-compose.yaml` : session principale seule. Go agents et Go orchestrateur : séquentiels (fichiers partagés).
 
 ## Gherkin
-- [ ] T01 Go — acceptation (tag `acceptance`) agents C-01 à C-06 (C-06 en deux variantes) avec une passerelle simulée (`httptest`) · rouges : aucun appel à la passerelle ; pas de surface `crashes` ; pas de motif `view_unavailable`
-- [ ] T02 Go — acceptation orchestrateur C-07 (passerelle) et C-08 (bout en bout simulé) · rouges : écouteur absent ; `crashes` refusé par la liste blanche
-- [ ] T03 Flutter — `acte_crashlist.feature` F-01, F-02 · rouges : composant `CrashList` inconnu du catalogue fermé ; étagère « inutilisé »
+- [x] T01 Go — acceptation (tag `acceptance`) agents C-01 à C-06 (C-06 en deux variantes) avec une passerelle simulée (`httptest`) · rouges : aucun appel à la passerelle ; pas de surface `crashes` ; pas de motif `view_unavailable`
+- [x] T02 Go — acceptation orchestrateur C-07 (passerelle) et C-08 (bout en bout simulé) · rouges : écouteur absent ; `crashes` refusé par la liste blanche
+- [x] T03 Flutter — `acte_crashlist.feature` F-01, F-02 · rouges : composant `CrashList` inconnu du catalogue fermé ; étagère « inutilisé »
 
 ## Contrat et données (session principale)
 - [x] T10 Go — jeu de données : `crashes` (5 lignes de `dataset.md`), `TopCrashes`, contrôles de cohérence · `dataset_test.go` (ordre, filtre de plateforme, bornes)
@@ -18,7 +18,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T22 Go — `bootstrap` : `LLM_GATEWAY_ADDR`, `LLM_GATEWAY_ALLOWED_SOURCES`, `COMPOSER_*`, second `http.Server`, arrêt conjoint des deux serveurs (`errors.Join`) · `config_test.go`, `main_test.go`
 - [x] T23 Go — `A2UI_COMPONENTS` à 6 composants en test de bout en bout (C-08) ; `TagPlanner` inchangé (cas « la liste des avis » → Voix seule, « liste des crashs » → Qualité) · `planner_test.go`
 - [x] T25 Go — `view_unavailable` dans `scopeReasons`, phrase `failure_rejected_view`, choix de la phrase par `ScopeReason` quand tous les agents refusent · `pipeline_scope_reason_test.go`, `phrases_test.go`
-- [ ] T24 compose — `docker-compose.yaml` (`ipam` et `ipv4_address` fixes, écouteur interne, ancre `COMPOSER_TIMEOUT`, `COMPOSER_*`, `COMPOSER_LLM_URL` par agent, service `composer-bench` sous le profil `bench`), règles de `check-compose.sh` (A5) et auto-test `backend/check-compose-selftest.sh` · surcharges `backend/testdata/compose-bad-*.yaml` qui doivent faire échouer le script (`env_file`, port publié, URL hors réseau, délais incohérents, `OPENAI_*` chez un agent)
+- [x] T24 compose — `docker-compose.yaml` (`ipam` et `ipv4_address` fixes, écouteur interne, ancre `COMPOSER_TIMEOUT`, `COMPOSER_*`, `COMPOSER_LLM_URL` par agent, service `composer-bench` sous le profil `bench` : reporté en T50, quand `cmd/composer-bench` existe), règles de `check-compose.sh` (A5) et auto-test `backend/check-compose-selftest.sh` · surcharges `backend/testdata/compose-bad-*.yaml` qui doivent faire échouer le script (`env_file`, port publié, URL hors réseau, délais incohérents, `OPENAI_*` chez un agent)
 
 ## TDD Go — agents (séquentiel)
 - [ ] T30 Go — `kit` : `Intent.View` (hors metadata `genesis/intent`), `ParseIntent` (« liste des crashs » et variantes ; lexique fermé de vues inconnues → `view_unavailable`), la liste ne déplace pas le focus et n'en hérite pas · `scope_test.go` (tables)
