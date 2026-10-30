@@ -43,6 +43,7 @@ services:
       # Délai maximal d'une délégation à un agent (NFR-03) et d'acquittement d'un commentaire vocal.
       AGENT_TIMEOUT: ${AGENT_TIMEOUT:-8s}
       VOICE_APPEND_ACK_TIMEOUT: ${VOICE_APPEND_ACK_TIMEOUT:-2s}
+      VOICE_ANNOUNCE_TIMEOUT: ${VOICE_ANNOUNCE_TIMEOUT:-4s}
       VOICE_MODEL: ${VOICE_MODEL:-gpt-live-1}
       VOICE_VOICE: ${VOICE_VOICE:-brise}
       VOICE_DELEGATION_TYPE: ${VOICE_DELEGATION_TYPE:-client}
