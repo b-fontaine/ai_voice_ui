@@ -7,6 +7,10 @@
   "reviewNegativeMaxPct": 25,
   "reviewRiskMarginPt": 2,
   "decisionStatus": "En attente de décision",
+  "decisions": {
+    "block_release": {"status": "Bloquée", "verb": "bloquée"},
+    "validate_release": {"status": "Validée", "verb": "validée"}
+  },
   "rows": [
     {"day": "J1", "platform": "iOS", "version": "3.4", "sessions": 9800, "crashes": 22},
     {"day": "J1", "platform": "Android", "version": "3.4", "sessions": 12000, "crashes": 36},
