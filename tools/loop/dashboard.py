@@ -168,6 +168,22 @@ def state(wt):
     out["git"] = {"branch": branch, "origin_main": origin,
                   "log": [dict(zip(["sha", "at", "msg"], l.split("\t"))) for l in log.splitlines() if l]}
 
+    # Travaux en cours (porte, publication, capture) et état de publication de la dernière fonctionnalité.
+    _, ps = sh(["pgrep", "-af", "tools/loop/(gate|publish|app-smoke)\\.sh"])
+    running = sorted({m.group(1) for m in re.finditer(r"tools/loop/(gate|publish|app-smoke)\.sh", ps)})
+    out["running"] = running
+    feats_done = out.get("features") or []
+    if feats_done:
+        last = feats_done[-1]
+        rc_anc, _ = sh(["git", "merge-base", "--is-ancestor", env_value("LOOP_BRANCH", "loop"), "origin/main"], cwd=wt)
+        if "publish" in running:
+            pub = "publication en cours"
+        elif rc_anc == 0:
+            pub = "publiée sur main"
+        else:
+            pub = "fusionnée dans loop, pas encore publiée"
+        out["last_feature"] = {"id": last.get("id"), "name": last.get("name"), "step": last.get("step"), "publication": pub}
+
     snaps = sorted(glob.glob(os.path.join(st, "snapshots", "*.png")), key=os.path.getmtime)
     out["snapshot"] = {"name": os.path.basename(snaps[-1]), "at": int(os.path.getmtime(snaps[-1]))} if snaps else None
     return out
@@ -205,10 +221,10 @@ function quota(name,q){const u=q.used_percentage??null;return `<div>${name} · <
 async function load(){
  let d;try{d=await (await fetch('/api/state',{cache:'no-store'})).json()}catch(x){document.getElementById('top').textContent='serveur injoignable';return}
  if(!d.exists){document.getElementById('m').innerHTML=`<section class="wide">Worktree introuvable : ${e(d.worktree)}</section>`;return}
- const h=d.health;let state=h.dialog?pill('bloquée : boîte de dialogue à valider (tmux attach -t genesis-loop)','bad'):h.stop?pill('STOP posé','bad'):h.paused_until?pill('pause quota jusqu’à '+hm(h.paused_until),'warn'):h.fresh?pill('nouvelle conversation imminente','acc'):!h.loop?pill('boucle arrêtée','bad'):(h.heartbeat_s!=null&&h.heartbeat_s>1800)?pill('inactive depuis '+ago(h.heartbeat_s),'warn'):pill('en marche','ok');
+ const h=d.health;const run=(d.running||[]);let state=run.includes('publish')?pill('publication en cours','acc'):run.includes('app-smoke')?pill('capture de l’app en cours','acc'):run.includes('gate')?pill('porte qualité en cours','acc'):'';state=h.dialog?pill('bloquée : boîte de dialogue à valider (tmux attach -t genesis-loop)','bad'):h.stop?pill('STOP posé','bad'):h.paused_until?pill('pause quota jusqu’à '+hm(h.paused_until),'warn'):h.fresh?pill('nouvelle conversation imminente','acc'):!h.loop?pill('boucle arrêtée','bad'):(h.heartbeat_s!=null&&h.heartbeat_s>1800)?pill('inactive depuis '+ago(h.heartbeat_s),'warn'):(state||pill('en marche','ok'));
  document.getElementById('top').innerHTML=`${state} ${h.supervisor?pill('superviseur actif','ok'):pill('superviseur arrêté','bad')} <span class="muted">· mis à jour ${new Date(d.now*1000).toLocaleTimeString('fr-FR')}</span>`;
  const c=d.current;let html='';
- html+=`<section><h2>Maintenant</h2>${c?`<div style="font-size:16px;font-weight:600">${e(c.id)}</div><div style="margin:6px 0">${stepPill(c.step)} <span class="muted">tentatives ${e(c.attempts)}</span></div><div class="kv"><span class="muted">Tâche</span><span>${e(c.task||'—')}</span><span class="muted">Branche</span><span class="mono">${e(d.git.branch)}</span><span class="muted">Activité</span><span>il y a ${ago(h.heartbeat_s)}</span></div>${c.last.map(r=>`<p class="muted" style="margin:8px 0 0"><b>${e(r.step)}</b> — ${e((r.done||'').slice(0,260))}</p>`).join('')}`:'<p class="muted">Aucune fonctionnalité en cours (entre deux fonctionnalités ou en attente).</p>'}</section>`;
+ html+=`<section><h2>Maintenant</h2>${c?`<div style="font-size:16px;font-weight:600">${e(c.id)}</div><div style="margin:6px 0">${stepPill(c.step)} <span class="muted">tentatives ${e(c.attempts)}</span></div><div class="kv"><span class="muted">Tâche</span><span>${e(c.task||'—')}</span><span class="muted">Branche</span><span class="mono">${e(d.git.branch)}</span><span class="muted">Activité</span><span>il y a ${ago(h.heartbeat_s)}</span></div>${c.last.map(r=>`<p class="muted" style="margin:8px 0 0"><b>${e(r.step)}</b> — ${e((r.done||'').slice(0,260))}</p>`).join('')}`:(()=>{const l=d.last_feature;if(!l)return '<p class="muted">Aucune fonctionnalité.</p>';return `<p class="muted" style="margin:0 0 6px">Entre deux fonctionnalités.</p><div style="font-size:16px;font-weight:600">Dernière : ${e(l.id)}</div><div class="muted">${e(l.name)}</div><div style="margin:6px 0">${stepPill(l.step)} ${pill(l.publication,l.publication.startsWith('publiée')?'ok':'acc')}</div>${h.fresh?'<p class="muted">Prochaine étape : le superviseur relance la boucle dans une conversation neuve (≤ 5 min).</p>':''}${run.length?`<p class="muted">En cours : ${e(run.join(', '))}</p>`:''}`})()}</section>`;
  html+=`<section><h2>Quota et budget</h2>${quota('Fenêtre 5 h',d.quota.five_hour)}${quota('Semaine',d.quota.seven_day)}<div class="kv"><span class="muted">Contrôle</span><span class="mono">${e(d.quota.check)}</span><span class="muted">OpenAI</span><span>${e(d.quota.budget)}</span><span class="muted">origin/main</span><span class="mono">${e(d.git.origin_main)}</span></div></section>`;
  html+=`<section class="wide scroll"><h2>Fonctionnalités</h2><table><tr><th>NNN</th><th>Fonctionnalité</th><th>Jalon</th><th>Étape</th></tr>${(d.features||[]).map(f=>`<tr><td class="mono">${e(f.id)}</td><td>${e(f.name)}</td><td>${e(f.milestone)}</td><td>${stepPill(f.step)}</td></tr>`).join('')}</table></section>`;
  html+=`<section><h2>Questions pour toi (${d.questions.length})</h2>${d.questions.length?`<table>${d.questions.map(q=>`<tr><td class="mono">${e(q.id)}</td><td>${e(q.question)}<div class="muted">${e(q.due)}</div></td></tr>`).join('')}</table>`:'<p class="muted">Aucune.</p>'}</section>`;
