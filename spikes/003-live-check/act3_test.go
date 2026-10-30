@@ -249,8 +249,4 @@ func TestAct3WaitPredicates(t *testing.T) {
 	if act2Done(act1Msgs(), t3Play2) {
 		t.Error("l'acte 1 ne doit pas valoir acte 2")
 	}
-	spoken := []received{msg("transcript", 1000, map[string]any{"role": "ai", "text": "a"})}
-	if quietAI(spoken, 3500, 3000) || !quietAI(spoken, 4100, 3000) || !quietAI(nil, 10, 3000) {
-		t.Error("silence de la voix mal évalué")
-	}
 }

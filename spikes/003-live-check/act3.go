@@ -18,14 +18,16 @@ const (
 // lui-même : instants de la 2e question, du clic et de sa réponse.
 type act3Observations struct {
 	observations
-	Play2UnixMs  int64  // lecture de la 2e question (0 = jamais jouée)
-	ClickUnixMs  int64  // juste avant l'envoi du POST /canvas/actions (0 = jamais envoyé)
-	RespUnixMs   int64  // réception de la réponse HTTP
-	ClickStatus  int    // 0 si erreur réseau
-	ClickBody    string // corps de la réponse (borné), secret masqué à l'affichage
-	ClickErr     string
-	DeleteUnixMs int64
-	Aborted      string // raison d'un arrêt anticipé (délai d'attente d'un acte), vide sinon
+	Play2UnixMs   int64  // lecture de la 2e question (0 = jamais jouée)
+	ClickUnixMs   int64  // juste avant l'envoi du POST /canvas/actions (0 = jamais envoyé)
+	RespUnixMs    int64  // réception de la réponse HTTP
+	ClickStatus   int    // 0 si erreur réseau
+	ClickBody     string // corps de la réponse (borné), secret masqué à l'affichage
+	ClickErr      string
+	ClickAttempts int      // nombre d'envois du clic (le premier compris)
+	ClickCodes    []string // code de chaque réponse, par exemple « 409 busy » ou « 202 »
+	DeleteUnixMs  int64
+	Aborted       string // raison d'un arrêt anticipé (délai d'attente d'un acte), vide sinon
 }
 
 // act3Criterion est le verdict d'un critère ; Informative = rapporté sans faire échouer l'essai.
@@ -46,6 +48,8 @@ type act3Summary struct {
 	CostUSD              float64         `json:"estimated_cost_usd"`
 	ClickStatus          int             `json:"click_status"`
 	ClickBody            string          `json:"click_body,omitempty"`
+	ClickAttempts        int             `json:"click_attempts"`
+	ClickCodes           []string        `json:"click_codes,omitempty"`
 	ClickToPlanMs        int64           `json:"click_to_plan_ms"`
 	ClickToWorkingMs     int64           `json:"click_to_working_ms"`
 	ClickToStatusMs      int64           `json:"click_to_blocked_ms"`
@@ -154,14 +158,53 @@ func act2Done(ms []received, sinceMs int64) bool {
 	return true
 }
 
-// quietAI : aucune parole de l'IA depuis quietMs (la voix a fini de commenter l'acte précédent).
-func quietAI(ms []received, nowMs, quietMs int64) bool {
-	for _, r := range ms {
-		if _, ai := aiTextOf(r); ai && nowMs-r.UnixMs < quietMs {
-			return false
+// delegationSettled : la délégation en cours est réellement terminée. Tous les agents du dernier
+// plan sont completed, puis la voix a fini de commenter : au moins un transcript ai reçu après ce
+// plan et un silence de settleMs depuis le dernier ; si la voix ne dit rien, on attend
+// commentaryWaitMs depuis la fin des agents (elle peut légitimement se taire).
+func delegationSettled(ms []received, nowMs, settleMs, commentaryWaitMs int64) bool {
+	last := -1
+	for i, r := range ms {
+		if r.Env.Type == "plan" {
+			last = i
 		}
 	}
-	return true
+	if last < 0 {
+		return false
+	}
+	planAt := ms[last].UnixMs
+	selected, _ := planOf(ms[last])
+	if len(selected) == 0 {
+		return false
+	}
+	doneAt := map[string]int64{}
+	var lastAI int64 = -1
+	for _, r := range ms[last+1:] {
+		switch r.Env.Type {
+		case "agent.activity":
+			if a := activityOf(r); a.State == "completed" {
+				doneAt[a.Agent] = r.UnixMs
+			}
+		case "transcript":
+			if _, ai := aiTextOf(r); ai && r.UnixMs >= planAt && r.UnixMs > lastAI {
+				lastAI = r.UnixMs
+			}
+		}
+	}
+	var endAt int64
+	for _, a := range selected {
+		at, ok := doneAt[a]
+		if !ok {
+			return false
+		}
+		if at > endAt {
+			endAt = at
+		}
+	}
+	if lastAI >= 0 {
+		return nowMs-lastAI >= settleMs
+	}
+	return nowMs-endAt >= commentaryWaitMs
 }
 
 func lastUsageSeconds(ms []received) (float64, bool) {
@@ -231,17 +274,26 @@ func summarizeAct3(o act3Observations) act3Summary {
 	add(checkAct2Phase(p2, o.Play2UnixMs > 0))
 
 	// (a) clic.
+	s.ClickAttempts, s.ClickCodes = o.ClickAttempts, o.ClickCodes
+	if s.ClickAttempts == 0 && o.ClickStatus != 0 {
+		s.ClickAttempts = 1
+	}
+	codes := strings.Join(s.ClickCodes, ", ")
 	click := act3Criterion{Name: "(a) POST /canvas/actions -> 202", Evaluated: o.ClickUnixMs > 0 || o.ClickErr != ""}
 	switch {
 	case o.ClickErr != "":
-		click.Detail = "erreur réseau : " + maskSecret(o.ClickErr, o.Secret)
+		click.Detail = fmt.Sprintf("erreur réseau à l'essai %d : %s", max(s.ClickAttempts, 1), maskSecret(o.ClickErr, o.Secret))
 	case o.ClickUnixMs == 0:
 		click.Detail = "clic non envoyé"
 	case o.ClickStatus == 202:
 		click.OK = true
-		click.Detail = "HTTP 202"
+		click.Detail = fmt.Sprintf("HTTP 202 à l'essai %d/%d", s.ClickAttempts, clickMaxAttempts)
+		if codes != "" {
+			click.Detail += " (codes : " + codes + ")"
+		}
 	default:
-		click.Detail = fmt.Sprintf("HTTP %d attendu 202 (corps %q)", o.ClickStatus, s.ClickBody)
+		click.Detail = fmt.Sprintf("HTTP %d attendu 202 après %d essais (codes : %s ; corps %q)",
+			o.ClickStatus, s.ClickAttempts, codes, s.ClickBody)
 	}
 	add(click)
 	if !click.OK {
@@ -482,6 +534,7 @@ func (s act3Summary) render() string {
 	fmt.Fprintf(&b, "durée de session facturée estimée: %.1f s (source: %s) ; coût estimé: %.4f $ (hors TTS)\n",
 		s.BilledSeconds, s.BilledSource, s.CostUSD)
 	fmt.Fprintf(&b, "clic: HTTP %d %s\n", s.ClickStatus, s.ClickBody)
+	fmt.Fprintf(&b, "clic, essais: %d (codes : %s)\n", s.ClickAttempts, strings.Join(s.ClickCodes, ", "))
 	fmt.Fprintf(&b, "délai clic -> plan: %s\n", msOrNA(s.ClickToPlanMs))
 	fmt.Fprintf(&b, "délai clic -> Livraison working: %s\n", msOrNA(s.ClickToWorkingMs))
 	fmt.Fprintf(&b, "délai clic -> décision Bloquée (a2ui): %s\n", msOrNA(s.ClickToStatusMs))

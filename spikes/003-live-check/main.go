@@ -183,7 +183,8 @@ func main() {
 	file2 := flag.String("file2", "", "Ogg/Opus de la 2e question (act3)")
 	clickWindow := flag.Duration("click-window", 20*time.Second, "act3 : observation après le clic")
 	actTimeout := flag.Duration("act-timeout", 60*time.Second, "act3 : attente maximale de la fin de chaque acte")
-	settle := flag.Duration("settle", 4*time.Second, "act3 : silence de la voix exigé avant la 2e question et avant le clic")
+	settle := flag.Duration("settle", 4*time.Second, "act3 : silence de la voix exigé après son dernier commentaire, avant la 2e question et avant le clic")
+	commentaryWait := flag.Duration("commentary-wait", 8*time.Second, "act3 : attente maximale d'un commentaire vocal après la fin des agents (la voix peut se taire)")
 	maxSession := flag.Duration("max-session", 4*time.Minute, "act3 : plafond dur de la durée de la session")
 	flag.Parse()
 	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" && *scenario != "act3" {
@@ -365,7 +366,7 @@ func main() {
 	if *scenario == "act3" {
 		capCtx, capCancel := context.WithTimeout(ctx, *maxSession)
 		a3 = runAct3(capCtx, act3Params{j: j, filtered: filtered, pl: pl, pk2: pk2, baseURL: baseURL,
-			actTimeout: *actTimeout, settle: *settle, clickWindow: *clickWindow})
+			actTimeout: *actTimeout, settle: *settle, commentaryWait: *commentaryWait, clickWindow: *clickWindow})
 		capCancel()
 	} else {
 		select {
