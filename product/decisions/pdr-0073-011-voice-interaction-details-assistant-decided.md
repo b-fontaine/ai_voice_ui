@@ -24,7 +24,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 | Id | Décision |
 |---|---|
 | **D1** | **Événement `voice.interrupted {at_ms}`** sur l'app-channel, un seul type nouveau ; il sert au « Stop » détecté (pdr-0069) et déclenche la coupure locale, l'orbe « Interrompue » puis « Écoute » et la troncature de la réplique. |
-| **D2** | **Détecteur de mots d'arrêt** : correspondance sur mots entiers, fenêtre glissante de 6 mots, anti-rebond configurable ; liste injectée (`VOICE_STOP_WORDS`), jamais codée en dur. |
+| **D2** | **Détecteur de mots d'arrêt** (amendé par la revue du code, R1-R2) : le mot d'arrêt doit être le **premier mot significatif** d'un énoncé d'au plus `VOICE_STOP_MAX_WORDS` mots (4 par défaut) ; énoncé = suite de deltas dont l'écart de `start_ms` reste sous `VOICE_STOP_UTTERANCE_GAP` ; confirmé seulement à une ponctuation terminale, à `VOICE_STOP_SETTLE` sans nouveau delta ou à l'ouverture d'un nouvel énoncé (jamais sur une simple frontière de mot) ; candidat écarté dès que le nombre de mots dépasse le maximum ; anti-rebond sur le `start_ms` du delta déclencheur ; une demande réduite à des mots d'arrêt n'est jamais planifiée (`VOICE_STOP_SPAN` borne l'écart d'une demande vide) ; liste injectée (`VOICE_STOP_WORDS`, liste vide = détecteur coupé), jamais codée en dur. |
 | **D3** | **Annulation sans fermeture** : `Interrupt` du port des délégations, époque et contexte annulé par cause (pas de verrou du canevas tenu pendant l'annulation) ; les actions `act-<n>` ne sont pas annulées ; le statut d'agent `canceled`, réservé au contrat depuis 004, est désormais émis. Les surfaces complètes restent (RG-14). |
 | **D4** | **Focus** : métadonnée A2A `genesis/focus` (liste fermée : plateforme, comparaison), l'orchestrateur la tient à partir de `genesis/intent` renvoyée par les agents réussis du canevas ; les agents restent sans état. |
 | **D5** | **Motif des refus** dans le journal de l'orchestrateur seulement ; le `detail` d'`agent.activity` reste l'ensemble fermé (« hors périmètre »). |
@@ -42,3 +42,4 @@ Le mot-clé déclenche à tort en répétition, ou la piste distante ne se coupe
 |---|---|---|
 | 2026-10-30 | Acceptée (délégation pdr-0062). | Assistant |
 | 2026-10-30 | Amendée par la revue du plan (D3, D4, D7). Q-77 ouverte (déclencheur sur prise de parole). | Assistant |
+| 2026-10-30 | Amendée par la revue du code : D2 (règle du premier mot significatif et `MaxWords` effectif mot à mot, `VOICE_STOP_SPAN`). Le client ignore une délégation datée du « Stop » pour rétablir la voix (`GENESIS_INTERRUPT_STOP_SPAN_MS`). | Assistant |
