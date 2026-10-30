@@ -54,13 +54,10 @@ const ScopeReasonKey = "genesis/scopeReason"
 // scopeReasons est la liste blanche des motifs de refus d'un agent.
 var scopeReasons = []string{"version", "two_platforms", "compare_without_platform", "compare_unavailable"}
 
-// Listes blanches de l'intention renvoyée par un agent (valeurs fermées, pdr-0071) :
-// les plateformes et la version de comparaison du jeu de données de la démo. Une
-// valeur hors liste fait écarter toute l'intention (le focus reste inchangé).
-var (
-	intentPlatforms = []string{"", "Android", "iOS"}
-	intentCompareTo = []string{"", "3.3"}
-)
+// Forme admise des valeurs de l'intention renvoyée par un agent (pdr-0071) : l'adaptateur
+// ne valide que la forme (longueur et jeu de caractères fermés) ; les agents restent
+// seuls juges des valeurs (plateformes, versions du jeu de données).
+const intentValueMaxRunes = 16
 
 // cancelTimeout borne l'appel CancelTask, émis avec un contexte neuf.
 const cancelTimeout = time.Second
@@ -544,8 +541,9 @@ func (s *stream) cancelRemote() {
 }
 
 // intentFrom lit l'intention dans les metadata du message de l'état completed. Elle
-// n'est rendue que si elle est entièrement valide : exactement les champs platform et
-// compareTo, chacun chaîne de la liste blanche. Sinon nil (le focus reste inchangé).
+// n'est rendue que si elle est bien formée : exactement les champs platform et
+// compareTo, chacun chaîne de 0 à 16 runes parmi [A-Za-z0-9.]. Sinon nil (le focus
+// reste inchangé).
 func intentFrom(msg *a2a.Message) *port.Focus {
 	if msg == nil {
 		return nil
@@ -556,10 +554,24 @@ func intentFrom(msg *a2a.Message) *port.Focus {
 	}
 	platform, okP := raw["platform"].(string)
 	compareTo, okC := raw["compareTo"].(string)
-	if !okP || !okC || len(raw) != 2 || !slices.Contains(intentPlatforms, platform) || !slices.Contains(intentCompareTo, compareTo) {
+	if !okP || !okC || len(raw) != 2 || !intentValueWellFormed(platform) || !intentValueWellFormed(compareTo) {
 		return nil
 	}
 	return &port.Focus{Platform: platform, CompareTo: compareTo}
+}
+
+// intentValueWellFormed dit si v a la forme d'une valeur d'intention : au plus
+// intentValueMaxRunes runes, toutes dans [A-Za-z0-9.].
+func intentValueWellFormed(v string) bool {
+	if utf8.RuneCountInString(v) > intentValueMaxRunes {
+		return false
+	}
+	for _, r := range v {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '.' {
+			return false
+		}
+	}
+	return true
 }
 
 // scopeReasonFrom lit le motif de refus dans les metadata du message de l'état rejected ;

@@ -17,7 +17,7 @@ type surface struct {
 	owner    string
 	taskID   string
 	children map[string][]string // identifiant de composant -> enfants référencés
-	hasData  bool                // l'objet entier « /<surface> » du data model a été écrit
+	hasData  bool                // le data model entier a été écrit (path absent, « / » ou « /<surface> »)
 }
 
 type task struct {
@@ -91,7 +91,8 @@ func (r *Registry) Apply(owner, taskID string, op Operation) error {
 	case DeleteSurface:
 		delete(r.surfaces, op.SurfaceID)
 	case UpdateDataModel:
-		if op.DataPath == "/"+op.SurfaceID {
+		// Un path absent ou « / » écrit le modèle entier ; « /<surface> » aussi.
+		if op.DataPath == "" || op.DataPath == "/" || op.DataPath == "/"+op.SurfaceID {
 			s.hasData = true
 		}
 	case UpdateComponents:
@@ -113,7 +114,9 @@ func (r *Registry) Apply(owner, taskID string, op Operation) error {
 
 // Complete vérifie, en fin de tâche, que chaque surface créée par la tâche et
 // toujours active a un composant root et que toutes ses références d'enfants
-// sont résolues.
+// sont résolues. Elle n'exige PAS l'écriture du data model (hasData), contrairement
+// à surface.complete (arrêt, RG-14) : une surface sans données finit la tâche sans
+// erreur, mais serait retirée à l'arrêt.
 func (r *Registry) Complete(taskID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

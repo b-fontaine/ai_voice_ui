@@ -375,3 +375,19 @@ func TestActiveForListsOnlyOwnedSurfacesSorted(t *testing.T) {
 		t.Fatalf("après deleteSurface : ActiveFor(a) = %v", got)
 	}
 }
+
+// Un updateDataModel sans path, ou au path « / », écrit le modèle entier : la surface
+// est alors complète à l'arrêt (R8).
+func TestCancelCompensationWholeModelWriteCompletesSurface(t *testing.T) {
+	for name, path := range map[string]string{"path absent": "", "racine": "/"} {
+		t.Run(name, func(t *testing.T) {
+			r := newRegistry(t)
+			_ = r.Apply("a", "t", create("s"))
+			_ = r.Apply("a", "t", update("s", []string{"root"}, nil))
+			_ = r.Apply("a", "t", a2ui.Operation{Kind: a2ui.UpdateDataModel, SurfaceID: "s", DataPath: path})
+			if got := r.CancelCompensation("t"); len(got) != 0 {
+				t.Fatalf("écriture entière du modèle : %v, attendu aucune compensation", got)
+			}
+		})
+	}
+}
