@@ -26,5 +26,5 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## Clôture
 - [x] T90 `tools/loop/gate.sh --full` vert (Flutter + Go)
-- [ ] T91 Revue architect-reviewer (mode CODE) et refactorisations par lots
+- [x] T91 Revue architect-reviewer (mode CODE) et refactorisations par lots
 - [ ] T92 Vérification : `gate --full`, `app-smoke.sh` (capture de l'acte 3 à lire), essai réel unique si le budget le permet (Q-75) ; clôture : docs `product/` (catalogue, jeu de données, agents-protocols, app-channel-contract, security, backend, frontend-screen, roadmap, backlog, requirements FR-08 livrée), note `knowledge/` sur la voix hors délégation, `specs/progress.md`, `publish.sh`
