@@ -30,7 +30,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [x] T26 Flutter — états visuels de `top_bar/voice_orb.dart` (« Interrompue »), orbe à 0 pendant l'interruption · test de widget
 
 ## Clôture
-- [ ] T89 session principale — `docker-compose.yaml` (variables `VOICE_STOP_*`, `REQUEST_WINDOW_*`, phrases `stopped`) avant T90
+- [x] T89 session principale — `docker-compose.yaml` (variables `VOICE_STOP_*`, `REQUEST_WINDOW_*`, phrases `stopped`) avant T90
 - [ ] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer + refactorisations
 - [ ] T92 Vérification (`app-smoke`), docs `product/` (contrat app-channel, barge-in.feature, requirements FR-13 à FR-19), `specs/progress.md`, fusion et `publish.sh`
