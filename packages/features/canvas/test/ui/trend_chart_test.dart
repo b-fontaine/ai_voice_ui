@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:feature_canvas/src/catalog/trend_chart_painter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
@@ -235,6 +236,27 @@ void main() {
     }
     expect(allowed, contains(painter.thresholdColor));
     expect(allowed, contains(painter.axisColor));
+  });
+
+  testWidgets('acte 2 : le titre et la légende s affichent en entier', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    final RenderParagraph title = tester.renderObject<RenderParagraph>(
+      h.inCell(find.text('Taux de crash du jour')),
+    );
+    expect(title.didExceedMaxLines, isFalse, reason: 'titre coupé');
+    for (final String name in <String>['Android 3.4', 'Android 3.3']) {
+      final RenderParagraph p = tester.renderObject<RenderParagraph>(
+        h.inCell(find.text(name)),
+      );
+      expect(p.didExceedMaxLines, isFalse, reason: 'légende coupée : $name');
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('acte 2 : une entrée de légende par série, couleurs stables', (

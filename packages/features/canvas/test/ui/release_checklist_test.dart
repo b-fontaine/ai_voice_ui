@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/widgets.dart' show Key, Size;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
@@ -213,6 +214,36 @@ void main() {
       expect(h.engineErrors, isEmpty);
     },
   );
+
+  testWidgets('acte 2 : les valeurs qui citent la 3.3 ne sont jamais coupées', (
+    tester,
+  ) async {
+    // La cellule réelle de 1920 x 1080 fait environ 900 px utiles avec la
+    // vraie police ; Ahem est environ deux fois plus large, d'où 1200 px
+    // (la fenêtre de test par défaut, 800 px, serait plus étroite).
+    tester.view.physicalSize = const Size(1200, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final h = CatalogHarness(
+      'checklist',
+      'checklist',
+      size: const Size(1200, 255),
+    );
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    for (final String value in <String>[
+      '99,43 % (3.3 : 99,71 %)',
+      '30 % (3.3 : 14 %)',
+    ]) {
+      final RenderParagraph p = tester.renderObject<RenderParagraph>(
+        h.inCell(find.text(value)),
+      );
+      expect(p.didExceedMaxLines, isFalse, reason: 'valeur coupée : $value');
+    }
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('correction iOS : GO iOS rendu sans état neutre', (tester) async {
     final h = CatalogHarness('checklist', 'checklist');

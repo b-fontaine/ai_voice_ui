@@ -3,6 +3,7 @@ import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
+import 'text_metrics.dart';
 import 'trend_chart_painter.dart';
 
 /// `TrendChart` : courbes par série (3.3 / 3.4), seuil, jours, légende.
@@ -118,29 +119,18 @@ class _TrendView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  trend.title,
-                  style: theme.label.copyWith(color: theme.textPrimary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+          _TrendHeader(
+            title: trend.title,
+            legend: <_LegendEntry>[
               for (final TrendSeries s in series)
-                Flexible(
-                  child: _LegendEntry(
-                    key: Key('trend-series-${s.name}'),
-                    color: s.color,
-                    text: s.name,
-                  ),
+                _LegendEntry(
+                  key: Key('trend-series-${s.name}'),
+                  color: s.color,
+                  text: s.name,
                 ),
-              Flexible(
-                child: _LegendEntry(
-                  color: theme.blockingForeground,
-                  text: 'Seuil ${_pct(trend.thresholdPct)}',
-                ),
+              _LegendEntry(
+                color: theme.blockingForeground,
+                text: 'Seuil ${_pct(trend.thresholdPct)}',
               ),
             ],
           ),
@@ -177,27 +167,74 @@ class _LegendEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(left: 20),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            text,
+            style: theme.body,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              text,
-              style: theme.body,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+/// En-tête : le titre d'abord, jamais coupé. La légende le suit sur la même
+/// ligne quand tout tient, sinon elle passe à la ligne suivante.
+class _TrendHeader extends StatelessWidget {
+  const _TrendHeader({required this.title, required this.legend});
+
+  static const double _gap = 20;
+
+  final String title;
+  final List<_LegendEntry> legend;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    final TextStyle titleStyle = theme.label.copyWith(color: theme.textPrimary);
+    final Text titleText = Text(
+      title,
+      style: titleStyle,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Largeur d'une entrée : pastille 16 + espace 8 + texte.
+        double needed = measureTextWidth(context, title, titleStyle).ceil() + 1;
+        for (final _LegendEntry e in legend) {
+          needed += _gap + 24 + measureTextWidth(context, e.text, theme.body);
+        }
+        if (needed.ceil() + 1 <= constraints.maxWidth) {
+          return Row(
+            children: <Widget>[
+              Expanded(child: titleText),
+              for (final _LegendEntry e in legend) ...<Widget>[
+                const SizedBox(width: _gap),
+                e,
+              ],
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            titleText,
+            Wrap(spacing: _gap, children: legend),
+          ],
+        );
+      },
     );
   }
 }
