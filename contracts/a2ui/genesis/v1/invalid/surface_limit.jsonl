@@ -1,0 +1,7 @@
+{"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s2","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s3","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s4","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s5","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s6","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","createSurface":{"surfaceId":"s7","catalogId":"${CATALOG_ID}","sendDataModel":false}}

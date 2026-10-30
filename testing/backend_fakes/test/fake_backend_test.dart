@@ -282,6 +282,154 @@ void main() {
     );
     expect(jsonEncode(a2ui.last), contains('99,57 %'));
   });
+
+  group('acte 1 genesis (fixtures du contrat)', () {
+    Future<WebSocket> connect(List<Map<String, Object?>> into) async {
+      final socket = await WebSocket.connect(
+        'ws://127.0.0.1:${backend.port}/app?session=sess-1',
+      );
+      socket.listen(
+        (m) =>
+            into.add(Map<String, Object?>.from(jsonDecode(m as String) as Map)),
+      );
+      return socket;
+    }
+
+    test('le catalogId par défaut est celui de la configuration', () {
+      expect(
+        backend.catalogId,
+        'https://genesis-canvas.example/a2ui/catalogs/genesis/v1',
+      );
+    });
+
+    test(
+      'plan, trois working, douze messages a2ui dans l ordre, trois completed',
+      () async {
+        backend.catalogId = 'https://exemple.test/catalogue/v9';
+        await read(await post('v=0'));
+        await backend.emitGenesisAct1('sess-1');
+
+        final received = <Map<String, Object?>>[];
+        final socket = await connect(received);
+        // 2 session.state + 1 plan + 3 working + 12 a2ui + 3 completed.
+        await _until(() => received.length >= 21);
+
+        final act = received.skip(2).toList();
+        expect(act.first['type'], 'plan');
+        expect(act.first['data'], <String, Object?>{
+          'delegation': 'deleg_1',
+          'selected': <Object?>['Qualité', 'Voix du client', 'Livraison'],
+          'idle': <Object?>[],
+        });
+        final states = act
+            .where((e) => e['type'] == 'agent.activity')
+            .map((e) => (e['data']! as Map)['state'])
+            .toList();
+        expect(states, <Object?>[
+          'working',
+          'working',
+          'working',
+          'completed',
+          'completed',
+          'completed',
+        ]);
+        expect(
+          act.sublist(1, 4).every((e) => e['type'] == 'agent.activity'),
+          isTrue,
+        );
+        expect(act.sublist(4, 16).every((e) => e['type'] == 'a2ui'), isTrue);
+        expect(
+          act.sublist(16).every((e) => e['type'] == 'agent.activity'),
+          isTrue,
+        );
+
+        final a2ui = act.sublist(4, 16);
+        String op(Map<String, Object?> e) =>
+            (e['data']! as Map).keys.firstWhere((k) => k != 'version')
+                as String;
+        String surface(Map<String, Object?> e) =>
+            ((e['data']! as Map)[op(e)] as Map)['surfaceId'] as String;
+        expect(a2ui.map(surface).toSet().toList(), <String>[
+          'kpi',
+          'trend',
+          'reviews',
+          'checklist',
+        ]);
+        for (var i = 0; i < 12; i++) {
+          expect(
+            op(a2ui[i]),
+            const ['createSurface', 'updateComponents', 'updateDataModel'][i %
+                3],
+          );
+        }
+        expect(a2ui.map((e) => e['agent']).toSet(), <Object?>{
+          'Qualité',
+          'Voix du client',
+          'Livraison',
+        });
+        expect(
+          a2ui.every((e) => (e['task'] as String).startsWith('task_')),
+          isTrue,
+        );
+
+        final all = jsonEncode(received);
+        expect(all, isNot(contains(r'${CATALOG_ID}')));
+        expect(
+          RegExp('https://exemple.test/catalogue/v9').allMatches(all),
+          hasLength(4),
+        );
+        await socket.close();
+      },
+    );
+
+    test(
+      'POST /canvas/reset : 204, requête comptée, deleteSurface émis triés',
+      () async {
+        await read(await post('v=0'));
+        await backend.emitGenesisAct1('sess-1');
+        final received = <Map<String, Object?>>[];
+        final socket = await connect(received);
+        await _until(() => received.length >= 21);
+        expect(backend.canvasResets, 0);
+
+        final request = await http.postUrl(
+          Uri.parse('${backend.url}/canvas/reset'),
+        );
+        request.headers.set('Content-Type', 'application/json');
+        final response = await request.close();
+        await response.drain<void>();
+        expect(response.statusCode, 204);
+        expect(backend.canvasResets, 1);
+
+        await _until(() => received.length >= 25);
+        final deletes = received.skip(21).toList();
+        expect(deletes.map((e) => e['type']), everyElement('a2ui'));
+        expect(deletes.map((e) => e['agent']), everyElement('orchestrateur'));
+        expect(
+          deletes.map(
+            (e) => (((e['data']! as Map)['deleteSurface']) as Map)['surfaceId'],
+          ),
+          <Object?>['checklist', 'kpi', 'reviews', 'trend'],
+        );
+        expect(
+          deletes.every((e) => (e['data']! as Map)['version'] == 'v0.9'),
+          isTrue,
+        );
+
+        // Idempotent : plus aucune surface, 204 et un second comptage.
+        final again = await http.postUrl(
+          Uri.parse('${backend.url}/canvas/reset'),
+        );
+        final r2 = await again.close();
+        await r2.drain<void>();
+        expect(r2.statusCode, 204);
+        expect(backend.canvasResets, 2);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(received.length, 25);
+        await socket.close();
+      },
+    );
+  });
 }
 
 Future<void> _until(bool Function() condition) async {
