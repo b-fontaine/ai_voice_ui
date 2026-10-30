@@ -2,8 +2,8 @@
 
 - **Étape** : Refactorisation
 - **Tentatives** : 1/3
-- **Tâche en cours** : L3 (R4, Flutter)
-- **Fichiers touchés** (tâche en cours) : packages/features/protocol_feed, apps/genesis_canvas/lib/widgets/protocol_panel
+- **Tâche en cours** : L4 (R5, Flutter)
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas/lib/src/catalog, apps/genesis_canvas/lib/widgets/agents_rail
 - **Branche** : feat/007-j3-act1-frontend
 - **Backlog** : EP-03, EP-04, EP-05, EP-08
 - **Mis à jour** : 2026-10-30
@@ -35,7 +35,7 @@ Architecture conforme (Clean + FSD, `getIt` confiné, pas de Cubit, ordre de `_s
 - [x] **R1 important (Flutter)** — désynchronisation app/backend sur un 409 : le bouton n'est inactif que si un agent est `working` alors que le backend répond `busy` pendant tout `Pipeline.Run` (étape `plan`, agents `pending`, commentaire final). `anyWorking` doit couvrir `pending` ; `_requestBackendReset` réessaie sur `busy` (essais et intervalle injectés par `GenesisConfig`) ; test de page `busy` puis `done` = 2 appels.
 - [x] **R2 important (Flutter)** — `CatalogShelfBloc` ignore `compensations` : après un refus sur une surface active, l'étagère affiche 4/6 pour 3 surfaces (FR-06). Retirer les surfaces compensées ; tests dont « Cleared vide la table interne ».
 - [x] **R3 important (Flutter)** — `surface_exists` détruit une surface valide par compensation (le Go laisse l'état intact) : pas de compensation pour `surface_exists`. Tests validateur + gate.
-- [ ] **R4 important (Flutter)** — le panneau montre le même JSON (`{` puis `"version": "v0.9",`) : stocker le JSON compact du corps de l'opération sans `version`, borné ; test `protocol-json-<n>`.
+- [x] **R4 important (Flutter)** — le panneau montre le même JSON (`{` puis `"version": "v0.9",`) : stocker le JSON compact du corps de l'opération sans `version`, borné ; test `protocol-json-<n>`.
 - [ ] **R5 important (Flutter)** — débordements : `ReleaseChecklist` `ClipRect` cache des lignes (dont une bloquante) → « + N autres critères » ; légende de `TrendChart` sans `Flexible` ; nom d'agent du rail sans ellipse ; tests à données longues/nombreuses.
 - [ ] **R6 mineur (Flutter)** — couleurs `Colors.*` du rail et `fontSize: 28` hors `SceneTheme` (RG-09) ; paires graphiques sur `surface` au test de contraste (3:1, WCAG 1.4.11).
 - [ ] **R7 mineur (Flutter)** — code mort et API réservées aux tests : `keyIndicatorRequiredFields`, flux `validated` en diffusion et `RepositoryProvider<A2uiGate>`, `MessageHighlighted`, `ProtocolPanel.visibleEntries`, `CatalogShelfState.empty()` recopié, paramètre `path` de `boundCatalogItem`, double journal de l'échec de remise à vide, états en `final class` + `@immutable`.
