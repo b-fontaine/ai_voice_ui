@@ -17,7 +17,7 @@ tags: [questions-ouvertes, ecarts, hypotheses, decisions]
 1. **Quand une question est tranchée**, invoquer le skill `product-decide` : il crée un `pdr-NNNN-<slug>` dans [decisions/](../decisions/), qui cite la question.
 2. Passer alors le statut à **« tranchée → pdr-NNNN »** (ou « Sans objet → pdr-NNNN » si une décision rend la question caduque) ; ne jamais supprimer la ligne. Une question qui relève de la logistique ou des supports du talk (salle, son, répétitions, vidéo de secours, slides) passe à **« Gérée par le porteur »** : hors périmètre de l'assistant ([pdr-0027](../decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)).
 3. Mettre à jour les documents qui renvoient à la question (marques « ⚠️ Hypothèse non confirmée »).
-4. Une nouvelle question prend l'id libre suivant (prochain libre : `Q-71`) ; un nouvel écart prend `E23`….
+4. Une nouvelle question prend l'id libre suivant (prochain libre : `Q-73`) ; un nouvel écart prend `E23`….
 5. Le décideur est le porteur, Benoît FONTAINE, sauf mention contraire. L'assistant recommande, le porteur décide (AGENTS.md § 4), sauf **décision contrainte** : l'assistant la tranche (PDR acceptée avec `constraint_basis`) et la signale au porteur, qui peut la contester.
 
 ## Écarts entre sources (règle : la fiche l'emporte, pdr-0017)

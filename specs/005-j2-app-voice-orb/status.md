@@ -1,6 +1,6 @@
 # 005 — État
 
-- **Étape** : Clôture
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | Clôture | docs `product/` mises à jour par `product-steward` (roadmap J2 livré, backlog EP-01-04, `frontend.md` § DI et paquets réels, `security.md` validation client en hypothèse → Q-71, `app-channel-contract.md` § côté client) ; notes `knowledge/` (`di-setup-versions` : `build_runner` ≤ 2.16.1 avec `injectable_generator` 3.1.3 et type fonction non enregistrable ; `rt-graceful-close` : `RTCPeerConnection.close()` ≠ `dispose()`) ; `product_lint` 0 erreur (1 avertissement : `frontend.md` 165 lignes > 150, scission à prévoir), `kb_lint` 0 erreur ; prochain id libre = Q-73 | — |
 | 2026-10-30 | Vérification | `gate.sh --full` VERT (40 contrôles) à `748be0a`, arbre propre ; `app-smoke.sh` OK (compose up, build Linux de l'app avec `flutter_webrtc`, rejeu du scénario `act1-replay`, capture) : orbe au repos, lignes « Vous »/« IA », bouton « Démarrer » désactivé (mode scénario), surface « Sessions sans crash 99,57 % » rendue, conforme à la spec ; **essai réel payant INDISPONIBLE, non compté comme tentative** : carte son présente mais ni `pactl` ni moyen de piloter « Démarrer » ni d'injecter la phrase sans présence humaine (haut-parleurs du porteur à 01 h 40) ; budget disponible (0,33 € / 12 €) ; à faire en répétition avec le porteur (SP-06, J7), avec le contrôle de la sortie propre de la fenêtre (`onExitRequested`) | `.omc/state/loop/snapshots/20261030-014107-act1-replay.png` ; `.omc/state/loop/gates/` dernier `*-full.log` |
 | 2026-10-30 | Refactorisation | `gate.sh --full` unique de l'étape : VERT, 40 contrôles, arbre propre à `748be0a` (HEAD = commit du porteur `perf(loop): porte rapide…` qui ne touche que `tools/loop/verify.sh`, arrivé sur la branche pendant la refactorisation ; non modifié par la boucle) | `.omc/state/loop/gates/` dernier `*-full.log` ; `last_green_sha` = `748be0a` |
 | 2026-10-30 | Refactorisation | lot 5 (tests) : R9 — paquets `testing/voice_fakes` (faux transport unique, `FakeRelay`, `FakeChannel` pilotable, `VoiceHarness`) et `testing/bloc_harness` (`statesAfter`, 3 copies supprimées) ; `StubVoiceSessionBloc` et `_ObservedSession` supprimés, `top_bar_test` et le test de composition réécrits sur de vrais objets et des faux de frontières ; tests avant/après identiques (app 78/78, voice_session 119/119, canvas 10/10, agent_activity 14/14) ; écarts : l'ordre de fermeture est vérifié par un journal (la fin du flux `status` ne peut pas être ordonnée strictement avec la libération de la source) ; `stop` bloqué : deux erreurs bornées observées | `.omc/state/loop/gates/20261030-013652-unit-flutter.log` (VERT, 33 contrôles) |

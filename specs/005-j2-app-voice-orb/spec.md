@@ -28,12 +28,12 @@ Automatisés dans `apps/genesis_canvas/test/acceptance/` (bdd_widget_test). Fron
 - V6 — aucune clé : la configuration ne lit que l'URL du backend (test unitaire de `GenesisConfig`, et revue de code NFR-09).
 
 ## Critères d'acceptation
-- [ ] V1 à V5 automatisés et verts ; V6 en test unitaire
-- [ ] Tests unitaires de chaque unité (entités de session, décodeur d'enveloppes, client WSS, relais SDP, `VoiceSessionBloc`, transcription, activité des agents, orbe)
-- [ ] `tools/loop/gate.sh --full` vert (Flutter et Go inchangés côté Go)
-- [ ] Revue d'architecte : CONFORME (ou refactorisations appliquées)
-- [ ] Aucun `getIt` dans un widget ni un Bloc (contrôle par `grep` dans la revue) ; versions de `flutter_webrtc`, `get_it`, `injectable`, `web_socket_channel`, `http` figées dans `pubspec.lock`
-- [ ] Vérification : capture `app-smoke.sh` (canevas vide + orbe + bouton), puis, si un micro et une sortie audio existent sur la machine de la boucle et que le budget le permet, **un essai réel unique** avec `docker compose up` (délai `delegation` → premier `a2ui` lu dans le journal de l'app) ; sinon indisponibilité notée et essai laissé à la répétition avec le porteur (SP-06)
+- [x] V1 à V5 automatisés et verts ; V6 en test unitaire
+- [x] Tests unitaires de chaque unité (entités de session, décodeur d'enveloppes, client WSS, relais SDP, `VoiceSessionBloc`, transcription, activité des agents, orbe)
+- [x] `tools/loop/gate.sh --full` vert (Flutter et Go inchangés côté Go)
+- [x] Revue d'architecte : CONFORME (ou refactorisations appliquées)
+- [x] Aucun `getIt` dans un widget ni un Bloc, **sauf la page racine de composition** (exception prévue par `frontend.md`, à préciser dans AGENTS.md : Q-72) ; contrôle par `grep` dans la revue ; versions de `flutter_webrtc`, `get_it`, `injectable`, `web_socket_channel`, `http` figées dans `pubspec.lock`
+- [~] Vérification (capture faite et conforme ; **essai réel indisponible, laissé à la répétition avec le porteur**) : capture `app-smoke.sh` (canevas vide + orbe + bouton), puis, si un micro et une sortie audio existent sur la machine de la boucle et que le budget le permet, **un essai réel unique** avec `docker compose up` (délai `delegation` → premier `a2ui` lu dans le journal de l'app) ; sinon indisponibilité notée et essai laissé à la répétition avec le porteur (SP-06)
 
 ## Questions ouvertes
 Aucune bloquante. À signaler au porteur sans bloquer : Q-69 et Q-70 (déjà ouvertes) concernent le comportement de l'app quand une surface partielle disparaît (`deleteSurface` de compensation, géré par le `CanvasBloc`) et la survie du canevas entre sessions voix ; en J2 l'app **conserve** le canevas à l'arrêt de la session.

@@ -3,12 +3,12 @@ id: p-ar-app-channel-contract
 title: Contrat v1 de l'app-channel (implémenté par 003 et 004)
 area: architecture
 status: draft
-updated: 2026-10-29
-sources: [specs/003-j2-voice-relay-backend/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, knowledge:genui-a2ui-messages, knowledge:genui-a2ui-security, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-sideband]
-links: [p-ar-agents-protocols, p-ar-backend, p-ar-security, p-ar-replay, p-rm-open-questions, pdr-0019-six-limit-applies-to-surfaces, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-graceful-close, genui-a2ui-messages, genui-a2ui-security, proto-a2a-task-lifecycle, ma-real-tool-results]
+updated: 2026-10-30
+sources: [specs/005-j2-app-voice-orb/status.md, specs/003-j2-voice-relay-backend/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, knowledge:genui-a2ui-messages, knowledge:genui-a2ui-security, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-sideband]
+links: [p-ar-frontend, pdr-0038-latency-measured-on-app-clock, p-ar-agents-protocols, p-ar-backend, p-ar-security, p-ar-replay, p-rm-open-questions, pdr-0019-six-limit-applies-to-surfaces, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-graceful-close, genui-a2ui-messages, genui-a2ui-security, proto-a2a-task-lifecycle, ma-real-tool-results]
 tags: [protocoles, app-channel, a2ui, wss, contrat, agent-activity, validation]
 ---
-# Contrat v1 de l'app-channel (fonctionnalités 003 et 004)
+# Contrat v1 de l'app-channel (fonctionnalités 003, 004 et côté client 005)
 
 **En bref.** Ce que le backend expose réellement à l'app : routes HTTP et WSS `GET /app`, enveloppe `{v:1, type, session, t_ms, data}` et 7 types de messages. 003 (2026-10-29) a livré la voix (`orb.level`, `transcript`, `session.state`, `usage`) ; 004 (2026-10-29, vérifié en réel) ajoute l'A2UI relayé, l'activité des agents et la délégation. Ancrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md), [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md), [pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md). Contexte et séquences : [p-ar-agents-protocols](agents-protocols.md).
 
@@ -78,6 +78,17 @@ Les agents produisent l'A2UI ; l'orchestrateur la **valide et la relaie** ([pdr-
 | Fin de tâche | chaque surface créée a un `root` et toutes ses références sont résolues, sinon échec (le rendu progressif est valide en v0.9) |
 
 Codes d'erreur fermés, jamais exposés à l'app ni à la voix. Catalogue : `A2UI_CATALOG_ID` vaut en J2 l'URI du catalogue « basic » v0.9, le catalogue fermé `genesis` (6 composants, [pdr-0014](../decisions/pdr-0014-six-component-catalog.md)) arrive en J3 (Q-44 ouverte).
+
+## Côté client (005, 2026-10-30)
+
+Implémenté dans `shared/backend_channel` et `features/voice_session` ([p-ar-frontend](frontend.md)).
+
+| Point | Comportement |
+|---|---|
+| Ouverture | le client ouvre le WSS **après** le 200 du relais, avec `?session=<X-Session-Id>` ; **sans en-tête `Origin`**, hôte tel que configuré (`GENESIS_BACKEND_URL`, origine seule) ; le backlog rejoue ce qui a été publié entre l'answer et la connexion (hors `orb.level`) |
+| Messages illisibles | type inconnu ou enveloppe illisible : **ignoré et consigné** (phrases fermées, jamais le contenu), jamais fatal ; un message A2UI refusé par le décodeur est écarté de la même façon |
+| Perte du canal | événement `ChannelLost` (le flux d'événements n'émet jamais d'erreur) ; `closed` du backend de la session courante : libération locale sans `DELETE` ; perte du WSS : `DELETE` au mieux puis libération (pas de session facturée sans visuels) |
+| Journal local | `EnvelopeLog` (`GENESIS_APP_LOG`, inactif sans chemin) : format du journal backend (enveloppe sans `v`, mêmes noms de champs) + `unix_ms` lu sur l'**horloge de l'app** à la réception ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)), jamais le `t_ms` du backend ; **base du rejeu (J6)** |
 
 ## Non couvert (à venir)
 

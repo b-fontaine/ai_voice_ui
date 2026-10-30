@@ -3,8 +3,8 @@ id: rt-graceful-close
 title: Fermeture propre d'une session voix
 tags: [pattern, lifecycle, dispose, resources, bloc]
 status: sourced
-updated: 2026-10-26
-sources: [https://developers.openai.com/api/docs/guides/live-conversations.md, https://ai.google.dev/gemini-api/docs/live-session, https://pub.dev/documentation/flutter_webrtc/latest/flutter_webrtc/Helper-class.html]
+updated: 2026-10-30
+sources: [https://github.com/flutter-webrtc/flutter-webrtc/blob/main/lib/src/native/rtc_peerconnection_impl.dart, https://developers.openai.com/api/docs/guides/live-conversations.md, https://ai.google.dev/gemini-api/docs/live-session, https://pub.dev/documentation/flutter_webrtc/latest/flutter_webrtc/Helper-class.html]
 links: [rt-gpt-live-lifecycle, rt-gemini-session-limits, rt-flutter-webrtc-audio-routing, proj-avw-risks, di-dispose-method]
 ---
 # Fermer proprement (et pouvoir redémarrer)
@@ -22,9 +22,11 @@ links: [rt-gpt-live-lifecycle, rt-gemini-session-limits, rt-flutter-webrtc-audio
 1. Pour chaque piste locale : `track.stop()`.
 2. `localStream.dispose()`.
 3. `dataChannel.close()`.
-4. `pc.close()`.
+4. `pc.close()`, puis `pc.dispose()`.
 5. `renderer.srcObject = null` puis `renderer.dispose()`.
 6. Android : `Helper.clearAndroidCommunicationDevice()`.
+
+`close()` et `dispose()` d'un `RTCPeerConnection` sont deux appels natifs distincts (vérifié le 2026-10-30 dans `flutter_webrtc` 1.6.3, `rtc_peerconnection_impl.dart` : `close()` envoie `peerConnectionClose` ; seul `dispose()` annule l'abonnement à l'`EventChannel` et envoie `peerConnectionDispose`). Sans `dispose()`, un pair natif fuit à chaque session.
 
 **Architecture** (opinion, contre les bugs d'ai_voice_widget) :
 - Séparer `stop()` (fin de session, l'objet reste réutilisable) de `dispose()` (fin de vie). Ne pas fermer les `StreamController` dans `stop()`.

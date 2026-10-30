@@ -38,4 +38,4 @@ await pc.setRemoteDescription(RTCSessionDescription(answerSdp, 'answer'));
 ## ⚠️ Pièges
 - Le SDP est échangé en un seul aller-retour HTTP (pas de trickle ICE) : la doc OpenAI demande d'**attendre la fin de la collecte ICE** avant d'envoyer l'offre, et d'envoyer `localDescription` (qui contient les candidats), pas l'`offer` initiale. Le délai réel sur mobile reste à mesurer.
 - Pas de `audio.format` ni de `session.start` (cf. [[rt-gpt-live-webrtc-session]]).
-- Fermer dans l'ordre : `session.close`, `session.closed`, puis arrêt des pistes, `pc.close()`, `dispose()` des renderers.
+- Fermer dans l'ordre : `session.close`, `session.closed`, puis arrêt des pistes, `pc.close()` **puis `pc.dispose()`** (deux appels natifs distincts, [[rt-graceful-close]]), `dispose()` des renderers.
