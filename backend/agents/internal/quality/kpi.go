@@ -53,9 +53,9 @@ func (c *KpiComposer) Compose(ctx context.Context, req kit.Request, ds dataset.D
 	if err != nil {
 		return kit.Composition{}, err
 	}
-	value := dataset.FormatPct(kpi.CrashFreePct)
+	value := dataset.FormatPct(kpi.CrashFreePct, 2)
 	summary := fmt.Sprintf("Sessions sans crash : %s sur 7 jours, seuil %s, %s (marge %s).",
-		value, dataset.FormatPct(kpi.ThresholdPct), kpi.Status, dataset.FormatMargin(kpi.MarginPt))
+		value, dataset.FormatPct(kpi.ThresholdPct, 2), kpi.Status, dataset.FormatMargin(kpi.MarginPt))
 
 	var msgs []map[string]any
 	if !slices.Contains(req.ActiveSurfaces, surfaceID) {

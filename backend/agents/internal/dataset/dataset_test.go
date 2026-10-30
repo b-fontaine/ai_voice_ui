@@ -19,10 +19,10 @@ func TestKpiComputedFromRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CrashFree : %v", err)
 	}
-	if got := dataset.FormatPct(kpi.CrashFreePct); got != "99,57 %" {
+	if got := dataset.FormatPct(kpi.CrashFreePct, 2); got != "99,57 %" {
 		t.Errorf("KPI = %q, attendu %q", got, "99,57 %")
 	}
-	if got := dataset.FormatPct(kpi.ThresholdPct); got != "99,50 %" {
+	if got := dataset.FormatPct(kpi.ThresholdPct, 2); got != "99,50 %" {
 		t.Errorf("seuil = %q, attendu %q", got, "99,50 %")
 	}
 	if got := dataset.FormatMargin(kpi.MarginPt); got != "0,07 pt" {
@@ -40,7 +40,7 @@ func TestKpiComputedFromRows(t *testing.T) {
 		}
 	}
 	kpi2, _ := ds2.CrashFree("3.4")
-	if got := dataset.FormatPct(kpi2.CrashFreePct); got == "99,57 %" {
+	if got := dataset.FormatPct(kpi2.CrashFreePct, 2); got == "99,57 %" {
 		t.Errorf("le KPI n'a pas changé après modification d'une ligne : %q", got)
 	}
 	if kpi2.Status != dataset.StatusValidated {
@@ -125,4 +125,5 @@ func TestDatasetMatchesProductSheet(t *testing.T) {
 	if ds.CrashFreeThresholdPct != 99.50 || ds.RiskMarginPt != 0.10 {
 		t.Errorf("seuils %v / %v, la fiche dit 99,50 et 0,10", ds.CrashFreeThresholdPct, ds.RiskMarginPt)
 	}
+	checkSheetDerivedValues(t, ds)
 }

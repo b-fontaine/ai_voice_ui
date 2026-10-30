@@ -10,13 +10,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 )
 
 //go:embed dataset.json
 var raw []byte
 
-// Statuts d'un critère (fiche, § Règles de calcul et seuils).
+// Libellés français d'un statut de critère (fiche, § Règles de calcul et seuils).
 const (
 	StatusValidated = "validé"
 	StatusAtRisk    = "à risque"
@@ -37,7 +38,15 @@ type Dataset struct {
 	App                   string  `json:"app"`
 	CrashFreeThresholdPct float64 `json:"crashFreeThresholdPct"`
 	RiskMarginPt          float64 `json:"riskMarginPt"`
-	Rows                  []Row   `json:"rows"`
+	// ReviewNegativeMaxPct est le seuil go des avis négatifs (≤ 25 %) ;
+	// ReviewRiskMarginPt la marge sous laquelle le critère est « à risque » (2 pts).
+	ReviewNegativeMaxPct float64 `json:"reviewNegativeMaxPct"`
+	ReviewRiskMarginPt   float64 `json:"reviewRiskMarginPt"`
+
+	Rows       []Row            `json:"rows"`
+	ReviewRows []ReviewRow      `json:"reviews"`
+	Excerpts   []Excerpt        `json:"excerpts"`
+	Changelog  []ChangelogEntry `json:"changelog"`
 }
 
 // Load décode le jeu embarqué ; chaque appel renvoie une copie indépendante.
@@ -46,8 +55,8 @@ func Load() (Dataset, error) {
 	if err := json.Unmarshal(raw, &d); err != nil {
 		return Dataset{}, fmt.Errorf("jeu de données embarqué invalide : %w", err)
 	}
-	if len(d.Rows) == 0 {
-		return Dataset{}, fmt.Errorf("jeu de données embarqué vide")
+	if len(d.Rows) == 0 || len(d.ReviewRows) == 0 || len(d.Changelog) == 0 {
+		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (sessions, avis ou changelog manquant)")
 	}
 	return d, nil
 }
@@ -57,42 +66,129 @@ type KPI struct {
 	CrashFreePct float64 // 100 − Σ crashs ÷ Σ sessions, en %
 	ThresholdPct float64
 	MarginPt     float64 // CrashFreePct − ThresholdPct
-	Status       string
+	Status       string  // libellé français (StatusValidated…)
+	Level        Level   // code fermé ok|risk|blocking
 }
 
 // CrashFree calcule l'indicateur global (toutes plateformes) d'une version, par
 // la moyenne pondérée par les sessions : 100 % − Σ crashs ÷ Σ sessions.
 func (d Dataset) CrashFree(version string) (KPI, error) {
+	return d.CrashFreeByPlatform(version, "")
+}
+
+// CrashFreeByPlatform est CrashFree restreint à une plateforme ; "" = toutes.
+// Le statut est calculé sur la marge non arrondie (A8 c).
+func (d Dataset) CrashFreeByPlatform(version, platform string) (KPI, error) {
 	var sessions, crashes int
 	for _, r := range d.Rows {
-		if r.Version == version {
+		if r.Version == version && (platform == "" || r.Platform == platform) {
 			sessions += r.Sessions
 			crashes += r.Crashes
 		}
 	}
 	if sessions == 0 {
-		return KPI{}, fmt.Errorf("aucune session pour la version %q", version)
+		return KPI{}, fmt.Errorf("aucune session pour la version %q (plateforme %q)", version, platform)
 	}
-	pct := 100 - 100*float64(crashes)/float64(sessions)
+	pct := crashFreePct(sessions, crashes)
 	margin := pct - d.CrashFreeThresholdPct
-	// Les comparaisons se font sur les valeurs arrondies à 0,01 pt, comme l'affichage.
-	roundedMargin := math.Round(margin*100) / 100
-	status := StatusValidated
-	switch {
-	case roundedMargin < 0:
-		status = StatusBlocking
-	case roundedMargin < d.RiskMarginPt:
-		status = StatusAtRisk
-	}
-	return KPI{CrashFreePct: pct, ThresholdPct: d.CrashFreeThresholdPct, MarginPt: margin, Status: status}, nil
+	lvl := ClassifyMargin(margin, d.RiskMarginPt)
+	return KPI{CrashFreePct: pct, ThresholdPct: d.CrashFreeThresholdPct, MarginPt: margin, Status: lvl.Label(), Level: lvl}, nil
 }
 
-// FormatPct formate un pourcentage à la française : « 99,57 % ».
-func FormatPct(v float64) string {
-	return strings.Replace(fmt.Sprintf("%.2f", v), ".", ",", 1) + " %"
+func crashFreePct(sessions, crashes int) float64 {
+	return 100 - 100*float64(crashes)/float64(sessions)
+}
+
+// dayOrder liste les jours de la période dans l'ordre.
+var dayOrder = []string{"J1", "J2", "J3", "J4", "J5", "J6", "J7"}
+
+// dailyTotals somme sessions et crashs par jour (J1..J7) pour une version et une
+// plateforme ("" = toutes).
+func (d Dataset) dailyTotals(version, platform string) ([][2]int, error) {
+	idx := make(map[string]int, len(dayOrder))
+	for i, day := range dayOrder {
+		idx[day] = i
+	}
+	out := make([][2]int, len(dayOrder))
+	found := false
+	for _, r := range d.Rows {
+		if r.Version != version || (platform != "" && r.Platform != platform) {
+			continue
+		}
+		i, ok := idx[r.Day]
+		if !ok {
+			return nil, fmt.Errorf("jour inconnu %q", r.Day)
+		}
+		out[i][0] += r.Sessions
+		out[i][1] += r.Crashes
+		found = true
+	}
+	if !found {
+		return nil, fmt.Errorf("aucune ligne pour la version %q (plateforme %q)", version, platform)
+	}
+	for i, t := range out {
+		if t[0] == 0 {
+			return nil, fmt.Errorf("aucune session le %s pour la version %q (plateforme %q)", dayOrder[i], version, platform)
+		}
+	}
+	return out, nil
+}
+
+// DailyCrashRates renvoie le taux de crash du jour, en %, de J1 à J7, arrondi à
+// 2 décimales (valeurs de la courbe de tendance).
+func (d Dataset) DailyCrashRates(version, platform string) ([]float64, error) {
+	if platform == "" {
+		return nil, fmt.Errorf("plateforme requise pour une série quotidienne")
+	}
+	totals, err := d.dailyTotals(version, platform)
+	if err != nil {
+		return nil, err
+	}
+	rates := make([]float64, len(totals))
+	for i, t := range totals {
+		rates[i] = math.Round(10000*float64(t[1])/float64(t[0])) / 100
+	}
+	return rates, nil
+}
+
+// Trend est la tendance du KPI : taux sans crash du jour J7 − celui de J1, en
+// points, sur les valeurs non arrondies. platform "" = toutes plateformes.
+func (d Dataset) Trend(version, platform string) (float64, error) {
+	totals, err := d.dailyTotals(version, platform)
+	if err != nil {
+		return 0, err
+	}
+	first, last := totals[0], totals[len(totals)-1]
+	return crashFreePct(last[0], last[1]) - crashFreePct(first[0], first[1]), nil
+}
+
+// FormatPct formate un pourcentage à la française avec le nombre de décimales
+// demandé : (99.567, 2) → « 99,57 % », (23.8, 0) → « 24 % ».
+func FormatPct(v float64, decimals int) string {
+	return FormatDecimal(v, decimals) + " %"
+}
+
+// FormatDecimal formate un nombre à la française : (4.0, 1) → « 4,0 ».
+func FormatDecimal(v float64, decimals int) string {
+	return strings.Replace(strconv.FormatFloat(v, 'f', decimals, 64), ".", ",", 1)
 }
 
 // FormatMargin formate une marge en points : « 0,07 pt ».
 func FormatMargin(v float64) string {
-	return strings.Replace(fmt.Sprintf("%.2f", v), ".", ",", 1) + " pt"
+	return FormatDecimal(v, 2) + " pt"
+}
+
+// FormatPt formate une tendance signée en points, avec le vrai signe moins
+// U+2212 : « −0,36 pt », « +0,03 pt ». Une valeur qui s'arrondit à zéro n'a pas
+// de signe : « 0,00 pt ».
+func FormatPt(v float64) string {
+	body := FormatDecimal(math.Abs(v), 2)
+	switch {
+	case body == "0,00":
+		return body + " pt"
+	case v < 0:
+		return "\u2212" + body + " pt"
+	default:
+		return "+" + body + " pt"
+	}
 }

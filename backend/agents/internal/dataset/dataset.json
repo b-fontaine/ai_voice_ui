@@ -2,6 +2,8 @@
   "app": "Release Copilot",
   "crashFreeThresholdPct": 99.5,
   "riskMarginPt": 0.1,
+  "reviewNegativeMaxPct": 25,
+  "reviewRiskMarginPt": 2,
   "rows": [
     {"day": "J1", "platform": "iOS", "version": "3.4", "sessions": 9800, "crashes": 22},
     {"day": "J1", "platform": "Android", "version": "3.4", "sessions": 12000, "crashes": 36},
@@ -24,5 +26,21 @@
     {"day": "J7", "platform": "iOS", "version": "3.4", "sessions": 11500, "crashes": 22},
     {"day": "J7", "platform": "Android", "version": "3.4", "sessions": 23500, "crashes": 197},
     {"day": "J7", "platform": "Android", "version": "3.3", "sessions": 40700, "crashes": 117}
+  ],
+  "reviews": [
+    {"platform": "iOS", "version": "3.4", "stars": [16, 8, 13, 95, 240]},
+    {"platform": "Android", "version": "3.4", "stars": [140, 56, 44, 190, 362]}
+  ],
+  "excerpts": [
+    {"version": "3.4", "stars": 1, "platform": "Android", "text": "L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour."},
+    {"version": "3.4", "stars": 5, "platform": "iOS", "text": "La validation bancaire est enfin rapide, plus besoin de ressaisir ma carte."},
+    {"version": "3.4", "stars": 2, "platform": "Android", "text": "Après le code reçu par SMS, retour à l'accueil et panier vide."}
+  ],
+  "changelog": [
+    {"area": "Paiement : flux 3-D Secure 2", "kind": "feat", "prs": 11},
+    {"area": "Panier : sauvegarde hors ligne", "kind": "feat", "prs": 8},
+    {"area": "Catalogue : galerie photos plein écran", "kind": "feat", "prs": 7},
+    {"area": "Base locale : migration du schéma 3.4", "kind": "refactor", "prs": 6},
+    {"area": "Correctifs notifications et accessibilité", "kind": "fix", "prs": 5}
   ]
 }
