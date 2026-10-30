@@ -13,8 +13,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## TDD Go — orchestrateur (séquentiel)
 - [x] T19 savoir — vérifier la doc officielle de l'API Responses (sortie structurée, `store`, effort de raisonnement, `incomplete`) et créer la note `knowledge/` (kb-curate) avant T20 · `kb_lint.py` vert
-- [ ] T20 Go — `domain.LlmRequest/LlmResult`, port `LlmText`, adaptateur `openaitext` (Responses, `store: false`, aucun outil, effort configurable, `incomplete` = erreur fermée, délai, jetons, clé et contenu jamais journalisés, jetons `usage` journalisés) · `provider_test.go` (serveur factice, délai, 4xx/5xx, corps énorme)
-- [ ] T21 Go — passerelle `llmgateway` (route, `RemoteAddr` autorisée, `Host` 421, `Origin` 403, 415, `DisallowUnknownFields`, schéma et champs bornés, débit, `no-store`, `disabled` si modèle vide, appel amont sous `r.Context()`, délais du serveur) · `gateway_test.go` (table de rejets C-07)
+- [x] T20 Go — `domain.LlmRequest/LlmResult`, port `LlmText`, adaptateur `openaitext` (Responses, `store: false`, aucun outil, effort configurable, `incomplete` = erreur fermée, délai, jetons, clé et contenu jamais journalisés, jetons `usage` journalisés) · `provider_test.go` (serveur factice, délai, 4xx/5xx, corps énorme)
+- [x] T21 Go — passerelle `llmgateway` (route, `RemoteAddr` autorisée, `Host` 421, `Origin` 403, 415, `DisallowUnknownFields`, schéma et champs bornés, débit, `no-store`, `disabled` si modèle vide, appel amont sous `r.Context()`, délais du serveur) · `gateway_test.go` (table de rejets C-07)
 - [ ] T22 Go — `bootstrap` : `LLM_GATEWAY_ADDR`, `LLM_GATEWAY_ALLOWED_SOURCES`, `COMPOSER_*`, second `http.Server`, arrêt conjoint des deux serveurs (`errors.Join`) · `config_test.go`, `main_test.go`
 - [ ] T23 Go — `A2UI_COMPONENTS` à 6 composants en test de bout en bout (C-08) ; `TagPlanner` inchangé (cas « la liste des avis » → Voix seule, « liste des crashs » → Qualité) · `planner_test.go`
 - [ ] T25 Go — `view_unavailable` dans `scopeReasons`, phrase `failure_rejected_view`, choix de la phrase par `ScopeReason` quand tous les agents refusent · `pipeline_scope_reason_test.go`, `phrases_test.go`
