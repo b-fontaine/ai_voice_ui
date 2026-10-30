@@ -1,12 +1,12 @@
 # 006 — État
 
-- **Étape** : Clôture
-- **Tentatives** : 1/3
-- **Tâche en cours** : T92 (clôture : docs product/)
+- **Étape** : Terminée
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
-- **Mis à jour** : 2026-10-30 (revue du plan intégrée)
+- **Mis à jour** : 2026-10-30 (terminée)
 
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
@@ -45,6 +45,8 @@
 | 2026-10-30 | Vérification (essai réel unique) | Pile compose complète (4 services `healthy`) + client jetable `spikes/003-live-check -scenario act1` (nouveau : `act1.go`, tests rouge `undefined: summarizeAct1` puis vert) avec le **vrai** modèle `gpt-live-1` et une question TTS (`gpt-4o-mini-tts`, voix `alloy`, Ogg/Opus) « Bonjour. Prépare la release trois point quatre. » : POST 200, DELETE 204, `active` 1 588 ms après le POST ; transcription « Bonjour, prépare la release 3.4 » ; le modèle **délègue** ; 1 message `plan` : `selected=[Qualité, Voix du client, Livraison]`, `idle=[]` ; `agent.activity` 3 `working` puis 3 `completed`, 0 `failed`/`rejected` ; 12 `a2ui`, 4 surfaces (`reviews`, `kpi`, `checklist`, `trend` dans l'ordre d'arrivée, parallélisme des agents), chacune createSurface → updateComponents → updateDataModel ; délais `delegation` → 1er `createSurface` 3 ms (NFR-02) et → 4ᵉ `updateDataModel` 4 ms (NFR-03), agents déterministes donc quasi nuls (la vraie mesure attend Q-17, LLM) ; voix : « Je m'en occupe, un voici ce que je constate. "99,57 % de sessions sans crash sur 7 jours, à risque : marge 0,07 point. Android franchit le seuil de crash à J5. 24 % d'avis négatifs… » (fondé sur les vrais résultats ; mot parasite « un » : paraphrase du modèle, à surveiller en répétition) ; dernier `usage` 43 s, contexte 2,5 % ; clé absente des journaux compose, du JSONL et de la sortie du client (revérifié par la session principale : 0 fichier de `spikes/`, `specs/` et des captures la contient) ; VERDICT OK ; coût 0,05 € (43 s × 0,05 $/min + TTS 0,01), total 0,38 €/12 € ; `docker compose down` fait. **Non vérifié avec le vrai modèle** : la règle de délégation universelle (demande hors catalogue, RG-08) — un seul essai payant par fonctionnalité ; couverte par G2 avec les vrais agents. Les journaux de l'orchestrateur n'affichent que les requêtes HTTP : les messages `plan`/`a2ui`/`agent.activity` sont dans le journal JSONL du volume (comme en 004), pas dans les logs de conteneur. | `…/scratchpad/live-check-006.out`, `specs/openai-spend.tsv` |
 
 | 2026-10-30 | Vérification (clôture) | `gate --full` VERT sur arbre propre (40 contrôles) au commit `caff55d` après l'essai réel ; `app-smoke` OK ; essai réel OK. **Étape Vérification terminée.** Passage à la Clôture (docs `product/` par `product-steward`, décisions, KB, fusion, `publish.sh`). | `.omc/state/loop/gates/20261030-032850-full.log` |
+
+| 2026-10-30 | Clôture | Docs `product/` mises à jour par `product-steward` (contrat app-channel : `plan`, `rejected`, `genesis/activeSurfaces`, validateur `bad_property` ; backend : module `backend/agents`, sélection des agents, configuration ; protocoles ; catalogue `genesis` v1 (`components` 4 / `catalogComponents` 6) ; jeu de données ; roadmap J3-A/J3-B, nouveau risque RD-9 ; backlog ; constats sur Q-17, Q-35, Q-44, Q-69, Q-70, Q-71, aucun statut changé) ; `product_lint` 0 erreur ; note KB `rt-openai-tts-test-audio` (nouvelle) et `rt-gpt-live-delegation-latency` mise à jour, `kb_lint` 0 erreur ; aucune PDR créée (aucune parole du porteur à propager, aucune décision contrainte nouvelle ; le nom d'affichage dans `AGENTS` est un détail de configuration de conception, A9). **Terminée** : fusion dans `loop` et `publish.sh` à suivre. | `product/`, `knowledge/` |
 
 ## Revue d'architecte
 

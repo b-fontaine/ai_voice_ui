@@ -24,6 +24,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T16 Infra — compose (`agent-voice`, `agent-delivery`, réseau interne, durcissement), `check-compose.sh` (boucle sur `agent-*`), CI · test d'abord : script de contrôle du `docker compose config --format json` (échoue avant)
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
-- [ ] T91 Revue architect-reviewer (mode CODE) + refactorisations (par lots)
-- [ ] T92 Vérification (journal : `delegation` → 1er `createSurface`, → 4ᵉ `updateDataModel` ; essai réel unique si budget), clôture (docs `product/` dont le contrat app-channel `plan`/`rejected`), fusion, `publish.sh`, `fresh_session`
+- [x] T90 `tools/loop/gate.sh --full` vert
+- [x] T91 Revue architect-reviewer (mode CODE) + refactorisations (par lots)
+- [x] T92 Vérification (journal : `delegation` → 1er `createSurface`, → 4ᵉ `updateDataModel` ; essai réel unique si budget), clôture (docs `product/` dont le contrat app-channel `plan`/`rejected`), fusion, `publish.sh`, `fresh_session`
