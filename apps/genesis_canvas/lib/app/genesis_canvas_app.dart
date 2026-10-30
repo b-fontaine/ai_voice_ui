@@ -9,7 +9,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
 import 'package:shared_core/shared_core.dart'
-    show ExitHandler, ReplayDelay, ReplayedMessage;
+    show AppClock, ExitHandler, ReplayDelay, ReplayedMessage;
 
 import '../pages/genesis_canvas/genesis_canvas.dart';
 import '../pages/genesis_canvas/genesis_canvas_page_settings.dart';
@@ -38,6 +38,7 @@ class GenesisCanvasApp extends StatefulWidget {
     this.errorSink,
     this.assetBundle,
     this.replayDelay,
+    this.clock,
     this.voiceTransportFactory,
   });
 
@@ -48,6 +49,9 @@ class GenesisCanvasApp extends StatefulWidget {
 
   /// Attente entre deux messages du rejeu ; `null` : délai réel.
   final ReplayDelay? replayDelay;
+
+  /// Horloge de l'app (frontière « temps ») ; `null` : horloge système.
+  final AppClock? clock;
 
   /// Un transport voix NEUF par démarrage de session ; `null` : WebRTC réel.
   final VoiceTransport Function()? voiceTransportFactory;
@@ -69,6 +73,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
       _getIt,
       config: widget.config,
       errorSink: _errorSink,
+      clock: widget.clock,
       voiceTransportFactory: widget.voiceTransportFactory,
     );
     final scenario = widget.config.scenario;
