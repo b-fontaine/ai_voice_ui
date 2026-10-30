@@ -1,8 +1,8 @@
 # 006 — État
 
 - **Étape** : Vérification
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T92 (essai réel unique)
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
@@ -39,6 +39,8 @@
 | 2026-10-30 | Refactorisation | Lot 5 (R10) fait : `TestMain` de l'acceptation orchestrateur supprime `buildDir` (19 dossiers `/tmp/genesis-agents-*` avant et après un run : plus de fuite ; les 19 anciens ont été supprimés à la main, ils ne contenaient que les trois binaires) ; `TestFailurePhraseMatchesCause` compare `wantDetail` exactement (déjà vert : le code produisait ces détails) ; `pipeline.go` 771 → 374 lignes (`plan_step.go` 88, `task.go` 233, `commentary.go` 114, déplacement pur, tests inchangés) ; commentaires périmés corrigés (`port/agent.go`, `hub.go`) ; noms de carte nettoyés dans `a2aclient` (`cleanCardName` : 40 runes, contrôles et bidi retirés, repli sur l'hôte ; rouge initial `Card().Name = "Qual‮ité"`, attendu `"Qualité"`). Non fait : assertion « `inflight` vide » dans les tests existants de `pipeline_test.go` (jugée non triviale à y insérer ; couverte par `TestEverySelectedAgentGetsTerminalActivity`). | `.omc/state/loop/gates/20261030-031931-unit-go.log` |
 
 | 2026-10-30 | Refactorisation (clôture) | R1 à R10 appliquées en 5 lots (Lot 1 CI, Lot 2 agents, Lot 3 planification, Lot 4 contrat et phrases, Lot 5 hygiène). **`gate --full` VERT sur arbre propre** (40 contrôles) au commit `674f410`. Passage à la Vérification. | `.omc/state/loop/gates/20261030-032052-full.log` |
+
+| 2026-10-30 | Vérification | `gate --full` vert sur arbre propre (`.omc/state/loop/gates/20261030-032052-full.log`) ; `app-smoke.sh` OK : pile compose complète démarrée avec `--wait` (orchestrateur + `agent-quality` + `agent-voice` + `agent-delivery` : 4 services `healthy`), capture `.omc/state/loop/snapshots/20261030-032308-act1-replay.png` lue : rejeu de la fixture de l'app (surface J2 « Sessions sans crash / 99,57 % », barre du haut, orbe, bouton Démarrer) conforme à l'état attendu de l'app, que 006 ne modifie pas. **Constat à signaler au porteur** : l'app (005) rend avec le catalogue de base de genui ; le backend émet désormais les composants `genesis` (`KeyIndicator`…) : tant que 007 n'est pas livrée, le flux vocal réel de bout en bout n'affiche pas ces surfaces (écart attendu du découpage J3, mais il rend la `main` incohérente entre app et backend jusqu'à 007). Essai réel unique en cours. | `.omc/state/loop/snapshots/last-compose.log` |
 
 ## Revue d'architecte
 
