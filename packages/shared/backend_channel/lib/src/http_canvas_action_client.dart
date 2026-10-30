@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import 'canvas_action_client.dart';
+import 'json_post_transport.dart';
 
 /// [CanvasActionClient] sur HTTP (`package:http`).
 ///
@@ -17,31 +17,26 @@ import 'canvas_action_client.dart';
 /// que `/`, ni requête, ni fragment (sinon [ArgumentError]).
 class HttpCanvasActionClient implements CanvasActionClient {
   HttpCanvasActionClient({
-    required this.baseUrl,
-    required this.timeout,
+    required Uri baseUrl,
+    required Duration timeout,
     http.Client? client,
-  }) : _client = client ?? http.Client(),
-       _ownsClient = client == null {
-    if ((baseUrl.path.isNotEmpty && baseUrl.path != '/') ||
-        baseUrl.hasQuery ||
-        baseUrl.hasFragment) {
-      throw ArgumentError.value(
-        'baseUrl',
-        'baseUrl',
-        'doit être une origine (sans chemin, requête ni fragment)',
-      );
-    }
-  }
+  }) : _transport = JsonPostTransport(
+         baseUrl: baseUrl,
+         timeout: timeout,
+         client: client,
+       );
+
+  final JsonPostTransport _transport;
 
   /// Origine du backend (valeur de `GENESIS_BACKEND_URL`).
-  final Uri baseUrl;
+  Uri get baseUrl => _transport.baseUrl;
 
   /// Délai maximal de la requête (envoi et lecture de la réponse).
-  final Duration timeout;
-
-  final http.Client _client;
-  final bool _ownsClient;
-  bool _closed = false;
+  ///
+  /// `Future.timeout` n'annule pas la requête HTTP en vol : un 202 reçu après
+  /// le délai est classé [CanvasActionResult.failed] côté app alors que le
+  /// backend a accepté l'action.
+  Duration get timeout => _transport.timeout;
 
   /// Taille maximale lue dans un corps de réponse : le backend n'en envoie
   /// qu'un minuscule.
@@ -49,40 +44,27 @@ class HttpCanvasActionClient implements CanvasActionClient {
 
   /// Ferme le client `http` s'il a été créé par cette instance. Les appels
   /// suivants de [send] renvoient [CanvasActionResult.failed].
-  void close() {
-    _closed = true;
-    if (_ownsClient) _client.close();
-  }
-
-  Uri get _actionsUri {
-    final base = baseUrl.path.endsWith('/')
-        ? baseUrl.path.substring(0, baseUrl.path.length - 1)
-        : baseUrl.path;
-    return baseUrl.replace(path: '$base/canvas/actions', query: '');
-  }
+  void close() => _transport.close();
 
   @override
   Future<CanvasActionResult> send({
     required String action,
     required String surface,
   }) async {
-    if (_closed) return CanvasActionResult.failed;
-    final request = http.Request('POST', _actionsUri)
-      ..headers['Content-Type'] = 'application/json'
-      ..body = jsonEncode(<String, String>{
-        'action': action,
-        'surface': surface,
-      });
+    if (_transport.isClosed) return CanvasActionResult.failed;
     try {
-      return await Future<CanvasActionResult>(() async {
-        final response = await _client.send(request);
-        final bytes = <int>[];
-        // Le corps est lu (borné) puis vidé pour libérer la connexion.
-        await for (final chunk in response.stream) {
-          if (bytes.length < _maxBodyBytes) bytes.addAll(chunk);
-        }
-        return _classify(response.statusCode, bytes);
-      }).timeout(timeout);
+      return await _transport.post<CanvasActionResult>(
+        '/canvas/actions',
+        jsonEncode(<String, String>{'action': action, 'surface': surface}),
+        (response) async {
+          final bytes = <int>[];
+          // Le corps est lu (borné) puis vidé pour libérer la connexion.
+          await for (final chunk in response.stream) {
+            if (bytes.length < _maxBodyBytes) bytes.addAll(chunk);
+          }
+          return _classify(response.statusCode, bytes);
+        },
+      );
     } on Object {
       // Réseau, délai, TLS, client fermé : le contrat du port ne lève jamais
       // et le message d'origine contient l'URL.

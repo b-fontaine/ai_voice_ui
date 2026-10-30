@@ -307,6 +307,109 @@ void main() {
       }
     });
 
+    test('GENESIS_CANVAS_ACTION_TIMEOUT_MS : 100 à 10000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_ACTION_TIMEOUT_MS': ?value},
+      ).canvasActionTimeout;
+
+      expect(read(null), const Duration(seconds: 2));
+      expect(read(''), const Duration(seconds: 2));
+      expect(read(' 1500 '), const Duration(milliseconds: 1500));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test('GENESIS_CANVAS_ACTION_RETRIES : nombre de réessais, 0 à 30', () {
+      int read(String? value) => GenesisConfig.fromEnvironment(<String, String>{
+        'GENESIS_CANVAS_ACTION_RETRIES': ?value,
+      }).canvasActionRetries;
+
+      expect(read(null), 6);
+      expect(read(''), 6);
+      expect(read(' 12 '), 12);
+      expect(read('0'), 0);
+      expect(read('30'), 30);
+    });
+
+    test('GENESIS_CANVAS_ACTION_RETRY_INTERVAL_MS : 100 à 10000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_ACTION_RETRY_INTERVAL_MS': ?value},
+      ).canvasActionRetryInterval;
+
+      expect(read(null), const Duration(seconds: 1));
+      expect(read(''), const Duration(seconds: 1));
+      expect(read(' 250 '), const Duration(milliseconds: 250));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('10000'), const Duration(seconds: 10));
+    });
+
+    test('GENESIS_CANVAS_ACTION_MAX_DURATION_MS : 1000 à 90000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_CANVAS_ACTION_MAX_DURATION_MS': ?value},
+      ).canvasActionMaxDuration;
+
+      expect(read(null), const Duration(seconds: 60));
+      expect(read(''), const Duration(seconds: 60));
+      expect(read(' 30000 '), const Duration(seconds: 30));
+      expect(read('1000'), const Duration(seconds: 1));
+      expect(read('90000'), const Duration(milliseconds: 90000));
+    });
+
+    test('variables d\'action invalides : erreur sans la valeur', () {
+      const cases = <String, List<String>>{
+        'GENESIS_CANVAS_ACTION_TIMEOUT_MS': <String>[
+          'abc',
+          '-0',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ],
+        'GENESIS_CANVAS_ACTION_RETRIES': <String>[
+          'abc',
+          '-1',
+          '31',
+          '1.5',
+          '1e1',
+          '007007',
+        ],
+        'GENESIS_CANVAS_ACTION_RETRY_INTERVAL_MS': <String>[
+          'abc',
+          '-0',
+          '99',
+          '10001',
+          '1.5',
+          '1e3',
+        ],
+        'GENESIS_CANVAS_ACTION_MAX_DURATION_MS': <String>[
+          'abc',
+          '-0',
+          '999',
+          '90001',
+          '1.5',
+          '1e3',
+        ],
+      };
+      for (final entry in cases.entries) {
+        for (final raw in entry.value) {
+          expect(
+            () =>
+                GenesisConfig.fromEnvironment(<String, String>{entry.key: raw}),
+            throwsA(
+              isA<GenesisConfigException>()
+                  .having((e) => e.message, 'message', contains(entry.key))
+                  .having(
+                    (e) => e.message,
+                    'sans valeur',
+                    isNot(contains(raw)),
+                  ),
+            ),
+            reason: '${entry.key}=$raw',
+          );
+        }
+      }
+    });
+
     test('R5 : invariants des délais de fermeture par défaut', () {
       const config = GenesisConfig();
       // Chaque niveau borne celui qu'il enveloppe, avec une marge.
