@@ -43,5 +43,21 @@
 - [x] A7 important — `OrbSmoother` pur, contrôleur UI, retombée, preuve NFR-04
 - [x] A8 important — transcription, sockets réels dans `testWidgets`, graphe `live` seul, versions figées (T01)
 
+**Revue de code (mode CODE, 2026-10-30, `b183b5e`) : CONFORME SOUS RÉSERVE — aucune bloquante, 5 importantes, 5 mineures.** Frontières de couches vérifiées par pubspec et grep : une seule violation (R1). Choix assumés vérifiés sans action : `GetIt.asNewInstance()` dans `genesis_canvas_app.dart` (équivalent du `main`), piège T21 supprimé, `Active` avant l'ouverture du WSS, `stop()` non borné pendant `Connecting` borné à la sortie par `ExitGuard`, DELETE avant `transport.stop`, une seule capture micro, NFR-04, harnais d'acceptation renforcé, aucun `skip`/TODO.
+- [ ] R1 importante — `pages` importe la couche `app` (`GenesisConfig`, `ExitGuard`) : `ExitGuard` → `shared_core`, `GenesisCanvasPageSettings` passé par constructeur, la page ne résout plus `GenesisConfig`
+- [ ] R2 importante — rappels jamais branchés (`onInvalid`, `onIgnored`, `EnvelopeLog.onError`) : puits de diagnostic, lignes consignées, test d'abord
+- [ ] R3 importante — `RTCPeerConnection.dispose()` jamais appelé : `RtcPeer.dispose()`, `stop` ≠ `dispose` effectif, ordre `[mic.stop, peer.close, peer.dispose]`
+- [ ] R4 importante — `VoiceSession._connect` : exceptions imprévues (fabrique de transport, `logFactory`, `log.open`) sans libération ni `Failed` ; clause finale + tests
+- [ ] R5 importante — budget des délais de fermeture incohérent (`exitCloseTimeout` 8 s = `sessionCloseTimeout` 8 s > `relayDeleteTimeout` 7 s, WSS 2 s/5 s en dur) : `channelConnectTimeout`/`channelCloseTimeout` injectés, invariant testé sur les valeurs par défaut (valeurs à confirmer par le porteur ; la spec dit « ~8 s »)
+- [ ] R6 mineure — collision `AgentActivityState` : enum de l'entité → `AgentTaskState`
+- [ ] R7 mineure — `HttpVoiceRelay._exchange` : clause finale `unreachable`, annulation de l'abonnement au délai, `close()` branché au DI
+- [ ] R8 mineure — `VoiceSession._onEnvelope` : journaliser dès que la génération est courante (y compris pendant `Stopping`)
+- [ ] R9 mineure — doublures de classes internes et faux dupliqués : `StubVoiceSessionBloc` et `_ObservedSession` à remplacer par de vrais objets sur faux de frontières ; paquets `testing/voice_fakes` et `testing/bloc_harness`
+- [ ] R10 mineure — hygiène : barrels trop larges, égalité profonde dupliquée (`DeepCollectionEquality`), `default:` sur sealed, `liveEnvironment` sans effet, résolutions répétées, initialisations paresseuses forcées, raison brute affichée, URL de backend avec chemin/requête/fragment
+
+Conflits avec une décision (pas de code, questions ouvertes pour le porteur, sans bloquer) : **Q-71** (validation A2UI côté client reportée à J3 ? `security.md` dit « deux fois ») et **Q-72** (exception « racine de composition » dans AGENTS.md § 2, que la boucle ne peut pas modifier).
+
+Plan de lots (Flutter seul : séquentiels) : **lot 1** voice_session = R3 + R4 + R8 + part voice_session de R10 ; **lot 2** backend_channel = R7 + R10 (égalité profonde, `endpointFor`, délais du canal de R5) ; **lot 3** entités = R6 + égalité profonde d'`entity_session` ; **lot 4** app = R1 + R2 + R5 (config) + R10 (app) ; **lot 5** tests = R9. Une seule `gate.sh --full` à la fin.
+
 ## Questions pour le porteur
-<!-- Q-xx créées : ce qui est bloqué, ce qui continue. -->
+Q-71 et Q-72 (ouvertes le 2026-10-30, non bloquantes) : voir la revue de code ci-dessus et `product/roadmap/open-questions.md`.
