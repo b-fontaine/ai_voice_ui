@@ -42,8 +42,6 @@ class ProtocolFeedBloc extends Bloc<ProtocolFeedEvent, ProtocolFeedState> {
   final AppClock clock;
   int _nextIndex = 0;
 
-  static const JsonEncoder _encoder = JsonEncoder.withIndent('  ');
-
   Future<void> _onSubscribed(
     ProtocolSourceSubscribed event,
     Emitter<ProtocolFeedState> emit,
@@ -60,7 +58,7 @@ class ProtocolFeedBloc extends Bloc<ProtocolFeedEvent, ProtocolFeedState> {
     final (ProtocolOperation operation, String? surfaceId) = _read(
       envelope.raw,
     );
-    final String full = _encoder.convert(envelope.raw);
+    final String full = _compactJson(envelope.raw);
     final bool truncated = full.length > maxJsonChars;
     final ProtocolEntry entry = ProtocolEntry(
       index: _nextIndex++,
@@ -91,6 +89,23 @@ class ProtocolFeedBloc extends Bloc<ProtocolFeedEvent, ProtocolFeedState> {
       ),
     );
   }
+
+  /// JSON compact du corps de l'opération (sans la clé `version`, constante
+  /// qui ne dit rien du message) ; pour une opération inconnue, du message
+  /// entier. Le message brut n'est jamais modifié.
+  String _compactJson(Map<String, Object?> raw) {
+    for (final String key in _operationKeys) {
+      if (raw.containsKey(key)) return jsonEncode(raw[key]);
+    }
+    return jsonEncode(raw);
+  }
+
+  static const List<String> _operationKeys = <String>[
+    'createSurface',
+    'updateComponents',
+    'updateDataModel',
+    'deleteSurface',
+  ];
 
   /// Lit au mieux l'opération et la surface d'un message brut.
   (ProtocolOperation, String?) _read(Map<String, Object?> raw) {

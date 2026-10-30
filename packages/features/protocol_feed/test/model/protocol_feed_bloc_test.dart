@@ -113,14 +113,36 @@ void main() {
     expect(states.last.highlightedSurfaceId, 'trend');
   });
 
-  test('JSON brut mis en forme, identique au raw décodé, raw intact', () async {
+  // R4 : le JSON affiché est celui du CORPS de l'opération, compact et sans
+  // `version` (constante qui ouvrait chaque message et masquait son contenu).
+  test('JSON compact du corps de l opération, raw intact', () async {
     final Map<String, Object?> raw = fixture('kpi')[2];
     final states = await run([accepted(raw)]);
     final ProtocolEntry e = states.last.entries.single;
     expect(e.truncated, isFalse);
-    expect(jsonDecode(e.json), raw);
-    expect(e.json, contains('\n'));
+    expect(jsonDecode(e.json), raw['updateDataModel']);
+    expect(e.json, jsonEncode(raw['updateDataModel']));
+    expect(e.json, isNot(contains('\n')));
+    expect(e.json, isNot(contains('  ')));
+    expect(e.json, isNot(contains('"version"')));
+    expect(e.json, contains('"path":"/kpi"'));
     expect(raw['updateDataModel'], isNotNull);
+    expect(raw['version'], 'v0.9');
+  });
+
+  test('updateComponents : surfaceId et composants, sans version', () async {
+    final states = await run([accepted(fixture('kpi')[1])]);
+    final String json = states.last.entries.single.json;
+    expect(json, contains('"surfaceId":"kpi"'));
+    expect(json, contains('"component"'));
+    expect(json, isNot(contains('version')));
+  });
+
+  test('createSurface : corps sans version', () async {
+    final states = await run([accepted(fixture('kpi')[0])]);
+    final String json = states.last.entries.single.json;
+    expect(json, contains('"surfaceId":"kpi"'));
+    expect(json, isNot(contains('version')));
   });
 
   test('JSON borné avec marque de troncature', () async {
@@ -129,14 +151,42 @@ void main() {
     expect(e.truncated, isTrue);
     expect(
       e.json.startsWith(
-        const JsonEncoder.withIndent('  ')
-            .convert(fixture('kpi')[2])
-            .substring(0, 50),
+        jsonEncode(fixture('kpi')[2]['updateDataModel']).substring(0, 50),
       ),
       isTrue,
     );
     expect(e.json.length, lessThan(50 + 40));
     expect(e.json, endsWith(ProtocolEntry.truncationMark));
+  });
+
+  test('message refusé : JSON du corps, code de refus à part', () async {
+    final Map<String, Object?> raw = fixture('kpi')[1];
+    final states = await run([
+      ValidatedEnvelope(
+        raw: raw,
+        verdict: const ValidationRejected(ValidationCodes.componentNotAllowed),
+        agent: 'release',
+        task: 't1',
+      ),
+    ]);
+    final ProtocolEntry e = states.last.entries.single;
+    expect(e.json, jsonEncode(raw['updateComponents']));
+    expect(e.rejectionCode, ValidationCodes.componentNotAllowed);
+    expect(e.json, isNot(contains(ValidationCodes.componentNotAllowed)));
+  });
+
+  test('opération inconnue : JSON compact du message entier', () async {
+    final Map<String, Object?> raw = <String, Object?>{
+      'version': 'v0.9',
+      'bogus': <String, Object?>{'a': 1},
+    };
+    final states = await run([
+      ValidatedEnvelope(
+        raw: raw,
+        verdict: const ValidationRejected(ValidationCodes.badOperation),
+      ),
+    ]);
+    expect(states.last.entries.single.json, jsonEncode(raw));
   });
 
   test('message refusé : ajouté, marqué refusé avec son code', () async {

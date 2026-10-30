@@ -234,6 +234,36 @@ void main() {
     );
   });
 
+  testWidgets('le JSON montre le corps de l opération, sans version', (
+    tester,
+  ) async {
+    await pumpPanel(tester);
+    await toggle(tester);
+    await receive(
+      tester,
+      ValidatedEnvelope(
+        raw: <String, Object?>{
+          'version': 'v0.9',
+          'updateComponents': <String, Object?>{
+            'surfaceId': 'kpi',
+            'components': <Object?>[
+              <String, Object?>{'id': 'root', 'component': 'KeyIndicator'},
+            ],
+          },
+        },
+        verdict: const ValidationAccepted(),
+        agent: 'Qualité',
+      ),
+    );
+
+    final String shown = tester
+        .widget<Text>(find.byKey(const Key('protocol-json-0')))
+        .data!;
+    expect(shown, contains('"surfaceId":"kpi"'));
+    expect(shown, contains('"component"'));
+    expect(shown, isNot(contains('version')));
+  });
+
   testWidgets('seules les dernières entrées sont montrées, le numéro reste '
       'celui du Bloc', (tester) async {
     await pumpPanel(tester);
