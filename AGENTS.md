@@ -59,7 +59,7 @@ Sous Claude Code, les skills `product-lookup` (lire), `product-curate` (écrire)
 ## 2. Règles du projet (non négociables)
 
 - **Architecture :** Clean Architecture combinée à Feature Sliced Design (voir les notes `arch-*`). Les imports ne descendent que vers les couches inférieures. Chaque slice expose une API publique (barrel).
-- **DI :** `get_it` + `injectable`, avec injection **par constructeur**. Interdit d'appeler `getIt` dans un widget ou un Bloc.
+- **DI :** `get_it` + `injectable`, avec injection **par constructeur**. Interdit d'appeler `getIt` dans un widget ou un Bloc, sauf la page racine de composition (pdr-0057).
 - **État :** `flutter_bloc` en **Bloc uniquement, Cubit interdit**. Events et states sont des `sealed`/`freezed`. Les flux passent par `emit.forEach`/`onEach`. Choisir un transformer de concurrence explicite.
 - **Tests :** TDD (rouge → vert → refactor). Les comportements utilisateur sont décrits en BDD avec `bdd_widget_test` (fichiers `.feature`) **avant** l'implémentation. On ne mocke qu'aux frontières (runners voix, réseau, plateforme).
 - **Orchestrateur :** il tourne **côté backend dès le départ** (décision du 2026-10-27). L'app Flutter ne porte que l'audio et WebRTC, le rendu A2UI et les outils locaux sans secret. Voir `adr-0002-orchestrator-backend` ; architecture du produit : `product/architecture/overview.md` (patrons génériques : `ma-target-architecture`, `ma-where-to-run-agents`).
@@ -92,6 +92,7 @@ Sous Claude Code, les skills `product-lookup` (lire), `product-curate` (écrire)
 - **Signaler explicitement toute hypothèse non confirmée** par le porteur du projet (compétences de l'équipe, contraintes d'hébergement…), et la faire confirmer avant de la noter comme décision. Dans `product/`, elle est marquée « ⚠️ Hypothèse non confirmée » et renvoie à une `Q-xx`.
 - **L'assistant recommande, le porteur décide** les vrais arbitrages. L'ADR ou la PDR indique qui a décidé (`decided_by` pour les PDR).
 - **Exception : décision contrainte.** Quand une seule réponse découle des faits vérifiés et des décisions déjà prises, l'assistant la tranche, l'enregistre (PDR avec `constraint_basis`) et la signale ; le porteur peut la contester. Parole du porteur (2026-10-29) : « Tu as toutes les infos […], tu pouvais donc prendre la bonne décision seul, non ? »
+- **Règle permanente (pdr-0062, 2026-10-30) :** écart fiche/maquette → la fiche s'applique ; fiche muette sur un détail d'interface → l'assistant ou la boucle tranche (PDR acceptée, `decided_by` « Assistant (délégation du porteur, pdr-0062) ») et le signale dans son compte rendu et `specs/progress.md` ; les vrais choix de produit (périmètre, mise en scène des actes, budget, fournisseurs) restent au porteur.
 
 ## 5. Entretenir la base `knowledge/`
 

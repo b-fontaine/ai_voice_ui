@@ -85,7 +85,7 @@ La fiche exclut « authentification utilisateur, multi-utilisateur » du périm�
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- **Validation A2UI côté client** (catalogue fermé `genesis`) : l'orchestrateur valide désormais composants, propriétés et liaisons (006) ; côté client elle relève de 007, décision du porteur ouverte (Q-71, inchangée).
+- **Validation A2UI côté client** (catalogue fermé `genesis`) : l'orchestrateur valide désormais composants, propriétés et liaisons (006) ; côté client elle est livrée **dès 007** : le catalogue fermé `genesis` sert de liste blanche dans l'app, en plus de l'orchestrateur (Q-71 tranchée → [pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)).
 - Mode d'authentification : option A recommandée, à confirmer (Q-48). ~~Plafond de coût~~ : 20 € ([pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md)).
-- **Confirmation** du clic « Bloquer la release » : action fictive, donc sans confirmation hors GenUI ? (la règle générique l'exige pour les actions sensibles, [genui-a2ui-security]) → Q-49.
+- **Confirmation** du clic « Bloquer la release » : aucune confirmation hors GenUI (action fictive, l'IA confirme à la voix ; la règle générique de [genui-a2ui-security] vise les actions réelles) — Q-49 tranchée → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md).
 - ~~Agent d'un autre éditeur~~ (E6) : sans objet ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md)).

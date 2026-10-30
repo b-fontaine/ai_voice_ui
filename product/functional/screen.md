@@ -3,7 +3,7 @@ id: p-fn-screen
 title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
 links: [p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
@@ -56,7 +56,7 @@ stateDiagram-v2
 
 L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) : le secours est une vidéo gérée par le porteur.
 
-⚠️ Les maquettes affichent la pastille « EN ÉCOUTE » pendant la planification et la construction, là où la fiche prévoit « Réflexion » (écart E12 · Q-30). Repères : [ux-voice-multimodal], [rt-barge-in].
+⚠️ Les maquettes affichent la pastille « EN ÉCOUTE » pendant la planification et la construction, là où la fiche prévoit « Réflexion » (écart E12 · Q-30 tranché : la fiche s'applique, [pdr-0054](../decisions/pdr-0054-stage-screen-orb-acts-checklist.md)). Repères : [ux-voice-multimodal], [rt-barge-in].
 
 ## Modes d'interaction (fiche § 6, p. 9)
 
@@ -77,7 +77,7 @@ Tranché (E5 · Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-
 | P | Déplier ou replier le flux du protocole | FR-05 (zone flux) |
 | R | Remettre le canevas à vide | FR-11 |
 | ~~B~~ | ~~Basculer en mode secours~~ | ~~FR-10~~ retirée (pdr-0032) |
-| ← / → | Reculer ou avancer dans le rejeu | FR-09 ; pas-à-pas : Q-52 ouverte (reco : aucun pas-à-pas imposé, à confirmer) |
+| ← / → | Reculer ou avancer dans le rejeu | FR-09 ; pas de pas-à-pas : lecture, pause et vitesse suffisent (Q-52 → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)) |
 
 Points d'attention (assistant) :
 - Sur desktop, Espace active aussi le bouton qui a le focus (par exemple « Bloquer la release ») ; un raccourci Flutter ne se déclenche que dans le sous-arbre focalisé ([ux-desktop-shortcuts], [ux-desktop-focus]).

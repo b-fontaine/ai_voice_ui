@@ -3,7 +3,7 @@ id: pdr-0023-example-guided-composition
 title: "PDR-0023 — La composition A2UI est faite par un LLM guidé par des exemples d'écrans attendus, sur un catalogue fermé"
 area: decisions
 status: validated
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/product-description.pdf#p12]
 links: [p-rm-open-questions, p-ar-backend, p-fn-risks-acceptance, p-fn-nfr, p-fn-catalog, p-ar-quality, p-rm-roadmap, pdr-0005-frozen-fictional-dataset, pdr-0007-closed-catalog-stage-theme, pdr-0020-act1-four-surfaces]
 tags: [pdr, decision, composition, determinisme, llm, decision-contrainte]
@@ -62,5 +62,6 @@ Part de l'assistant : décision contrainte, prise sur délégation du porteur ; 
 |---|---|---|
 | 2026-10-28 | Q-38 ouverte par l'architecture | Assistant |
 | 2026-10-29 | Acceptée comme décision contrainte, sur délégation du porteur | Assistant |
+| 2026-10-30 | Reconfirmée comme valable : [pdr-0060](pdr-0060-small-openai-text-model-guided-a2ui.md) (Q-17, réponse du porteur du 2026-10-30 : « Petit LLM OpenAI + repli (Recommandé) ») en est la mise en œuvre ; les écrans d'exemple guident un petit modèle texte, repli sur écrans fixes si NFR-02/03 échouent. | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

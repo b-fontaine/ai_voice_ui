@@ -19,7 +19,7 @@ tags: [frontend, flutter, desktop, fsd, clean-architecture, bloc, di, genui, des
 | Règle | Application ici | Source |
 |---|---|---|
 | Clean + FSD, imports vers le bas, barrel par slice | `export … show` dans un fichier de librairie par slice | [arch-fsd-public-api] |
-| `get_it` + `injectable`, injection par constructeur | `getIt` appelé seulement dans `pages/genesis_canvas` (racine de composition) et `app/di` ; exception « racine de composition » de la règle d'AGENTS.md § 2 : Q-72 (ouverte) | [di-no-service-locator] |
+| `get_it` + `injectable`, injection par constructeur | `getIt` appelé seulement dans `pages/genesis_canvas` (racine de composition) et `app/di` ; exception « racine de composition » de la règle d'AGENTS.md § 2 (Q-72 → pdr-0057) | [di-no-service-locator] |
 | Bloc uniquement, events/states `sealed`/`freezed`, transformer explicite | Voir tableau des Blocs | [bloc-no-cubit], [bloc-event-transformers] |
 | Une seule capture micro | `getUserMedia` de `flutter_webrtc` uniquement, jamais `record` en parallèle | [rt-echo-cancellation], [proj-avw-risks] n°3 |
 | `stop` distinct de `dispose` | Port `VoiceSession` | [rt-provider-abstraction], [rt-graceful-close] |
@@ -87,7 +87,7 @@ flowchart LR
   - graphe `live` **seul**, résolu sans entrée-sortie, **sans fake dans `lib/`** : les tests ne remplacent que la fabrique de transport et pointent `GENESIS_BACKEND_URL` sur un faux backend local réel ;
   - **un `GetIt` par instance d'app** (`GetIt.asNewInstance()`), pas de variable globale ; **pas de scope par session en J2** (la portée get_it par session, proposée à l'origine pour `VoiceSession`, transport genui et bus d'événements, est reportée) ;
   - fabriques `VoiceTransport Function()` et `EnvelopeLog Function()` **enregistrées à la main** : injectable ne sait pas enregistrer un type fonction ;
-  - `VoiceSession` résolue **une seule fois** par la page racine de composition, qui construit dessus `LiveSessionEventSource` et `VoiceSessionBloc` ; `getIt` n'est appelé nulle part ailleurs (exception de la racine de composition : Q-72, ouverte) ; le relais HTTP est fermé par `getIt.reset()`.
+  - `VoiceSession` résolue **une seule fois** par la page racine de composition, qui construit dessus `LiveSessionEventSource` et `VoiceSessionBloc` ; `getIt` n'est appelé nulle part ailleurs (exception de la racine de composition : pdr-0057) ; le relais HTTP est fermé par `getIt.reset()`.
 - **Fermeture de la page** (ordre testé) : `VoiceSessionBloc.close()`, `VoiceSession.stop()` (borné), `VoiceSession.dispose()`, `LiveSessionEventSource.dispose()`, `CanvasBloc.close()`, `SurfaceController.dispose()`. Sortie de la fenêtre : `AppLifecycleListener(onExitRequested)` + `ExitGuard` (`shared/core`).
 - **Délais par défaut** : `relayDeleteTimeout` 7 s, `channelCloseTimeout` 2 s, `sessionCloseTimeout` 10 s, `exitCloseTimeout` 12 s (invariants testés : 10 s > 7 s + 2 s ; 12 s > 10 s + 1 s). **Réglages posés par l'assistant** (la spec disait « ~8 s ») : à confirmer par le porteur, sans bloquer.
 - ⚠️ Hypothèse non confirmée : démarrage de la session par un bouton « Démarrer » (geste explicite) plutôt qu'automatique ; le raccourci éventuel relève de [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) (facultatif).
@@ -160,6 +160,6 @@ Passages propres au projet retirés des notes génériques (souvent antérieurs 
 
 - **Source du niveau audio** de l'orbe et de la forme d'onde sans seconde capture micro (statistiques WebRTC ou copie sideband) : copie sideband **mesurée en SP-02** (RMS exploitable : 0 au silence, 0,05–0,17 en parole, blocs de 200 ms) ; `audioLevel` des statistiques WebRTC **non testé** (⚠️) ; retenu (Q-43 tranchée, [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md)) : le backend calcule le RMS de la copie sideband, le pousse à 5 Hz sur l'app-channel et l'orbe interpole à 60 i/s ; ⚠️ Hypothèse non confirmée : 5 Hz suffisent visuellement, à vérifier sur l'orbe réelle en J2 (réexamen prévu par la PDR).
 - **Mise en page du canevas** : tranchée, grille tenue par l'app, N surfaces ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md), Q-29).
-- **`catalogId`** définitif (la maquette affiche `genesis.release`, la convention recommande une URI versionnée, [genui-catalog-ids]) → Q-44.
+- **`catalogId`** définitif (la maquette affiche `genesis.release`, la convention recommande une URI versionnée, [genui-catalog-ids]) → Q-44 tranchée : `https://genesis-canvas.example/a2ui/catalogs/genesis/v1` (pdr-0055).
 - **genui sous Linux** : build exige les en-têtes GStreamer ; rendu confirmé par SP-10 le 2026-10-29 ([genui-overview], [pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)). Q-45 (Windows) sans objet.
 - **Raccourcis** : tranché (Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) : facultatifs, toute action critique à la souris.

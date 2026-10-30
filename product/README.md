@@ -3,7 +3,7 @@ id: p-readme
 title: Documentation produit Genesis Canvas
 area: meta
 status: draft
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, AGENTS.md]
 links: [pdr-0041-backend-in-this-repo-local-no-auth, pdr-0042-calendar-and-cut-order-validated, pdr-0043-light-spec-kit-sdd-template, p-conventions, p-sources, p-fn-vision, p-fn-requirements, p-fn-screen, p-ar-overview, p-rm-roadmap, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0026-desktop-only-target, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0048-session-log-only-no-otel-signoz, pdr-0049-sheet-gherkin-scenarios-only, pdr-0050-gpt-live-client-delegation-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended]
 tags: [meta, readme, entree, carte]
@@ -52,7 +52,7 @@ tags: [meta, readme, entree, carte]
 | Talk | 45 min, Meetup Flutter Nantes, **2026-11-12**, enregistré ; logistique et supports gérés par le porteur ([pdr-0027](decisions/pdr-0027-talk-context-meetup-flutter-nantes.md)) |
 | Spikes | SP-00 Widgetbook 4 fait ; J1 réduit (29-30/10) : SP-10 genui sur Linux d'abord, SP-01, SP-03, SP-02 réduit ; SP-04 à SP-07 absorbés dans les jalons ; SP-09 sans objet ([spikes](roadmap/spikes.md)) |
 | Décisions | 43 PDR : 41 acceptées (dont 9 décisions contraintes : pdr-0018 à pdr-0026), 2 remplacées (pdr-0002 → pdr-0028, pdr-0006 → pdr-0032), aucune proposée ; 8 ADR hérités ([index](decisions/index.yaml)) |
-| Questions | 65 au registre : 43 closes (37 tranchées, 3 sans objet, 3 gérées par le porteur), 22 ouvertes ; 22 écarts entre sources, dont E1, E2, E3, E4, E10, E11, E15, E16, E19, E20, E21 et E22 tranchés (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
+| Questions | 72 au registre : 67 closes (61 tranchées, 3 sans objet, 3 gérées par le porteur), 5 ouvertes ; 22 écarts entre sources, dont E1, E2, E3, E4, E7, E8, E9, E10, E12, E13, E14, E17, E11, E15, E16, E19, E20, E21 et E22 tranchés (21 fiche ↔ maquettes, 1 fiche ↔ ADR hérités) ([registre](roadmap/open-questions.md)) |
 
 ## Décisions clés
 
@@ -66,12 +66,10 @@ Règle en vigueur ([pdr-0017](decisions/pdr-0017-source-hierarchy-sheet-over-moc
 |---|---|
 | Q-01, Q-02, Q-29, Q-60, Q-62 tranchées par le porteur (pdr-0013 à pdr-0016) ; décisions contraintes : Q-03 (pdr-0018, A2UI v0.9), Q-04 (pdr-0019, limite = surfaces), Q-28 (pdr-0020, acte 1 = 4 surfaces), Q-33 (pdr-0021), Q-34 (pdr-0022, steps sans chiffre), Q-38 (pdr-0023, composition guidée par exemples), Q-58 (pdr-0024, acte 2 Android seul), Q-59 (pdr-0025, répliques speaker + IA), Q-64 (pdr-0026, desktop seul) | Fixaient le contenu des actes 1 à 3 |
 | Réponses du porteur du 2026-10-29 : Q-05, Q-06, Q-07, Q-08, Q-10, Q-11, Q-12, Q-13, Q-15, Q-16, Q-18, Q-19, Q-23, Q-26, Q-36, Q-37, Q-54, Q-56, Q-61 (pdr-0012 acceptée, pdr-0027 à pdr-0040) ; Q-45, Q-50, Q-51 sans objet ; Q-14, Q-24, Q-57 gérées par le porteur | Fixent le calendrier, la plateforme, l'hébergement et le backend |
-| Q-52 — pas-à-pas du rejeu (reco : aucun, à confirmer) | Bloque J6 |
+| Q-17, Q-20, Q-21, Q-22, Q-30, Q-31, Q-32, Q-35, Q-44, Q-49, Q-52, Q-69, Q-70, Q-71, Q-72 tranchées par le porteur le 2026-10-30 (pdr-0053 à pdr-0061) ; règle permanente fiche/maquette (pdr-0062) | Débloquent J3 (007) à J6 |
 | SP-10 — genui sous Linux : ✅ confirmé le 2026-10-29 | Plus de risque plateforme connu ([pdr-0028](decisions/pdr-0028-linux-demo-machine.md)) |
 | Q-25, Q-39, Q-46, Q-55, Q-63 tranchées par le porteur le 2026-10-29 (pdr-0046, pdr-0045, pdr-0047, pdr-0048, pdr-0049) | Fixent les versions, le canal app ↔ backend, l'observabilité et la couverture Gherkin |
-| Q-17 — LLM des agents | Bloque J3 |
 | Q-43, Q-47, Q-53 tranchées par le porteur le 2026-10-29 (pdr-0051, pdr-0050, pdr-0052) ; Q-67 — délai d'arrêt de la voix après interruption (avant J7) ; Q-68 — plafond de durée par session GPT-Live (avant J7) | Fixent l'orbe, la délégation GPT-Live et les sessions ; Q-67 conditionne FR-13 |
-| Q-69 — surface partielle d'un agent en échec : retirer ou laisser en état neutre (avant J3 si possible) ; Q-70 — le canevas survit-il à la session voix (pdr-0052 vs FR-07, avant J4) | Fixent la politique d'échec visible sur scène (RG-10 vs RG-14) et l'acte 2 « modifier en place » |
 
 ## Contribuer
 

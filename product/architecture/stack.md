@@ -3,7 +3,7 @@ id: p-ar-stack
 title: Stack technologique et versions
 area: architecture
 status: draft
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, knowledge:ma-package-versions, knowledge:genui-overview, knowledge:bloc-packages-versions, knowledge:di-setup-versions, knowledge:ds-widgetbook-versions, knowledge:ds-widgetbook-4-spike, knowledge:ma-backend-sdk-go, knowledge:adr-0003-backend-go]
 links: [pdr-0045-app-backend-channel-wss-recommended, pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0048-session-log-only-no-otel-signoz, proto-a2a-go-v03-compat, proto-a2a-bindings, proto-a2a-dart-sdk, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-rm-open-questions, p-rm-spikes, pdr-0010-pinned-experimental-versions, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, pdr-0002-desktop-platform, ma-package-versions, genui-overview, genui-a2a-connector, genui-a2ui-overview, bloc-packages-versions, di-setup-versions, ds-widgetbook-versions, ds-widgetbook-4-spike, ma-backend-sdk-go, ma-backend-stack-recommendation, proj-sk-backend, rt-gpt-live-overview, proto-a2a-overview, test-bdd-widget-test, test-golden-alchemist, test-very-good-analysis, test-mocktail-essentials, test-coverage-ci, perf-desktop-specifics, rt-flutter-webrtc-overview, adr-0001-initial-constraints, adr-0003-backend-go, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0007-ds-design-tool-claude-design, adr-0008-ds-widgetbook-4-beta, rt-gpt-live-session-config, rt-provider-abstraction, ds-widgetbook-4-beta, ds-widgetbook-4-risks, ds-claude-design-overview, ds-claude-design-workflow, ds-tokens-figma-sources, ds-widgetbook-publish-web, ma-backend-stack-options, p-rm-backend-production-plan, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0028-linux-demo-machine]
 tags: [stack, versions, flutter, genui, go, epinglage]
@@ -65,7 +65,7 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 | Service | Version / modèle | Statut | Source |
 |---|---|---|---|
 | OpenAI GPT-Live | `gpt-live-1` (seul snapshot), 0,05 $/min, voix FR `brise` / `sillage` | **proposé** ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md)) | [rt-gpt-live-overview], [rt-gpt-live-session-config] |
-| LLM texte de composition A2UI | **à figer** ([Q-17](../roadmap/open-questions.md)) | ouvert | — |
+| LLM texte de composition A2UI | petit modèle texte OpenAI, **à figer par la mesure de J3** ([pdr-0060](../decisions/pdr-0060-small-openai-text-model-guided-a2ui.md), Q-17) | décidé, modèle ouvert | — |
 | Gemini Live | alternative documentée, non retenue | ouvert | [rt-provider-abstraction] |
 
 ## Outillage de conception
@@ -94,7 +94,7 @@ Légende statut : **stable** · **bêta** (préversion assumée, cf. talk) · **
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- Versions : Flutter figé ([pdr-0046](../decisions/pdr-0046-flutter-3-47-8-pinned.md), Q-25) ; Go figé au premier commit de code et Style Dictionary à son introduction ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md), Q-46). Reste ouvert : LLM texte → Q-17.
+- Versions : Flutter figé ([pdr-0046](../decisions/pdr-0046-flutter-3-47-8-pinned.md), Q-25) ; Go figé au premier commit de code et Style Dictionary à son introduction ([pdr-0047](../decisions/pdr-0047-go-and-tool-versions-pinned.md), Q-46). Reste à figer : le modèle texte (mesure J3, [pdr-0060](../decisions/pdr-0060-small-openai-text-model-guided-a2ui.md)).
 - Rendu effectif de `genui` sous Linux : ✅ confirmé par SP-10 le 2026-10-29 (en-têtes GStreamer requis) ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)). Q-45 (Windows) sans objet.
 - ~~Inclusion de `genui_a2a`~~ → tranchée : hors stack de l'app, canal = WSS app-channel maison ; compatibilité A2A v0.3 avec a2a-go vérifiée en SP-03 ([pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), Q-39).
 - ~~Version du protocole A2UI montrée par la démo~~ → tranchée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](../decisions/pdr-0018-a2ui-v09-genui-0-10-4.md)).

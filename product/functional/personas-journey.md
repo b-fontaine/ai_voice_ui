@@ -3,7 +3,7 @@ id: p-fn-personas-journey
 title: Personas et parcours en 3 actes
 area: functional
 status: validated
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p2, product/sources/design-example.pdf]
 links: [p-fn-vision, p-fn-scope, p-fn-requirements, p-fn-mockups, p-fn-dataset, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, p-rm-open-questions, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
 tags: [personas, parcours, actes, demo]
@@ -49,7 +49,7 @@ La parade au bruit de salle demande des **phrases clés courtes et rodées** (fi
 
 ## Écarts avec les maquettes
 
-Les maquettes numérotent trois **étapes** (« 1 / 3 · VIDE », « 2 / 3 · CONSTRUCTION », « 3 / 3 · TRANSFORMATION ») qui ne recouvrent pas les trois actes de la fiche : l'acte 3 n'a pas de maquette dédiée, et le bouton « Bloquer la release » apparaît dès la transformation (écarts E9 · Q-22 et E7 · Q-20). La maquette montre aussi 4 agents au lieu de 3 (écart E1 · Q-01). Détails : [p-fn-mockups](mockups.md) ; arbitrages ouverts : [p-rm-open-questions](../roadmap/open-questions.md).
+Les maquettes numérotent trois **étapes** (« 1 / 3 · VIDE », « 2 / 3 · CONSTRUCTION », « 3 / 3 · TRANSFORMATION ») qui ne recouvrent pas les trois actes de la fiche : l'acte 3 n'a pas de maquette dédiée, et le bouton « Bloquer la release » apparaît dès la transformation (écarts E9 · Q-22 et E7 · Q-20 : tranchés, un indicateur « Acte n/3 » reprend les 3 actes de la fiche, pdr-0054 ; la Barre d'actions arrive à la fin de l'acte 2, pdr-0061). La maquette montre aussi 4 agents au lieu de 3 (écart E1 · Q-01). Détails : [p-fn-mockups](mockups.md) ; arbitrages ouverts : [p-rm-open-questions](../roadmap/open-questions.md).
 
 ## Question ouverte (fiche § 3)
 

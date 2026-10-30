@@ -3,7 +3,7 @@ id: p-fn-requirements
 title: Exigences fonctionnelles FR-01 à FR-20
 area: functional
 status: validated
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
 links: [rt-echo-cancellation, p-fn-nfr, p-fn-business-rules, p-fn-screen, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, rt-barge-in, ux-voice-multimodal, pdr-0013-orchestrator-visible-agent-selection, pdr-0016-validate-release-action, pdr-0024-act2-android-only, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07, pdr-0012-voice-provider-openai, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [exigences, fr, moscow, bdd]
@@ -38,7 +38,7 @@ Les ids S-xx sont une numérotation de l'assistant ; les titres sont ceux de la 
 | FR-04 | Chaque surface apparaît en 3 temps : squelette, composants, données | Must | S-01 (squelette < 1,5 s) | RG-02, RG-03 |
 | FR-05 | Le panneau protocole met en évidence le message qui correspond au composant en train d'apparaître | Must | — | RG-25 |
 | FR-06 | Le composant utilisé s'allume dans l'étagère du catalogue | Should | — | RG-25 |
-| FR-07 | Une demande de modification transforme une surface existante sur place, sans la recréer | Must | S-02 | RG-06 ; ⚠️ écart E8 · Q-21 (surface retirée) ; uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) ; couvre aussi les interactions vocales par composant de la fiche § 7 (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) |
+| FR-07 | Une demande de modification transforme une surface existante sur place, sans la recréer | Must | S-02 | RG-06 ; aucune surface retirée (E8 · Q-21 → pdr-0059) ; uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) ; couvre aussi les interactions vocales par composant de la fiche § 7 (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) |
 | FR-08 | Un clic sur un composant généré est transmis à l'agent, qui répond à la voix | Must | S-03 | RG-18, RG-28, RG-30 |
 | FR-09 | Toute la génération est enregistrée et rejouable à une vitesse de 0,25× à 2× | Must | — | RG-19 ; flux A2UI seul, rejeu = acte 4 ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) |
 | FR-10 | ~~Un raccourci clavier bascule en mode secours (rejeu d'une session enregistrée)~~ | ~~Must~~ **retirée (pdr-0032)** | ~~S-04~~ | ~~RG-20~~ ; secours = vidéo OBS gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) |

@@ -20,6 +20,7 @@ Référence : `product/_conventions.md` § 5 et le gabarit `product/decisions/_t
 - **Décision contrainte** : une seule réponse correcte découle de faits vérifiés (notes `knowledge/` `status: verified`, doc officielle) et/ou de décisions acceptées (`pdr-*`, ADR hérités, AGENTS.md § 2, exigences de la fiche). L'assistant la tranche **sans demander** : PDR `acceptée`, `decided_by: "Assistant (décision contrainte), sur délégation du porteur du 2026-10-29"`, champ `constraint_basis` (ids qui imposent la réponse), puis il la **signale** au porteur dans son compte rendu. Le porteur peut la contester : elle est alors remplacée (§ 3) par une PDR de sa main. Exemple : [pdr-0018](../../../product/decisions/pdr-0018-a2ui-v09-genui-0-10-4.md).
 - **Arbitrage** (porteur) : plusieurs options valables ; goût, priorité, mise en scène, budget, calendrier, matériel, hypothèse sur l'équipe ou l'hébergement. L'assistant recommande, le porteur tranche.
 - **Fait à établir** : la réponse dépend d'un spike ou d'une mesure ; rattacher la `Q-xx` au spike.
+- **Règle permanente (pdr-0062, 2026-10-30)** : écart fiche/maquette → la fiche s'applique ; fiche muette sur un détail d'interface → l'assistant tranche (PDR `acceptée`, `decided_by` « Assistant (délégation du porteur, pdr-0062) »), le signale dans son compte rendu et `specs/progress.md` ; périmètre, mise en scène des actes, budget et fournisseurs restent au porteur.
 - En cas de doute, c'est un arbitrage.
 
 ## 1. Créer une PDR (proposée ou acceptée)

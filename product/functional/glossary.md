@@ -3,7 +3,7 @@ id: p-fn-glossary
 title: Glossaire
 area: functional
 status: draft
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, knowledge:genui-a2ui-overview, knowledge:rt-barge-in]
 links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0032-obs-video-fallback-a2ui-replay-act]
 tags: [glossaire, vocabulaire]
@@ -20,7 +20,7 @@ tags: [glossaire, vocabulaire]
 | **Release Copilot** | Cas d'usage métier : préparer la décision go/no-go d'une release mobile. | Fiche § 1 |
 | **Speaker** | Benoît, qui donne le talk et pilote la démo (voix, clic, clavier). | Fiche § 2 |
 | **Acte** | Étape du déroulé : 1 Créer, 2 Transformer, 3 Interagir, 4 Rejouer (optionnel). | Fiche § 2 ; voir aussi « étape » |
-| **Étape (maquettes)** | Indicateur « n / 3 » des maquettes : Vide, Construction, Transformation. Ne coïncide pas avec les actes (E9 · Q-22). | Maquettes 1-3 |
+| **Étape (maquettes)** | Indicateur « n / 3 » des maquettes : Vide, Construction, Transformation. Ne coïncide pas avec les actes (E9 · Q-22 → pdr-0054 : l'indicateur « Acte n/3 » suit les 3 actes de la fiche). | Maquettes 1-3 |
 | **Go/no-go** | Décision de publier ou de bloquer une release, fondée sur des critères et leurs seuils. | Fiche § 1, § 7 ; maquette 3 |
 | **Seuil go** | Valeur minimale ou maximale qu'un critère doit respecter (ex. sans crash ≥ 99,50 %). | Maquette 3 |
 | **Thème de scène** | Thème visuel unique (couleurs, tailles de texte ≥ 24 px) défini par le développeur ; l'IA n'y touche jamais. | Fiche § 7, § 8 |

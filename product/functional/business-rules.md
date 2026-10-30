@@ -3,7 +3,7 @@ id: p-fn-business-rules
 title: Règles de fonctionnement RG-01 à RG-30
 area: functional
 status: draft
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
 links: [p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
@@ -21,7 +21,7 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 | RG-03 | Le premier squelette apparaît en moins de 1,5 s après la fin de la phrase, avant toute donnée. | NFR-02, § 8 (« squelettes immédiats ») |
 | RG-04 | L'IA commente pendant la construction (« je lance l'analyse des crashs... ») : l'attente devient du spectacle. | § 5 (point délicat), § 8 (risque « attente trop longue ») |
 | RG-05 | Au maximum 6 surfaces sont visibles en même temps. | § 3, § 6, NFR-06 ; portée tranchée (E4 · Q-04, [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) : surfaces visibles, pas de compteur de composants |
-| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; ⚠️ écart E8 · Q-21 ; acte 2 uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) |
+| RG-06 | Une demande de modification transforme les surfaces existantes **sur place** : elles restent à leur place et ne sont pas recréées. | FR-07, § 2 acte 2, S-02 ; aucune suppression en acte 2 (E8 · Q-21 → pdr-0059) ; acte 2 uniquement Android, checklist comprise (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)) |
 | RG-25 | La fabrication est montrée en continu : l'agent sollicité s'allume avec sa tâche, le message de protocole en cours est mis en évidence et relié à son composant, le composant utilisé s'allume dans l'étagère, la transcription est affichée en direct. | FR-02, FR-03, FR-05, FR-06, § 6 |
 | RG-29 | L'orchestrateur choisit à chaque demande les agents qu'il active, et le rail le montre : agents sollicités allumés avec leur tâche, agents non sollicités visiblement en veille. Les agents portent un nom de rôle métier (Qualité, Voix du client, Livraison). | FR-03, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md) |
 
@@ -54,7 +54,7 @@ Repère technique : couper la voix n'annule pas d'elle-même les outils en cours
 | RG | Règle | Source |
 |---|---|---|
 | RG-18 | Un clic sur un composant généré est transmis à l'agent concerné, qui s'allume dans le rail et répond à la voix **et** dans l'interface. | FR-08, § 6 (modes), S-03 |
-| RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; ⚠️ écart E17 · Q-35 |
+| RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; statuts de la fiche § 7 : validé / à risque / bloquant (E17 · Q-35 → pdr-0054) |
 | RG-30 | « Valider la release » se comporte comme « Bloquer la release » (RG-18, RG-28) : clic transmis à Livraison, confirmation vocale, statut de la checklist mis à jour (par exemple « Validée »). | § 7 (Barre d'actions) ; [pdr-0016](../decisions/pdr-0016-validate-release-action.md) (Q-62) |
 
 ## Régie de scène et rejeu
@@ -80,7 +80,7 @@ Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème
 
 ## Points ouverts
 
-- RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21). Son critère iOS est sans portée : uniquement Android (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
+- RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21 tranché : aucune suppression, pdr-0059). Son critère iOS est sans portée : uniquement Android (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
 - RG-17 : tranché (E20 · Q-59, [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)) : répliques du speaker et de l'IA, réplique coupée tronquée ; la détection de l'interruption reste ouverte (Q-40).
 - Interactions vocales propres à chaque composant (fiche § 7) : tranché (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) : couvertes par FR-07 / RG-06 uniquement, sans règle dédiée.
 - RG-14 / RG-15 : modèle de surfaces tranché (E11 · Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : N surfaces dans une grille de l'app ([genui-multiple-surfaces]).
