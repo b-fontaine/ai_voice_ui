@@ -1,6 +1,6 @@
 # 005 — État
 
-- **Étape** : TDD
+- **Étape** : Refactorisation
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -11,6 +11,8 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | Revue | Revue d'architecte (mode CODE) rendue : CONFORME SOUS RÉSERVE, 0 bloquante, 5 importantes (R1-R5), 5 mineures (R6-R10) ; Q-71 et Q-72 ouvertes (conflits avec une décision, non bloquantes) ; `product_lint` 0 erreur | rapport collé ci-dessous |
+| 2026-10-30 | TDD | T90 : `gate.sh --full` VERT à `b183b5e`, arbre propre, 36 contrôles (Flutter, Go, acceptation, compose) | `.omc/state/loop/gates/20261030-005722-full.log` ; `last_green_sha` = `b183b5e` |
 | 2026-10-30 | TDD | T23 faite : `GenesisCanvasApp` (un `GetIt` par instance, `voiceTransportFactory`), page racine de composition (une seule `VoiceSession`, abonnés branchés avant toute connexion, sous-flux canevas dérivé une fois), ordre de fermeture testé, `ExitGuard`, mode scénario (source vivante non branchée, « Démarrer » désactivé), exclusion d'analyse retirée ; rouge cité (`voiceTransportFactory` absent, `ExitGuard` absent, `startEnabled` absent) ; acceptation V1-V5bis + `loop_harness` : `flutter test test/acceptance` → 15 tests verts (revérifié) ; écarts : orbe immobile aussi en mode scénario (H-02 `pumpAndSettle`), `LiveSessionEventSource`/`VoiceSessionBloc` retirés du graphe (piège T21 supprimé), harnais d'acceptation corrigé pour les E/S réelles (`emitFixture`, `shutDown`), `GetIt` présent dans `app/di`, `genesis_canvas_app.dart` et la page | `.omc/state/loop/gates/20261030-005433-unit-flutter.log` (VERT, 29 contrôles) |
 | 2026-10-30 | TDD | T22 faite : `VoiceOrb` (CustomPainter repaint-driven, repos/parole/réflexion, Semantics), `TopBar`, `AgentsRail`, `voiceFailureMessage` ; rouge cité (symboles absents), 42 tests de widgets verts dont la preuve NFR-04 (60 niveaux poussés, aucun rebuild de `TopBar`) ; acceptation : ne reste que `voiceTransportFactory` (T23) | `.omc/state/loop/gates/20261030-002255-unit-flutter.log` (VERT, 29 contrôles) |
 | 2026-10-30 | TDD | T21 faite : `GenesisConfig` étendue (URL validée sans fuite de valeur, journal, constantes), `loadConfigOrExit`, graphe DI `live` seul sans E/S à la construction, substitution de la fabrique de transport, V6 (aucune clé dans `lib/`) ; rouge cité pour `genesis_config_test`/`injection_test` (getters et paramètre `config` absents), 14 tests de config ; **écart de méthode** : `config_loader_test.dart` écrit en même temps que `config_loader.dart` (pas de rouge cité) ; injectable ne sait pas enregistrer un type fonction → enregistrement manuel | `.omc/state/loop/gates/20261030-000831-unit-flutter.log` (VERT, 29 contrôles) |

@@ -40,6 +40,6 @@
 - [x] T23 Flutter — page `genesis_canvas` et `app/lifecycle` : câblage source → Blocs (abonnement avant connexion, sous-flux canevas dérivé une fois), `GENESIS_SCENARIO` désactive la source vivante et « Démarrer », ordre de fermeture, `AppLifecycleListener(onExitRequested)` borné · test d'abord : test de page avec le faux backend (V1), ordre de fermeture observé, `loop_harness.feature` toujours vert
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
-- [ ] T91 Revue architect-reviewer (mode CODE) + refactorisations (par lots)
+- [x] T90 `tools/loop/gate.sh --full` vert
+- [~] T91 Revue architect-reviewer (mode CODE) + refactorisations (par lots)
 - [ ] T92 Vérification : capture `app-smoke.sh`, essai réel unique si matériel et budget (`openai-budget.sh`), confirmation de la sortie propre de la fenêtre, mise à jour de `product/architecture/frontend.md` § DI (modules dans `app/di`) et du contrat, clôture, fusion, `publish.sh`, `fresh_session`

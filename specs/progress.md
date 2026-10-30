@@ -10,11 +10,12 @@
 | 002 | SP-02 : session GPT-Live par relais SDP (spike réduit) | EP-02 | J1 | Terminée ⚠️ (résultat partiel), publiée (`82465d5`) | 2026-10-29 |
 | 003 | J2 : backend squelette (relais SDP, sideband, app-channel, compose, CI) | EP-01, EP-02 | J2 | Terminée ✅, publiée (`c193434`) | 2026-10-29 |
 | 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Terminée ✅, publiée (`0d979f9`) | 2026-10-29 |
-| 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | TDD, T10 à T17 faites, reste T18 à T23 (branche `feat/005-j2-app-voice-orb`) | 2026-10-29 |
+| 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | Refactorisation (R1-R10, 5 lots) (branche `feat/005-j2-app-voice-orb`) | 2026-10-29 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-30 | 005 : TDD terminé (T10-T23, acceptation V1-V5bis + loop_harness verts, `gate --full` vert à `b183b5e`) ; revue d'architecte du code rendue (0 bloquante, 5 importantes, 5 mineures) ; refactorisation en 5 lots. **Pour le porteur, sans bloquer** : Q-71 (validation A2UI côté client reportée à J3 ?) et Q-72 (préciser dans AGENTS.md § 2 l'exception « racine de composition » pour `getIt`). |
 | 2026-10-29 | 005 : TDD en cours — T10 à T17 faites (entités de session, `A2uiDecoder`/`AppClock`, enveloppe, canal WSS, relais HTTP, journal, `VoiceSession`, source d'événements et Blocs voix) ; reste T18 (orbe), T19 (adaptateur WebRTC), T20 (agents), T21 (DI), T22 (widgets), T23 (page). |
 | 2026-10-29 | 005 : Gherkin terminé (T01 : 4 paquets et DI, `build_runner` figé en 2.16.1 car `injectable_generator` 3.1.3 est incompatible avec 2.16.2 — choix contraint ; T02 : 12 scénarios V1-V5bis rouges pour la bonne raison, gate --unit vert) ; passage au TDD (T10 à T23). |
 | 2026-10-29 | 005 : revue du plan rendue (À AMENDER, 2 bloquants), amendements A1-A8 intégrés ; passage à l'étape Gherkin (T01 d'abord : résolution `injectable_generator`/`analyzer`, arrêt et remontée au porteur si impossible). |
