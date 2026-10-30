@@ -48,7 +48,7 @@ func ParseConfig(getenv func(string) string) (Config, error) {
 	c.Timeout = d
 	// NewClient applique les mêmes contrôles d'URL que le câblage de l'agent.
 	if _, err := llmcompose.NewClient(c.URL, c.Timeout); err != nil {
-		return Config{}, errors.New("COMPOSER_LLM_URL invalide : http://hôte:port" + llmcompose.CompletePath + " attendu, sans identifiants ni requête")
+		return Config{}, errors.New("COMPOSER_LLM_URL invalide : http://hôte:port" + kit.ComposerLLMPath + " attendu, sans identifiants ni requête")
 	}
 
 	c.Repeats = defaultRepeats

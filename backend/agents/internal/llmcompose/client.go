@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
 const (
-	// CompletePath est le chemin fixe de la passerelle LLM de l'orchestrateur.
-	CompletePath = "/v1/complete"
 	// MaxResponseBytes borne le corps lu de la réponse de la passerelle.
 	MaxResponseBytes = 64 << 10
 )
@@ -57,17 +57,17 @@ type Client struct {
 var _ Completer = (*Client)(nil)
 
 // NewClient valide l'URL de la passerelle (http, sans identifiants, sans requête ni
-// fragment, chemin exactement CompletePath) et le délai par appel. Les erreurs ne citent
+// fragment, chemin exactement kit.ComposerLLMPath) et le délai par appel. Les erreurs ne citent
 // jamais l'URL.
 func NewClient(rawURL string, timeout time.Duration) (*Client, error) {
 	u, err := url.Parse(rawURL)
 	switch {
 	case err != nil || u.Scheme != "http" || u.Host == "" || u.Hostname() == "":
-		return nil, errors.New("URL de la passerelle invalide : http://hôte:port" + CompletePath + " attendu")
+		return nil, errors.New("URL de la passerelle invalide : http://hôte:port" + kit.ComposerLLMPath + " attendu")
 	case u.User != nil:
 		return nil, errors.New("URL de la passerelle invalide : identifiants interdits")
-	case u.Path != CompletePath || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "":
-		return nil, errors.New("URL de la passerelle invalide : chemin " + CompletePath + " exact attendu")
+	case u.Path != kit.ComposerLLMPath || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "":
+		return nil, errors.New("URL de la passerelle invalide : chemin " + kit.ComposerLLMPath + " exact attendu")
 	case timeout <= 0:
 		return nil, errors.New("délai de composition invalide : une durée positive est attendue")
 	}

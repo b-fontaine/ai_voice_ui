@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
@@ -64,31 +62,6 @@ func TestScenarioExpectationsMatchParseIntent(t *testing.T) {
 				t.Errorf("%s : %s attend %q/%q, ParseIntent donne %q/%q", s.ID, ps.Component,
 					ps.Params.Platform, ps.Params.Compare, intent.Platform, intent.CompareTo)
 			}
-		}
-	}
-}
-
-// Le profil de validation du banc est la copie de celui de l'agent Qualité (seul le
-// binaire assemble llmcompose et quality) : ce test échoue si les deux divergent.
-func TestProfileMatchesAgentQualityWiring(t *testing.T) {
-	src, err := os.ReadFile("../agent-quality/composer.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, c := range qualityComponents {
-		line := `{Name: "` + c.Name + `", Surface: "` + c.Surface + `", Path: "` + c.Path + `", `
-		if c.Counted {
-			line += `Counted: true, `
-		}
-		line += `Description: "` + c.Description + `", Build: adapt(quality.` + c.Name + `)}`
-		if !strings.Contains(string(src), line) {
-			t.Errorf("le composant %s diffère de celui de agent-quality/composer.go", c.Name)
-		}
-	}
-	for _, frag := range []string{`MaxSurfaces: 3, MaxCount: dataset.MaxTopCrashes`, `Global: []string{"KeyIndicator", "TrendChart"}`,
-		`Views:  map[string][]string{kit.ViewCrashList: {"CrashList"}}`} {
-		if !strings.Contains(string(src), frag) {
-			t.Errorf("agent-quality/composer.go ne contient plus %q : mettre à jour le profil du banc", frag)
 		}
 	}
 }

@@ -153,3 +153,14 @@ func TestComposerWithoutEmitKeepsMessagesBehaviour(t *testing.T) {
 		t.Errorf("états %v messages %v", states, data)
 	}
 }
+
+// Une vue nommée ne déplace jamais le focus : le completed d'une composition à vue nommée
+// ne porte pas genesis/intent, quel que soit l'agent (revue 012, R6).
+func TestCompletedWithNamedViewCarriesNoIntent(t *testing.T) {
+	base := serve(t, testProfile(t), fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+		return kit.Composition{Messages: []map[string]any{}, Summary: "ok", Intent: &kit.Intent{View: kit.ViewCrashList}}, nil
+	}})
+	if got, ok := intentOfCompleted(t, base); ok {
+		t.Fatalf("genesis/intent = %#v : attendu absent pour une vue nommée", got)
+	}
+}

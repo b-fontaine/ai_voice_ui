@@ -2,9 +2,7 @@ package main
 
 import (
 	"log/slog"
-	"slices"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/llmcompose"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/quality"
@@ -21,7 +19,7 @@ func newComposer(s kit.Settings, log *slog.Logger) (kit.Composer, error) {
 	if s.ComposerLLMURL == "" {
 		return deterministic, nil
 	}
-	validator, err := llmcompose.NewValidator(validatorConfig(s.Dataset))
+	validator, err := llmcompose.NewValidator(quality.ComposerProfile(s.Dataset))
 	if err != nil {
 		return nil, err
 	}
@@ -45,34 +43,4 @@ func newComposer(s kit.Settings, log *slog.Logger) (kit.Composer, error) {
 		Instructions: prompt.Instructions(),
 		Log:          log,
 	})
-}
-
-// validatorConfig est le profil de l'agent Qualité pour la validation des plans : les
-// plateformes et la version de comparaison viennent du jeu de données.
-func validatorConfig(ds dataset.Dataset) llmcompose.ValidatorConfig {
-	var platforms []string
-	for _, r := range ds.Rows {
-		if !slices.Contains(platforms, r.Platform) {
-			platforms = append(platforms, r.Platform)
-		}
-	}
-	slices.Sort(platforms)
-	return llmcompose.ValidatorConfig{
-		Components: []llmcompose.Component{
-			{Name: "KeyIndicator", Surface: "kpi", Path: "/kpi", Description: "indicateur du taux de sessions sans crash de la version", Build: adapt(quality.KeyIndicator)},
-			{Name: "TrendChart", Surface: "trend", Path: "/trend", Description: "courbe du taux de crash sur sept jours", Build: adapt(quality.TrendChart)},
-			{Name: "CrashList", Surface: "crashes", Path: "/crashes", Counted: true, Description: "liste des principaux crashs de la version", Build: adapt(quality.CrashList)},
-		},
-		Platforms: platforms, Compares: []string{ds.CompareVersion},
-		MaxSurfaces: 3, MaxCount: dataset.MaxTopCrashes,
-		Global: []string{"KeyIndicator", "TrendChart"},
-		Views:  map[string][]string{kit.ViewCrashList: {"CrashList"}},
-	}
-}
-
-// adapt branche un builder Qualité sur le port de llmcompose.
-func adapt(b quality.Builder) llmcompose.Builder {
-	return func(p llmcompose.Params, ds dataset.Dataset) (map[string]any, string, error) {
-		return b(quality.Params{Platform: p.Platform, CompareTo: p.Compare, Count: p.Count}, ds)
-	}
 }

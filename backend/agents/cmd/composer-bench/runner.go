@@ -11,6 +11,7 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/llmcompose"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/quality"
 )
 
 // benchCatalogID : identifiant de catalogue des surfaces construites (sans effet sur la mesure).
@@ -37,7 +38,7 @@ func NewRunner(c llmcompose.Completer, now func() time.Time) (*Runner, error) {
 	if err != nil {
 		return nil, err
 	}
-	validator, err := llmcompose.NewValidator(validatorConfig(ds))
+	validator, err := llmcompose.NewValidator(quality.ComposerProfile(ds))
 	if err != nil {
 		return nil, err
 	}

@@ -311,7 +311,7 @@ func TestC03ChildDeadlineFallsBackAsTimeout(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	client, err := llmcompose.NewClient(srv.URL+llmcompose.CompletePath, 80*time.Millisecond)
+	client, err := llmcompose.NewClient(srv.URL+kit.ComposerLLMPath, 80*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func TestParentCancellationWithRealClient(t *testing.T) {
 		<-r.Context().Done()
 	}))
 	t.Cleanup(srv.Close)
-	client, err := llmcompose.NewClient(srv.URL+llmcompose.CompletePath, 5*time.Second)
+	client, err := llmcompose.NewClient(srv.URL+kit.ComposerLLMPath, 5*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}

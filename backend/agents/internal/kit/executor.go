@@ -148,9 +148,9 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 }
 
 // completedMessage porte l'intention résolue dans les metadata de l'état completed ;
-// nil sans intention. Les valeurs sont des chaînes d'ensembles fermés du jeu de données.
+// nil sans intention, et nil pour une vue nommée (elle ne déplace jamais le focus). Les valeurs sont des chaînes d'ensembles fermés du jeu de données.
 func completedMessage(in *Intent) *a2a.Message {
-	if in == nil {
+	if in == nil || in.View != "" {
 		return nil
 	}
 	m := a2a.NewMessage(a2a.MessageRoleAgent)
