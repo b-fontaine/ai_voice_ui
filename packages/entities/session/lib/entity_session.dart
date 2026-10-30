@@ -1,4 +1,5 @@
 // API publique de entity_session.
+export 'src/a2ui_journal.dart' show A2uiJournal, JournalEntry;
 export 'src/session_event.dart'
     show
         A2uiEnvelopeReceived,
