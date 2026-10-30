@@ -27,8 +27,7 @@ type AgentCard struct {
 
 // AgentRequest est une demande confiée à un agent distant : Text est la
 // demande en langage naturel, ContextID rattache les échanges d'une même
-// conversation (l'identifiant de la session voix ; vide pour une première
-// demande).
+// conversation (l'identifiant de la session voix).
 //
 // Card est la carte déjà lue par Card() pour cette délégation (nil : Send lit la
 // carte lui-même). Une carte qui ne vient pas de l'adaptateur est ignorée.
@@ -102,7 +101,8 @@ type RemoteAgent interface {
 	// configurée) : elle sert de propriétaire des surfaces, jamais à
 	// l'affichage.
 	ID() string
-	// Name est le dernier nom valide de carte, sinon l'hôte de l'URL de carte :
+	// Name est le nom d'affichage configuré s'il existe, sinon le dernier nom
+	// valide de carte (nettoyé), sinon l'hôte de l'URL de carte :
 	// il sert à l'affichage et aux échecs survenus avant toute lecture de carte.
 	Name() string
 	// LastTags renvoie une copie des tags de la dernière carte VALIDE lue, nil

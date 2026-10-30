@@ -55,6 +55,17 @@ var (
 	buildResults = map[string]buildResult{}
 )
 
+// TestMain supprime, après les tests, le dossier des binaires d'agents compilés.
+func TestMain(m *testing.M) {
+	code := m.Run()
+	buildMu.Lock()
+	if buildDir != "" {
+		_ = os.RemoveAll(buildDir)
+	}
+	buildMu.Unlock()
+	os.Exit(code)
+}
+
 // agentsModuleDir est le dossier du module backend/agents (le test tourne dans acceptance/).
 func agentsModuleDir(t *testing.T) string {
 	t.Helper()

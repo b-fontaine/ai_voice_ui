@@ -143,9 +143,9 @@ func (h *Hub) Publish(sessionID string, m domain.Message) {
 // Un deleteSurface fait oublier tous les messages retenus de la surface et n'est
 // pas retenu lui-même : un abonné tardif ne reconstruit jamais une surface
 // supprimée. Un `plan` (sans surface) est retenu comme un agent.activity, avec
-// les mêmes bornes, et n'est jamais effacé par un deleteSurface. Au-delà de RetainedMax, l'éviction retire d'abord les
-// agent.activity les plus anciens, puis les mises à jour les plus anciennes ;
-// le createSurface d'une surface vivante n'est évincé qu'en dernier recours,
+// les mêmes bornes, et n'est jamais effacé par un deleteSurface. Au-delà de
+// RetainedMax, l'éviction retire d'abord les agent.activity les plus anciens,
+// puis les mises à jour les plus anciennes ; le createSurface d'une surface vivante n'est évincé qu'en dernier recours,
 // quand il ne reste que des createSurface (plus de RetainedMax surfaces
 // vivantes : impossible tant que RetainedMax dépasse le plafond de surfaces du
 // registre, 6 ; la mémoire reste bornée dans tous les cas). h.mu doit être tenu.

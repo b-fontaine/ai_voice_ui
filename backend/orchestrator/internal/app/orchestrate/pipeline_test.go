@@ -1088,13 +1088,14 @@ func TestCompletedWithoutSummarySaysNoSummary(t *testing.T) {
 
 func TestFailurePhraseMatchesCause(t *testing.T) {
 	for name, tc := range map[string]struct {
-		err  error
-		want string
+		err        error
+		want       string
+		wantDetail string
 	}{
-		"rejet":        {&port.AgentError{Kind: port.AgentRejected, Reason: "refusée"}, pipePhrases.FailureRejected},
-		"échec agent":  {&port.AgentError{Kind: port.AgentFailed, Reason: "x"}, pipePhrases.Failure},
-		"injoignable":  {&port.AgentError{Kind: port.AgentUnreachable, Reason: "x"}, pipePhrases.Failure},
-		"erreur brute": {errors.New("boum"), pipePhrases.Failure},
+		"rejet":        {&port.AgentError{Kind: port.AgentRejected, Reason: "refusée"}, pipePhrases.FailureRejected, DetailOutOfScope},
+		"échec agent":  {&port.AgentError{Kind: port.AgentFailed, Reason: "x"}, pipePhrases.Failure, DetailAgentFailed},
+		"injoignable":  {&port.AgentError{Kind: port.AgentUnreachable, Reason: "x"}, pipePhrases.Failure, DetailUnreachable},
+		"erreur brute": {errors.New("boum"), pipePhrases.Failure, DetailAgentFailed},
 	} {
 		t.Run(name, func(t *testing.T) {
 			e := newEnv(t, newAgent(agentQuality, submitted("t1"), step{err: tc.err}))
@@ -1102,9 +1103,13 @@ func TestFailurePhraseMatchesCause(t *testing.T) {
 			if want := []string{pipePhrases.Generic, tc.want}; !reflect.DeepEqual(e.texts(), want) {
 				t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
 			}
-			// le détail de l'activité reste dans l'ensemble fermé
-			if got := e.sink.snapshot(); len(got) != 2 || activityOf(t, got[1]).Detail != DetailAgentFailed && activityOf(t, got[1]).Detail != DetailUnreachable && activityOf(t, got[1]).Detail != DetailOutOfScope {
+			// le détail de l'activité est exactement celui de la cause
+			got := e.sink.snapshot()
+			if len(got) != 2 {
 				t.Fatalf("messages = %q", describeAll(got))
+			}
+			if d := activityOf(t, got[1]).Detail; d != tc.wantDetail {
+				t.Fatalf("détail = %q, attendu %q", d, tc.wantDetail)
 			}
 		})
 	}

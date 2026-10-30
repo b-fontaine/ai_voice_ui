@@ -134,7 +134,7 @@ func (a *Agent) ID() string {
 	return u.String()
 }
 
-// Name renvoie le nom configuré, sinon LastName, sinon l'hôte de l'URL de la carte.
+// Name renvoie le nom configuré, sinon LastName (nettoyé), sinon l'hôte de l'URL de la carte.
 func (a *Agent) Name() string {
 	if a.name != "" {
 		return a.name
@@ -202,6 +202,31 @@ func cardLabel(card *a2a.AgentCard) string {
 	return card.Skills[0].ID
 }
 
+// maxCardNameRunes borne le nom d'affichage issu d'une carte distante.
+const maxCardNameRunes = 40
+
+// cleanCardName nettoie le nom d'une carte distante (non fiable) : les blancs
+// (retours à la ligne compris) deviennent des espaces normalisés, les autres
+// caractères de contrôle et de formatage (bidi, largeur nulle) sont retirés,
+// le résultat est borné à maxCardNameRunes. Vide si rien ne reste.
+func cleanCardName(raw string) string {
+	var b strings.Builder
+	for _, r := range raw {
+		switch {
+		case unicode.IsSpace(r):
+			b.WriteByte(' ')
+		case unicode.IsControl(r), unicode.Is(unicode.Cf, r):
+		default:
+			b.WriteRune(r)
+		}
+	}
+	name := strings.Join(strings.Fields(b.String()), " ")
+	if utf8.RuneCountInString(name) > maxCardNameRunes {
+		name = strings.TrimSpace(string([]rune(name)[:maxCardNameRunes]))
+	}
+	return name
+}
+
 // fetchCard lit la carte et la valide ; seule l'interface JSON-RPC de même
 // origine que CardURL est conservée dans la carte renvoyée.
 func (a *Agent) fetchCard(ctx context.Context) (*a2a.AgentCard, error) {
@@ -227,6 +252,10 @@ func (a *Agent) fetchCard(ctx context.Context) (*a2a.AgentCard, error) {
 		return nil, &port.AgentError{Kind: port.AgentProtocol, Reason: "aucune interface JSON-RPC annoncée"}
 	}
 	card.SupportedInterfaces = kept
+	card.Name = cleanCardName(card.Name)
+	if card.Name == "" {
+		card.Name = a.cardURL.Hostname()
+	}
 	a.mu.Lock()
 	a.lastName = card.Name
 	a.lastTags = cardTags(card)
