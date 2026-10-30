@@ -3,6 +3,7 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/delivery"
@@ -10,5 +11,7 @@ import (
 )
 
 func main() {
-	os.Exit(kit.Main(os.Args[1:], os.Getenv, os.Stderr, delivery.Profile, func(catalogID string) kit.Composer { return delivery.NewComposer(catalogID) }))
+	os.Exit(kit.Main(os.Args[1:], os.Getenv, os.Stderr, delivery.Profile, func(s kit.Settings, _ *slog.Logger) (kit.Composer, error) {
+		return delivery.NewComposer(s.CatalogID), nil
+	}))
 }

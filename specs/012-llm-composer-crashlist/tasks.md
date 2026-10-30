@@ -27,8 +27,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T33 Go — couture `emit` de `kit.Composer`/`executor` (A1) ; `llmcompose.Client` (URL validée, `CheckRedirect`, corps borné, un essai, délai) et `Composer` (`ParseIntent` avant l'appel, plan → builders, surfaces actives rafraîchies, repli, parent annulé ≠ délai) · `composer_test.go` (C-01 à C-05, `Summary` comparé), `executor_test.go` (ordre inchangé)
 - [x] T34 Go — `Prompt` et `internal/llmcompose/examples.json` embarqué (demande → plan, sans valeurs ; préfixe statique) · test qui rejoue chaque plan d'exemple par les builders et compare aux fixtures `act1-*`, `act2-*`, `correction-ios-*`, `crashlist-*` ; test d'absence de valeurs
 - [ ] T35 Go — builders pour Voix du client et Livraison ; modèle branché dessus **seulement si la mesure par agent (T51) le justifie** (actions toujours déterministes) · tests de profil et d'équivalence
-- [ ] T36 Go — `kit.Main` prend une fabrique `func(Settings, *slog.Logger) (Composer, error)` ; `Settings.ComposerLLMURL`/`ComposerTimeout` ; décoration dans `cmd/agent-*/main.go` (absent = déterministe) ; motifs de repli journalisés · `env_test.go`, `main_test.go`
-- [ ] T37 Go — consignes vocales (`voice-instructions.fr.md`) : la liste des crashs existe, vue inconnue refusée avec alternative (après T25) · test du texte
+- [x] T36 Go — `kit.Main` prend une fabrique `func(Settings, *slog.Logger) (Composer, error)` ; `Settings.ComposerLLMURL`/`ComposerTimeout` ; décoration dans `cmd/agent-*/main.go` (absent = déterministe) ; motifs de repli journalisés · `env_test.go`, `main_test.go`
+- [x] T37 Go — consignes vocales (`voice-instructions.fr.md`) : la liste des crashs existe, vue inconnue refusée avec alternative (après T25) · test du texte
 
 ## TDD Flutter
 - [x] T40 Flutter — `genesis_contract.dart` : `CrashList` dans `components`, schéma, parité Go/Dart sur les fixtures positives et négatives · `genesis_contract_test.dart`

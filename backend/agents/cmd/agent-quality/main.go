@@ -10,5 +10,5 @@ import (
 )
 
 func main() {
-	os.Exit(kit.Main(os.Args[1:], os.Getenv, os.Stderr, quality.Profile, func(catalogID string) kit.Composer { return quality.NewComposer(catalogID) }))
+	os.Exit(kit.Main(os.Args[1:], os.Getenv, os.Stderr, quality.Profile, newComposer))
 }

@@ -69,3 +69,28 @@ func TestVoiceInstructionsCoverInterruptionRules(t *testing.T) {
 		t.Errorf("instructions vocales : %d caractères, au plus 4000", n)
 	}
 }
+
+// Spec 012 : la liste des principaux crashs se délègue comme le reste ; une vue
+// indisponible est annoncée par l'orchestrateur, jamais refusée ni remplacée par le résumé
+// d'une autre vue par le modèle vocal.
+func TestVoiceInstructionsCoverCrashListAndUnavailableView(t *testing.T) {
+	raw, err := os.ReadFile(realInstructionsPath())
+	if err != nil {
+		t.Fatalf("lecture des instructions : %v", err)
+	}
+	text := string(raw)
+	for _, want := range []string{
+		"la liste des principaux crashs",
+		"Si l'orchestrateur indique qu'une vue demandée n'est pas disponible, dis-le tel quel",
+		"ne la refuses pas toi-même",
+		"ne relis jamais le résumé d'une autre vue comme réponse",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("instructions vocales : %q absent", want)
+		}
+	}
+	// Les règles de délégation existantes restent.
+	if !strings.Contains(text, "délègue toujours") {
+		t.Error("instructions vocales : règle de délégation perdue")
+	}
+}

@@ -508,6 +508,35 @@ func TestActiveSurfacesAreRefreshedEvenWhenThePlanOmitsThem(t *testing.T) {
 	}
 }
 
+// NFR-08 : une demande de plateforme ou de comparaison ne rafraîchit que kpi et trend, par
+// les deux chemins ; `crashes` n'est réémise que par une demande de liste (pdr-0074, D9).
+func TestPlatformIntentDoesNotRefreshCrashList(t *testing.T) {
+	active := []string{"kpi", "trend", "crashes"}
+	for _, text := range []string{"Concentre-toi sur Android", "Compare Android avec la 3.3"} {
+		for name, plan := range map[string]string{
+			"plan complet":    `{"surfaces":[{"component":"KeyIndicator","params":{}},{"component":"TrendChart","params":{}}]}`,
+			"plan avec liste": `{"surfaces":[{"component":"KeyIndicator","params":{}},{"component":"TrendChart","params":{}},{"component":"CrashList","params":{}}]}`,
+			"plan partiel":    `{"surfaces":[{"component":"KeyIndicator","params":{}}]}`,
+		} {
+			t.Run(text+"/"+name, func(t *testing.T) {
+				r := newRig(t, replies(plan))
+				rq := kit.Request{Text: text, ContextID: "ctx", ActiveSurfaces: active}
+				got, err := r.compose(t, rq)
+				if err != nil {
+					// Un plan avec la liste est invalide pour une plateforme : repli, même résultat.
+					t.Fatal(err)
+				}
+				for _, m := range got.Messages {
+					if u, ok := m["updateDataModel"].(map[string]any); ok && u["surfaceId"] == "crashes" {
+						t.Errorf("crashes rafraîchie par une intention de plateforme : %v", m)
+					}
+				}
+				r.requireEqualDeterministic(t, got, rq)
+			})
+		}
+	}
+}
+
 func TestNamedViewDoesNotRefreshOtherActiveSurfaces(t *testing.T) {
 	r := newRig(t, replies(listPlan))
 	rq := kit.Request{Text: "Affiche la liste des crashs", ContextID: "ctx", ActiveSurfaces: []string{"kpi", "trend"}}

@@ -142,6 +142,14 @@ func (v *Validator) Validate(p Plan, intent kit.Intent) (Plan, error) {
 		}
 	case intent.IsZero():
 		exact = v.cfg.Global
+	default:
+		// Plateforme ou comparaison : seuls les composants globaux (kpi, trend) ; une vue
+		// nommée n'est émise que par une demande de vue (NFR-08, pdr-0074 D9).
+		for name := range seen {
+			if !slices.Contains(v.cfg.Global, name) {
+				return Plan{}, invalidPlan("composant réservé à une vue nommée")
+			}
+		}
 	}
 	if exact != nil && !sameSet(seen, exact) {
 		return Plan{}, invalidPlan("ensemble de composants différent de celui exigé par la vue")
@@ -164,6 +172,10 @@ func (v *Validator) resolve(c Component, p Params, intent kit.Intent) (Params, e
 	out.Platform, out.Compare = intent.Platform, intent.CompareTo
 	return out, nil
 }
+
+// IsGlobal dit si le composant fait partie de la vue globale (rafraîchie par toute
+// demande sans vue nommée).
+func (v *Validator) IsGlobal(name string) bool { return slices.Contains(v.cfg.Global, name) }
 
 func sameSet(got map[string]bool, want []string) bool {
 	if len(got) != len(want) {

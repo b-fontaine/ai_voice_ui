@@ -120,7 +120,8 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 // build construit la composition d'un plan validé. Les surfaces sont traitées dans l'ordre
 // du profil (jamais celui du modèle : NFR-08) ; les surfaces actives de l'agent absentes du
 // plan sont rafraîchies avec les paramètres de l'intention, sauf pour une vue nommée qui
-// ne déplace pas le focus. Aucun createSurface n'est émis pour une surface active.
+// ne déplace pas le focus ; seuls les composants globaux sont rafraîchis (une liste n'est
+// réémise que par une demande de liste). Aucun createSurface n'est émis pour une surface active.
 func (c *Composer) build(plan Plan, intent kit.Intent, req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
 	planned := map[string]Params{}
 	for _, s := range plan.Surfaces {
@@ -131,7 +132,7 @@ func (c *Composer) build(plan Plan, intent kit.Intent, req kit.Request, ds datas
 	for _, comp := range c.cfg.Validator.cfg.Components {
 		params, ok := planned[comp.Name]
 		if !ok {
-			if intent.View != "" || !contains(req.ActiveSurfaces, comp.Surface) {
+			if intent.View != "" || !c.cfg.Validator.IsGlobal(comp.Name) || !contains(req.ActiveSurfaces, comp.Surface) {
 				continue
 			}
 			params = Params{Platform: intent.Platform, Compare: intent.CompareTo}

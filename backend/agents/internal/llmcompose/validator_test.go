@@ -327,3 +327,17 @@ func containsAny(list []any, s string) bool {
 	}
 	return false
 }
+
+// Une intention de plateforme ou de comparaison n'admet que les composants globaux : la
+// liste des crashs est réservée à une demande de liste (NFR-08, pdr-0074 D9).
+func TestValidatorRejectsViewComponentOnPlatformIntent(t *testing.T) {
+	v := newValidator(t)
+	for name, intent := range map[string]kit.Intent{"plateforme": android, "comparaison": andCmp} {
+		t.Run(name, func(t *testing.T) {
+			p := plan(surf("KeyIndicator", none), surf("TrendChart", none), surf("CrashList", none))
+			if _, err := v.Validate(p, intent); !errors.Is(err, llmcompose.ErrInvalidPlan) {
+				t.Errorf("erreur %v, attendu ErrInvalidPlan", err)
+			}
+		})
+	}
+}
