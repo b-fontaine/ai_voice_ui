@@ -1,0 +1,1 @@
+{"version":"v0.9","updateDataModel":{"surfaceId":"trend","path":"/trend","value":{"title":"Taux de crash du jour","thresholdPct":0.5,"yMaxPct":1.0,"days":["J1","J2","J3","J4","J5","J6","J7"],"series":[{"name":"iOS 3.4","points":[0.22,0.2,0.21,0.19,0.21,0.2,0.19]}]}}}

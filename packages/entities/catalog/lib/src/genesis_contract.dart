@@ -32,8 +32,9 @@ abstract final class GenesisContract {
     'data',
   ];
 
-  /// Champs obligatoires de l'objet lié, par composant. `comparison` (acte 2)
-  /// est optionnel et toléré : il n'apparaît pas ici.
+  /// Champs obligatoires de l'objet lié, par composant. `comparison` (acte 2,
+  /// `KeyIndicator` et `ReviewSentiment`) est facultatif : il n'apparaît pas
+  /// ici, mais ses champs requis sont dans [requiredNestedFields].
   static const Map<String, List<String>> requiredFields =
       <String, List<String>>{
         'KeyIndicator': <String>[
@@ -68,14 +69,19 @@ abstract final class GenesisContract {
       };
 
   /// Champs obligatoires des éléments ou sous-objets, par composant puis par
-  /// champ parent (`series` → `name`, `points`, etc.).
+  /// champ parent (`series` → `name`, `points`, etc.). `comparison` est
+  /// facultatif ; quand il est présent, ses trois champs sont requis.
   static const Map<String, Map<String, List<String>>> requiredNestedFields =
       <String, Map<String, List<String>>>{
+        'KeyIndicator': <String, List<String>>{
+          'comparison': <String>['label', 'value', 'delta'],
+        },
         'TrendChart': <String, List<String>>{
           'series': <String>['name', 'points'],
         },
         'ReviewSentiment': <String, List<String>>{
           'excerpts': <String>['stars', 'platform', 'text'],
+          'comparison': <String>['label', 'value', 'delta'],
         },
         'ReleaseChecklist': <String, List<String>>{
           'items': <String>[

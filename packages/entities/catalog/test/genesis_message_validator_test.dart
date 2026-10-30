@@ -423,6 +423,53 @@ void main() {
       expect(v.activeSurfaces, {'kpi', 'trend', 'reviews', 'checklist'});
     });
   });
+
+  group('acte 2 et correction iOS (spec 008)', () {
+    const act1 = <String>[
+      'act1-kpi',
+      'act1-trend',
+      'act1-reviews',
+      'act1-checklist',
+    ];
+    const followUp = <String>[
+      'act2-kpi',
+      'act2-trend',
+      'act2-reviews',
+      'act2-checklist',
+      'correction-ios-kpi',
+      'correction-ios-trend',
+      'correction-ios-reviews',
+      'correction-ios-checklist',
+    ];
+
+    List<Map<String, Object?>> load(String name) => const LineSplitter()
+        .convert(
+          File('${_contractsDir().path}/examples/$name.jsonl')
+              .readAsStringSync()
+              .replaceAll(r'${CATALOG_ID}', _cid),
+        )
+        .where((l) => l.trim().isNotEmpty)
+        .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
+        .toList();
+
+    test('l acte 1, puis l acte 2, puis la correction iOS sont acceptés', () {
+      for (final name in [...act1, ...followUp]) {
+        final messages = load(name);
+        for (final m in messages) {
+          expect(v.check(m).verdict, const ValidationAccepted(), reason: name);
+        }
+      }
+      expect(v.activeSurfaces, {'kpi', 'trend', 'reviews', 'checklist'});
+    });
+
+    for (final name in followUp) {
+      test('$name seule est refusée : unknown_surface', () {
+        final messages = load(name);
+        expect(messages, hasLength(1));
+        expect(_code(v.check(messages.single)), 'unknown_surface');
+      });
+    }
+  });
 }
 
 Directory _contractsDir() {

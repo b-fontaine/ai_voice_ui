@@ -1,0 +1,1 @@
+{"version":"v0.9","updateDataModel":{"surfaceId":"kpi","path":"/kpi","value":{"label":"Sessions sans crash · Android","value":"99,43 %","trend":"−0,54 pt","threshold":"≥ 99,50 %","status":"blocking","statusLabel":"Bloquant","comparison":{"label":"3.3","value":"99,71 %","delta":"−0,28 pt"}}}}
