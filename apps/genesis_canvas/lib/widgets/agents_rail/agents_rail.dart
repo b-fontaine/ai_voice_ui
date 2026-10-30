@@ -17,6 +17,11 @@ class AgentsRail extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           for (final agent in state.agents) _AgentRow(agent: agent),
+          if (state.noAgentSelected)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text('aucun agent retenu', key: Key('agents-none')),
+            ),
         ],
       ),
     ),
@@ -29,23 +34,34 @@ class _AgentRow extends StatelessWidget {
   final AgentStatus agent;
 
   static String _stateText(AgentRunState state) => switch (state) {
+    AgentRunState.orchestrating => 'orchestre',
+    AgentRunState.idle => 'en veille',
+    AgentRunState.pending => 'en attente',
     AgentRunState.working => 'en cours',
     AgentRunState.completed => 'terminé',
     AgentRunState.failed => 'échec',
+    AgentRunState.rejected => 'hors périmètre',
     AgentRunState.interrupted => 'interrompu',
   };
 
   static Color _stateColor(AgentRunState state) => switch (state) {
+    AgentRunState.orchestrating => Colors.lightBlueAccent,
+    AgentRunState.idle => Colors.blueGrey,
+    AgentRunState.pending => Colors.amberAccent,
     AgentRunState.working => Colors.amber,
     AgentRunState.completed => Colors.greenAccent,
     AgentRunState.failed => Colors.redAccent,
+    AgentRunState.rejected => Colors.orangeAccent,
     AgentRunState.interrupted => Colors.grey,
   };
 
   @override
   Widget build(BuildContext context) {
     final label = agent.label;
-    final detail = agent.detail;
+    final stateText = _stateText(agent.state);
+    // Un détail identique au libellé d'état (« hors périmètre ») n'est pas
+    // répété.
+    final detail = agent.detail == stateText ? null : agent.detail;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -63,7 +79,7 @@ class _AgentRow extends StatelessWidget {
           Text(agent.agent),
           if (label != null) ...<Widget>[const SizedBox(width: 8), Text(label)],
           const SizedBox(width: 8),
-          Text(_stateText(agent.state)),
+          Text(stateText),
           if (detail != null) ...<Widget>[
             const SizedBox(width: 8),
             Text(detail),

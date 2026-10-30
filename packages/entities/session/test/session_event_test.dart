@@ -92,6 +92,23 @@ void main() {
           const UsageUpdated(seconds: 3, contextRatio: 0.2),
           const UsageUpdated(seconds: 4, contextRatio: 0.2),
         ),
+        'PlanReceived': (
+          PlanReceived(
+            delegation: 'd1',
+            selected: <String>['Qualité'],
+            idle: <String>['Livraison'],
+          ),
+          PlanReceived(
+            delegation: 'd1',
+            selected: <String>['Qualité'],
+            idle: <String>['Livraison'],
+          ),
+          PlanReceived(
+            delegation: 'd1',
+            selected: <String>['Qualité'],
+            idle: <String>[],
+          ),
+        ),
         'ChannelLost': (
           const ChannelLost('r'),
           const ChannelLost('r'),
@@ -118,6 +135,7 @@ void main() {
       DelegationStarted() => 'DelegationStarted',
       AgentActivityReceived() => 'AgentActivityReceived',
       A2uiEnvelopeReceived() => 'A2uiEnvelopeReceived',
+      PlanReceived() => 'PlanReceived',
       UsageUpdated() => 'UsageUpdated',
       ChannelLost() => 'ChannelLost',
     };
@@ -125,6 +143,23 @@ void main() {
         .map(((SessionEvent, SessionEvent, SessionEvent) t) => name(t.$1))
         .toSet();
     expect(names, cases.keys.toSet());
+  });
+
+  test('PlanReceived : listes immuables et copiées', () {
+    final List<String> selected = <String>['a'];
+    final PlanReceived plan = PlanReceived(
+      delegation: 'd',
+      selected: selected,
+      idle: const <String>[],
+    );
+    selected.add('b');
+    expect(plan.selected, <String>['a']);
+    expect(() => plan.selected.add('c'), throwsUnsupportedError);
+    expect(() => plan.idle.add('c'), throwsUnsupportedError);
+  });
+
+  test('AgentTaskState connaît rejected', () {
+    expect(AgentTaskState.values, contains(AgentTaskState.rejected));
   });
 
   test('SessionEventSource expose un flux d\'événements', () {

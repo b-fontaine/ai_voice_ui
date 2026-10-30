@@ -177,4 +177,100 @@ void main() {
     expect(row('Qualité'), findsOneWidget);
     expect(row('Risques'), findsOneWidget);
   });
+
+  testWidgets(
+    'un plan affiche orchestrateur, agent retenu et agents en veille',
+    (tester) async {
+      await pumpRail(tester);
+      await emit(
+        tester,
+        PlanReceived(
+          delegation: 'd1',
+          selected: const <String>['Voix du client'],
+          idle: const <String>['Qualité', 'Livraison'],
+        ),
+      );
+      expect(row('Orchestrateur'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: row('Voix du client'),
+          matching: find.text('en attente'),
+        ),
+        findsOneWidget,
+      );
+      for (final String name in <String>['Qualité', 'Livraison']) {
+        expect(
+          find.descendant(of: row(name), matching: find.text('en veille')),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('aucun agent retenu'), findsNothing);
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Voix du client',
+          task: 't',
+          state: AgentTaskState.working,
+        ),
+      );
+      expect(
+        find.descendant(
+          of: row('Voix du client'),
+          matching: find.text('en cours'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('un plan vide affiche « aucun agent retenu »', (tester) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd',
+        selected: const <String>[],
+        idle: const <String>['Qualité'],
+      ),
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('agents-rail')),
+        matching: find.text('aucun agent retenu'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('agents-none')), findsOneWidget);
+  });
+
+  testWidgets('un agent qui refuse est « hors périmètre » avec son détail', (
+    tester,
+  ) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd',
+        selected: const <String>['Qualité'],
+        idle: const <String>[],
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't',
+        state: AgentTaskState.rejected,
+        detail: 'hors périmètre',
+      ),
+    );
+    expect(
+      find.descendant(
+        of: row('Qualité'),
+        matching: find.text('hors périmètre'),
+      ),
+      findsOneWidget, // le détail identique au libellé n'est pas répété
+    );
+  });
 }

@@ -76,9 +76,16 @@ class SessionEventConverter {
             'working': AgentTaskState.working,
             'completed': AgentTaskState.completed,
             'failed': AgentTaskState.failed,
+            'rejected': AgentTaskState.rejected,
           }),
           label: _optionalString(data, 'label'),
           detail: _optionalString(data, 'detail'),
+        );
+      case AppChannelTypes.plan:
+        return PlanReceived(
+          delegation: _string(data, 'delegation'),
+          selected: _stringList(data, 'selected'),
+          idle: _stringList(data, 'idle'),
         );
       case AppChannelTypes.a2ui:
         try {
@@ -114,6 +121,15 @@ class SessionEventConverter {
   static String _string(Map<String, Object?> data, String key) {
     final Object? value = data[key];
     if (value is String) return value;
+    throw const _Ignored(_Reasons.badField);
+  }
+
+  /// Tableau de chaînes obligatoire : absent, `null` ou mal typé, ignoré.
+  static List<String> _stringList(Map<String, Object?> data, String key) {
+    final Object? value = data[key];
+    if (value is List<Object?> && value.every((Object? e) => e is String)) {
+      return List<String>.of(value.cast<String>());
+    }
     throw const _Ignored(_Reasons.badField);
   }
 

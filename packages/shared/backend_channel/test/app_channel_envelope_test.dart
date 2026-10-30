@@ -50,6 +50,14 @@ void main() {
         type: 'delegation',
         data: {'id': 'deleg_1', 'offset_ms': 2100},
       ),
+      AppChannelTypes.plan: _env(
+        type: 'plan',
+        data: {
+          'delegation': 'deleg_1',
+          'selected': ['Qualité'],
+          'idle': <String>[],
+        },
+      ),
       AppChannelTypes.agentActivity: _env(
         type: 'agent.activity',
         data: {'agent': 'Qualité', 'task': 't1', 'state': 'working'},

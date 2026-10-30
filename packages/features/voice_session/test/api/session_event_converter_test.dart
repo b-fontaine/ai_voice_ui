@@ -108,6 +108,44 @@ void main() {
           detail: 'délai dépassé',
         ),
       ),
+      'agent.activity rejected': (
+        _env('agent.activity', <String, Object?>{
+          'agent': 'Qualité',
+          'task': 't',
+          'state': 'rejected',
+          'detail': 'hors périmètre',
+        }),
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 't',
+          state: AgentTaskState.rejected,
+          detail: 'hors périmètre',
+        ),
+      ),
+      'plan': (
+        _env('plan', <String, Object?>{
+          'delegation': 'd1',
+          'selected': <Object?>['Voix du client'],
+          'idle': <Object?>['Qualité', 'Livraison'],
+        }),
+        PlanReceived(
+          delegation: 'd1',
+          selected: const <String>['Voix du client'],
+          idle: const <String>['Qualité', 'Livraison'],
+        ),
+      ),
+      'plan vide': (
+        _env('plan', <String, Object?>{
+          'delegation': 'd2',
+          'selected': <Object?>[],
+          'idle': <Object?>['Qualité'],
+        }),
+        PlanReceived(
+          delegation: 'd2',
+          selected: const <String>[],
+          idle: const <String>['Qualité'],
+        ),
+      ),
       'agent.activity repli sur l\'enveloppe': (
         _env(
           'agent.activity',
@@ -246,6 +284,44 @@ void main() {
               'task': 't',
               'state': 'working',
               'label': 1,
+            }),
+            'champ manquant ou mal typé',
+          ),
+          'plan sans selected': (
+            _env('plan', <String, Object?>{
+              'delegation': 'd',
+              'idle': <Object?>[],
+            }),
+            'champ manquant ou mal typé',
+          ),
+          'plan selected null': (
+            _env('plan', <String, Object?>{
+              'delegation': 'd',
+              'selected': null,
+              'idle': <Object?>[],
+            }),
+            'champ manquant ou mal typé',
+          ),
+          'plan idle mal typé': (
+            _env('plan', <String, Object?>{
+              'delegation': 'd',
+              'selected': <Object?>[],
+              'idle': 'Qualité',
+            }),
+            'champ manquant ou mal typé',
+          ),
+          'plan élément non chaîne': (
+            _env('plan', <String, Object?>{
+              'delegation': 'd',
+              'selected': <Object?>[1],
+              'idle': <Object?>[],
+            }),
+            'champ manquant ou mal typé',
+          ),
+          'plan sans delegation': (
+            _env('plan', <String, Object?>{
+              'selected': <Object?>[],
+              'idle': <Object?>[],
             }),
             'champ manquant ou mal typé',
           ),

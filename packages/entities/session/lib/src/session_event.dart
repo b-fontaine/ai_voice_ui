@@ -9,8 +9,9 @@ enum TranscriptRole { user, ai }
 /// État de la session vocale vu par l'application.
 enum SessionState { connecting, active, closed }
 
-/// État d'une tâche A2A d'agent.
-enum AgentTaskState { working, completed, failed }
+/// État d'une tâche A2A d'agent. `rejected` : l'agent retenu refuse la
+/// demande (hors périmètre), ce qui n'est pas un échec.
+enum AgentTaskState { working, completed, failed, rejected }
 
 /// Événement de session, produit par le canal applicatif et consommé par les
 /// Blocs. Hiérarchie fermée : un `switch` sans `default` doit être exhaustif.
@@ -147,6 +148,33 @@ final class A2uiEnvelopeReceived extends SessionEvent {
 
   @override
   int get hashCode => Object.hash(agent, task, _deepEq.hash(raw));
+}
+
+/// Plan de l'orchestrateur pour une délégation (pdr-0013) : agents retenus
+/// ([selected], dans l'ordre reçu) et agents laissés en veille ([idle]).
+/// Un [selected] vide signifie une demande hors catalogue (RG-08).
+final class PlanReceived extends SessionEvent {
+  PlanReceived({
+    required this.delegation,
+    required List<String> selected,
+    required List<String> idle,
+  }) : selected = List<String>.unmodifiable(selected),
+       idle = List<String>.unmodifiable(idle);
+
+  final String delegation;
+  final List<String> selected;
+  final List<String> idle;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlanReceived &&
+      other.delegation == delegation &&
+      _deepEq.equals(other.selected, selected) &&
+      _deepEq.equals(other.idle, idle);
+
+  @override
+  int get hashCode =>
+      Object.hash(delegation, _deepEq.hash(selected), _deepEq.hash(idle));
 }
 
 /// Consommation de la session : durée écoulée et taux de remplissage du contexte.

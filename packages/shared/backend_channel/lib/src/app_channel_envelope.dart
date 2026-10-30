@@ -14,6 +14,7 @@ abstract final class AppChannelTypes {
   static const String sessionState = 'session.state';
   static const String usage = 'usage';
   static const String delegation = 'delegation';
+  static const String plan = 'plan';
   static const String agentActivity = 'agent.activity';
   static const String a2ui = 'a2ui';
 }

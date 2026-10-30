@@ -7,6 +7,7 @@ export 'src/session_event.dart'
         ChannelLost,
         DelegationStarted,
         OrbLevelChanged,
+        PlanReceived,
         SessionEvent,
         SessionState,
         SessionStateChanged,

@@ -1,5 +1,20 @@
 /// État d'exécution d'un agent tel qu'affiché.
-enum AgentRunState { working, completed, failed, interrupted }
+///
+/// - `orchestrating` : ligne de l'orchestrateur, présente dès qu'un plan est
+///   reçu ;
+/// - `idle` : agent non retenu par le plan (« en veille ») ;
+/// - `pending` : agent retenu, sans activité reçue pour l'instant ;
+/// - `rejected` : agent retenu qui refuse (« hors périmètre »), pas un échec.
+enum AgentRunState {
+  orchestrating,
+  idle,
+  pending,
+  working,
+  completed,
+  failed,
+  rejected,
+  interrupted,
+}
 
 /// Ligne d'activité d'un agent (une par nom d'agent).
 class AgentStatus {
@@ -43,12 +58,21 @@ class AgentStatus {
 
 /// Activité de tous les agents, dans l'ordre de première apparition.
 class AgentActivityState {
-  AgentActivityState(List<AgentStatus> agents)
+  AgentActivityState(List<AgentStatus> agents, {this.noAgentSelected = false})
     : agents = List<AgentStatus>.unmodifiable(agents);
 
-  const AgentActivityState.empty() : agents = const <AgentStatus>[];
+  const AgentActivityState.empty()
+    : agents = const <AgentStatus>[],
+      noAgentSelected = false;
+
+  /// Nom d'affichage de la ligne de l'orchestrateur (constante, pas un agent).
+  static const String orchestratorName = 'Orchestrateur';
 
   final List<AgentStatus> agents;
+
+  /// Vrai si le dernier plan ne retient aucun agent (RG-08, « aucun agent
+  /// retenu »).
+  final bool noAgentSelected;
 
   /// Vrai si au moins un agent travaille.
   bool get anyWorking =>
@@ -56,7 +80,9 @@ class AgentActivityState {
 
   @override
   bool operator ==(Object other) {
-    if (other is! AgentActivityState || other.agents.length != agents.length) {
+    if (other is! AgentActivityState ||
+        other.noAgentSelected != noAgentSelected ||
+        other.agents.length != agents.length) {
       return false;
     }
     for (int i = 0; i < agents.length; i++) {
@@ -66,8 +92,9 @@ class AgentActivityState {
   }
 
   @override
-  int get hashCode => Object.hashAll(agents);
+  int get hashCode => Object.hash(noAgentSelected, Object.hashAll(agents));
 
   @override
-  String toString() => 'AgentActivityState($agents)';
+  String toString() =>
+      'AgentActivityState($agents, noAgentSelected: $noAgentSelected)';
 }
