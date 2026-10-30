@@ -351,7 +351,7 @@ func TestGenesisG4_AgentCardAndStream(t *testing.T) {
 }
 
 func TestGenesisG4_DefensiveRefusal(t *testing.T) {
-	questions := []string{"compare avec la 3.3", "la release 3.5", "uniquement sur Android"}
+	questions := []string{"compare avec la 3.3", "la release 3.5", "uniquement sur Android", "Montre Android et iOS"}
 	for _, tc := range genesisCases {
 		t.Run(tc.name, func(t *testing.T) {
 			base := startBinary(t, tc.binary)
