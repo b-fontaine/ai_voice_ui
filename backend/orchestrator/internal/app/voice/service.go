@@ -230,7 +230,7 @@ func (s *Service) run(ctx context.Context, sess *session) {
 	// Open précède « active » : aucun événement n'est consommé avant lui.
 	var fw *forwarder
 	if s.opts.Delegations != nil {
-		fw = newForwarder(s.opts.Delegations.Open(sess.id, sess.start, sb), sess.id, s.opts.Logger)
+		fw = newForwarder(s.opts.Delegations.Open(sess.id, sess.start, sidebandReply{sb}), sess.id, s.opts.Logger)
 	}
 	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateActive})
 	s.supervise(sess, sb, fw)

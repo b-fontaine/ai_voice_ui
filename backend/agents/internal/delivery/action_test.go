@@ -95,3 +95,41 @@ func TestDeliveryActionIgnoresResidualText(t *testing.T) {
 		t.Errorf("messages %v", got.Messages)
 	}
 }
+
+// Limite connue (A8 du plan 009, Q-76) : l'agent est sans état. Une demande vocale
+// ultérieure (« Non, plutôt iOS ») réécrit tout `/checklist` depuis le jeu de
+// données, avec « En attente de décision » : la décision « Bloquée » prise par
+// un clic est perdue sans bruit. Ce test DÉCRIT la limite ; il changera avec la
+// réponse du porteur à Q-76 (décision conservée par l'orchestrateur ou l'app).
+func TestDeliveryVoiceRequestAfterActionLosesDecision_KnownLimit(t *testing.T) {
+	blocked, err := composeAction(t, "block_release", "checklist", "actions")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := updatedValue(t, blocked.Messages[0], "/checklist/decisionStatus"); v != "Bloquée" {
+		t.Fatalf("décision après le clic = %v, attendu Bloquée", v)
+	}
+
+	later := compose(t, "Non, plutôt iOS", "checklist", "actions")
+	var whole map[string]any
+	for _, m := range later.Messages {
+		if dm, ok := m["updateDataModel"].(map[string]any); ok && dm["surfaceId"] == "checklist" && dm["path"] == "/checklist" {
+			whole, _ = dm["value"].(map[string]any)
+		}
+	}
+	if whole == nil {
+		t.Fatalf("aucune réécriture de /checklist dans %v", later.Messages)
+	}
+	if whole["decisionStatus"] != "En attente de décision" {
+		t.Fatalf("decisionStatus = %v : la limite A8 a changé (décision conservée ?), mettre à jour Q-76 et ce test", whole["decisionStatus"])
+	}
+}
+
+func updatedValue(t *testing.T, msg map[string]any, path string) any {
+	t.Helper()
+	dm, ok := msg["updateDataModel"].(map[string]any)
+	if !ok || dm["path"] != path {
+		t.Fatalf("message %v : updateDataModel de %q attendu", msg, path)
+	}
+	return dm["value"]
+}

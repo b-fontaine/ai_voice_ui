@@ -149,6 +149,24 @@ const MaxCommentaryRunes = 1000
 // plus Options.AppendAckTimeout. Jamais de nouvelle tentative : un renvoi
 // ferait dire la phrase deux fois.
 func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text string) error {
+	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, delegationID)
+	return s.appendCommentary(ctx, "gc-"+delegationID, text, ev)
+}
+
+// AppendGeneralCommentary envoie session.commentary.append avec delegation_id
+// nul (« contexte général de la session » du SDK) : un commentaire hors de
+// toute délégation. Même acquittement, mêmes bornes et jamais de nouvelle
+// tentative que AppendCommentary ; aucune politique de repli ici (elle vit
+// dans la couche application).
+func (s *sideband) AppendGeneralCommentary(ctx context.Context, text string) error {
+	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, "")
+	ev.OfSessionCommentaryAppend.DelegationID = param.Null[string]()
+	return s.appendCommentary(ctx, "gc-general", text, ev)
+}
+
+// appendCommentary valide le texte, envoie ev (dont l'event_id est fixé ici)
+// et attend l'acquittement. prefix compose l'event_id : « <prefix>-<n> ».
+func (s *sideband) appendCommentary(ctx context.Context, prefix, text string, ev live.ConnectClientEventUnionParam) error {
 	if text == "" {
 		return errors.New("commentaire vocal vide")
 	}
@@ -161,7 +179,7 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 	default:
 	}
 
-	eventID := fmt.Sprintf("gc-%s-%d", delegationID, s.seq.Add(1))
+	eventID := fmt.Sprintf("%s-%d", prefix, s.seq.Add(1))
 	ack := make(chan error, 1)
 	s.mu.Lock()
 	s.pending[eventID] = ack
@@ -172,7 +190,6 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 		s.mu.Unlock()
 	}()
 
-	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, delegationID)
 	ev.OfSessionCommentaryAppend.EventID = param.NewOpt(eventID)
 	s.sendMu.Lock() // le SDK refuse les envois concurrents en file
 	err := s.conn.Send(ctx, ev)

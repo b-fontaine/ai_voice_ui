@@ -164,7 +164,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -174,7 +174,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := cfg.Phrases
-	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" || p.ActionResultTemplate != "ar %s" || p.ActionFailure != "af" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -183,11 +183,11 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
 		"json cassé":       `{"partial_failure":"pf %s","generic": "` + secret,
-		"champ inconnu":    `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
-		"deux %s":          `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
+		"champ inconnu":    `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
+		"deux %s":          `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"action_result_template":"ar %s","action_failure":"af","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -209,10 +209,12 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 
 func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
 	for key, absent := range map[string]string{
-		"failure_rejected": `"failure_rejected":"fr",`,
-		"no_summary":       `"no_summary":"ns",`,
-		"out_of_catalog":   `"out_of_catalog":"oc",`,
-		"partial_failure":  `"partial_failure":"pf %s",`,
+		"failure_rejected":       `"failure_rejected":"fr",`,
+		"no_summary":             `"no_summary":"ns",`,
+		"out_of_catalog":         `"out_of_catalog":"oc",`,
+		"partial_failure":        `"partial_failure":"pf %s",`,
+		"action_result_template": `"action_result_template":"ar %s",`,
+		"action_failure":         `"action_failure":"af",`,
 	} {
 		env := fullEnv()
 		env["VOICE_PHRASES_FILE"] = writePhrases(t, strings.Replace(customPhrases, absent, "", 1))
@@ -237,6 +239,23 @@ func TestFinalCommentaryQuotesSummary(t *testing.T) {
 	got := fmt.Sprintf(cfg.Phrases.ResultTemplate, "RÉSUMÉ")
 	if !strings.Contains(got, "« RÉSUMÉ »") {
 		t.Fatalf("le résumé doit être encadré de « » : %q", got)
+	}
+}
+
+// Les phrases d'action embarquées : la confirmation ne reprend pas la formule des
+// délégations et l'échec ne dit jamais qu'une décision a été prise (A8).
+func TestDefaultActionPhrases(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := cfg.Phrases
+	if got := fmt.Sprintf(p.ActionResultTemplate, "La release 3.4 est bloquée."); !strings.Contains(got, "La release 3.4 est bloquée.") || strings.Contains(got, "Voici ce que je constate") {
+		t.Fatalf("confirmation d'action = %q", got)
+	}
+	failure := strings.ToLower(p.ActionFailure)
+	if !strings.Contains(failure, "pas pu") || strings.Contains(failure, "bloquée") || strings.Contains(failure, "validée") || strings.ContainsAny(failure, "0123456789") {
+		t.Fatalf("phrase d'échec d'action = %q", p.ActionFailure)
 	}
 }
 

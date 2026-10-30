@@ -175,6 +175,12 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		p.publishOrphans(c)
 	}
 
+	// Une action (d.Action, jamais une délégation du fournisseur) de l'interface suit son propre chemin (action_run.go).
+	if d.Action != nil {
+		p.runAction(ctx, d)
+		return
+	}
+
 	if len(p.deps.Agents) == 0 {
 		if p.waitGeneric(ctx, d) {
 			p.say(ctx, d.ID, p.deps.Phrases.NoAgent)
@@ -204,36 +210,7 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	}
 
 	n := len(selected)
-	tasks := make([]*taskState, n)
-	for k, i := range selected {
-		a := p.deps.Agents[i]
-		tasks[k] = &taskState{agent: a.Name(), owner: a.ID(), card: cards[i], cardErr: cardErrs[i]}
-	}
-	finished := make(chan struct{}, n)
-	p.wg.Add(n)
-	for k, i := range selected {
-		go func() {
-			defer p.wg.Done()
-			p.runAgent(agentCtx, p.deps.Agents[i], tasks[k], d)
-			finished <- struct{}{}
-		}()
-	}
-
-	// Le canal ne sert qu'à attendre la fin des goroutines : l'issue de chaque
-	// tâche est lue dans son taskState, consignée sous le verrou au moment de
-	// `completed`/`failed`.
-	got := 0
-collect:
-	for got < n {
-		select {
-		case <-finished:
-			got++
-		case <-agentCtx.Done():
-			p.failInflight(agentCtx)
-			break collect
-		}
-	}
-	succeeded, rejections := p.outcomes(agentCtx, tasks)
+	tasks, succeeded, rejections := p.runTasks(ctx, agentCtx, d, cards, cardErrs, selected)
 
 	if sessionClosed(ctx) {
 		p.seal()
@@ -273,6 +250,45 @@ collect:
 		text += " " + fmt.Sprintf(p.deps.Phrases.PartialFailure, failedList(failed))
 	}
 	p.say(ctx, d.ID, text)
+}
+
+// runTasks lance une tâche par agent retenu, attend leur fin (ou l'échéance
+// agentCtx) puis lit les issues : résumés des tâches réussies, dans l'ordre des
+// agents, et nombre de refus. Invariant : chaque agent retenu reçoit un
+// agent.activity terminal. Commun aux délégations vocales et aux actions.
+func (p *Pipeline) runTasks(ctx, agentCtx context.Context, d Delegation, cards []port.AgentCard, cardErrs []error, selected []int) (tasks []*taskState, succeeded []string, rejections int) {
+	n := len(selected)
+	tasks = make([]*taskState, n)
+	for k, i := range selected {
+		a := p.deps.Agents[i]
+		tasks[k] = &taskState{agent: a.Name(), owner: a.ID(), card: cards[i], cardErr: cardErrs[i]}
+	}
+	finished := make(chan struct{}, n)
+	p.wg.Add(n)
+	for k, i := range selected {
+		go func() {
+			defer p.wg.Done()
+			p.runAgent(agentCtx, p.deps.Agents[i], tasks[k], d)
+			finished <- struct{}{}
+		}()
+	}
+
+	// Le canal ne sert qu'à attendre la fin des goroutines : l'issue de chaque
+	// tâche est lue dans son taskState, consignée sous le verrou au moment de
+	// `completed`/`failed`.
+	got := 0
+collect:
+	for got < n {
+		select {
+		case <-finished:
+			got++
+		case <-agentCtx.Done():
+			p.failInflight(agentCtx)
+			break collect
+		}
+	}
+	succeeded, rejections = p.outcomes(agentCtx, tasks)
+	return tasks, succeeded, rejections
 }
 
 // Close empêche toute publication ultérieure et attend les goroutines des
@@ -351,6 +367,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 	card := ts.card
 	for u, err := range a.Send(ctx, port.AgentRequest{
 		Text: d.Request, ContextID: p.deps.SessionID, Card: &card, ActiveSurfaces: p.activeSurfaces(ts.owner),
+		Action: d.Action,
 	}) {
 		if err != nil {
 			p.fail(ctx, ts, err)

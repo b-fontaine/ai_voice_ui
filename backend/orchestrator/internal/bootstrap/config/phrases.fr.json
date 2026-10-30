@@ -8,5 +8,7 @@
   "no_agent": "Aucun agent n'est disponible pour le moment.",
   "out_of_catalog": "Je ne peux pas afficher cela : je compose seulement avec des indicateurs de stabilité, des courbes de crashs, des avis clients et une checklist de release. Voulez-vous l'un d'eux ?",
   "partial_failure": "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
-  "result_template": "Voici ce que je constate : « %s »"
+  "result_template": "Voici ce que je constate : « %s »",
+  "action_result_template": "C'est fait. %s",
+  "action_failure": "Je n'ai pas pu enregistrer cette décision : la checklist reste inchangée."
 }

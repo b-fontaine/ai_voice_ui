@@ -125,13 +125,36 @@ type testSideband struct {
 	autoClose bool // émet closed à l'appel de Close
 	// confirmDelay retarde la confirmation (session.closed) après Close.
 	confirmDelay time.Duration
+
+	sentMu     sync.Mutex
+	commentary []string // « <delegation>:<texte> » des AppendCommentary reçus
+	general    []string // textes des AppendGeneralCommentary reçus
+	generalErr error
 }
 
 func newTestSideband(autoClose bool) *testSideband {
 	return &testSideband{events: make(chan port.LiveEvent, 64), closeCall: make(chan struct{}), autoClose: autoClose}
 }
 
-func (s *testSideband) AppendCommentary(context.Context, string, string) error { return nil }
+func (s *testSideband) AppendCommentary(_ context.Context, delegationID, text string) error {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	s.commentary = append(s.commentary, delegationID+":"+text)
+	return nil
+}
+
+func (s *testSideband) AppendGeneralCommentary(_ context.Context, text string) error {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	s.general = append(s.general, text)
+	return s.generalErr
+}
+
+func (s *testSideband) sent() (commentary, general []string) {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	return append([]string(nil), s.commentary...), append([]string(nil), s.general...)
+}
 
 func (s *testSideband) Events() <-chan port.LiveEvent { return s.events }
 
@@ -475,6 +498,8 @@ func TestCloseGuardTimeout(t *testing.T) {
 type blockingSideband struct{ events chan port.LiveEvent }
 
 func (s *blockingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+
+func (s *blockingSideband) AppendGeneralCommentary(context.Context, string) error { return nil }
 
 func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
 
@@ -1184,3 +1209,5 @@ func TestCloseTimeoutHangupErrorJoined(t *testing.T) {
 }
 
 func (s *failingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+
+func (s *failingSideband) AppendGeneralCommentary(context.Context, string) error { return nil }

@@ -2,8 +2,10 @@ package voice
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
+	"slices"
 	"strconv"
 	"sync"
 	"testing"
@@ -142,8 +144,19 @@ func TestDelegationsOpenedOnceWhenActive(t *testing.T) {
 		t.Fatalf("un seul Open attendu, obtenu %d", len(calls))
 	}
 	sb := live.waitAttached(t)
-	if calls[0].sessionID != opened.SessionID || !calls[0].start.Equal(clock.Now()) || calls[0].reply != port.VoiceReply(sb) {
+	if calls[0].sessionID != opened.SessionID || !calls[0].start.Equal(clock.Now()) || calls[0].reply == nil {
 		t.Fatalf("Open = %+v (sideband %p)", calls[0], sb)
+	}
+	// La voix remise aux délégations parle par le sideband : un commentaire de
+	// délégation garde son identifiant, une annonce part hors délégation.
+	if err := calls[0].reply.AppendCommentary(context.Background(), "deleg_1", "bonjour"); err != nil {
+		t.Fatal(err)
+	}
+	if err := calls[0].reply.Announce(context.Background(), "c'est fait"); err != nil {
+		t.Fatal(err)
+	}
+	if commentary, general := sb.sent(); !slices.Equal(commentary, []string{"deleg_1:bonjour"}) || !slices.Equal(general, []string{"c'est fait"}) {
+		t.Fatalf("envois du sideband : commentaires %v, hors délégation %v", commentary, general)
 	}
 	sb.events <- port.LiveEvent{Type: port.EventUsageUpdated, Seconds: 1}
 	sink.waitCount(t, domain.TypeUsage, 1)
@@ -442,5 +455,24 @@ func TestDeleteWithSlowAgentCancelReturns204(t *testing.T) {
 	}
 	if got := live.hangupCalls(); len(got) != 0 {
 		t.Fatalf("raccrochage inattendu après une fermeture confirmée : %v", got)
+	}
+}
+
+func TestAnnounceReportsSidebandRefusal(t *testing.T) {
+	live := &testLive{autoClose: true}
+	svc, sink, _, fd := newDelegationService(t, live, nil)
+	if _, err := svc.Open(context.Background(), "o"); err != nil {
+		t.Fatal(err)
+	}
+	sink.waitState(t, domain.StateActive, 1)
+	sb := live.waitAttached(t)
+	sb.sentMu.Lock()
+	sb.generalErr = errors.New("refusé")
+	sb.sentMu.Unlock()
+	if err := fd.openCalls()[0].reply.Announce(context.Background(), "texte"); err == nil {
+		t.Fatal("le refus d'acquittement doit remonter à l'appelant (politique de repli : T14)")
+	}
+	if err := svc.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -115,6 +115,9 @@ func (s *fakeSideband) finish() {
 // le double qui enregistre).
 func (s *fakeSideband) AppendCommentary(_ context.Context, _, _ string) error { return nil }
 
+// AppendGeneralCommentary : même double historique, qui n'enregistre rien (port.Sideband l'exige depuis 009).
+func (s *fakeSideband) AppendGeneralCommentary(_ context.Context, _ string) error { return nil }
+
 // Close demande la fermeture ; le sideband émet alors « closed ».
 func (s *fakeSideband) Close(_ context.Context) error {
 	s.once.Do(func() { close(s.closed) })

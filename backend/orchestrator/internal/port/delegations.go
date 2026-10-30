@@ -24,6 +24,10 @@ var ErrUnknownAction = errors.New("action inconnue")
 // dire un commentaire à la voix pour une délégation.
 type VoiceReply interface {
 	AppendCommentary(ctx context.Context, delegationID, text string) error
+	// Announce dit un texte HORS de toute délégation (action de l'interface) :
+	// il n'est jamais rattaché à un identifiant de délégation, ni à un
+	// identifiant d'opération interne. nil n'est que l'acquittement.
+	Announce(ctx context.Context, text string) error
 }
 
 // Delegations ouvre la gestion des délégations d'une session voix (A1). Elle

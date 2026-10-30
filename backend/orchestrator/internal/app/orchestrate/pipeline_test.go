@@ -39,6 +39,9 @@ var pipePhrases = Phrases{
 	OutOfCatalog:    "Je ne peux pas afficher cela : je compose avec des indicateurs, des courbes, des avis et une checklist.",
 	PartialFailure:  "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
 	ResultTemplate:  "Voici ce que l'agent rapporte : %s",
+	// Confirmation et échec d'une action de l'interface.
+	ActionResultTemplate: "C'est fait. %s",
+	ActionFailure:        "Je n'ai pas pu enregistrer cette décision, la checklist reste inchangée.",
 }
 
 type fixedClock struct{ t time.Time }
@@ -1303,6 +1306,8 @@ type slowReply struct {
 	mu       sync.Mutex
 	said     []string
 }
+
+func (r *slowReply) Announce(context.Context, string) error { return nil }
 
 func (r *slowReply) AppendCommentary(ctx context.Context, _ string, text string) error {
 	if text != pipePhrases.Generic {
