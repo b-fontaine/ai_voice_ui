@@ -1,6 +1,6 @@
 # 006 — État
 
-- **Étape** : Refactorisation
+- **Étape** : Vérification
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -37,6 +37,8 @@
 | 2026-10-30 | Refactorisation | Lot 4 (R5, R6) fait : acceptation avec `A2UI_ALLOWED_PROPS=id,component,data` et `A2UI_BINDING_PROPS=data` (**mutation de la session principale** : sans `data` dans la liste blanche, les trois agents voient leurs messages refusés `bad_property: propriété hors liste blanche` et G1 échoue ; restauré) ; `TestGenesisFixtures_DataModelMatchesCatalog` (rouges par mutation des exemples : champ en trop, `yMaxPct` string, `level: "bogus"`) ; `check-compose.sh` compare par égalité d'ensembles `A2UI_ALLOWED_PROPS` et `A2UI_BINDING_PROPS` au catalogue (rouge par mutation du compose) ; `catalog.json` gagne `catalogComponents` (6 composants de pdr-0014, `components` = liste blanche J3 de 4 inchangée) + test `TestGenesisFixtures_CatalogComponentsAreThePdr0014Six` ; `failure_rejected` avec alternative (« … je peux afficher la vue globale de la release 3.4, avec stabilité, avis et checklist. Voulez-vous la voir ? »), `TestFailureRejectedOffersAlternative`. Écart assumé : `TestConfig_EmbeddedPhrasesByDefault` retire la chaîne « 3.4 » avant son contrôle « sans chiffre » pour `FailureRejected` seulement (les autres phrases gardent l'interdiction complète). | `.omc/state/loop/gates/20261030-031528-unit-go.log` |
 
 | 2026-10-30 | Refactorisation | Lot 5 (R10) fait : `TestMain` de l'acceptation orchestrateur supprime `buildDir` (19 dossiers `/tmp/genesis-agents-*` avant et après un run : plus de fuite ; les 19 anciens ont été supprimés à la main, ils ne contenaient que les trois binaires) ; `TestFailurePhraseMatchesCause` compare `wantDetail` exactement (déjà vert : le code produisait ces détails) ; `pipeline.go` 771 → 374 lignes (`plan_step.go` 88, `task.go` 233, `commentary.go` 114, déplacement pur, tests inchangés) ; commentaires périmés corrigés (`port/agent.go`, `hub.go`) ; noms de carte nettoyés dans `a2aclient` (`cleanCardName` : 40 runes, contrôles et bidi retirés, repli sur l'hôte ; rouge initial `Card().Name = "Qual‮ité"`, attendu `"Qualité"`). Non fait : assertion « `inflight` vide » dans les tests existants de `pipeline_test.go` (jugée non triviale à y insérer ; couverte par `TestEverySelectedAgentGetsTerminalActivity`). | `.omc/state/loop/gates/20261030-031931-unit-go.log` |
+
+| 2026-10-30 | Refactorisation (clôture) | R1 à R10 appliquées en 5 lots (Lot 1 CI, Lot 2 agents, Lot 3 planification, Lot 4 contrat et phrases, Lot 5 hygiène). **`gate --full` VERT sur arbre propre** (40 contrôles) au commit `674f410`. Passage à la Vérification. | `.omc/state/loop/gates/20261030-032052-full.log` |
 
 ## Revue d'architecte
 
