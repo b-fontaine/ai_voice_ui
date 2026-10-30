@@ -1,3 +1,4 @@
+# attendu: ne doit pas recevoir env_file
 services:
   agent-quality:
     env_file:

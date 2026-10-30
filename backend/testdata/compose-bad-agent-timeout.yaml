@@ -1,3 +1,4 @@
+# attendu: doit depasser celui de la passerelle
 services:
   agent-quality:
     environment:

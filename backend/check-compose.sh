@@ -133,9 +133,8 @@ import re
 
 def default_value(raw):
     raw = str(raw)
-    if raw.startswith("${") and ":-" in raw and raw.endswith("}"):
-        return raw[raw.index(":-") + 2:-1]
-    return raw
+    m = re.fullmatch(r"\$\{[A-Za-z0-9_]+:?-(.*)\}", raw, re.S)
+    return m.group(1) if m else raw
 
 
 def seconds(raw, label):

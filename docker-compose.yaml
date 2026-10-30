@@ -86,11 +86,12 @@ services:
       # (jamais 0.0.0.0), non publié, sources limitées aux agents branchés. `COMPOSER_MODEL` vide
       # = passerelle désactivée (503) et composition déterministe. Modèle fixé par la mesure du
       # 2026-10-30 (T51 : 25/25 plans valides, p50 1,8 s, p90 2,7 s) ; le squelette part avant l'appel (T52).
-      # Attention : une commande `docker compose` lancée sans ce modèle dans l'environnement recrée
-      # l'orchestrateur avec la valeur par défaut ci-dessous.
+      # Syntaxe `${VAR-défaut}` (sans deux-points) : `COMPOSER_MODEL= docker compose up` (valeur VIDE) désactive
+      # le modèle (filet de pdr-0060), une variable absente prend `gpt-6-luna`. Une commande `docker compose`
+      # lancée sans ce modèle dans l'environnement recrée l'orchestrateur avec la valeur par défaut.
       LLM_GATEWAY_ADDR: ${LLM_GATEWAY_ADDR:-172.30.77.10:8081}
       LLM_GATEWAY_ALLOWED_SOURCES: ${LLM_GATEWAY_ALLOWED_SOURCES:-172.30.77.21,172.30.77.30}
-      COMPOSER_MODEL: ${COMPOSER_MODEL:-gpt-6-luna}
+      COMPOSER_MODEL: ${COMPOSER_MODEL-gpt-6-luna}
       COMPOSER_TIMEOUT: *composer_gateway_timeout
       COMPOSER_MAX_OUTPUT_TOKENS: ${COMPOSER_MAX_OUTPUT_TOKENS:-1024}
       COMPOSER_REASONING_EFFORT: ${COMPOSER_REASONING_EFFORT:-}
@@ -138,7 +139,7 @@ services:
       A2UI_CATALOG_ID: *a2ui_catalog
       # Compositeur LLM : seul Qualité a un choix non trivial (KeyIndicator, TrendChart, CrashList) ;
       # Voix et Livraison restent déterministes tant que la mesure par agent (T51) ne justifie pas le contraire.
-      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY:-http://172.30.77.10:8081/v1/complete}
+      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY-http://172.30.77.10:8081/v1/complete}
       COMPOSER_TIMEOUT: *composer_agent_timeout
     <<: *agent
     networks:
@@ -189,7 +190,7 @@ services:
       args:
         CMD: composer-bench
     environment:
-      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY:-http://172.30.77.10:8081/v1/complete}
+      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY-http://172.30.77.10:8081/v1/complete}
       COMPOSER_TIMEOUT: *composer_agent_timeout
       BENCH_REPEATS: ${BENCH_REPEATS:-5}
       BENCH_PAUSE: ${BENCH_PAUSE:-1s}

@@ -1,3 +1,4 @@
+# attendu: composer-bench ne doit publier aucun port
 services:
   composer-bench:
     ports:

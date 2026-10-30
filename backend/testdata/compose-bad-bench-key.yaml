@@ -1,3 +1,4 @@
+# attendu: composer-bench : OPENAI_API_KEY ne doit pas lui etre fourni
 services:
   composer-bench:
     environment:

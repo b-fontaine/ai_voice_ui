@@ -1,3 +1,4 @@
+# attendu: doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES
 services:
   orchestrator:
     environment:

@@ -1,3 +1,4 @@
+# attendu: le port de la passerelle LLM ne doit jamais etre publie
 services:
   orchestrator:
     ports:
