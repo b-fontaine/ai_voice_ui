@@ -20,7 +20,7 @@ export 'voice_orb.dart' show VoiceOrb;
 /// scène (>= 24 px, RG-09) ; les lignes s'abrègent avec une ellipse.
 ///
 /// Elle lit les Blocs fournis plus haut (`VoiceSessionBloc`, `TranscriptBloc`,
-/// `AgentActivityBloc`) et leur envoie les commandes. Le niveau de l'orbe
+/// `AgentActivityBloc`, `OrbPhaseBloc`) et leur envoie les commandes. Le niveau de l'orbe
 /// ([orbLevel]) va directement au painter : le changer ne reconstruit pas la
 /// barre (NFR-04).
 class TopBar extends StatelessWidget {
@@ -59,11 +59,16 @@ class TopBar extends StatelessWidget {
               BlocBuilder<AgentActivityBloc, AgentActivityState>(
                 buildWhen: (previous, current) =>
                     previous.anyWorking != current.anyWorking,
-                builder: (context, agents) => VoiceOrb(
-                  level: orbLevel,
-                  thinking: status is Active && agents.anyWorking,
-                  speakingThreshold: speakingThreshold,
-                ),
+                builder: (context, agents) =>
+                    BlocBuilder<OrbPhaseBloc, OrbPhase>(
+                      builder: (context, phase) => VoiceOrb(
+                        level: orbLevel,
+                        thinking: status is Active && agents.anyWorking,
+                        interrupted: status is Active && phase is Interrupted,
+                        listening: status is Active && phase is Listening,
+                        speakingThreshold: speakingThreshold,
+                      ),
+                    ),
               ),
               const SizedBox(width: 16),
               Expanded(child: _Details(status: status)),

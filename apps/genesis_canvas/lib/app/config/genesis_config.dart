@@ -48,6 +48,8 @@ class GenesisConfig {
     this.orbAttack = const Duration(milliseconds: 80),
     this.orbRelease = const Duration(milliseconds: 250),
     this.orbSpeakingThreshold = 0.03,
+    this.interruptResumeSilence = defaultInterruptResumeSilence,
+    this.interruptMaxDuration = defaultInterruptMaxDuration,
     this.replayMaxGap = defaultReplayMaxGap,
     this.replayTick = defaultReplayTick,
     this.replayJournalMaxEntries = defaultReplayJournalMaxEntries,
@@ -75,7 +77,8 @@ class GenesisConfig {
   /// `GENESIS_CANVAS_ACTION_MAX_DURATION_MS` et les variables du rejeu
   /// (`GENESIS_REPLAY_MAX_GAP_MS`, `GENESIS_REPLAY_TICK_MS`,
   /// `GENESIS_REPLAY_JOURNAL_MAX`, `GENESIS_REPLAY_SPEED`,
-  /// `GENESIS_REPLAY_AT`).
+  /// `GENESIS_REPLAY_AT`) et celles de l'interruption vocale
+  /// (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`, `GENESIS_INTERRUPT_MAX_MS`).
   ///
   /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` ou
   /// `GENESIS_CATALOG_ID`, `GENESIS_CANVAS_RESET_TIMEOUT_MS`,
@@ -103,6 +106,22 @@ class GenesisConfig {
     canvasActionMaxDuration:
         _readCanvasActionMaxDuration(environment) ??
         defaultCanvasActionMaxDuration,
+    interruptResumeSilence:
+        _readMillis(
+          environment,
+          _interruptResumeSilenceVariable,
+          min: 100,
+          max: 60000,
+        ) ??
+        defaultInterruptResumeSilence,
+    interruptMaxDuration:
+        _readMillis(
+          environment,
+          _interruptMaxVariable,
+          min: 1000,
+          max: 120000,
+        ) ??
+        defaultInterruptMaxDuration,
     replayMaxGap:
         _readMillis(environment, _replayMaxGapVariable, min: 100, max: 60000) ??
         defaultReplayMaxGap,
@@ -275,6 +294,21 @@ class GenesisConfig {
   /// Niveau lissé à partir duquel l'orbe est dite « parle ».
   final double orbSpeakingThreshold;
 
+  /// Silence de l'IA (niveau d'orbe sous le seuil) qui met fin à une
+  /// interruption vocale : l'orbe écoute et la voix de l'IA est rétablie
+  /// (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`, 100 à 60000 ms, défaut 3 s).
+  final Duration interruptResumeSilence;
+
+  /// Défaut de [interruptResumeSilence] (3 s).
+  static const Duration defaultInterruptResumeSilence = Duration(seconds: 3);
+
+  /// Durée maximale d'une interruption vocale, même si l'IA reste audible
+  /// (`GENESIS_INTERRUPT_MAX_MS`, 1000 à 120000 ms, défaut 15 s).
+  final Duration interruptMaxDuration;
+
+  /// Défaut de [interruptMaxDuration] (15 s).
+  static const Duration defaultInterruptMaxDuration = Duration(seconds: 15);
+
   static String? _read(Map<String, String> environment, String name) {
     final value = environment[name]?.trim();
     return (value == null || value.isEmpty) ? null : value;
@@ -422,6 +456,9 @@ class GenesisConfig {
     return Duration(milliseconds: millis);
   }
 
+  static const String _interruptResumeSilenceVariable =
+      'GENESIS_INTERRUPT_RESUME_SILENCE_MS';
+  static const String _interruptMaxVariable = 'GENESIS_INTERRUPT_MAX_MS';
   static const String _replayMaxGapVariable = 'GENESIS_REPLAY_MAX_GAP_MS';
   static const String _replayTickVariable = 'GENESIS_REPLAY_TICK_MS';
   static const String _replayJournalMaxVariable = 'GENESIS_REPLAY_JOURNAL_MAX';

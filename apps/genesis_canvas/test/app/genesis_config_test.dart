@@ -410,6 +410,59 @@ void main() {
       }
     });
 
+    test('interruption : valeurs par défaut', () {
+      const config = GenesisConfig();
+      expect(config.interruptResumeSilence, const Duration(seconds: 3));
+      expect(config.interruptMaxDuration, const Duration(seconds: 15));
+      final fromEmpty = GenesisConfig.fromEnvironment(const <String, String>{});
+      expect(fromEmpty.interruptResumeSilence, config.interruptResumeSilence);
+      expect(fromEmpty.interruptMaxDuration, config.interruptMaxDuration);
+    });
+
+    test('GENESIS_INTERRUPT_RESUME_SILENCE_MS : 100 à 60000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_INTERRUPT_RESUME_SILENCE_MS': ?value},
+      ).interruptResumeSilence;
+
+      expect(read(null), const Duration(seconds: 3));
+      expect(read(' 1500 '), const Duration(milliseconds: 1500));
+      expect(read('100'), const Duration(milliseconds: 100));
+      expect(read('60000'), const Duration(minutes: 1));
+      for (final raw in <String>['99', '60001', 'abc', '-5', '1.5']) {
+        expect(
+          () => GenesisConfig.fromEnvironment(<String, String>{
+            'GENESIS_INTERRUPT_RESUME_SILENCE_MS': raw,
+          }),
+          throwsA(
+            isA<GenesisConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('GENESIS_INTERRUPT_RESUME_SILENCE_MS'),
+                isNot(contains(raw)),
+              ),
+            ),
+          ),
+          reason: raw,
+        );
+      }
+    });
+
+    test('GENESIS_INTERRUPT_MAX_MS : 1000 à 120000 ms', () {
+      Duration read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_INTERRUPT_MAX_MS': ?value},
+      ).interruptMaxDuration;
+
+      expect(read(null), const Duration(seconds: 15));
+      expect(read('20000'), const Duration(seconds: 20));
+      expect(
+        () => GenesisConfig.fromEnvironment(const <String, String>{
+          'GENESIS_INTERRUPT_MAX_MS': '999',
+        }),
+        throwsA(isA<GenesisConfigException>()),
+      );
+    });
+
     test('rejeu : valeurs par défaut', () {
       const config = GenesisConfig();
       expect(config.replayMaxGap, const Duration(seconds: 3));

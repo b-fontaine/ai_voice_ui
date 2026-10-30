@@ -9,6 +9,8 @@ GenesisCanvasPageSettings pageSettingsOf([
   orbRelease: config.orbRelease,
   orbSilenceTimeout: config.orbSilenceTimeout,
   orbSpeakingThreshold: config.orbSpeakingThreshold,
+  interruptResumeSilence: config.interruptResumeSilence,
+  interruptMaxDuration: config.interruptMaxDuration,
   sessionCloseTimeout: config.sessionCloseTimeout,
   exitCloseTimeout: config.exitCloseTimeout,
   canvasResetRetries: config.canvasResetRetries,

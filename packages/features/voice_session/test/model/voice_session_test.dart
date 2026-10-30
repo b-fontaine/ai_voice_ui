@@ -575,6 +575,75 @@ void main() {
       expect(lines.single, contains('"type":"transcript"'));
       expect(lines.single, contains('"unix_ms":1000'));
     });
+
+    group('coupure de la voix de l\'IA (voice.interrupted)', () {
+      test('coupe la piste distante, puis la rétablit à la reprise', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        h.channel.last.add(
+          envelopeOf('voice.interrupted', <String, Object?>{'at_ms': 2500}),
+        );
+        await pumpEventQueue();
+
+        expect(h.transports.single.remoteAudioEnabled, isFalse);
+
+        await h.session.resumeRemoteAudio();
+        expect(h.transports.single.remoteAudioEnabled, isTrue);
+        expect(
+          h.transports.single.calls.where((c) => c.startsWith('setRemote')),
+          <String>[
+            'setRemoteAudioEnabled(false)',
+            'setRemoteAudioEnabled(true)',
+          ],
+        );
+        await h.session.dispose();
+      });
+
+      test('la reprise sans coupure ne touche pas au transport', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        await h.session.resumeRemoteAudio();
+
+        expect(
+          h.transports.single.calls.where((c) => c.startsWith('setRemote')),
+          isEmpty,
+        );
+        await h.session.dispose();
+      });
+
+      test('une interruption d\'une autre session est ignorée', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        h.channel.last.add(
+          envelopeOf('voice.interrupted', <String, Object?>{
+            'at_ms': 1,
+          }, session: 'autre'),
+        );
+        await pumpEventQueue();
+
+        expect(h.transports.single.remoteAudioEnabled, isTrue);
+        await h.session.dispose();
+      });
+
+      test('une nouvelle session repart avec le son actif', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        h.channel.last.add(
+          envelopeOf('voice.interrupted', <String, Object?>{'at_ms': 1}),
+        );
+        await pumpEventQueue();
+        await h.session.stop();
+        await h.session.start();
+        await h.session.resumeRemoteAudio();
+
+        expect(h.transports, hasLength(2));
+        expect(
+          h.transports.last.calls,
+          isNot(contains('setRemoteAudioEnabled(true)')),
+        );
+        await h.session.dispose();
+      });
+    });
   });
 }
 

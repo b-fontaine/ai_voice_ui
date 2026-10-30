@@ -56,10 +56,15 @@ import 'package:feature_voice_session/feature_voice_session.dart'
         Failed,
         Idle,
         LiveSessionEventSource,
+        Interrupted,
         OrbLevelController,
+        OrbPhase,
+        OrbPhaseBloc,
+        OrbPhaseSourceSubscribed,
         OrbSmoother,
         Stopping,
         TranscriptBloc,
+        TranscriptResumed,
         TranscriptSourceSubscribed,
         VoiceSession,
         VoiceSessionBloc,
@@ -167,6 +172,15 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   );
   late final VoiceSessionBloc _voiceBloc = VoiceSessionBloc(_session);
   late final TranscriptBloc _transcriptBloc = widget.getIt<TranscriptBloc>();
+  // Phase de l'orbe (écoute, parole, interrompue) : réglée par la
+  // configuration, construite ici (racine de composition) avec la source.
+  late final OrbPhaseBloc _phaseBloc = OrbPhaseBloc(
+    speakingThreshold: _settings.orbSpeakingThreshold,
+    resumeSilence: _settings.interruptResumeSilence,
+    maxInterruption: _settings.interruptMaxDuration,
+  );
+  StreamSubscription<OrbPhase>? _phaseSubscription;
+  bool _wasInterrupted = false;
   late final AgentActivityBloc _agentsBloc = widget.getIt<AgentActivityBloc>();
   // Écran de fabrication : panneau du protocole (horloge de l'app, pdr-0038),
   // étagère du catalogue et régie des actes.
@@ -283,6 +297,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // Tous les abonnés se branchent avant toute connexion.
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
+    _phaseBloc.add(OrbPhaseSourceSubscribed(_source.events));
+    _phaseSubscription = _phaseBloc.stream.listen(_onOrbPhase);
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
     // Un seul flux de `SessionEvent` entre dans le gate : le flux vivant, ou
     // le rejeu encapsulé en enveloppes (la source vivante n'alimente alors pas
@@ -634,6 +650,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _resetGeneration++;
     _cancelRetryWait();
     unawaited(_statusSubscription?.cancel());
+    unawaited(_phaseSubscription?.cancel());
     unawaited(_activitySubscription?.cancel());
     unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
@@ -652,6 +669,19 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     super.dispose();
   }
 
+  // Fin d'une interruption vocale (FR-19) : la page relie la phase de l'orbe
+  // aux trois consommateurs qui ne se lisent pas entre eux : la voix de l'IA,
+  // le niveau de l'orbe et la ligne de transcription.
+  void _onOrbPhase(OrbPhase phase) {
+    final interrupted = phase is Interrupted;
+    final resumed = _wasInterrupted && !interrupted;
+    _wasInterrupted = interrupted;
+    if (!resumed) return;
+    unawaited(_session.resumeRemoteAudio());
+    _orb.resume();
+    _transcriptBloc.add(const TranscriptResumed());
+  }
+
   /// Fermeture ordonnée, jamais d'exception non gérée : un objet n'est libéré
   /// qu'après ses consommateurs.
   ///
@@ -662,7 +692,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 5. routeur du rejeu (il lit la source), puis filtre A2UI (il lit le
   ///    routeur) ; le Bloc du rejeu, lui, est déjà fermé par `dispose`, avant
   ///    toute cette séquence ;
-  /// 6. Blocs de transcription, d'action, d'activité (que le Bloc d'action
+  /// 6. Blocs de transcription, de phase de l'orbe, d'action, d'activité (que le Bloc d'action
   ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
   ///    lisent le gate, donc ils ne se ferment qu'après lui ;
@@ -676,6 +706,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     await _step('routeur du rejeu', () async => _router.dispose());
     await _step('filtre A2UI', _gate.dispose);
     await _step('Bloc de transcription', _transcriptBloc.close);
+    await _step('Bloc de phase de l\'orbe', _phaseBloc.close);
     await _step('Bloc d\'action', _actionBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
     await _step('Bloc du canevas', _bloc.close);
@@ -718,6 +749,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     providers: [
       BlocProvider<VoiceSessionBloc>.value(value: _voiceBloc),
       BlocProvider<TranscriptBloc>.value(value: _transcriptBloc),
+      BlocProvider<OrbPhaseBloc>.value(value: _phaseBloc),
       BlocProvider<AgentActivityBloc>.value(value: _agentsBloc),
       BlocProvider<CanvasActionBloc>.value(value: _actionBloc),
       BlocProvider<CanvasBloc>.value(value: _bloc),

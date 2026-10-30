@@ -5,11 +5,21 @@ export 'src/api/flutter_web_rtc_platform.dart' show FlutterWebRtcPlatform;
 export 'src/api/flutter_web_rtc_transport.dart' show FlutterWebRtcTransport;
 export 'src/api/live_session_event_source.dart' show LiveSessionEventSource;
 export 'src/api/web_rtc_platform.dart' show WebRtcPlatform;
+export 'src/model/orb_phase_bloc.dart'
+    show
+        Interrupted,
+        Listening,
+        OrbPhase,
+        OrbPhaseBloc,
+        OrbPhaseEvent,
+        OrbPhaseSourceSubscribed,
+        Speaking;
 export 'src/model/orb_smoother.dart' show OrbSmoother;
 export 'src/model/transcript_bloc.dart'
     show
         TranscriptBloc,
         TranscriptEvent,
+        TranscriptResumed,
         TranscriptSourceSubscribed,
         TranscriptState;
 export 'src/model/voice_failure.dart'
