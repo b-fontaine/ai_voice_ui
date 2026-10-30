@@ -15,7 +15,7 @@
 | 007 | J3-B : acte 1 côté app (catalogue `genesis` fermé et validé côté client, rail, panneau protocole, étagère, indicateur d'acte, remise à vide + route Go `POST /canvas/reset`) | EP-03, EP-04, EP-05, EP-08 | J3 | Terminée ✅ (essai réel avec micro à faire en répétition), publiée (`03cdc38`) | 2026-10-30 |
 | 008 | J4 : acte 2 « Transformer » (mutation sur place, filtre Android, comparaison 3.3, registre de canevas partagé, correction de plateforme) | EP-03, EP-04, EP-09 | J4 | Terminée ✅ (essai réel avec micro à faire en répétition), publiée (`acdc7a5`) | 2026-10-30 |
 | 009 | J5 : acte 3 « Interagir » (Barre d'actions en cinquième surface, clic → agent Livraison → vrai résultat → voix, « Bloquer » / « Valider la release ») | EP-03, EP-04, EP-02, EP-06 | J5 | Terminée ⚠️ (voix hors délégation non observée en réel : à faire en répétition ; Q-75, Q-76), publiée (`5dd4cd2`) | 2026-10-30 |
-| 010 | J6 : acte 4 « Rejouer » (journal client du flux A2UI, rejeu par le même gate de 0,25× à 2×, curseur, Direct) | EP-07, EP-05 | J6 | Refactorisation | 2026-10-30 |
+| 010 | J6 : acte 4 « Rejouer » (journal client du flux A2UI, rejeu par le même gate de 0,25× à 2×, curseur, Direct) | EP-07, EP-05 | J6 | Vérification | 2026-10-30 |
 
 ## Journal
 | Date | Événement |
