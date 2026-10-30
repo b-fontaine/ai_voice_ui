@@ -152,6 +152,50 @@ abstract final class ContractFixtures {
     return surfaces;
   }
 
+  /// Agent qui produit la Barre d'actions et les résultats d'action (Livraison,
+  /// pdr-0065 D2 et D3), et numéro de la tâche A2A de l'acte 3 : les
+  /// identifiants de tâche sont uniques sur toute la démo (acte 1 : 1 à 3,
+  /// acte 2 : 4 à 6, correction iOS : 7 à 9).
+  static const String actionAgent = 'Livraison';
+  static const String act2ActionsTask = 'task_6';
+  static const String act3Task = 'task_10';
+
+  /// Messages de la surface `actions` créée à la fin de l'acte 2
+  /// (`examples/act2-actions.jsonl`) : `createSurface`, `updateComponents`,
+  /// `updateDataModel`.
+  static Future<List<Map<String, Object?>>> actionsMessages({
+    String catalogId = defaultCatalogId,
+  }) => _exampleMessages('act2-actions.jsonl', catalogId);
+
+  /// Message du résultat d'une action (`examples/act3-block.jsonl` ou
+  /// `act3-validate.jsonl`) : un `updateDataModel` de sous-chemin (A7).
+  static Future<List<Map<String, Object?>>> actionResultMessages(
+    String action, {
+    String catalogId = defaultCatalogId,
+  }) {
+    final file = switch (action) {
+      'block_release' => 'act3-block.jsonl',
+      'validate_release' => 'act3-validate.jsonl',
+      _ => throw ArgumentError('Action inconnue du contrat : $action'),
+    };
+    return _exampleMessages(file, catalogId);
+  }
+
+  static Future<List<Map<String, Object?>>> _exampleMessages(
+    String file,
+    String catalogId,
+  ) async {
+    final dir = await genesisDirectory();
+    final text = File.fromUri(dir.uri.resolve('examples/$file'))
+        .readAsStringSync()
+        .replaceAll(catalogPlaceholder, catalogId);
+    return const LineSplitter()
+        .convert(text)
+        .where((l) => l.trim().isNotEmpty)
+        .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
+        .toList();
+  }
+
   /// Messages d'une fixture négative `invalid/<name>.jsonl`, `${CATALOG_ID}`
   /// remplacé par [catalogId].
   static Future<List<Map<String, Object?>>> invalidMessages(
