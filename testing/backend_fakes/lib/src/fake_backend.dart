@@ -129,6 +129,24 @@ class FakeBackend {
   /// Nombre de requêtes `POST /canvas/reset` reçues.
   int canvasResets = 0;
 
+  /// Corps bruts des requêtes `POST /canvas/actions` reçues (pdr-0065, D1),
+  /// dans l'ordre d'arrivée, refusées comprises.
+  final List<String> canvasActionBodies = <String>[];
+
+  /// Statuts forcés pour les prochaines requêtes `POST /canvas/actions`,
+  /// consommés dans l'ordre (par exemple `[409, 202]`) ; vide : 202. Un 409
+  /// répond `{"error":"busy"}`.
+  final List<int> canvasActionStatuses = <int>[];
+
+  /// `true` : une action acceptée (202) déclenche seule la séquence de l'acte
+  /// 3 ([emitGenesisActionStart], attente de [actionWorkDuration], puis
+  /// [emitGenesisActionResult]), comme le vrai orchestrateur. `false` : le
+  /// test pilote chaque temps.
+  bool actionAutoRun = true;
+
+  /// Durée du travail de l'agent entre `working` et le résultat, en temps réel.
+  Duration actionWorkDuration = const Duration(milliseconds: 400);
+
   final List<String> _sessions = <String>[];
 
   /// Surfaces actives par session, déduites des messages `a2ui` publiés.
@@ -242,10 +260,16 @@ class FakeBackend {
   /// `updateDataModel` par surface (aucun `createSurface`, D1), puis
   /// `agent.activity completed` ×3. Les identifiants de tâche sont distincts
   /// de l'acte 1.
+  ///
+  /// Avec [withActions] (acte 2 de la spec 009, pdr-0065 D2), la tâche de
+  /// Livraison crée en plus la surface `actions` (`createSurface`,
+  /// `updateComponents`, `updateDataModel`) après la mutation de la checklist
+  /// (A2) : le seul `createSurface` du tour est celui de `actions`.
   Future<void> emitGenesisFollowUp(
     String session,
     GenesisFollowUp followUp, {
     String delegation = 'deleg_2',
+    bool withActions = false,
   }) async {
     final surfaces = await ContractFixtures.followUpSurfaces(
       followUp,
@@ -268,7 +292,82 @@ class FakeBackend {
         task: surfaces[i].task,
       );
     }
+    if (withActions) await emitGenesisActions(session);
     _emitActivities(session, 'completed', tasks);
+  }
+
+  /// Publie la surface `actions` de la fin de l'acte 2 (exemple
+  /// `act2-actions.jsonl`) du temps [from] au temps [upTo] inclus. [data]
+  /// remplace la valeur du modèle de données (cas hors contrat, état neutre).
+  Future<void> emitGenesisActions(
+    String session, {
+    SurfaceStage from = SurfaceStage.skeleton,
+    SurfaceStage upTo = SurfaceStage.data,
+    Object? data,
+  }) async {
+    final messages = await ContractFixtures.actionsMessages(
+      catalogId: catalogId,
+    );
+    for (var i = from.index; i <= upTo.index; i++) {
+      var message = messages[i];
+      if (i == SurfaceStage.data.index && data != null) {
+        final update = Map<String, Object?>.from(
+          message['updateDataModel']! as Map,
+        );
+        update['value'] = data;
+        message = <String, Object?>{...message, 'updateDataModel': update};
+      }
+      emit(
+        session,
+        'a2ui',
+        message,
+        tMs: 3500 + i * 50,
+        agent: ContractFixtures.actionAgent,
+        task: ContractFixtures.act2ActionsTask,
+      );
+    }
+  }
+
+  /// Début de l'acte 3 : `plan` où Livraison est seul retenu (les deux autres
+  /// agents en veille), puis `agent.activity working` de Livraison. L'identifiant
+  /// d'opération `act-1` n'est pas celui d'une délégation du fournisseur.
+  Future<void> emitGenesisActionStart(String session) async {
+    emitGenesisPlan(
+      session,
+      selected: <String>[ContractFixtures.actionAgent],
+      delegation: 'act-1',
+    );
+    _emitActivities(
+      session,
+      'working',
+      <String, String>{ContractFixtures.actionAgent: ContractFixtures.act3Task},
+      agents: <String>[ContractFixtures.actionAgent],
+    );
+  }
+
+  /// Fin de l'acte 3 : le résultat de l'action [action] (`updateDataModel` de
+  /// sous-chemin des exemples `act3-*`), puis `agent.activity completed`.
+  Future<void> emitGenesisActionResult(String session, String action) async {
+    final messages = await ContractFixtures.actionResultMessages(
+      action,
+      catalogId: catalogId,
+    );
+    for (final message in messages) {
+      emit(
+        session,
+        'a2ui',
+        message,
+        tMs: 4000,
+        agent: ContractFixtures.actionAgent,
+        task: ContractFixtures.act3Task,
+      );
+    }
+    _emitActivities(
+      session,
+      'completed',
+      <String, String>{ContractFixtures.actionAgent: ContractFixtures.act3Task},
+      agents: <String>[ContractFixtures.actionAgent],
+    );
   }
 
   void _emitActivities(
@@ -448,6 +547,9 @@ class FakeBackend {
     if (request.method == 'POST' && path == '/canvas/reset') {
       return _canvasReset(request);
     }
+    if (request.method == 'POST' && path == '/canvas/actions') {
+      return _canvasAction(request);
+    }
     if (request.method == 'GET' && path == '/healthz') {
       request.response
         ..statusCode = HttpStatus.ok
@@ -547,6 +649,41 @@ class FakeBackend {
           'deleteSurface': <String, Object?>{'surfaceId': id},
         }, agent: 'orchestrateur');
       }
+    }
+  }
+
+  /// `POST /canvas/actions` : journalise le corps, répond selon
+  /// [canvasActionStatuses] (202 par défaut, 409 `busy`), puis, si
+  /// [actionAutoRun], enchaîne la séquence de l'acte 3 sur la session la plus
+  /// récente.
+  Future<void> _canvasAction(HttpRequest request) async {
+    final body = await utf8.decoder.bind(request).join();
+    canvasActionBodies.add(body);
+    _record('canvas action $body');
+    final status = canvasActionStatuses.isEmpty
+        ? HttpStatus.accepted
+        : canvasActionStatuses.removeAt(0);
+    if (status != HttpStatus.accepted) {
+      return _json(request.response, status, <String, Object?>{
+        'error': status == HttpStatus.conflict ? 'busy' : 'refused',
+      });
+    }
+    request.response.statusCode = HttpStatus.accepted;
+    await request.response.close();
+    final session = lastSessionId;
+    if (!actionAutoRun || session == null) return;
+    final decoded = jsonDecode(body);
+    if (decoded is! Map || decoded['action'] is! String) return;
+    unawaited(_runAction(session, decoded['action']! as String));
+  }
+
+  Future<void> _runAction(String session, String action) async {
+    try {
+      await emitGenesisActionStart(session);
+      await Future<void>.delayed(actionWorkDuration);
+      await emitGenesisActionResult(session, action);
+    } on Object catch (error) {
+      _record('canvas action run abandoned: $error');
     }
   }
 

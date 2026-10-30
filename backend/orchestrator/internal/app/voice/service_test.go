@@ -125,13 +125,60 @@ type testSideband struct {
 	autoClose bool // émet closed à l'appel de Close
 	// confirmDelay retarde la confirmation (session.closed) après Close.
 	confirmDelay time.Duration
+
+	sentMu     sync.Mutex
+	commentary []string // « <delegation>:<texte> » des AppendCommentary reçus
+	general    []string // textes des AppendGeneralCommentary reçus
+	generalErr error
+	// commentaryErr refuse les AppendCommentary ; instructions et instructionsErr
+	// portent les AppendInstructions ; order journalise tous les envois, dans l'ordre
+	// (« general », « delegated:<id> », « instructions »), refusés compris.
+	commentaryErr   error
+	instructions    []string
+	instructionsErr error
+	order           []string
 }
 
 func newTestSideband(autoClose bool) *testSideband {
 	return &testSideband{events: make(chan port.LiveEvent, 64), closeCall: make(chan struct{}), autoClose: autoClose}
 }
 
-func (s *testSideband) AppendCommentary(context.Context, string, string) error { return nil }
+func (s *testSideband) AppendCommentary(_ context.Context, delegationID, text string) error {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	s.commentary = append(s.commentary, delegationID+":"+text)
+	s.order = append(s.order, "delegated:"+delegationID)
+	return s.commentaryErr
+}
+
+func (s *testSideband) AppendInstructions(_ context.Context, text string) error {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	s.instructions = append(s.instructions, text)
+	s.order = append(s.order, "instructions")
+	return s.instructionsErr
+}
+
+// sendOrder renvoie la liste ordonnée des envois reçus (refusés compris).
+func (s *testSideband) sendOrder() []string {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	return append([]string(nil), s.order...)
+}
+
+func (s *testSideband) AppendGeneralCommentary(_ context.Context, text string) error {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	s.general = append(s.general, text)
+	s.order = append(s.order, "general")
+	return s.generalErr
+}
+
+func (s *testSideband) sent() (commentary, general []string) {
+	s.sentMu.Lock()
+	defer s.sentMu.Unlock()
+	return append([]string(nil), s.commentary...), append([]string(nil), s.general...)
+}
 
 func (s *testSideband) Events() <-chan port.LiveEvent { return s.events }
 
@@ -475,6 +522,10 @@ func TestCloseGuardTimeout(t *testing.T) {
 type blockingSideband struct{ events chan port.LiveEvent }
 
 func (s *blockingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+
+func (s *blockingSideband) AppendGeneralCommentary(context.Context, string) error { return nil }
+
+func (s *blockingSideband) AppendInstructions(context.Context, string) error { return nil }
 
 func (b *blockingSideband) Events() <-chan port.LiveEvent { return b.events }
 
@@ -1184,3 +1235,7 @@ func TestCloseTimeoutHangupErrorJoined(t *testing.T) {
 }
 
 func (s *failingSideband) AppendCommentary(context.Context, string, string) error { return nil }
+
+func (s *failingSideband) AppendGeneralCommentary(context.Context, string) error { return nil }
+
+func (s *failingSideband) AppendInstructions(context.Context, string) error { return nil }

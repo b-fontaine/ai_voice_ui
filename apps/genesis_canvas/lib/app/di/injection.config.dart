@@ -39,6 +39,10 @@ extension GetItInjectableX on _i174.GetIt {
       () => appModule.canvasResetClient(gh<_i32.GenesisConfig>()),
       dispose: _i580.closeCanvasResetClient,
     );
+    gh.lazySingleton<_i769.CanvasActionClient>(
+      () => appModule.canvasActionClient(gh<_i32.GenesisConfig>()),
+      dispose: _i580.closeCanvasActionClient,
+    );
     gh.lazySingleton<_i769.AppChannel>(
       () => appModule.appChannel(gh<_i32.GenesisConfig>(), gh<StringSink>()),
     );

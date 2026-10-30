@@ -83,7 +83,7 @@ void main() {
           value: bloc,
           child: SizedBox(
             width: 940,
-            height: 255,
+            height: 255 + CanvasBoard.actionsBandHeight,
             child: CanvasBoard(controller: controller),
           ),
         ),
@@ -255,7 +255,7 @@ void main() {
     expect(
       catalog.items.map((i) => i.name),
       GenesisContract.components,
-      reason: 'ActionBar et CrashList n ont pas de schéma : hors catalogue',
+      reason: 'les 5 composants validés, dans l ordre ; CrashList est hors catalogue',
     );
   });
 }

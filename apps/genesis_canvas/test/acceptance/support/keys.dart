@@ -73,6 +73,10 @@ abstract final class AcceptanceKeys {
   /// Préfixe commun des clés [trendSeries] (pour compter les séries).
   static const String trendSeriesPrefix = 'trend-series-';
 
+  /// Bouton de la Barre d'actions pour l'action [id] (`block_release`,
+  /// `validate_release`), descendant de [surface]`('actions')` (spec 009).
+  static Key actionButton(String id) => Key('action-$id');
+
   /// Canevas (existe déjà).
   static const Key canvasBoard = Key('canvas-board');
 

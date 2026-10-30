@@ -19,7 +19,19 @@ type Request struct {
 	// le registre de l'orchestrateur. Un composeur n'émet `createSurface` que pour une
 	// surface qu'il produit et qui manque à cette liste.
 	ActiveSurfaces []string
+	// Action est l'action de l'interface (Barre d'actions) portée par la requête, ou
+	// vide pour une demande vocale. Quand elle est présente, Text est vide : le texte du
+	// message A2A (le nom de l'action) n'est jamais interprété comme une demande.
+	Action ActionCall
 }
+
+// ActionCall est une action de l'interface adressée à l'agent (acte 3).
+type ActionCall struct {
+	Name string
+}
+
+// IsZero indique l'absence d'action.
+func (a ActionCall) IsZero() bool { return a == ActionCall{} }
 
 // Composition est le résultat : un message A2UI v0.9 par élément de Messages
 // (uniquement map[string]any et []any) et un résumé factuel.

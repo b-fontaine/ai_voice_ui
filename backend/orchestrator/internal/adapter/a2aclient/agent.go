@@ -34,6 +34,10 @@ import (
 // ne contiennent que map[string]any et []any).
 const ActiveSurfacesKey = "genesis/activeSurfaces"
 
+// ActionKey est la clé de metadata du message A2A qui porte une action de
+// l'interface : {"name": <nom>}.
+const ActionKey = "genesis/action"
+
 // cancelTimeout borne l'appel CancelTask, émis avec un contexte neuf.
 const cancelTimeout = time.Second
 
@@ -364,13 +368,20 @@ func (s *stream) run(req port.AgentRequest) {
 		}
 	}()
 
-	msg := a2a.NewMessage(a2a.MessageRoleUser, a2a.NewTextPart(req.Text))
+	text := req.Text
+	if req.Action != nil {
+		text = req.Action.Name // a2a-go refuse un message sans part : le nom sert de texte
+	}
+	msg := a2a.NewMessage(a2a.MessageRoleUser, a2a.NewTextPart(text))
 	msg.ContextID = req.ContextID
 	active := make([]any, 0, len(req.ActiveSurfaces))
 	for _, id := range req.ActiveSurfaces {
 		active = append(active, id)
 	}
 	msg.Metadata = map[string]any{ActiveSurfacesKey: active}
+	if req.Action != nil {
+		msg.Metadata[ActionKey] = map[string]any{"name": req.Action.Name}
+	}
 	for ev, err := range client.SendStreamingMessage(s.ctx, &a2a.SendMessageRequest{Message: msg}) {
 		if err != nil {
 			s.a.log.Debug("a2aclient : erreur de flux", "err", err)

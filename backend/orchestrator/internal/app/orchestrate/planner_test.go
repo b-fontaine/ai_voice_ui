@@ -2,6 +2,7 @@ package orchestrate
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -80,5 +81,64 @@ func TestPlannerSelectsByCardTags(t *testing.T) {
 				t.Fatalf("Plan(%.40q) = %v, attendu %v", c.request, got, c.want)
 			}
 		})
+	}
+}
+
+func TestTagPlannerNeverSelectsOnActionTag(t *testing.T) {
+	cards := []port.AgentCard{
+		{Name: "Livraison", Tags: []string{"action:block_release", "action:validate_release"}},
+		{Name: "Autre", Tags: []string{"stabilité"}},
+	}
+	for _, req := range []string{
+		"action:block_release", "action block_release", "block_release",
+		"bloque la release", "validate_release action",
+	} {
+		if got := (TagPlanner{}).Plan(req, cards); len(got) != 0 {
+			t.Errorf("Plan(%q) = %v, aucun agent attendu", req, got)
+		}
+	}
+}
+
+func TestActionPlannerSelectsAgentsAcceptingAction(t *testing.T) {
+	cards := []port.AgentCard{
+		{Name: "Qualité", Tags: []string{"stabilité"}},
+		{Name: "Livraison", Tags: []string{"release", "action:block_release", "action:validate_release"}},
+		{Name: "Voix", Tags: []string{"voix"}},
+	}
+	cases := []struct {
+		action   string
+		selected []int
+	}{
+		{"block_release", []int{1}},
+		{"validate_release", []int{1}},
+	}
+	for _, c := range cases {
+		sel, err := (ActionPlanner{}).Plan(c.action, cards)
+		if err != nil || !reflect.DeepEqual(sel, c.selected) {
+			t.Errorf("Plan(%q) = %v, %v", c.action, sel, err)
+		}
+	}
+}
+
+func TestActionPlannerRejectsUnknownOrInvalidName(t *testing.T) {
+	cards := []port.AgentCard{{Name: "Livraison", Tags: []string{"action:block_release", "Action:Other", "action:"}}}
+	for _, name := range []string{
+		"", "unknown_action", "Block_release", "block-release", "1block", "block release",
+		"block_release\n", "other", "", strings.Repeat("a", 41), "../x", "action:block_release",
+	} {
+		sel, err := (ActionPlanner{}).Plan(name, cards)
+		if !errors.Is(err, port.ErrUnknownAction) || sel != nil {
+			t.Errorf("Plan(%q) = %v, %v", name, sel, err)
+		}
+	}
+	// 40 caractères valides mais aucun agent : toujours inconnu.
+	if _, err := (ActionPlanner{}).Plan(strings.Repeat("a", 40), cards); !errors.Is(err, port.ErrUnknownAction) {
+		t.Errorf("err = %v", err)
+	}
+}
+
+func TestSentinelErrorsAreDistinct(t *testing.T) {
+	if errors.Is(port.ErrNoSession, port.ErrUnknownAction) || errors.Is(port.ErrNoSession, port.ErrCanvasBusy) {
+		t.Fatal("sentinelles confondues")
 	}
 }

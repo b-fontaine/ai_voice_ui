@@ -41,6 +41,17 @@ type Sideband interface {
 	// est de la responsabilité de l'appelant. Le retour nil n'est que
 	// l'acquittement (`…appended`) : ce n'est pas la diction.
 	AppendCommentary(ctx context.Context, delegationID, text string) error
+	// AppendGeneralCommentary fait dire un commentaire hors de toute
+	// délégation (`session.commentary.append` avec `delegation_id` nul). Même
+	// contrat d'acquittement qu'AppendCommentary : nil n'est que l'acquittement.
+	// Primitive seulement : la politique de repli est celle de la couche app.
+	AppendGeneralCommentary(ctx context.Context, text string) error
+	// AppendInstructions ajoute une consigne à la session
+	// (`session.instructions.append`, `delegation_id` nul) ; acquittement
+	// `session.instructions.appended`. Le texte est un canal de confiance : il
+	// vient de l'orchestrateur, jamais d'un agent ni du client. Primitive
+	// seulement : la politique de repli est celle de la couche app.
+	AppendInstructions(ctx context.Context, text string) error
 }
 
 // EventType identifie la nature d'un LiveEvent.

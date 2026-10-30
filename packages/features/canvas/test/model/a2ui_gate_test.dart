@@ -97,6 +97,42 @@ void main() {
   });
 
   test(
+    'R4 : seuls /<surfaceId> et les sous-chemins déclarés sont écrits',
+    () async {
+      Map<String, Object?> write(String path, Object? value) =>
+          <String, Object?>{
+            'version': 'v0.9',
+            'updateDataModel': <String, Object?>{
+              'surfaceId': 'checklist',
+              'path': path,
+              'value': value,
+            },
+          };
+
+      // Un refus supprime la surface (compensation) : on la recrée entre deux.
+      input
+        ..add(_event(_create('checklist')))
+        ..add(_event(write('/checklist/decisionStatus', 'blocked')))
+        ..add(_event(write('/checklist/decisionStatus', 3)))
+        ..add(_event(_create('checklist')))
+        ..add(_event(write('/checklist/recommendation/level', 'high')));
+      await settle();
+
+      expect(rejected, <String>[
+        ValidationCodes.pathNotAllowed,
+        ValidationCodes.pathNotAllowed,
+      ]);
+      expect(accepted.map(_kind), <String>[
+        'createSurface',
+        'updateDataModel',
+        'deleteSurface',
+        'createSurface',
+        'deleteSurface',
+      ]);
+    },
+  );
+
+  test(
     'les événements qui ne sont pas des messages A2UI sont ignorés',
     () async {
       input.add(const OrbLevelChanged(0.5));

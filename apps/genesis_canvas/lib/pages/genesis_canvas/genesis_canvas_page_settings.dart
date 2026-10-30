@@ -14,6 +14,9 @@ class GenesisCanvasPageSettings {
     required this.exitCloseTimeout,
     required this.canvasResetRetries,
     required this.canvasResetRetryInterval,
+    required this.canvasActionRetries,
+    required this.canvasActionRetryInterval,
+    required this.canvasActionMaxDuration,
   });
 
   /// Temps de montée du lissage de l'orbe.
@@ -40,6 +43,15 @@ class GenesisCanvasPageSettings {
   /// Intervalle entre deux réessais de la remise à vide.
   final Duration canvasResetRetryInterval;
 
+  /// Nombre de réessais d'une action quand le backend est occupé.
+  final int canvasActionRetries;
+
+  /// Intervalle entre deux essais d'une action.
+  final Duration canvasActionRetryInterval;
+
+  /// Durée maximale de l'état « en cours » d'une action.
+  final Duration canvasActionMaxDuration;
+
   @override
   bool operator ==(Object other) =>
       other is GenesisCanvasPageSettings &&
@@ -50,7 +62,10 @@ class GenesisCanvasPageSettings {
       other.sessionCloseTimeout == sessionCloseTimeout &&
       other.exitCloseTimeout == exitCloseTimeout &&
       other.canvasResetRetries == canvasResetRetries &&
-      other.canvasResetRetryInterval == canvasResetRetryInterval;
+      other.canvasResetRetryInterval == canvasResetRetryInterval &&
+      other.canvasActionRetries == canvasActionRetries &&
+      other.canvasActionRetryInterval == canvasActionRetryInterval &&
+      other.canvasActionMaxDuration == canvasActionMaxDuration;
 
   @override
   int get hashCode => Object.hash(
@@ -62,5 +77,8 @@ class GenesisCanvasPageSettings {
     exitCloseTimeout,
     canvasResetRetries,
     canvasResetRetryInterval,
+    canvasActionRetries,
+    canvasActionRetryInterval,
+    canvasActionMaxDuration,
   );
 }

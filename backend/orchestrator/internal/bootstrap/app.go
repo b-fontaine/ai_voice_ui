@@ -126,15 +126,17 @@ func New(cfg Config, deps Deps) (*App, error) {
 		MaxSession:              cfg.MaxSession,
 		DelegationsCloseTimeout: delegationsCloseTimeout,
 		AttachAttempts:          cfg.AttachAttempts, AttachDelay: cfg.AttachDelay,
-		Delegations: delegations,
-		Logger:      logger,
+		Delegations:            delegations,
+		Phrases:                cfg.VoicePhrases,
+		AnnounceObserveTimeout: cfg.AnnounceObserveTimeout,
+		Logger:                 logger,
 	})
 	if err != nil {
 		_ = journal.Close()
 		return nil, err
 	}
 	handler, err := httpapi.NewHandler(httpapi.Options{
-		Sessions: service, Canvas: delegations, App: hub, Clock: clock, Logger: logger,
+		Sessions: service, Canvas: delegations, Actor: delegations, App: hub, Clock: clock, Logger: logger,
 		RateBurst: cfg.SessionRateBurst, RateWindow: cfg.SessionRateWindow, MaxBodyBytes: maxOfferBytes,
 		AllowedHosts: cfg.AllowedHosts,
 	})
@@ -182,6 +184,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 			CatalogID: cfg.A2UICatalogID, Components: cfg.A2UIComponents,
 			MaxMessageBytes: a2uiMaxMessageBytes, MaxDepth: a2uiMaxDepth, MaxComponentsPerUpdate: a2uiMaxComponents,
 			AllowedProps: cfg.A2UIAllowedProps, BindingProps: cfg.A2UIBindingProps,
+			WritableSubPaths: cfg.A2UIWritableSubPaths,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("bootstrap: validateur A2UI : %w", err)

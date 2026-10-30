@@ -32,13 +32,25 @@ type sideband struct {
 	seq     atomic.Int64
 	sendMu  sync.Mutex // sérialise les envois de commentaires
 	mu      sync.Mutex // protège pending
-	pending map[string]chan error
+	pending map[string]pendingAck
 
 	closeOnce sync.Once
 	closeErr  error
 }
 
 var _ port.Sideband = (*sideband)(nil)
+
+// pendingAck est une commande en attente : le canal de son résultat et le type
+// d'événement qui l'acquitte (un acquittement d'un autre type ne la résout pas).
+type pendingAck struct {
+	ch      chan error
+	ackType string
+}
+
+const (
+	ackCommentary   = "session.commentary.appended"
+	ackInstructions = "session.instructions.appended"
+)
 
 func newSideband(conn *live.SidebandConnection, p *Provider) *sideband {
 	loopCtx, cancel := context.WithCancel(context.Background())
@@ -49,7 +61,7 @@ func newSideband(conn *live.SidebandConnection, p *Provider) *sideband {
 		done:   make(chan struct{}),
 		cancel: cancel,
 
-		pending: make(map[string]chan error),
+		pending: make(map[string]pendingAck),
 	}
 	go s.run(loopCtx)
 	return s
@@ -92,12 +104,12 @@ func (s *sideband) route(raw []byte) {
 		return
 	}
 	switch f.Type {
-	case "session.commentary.appended":
-		s.resolve(f.ClientEventID, nil)
+	case ackCommentary, ackInstructions:
+		s.resolve(f.ClientEventID, f.Type, nil)
 	case "error":
 		msg := strings.ReplaceAll(f.Error.Message, s.p.secret, "[masquée]")
-		s.resolve(f.ClientEventID, fmt.Errorf("commentaire vocal refusé par le fournisseur (code %q, type %q) : %s",
-			f.Error.Code, f.Error.Type, msg))
+		s.resolve(f.ClientEventID, "", fmt.Errorf("%w (code %q, type %q) : %s",
+			port.ErrVoiceRefused, f.Error.Code, f.Error.Type, msg))
 	}
 }
 
@@ -149,6 +161,41 @@ const MaxCommentaryRunes = 1000
 // plus Options.AppendAckTimeout. Jamais de nouvelle tentative : un renvoi
 // ferait dire la phrase deux fois.
 func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text string) error {
+	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, delegationID)
+	return s.appendCommentary(ctx, "gc-"+delegationID, text, ev)
+}
+
+// AppendGeneralCommentary envoie session.commentary.append avec delegation_id
+// nul (« contexte général de la session » du SDK) : un commentaire hors de
+// toute délégation. Même acquittement, mêmes bornes et jamais de nouvelle
+// tentative que AppendCommentary ; aucune politique de repli ici (elle vit
+// dans la couche application).
+func (s *sideband) AppendGeneralCommentary(ctx context.Context, text string) error {
+	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, "")
+	ev.OfSessionCommentaryAppend.DelegationID = param.Null[string]()
+	return s.appendCommentary(ctx, "gc-general", text, ev)
+}
+
+// AppendInstructions envoie session.instructions.append avec delegation_id nul
+// (contexte général de la session) puis attend session.instructions.appended
+// (ou error de même client_event_id). Même borne de taille que les
+// commentaires, jamais de nouvelle tentative. Le texte est une consigne : il
+// doit venir de l'orchestrateur, jamais d'un agent ni du client.
+func (s *sideband) AppendInstructions(ctx context.Context, text string) error {
+	ev := live.ConnectClientEventParamOfSessionInstructionsAppend(text, "")
+	ev.OfSessionInstructionsAppend.DelegationID = param.Null[string]()
+	return s.appendCommand(ctx, "gi-general", ackInstructions, text, ev,
+		func(id string) { ev.OfSessionInstructionsAppend.EventID = param.NewOpt(id) })
+}
+
+func (s *sideband) appendCommentary(ctx context.Context, prefix, text string, ev live.ConnectClientEventUnionParam) error {
+	return s.appendCommand(ctx, prefix, ackCommentary, text, ev,
+		func(id string) { ev.OfSessionCommentaryAppend.EventID = param.NewOpt(id) })
+}
+
+// appendCommand valide le texte, fixe l'event_id (setID), envoie ev et attend
+// l'acquittement de type ackType. prefix compose l'event_id : « <prefix>-<n> ».
+func (s *sideband) appendCommand(ctx context.Context, prefix, ackType, text string, ev live.ConnectClientEventUnionParam, setID func(string)) error {
 	if text == "" {
 		return errors.New("commentaire vocal vide")
 	}
@@ -161,10 +208,10 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 	default:
 	}
 
-	eventID := fmt.Sprintf("gc-%s-%d", delegationID, s.seq.Add(1))
+	eventID := fmt.Sprintf("%s-%d", prefix, s.seq.Add(1))
 	ack := make(chan error, 1)
 	s.mu.Lock()
-	s.pending[eventID] = ack
+	s.pending[eventID] = pendingAck{ch: ack, ackType: ackType}
 	s.mu.Unlock()
 	defer func() {
 		s.mu.Lock()
@@ -172,15 +219,14 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 		s.mu.Unlock()
 	}()
 
-	ev := live.ConnectClientEventParamOfSessionCommentaryAppend(text, delegationID)
-	ev.OfSessionCommentaryAppend.EventID = param.NewOpt(eventID)
+	setID(eventID)
 	s.sendMu.Lock() // le SDK refuse les envois concurrents en file
 	err := s.conn.Send(ctx, ev)
 	s.sendMu.Unlock()
 	if err != nil {
-		return s.p.wrap("envoi de session.commentary.append", err)
+		return s.p.wrap("envoi de la commande vocale", err)
 	}
-	s.p.log.Debug("commentaire vocal envoyé", "event_id", eventID, "runes", utf8.RuneCountInString(text))
+	s.p.log.Debug("envoi vocal envoyé", "event_id", eventID, "runes", utf8.RuneCountInString(text))
 
 	timer := time.NewTimer(s.p.ackTimeout)
 	defer timer.Stop()
@@ -191,23 +237,30 @@ func (s *sideband) AppendCommentary(ctx context.Context, delegationID, text stri
 		return errors.New("commentaire vocal non acquitté : la session voix s'est terminée")
 	case <-timer.C:
 		s.p.log.Warn("commentaire vocal non acquitté", "event_id", eventID, "delai", s.p.ackTimeout)
-		return fmt.Errorf("commentaire vocal non acquitté en %s", s.p.ackTimeout)
+		return fmt.Errorf("%w en %s", port.ErrVoiceNoAck, s.p.ackTimeout)
 	case <-ctx.Done():
 		return s.p.wrap("attente de l'acquittement du commentaire", ctx.Err())
 	}
 }
 
+// Les erreurs rendues par appendCommand se classent pour la couche application :
+// port.ErrVoiceRefused (événement error corrélé : la commande n'a pas été prise
+// en compte) et port.ErrVoiceNoAck (délai dépassé : elle a pu être reçue). Les
+// autres (envoi, session terminée, contexte) n'autorisent aucun repli.
+
 // resolve livre l'acquittement (err nil) ou l'erreur d'une commande en attente.
-func (s *sideband) resolve(clientEventID string, err error) {
+// ackType est le type de l'événement d'acquittement (vide pour une erreur, qui
+// résout toute commande).
+func (s *sideband) resolve(clientEventID, ackType string, err error) {
 	if clientEventID == "" {
 		return
 	}
 	s.mu.Lock()
-	ch, ok := s.pending[clientEventID]
+	p, ok := s.pending[clientEventID]
 	s.mu.Unlock()
-	if ok {
+	if ok && (ackType == "" || ackType == p.ackType) {
 		select {
-		case ch <- err:
+		case p.ch <- err:
 		default:
 		}
 	}

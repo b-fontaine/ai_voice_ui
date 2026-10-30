@@ -11,7 +11,8 @@ final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
   description: 'Sentiment des avis lié à /reviews.',
   parse: _Reviews.tryParse,
-  build: (BuildContext context, _Reviews r) => _ReviewsView(reviews: r),
+  build: (BuildContext context, _Reviews r, String _) =>
+      _ReviewsView(reviews: r),
 );
 
 class _Excerpt {
@@ -98,6 +99,9 @@ class _ReviewsView extends StatelessWidget {
     final String average = reviews.average
         .toStringAsFixed(1)
         .replaceAll('.', ',');
+    // Budget de hauteur (cellule de 250 px à 1920 × 1080, marge de 2 × 16) :
+    // 6 lignes de 31,2 px (le repli de « ★ » en ajoute jusqu'à 0,8 chacune
+    // avec les polices réelles), la barre de 12 px et 3 écarts de 4 px.
     return CellFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,12 +124,12 @@ class _ReviewsView extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           _SplitBar(
             positive: reviews.positivePct,
             negative: reviews.negativePct,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Row(
             children: <Widget>[
               Text(
@@ -147,7 +151,7 @@ class _ReviewsView extends StatelessWidget {
               key: const Key('comparison-reviews'),
               text: reviews.comparison!,
             ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           for (int i = 0; i < reviews.excerpts.length; i++)
             _ExcerptRow(
               key: Key('review-excerpt-$i'),

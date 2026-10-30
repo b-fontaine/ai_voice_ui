@@ -21,6 +21,7 @@ const wait = 3 * time.Second
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
 	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
+	ActionResultTemplate: "AR:%s", ActionFailure: "AF",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -36,9 +37,61 @@ type fakeReply struct {
 	notify  chan commentary
 	err     error
 	release chan struct{} // si non nil, AppendCommentary attend
+
+	// Annonces (hors délégation) : texte dit, appelé avant l'enregistrement
+	// par onAnnounce (instantané de l'état au moment de la prise de parole).
+	announced      []string
+	outcomes       []port.AnnounceOutcome
+	announceNotify chan string
+	announceErr    error
+	onAnnounce     func(text string)
 }
 
-func newFakeReply() *fakeReply { return &fakeReply{notify: make(chan commentary, 100)} }
+func newFakeReply() *fakeReply {
+	return &fakeReply{notify: make(chan commentary, 100), announceNotify: make(chan string, 100)}
+}
+
+func (f *fakeReply) Announce(_ context.Context, a port.Announcement) error {
+	text := a.Text
+	f.mu.Lock()
+	hook := f.onAnnounce
+	f.mu.Unlock()
+	if hook != nil {
+		hook(text)
+	}
+	f.mu.Lock()
+	f.announced = append(f.announced, text)
+	f.outcomes = append(f.outcomes, a.Outcome)
+	f.mu.Unlock()
+	f.announceNotify <- text
+	return f.announceErr
+}
+
+// announces renvoie les annonces dites jusqu'ici.
+func (f *fakeReply) announces() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.announced...)
+}
+
+// announceOutcomes renvoie les issues transmises avec les annonces.
+func (f *fakeReply) announceOutcomes() []port.AnnounceOutcome {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]port.AnnounceOutcome(nil), f.outcomes...)
+}
+
+// nextAnnounce attend la prochaine annonce.
+func (f *fakeReply) nextAnnounce(t *testing.T) string {
+	t.Helper()
+	select {
+	case s := <-f.announceNotify:
+		return s
+	case <-time.After(wait):
+		t.Fatal("aucune annonce reçue")
+		return ""
+	}
+}
 
 func (f *fakeReply) AppendCommentary(ctx context.Context, id, text string) error {
 	if f.release != nil {
@@ -196,6 +249,13 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.ResultTemplate = "%s et %s" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "%d" }),
 		blank(func(p *Phrases) { p.ResultTemplate = "100 % de %s" }),
+		blank(func(p *Phrases) { p.ActionResultTemplate = "" }),
+		blank(func(p *Phrases) { p.ActionResultTemplate = "sans verbe" }),
+		blank(func(p *Phrases) { p.ActionResultTemplate = "%s et %s" }),
+		blank(func(p *Phrases) { p.ActionResultTemplate = "100 % de %s" }),
+		blank(func(p *Phrases) { p.ActionResultTemplate = strings.Repeat("é", MaxCommentaryRunes) + "%s" }),
+		blank(func(p *Phrases) { p.ActionFailure = " " }),
+		blank(func(p *Phrases) { p.ActionFailure = strings.Repeat("é", MaxCommentaryRunes+1) }),
 	} {
 		if _, err := NewManager(factoryOf(r), p, testOptions()); err == nil {
 			t.Fatalf("phrases %+v acceptées", p)

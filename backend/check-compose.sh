@@ -114,6 +114,17 @@ check(default_of("A2UI_ALLOWED_PROPS") == catalog_props,
 check(default_of("A2UI_BINDING_PROPS") == catalog_binding,
       "A2UI_BINDING_PROPS (defaut) doit egaler l union des cles binding du catalogue genesis/v1")
 
+# R4 : sous-chemins inscriptibles de updateDataModel = ceux du catalogue (chemin:type, égalité d ensembles).
+catalog_writable = set()
+for definition in definitions.values():
+    for path, typ in ((definition.get("dataModel") or {}).get("writableSubPaths") or {}).items():
+        catalog_writable.add(path + ":" + typ)
+check(default_of("A2UI_WRITABLE_SUBPATHS") == catalog_writable,
+      "A2UI_WRITABLE_SUBPATHS (defaut) doit egaler les writableSubPaths du catalogue genesis/v1")
+for name in agent_names:
+    check("A2UI_WRITABLE_SUBPATHS" not in (services[name].get("environment") or {}),
+          name + " : A2UI_WRITABLE_SUBPATHS ne concerne que l orchestrateur")
+
 check("sk-" not in json.dumps(cfg), "une valeur contient sk- (secret possible)")
 
 if errors:

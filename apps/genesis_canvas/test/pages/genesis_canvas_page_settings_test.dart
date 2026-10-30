@@ -12,6 +12,9 @@ void main() {
         exitCloseTimeout: const Duration(seconds: 12),
         canvasResetRetries: 8,
         canvasResetRetryInterval: const Duration(milliseconds: 1500),
+        canvasActionRetries: 6,
+        canvasActionRetryInterval: const Duration(seconds: 1),
+        canvasActionMaxDuration: const Duration(seconds: 60),
       );
 
   test('égalité par valeur', () {

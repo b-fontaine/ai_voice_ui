@@ -9,7 +9,7 @@ import (
 // RG-08 : un refus offre une alternative, sans aucun chiffre.
 func TestFailureRejectedOffersAlternative(t *testing.T) {
 	alternativeWords := []string{"afficher", "voulez-vous", "je peux"}
-	p, err := loadPhrases("")
+	p, _, err := loadPhrases("")
 	if err != nil {
 		t.Fatal(err)
 	}

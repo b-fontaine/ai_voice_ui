@@ -14,7 +14,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 )
 
 const (
@@ -31,6 +33,8 @@ const (
 	defaultSessionRateWindow = 10 * time.Second
 	// Attente d'acquittement d'un commentaire vocal (VOICE_APPEND_ACK_TIMEOUT).
 	defaultAppendAckTimeout = 2 * time.Second
+	// Observation d'une parole après une annonce acquittée (VOICE_ANNOUNCE_TIMEOUT).
+	defaultAnnounceObserveTimeout = 4 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -91,14 +95,26 @@ type Config struct {
 	// liaison {path}. Listes facultatives : vides, aucun contrôle de propriétés.
 	A2UIAllowedProps []string
 	A2UIBindingProps []string
+	// A2UIWritableSubPaths (A2UI_WRITABLE_SUBPATHS, `chemin:type` séparés par des
+	// virgules) : sous-chemins qu'un updateDataModel peut écrire en plus de l'objet
+	// entier de la surface (R4, spec 009). Vide : chemins non contrôlés. Ne
+	// concerne que le validateur de l'orchestrateur.
+	A2UIWritableSubPaths map[string]string
 	// AppendAckTimeout : attente de l'acquittement d'un commentaire vocal
 	// (VOICE_APPEND_ACK_TIMEOUT) ; défaut 2 s, documenté ici.
 	AppendAckTimeout time.Duration
+	// AnnounceObserveTimeout : durée pendant laquelle on observe (journal
+	// seulement, jamais de second envoi) si la voix parle après une annonce
+	// acquittée (VOICE_ANNOUNCE_TIMEOUT) ; défaut 4 s, documenté ici.
+	AnnounceObserveTimeout time.Duration
 	// AckDelayMs (VOICE_ACK_DELAY_MS, entier >= 0) : délai de l'accusé vocal
 	// automatique du fournisseur ; nil : non envoyé.
 	AckDelayMs *int64
 	// Phrases : commentaires vocaux (VOICE_PHRASES_FILE, sinon fichier embarqué).
 	Phrases orchestrate.Phrases
+	// VoicePhrases : consignes fixes de la voix (même fichier), choisies selon
+	// l'issue d'une annonce.
+	VoicePhrases voice.Phrases
 
 	apiKey string
 }
@@ -292,6 +308,9 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 			return errors.New("A2UI_BINDING_PROPS doit être inclus dans A2UI_ALLOWED_PROPS")
 		}
 	}
+	if cfg.A2UIWritableSubPaths, err = a2ui.ParseWritableSubPaths(getenv("A2UI_WRITABLE_SUBPATHS")); err != nil {
+		return errors.New("A2UI_WRITABLE_SUBPATHS doit être une liste de `chemin:type` séparés par des virgules (chemin JSON Pointer d'au moins deux segments, type string)")
+	}
 	if raw := strings.TrimSpace(getenv("AGENT_TIMEOUT")); raw != "" {
 		d, err := time.ParseDuration(raw)
 		if err != nil || d <= 0 {
@@ -318,6 +337,14 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		}
 		cfg.AppendAckTimeout = d
 	}
+	cfg.AnnounceObserveTimeout = defaultAnnounceObserveTimeout
+	if raw := strings.TrimSpace(getenv("VOICE_ANNOUNCE_TIMEOUT")); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return errors.New("VOICE_ANNOUNCE_TIMEOUT doit être une durée strictement positive (par exemple 4s)")
+		}
+		cfg.AnnounceObserveTimeout = d
+	}
 	if raw := strings.TrimSpace(getenv("VOICE_ACK_DELAY_MS")); raw != "" {
 		n, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil || n < 0 {
@@ -326,11 +353,12 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		cfg.AckDelayMs = &n
 	}
 
-	phrases, err := loadPhrases(strings.TrimSpace(getenv("VOICE_PHRASES_FILE")))
+	phrases, voicePhrases, err := loadPhrases(strings.TrimSpace(getenv("VOICE_PHRASES_FILE")))
 	if err != nil {
 		return err
 	}
 	cfg.Phrases = phrases
+	cfg.VoicePhrases = voicePhrases
 	return nil
 }
 

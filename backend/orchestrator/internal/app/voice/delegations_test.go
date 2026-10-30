@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"slices"
 	"strconv"
 	"sync"
 	"testing"
@@ -142,8 +143,19 @@ func TestDelegationsOpenedOnceWhenActive(t *testing.T) {
 		t.Fatalf("un seul Open attendu, obtenu %d", len(calls))
 	}
 	sb := live.waitAttached(t)
-	if calls[0].sessionID != opened.SessionID || !calls[0].start.Equal(clock.Now()) || calls[0].reply != port.VoiceReply(sb) {
+	if calls[0].sessionID != opened.SessionID || !calls[0].start.Equal(clock.Now()) || calls[0].reply == nil {
 		t.Fatalf("Open = %+v (sideband %p)", calls[0], sb)
+	}
+	// La voix remise aux délégations parle par le sideband : un commentaire de
+	// délégation garde son identifiant, une annonce part hors délégation.
+	if err := calls[0].reply.AppendCommentary(context.Background(), "deleg_1", "bonjour"); err != nil {
+		t.Fatal(err)
+	}
+	if err := calls[0].reply.Announce(context.Background(), announceDone("c'est fait")); err != nil {
+		t.Fatal(err)
+	}
+	if commentary, general := sb.sent(); !slices.Equal(commentary, []string{"deleg_1:bonjour"}) || !slices.Equal(general, []string{"c'est fait"}) {
+		t.Fatalf("envois du sideband : commentaires %v, hors délégation %v", commentary, general)
 	}
 	sb.events <- port.LiveEvent{Type: port.EventUsageUpdated, Seconds: 1}
 	sink.waitCount(t, domain.TypeUsage, 1)

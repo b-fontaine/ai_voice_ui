@@ -47,6 +47,7 @@ void main() {
     expect(getIt<AppClock>(), isA<SystemClock>());
     expect(getIt<VoiceRelay>(), isA<HttpVoiceRelay>());
     expect(getIt<CanvasResetClient>(), isA<HttpCanvasResetClient>());
+    expect(getIt<CanvasActionClient>(), isA<HttpCanvasActionClient>());
     expect(getIt<AppChannel>(), isA<WebSocketAppChannel>());
     expect(getIt<WebRtcPlatform>(), isA<FlutterWebRtcPlatform>());
     expect(getIt<VoiceTransport Function()>()(), isA<FlutterWebRtcTransport>());
@@ -176,6 +177,45 @@ void main() {
     expect(await client.reset(), CanvasResetResult.unreachable);
     // La page consigne l'échec, une seule fois : le client reste muet.
     expect(sink.toString(), isEmpty);
+  });
+
+  test('client d\'action : URL et délai injectés', () {
+    final getIt = build(
+      withConfig: GenesisConfig(
+        backendUrl: Uri.parse('http://127.0.0.1:1'),
+        canvasActionTimeout: const Duration(milliseconds: 900),
+      ),
+    );
+
+    final client = getIt<CanvasActionClient>() as HttpCanvasActionClient;
+    expect(client.baseUrl, Uri.parse('http://127.0.0.1:1'));
+    expect(client.timeout, const Duration(milliseconds: 900));
+    expect(getIt<CanvasActionClient>(), same(client));
+  });
+
+  test('reset ferme le client d\'action', () async {
+    HttpOverrides.global = null;
+    final backend = await FakeBackend.start();
+    addTearDown(backend.close);
+    final getIt = GetIt.asNewInstance();
+    configureDependencies(
+      getIt,
+      config: GenesisConfig(backendUrl: Uri.parse(backend.url)),
+      errorSink: StringBuffer(),
+    );
+    final client = getIt<CanvasActionClient>();
+    expect(
+      await client.send(action: 'block_release', surface: 'actions'),
+      CanvasActionResult.accepted,
+    );
+
+    await getIt.reset();
+
+    expect(
+      await client.send(action: 'block_release', surface: 'actions'),
+      CanvasActionResult.failed,
+    );
+    expect(backend.canvasActionBodies, hasLength(1));
   });
 
   test('reset ferme le client de remise à vide', () async {

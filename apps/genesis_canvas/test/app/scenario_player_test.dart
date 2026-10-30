@@ -99,30 +99,47 @@ void main() {
       expect(messages.map((m) => m.raw), raws);
     });
 
-    test('lit l\'asset act2-replay versionné : seize messages que le gate '
-        'accepte tous (acte 1 puis quatre updateDataModel)', () async {
-      final file = File('assets/replays/act2-replay.jsonl');
-      final bundle = _Utf8Bundle(<String, List<int>>{
-        'assets/replays/act2-replay.jsonl': file.readAsBytesSync(),
-      });
-      final messages = await ScenarioPlayer(
-        bundle: bundle,
-        delay: (_) async {},
-      ).entries('act2-replay').toList();
-      expect(messages, hasLength(16));
+    for (final (name, count, detail) in const [
+      (
+        'act2-replay',
+        19,
+        'dix-neuf messages : acte 1, quatre updateDataModel, puis la '
+            'création de la Barre d\'actions',
+      ),
+      (
+        'act3-replay',
+        20,
+        'vingt messages : l\'acte 2 puis le résultat du clic sur « Bloquer la '
+            'release »',
+      ),
+    ]) {
+      test(
+        'lit l\'asset $name versionné : $detail, que le gate accepte tous',
+        () async {
+          final file = File('assets/replays/$name.jsonl');
+          final bundle = _Utf8Bundle(<String, List<int>>{
+            'assets/replays/$name.jsonl': file.readAsBytesSync(),
+          });
+          final messages = await ScenarioPlayer(
+            bundle: bundle,
+            delay: (_) async {},
+          ).entries(name).toList();
+          expect(messages, hasLength(count));
 
-      final rejected = <String>[];
-      final gate = A2uiGate(
-        catalogId: GenesisContract.defaultCatalogId,
-        onRejected: rejected.add,
+          final rejected = <String>[];
+          final gate = A2uiGate(
+            catalogId: GenesisContract.defaultCatalogId,
+            onRejected: rejected.add,
+          );
+          addTearDown(gate.dispose);
+          final accepted = gate.accepted.toList();
+          gate.attach(A2uiGate.replayEvents(Stream.fromIterable(messages)));
+
+          expect(await accepted, hasLength(count));
+          expect(rejected, isEmpty);
+        },
       );
-      addTearDown(gate.dispose);
-      final accepted = gate.accepted.toList();
-      gate.attach(A2uiGate.replayEvents(Stream.fromIterable(messages)));
-
-      expect(await accepted, hasLength(16));
-      expect(rejected, isEmpty);
-    });
+    }
 
     test('scénario inconnu : l\'erreur remonte', () async {
       final player = ScenarioPlayer(bundle: _FakeBundle(<String, String>{}));

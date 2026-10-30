@@ -142,7 +142,10 @@ void main() {
     'quatre surfaces : grille 2 × 2 de cellules égales, dans l\'ordre '
     'd\'arrivée',
     (tester) async {
-      tester.view.physicalSize = const Size(1920, 520);
+      tester.view.physicalSize = const Size(
+        1920,
+        520 + CanvasBoard.actionsBandHeight,
+      );
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       createEngine();
@@ -177,7 +180,10 @@ void main() {
   testWidgets('une surface occupe toute la largeur ; six surfaces : 3 × 2', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(1800, 600);
+    tester.view.physicalSize = const Size(
+      1800,
+      600 + CanvasBoard.actionsBandHeight,
+    );
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     createEngine();
@@ -203,7 +209,10 @@ void main() {
     'emplacement déterministe : kpi, trend, reviews, checklist quel que soit '
     'l\'ordre d\'arrivée, les surfaces inconnues ensuite',
     (tester) async {
-      tester.view.physicalSize = const Size(1800, 600);
+      tester.view.physicalSize = const Size(
+        1800,
+        600 + CanvasBoard.actionsBandHeight,
+      );
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       createEngine();
@@ -236,7 +245,10 @@ void main() {
     'quatre surfaces arrivées à l\'envers : kpi en haut à gauche, checklist '
     'en bas à droite',
     (tester) async {
-      tester.view.physicalSize = const Size(1920, 520);
+      tester.view.physicalSize = const Size(
+        1920,
+        520 + CanvasBoard.actionsBandHeight,
+      );
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       createEngine();
@@ -259,6 +271,100 @@ void main() {
       expect(cell('checklist').topLeft, cell('kpi').bottomRight);
     },
   );
+
+  group('bandeau de la Barre d\'actions (A1, pdr-0065 D7)', () {
+    const List<String> act1 = <String>['kpi', 'trend', 'reviews', 'checklist'];
+
+    Future<void> pumpAct1(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(
+        1920,
+        520 + CanvasBoard.actionsBandHeight,
+      );
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      createEngine();
+      await pumpBoard(tester);
+      for (final String id in act1) {
+        bloc
+          ..add(A2uiMessageReceived(createSurface(id)))
+          ..add(A2uiMessageReceived(updateComponents(id, 'Texte $id')));
+      }
+      await settle(tester);
+    }
+
+    Finder engineOf(String id) => find.descendant(
+      of: find.byKey(Key('surface-$id')),
+      matching: find.byType(Surface),
+    );
+
+    testWidgets('à l\'arrivée de actions, les quatre surfaces gardent leur '
+        'position, leur taille et leur State', (tester) async {
+      await pumpAct1(tester);
+      final Map<String, Rect> rects = <String, Rect>{
+        for (final String id in act1)
+          id: tester.getRect(find.byKey(Key('surface-$id'))),
+      };
+      final Map<String, State> states = <String, State>{
+        for (final String id in act1) id: tester.state(engineOf(id)),
+      };
+
+      bloc
+        ..add(A2uiMessageReceived(createSurface('actions')))
+        ..add(A2uiMessageReceived(updateComponents('actions', 'Barre')));
+      await settle(tester);
+
+      for (final String id in act1) {
+        expect(
+          tester.getRect(find.byKey(Key('surface-$id'))),
+          rects[id],
+          reason: 'la surface $id a bougé ou changé de taille',
+        );
+        expect(
+          tester.state(engineOf(id)),
+          same(states[id]),
+          reason: 'le State de Surface $id a été recréé',
+        );
+      }
+    });
+
+    testWidgets('le bandeau est sous la grille, sur sa largeur, sans '
+        'déborder', (tester) async {
+      await pumpAct1(tester);
+      bloc
+        ..add(A2uiMessageReceived(createSurface('actions')))
+        ..add(A2uiMessageReceived(updateComponents('actions', 'Barre')));
+      await settle(tester);
+
+      final Rect bar = tester.getRect(find.byKey(const Key('surface-actions')));
+      final Rect board = tester.getRect(find.byKey(const Key('canvas-board')));
+      final Rect kpi = tester.getRect(find.byKey(const Key('surface-kpi')));
+      final Rect checklist = tester.getRect(
+        find.byKey(const Key('surface-checklist')),
+      );
+      expect(bar.top, greaterThanOrEqualTo(checklist.bottom));
+      expect(bar.left, kpi.left);
+      expect(bar.right, checklist.right);
+      expect(bar.height, CanvasBoard.actionsBandHeight);
+      expect(bar.bottom, lessThanOrEqualTo(board.bottom));
+      expect(CanvasBoard.actionsBandHeight, greaterThanOrEqualTo(48));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('le bandeau n\'est pas une cinquième cellule de la grille', (
+      tester,
+    ) async {
+      await pumpAct1(tester);
+      bloc.add(A2uiMessageReceived(createSurface('actions')));
+      await settle(tester);
+
+      expect(
+        tester.getSize(find.byKey(const Key('surface-kpi'))).width,
+        960,
+        reason: 'la grille reste à deux colonnes',
+      );
+      expect(find.byKey(const Key('surface-actions')), findsOneWidget);
+    });
+  });
 
   group('contour pointillé de la surface mise en évidence (D2)', () {
     Future<void> createTwo(WidgetTester tester, {String? highlighted}) async {

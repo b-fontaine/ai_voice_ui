@@ -83,6 +83,7 @@ func newFixture(t *testing.T, mutate func(*Options)) fixture {
 	opts := Options{
 		Sessions:     sess,
 		Canvas:       &fakeCanvas{},
+		Actor:        &fakeActor{},
 		App:          http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "hub") }),
 		Clock:        clock,
 		Logger:       slog.New(slog.NewTextHandler(logs, nil)),

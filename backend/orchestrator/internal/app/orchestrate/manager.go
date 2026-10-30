@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -38,6 +39,11 @@ type Delegation struct {
 	// dérive de SON contexte de session par agentContext ; elle ne borne ni les
 	// commentaires ni la fermeture de la session.
 	Timeout time.Duration
+	// Action, si non nil, fait de cette délégation une action de l'interface
+	// (Manager.Act) : ID est alors l'identifiant d'opération interne `act-<n>`,
+	// jamais un identifiant du fournisseur voix (ni mémorisé dans `seen`, ni
+	// passé à AppendCommentary), Request est vide et GenericDone nil.
+	Action *port.ActionCall
 }
 
 // agentContext borne le travail de l'agent : échéance Timeout (cause
@@ -86,6 +92,14 @@ type Phrases struct {
 	// ResultTemplate contient un seul `%s`, remplacé par le résumé de l'agent
 	// (donnée non fiable, nettoyée et bornée).
 	ResultTemplate string
+	// ActionResultTemplate est la confirmation d'une action de l'interface
+	// réussie : un seul `%s`, remplacé par le résumé réel de l'agent (nettoyé et
+	// borné). Distincte de ResultTemplate, dont la formule ne convient pas à une
+	// action. Dite seulement après `completed`.
+	ActionResultTemplate string
+	// ActionFailure est dite quand l'action a échoué (agent injoignable, résultat
+	// invalide, délai) : honnête, sans résumé ni décision annoncée, aucun chiffre.
+	ActionFailure string
 }
 
 // MaxCommentaryRunes est la borne d'un commentaire vocal. Elle duplique celle
@@ -101,6 +115,7 @@ func (p Phrases) Validate() error {
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
 		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
 		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "PartialFailure": p.PartialFailure, "ResultTemplate": p.ResultTemplate,
+		"ActionResultTemplate": p.ActionResultTemplate, "ActionFailure": p.ActionFailure,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)
@@ -109,18 +124,22 @@ func (p Phrases) Validate() error {
 			return fmt.Errorf("orchestrate : phrase %s trop longue (%d runes, maximum %d)", name, n, MaxCommentaryRunes)
 		}
 	}
-	for name, v := range map[string]string{"ResultTemplate": p.ResultTemplate, "PartialFailure": p.PartialFailure} {
+	for name, v := range map[string]string{
+		"ResultTemplate": p.ResultTemplate, "PartialFailure": p.PartialFailure, "ActionResultTemplate": p.ActionResultTemplate,
+	} {
 		if strings.Count(v, "%s") != 1 ||
 			strings.Contains(strings.ReplaceAll(strings.ReplaceAll(v, "%%", ""), "%s", ""), "%") {
 			return fmt.Errorf("orchestrate : %s doit contenir un seul %%s et aucun autre verbe", name)
 		}
 	}
-	if n := utf8.RuneCountInString(p.ResultTemplate) - 2 + maxSummaryRunes; n > MaxCommentaryRunes {
-		return fmt.Errorf("orchestrate : ResultTemplate trop long (%d runes avec un résumé de %d, maximum %d)", n, maxSummaryRunes, MaxCommentaryRunes)
-	}
-	// Avec la phrase d'échec partiel, il doit rester de la place pour les résumés.
-	if p.summaryBudget(true) < minPartialSummaryRunes {
-		return fmt.Errorf("orchestrate : ResultTemplate et PartialFailure trop longs ensemble (moins de %d runes restent pour les résumés)", minPartialSummaryRunes)
+	for name, tpl := range map[string]string{"ResultTemplate": p.ResultTemplate, "ActionResultTemplate": p.ActionResultTemplate} {
+		if n := utf8.RuneCountInString(tpl) - 2 + maxSummaryRunes; n > MaxCommentaryRunes {
+			return fmt.Errorf("orchestrate : %s trop long (%d runes avec un résumé de %d, maximum %d)", name, n, maxSummaryRunes, MaxCommentaryRunes)
+		}
+		// Avec la phrase d'échec partiel, il doit rester de la place pour les résumés.
+		if budget(tpl, p.PartialFailure, true) < minPartialSummaryRunes {
+			return fmt.Errorf("orchestrate : %s et PartialFailure trop longs ensemble (moins de %d runes restent pour les résumés)", name, minPartialSummaryRunes)
+		}
 	}
 	return nil
 }
@@ -134,11 +153,20 @@ const minPartialSummaryRunes = 200
 // avec partial une espace, la phrase d'échec et des noms de longueur maximale)
 // tienne dans MaxCommentaryRunes.
 func (p Phrases) summaryBudget(partial bool) int {
-	budget := MaxCommentaryRunes - (utf8.RuneCountInString(p.ResultTemplate) - 2)
+	return budget(p.ResultTemplate, p.PartialFailure, partial)
+}
+
+// actionSummaryBudget est summaryBudget pour la confirmation d'une action.
+func (p Phrases) actionSummaryBudget(partial bool) int {
+	return budget(p.ActionResultTemplate, p.PartialFailure, partial)
+}
+
+func budget(template, partialFailure string, partial bool) int {
+	b := MaxCommentaryRunes - (utf8.RuneCountInString(template) - 2)
 	if partial {
-		budget -= 1 + utf8.RuneCountInString(p.PartialFailure) - 2 + maxFailedNamesRunes
+		b -= 1 + utf8.RuneCountInString(partialFailure) - 2 + maxFailedNamesRunes
 	}
-	return min(budget, maxSummaryRunes)
+	return min(b, maxSummaryRunes)
 }
 
 // Options règle le gestionnaire ; toutes les valeurs sont obligatoires.
@@ -159,8 +187,11 @@ type Manager struct {
 	phrases Phrases
 	opts    Options
 
-	mu       sync.Mutex // protège sessions ; jamais tenu pendant un appel à une session (ordre : Canvas.mu → m.mu → session.mu)
+	mu       sync.Mutex // protège sessions et openSeq ; jamais tenu pendant un appel à une session (ordre : Canvas.mu → m.mu → session.mu)
 	sessions map[*session]struct{}
+	openSeq  uint64 // numéro d'ouverture de la dernière session (déterministe, croissant)
+
+	actSeq atomic.Uint64 // compteur des identifiants d'opération `act-<n>`
 }
 
 var _ port.Delegations = (*Manager)(nil)
@@ -211,6 +242,8 @@ func (m *Manager) Open(sessionID string, start time.Time, reply port.VoiceReply)
 	s.wg.Add(1)
 	go s.work()
 	m.mu.Lock()
+	m.openSeq++
+	s.opened = m.openSeq
 	m.sessions[s] = struct{}{}
 	m.mu.Unlock()
 	return s
@@ -300,6 +333,8 @@ type session struct {
 	window *RequestWindow
 	queue  chan Delegation
 	sends  chan struct{} // jetons des envois de commentaire en vol
+
+	opened uint64 // numéro d'ouverture (Manager.openSeq), fixé à l'ouverture sous Manager.mu
 
 	mu      sync.Mutex // protège closed, pending, seen, order et wg.Add
 	closed  bool

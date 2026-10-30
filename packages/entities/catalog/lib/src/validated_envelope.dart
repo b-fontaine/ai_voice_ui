@@ -19,6 +19,7 @@ abstract final class ValidationCodes {
   static const String surfaceLimit = 'surface_limit';
   static const String unknownSurface = 'unknown_surface';
   static const String componentCap = 'component_cap';
+  static const String pathNotAllowed = 'path_not_allowed';
 }
 
 /// Verdict du validateur sur un message A2UI.

@@ -4,8 +4,8 @@ title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
+sources: [specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -35,14 +35,16 @@ Fiche muette sur les détails d'interface : tranchés par la boucle sous [pdr-00
 |---|---|
 | **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée ; l'indicateur vaut 1 par défaut, un clic passe à l'acte suivant (souris d'abord), retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
 | **Rail des agents** | piloté par le message `plan` (D5, RG-29) : l'orchestrateur, puis les agents du plan, sans nom codé en dur ; états en toutes lettres (« en attente », « en cours », « terminé », « échec », « hors périmètre ») ; un agent non retenu est **« en veille »** ; plan vide : **« aucun agent retenu »** (RG-08) ; rail vide tant qu'aucun `plan` n'est arrivé (RG-01) |
-| **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille 2×2 puis 3×2 (6 max) ; **contour pointillé** autour de la surface du message en cours (D2) |
+| **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille 2×2 (6 surfaces au plus) ; **bandeau de 72 px sous la grille** pour la Barre d'actions (009, pdr-0065 D7), réservé dès la première surface ; **contour pointillé** autour de la surface du message en cours (D2) |
 | **Flux du protocole** | **replié en bas à droite** ; déplié (clic), il recouvre le canevas à droite **sans le redimensionner** ; message en cours mis en évidence, messages refusés marqués « refusé » ; JSON affiché brut |
-| **Étagère** | « CATALOGUE · n / 6 utilisés » ; « 4 / 6 » en fin d'acte 1, Barre d'actions et Liste des crashs « inutilisés » (FR-06) |
+| **Étagère** | « CATALOGUE · n / 6 utilisés » ; « 4 / 6 » en fin d'acte 1, **« 5 / 6 »** quand la Barre d'actions apparaît (fin de l'acte 2, 009), Liste des crashs « inutilisée » (FR-06) |
 | **Rejeu** | **emplacement** « REJEU », commandes inactives jusqu'à J6 (D3) |
 
 D6 : composants au seul thème de scène (RG-09), statuts par codes fermés `ok|risk|blocking`, courbe dessinée sans nouvelle dépendance.
 
-**Budget des zones à 1920×1080** : barre 160 px, rail ≤ 200 px, canevas 520 px (cellules ≈ 940×255), rangée du bas ≤ 140 px (étagère, Rejeu, panneau replié), marges 60 px ; texte ≥ 24 px partout (NFR-05), aucun défilement ni mise à l'échelle. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 (la fenêtre Linux s'ouvre à cette taille) ; en dessous, les zones débordent ; projection 16:9 en 1080p de la machine de démo ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
+**Budget des zones à 1920×1080** (modifié par 009, [pdr-0065](../decisions/pdr-0065-009-act3-interact-details-assistant-decided.md) D8) : barre supérieure **128 px** (160 en 007), rail ≤ 200 px, canevas **572 px** (520 en 007 : grille 2×250 + bandeau de la Barre d'actions de 72 px ; cellules ≈ 940×250), rangée du bas ≤ 140 px (étagère, Rejeu, panneau replié), marges et intervalles **40 px** au total à la verticale (60 en 007 ; marge verticale 18 → 8 px) ; texte ≥ 24 px partout (NFR-05), aucun défilement ni mise à l'échelle. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 (la fenêtre Linux s'ouvre à cette taille) ; en dessous, les zones débordent ; projection 16:9 en 1080p de la machine de démo ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
+
+**À valider par le porteur** (détail d'interface tranché par la boucle sous pdr-0062, contestable) : le bandeau étant réservé dès la première surface, **une bande vide de 72 px reste en bas du canevas pendant les actes 1 et 2**. C'est le prix d'une grille qui ne bouge pas quand la barre arrive (S-02 : « les surfaces existantes restent à leur place »). Une grille 3×2 évitait la bande mais déplaçait les quatre surfaces ; seul le porteur peut assouplir S-02. Les couleurs de bordure des deux boutons sont aussi un choix de la boucle (contrastes mesurés).
 
 ## États de l'orbe vocal (fiche § 6, p. 9)
 
@@ -80,7 +82,7 @@ L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0
 | Mode | Usage | Qui |
 |---|---|---|
 | **Voix** (principal) | Demander, modifier, corriger, couper la parole à l'IA | Speaker |
-| **Clic sur un composant généré** | La réponse de l'agent arrive à la voix et dans l'interface | Speaker |
+| **Clic sur un composant généré** | La réponse de l'agent arrive à la voix et dans l'interface ; livré par 009 pour la Barre d'actions (boutons inactifs pendant l'action) | Speaker |
 | **Clavier** | Régie de scène (raccourcis ci-dessous) | Réservé au speaker |
 
 ## Raccourcis clavier proposés (fiche § 6, p. 10)

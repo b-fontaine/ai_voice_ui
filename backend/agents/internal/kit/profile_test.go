@@ -124,3 +124,11 @@ func TestProfileMilestoneWordsAreWholeNumbersOnly(t *testing.T) {
 		t.Errorf("« J2EE » n'est pas un numéro de jalon : %v", err)
 	}
 }
+
+// profileWithTags renvoie le profil d'essai avec des tags de compétence supplémentaires.
+func profileWithTags(t *testing.T, tags ...string) kit.Profile {
+	t.Helper()
+	p := testProfile(t)
+	p.Skill.Tags = append(append([]string(nil), p.Skill.Tags...), tags...)
+	return p
+}

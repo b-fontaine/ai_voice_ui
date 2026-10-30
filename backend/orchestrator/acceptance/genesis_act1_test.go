@@ -12,12 +12,13 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
-// surfaceAgent : agent qui produit chaque surface du catalogue `genesis` (plan 006, § Contrats).
+// surfaceAgent : agent qui produit chaque surface du catalogue `genesis` (plan 006, § Contrats ; la cinquième surface, plan 009).
 var surfaceAgent = map[string]string{
 	"kpi":       agentQuality,
 	"trend":     agentQuality,
 	"reviews":   agentVoice,
 	"checklist": agentDelivery,
+	"actions":   agentDelivery, // créée à l'acte 2 (pdr-0065 D2)
 }
 
 // surfaceOps regroupe, par surface, les opérations A2UI relayées dans l'ordre d'arrivée.

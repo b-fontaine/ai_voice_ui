@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
+import 'package:a2ui_core/a2ui_core.dart' as a2ui;
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_catalog_shelf/feature_catalog_shelf.dart';
 import 'package:feature_protocol_feed/feature_protocol_feed.dart';
 import 'package:feature_stage_controls/feature_stage_controls.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
-import 'package:flutter/material.dart' show FilledButton;
+import 'package:flutter/material.dart' show FilledButton, OutlinedButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,7 @@ import '../support/page_rig.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart'
-    show CanvasResetResult;
+    show CanvasActionResult, CanvasResetResult;
 
 const _catalog = rigCatalog;
 
@@ -50,6 +51,10 @@ void main() {
     ctx.read<TranscriptBloc>().stream.listen(
       null,
       onDone: () => journal.add('bloc.transcript closed'),
+    );
+    ctx.read<CanvasActionBloc>().stream.listen(
+      null,
+      onDone: () => journal.add('bloc.action closed'),
     );
     ctx.read<AgentActivityBloc>().stream.listen(
       null,
@@ -100,6 +105,9 @@ void main() {
       't1.dispose',
       'source disposed',
       'bloc.transcript closed',
+      // Le Bloc d'action lit l'activité des agents (relayée par la page) : il
+      // se ferme avant le Bloc des agents.
+      'bloc.action closed',
       'bloc.agents closed',
       'bloc.canvas closed',
       // Les Blocs de l'écran de fabrication se ferment après la source et le
@@ -453,6 +461,7 @@ void main() {
         'CatalogShelfCleared',
         'AgentActivityReset',
         'StageResetRequested',
+        'ActionStageReset',
         'client.reset',
       ]);
       expect(rig.resetClient.calls, 1);
@@ -669,6 +678,185 @@ void main() {
       expect(rig.resetClient.calls, 0);
     });
   });
+
+  group('acte 3 : Bloc d\'action branché par la page', () {
+    Map<String, Object?> activity(String state) => <String, Object?>{
+      'v': 1,
+      'type': 'agent.activity',
+      'session': 's1',
+      't_ms': 10,
+      'data': <String, Object?>{
+        'agent': 'Livraison',
+        'task': 't1',
+        'state': state,
+      },
+      'agent': 'Livraison',
+      'task': 't1',
+    };
+
+    Map<String, Object?> actionsCreate() => <String, Object?>{
+      'version': 'v0.9',
+      'createSurface': <String, Object?>{
+        'surfaceId': 'actions',
+        'catalogId': _catalog,
+      },
+    };
+    Map<String, Object?> actionsComponents() => <String, Object?>{
+      'version': 'v0.9',
+      'updateComponents': <String, Object?>{
+        'surfaceId': 'actions',
+        'components': <Object?>[
+          <String, Object?>{
+            'id': 'root',
+            'component': 'ActionBar',
+            'data': <String, Object?>{'path': '/actions'},
+          },
+        ],
+      },
+    };
+    Map<String, Object?> actionsData() => <String, Object?>{
+      'version': 'v0.9',
+      'updateDataModel': <String, Object?>{
+        'surfaceId': 'actions',
+        'path': '/actions',
+        'value': <String, Object?>{
+          'title': 'Décision',
+          'actions': <Object?>[
+            <String, Object?>{
+              'id': 'block_release',
+              'label': 'Bloquer',
+              'tone': 'danger',
+            },
+          ],
+        },
+      },
+    };
+
+    /// Le bouton de la Barre d'actions est-il actif (disponibilité vue par
+    /// l'utilisateur : `OutlinedButton.onPressed`) ?
+    bool actionEnabled(WidgetTester tester) =>
+        tester
+            .widget<OutlinedButton>(
+              find.byKey(const Key('action-block_release')),
+            )
+            .onPressed !=
+        null;
+
+    ReplayedMessage replayed(Map<String, Object?> json) =>
+        (raw: json, message: a2ui.A2uiMessage.fromJson(json));
+
+    Future<void> pumpMessages(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('un clic envoie l\'action ; inactif jusqu\'à la fin de '
+        'l\'activité des agents', (tester) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(rig.actionClient.calls, <String>['block_release@actions']);
+      expect(bloc.state, isA<ActionRunning>());
+
+      rig.receiveEnvelope(activity('working'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      rig.receiveEnvelope(activity('completed'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('la remise à vide réinitialise le Bloc d\'action', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      await tester.tap(find.byKey(const Key('reset-button')));
+      await pumpMessages(tester);
+
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('la fermeture de la session libère l\'action en cours', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+      expect(bloc.state, isA<ActionRunning>());
+
+      unawaited(rig.harness.session.stop());
+      for (var i = 0; i < 6; i++) {
+        await tester.pump();
+      }
+
+      expect(bloc.state, isA<ActionIdle>());
+    });
+
+    testWidgets('un refus du backend est consigné, les boutons redeviennent '
+        'actifs', (tester) async {
+      final rig = PageRig(tester);
+      rig.actionClient.script.add(CanvasActionResult.rejected);
+      await rig.mount(tester);
+      await rig.start(tester);
+      final bloc = rig.context.read<CanvasActionBloc>();
+
+      bloc.add(const ActionRequested('block_release', 'actions'));
+      await pumpMessages(tester);
+
+      expect(bloc.state, isA<ActionIdle>());
+      expect(rig.errors.toString(), contains('Action'));
+      expect(rig.errors.toString(), contains('rejected'));
+    });
+
+    testWidgets('mode rejeu : les actions ne sont pas disponibles', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(
+        tester,
+        replay: Stream<ReplayedMessage>.fromIterable(<ReplayedMessage>[
+          replayed(actionsCreate()),
+          replayed(actionsComponents()),
+          replayed(actionsData()),
+        ]),
+      );
+      await drain(tester);
+
+      expect(actionEnabled(tester), isFalse);
+      expect(rig.actionClient.calls, isEmpty);
+    });
+
+    testWidgets('mode vivant : les actions sont disponibles au repos', (
+      tester,
+    ) async {
+      final rig = PageRig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      rig.receive(actionsCreate());
+      rig.receive(actionsComponents());
+      rig.receive(actionsData());
+      await tester.pump();
+      await tester.pump();
+
+      expect(actionEnabled(tester), isTrue);
+    });
+  });
 }
 
 /// Consigne le type de chaque événement de Bloc dans le journal des faux.
@@ -683,6 +871,7 @@ class _JournalObserver extends BlocObserver {
     'CatalogShelfCleared',
     'AgentActivityReset',
     'StageResetRequested',
+    'ActionStageReset',
   };
 
   @override

@@ -40,8 +40,8 @@ func TestSharedCanvas_SecondSessionDoesNotRecreate(t *testing.T) {
 
 	sessB := postSession(t, srv.URL)
 	envs := collectDelegation(t, feed, "session B")
-	if got := createdSurfaces(t, envs); len(got) != 0 {
-		t.Fatalf("session B : createSurface = %v, aucun attendu (le canevas de la session A est partagé ; reçu : %s)", got, describe(envs))
+	if got := createdAmong(t, envs, act1Surfaces); len(got) != 0 {
+		t.Fatalf("session B : createSurface = %v, aucun attendu sur les quatre surfaces de l'acte 1 (le canevas de la session A est partagé ; reçu : %s)", got, describe(envs))
 	}
 	for _, e := range a2uiEnvelopes(envs) {
 		if e.Session != sessB {
@@ -76,10 +76,11 @@ func TestSharedCanvas_Act2FromNewSessionThenReset(t *testing.T) {
 	}
 	envs := collectDelegation(t, feed, "acte 2 en session B")
 	requireSelected(t, envs, "deleg_1", allThreeAgents)
-	if got := createdSurfaces(t, envs); len(got) != 0 {
-		t.Fatalf("session B : createSurface = %v, aucun attendu (reçu : %s)", got, describe(envs))
+	if got := createdAmong(t, envs, act1Surfaces); len(got) != 0 {
+		t.Fatalf("session B : createSurface = %v, aucun attendu sur les quatre surfaces de l'acte 1 (reçu : %s)", got, describe(envs))
 	}
 	requireOnlyUpdates(t, envs, loadExamples(t, "act2"), "acte 2 en session B")
+	requireActionBar(t, envs, true, "acte 2 en session B")
 	for _, e := range a2uiEnvelopes(envs) {
 		if e.Session != sessB {
 			t.Fatalf("a2ui de la session %q, attendu %q", e.Session, sessB)
@@ -91,16 +92,18 @@ func TestSharedCanvas_Act2FromNewSessionThenReset(t *testing.T) {
 	drainFeed(feed)
 
 	requireStatus(t, postReset(t, srv.URL, nil), http.StatusNoContent, "remise à vide avec la session B ouverte")
-	dels := collectDeletes(t, feed, 4)
-	if got := deletedSurfaces(t, dels); !slices.Equal(got, act1Surfaces) {
-		t.Fatalf("deleteSurface = %v, attendu %v", got, act1Surfaces)
+	// L'acte 2 a ouvert la cinquième surface (`actions`) : la remise à vide la supprime aussi.
+	act2Surfaces := slices.Sorted(slices.Values(append([]string{"actions"}, act1Surfaces...)))
+	dels := collectDeletes(t, feed, len(act2Surfaces))
+	if got := deletedSurfaces(t, dels); !slices.Equal(got, act2Surfaces) {
+		t.Fatalf("deleteSurface = %v, attendu %v", got, act2Surfaces)
 	}
 	for _, e := range dels {
 		if e.Session != sessB || e.Agent != orchestrateur {
 			t.Fatalf("deleteSurface {session:%q agent:%q}, attendu {%q %q}", e.Session, e.Agent, sessB, orchestrateur)
 		}
 	}
-	requireNoMessage(t, feed, "après les quatre deleteSurface")
+	requireNoMessage(t, feed, "après les cinq deleteSurface")
 	closeSession(t, srv.URL, feed, sessB)
 
 	live.SetScript(turnsScript(utterAct1)...)

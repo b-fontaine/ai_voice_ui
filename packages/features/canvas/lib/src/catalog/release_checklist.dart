@@ -13,7 +13,8 @@ final CatalogItem releaseChecklistItem = boundCatalogItem<_Checklist>(
   name: 'ReleaseChecklist',
   description: 'Checklist go/no-go liée à /checklist.',
   parse: _Checklist.tryParse,
-  build: (BuildContext context, _Checklist c) => _ChecklistView(checklist: c),
+  build: (BuildContext context, _Checklist c, String _) =>
+      _ChecklistView(checklist: c),
 );
 
 class _Item {

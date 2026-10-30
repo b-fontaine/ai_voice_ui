@@ -13,4 +13,7 @@ GenesisCanvasPageSettings pageSettingsOf([
   exitCloseTimeout: config.exitCloseTimeout,
   canvasResetRetries: config.canvasResetRetries,
   canvasResetRetryInterval: config.canvasResetRetryInterval,
+  canvasActionRetries: config.canvasActionRetries,
+  canvasActionRetryInterval: config.canvasActionRetryInterval,
+  canvasActionMaxDuration: config.canvasActionMaxDuration,
 );

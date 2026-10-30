@@ -51,7 +51,9 @@ void main() {
           .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
           .toList();
       expect(messages, isNotEmpty);
-      final validator = GenesisMessageValidator();
+      final validator = GenesisMessageValidator(
+        writableSubPaths: GenesisContract.writableSubPaths,
+      );
       for (var i = 0; i < messages.length; i++) {
         final verdict = validator.check(messages[i]).verdict;
         if (i < messages.length - 1) {

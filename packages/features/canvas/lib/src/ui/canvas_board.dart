@@ -21,6 +21,11 @@ import 'dashed_outline_painter.dart';
 /// `createSurface` (la définition existe, sans `root`). `Surface` n'est montée
 /// qu'à partir de `updateComponents`.
 ///
+/// La Barre d'actions est un **bandeau** sous la grille, de largeur égale et
+/// de hauteur [actionsBandHeight], réservée dès la première surface : la grille
+/// 2 × 2 et le `State` de ses quatre cellules ne changent pas quand `actions`
+/// arrive (A1).
+///
 /// Emplacement **déterministe** (A7a) : les surfaces du contrat à leur rang
 /// (kpi, trend, reviews, checklist), puis les surfaces inconnues dans leur
 /// ordre d'arrivée. Pas de défilement, pas de mise à l'échelle.
@@ -30,6 +35,9 @@ class CanvasBoard extends StatelessWidget {
     required this.controller,
     this.highlightedSurfaceId,
   });
+
+  /// Hauteur réservée au bandeau de la Barre d'actions.
+  static const double actionsBandHeight = 72;
 
   final SurfaceController controller;
 
@@ -48,20 +56,35 @@ class CanvasBoard extends StatelessWidget {
     builder: (BuildContext context, CanvasState state) {
       final List<String> ids = _inSlotOrder(state.surfaceIds);
       final int columns = _columnsFor(ids.length);
+      // Le bandeau est réservé dès la première surface : les cellules de la
+      // grille ne bougent pas quand `actions` arrive (A1, S-02).
       return Column(
         children: <Widget>[
-          for (int start = 0; start < ids.length; start += columns)
-            Expanded(
-              child: Row(
-                children: <Widget>[
-                  for (int i = start; i < start + columns; i++)
-                    Expanded(
-                      child: i < ids.length
-                          ? _cell(context, ids[i], state)
-                          : const SizedBox.shrink(),
+          Expanded(
+            child: Column(
+              children: <Widget>[
+                for (int start = 0; start < ids.length; start += columns)
+                  Expanded(
+                    child: Row(
+                      children: <Widget>[
+                        for (int i = start; i < start + columns; i++)
+                          Expanded(
+                            child: i < ids.length
+                                ? _cell(context, ids[i], state)
+                                : const SizedBox.shrink(),
+                          ),
+                      ],
                     ),
-                ],
-              ),
+                  ),
+              ],
+            ),
+          ),
+          if (state.surfaceIds.isNotEmpty)
+            SizedBox(
+              height: actionsBandHeight,
+              child: state.surfaceIds.contains(_bandSurface)
+                  ? _cell(context, _bandSurface, state)
+                  : null,
             ),
         ],
       );
@@ -74,13 +97,16 @@ class CanvasBoard extends StatelessWidget {
       ?GenesisContract.surfaceOf(component),
   ];
 
-  /// Surfaces du contrat dans l'ordre du contrat, puis les autres dans leur
-  /// ordre d'arrivée.
+  /// Surface du bandeau (Barre d'actions), hors de la grille (A1, pdr-0065 D7).
+  static final String _bandSurface = GenesisContract.surfaceOf('ActionBar')!;
+
+  /// Surfaces de la grille : celles du contrat dans l'ordre du contrat, puis
+  /// les autres dans leur ordre d'arrivée ; le bandeau n'en fait pas partie.
   static List<String> _inSlotOrder(List<String> arrival) => <String>[
     for (final String id in _contractOrder)
-      if (arrival.contains(id)) id,
+      if (id != _bandSurface && arrival.contains(id)) id,
     for (final String id in arrival)
-      if (!_contractOrder.contains(id)) id,
+      if (id != _bandSurface && !_contractOrder.contains(id)) id,
   ];
 
   /// Grille tenue par l'app (pdr-0015) : une colonne pour une surface, 2 × 2

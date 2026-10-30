@@ -5,6 +5,10 @@
   "bad_property_literal_data.jsonl": "bad_property",
   "bad_property_unknown.jsonl": "bad_property",
   "component_not_allowed.jsonl": "component_not_allowed",
+  "path-empty.jsonl": "path_not_allowed",
+  "path-slash.jsonl": "path_not_allowed",
+  "subpath-other.jsonl": "path_not_allowed",
+  "subpath-wrong-type.jsonl": "path_not_allowed",
   "surface_limit.jsonl": "surface_limit",
   "too_large.jsonl": "too_large",
   "unknown_surface.jsonl": "unknown_surface"

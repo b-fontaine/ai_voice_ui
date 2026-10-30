@@ -21,6 +21,8 @@ dependencies:
   flutter_bloc: 9.1.1
   genui: 0.10.4
   json_schema_builder: 0.1.7
+  shared_backend_channel:
+    path: ../../shared/backend_channel
   shared_design_system:
     path: ../../shared/design_system
 

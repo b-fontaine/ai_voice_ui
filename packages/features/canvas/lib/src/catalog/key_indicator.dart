@@ -9,7 +9,7 @@ final CatalogItem keyIndicatorItem = boundCatalogItem<_Kpi>(
   name: 'KeyIndicator',
   description: 'Indicateur clé lié à /kpi.',
   parse: _Kpi.tryParse,
-  build: (BuildContext context, _Kpi kpi) => _Complete(kpi: kpi),
+  build: (BuildContext context, _Kpi kpi, String _) => _Complete(kpi: kpi),
 );
 
 /// Objet `/kpi` validé.

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'canvas_reset_client.dart';
+import 'json_post_transport.dart';
 
 /// [CanvasResetClient] sur HTTP (`package:http`, `dart:io`).
 ///
@@ -17,64 +18,43 @@ import 'canvas_reset_client.dart';
 /// construction).
 class HttpCanvasResetClient implements CanvasResetClient {
   HttpCanvasResetClient({
-    required this.baseUrl,
-    required this.timeout,
+    required Uri baseUrl,
+    required Duration timeout,
     http.Client? client,
     this.onError,
-  }) : _client = client ?? http.Client(),
-       _ownsClient = client == null {
-    if ((baseUrl.path.isNotEmpty && baseUrl.path != '/') ||
-        baseUrl.hasQuery ||
-        baseUrl.hasFragment) {
-      throw ArgumentError.value(
-        'baseUrl',
-        'baseUrl',
-        'doit être une origine (sans chemin, requête ni fragment)',
-      );
-    }
-  }
+  }) : _transport = JsonPostTransport(
+         baseUrl: baseUrl,
+         timeout: timeout,
+         client: client,
+       );
+
+  final JsonPostTransport _transport;
 
   /// Origine du backend (valeur de `GENESIS_BACKEND_URL`).
-  final Uri baseUrl;
+  Uri get baseUrl => _transport.baseUrl;
 
   /// Délai maximal de la requête (envoi et lecture de la réponse).
-  final Duration timeout;
+  Duration get timeout => _transport.timeout;
 
   /// Reçoit une phrase fermée à chaque échec (jamais l'URL ni le corps).
   /// Une exception levée par ce rappel est ignorée.
   final void Function(String reason)? onError;
 
-  final http.Client _client;
-  final bool _ownsClient;
-  bool _closed = false;
-
   /// Ferme le client `http` s'il a été créé par cette instance. Les appels
   /// suivants de [reset] renvoient [CanvasResetResult.unreachable].
-  void close() {
-    _closed = true;
-    if (_ownsClient) _client.close();
-  }
-
-  Uri get _resetUri {
-    final base = baseUrl.path.endsWith('/')
-        ? baseUrl.path.substring(0, baseUrl.path.length - 1)
-        : baseUrl.path;
-    return baseUrl.replace(path: '$base/canvas/reset', query: '');
-  }
+  void close() => _transport.close();
 
   @override
   Future<CanvasResetResult> reset() async {
-    if (_closed) return _fail(CanvasResetResult.unreachable);
-    final request = http.Request('POST', _resetUri)
-      ..headers['Content-Type'] = 'application/json'
-      ..body = '{}';
+    if (_transport.isClosed) return _fail(CanvasResetResult.unreachable);
     try {
-      final status = await Future<int>(() async {
-        final response = await _client.send(request);
+      final status = await _transport.post<int>('/canvas/reset', '{}', (
+        response,
+      ) async {
         // Le corps n'est pas lu : on le vide pour libérer la connexion.
         await response.stream.drain<void>();
         return response.statusCode;
-      }).timeout(timeout);
+      });
       return switch (status) {
         204 => CanvasResetResult.done,
         409 => _fail(CanvasResetResult.busy),

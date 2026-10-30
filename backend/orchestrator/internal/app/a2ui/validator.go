@@ -49,6 +49,7 @@ const (
 	CodeComponentCap        = "component_cap"
 	CodeMessageCap          = "message_cap"
 	CodeIncompleteSurface   = "incomplete_surface"
+	CodePathNotAllowed      = "path_not_allowed"
 )
 
 // ValidationError est l'erreur typée du validateur et du registre.
@@ -79,6 +80,50 @@ type Options struct {
 	// {"path": "<JSON Pointer>"}, jamais une valeur littérale. Sous-ensemble de
 	// AllowedProps ; vide : aucune liaison imposée.
 	BindingProps []string
+	// WritableSubPaths : sous-chemins qu'un `updateDataModel` peut écrire en plus
+	// de l'objet entier de la surface (chemin "/" + surfaceId). Clé = chemin
+	// complet (≥ 2 segments, JSON Pointer valide), valeur = type JSON attendu
+	// (seul "string" est connu). nil : chemins non contrôlés (comportement de 004) ;
+	// non nil mais vide : seul l'objet entier est admis (R4, spec 009).
+	WritableSubPaths map[string]string
+}
+
+// ParseWritableSubPaths lit la valeur de A2UI_WRITABLE_SUBPATHS : des entrées
+// `chemin:type` séparées par des virgules. Valeur vide : nil (non configurée).
+// L'erreur ne reproduit jamais la valeur.
+func ParseWritableSubPaths(raw string) (map[string]string, error) {
+	var out map[string]string
+	for _, e := range strings.Split(raw, ",") {
+		if e = strings.TrimSpace(e); e == "" {
+			continue
+		}
+		i := strings.LastIndex(e, ":")
+		if i < 0 {
+			return nil, errors.New("a2ui: entrée de sous-chemins inscriptibles sans type")
+		}
+		path, typ := strings.TrimSpace(e[:i]), strings.TrimSpace(e[i+1:])
+		if err := checkWritableSubPath(path, typ); err != nil {
+			return nil, err
+		}
+		if out == nil {
+			out = map[string]string{}
+		}
+		if _, dup := out[path]; dup {
+			return nil, errors.New("a2ui: sous-chemin inscriptible en double")
+		}
+		out[path] = typ
+	}
+	return out, nil
+}
+
+func checkWritableSubPath(path, typ string) error {
+	if !strings.HasPrefix(path, "/") || !validPointer(path) || len(strings.Split(path, "/")) < 3 {
+		return errors.New("a2ui: sous-chemin inscriptible invalide (JSON Pointer d'au moins deux segments attendu)")
+	}
+	if typ != "string" {
+		return errors.New("a2ui: type de sous-chemin inscriptible inconnu (string attendu)")
+	}
+	return nil
 }
 
 // Operation est le résultat d'une validation réussie. Elle ne partage aucune
@@ -117,6 +162,16 @@ func NewValidator(o Options) (*Validator, error) {
 	o.Components = append([]string(nil), o.Components...)
 	o.AllowedProps = append([]string(nil), o.AllowedProps...)
 	o.BindingProps = append([]string(nil), o.BindingProps...)
+	if o.WritableSubPaths != nil {
+		sub := make(map[string]string, len(o.WritableSubPaths))
+		for p, typ := range o.WritableSubPaths {
+			if err := checkWritableSubPath(p, typ); err != nil {
+				return nil, err
+			}
+			sub[p] = typ
+		}
+		o.WritableSubPaths = sub
+	}
 	var props map[string]struct{}
 	if len(o.AllowedProps) > 0 {
 		props = make(map[string]struct{}, len(o.AllowedProps))
@@ -203,8 +258,35 @@ func (v *Validator) Validate(msg map[string]any) (Operation, error) {
 				return Operation{}, fail(CodeBadPointer, "path n'est pas un JSON Pointer valide")
 			}
 		}
+		if err := v.checkWritablePath(sid, body); err != nil {
+			return Operation{}, err
+		}
 	}
 	return op, nil
+}
+
+// checkWritablePath applique R4 : l'objet entier de la surface ("/" + sid) ou
+// un sous-chemin déclaré de cette surface, avec le type déclaré. Sans effet si
+// WritableSubPaths n'est pas configurée. Absent, le chemin vaut la racine « / »
+// du data model et est donc refusé.
+func (v *Validator) checkWritablePath(sid string, body map[string]any) error {
+	if v.opts.WritableSubPaths == nil {
+		return nil
+	}
+	path, _ := body["path"].(string)
+	if path == "/"+sid {
+		return nil
+	}
+	typ, declared := v.opts.WritableSubPaths[path]
+	if !declared || !strings.HasPrefix(path, "/"+sid+"/") {
+		return fail(CodePathNotAllowed, "chemin d'écriture non admis")
+	}
+	if typ == "string" {
+		if _, ok := body["value"].(string); !ok {
+			return fail(CodePathNotAllowed, "type de valeur non admis pour ce chemin")
+		}
+	}
+	return nil
 }
 
 func (v *Validator) validateComponents(body map[string]any, op *Operation) error {

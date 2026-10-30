@@ -224,6 +224,87 @@ void main() {
       expect(v.check(_data('a', path: '')).verdict, const ValidationAccepted());
     });
 
+    group('chemins d écriture (R4)', () {
+      Map<String, Object?> write(String surface, Object? path, Object? value) =>
+          <String, Object?>{
+            'version': 'v0.9',
+            'updateDataModel': <String, Object?>{
+              'surfaceId': surface,
+              'path': ?path,
+              'value': value,
+            },
+          };
+
+      GenesisMessageValidator strict([Map<String, String>? sub]) {
+        final s = GenesisMessageValidator(
+          writableSubPaths: sub ?? GenesisContract.writableSubPaths,
+        );
+        expect(
+          s.check(_create('checklist')).verdict,
+          const ValidationAccepted(),
+        );
+        return s;
+      }
+
+      test('objet entier et sous-chemin déclaré (chaîne) acceptés', () {
+        final s = strict();
+        expect(
+          s
+              .check(write('checklist', '/checklist', <String, Object?>{}))
+              .verdict,
+          const ValidationAccepted(),
+        );
+        expect(
+          s
+              .check(write('checklist', '/checklist/decisionStatus', 'Bloquée'))
+              .verdict,
+          const ValidationAccepted(),
+        );
+      });
+
+      test('tout autre chemin ou type est refusé path_not_allowed', () {
+        final cases = <String, Map<String, Object?>>{
+          'autre sous-chemin': write(
+            'checklist',
+            '/checklist/recommendation/level',
+            'ok',
+          ),
+          'sous-chemin d une autre surface': write(
+            'checklist',
+            '/kpi/label',
+            'x',
+          ),
+          'racine d une autre surface': write('checklist', '/kpi', {}),
+          'type non chaîne': write('checklist', '/checklist/decisionStatus', 3),
+          'chemin vide': write('checklist', '', {}),
+          'racine /': write('checklist', '/', {}),
+          'chemin absent': write('checklist', null, {}),
+        };
+        cases.forEach((name, msg) {
+          expect(_code(strict().check(msg)), 'path_not_allowed', reason: name);
+        });
+      });
+
+      test('pointeur invalide reste bad_pointer', () {
+        expect(
+          _code(strict().check(write('checklist', 'checklist', {}))),
+          'bad_pointer',
+        );
+      });
+
+      test('liste vide : seul l objet entier est admis', () {
+        final s = strict(const <String, String>{});
+        expect(
+          s.check(write('checklist', '/checklist', {})).verdict,
+          const ValidationAccepted(),
+        );
+        expect(
+          _code(s.check(write('checklist', '/checklist/decisionStatus', 'x'))),
+          'path_not_allowed',
+        );
+      });
+    });
+
     test('catalogId attendu paramétrable', () {
       final other = GenesisMessageValidator(catalogId: 'urn:x');
       expect(other.check(_create('a')).verdict, isA<ValidationRejected>());
@@ -467,6 +548,74 @@ void main() {
         final messages = load(name);
         expect(messages, hasLength(1));
         expect(_code(v.check(messages.single)), 'unknown_surface');
+      });
+    }
+  });
+
+  group('acte 3 : Barre d actions et décision (spec 009)', () {
+    const before = <String>[
+      'act1-kpi',
+      'act1-trend',
+      'act1-reviews',
+      'act1-checklist',
+      'act2-kpi',
+      'act2-trend',
+      'act2-reviews',
+      'act2-checklist',
+    ];
+
+    List<Map<String, Object?>> load(String name) => const LineSplitter()
+        .convert(
+          File('${_contractsDir().path}/examples/$name.jsonl')
+              .readAsStringSync()
+              .replaceAll(r'${CATALOG_ID}', _cid),
+        )
+        .where((l) => l.trim().isNotEmpty)
+        .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
+        .toList();
+
+    void accept(String name) {
+      for (final m in load(name)) {
+        expect(v.check(m).verdict, const ValidationAccepted(), reason: name);
+      }
+    }
+
+    test('actions est créée en trois temps après les actes 1 et 2', () {
+      before.forEach(accept);
+      final kinds = [
+        for (final m in load('act2-actions'))
+          m.keys.firstWhere((k) => k != 'version'),
+      ];
+      expect(kinds, ['createSurface', 'updateComponents', 'updateDataModel']);
+      accept('act2-actions');
+      expect(v.activeSurfaces, {
+        'kpi',
+        'trend',
+        'reviews',
+        'checklist',
+        'actions',
+      });
+    });
+
+    test('act3-block puis act3-validate (sous-chemin) sont acceptés', () {
+      before.forEach(accept);
+      accept('act2-actions');
+      for (final name in ['act3-block', 'act3-validate']) {
+        expect(load(name), hasLength(1));
+        accept(name);
+      }
+      expect(v.activeSurfaces, {
+        'kpi',
+        'trend',
+        'reviews',
+        'checklist',
+        'actions',
+      });
+    });
+
+    for (final name in ['act3-block', 'act3-validate']) {
+      test('$name seule est refusée : unknown_surface', () {
+        expect(_code(v.check(load(name).single)), 'unknown_surface');
       });
     }
   });

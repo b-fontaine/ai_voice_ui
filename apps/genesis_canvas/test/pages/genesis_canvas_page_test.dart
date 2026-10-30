@@ -53,9 +53,9 @@ const _unknownComponent =
 // mais genui signale une erreur par `reportError`, sans lever d'exception.
 const _valid =
     '''
-{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s","catalogId":"$_catalog"}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s","path":"/kpi","value":{"label":"ok","value":"1","trend":"0","threshold":"1","status":"ok","statusLabel":"OK"}}}}
+{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"kpi","catalogId":"$_catalog"}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"kpi","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"kpi","path":"/kpi","value":{"label":"ok","value":"1","trend":"0","threshold":"1","status":"ok","statusLabel":"OK"}}}}
 ''';
 
 void main() {

@@ -11,7 +11,8 @@ final CatalogItem trendChartItem = boundCatalogItem<_Trend>(
   name: 'TrendChart',
   description: 'Courbe de tendance liée à /trend.',
   parse: _Trend.tryParse,
-  build: (BuildContext context, _Trend trend) => _TrendView(trend: trend),
+  build: (BuildContext context, _Trend trend, String _) =>
+      _TrendView(trend: trend),
 );
 
 class _RawSeries {

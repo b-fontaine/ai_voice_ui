@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/level"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
@@ -47,9 +49,51 @@ type Options struct {
 	// Delegations gère les délégations de chaque session (A1) ; nil : aucune
 	// délégation n'est traitée.
 	Delegations port.Delegations
+	// Phrases porte les consignes de dernier recours d'une annonce vocale hors
+	// délégation (canal de confiance). Valeur nulle : cette stratégie est
+	// désactivée.
+	Phrases Phrases
+	// AnnounceObserveTimeout borne l'observation (journal seulement) d'une
+	// parole sortante après une annonce acquittée ; 0 : pas d'observation.
+	AnnounceObserveTimeout time.Duration
+}
+
+// MaxAnnounceInstructionRunes borne une consigne de la voix. Elle duplique celle
+// des commentaires de l'adaptateur (sans l'importer) ; bootstrap teste l'égalité.
+const MaxAnnounceInstructionRunes = 1000
+
+// Phrases sont les deux consignes fixes de la stratégie de dernier recours
+// (`session.instructions.append`) d'une annonce vocale. Ce sont des textes de
+// l'orchestrateur : jamais composés d'une donnée d'agent ni du client, sans
+// gabarit. AnnounceDone confirme brièvement la décision de la checklist, une
+// seule fois ; AnnounceFailed dit que l'action n'a pas abouti et que la
+// checklist est inchangée, une seule fois. Le choix dépend de
+// port.Announcement.Outcome : un échec ne reçoit jamais la consigne de
+// confirmation.
+type Phrases struct {
+	AnnounceDone   string
+	AnnounceFailed string
+}
+
+// Validate vérifie que les deux consignes sont renseignées et bornées.
+func (p Phrases) Validate() error {
+	for name, v := range map[string]string{"AnnounceDone": p.AnnounceDone, "AnnounceFailed": p.AnnounceFailed} {
+		if strings.TrimSpace(v) == "" {
+			return fmt.Errorf("voice: phrase %s requise", name)
+		}
+		if n := utf8.RuneCountInString(v); n > MaxAnnounceInstructionRunes {
+			return fmt.Errorf("voice: phrase %s trop longue (%d runes, maximum %d)", name, n, MaxAnnounceInstructionRunes)
+		}
+	}
+	return nil
 }
 
 func (o Options) validate() error {
+	if o.Phrases != (Phrases{}) {
+		if err := o.Phrases.Validate(); err != nil {
+			return err
+		}
+	}
 	switch {
 	case o.SampleRate <= 0:
 		return errors.New("voice: SampleRate doit être > 0")
@@ -65,6 +109,8 @@ func (o Options) validate() error {
 		return errors.New("voice: AttachAttempts doit être > 0")
 	case o.AttachDelay <= 0:
 		return errors.New("voice: AttachDelay doit être > 0")
+	case o.AnnounceObserveTimeout < 0:
+		return errors.New("voice: AnnounceObserveTimeout doit être >= 0")
 	}
 	return nil
 }
@@ -229,11 +275,13 @@ func (s *Service) run(ctx context.Context, sess *session) {
 	}
 	// Open précède « active » : aucun événement n'est consommé avant lui.
 	var fw *forwarder
+	var rep *sidebandReply
 	if s.opts.Delegations != nil {
-		fw = newForwarder(s.opts.Delegations.Open(sess.id, sess.start, sb), sess.id, s.opts.Logger)
+		rep = newSidebandReply(sb, sess.id, s.opts, sess.closeRequested)
+		fw = newForwarder(s.opts.Delegations.Open(sess.id, sess.start, rep), sess.id, s.opts.Logger)
 	}
 	s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateActive})
-	s.supervise(sess, sb, fw)
+	s.supervise(sess, sb, fw, rep)
 }
 
 // attach tente Sideband jusqu'à AttachAttempts fois, AttachDelay entre deux
@@ -414,8 +462,10 @@ func (s *Service) closeConnecting(ctx, gctx context.Context, sess *session) erro
 // supervise traduit les événements du fournisseur en messages applicatifs et
 // route les transcripts d'entrée et les délégations vers fw (nil : aucun). Les
 // délégations sont fermées avant la publication de « closed », sur tous les
-// chemins de fin.
-func (s *Service) supervise(sess *session, sb port.Sideband, fw *forwarder) {
+// chemins de fin. rep (nil : aucun) apprend les délégations et les paroles
+// sortantes de la session et est arrêté à la fin de la supervision.
+func (s *Service) supervise(sess *session, sb port.Sideband, fw *forwarder, rep *sidebandReply) {
+	defer rep.stop()
 	closedSent := false
 	closedReason := ""
 	events := sb.Events()
@@ -443,7 +493,10 @@ loop:
 			switch ev.Type {
 			case port.EventInputTranscriptDelta:
 				fw.transcript(ev)
+			case port.EventOutputTranscriptDelta:
+				rep.noteSpeech()
 			case port.EventDelegationCreated:
+				rep.noteDelegation(ev.DelegationID)
 				fw.delegate(ev.DelegationID, ev.OffsetMs)
 			}
 		case <-sess.abandon:

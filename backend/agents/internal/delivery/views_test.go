@@ -44,20 +44,39 @@ func TestDeliveryPlatformViewsMatchFixtures(t *testing.T) {
 	}
 	for _, tc := range cases {
 		want := viewFixture(t, tc.prefix, "checklist")
-		got := compose(t, tc.text, "checklist")
 		if len(want) != 1 {
 			t.Fatalf("%d messages de fixtures, attendu 1", len(want))
 		}
+		// Surface `actions` absente : la mutation de la checklist d'abord, puis la barre.
+		got := compose(t, tc.text, "checklist")
+		wantAll := append(append([]map[string]any(nil), want...), viewFixture(t, "act2", "actions")...)
+		if !reflect.DeepEqual(got.Messages, wantAll) {
+			t.Errorf("%q : messages différents de %s + act2-actions :\n got  %v\n want %v", tc.text, tc.prefix, got.Messages, wantAll)
+		}
+		// Surface `actions` déjà ouverte : la checklist seule, la barre n'est pas recréée.
+		got = compose(t, tc.text, "checklist", "actions")
 		if !reflect.DeepEqual(got.Messages, want) {
-			t.Errorf("%q : messages différents de %s :\n got  %v\n want %v", tc.text, tc.prefix, got.Messages, want)
+			t.Errorf("%q, actions active : messages différents de %s :\n got  %v\n want %v", tc.text, tc.prefix, got.Messages, want)
+		}
+	}
+}
+
+func TestDeliveryGlobalViewHasNoActionBar(t *testing.T) {
+	got := compose(t, "Prépare la release 3.4", "checklist")
+	if k := kinds(got.Messages); !reflect.DeepEqual(k, []string{"updateDataModel"}) {
+		t.Errorf("vue globale : messages %v, attendu un updateDataModel (pas de barre à l'acte 1)", k)
+	}
+	for _, m := range compose(t, "Prépare la release 3.4").Messages {
+		if raw, _ := json.Marshal(m); strings.Contains(string(raw), `"actions"`) {
+			t.Errorf("vue globale : message sur la surface actions : %s", raw)
 		}
 	}
 }
 
 func TestDeliveryAndroidViewHasNoComparison(t *testing.T) {
 	got := compose(t, "Concentre-toi sur Android", "checklist")
-	if k := kinds(got.Messages); !reflect.DeepEqual(k, []string{"updateDataModel"}) {
-		t.Fatalf("messages %v, attendu un updateDataModel", k)
+	if k := kinds(got.Messages); !reflect.DeepEqual(k, []string{"updateDataModel", "createSurface", "updateComponents", "updateDataModel"}) {
+		t.Fatalf("messages %v, attendu la mutation de la checklist puis la barre", k)
 	}
 	v := got.Messages[0]["updateDataModel"].(map[string]any)["value"].(map[string]any)
 	items := v["items"].([]any)
@@ -74,7 +93,7 @@ func TestDeliveryAndroidViewHasNoComparison(t *testing.T) {
 	if reco := v["recommendation"].(map[string]any); reco["label"] != "NO-GO Android" || reco["level"] != "blocking" {
 		t.Errorf("recommandation : %v", reco)
 	}
-	raw, _ := json.Marshal(got.Messages)
+	raw, _ := json.Marshal(got.Messages[:1])
 	if strings.Contains(string(raw), "3.3") || strings.Contains(string(raw), "iOS") {
 		t.Errorf("vue Android seule : donnée 3.3 ou iOS émise : %s", raw)
 	}
@@ -82,12 +101,16 @@ func TestDeliveryAndroidViewHasNoComparison(t *testing.T) {
 
 func TestDeliveryPlatformViewCreatesMissingSurfacesInOrder(t *testing.T) {
 	got := compose(t, "Concentre-toi sur iOS")
-	if k := kinds(got.Messages); !reflect.DeepEqual(k, []string{"createSurface", "updateComponents", "updateDataModel"}) {
-		t.Errorf("messages %v", k)
+	want := []string{"createSurface", "updateComponents", "updateDataModel", "createSurface", "updateComponents", "updateDataModel"}
+	if k := kinds(got.Messages); !reflect.DeepEqual(k, want) {
+		t.Fatalf("messages %v, attendu %v", k, want)
 	}
 	reco := got.Messages[2]["updateDataModel"].(map[string]any)["value"].(map[string]any)["recommendation"].(map[string]any)
 	if reco["label"] != "GO iOS" {
 		t.Errorf("recommandation %v", reco)
+	}
+	if id := got.Messages[3]["createSurface"].(map[string]any)["surfaceId"]; id != "actions" {
+		t.Errorf("la barre vient après la checklist : surface %v", id)
 	}
 }
 

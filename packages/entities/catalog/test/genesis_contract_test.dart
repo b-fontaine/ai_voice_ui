@@ -21,13 +21,12 @@ Map<String, dynamic> _catalogJson() {
 void main() {
   final catalog = _catalogJson();
 
-  test(
-    'les 4 composants validés et les 6 du catalogue suivent catalog.json',
-    () {
-      expect(GenesisContract.components, catalog['components']);
-      expect(GenesisContract.catalogComponents, catalog['catalogComponents']);
-    },
-  );
+  test('les 5 composants validés (dans l ordre) et les 6 du catalogue suivent catalog.json', () {
+    expect(GenesisContract.components, catalog['components']);
+    expect(GenesisContract.components, hasLength(5));
+    expect(GenesisContract.components.last, 'ActionBar');
+    expect(GenesisContract.catalogComponents, catalog['catalogComponents']);
+  });
 
   test('chaque composant a la surface et le chemin lié du contrat', () {
     final definitions = catalog['definitions'] as Map<String, dynamic>;
@@ -86,8 +85,48 @@ void main() {
 
   test('un composant inconnu n a ni surface ni chemin lié', () {
     expect(GenesisContract.surfaceOf('Text'), isNull);
-    expect(GenesisContract.boundPathOf('ActionBar'), isNull);
+    expect(GenesisContract.boundPathOf('CrashList'), isNull);
   });
+
+  test('ActionBar : surface actions, chemin /actions, enums fermés', () {
+    final definition =
+        (catalog['definitions'] as Map<String, dynamic>)['ActionBar']
+            as Map<String, dynamic>;
+    final items =
+        ((((definition['dataModel'] as Map<String, dynamic>)['fields']
+                    as Map<String, dynamic>)['actions'])
+                as Map<String, dynamic>)['items']
+            as Map<String, dynamic>;
+    List<Object?> enumOf(String field) =>
+        (items[field] as Map<String, dynamic>)['enum'] as List<Object?>;
+    expect(GenesisContract.surfaceOf('ActionBar'), 'actions');
+    expect(GenesisContract.boundPathOf('ActionBar'), '/actions');
+    expect(GenesisContract.actionIds, enumOf('id'));
+    expect(GenesisContract.actionIds, <String>[
+      'block_release',
+      'validate_release',
+    ]);
+    expect(GenesisContract.actionTones, enumOf('tone'));
+    expect(GenesisContract.actionTones, <String>['neutral', 'danger']);
+  });
+
+  test(
+    'sous-chemins inscriptibles = ceux de catalog.json (chemin -> type)',
+    () {
+      final declared = <String, String>{};
+      for (final Object? d
+          in (catalog['definitions'] as Map<String, dynamic>).values) {
+        final dataModel =
+            (d as Map<String, dynamic>)['dataModel'] as Map<String, dynamic>?;
+        final sub = dataModel?['writableSubPaths'] as Map<String, dynamic>?;
+        sub?.forEach((k, v) => declared[k] = v as String);
+      }
+      expect(GenesisContract.writableSubPaths, declared);
+      expect(GenesisContract.writableSubPaths, <String, String>{
+        '/checklist/decisionStatus': 'string',
+      });
+    },
+  );
 
   test('l identifiant de catalogue par défaut est celui de pdr-0055', () {
     expect(

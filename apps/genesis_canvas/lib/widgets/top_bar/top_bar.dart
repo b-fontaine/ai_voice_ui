@@ -33,7 +33,7 @@ class TopBar extends StatelessWidget {
   });
 
   /// Hauteur de la zone (A7b du plan 007).
-  static const double height = 160;
+  static const double height = 128;
 
   final ValueListenable<double> orbLevel;
 

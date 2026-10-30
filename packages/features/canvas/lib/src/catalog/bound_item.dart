@@ -13,12 +13,14 @@ import 'package:shared_design_system/shared_design_system.dart';
 /// - objet absent : cellule « sans données » (`nodata-<surfaceId>`) ;
 /// - objet incomplet, de mauvais type ou de statut hors enum : état neutre
 ///   (`neutral-<surfaceId>`, RG-10), jamais d'exception ;
-/// - objet valide ([parse] renvoie une valeur) : [build].
+/// - objet valide ([parse] renvoie une valeur) : [build], qui reçoit aussi
+///   l'identifiant de la surface du contexte de rendu.
 CatalogItem boundCatalogItem<T extends Object>({
   required String name,
   required String description,
   required T? Function(Object raw) parse,
-  required Widget Function(BuildContext context, T value) build,
+  required Widget Function(BuildContext context, T value, String surfaceId)
+  build,
 }) {
   final String path =
       GenesisContract.boundPathOf(name) ??
@@ -51,7 +53,7 @@ CatalogItem boundCatalogItem<T extends Object>({
               child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
             );
           }
-          return build(context, value);
+          return build(context, value, ctx.surfaceId);
         },
       );
     },
@@ -84,9 +86,17 @@ class NoDataCell extends StatelessWidget {
 
 /// Fond arrondi commun aux cellules complètes.
 class CellFrame extends StatelessWidget {
-  const CellFrame({super.key, required this.child});
+  const CellFrame({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
 
   final Widget child;
+
+  /// Marge intérieure (la Barre d'actions réduit la marge verticale pour tenir
+  /// dans son bandeau de 72 px).
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) => SizedBox.expand(
@@ -95,7 +105,7 @@ class CellFrame extends StatelessWidget {
         color: SceneTheme.of(context).surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(padding: const EdgeInsets.all(16), child: child),
+      child: Padding(padding: padding, child: child),
     ),
   );
 }

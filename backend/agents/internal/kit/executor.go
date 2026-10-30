@@ -5,6 +5,7 @@ import (
 	"errors"
 	"iter"
 	"log/slog"
+	"regexp"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -20,9 +21,18 @@ const (
 	// l'orchestrateur transmet les surfaces actives de l'agent.
 	ActiveSurfacesKey = "genesis/activeSurfaces"
 
+	// ActionKey est la clé de metadata du message A2A qui porte une action de
+	// l'interface : {"name": <nom>}.
+	ActionKey = "genesis/action"
+
+	// actionTagPrefix préfixe, dans les tags du profil, les actions qu'un agent accepte.
+	actionTagPrefix = "action:"
+
 	maxActiveSurfaces    = 16
 	maxSurfaceNameLength = 64
 )
+
+var actionName = regexp.MustCompile(`^[a-z][a-z_]{0,39}$`)
 
 // executor traduit la composition de l'agent en événements A2A.
 type executor struct {
@@ -61,7 +71,16 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 				return
 			}
 		}
-		req := Request{Text: messageText(ec.Message), ContextID: ec.ContextID, ActiveSurfaces: ActiveSurfacesFrom(messageMetadata(ec.Message))}
+		meta := messageMetadata(ec.Message)
+		req := Request{ContextID: ec.ContextID, ActiveSurfaces: ActiveSurfacesFrom(meta), Action: ActionFrom(meta)}
+		if req.Action.IsZero() {
+			req.Text = messageText(ec.Message)
+		} else if !e.profile.acceptsAction(req.Action.Name) {
+			// Refus avant le composeur : l'agent ne sert que les actions de son profil.
+			e.log.Info("action refusée", "task", string(ec.TaskID), "reason", "unknown_action")
+			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
+			return
+		}
 		comp, err := e.composer.Compose(ctx, req, e.ds)
 		switch {
 		case ctx.Err() != nil:
@@ -145,6 +164,21 @@ func ActiveSurfacesFrom(meta map[string]any) []string {
 		out = append(out, s)
 	}
 	return out
+}
+
+// ActionFrom lit l'action dans les metadata d'un message A2A (clé ActionKey, valeur
+// {"name": <chaîne>}). Une valeur absente, mal typée ou dont le nom ne respecte pas
+// ^[a-z][a-z_]{0,39}$ donne une action vide.
+func ActionFrom(meta map[string]any) ActionCall {
+	raw, ok := meta[ActionKey].(map[string]any)
+	if !ok {
+		return ActionCall{}
+	}
+	name, ok := raw["name"].(string)
+	if !ok || !actionName.MatchString(name) {
+		return ActionCall{}
+	}
+	return ActionCall{Name: name}
 }
 
 func messageText(m *a2a.Message) string {
