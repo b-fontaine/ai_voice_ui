@@ -13,11 +13,12 @@
 | 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | Terminée ⚠️ (essai réel avec micro à faire en répétition), publiée (`33f475f`) | 2026-10-29 |
 | 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | Terminée ✅ (essai réel OK), publiée (`8d27b10`) | 2026-10-30 |
 | 007 | J3-B : acte 1 côté app (catalogue `genesis` fermé et validé côté client, rail, panneau protocole, étagère, indicateur d'acte, remise à vide + route Go `POST /canvas/reset`) | EP-03, EP-04, EP-05, EP-08 | J3 | Terminée ✅ (essai réel avec micro à faire en répétition), publiée (`03cdc38`) | 2026-10-30 |
-| 008 | J4 : acte 2 « Transformer » (mutation sur place, filtre Android, comparaison 3.3, registre de canevas partagé, correction de plateforme) | EP-03, EP-04, EP-09 | J4 | Vérification | 2026-10-30 |
+| 008 | J4 : acte 2 « Transformer » (mutation sur place, filtre Android, comparaison 3.3, registre de canevas partagé, correction de plateforme) | EP-03, EP-04, EP-09 | J4 | Clôture | 2026-10-30 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-30 | 008 : **Vérification terminée** (`gate --full` vert, 55 contrôles ; capture `app-smoke act2-replay` conforme après correction V1 : valeurs de la checklist et titre de la courbe tronqués à la première capture) ; essai réel avec micro indisponible (à faire en répétition avec le porteur). Passage à la Clôture (documents `product/`, fusion, publication). |
 | 2026-10-30 | 008 : revue d'architecte du code rendue (À REFACTORISER : 0 bloquante, 4 importantes, 6 mineures, aucun conflit avec une décision) ; R1-R9 appliquées en 3 lots ; `gate --full` vert (55 contrôles). **Pour le porteur, sans bloquer (pdr-0062, pdr-0064 D8-D9)** : couleurs de séries de la courbe par plateforme (3.3 en pointillés) ; un décimal précédé de « note » ou « moyenne » est une mesure, pas une version. Passage à la Vérification. |
 | 2026-10-30 | 008 : **TDD terminé** (T01…T16, T90 ; `gate --full` vert, 55 contrôles ; acceptations : Go S-02, B1, B2, B3, A6 verts ; Flutter 32 verts dont S-02, B1, B2, B4 ×3, A3). Canevas partagé entre sessions livré (`orchestrate.Canvas`, remise à vide en une passe) : Q-73 résolue par construction. Passage à la revue d'architecte du code. |
 | 2026-10-30 | 008 : **Gherkin terminé** (T01 jeu de données Go : versions dans `dataset.json`, extraits par vue, checklist de plateforme, comparaison ; T02 fixtures `act2-*` et `correction-ios-*` avec parité Go/Dart ; T03 acceptation Go : 6 rouges pour la bonne raison ; T04 acceptation Flutter : 7 rouges, 24 scénarios antérieurs verts) ; `gate --unit` vert. Passage au TDD (T10a d'abord). |
