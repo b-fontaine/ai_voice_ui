@@ -52,6 +52,10 @@ for name in agent_names:
     check(set((agent.get("networks") or {}).keys()) == {"agents"},
           name + " doit etre uniquement sur le reseau agents")
     check("env_file" not in agent, name + " ne doit pas recevoir env_file")
+    # R1 : le Dockerfile des agents impose ARG AGENT (sans défaut) ; le compose doit le fournir.
+    build_args = (agent.get("build") or {}).get("args") or {}
+    check(build_args.get("AGENT") == name[len("agent-"):],
+          name + " : build.args.AGENT doit valoir " + name[len("agent-"):])
     # R6(d) : une seule valeur de catalogue A2UI, partagée (ancre YAML) par orchestrateur et chaque agent.
     check(bool(env.get("A2UI_CATALOG_ID")) and env.get("A2UI_CATALOG_ID") == agent_env.get("A2UI_CATALOG_ID"),
           "A2UI_CATALOG_ID doit etre identique (ancre) pour orchestrator et " + name)
