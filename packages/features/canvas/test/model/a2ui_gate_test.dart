@@ -151,6 +151,29 @@ void main() {
   );
 
   test(
+    'un createSurface en double est refusé sans deleteSurface local',
+    () async {
+      input
+        ..add(_event(_create('kpi')))
+        ..add(_event(_create('kpi')))
+        ..add(_event(_components('kpi')));
+      await settle();
+
+      expect(validated.map((e) => e.verdict), <ValidationVerdict>[
+        const ValidationAccepted(),
+        const ValidationRejected('surface_exists'),
+        const ValidationAccepted(),
+      ]);
+      expect(validated[1].compensations, isEmpty);
+      expect(accepted.map(_kind), <String>[
+        'createSurface',
+        'updateComponents',
+      ]);
+      expect(rejected, <String>['surface_exists']);
+    },
+  );
+
+  test(
     'un deleteSurface d\'une surface absente est ignoré : flux validé seul',
     () async {
       input.add(_event(_delete('fantome')));

@@ -166,6 +166,79 @@ void main() {
     },
   );
 
+  test(
+    'un refus avec compensation libère les composants de la surface',
+    () async {
+      final states = await run([
+        for (final m in fixture('kpi')) accepted(m),
+        ValidatedEnvelope(
+          raw: <String, Object?>{
+            'version': 'v0.9',
+            'updateComponents': <String, Object?>{
+              'surfaceId': 'kpi',
+              'components': <Object?>[
+                <String, Object?>{'id': 'root', 'component': 'Inconnu'},
+              ],
+            },
+          },
+          verdict: const ValidationRejected(
+            ValidationCodes.componentNotAllowed,
+          ),
+          compensations: const <String>['kpi'],
+        ),
+      ]);
+      expect(states.map((s) => s.usedCount), [1, 0]);
+    },
+  );
+
+  test('un refus sans compensation ne change rien', () async {
+    final states = await run([
+      for (final m in fixture('kpi')) accepted(m),
+      ValidatedEnvelope(
+        raw: fixture('kpi')[1],
+        verdict: const ValidationRejected(ValidationCodes.surfaceExists),
+      ),
+    ]);
+    expect(states.map((s) => s.usedCount), [1]);
+  });
+
+  test(
+    'après Cleared, la table est vide : un delete ancien ne libère rien',
+    () async {
+      final states = await run(
+        [for (final m in fixture('kpi')) accepted(m)],
+        after: (bloc) async {
+          bloc.add(const CatalogShelfCleared());
+          await Future<void>.delayed(Duration.zero);
+        },
+      );
+      expect(states.last, const CatalogShelfState.empty());
+
+      // Une surface « trend » posée après Cleared, puis delete de l'ancienne
+      // « kpi » : seule « trend » compte, et rien n'est libéré par erreur.
+      final StreamController<ValidatedEnvelope> c =
+          StreamController<ValidatedEnvelope>();
+      final after = await statesAfter(CatalogShelfBloc(), (bloc) async {
+        bloc.add(CatalogShelfSourceSubscribed(c.stream));
+        await Future<void>.delayed(Duration.zero);
+        for (final m in fixture('kpi')) {
+          c.add(accepted(m));
+        }
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const CatalogShelfCleared());
+        await Future<void>.delayed(Duration.zero);
+        for (final m in fixture('trend')) {
+          c.add(accepted(m));
+        }
+        c.add(delete('kpi'));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      });
+      expect(usedOf(after.last), {'TrendChart'});
+      expect(after.last.usedCount, 1);
+    },
+  );
+
   test('erreur de flux ignorée ; fermeture annule l abonnement', () async {
     final StreamController<ValidatedEnvelope> c =
         StreamController<ValidatedEnvelope>();

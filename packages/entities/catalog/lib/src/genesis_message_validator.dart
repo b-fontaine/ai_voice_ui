@@ -13,6 +13,11 @@ import 'validated_envelope.dart';
 /// d'agent), `message_cap` (plafond par tâche), `incomplete_surface` (fin de
 /// tâche).
 ///
+/// Règles d'état : un `createSurface` en double est refusé (`surface_exists`)
+/// sans toucher à la surface existante (ni compensation, ni blocage) ; les
+/// mises à jour suivantes s'appliquent en place. Tout autre refus visant une
+/// surface active la retire et la bloque (compensation, pdr-0056).
+///
 /// Ajouts propres au client, absents du Go : la compensation locale et le
 /// verdict `ignored` (A2d du plan 007).
 class GenesisMessageValidator {
@@ -72,8 +77,12 @@ class GenesisMessageValidator {
       verdict = ValidationRejected(code);
       // Compensation locale : le refus d'un message d'une surface existante
       // la retire et la bloque (cohérent pdr-0056 : on ne garde pas une
-      // surface dans un état que le serveur n'a pas validé).
-      if (surfaceId != null && _active.containsKey(surfaceId)) {
+      // surface dans un état que le serveur n'a pas validé). Exception :
+      // `surface_exists` (createSurface en double) refuse le doublon mais laisse
+      // la surface existante, valide, intacte, comme le validateur Go.
+      if (code != ValidationCodes.surfaceExists &&
+          surfaceId != null &&
+          _active.containsKey(surfaceId)) {
         _active.remove(surfaceId);
         _blocked.add(surfaceId);
         compensations = <String>[surfaceId];

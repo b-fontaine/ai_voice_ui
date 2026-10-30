@@ -6,7 +6,8 @@ import 'catalog_shelf_event.dart';
 import 'catalog_shelf_state.dart';
 
 /// Étagère du catalogue (FR-06) : un composant est « utilisé » tant qu'une
-/// surface acceptée le porte. Seuls les messages `accepted` comptent.
+/// surface acceptée le porte. Seuls les messages `accepted` comptent ; un refus
+/// n'agit que par ses compensations (surfaces retirées localement).
 class CatalogShelfBloc extends Bloc<CatalogShelfEvent, CatalogShelfState> {
   CatalogShelfBloc() : super(const CatalogShelfState.empty()) {
     on<CatalogShelfSourceSubscribed>(_onSubscribed, transformer: restartable());
@@ -30,7 +31,15 @@ class CatalogShelfBloc extends Bloc<CatalogShelfEvent, CatalogShelfState> {
   );
 
   void _apply(ValidatedEnvelope envelope, Emitter<CatalogShelfState> emit) {
-    if (envelope.verdict is! ValidationAccepted) return;
+    if (envelope.verdict is! ValidationAccepted) {
+      // Un refus peut avoir retiré des surfaces localement (compensations) :
+      // leurs composants ne sont plus portés.
+      for (final String surface in envelope.compensations) {
+        _bySurface.remove(surface);
+      }
+      if (envelope.compensations.isNotEmpty) _emitUsed(emit);
+      return;
+    }
     final Object? update = envelope.raw['updateComponents'];
     final Object? delete = envelope.raw['deleteSurface'];
     if (update is Map) {
@@ -50,11 +59,13 @@ class CatalogShelfBloc extends Bloc<CatalogShelfEvent, CatalogShelfState> {
     } else {
       return;
     }
-    _emitIfChanged(
-      CatalogShelfState.fromUsed(_bySurface.values.expand((s) => s).toSet()),
-      emit,
-    );
+    _emitUsed(emit);
   }
+
+  void _emitUsed(Emitter<CatalogShelfState> emit) => _emitIfChanged(
+    CatalogShelfState.fromUsed(_bySurface.values.expand((s) => s).toSet()),
+    emit,
+  );
 
   void _emitIfChanged(CatalogShelfState next, Emitter<CatalogShelfState> emit) {
     if (next != state) emit(next);

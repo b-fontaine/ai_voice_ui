@@ -245,6 +245,23 @@ void main() {
       expect(_code(v.check(_create('a'))), 'surface_exists');
     });
 
+    test(
+      'createSurface en double : refusé sans compensation, surface gardée',
+      () {
+        open('a');
+        final e = v.check(_create('a'));
+        expect(_code(e), 'surface_exists');
+        expect(e.compensations, isEmpty);
+        expect(v.activeSurfaces, {'a'});
+        expect(v.blockedSurfaces, isEmpty);
+        expect(v.check(_data('a')).verdict, const ValidationAccepted());
+        expect(
+          v.check(_components('a', [_kpi()])).verdict,
+          const ValidationAccepted(),
+        );
+      },
+    );
+
     test('6 surfaces puis la 7e refusée sans compensation', () {
       for (var i = 0; i < 6; i++) {
         open('s$i');
