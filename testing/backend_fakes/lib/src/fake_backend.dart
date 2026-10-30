@@ -25,6 +25,19 @@ enum PostMode {
   oversizedAnswer,
 }
 
+/// Temps de fabrication d'une surface (RG-02) : chaque temps correspond à un
+/// message du contrat, dans l'ordre.
+enum SurfaceStage {
+  /// `createSurface` : l'app peint le squelette.
+  skeleton,
+
+  /// `updateComponents` : les composants, sans données.
+  components,
+
+  /// `updateDataModel` : les données.
+  data,
+}
+
 /// Faux backend de Genesis Canvas : un vrai serveur `dart:io` (HTTP et
 /// WebSocket) sur `127.0.0.1`, port éphémère. Seule la frontière réseau est
 /// réelle ; le fournisseur de voix (OpenAI) n'existe pas.
@@ -197,48 +210,98 @@ class FakeBackend {
   /// Les enveloppes `a2ui` portent `agent` et `task`.
   Future<void> emitGenesisAct1(String session) async {
     final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
-    const agents = ContractFixtures.act1Agents;
-    final tasks = <String, String>{for (final s in surfaces) s.agent: s.task};
-    var t = 2000;
-    emit(session, 'plan', <String, Object?>{
-      'delegation': 'deleg_1',
-      'selected': agents,
-      'idle': <String>[],
-    }, tMs: t);
-    void activity(String state) {
-      for (final agent in agents) {
-        emit(
-          session,
-          'agent.activity',
-          <String, Object?>{
-            'agent': agent,
-            'task': tasks[agent],
-            'state': state,
-            'label': agent,
-          },
-          tMs: t += 50,
-          agent: agent,
-          task: tasks[agent],
-        );
-      }
-    }
-
-    activity('working');
-    t += 1500;
+    emitGenesisPlan(session, selected: ContractFixtures.act1Agents);
+    await emitGenesisActivity(session, 'working');
     for (final surface in surfaces) {
-      for (final message in surface.messages) {
-        emit(
-          session,
-          'a2ui',
-          message,
-          tMs: t += 50,
-          agent: surface.agent,
-          task: surface.task,
-        );
-      }
+      await emitGenesisSurface(session, surface.surfaceId);
     }
-    t += 200;
-    activity('completed');
+    await emitGenesisActivity(session, 'completed');
+  }
+
+  /// Publie l'enveloppe `plan` de l'orchestrateur : [selected] retenus et
+  /// [idle] en veille (par défaut, les autres agents de l'acte 1).
+  void emitGenesisPlan(
+    String session, {
+    required List<String> selected,
+    List<String>? idle,
+    String delegation = 'deleg_1',
+  }) => emit(session, 'plan', <String, Object?>{
+    'delegation': delegation,
+    'selected': selected,
+    'idle':
+        idle ??
+        ContractFixtures.act1Agents
+            .where((a) => !selected.contains(a))
+            .toList(),
+  }, tMs: 2000);
+
+  /// Publie `agent.activity` ([state] : `working`, `completed`…) pour chacun
+  /// des [agents] (par défaut les trois agents de l'acte 1).
+  Future<void> emitGenesisActivity(
+    String session,
+    String state, {
+    List<String>? agents,
+  }) async {
+    final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
+    final tasks = <String, String>{for (final s in surfaces) s.agent: s.task};
+    for (final agent in agents ?? ContractFixtures.act1Agents) {
+      emit(
+        session,
+        'agent.activity',
+        <String, Object?>{
+          'agent': agent,
+          'task': tasks[agent],
+          'state': state,
+          'label': agent,
+        },
+        tMs: 2050,
+        agent: agent,
+        task: tasks[agent],
+      );
+    }
+  }
+
+  /// Publie les messages `a2ui` de la surface [surfaceId] de l'acte 1, du temps
+  /// [from] au temps [upTo] inclus (par défaut les trois temps). Permet de
+  /// montrer le squelette avant les composants, puis les données.
+  Future<void> emitGenesisSurface(
+    String session,
+    String surfaceId, {
+    SurfaceStage from = SurfaceStage.skeleton,
+    SurfaceStage upTo = SurfaceStage.data,
+  }) async {
+    final surfaces = await ContractFixtures.act1Surfaces(catalogId: catalogId);
+    final surface = surfaces.firstWhere(
+      (s) => s.surfaceId == surfaceId,
+      orElse: () => throw ArgumentError('Surface inconnue : $surfaceId'),
+    );
+    for (var i = from.index; i <= upTo.index; i++) {
+      emit(
+        session,
+        'a2ui',
+        surface.messages[i],
+        tMs: 3500 + i * 50,
+        agent: surface.agent,
+        task: surface.task,
+      );
+    }
+  }
+
+  /// Publie une fixture négative du contrat (`invalid/<name>.jsonl`) : les
+  /// messages que le client doit refuser (pdr-0053).
+  Future<void> emitGenesisInvalid(
+    String session,
+    String name, {
+    String agent = 'Qualité',
+    String task = 'task_1',
+  }) async {
+    final messages = await ContractFixtures.invalidMessages(
+      name,
+      catalogId: catalogId,
+    );
+    for (final message in messages) {
+      emit(session, 'a2ui', message, tMs: 3500, agent: agent, task: task);
+    }
   }
 
   void _trackSurface(String session, Object? data) {

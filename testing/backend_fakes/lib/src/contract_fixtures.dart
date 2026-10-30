@@ -97,6 +97,23 @@ abstract final class ContractFixtures {
     return surfaces;
   }
 
+  /// Messages d'une fixture négative `invalid/<name>.jsonl`, `${CATALOG_ID}`
+  /// remplacé par [catalogId].
+  static Future<List<Map<String, Object?>>> invalidMessages(
+    String name, {
+    String catalogId = defaultCatalogId,
+  }) async {
+    final dir = await genesisDirectory();
+    final text = File.fromUri(dir.uri.resolve('invalid/$name.jsonl'))
+        .readAsStringSync()
+        .replaceAll(catalogPlaceholder, catalogId);
+    return const LineSplitter()
+        .convert(text)
+        .where((l) => l.trim().isNotEmpty)
+        .map((l) => Map<String, Object?>.from(jsonDecode(l) as Map))
+        .toList();
+  }
+
   /// Contenu de `assets/replays/act1-replay.jsonl` dérivé du contrat (A5d) :
   /// une ligne `{t_ms, message}` par message, les surfaces espacées de 500 ms
   /// et les trois temps de 50 ms.

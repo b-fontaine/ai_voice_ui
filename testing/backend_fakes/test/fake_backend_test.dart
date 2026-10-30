@@ -382,6 +382,85 @@ void main() {
       },
     );
 
+    String op(Map<String, Object?> e) =>
+        (e['data']! as Map).keys.firstWhere((k) => k != 'version') as String;
+
+    test(
+      'emitGenesisSurface émet une surface par temps, avec agent et tâche',
+      () async {
+        await read(await post('v=0'));
+        final received = <Map<String, Object?>>[];
+        final socket = await connect(received);
+        await _until(() => received.length >= 2);
+
+        await backend.emitGenesisSurface(
+          'sess-1',
+          'reviews',
+          upTo: SurfaceStage.components,
+        );
+        await _until(() => received.length >= 4);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(received.skip(2).map(op), <String>[
+          'createSurface',
+          'updateComponents',
+        ]);
+        expect(
+          received.skip(2).map((e) => e['agent']),
+          everyElement('Voix du client'),
+        );
+
+        await backend.emitGenesisSurface(
+          'sess-1',
+          'reviews',
+          from: SurfaceStage.data,
+        );
+        await _until(() => received.length >= 5);
+        expect(op(received.last), 'updateDataModel');
+        expect(jsonEncode(received.last), contains('1164'));
+
+        await expectLater(
+          backend.emitGenesisSurface('sess-1', 'inconnue'),
+          throwsArgumentError,
+        );
+        await socket.close();
+      },
+    );
+
+    test('emitGenesisPlan complète idle avec les autres agents', () async {
+      await read(await post('v=0'));
+      final received = <Map<String, Object?>>[];
+      final socket = await connect(received);
+      await _until(() => received.length >= 2);
+
+      backend.emitGenesisPlan('sess-1', selected: <String>['Voix du client']);
+      backend.emitGenesisPlan('sess-1', selected: <String>[]);
+      await _until(() => received.length >= 4);
+      expect(received[2]['data'], <String, Object?>{
+        'delegation': 'deleg_1',
+        'selected': <Object?>['Voix du client'],
+        'idle': <Object?>['Qualité', 'Livraison'],
+      });
+      expect((received[3]['data']! as Map)['idle'], hasLength(3));
+      await socket.close();
+    });
+
+    test('emitGenesisInvalid publie la fixture négative du contrat', () async {
+      await read(await post('v=0'));
+      final received = <Map<String, Object?>>[];
+      final socket = await connect(received);
+      await _until(() => received.length >= 2);
+
+      await backend.emitGenesisInvalid('sess-1', 'component_not_allowed');
+      await _until(() => received.length >= 4);
+      expect(received.skip(2).map(op), <String>[
+        'createSurface',
+        'updateComponents',
+      ]);
+      expect(jsonEncode(received.last), contains('"Column"'));
+      expect(jsonEncode(received), isNot(contains(r'${CATALOG_ID}')));
+      await socket.close();
+    });
+
     test(
       'POST /canvas/reset : 204, requête comptée, deleteSurface émis triés',
       () async {
