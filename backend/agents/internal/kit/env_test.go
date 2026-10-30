@@ -1,10 +1,10 @@
-package agent_test
+package kit_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
 func TestConfigFromEnv(t *testing.T) {
@@ -15,7 +15,8 @@ func TestConfigFromEnv(t *testing.T) {
 		wantErr string // sous-chaîne attendue, "" si succès
 		addr    string
 	}{
-		{"défauts", map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat}, "", "127.0.0.1:8090"},
+		// Le port par défaut vient du profil (8099 pour le profil d'essai).
+		{"défauts", map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat}, "", "127.0.0.1:8099"},
 		{"adresse loopback explicite", map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat, "AGENT_LISTEN_ADDR": "localhost:9000"}, "", "localhost:9000"},
 		{"ipv6 loopback", map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat, "AGENT_LISTEN_ADDR": "[::1]:9000"}, "", "[::1]:9000"},
 		{"URL publique absente", map[string]string{"A2UI_CATALOG_ID": cat}, "AGENT_PUBLIC_URL", ""},
@@ -29,7 +30,7 @@ func TestConfigFromEnv(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s, err := agent.SettingsFromEnv(func(k string) string { return tc.env[k] })
+			s, err := kit.SettingsFromEnv(func(k string) string { return tc.env[k] }, testProfile(t))
 			if tc.wantErr != "" {
 				if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
 					t.Fatalf("erreur %v, attendu une erreur citant %q", err, tc.wantErr)
@@ -48,5 +49,29 @@ func TestConfigFromEnv(t *testing.T) {
 				t.Errorf("réglages %+v", s)
 			}
 		})
+	}
+}
+
+func TestDefaultListenPortFollowsProfile(t *testing.T) {
+	const url, cat = "http://agent:1", "https://example.test/catalog.json"
+	env := map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat}
+	for _, port := range []string{"8090", "8091", "8092"} {
+		p, err := kit.LoadProfile([]byte(strings.Replace(validProfileJSON, "8099", port, 1)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		s, err := kit.SettingsFromEnv(func(k string) string { return env[k] }, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := "127.0.0.1:" + port; s.ListenAddr != want {
+			t.Errorf("adresse par défaut %q, attendu %q", s.ListenAddr, want)
+		}
+		// AGENT_LISTEN_ADDR reste prioritaire.
+		env2 := map[string]string{"AGENT_PUBLIC_URL": url, "A2UI_CATALOG_ID": cat, "AGENT_LISTEN_ADDR": "127.0.0.1:9999"}
+		s, err = kit.SettingsFromEnv(func(k string) string { return env2[k] }, p)
+		if err != nil || s.ListenAddr != "127.0.0.1:9999" {
+			t.Errorf("AGENT_LISTEN_ADDR doit primer : %q, %v", s.ListenAddr, err)
+		}
 	}
 }

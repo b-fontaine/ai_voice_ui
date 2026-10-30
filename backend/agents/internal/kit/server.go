@@ -1,7 +1,8 @@
-// Package agent sert l'agent Qualité en A2A natif v1.0 (a2a-go v2) : carte
-// d'agent, JSON-RPC sur POST /, sonde GET /healthz, avec un durcissement HTTP
-// minimal (taille du corps, contrôle de l'en-tête Host).
-package agent
+// Package kit est le noyau générique des agents A2A de Genesis Canvas, en A2A natif
+// v1.0 (a2a-go v2) : carte d'agent, JSON-RPC sur POST /, sonde GET /healthz, avec un
+// durcissement HTTP minimal (taille du corps, contrôle de l'en-tête Host). Il ne
+// connaît aucun agent : l'identité vient d'un Profile, la composition d'un Composer.
+package kit
 
 import (
 	"bytes"
@@ -17,7 +18,6 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
@@ -26,11 +26,12 @@ const (
 	a2uiExtensionURI = "https://a2ui.org/a2a-extension/a2ui/v0.9"
 )
 
-// Config configure le serveur. Composer est facultatif (KpiComposer par défaut).
+// Config configure le serveur. Profile (chargé par LoadProfile) et Composer sont obligatoires.
 type Config struct {
 	PublicURL string
 	CatalogID string
-	Composer  compose.Composer
+	Profile   Profile
+	Composer  Composer
 }
 
 // NewServer construit le handler HTTP de l'agent.
@@ -46,12 +47,14 @@ func NewServer(cfg Config) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	composer := cfg.Composer
-	if composer == nil {
-		composer = compose.NewKpiComposer(cfg.CatalogID)
+	if cfg.Composer == nil {
+		return nil, errors.New("composeur absent")
 	}
-	card := newCard(cfg.PublicURL, cfg.CatalogID)
-	rpc := a2asrv.NewJSONRPCHandler(a2asrv.NewHandler(newExecutor(composer, ds, slog.Default())))
+	if err := cfg.Profile.validate(); err != nil {
+		return nil, fmt.Errorf("profil non chargé ou invalide : %w", err)
+	}
+	card := newCard(cfg.Profile, cfg.PublicURL, cfg.CatalogID)
+	rpc := a2asrv.NewJSONRPCHandler(a2asrv.NewHandler(newExecutor(cfg.Profile, cfg.Composer, ds, slog.Default())))
 
 	mux := http.NewServeMux()
 	mux.Handle("GET "+a2asrv.WellKnownAgentCardPath, a2asrv.NewStaticAgentCardHandler(card))
@@ -71,10 +74,10 @@ func parsePublicURL(raw string) (*url.URL, error) {
 	return u, nil
 }
 
-func newCard(publicURL, catalogID string) *a2a.AgentCard {
+func newCard(p Profile, publicURL, catalogID string) *a2a.AgentCard {
 	return &a2a.AgentCard{
-		Name:        "Qualité",
-		Description: "Agent Qualité de Genesis Canvas : indicateur « Sessions sans crash » de la version 3.4 sur 7 jours, avec son seuil, sous forme de surface A2UI et de résumé factuel.",
+		Name:        p.Name,
+		Description: p.Description,
 		Version:     "1.0.0",
 		SupportedInterfaces: []*a2a.AgentInterface{
 			{URL: publicURL, ProtocolBinding: a2a.TransportProtocolJSONRPC, ProtocolVersion: a2a.Version},
@@ -90,11 +93,11 @@ func newCard(publicURL, catalogID string) *a2a.AgentCard {
 			}},
 		},
 		Skills: []a2a.AgentSkill{{
-			ID:          "quality-kpi",
-			Name:        "Indicateur de qualité",
-			Description: "Affiche le taux de sessions sans crash de la version 3.4 sur 7 jours et le compare au seuil de la release.",
-			Tags:        []string{"qualité", "a2ui"},
-			Examples:    []string{"Où en est la qualité de la 3.4 ?"},
+			ID:          p.Skill.ID,
+			Name:        p.Skill.Name,
+			Description: p.Description,
+			Tags:        p.Skill.Tags,
+			Examples:    p.Skill.Examples,
 		}},
 	}
 }

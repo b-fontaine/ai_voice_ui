@@ -1,18 +1,17 @@
-package compose
+package quality
 
 import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
-	"sync"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
 const (
-	// MaxContexts borne la mémoire par contexte ; le plus ancien est évincé.
-	MaxContexts = 64
 	// maxRequestRunes borne le texte analysé.
 	maxRequestRunes = 1000
 
@@ -27,47 +26,39 @@ var (
 	platformWord   = regexp.MustCompile(`\b(android|ios)\b`)
 )
 
-// KpiComposer répond toujours par la surface « Sessions sans crash » de la 3.4.
-// Il est sûr pour un usage concurrent.
+// KpiComposer répond par la surface « Sessions sans crash » de la 3.4. Il est sans
+// état, donc sûr pour un usage concurrent : la mémoire des surfaces ouvertes est
+// côté orchestrateur (kit.Request.ActiveSurfaces).
 type KpiComposer struct {
 	catalogID string
-
-	mu       sync.Mutex
-	knownCtx map[string]struct{}
-	order    []string // du plus ancien au plus récent
 }
 
 // NewKpiComposer crée le composeur ; catalogID est l'identifiant de catalogue A2UI
 // injecté dans createSurface.
 func NewKpiComposer(catalogID string) *KpiComposer {
-	return &KpiComposer{catalogID: catalogID, knownCtx: map[string]struct{}{}}
+	return &KpiComposer{catalogID: catalogID}
 }
 
-// RememberedContexts renvoie le nombre de contextes mémorisés (pour les tests).
-func (c *KpiComposer) RememberedContexts() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return len(c.knownCtx)
-}
+var _ kit.Composer = (*KpiComposer)(nil)
 
 // Compose implémente Composer.
-func (c *KpiComposer) Compose(ctx context.Context, req Request, ds dataset.Dataset) (Composition, error) {
+func (c *KpiComposer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
 	if err := ctx.Err(); err != nil {
-		return Composition{}, err
+		return kit.Composition{}, err
 	}
 	if !inScope(req.Text) {
-		return Composition{}, ErrOutOfScope
+		return kit.Composition{}, kit.ErrOutOfScope
 	}
 	kpi, err := ds.CrashFree(targetVersion)
 	if err != nil {
-		return Composition{}, err
+		return kit.Composition{}, err
 	}
 	value := dataset.FormatPct(kpi.CrashFreePct)
 	summary := fmt.Sprintf("Sessions sans crash : %s sur 7 jours, seuil %s, %s (marge %s).",
 		value, dataset.FormatPct(kpi.ThresholdPct), kpi.Status, dataset.FormatMargin(kpi.MarginPt))
 
 	var msgs []map[string]any
-	if !c.known(req.ContextID) {
+	if !slices.Contains(req.ActiveSurfaces, surfaceID) {
 		msgs = append(msgs, map[string]any{"version": "v0.9", "createSurface": map[string]any{
 			"surfaceId": surfaceID, "catalogId": c.catalogID, "sendDataModel": true,
 		}})
@@ -85,41 +76,8 @@ func (c *KpiComposer) Compose(ctx context.Context, req Request, ds dataset.Datas
 			"surfaceId": surfaceID, "path": "/crashFree", "value": value,
 		}},
 	)
-	return Composition{Messages: msgs, Summary: summary}, nil
+	return kit.Composition{Messages: msgs, Summary: summary}, nil
 }
-
-// known indique si la surface du contexte a déjà été livrée (Remember). Compose
-// ne mémorise rien : seul Remember, appelé après un `completed` émis, le fait.
-func (c *KpiComposer) known(contextID string) bool {
-	if contextID == "" {
-		return false
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	_, ok := c.knownCtx[contextID]
-	return ok
-}
-
-// Remember mémorise le contexte, en évinçant le plus ancien au-delà de
-// MaxContexts. Un contexte vide n'est jamais mémorisé.
-func (c *KpiComposer) Remember(contextID string) {
-	if contextID == "" {
-		return
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if _, ok := c.knownCtx[contextID]; ok {
-		return
-	}
-	if len(c.order) >= MaxContexts {
-		delete(c.knownCtx, c.order[0])
-		c.order = c.order[1:]
-	}
-	c.knownCtx[contextID] = struct{}{}
-	c.order = append(c.order, contextID)
-}
-
-var _ Rememberer = (*KpiComposer)(nil)
 
 // inScope refuse : une autre version que la 3.4, une comparaison, une plateforme.
 func inScope(text string) bool {

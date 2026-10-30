@@ -1,8 +1,8 @@
 # 006 — État
 
 - **Étape** : TDD
-- **Tentatives** : 1/3
-- **Tâche en cours** : T10
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/006-j3-act1-backend
 - **Backlog** : EP-03, EP-04 (contrat), EP-09
@@ -17,6 +17,7 @@
 | 2026-10-30 | Gherkin (préparation) | T06 faite : fixtures `contracts/a2ui/genesis/v1/` (`catalog.json`, 4 exemples en trois temps, README) et test vert `genesis_fixtures_test.go` (rouge initial : fixtures absentes). Choix de l'agent : `catalog.json` en format maison (pas JSON Schema) ; avis en nombres bruts (`count`, `positivePct`, `negativePct`, `average`) ; `levelLabel` ajouté aux items de checklist. | `.omc/state/loop/gates/20261030-020810-unit-go.log` |
 | 2026-10-30 | Gherkin | T01-T03 faites : G1, G1bis, G2, G2bis, G3 (`backend/orchestrator/acceptance/genesis_*_test.go`, vrais binaires compilés à la demande, sans `TestMain`). **Sortie rouge attendue** : G1, G1bis, G2, G3 : `compilation de agent-voice impossible (le binaire d'agent doit exister) : go build ./cmd/agent-voice : exit status 1` ; G2bis : `aucun message plan publié ; reçu activity(Qualité:working), activity(Qualité:failed)` (vrai défaut : pas de planificateur, le refus devient `failed`). Tests de 004 toujours verts. Hypothèses des tests : `plan.data = {delegation, selected, idle}` (noms ou objets `name`/`agent`), `plan` en tête d'une délégation ; mots de refus et d'alternative de `out_of_catalog` testés par mots-clés (la phrase n'existe pas encore). Dette mineure : le dossier temporaire des binaires n'est jamais supprimé (`/tmp/genesis-agents-*`). | `.omc/state/loop/gates/20261030-021221-unit-go.log` |
 | 2026-10-30 | Gherkin (clôture) | T04 faite : G4 (`backend/agents/acceptance/genesis_agents_test.go`, vrais binaires). **Sortie rouge attendue** : Qualité : `3 messages A2UI, attendu 6 (surfaces [kpi trend])` (émet encore la surface 004 `quality`, `Column`/`Text`) ; refus Qualité cite « J2 » ; `surfaces actives vides : 0 createSurface, attendu 2` ; Voix du client et Livraison : `compilation de agent-voice impossible` / `agent-delivery`. B4 (004) reste vert. **Étape Gherkin terminée** : G1, G1bis, G2, G2bis, G3, G4 rouges pour la bonne raison, `gate --unit go` vert sur arbre propre. Suite : TDD, T10 d'abord (noyau `internal/kit`), puis T11, T12, T13, T14, T15a-c, T16. | `.omc/state/loop/gates/20261030-021436-unit-go.log` |
+| 2026-10-30 | TDD | T10 faite : noyau `internal/kit` (serveur, exécuteur, env, `Profile` JSON embarqué, `Composer` + `Request.ActiveSurfaces` lu dans `metadata["genesis/activeSurfaces"]`, bornes 16 éléments / 64 runes ; suppression de `Rememberer`, `MaxContexts`, `renewals` côté agent), `internal/quality` (composeur + `profile.json`), `arch_test.go` (aucun binaire n'importe un autre agent), port d'écoute par défaut tiré du profil. Rouge initial : `go vet ./internal/...` échoue (symboles `kit.Profile`, `kit.LoadProfile`, `kit.ActiveSurfacesKey`, `kit.ActiveSurfacesFrom` absents). Tests adaptés (même intention, base `ActiveSurfaces`) : mémoire par contexte → `TestSecondRequestWithActiveSurfaceUpdatesInPlace` etc. ; `TestRememberBounded` supprimé (la mémoire n'existe plus). **B4 : une assertion changée** (le refus devait contenir « pas supporté » et « J2 », désormais « refusée »), avancée de T12 à T10 car G4 interdit tout jalon dans le même texte ; état `rejected` et absence de message A2UI inchangés. Rouge restant attendu : G4 Qualité (6 messages, T12), Voix du client et Livraison (T13/T14). | `.omc/state/loop/gates/20261030-022000-unit-go.log` |
 
 ## Revue d'architecte
 **Revue du plan (2026-10-30) : À AMENDER.** Amendements, tous intégrés au plan (voir `plan.md`) :

@@ -1,4 +1,4 @@
-package agent
+package kit
 
 import (
 	"context"
@@ -7,10 +7,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
-
-const defaultListenAddr = "127.0.0.1:8090"
 
 // Settings regroupe la configuration de processus de l'agent.
 type Settings struct {
@@ -18,13 +17,15 @@ type Settings struct {
 	ListenAddr string
 }
 
-// SettingsFromEnv lit AGENT_LISTEN_ADDR (défaut 127.0.0.1:8090), AGENT_PUBLIC_URL et
+// SettingsFromEnv lit AGENT_LISTEN_ADDR (défaut 127.0.0.1:<listenPort du profil>), AGENT_PUBLIC_URL et
 // A2UI_CATALOG_ID (obligatoires) ; écouter hors boucle locale exige
 // AGENT_LISTEN_ALLOW_NON_LOOPBACK=1. Les erreurs citent la variable, jamais sa valeur.
-func SettingsFromEnv(getenv func(string) string) (Settings, error) {
+// Le profil est conservé dans Settings.Config ; le composeur reste à renseigner.
+func SettingsFromEnv(getenv func(string) string, p Profile) (Settings, error) {
 	s := Settings{ListenAddr: getenv("AGENT_LISTEN_ADDR")}
+	s.Profile = p
 	if s.ListenAddr == "" {
-		s.ListenAddr = defaultListenAddr
+		s.ListenAddr = net.JoinHostPort("127.0.0.1", strconv.Itoa(p.ListenPort))
 	}
 	s.PublicURL = getenv("AGENT_PUBLIC_URL")
 	if s.PublicURL == "" {

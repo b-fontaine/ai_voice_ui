@@ -1,19 +1,19 @@
-package compose_test
+package quality_test
 
 import (
 	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/quality"
 )
 
 const testCatalog = "https://example.test/catalog.json"
@@ -56,8 +56,8 @@ func TestThreeMessagesEqualReplay(t *testing.T) {
 		t.Fatalf("%d messages de la surface quality dans le replay, attendu 3", len(want))
 	}
 
-	c := compose.NewKpiComposer(testCatalog)
-	got, err := c.Compose(context.Background(), compose.Request{Text: "Prépare la release 3.4", ContextID: "c1"}, load(t))
+	c := quality.NewKpiComposer(testCatalog)
+	got, err := c.Compose(context.Background(), kit.Request{Text: "Prépare la release 3.4", ContextID: "c1"}, load(t))
 	if err != nil {
 		t.Fatalf("Compose : %v", err)
 	}
@@ -93,12 +93,12 @@ func TestScopeTable(t *testing.T) {
 		{"radios et studios", true},
 	}
 	for _, tc := range cases {
-		c := compose.NewKpiComposer(testCatalog)
-		_, err := c.Compose(context.Background(), compose.Request{Text: tc.text, ContextID: "c"}, load(t))
+		c := quality.NewKpiComposer(testCatalog)
+		_, err := c.Compose(context.Background(), kit.Request{Text: tc.text, ContextID: "c"}, load(t))
 		if tc.ok && err != nil {
 			t.Errorf("%q devrait être accepté : %v", tc.text, err)
 		}
-		if !tc.ok && !errors.Is(err, compose.ErrOutOfScope) {
+		if !tc.ok && !errors.Is(err, kit.ErrOutOfScope) {
 			t.Errorf("%q devrait donner ErrOutOfScope, obtenu %v", tc.text, err)
 		}
 	}
@@ -107,13 +107,13 @@ func TestScopeTable(t *testing.T) {
 func TestRequestTextTruncatedBeforeAnalysis(t *testing.T) {
 	// « Android » placé après la 1 000ᵉ rune : ignoré.
 	text := strings.Repeat("é", 1000) + " Android"
-	c := compose.NewKpiComposer(testCatalog)
-	if _, err := c.Compose(context.Background(), compose.Request{Text: text, ContextID: "c"}, load(t)); err != nil {
+	c := quality.NewKpiComposer(testCatalog)
+	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t)); err != nil {
 		t.Errorf("le texte doit être coupé à 1 000 runes avant analyse : %v", err)
 	}
 	// Dans les 1 000 premières runes : refusé.
 	text = strings.Repeat("é", 900) + " Android"
-	if _, err := c.Compose(context.Background(), compose.Request{Text: text, ContextID: "c2"}, load(t)); !errors.Is(err, compose.ErrOutOfScope) {
+	if _, err := c.Compose(context.Background(), kit.Request{Text: text, ContextID: "c2"}, load(t)); !errors.Is(err, kit.ErrOutOfScope) {
 		t.Errorf("Android avant la 1 000ᵉ rune doit être refusé, obtenu %v", err)
 	}
 }
@@ -130,53 +130,47 @@ func kinds(msgs []map[string]any) []string {
 	return out
 }
 
-func TestSecondRequestSameContextUpdatesInPlace(t *testing.T) {
-	c := compose.NewKpiComposer(testCatalog)
+func TestComposerCreatesOnlySurfacesNotActive(t *testing.T) {
+	cases := []struct {
+		name string
+		meta map[string]any // metadata A2A telles que l'exécuteur les lit
+		want []string
+	}{
+		{"surfaces actives vides", map[string]any{kit.ActiveSurfacesKey: []any{}}, []string{"createSurface", "updateComponents", "updateDataModel"}},
+		{"metadata absentes", nil, []string{"createSurface", "updateComponents", "updateDataModel"}},
+		{"la surface produite est active", map[string]any{kit.ActiveSurfacesKey: []any{"quality"}}, []string{"updateComponents", "updateDataModel"}},
+		{"surface d'un autre agent seulement", map[string]any{kit.ActiveSurfacesKey: []any{"reviews"}}, []string{"createSurface", "updateComponents", "updateDataModel"}},
+		{"valeur mal typée ignorée", map[string]any{kit.ActiveSurfacesKey: "quality"}, []string{"createSurface", "updateComponents", "updateDataModel"}},
+		{"éléments mal typés ignorés", map[string]any{kit.ActiveSurfacesKey: []any{7, nil}}, []string{"createSurface", "updateComponents", "updateDataModel"}},
+	}
 	ds := load(t)
-	first, err := c.Compose(context.Background(), compose.Request{Text: "qualité", ContextID: "ctx"}, ds)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c.Remember("ctx") // l'exécuteur le fait après un `completed` émis
-	second, err := c.Compose(context.Background(), compose.Request{Text: "et maintenant ?", ContextID: "ctx"}, ds)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, want := kinds(first.Messages), []string{"createSurface", "updateComponents", "updateDataModel"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("1re demande : %v, attendu %v", got, want)
-	}
-	if got, want := kinds(second.Messages), []string{"updateComponents", "updateDataModel"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("2e demande : %v, attendu %v", got, want)
-	}
-	other, _ := c.Compose(context.Background(), compose.Request{Text: "qualité", ContextID: "autre"}, ds)
-	if kinds(other.Messages)[0] != "createSurface" {
-		t.Errorf("un autre contexte doit recréer la surface : %v", kinds(other.Messages))
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := quality.NewKpiComposer(testCatalog)
+			req := kit.Request{Text: "qualité", ContextID: "ctx", ActiveSurfaces: kit.ActiveSurfacesFrom(tc.meta)}
+			got, err := c.Compose(context.Background(), req, ds)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if k := kinds(got.Messages); !reflect.DeepEqual(k, tc.want) {
+				t.Errorf("messages %v, attendu %v", k, tc.want)
+			}
+		})
 	}
 }
 
-func TestRememberBounded(t *testing.T) {
-	c := compose.NewKpiComposer(testCatalog)
+func TestComposerKeepsNoStateBetweenCalls(t *testing.T) {
+	// Même contexte, sans surface active annoncée : createSurface à chaque fois.
+	c := quality.NewKpiComposer(testCatalog)
 	ds := load(t)
-	ask := func(id string) []string {
-		r, err := c.Compose(context.Background(), compose.Request{Text: "qualité", ContextID: id}, ds)
+	for i := 0; i < 3; i++ {
+		r, err := c.Compose(context.Background(), kit.Request{Text: "qualité", ContextID: "ctx"}, ds)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c.Remember(id)
-		return kinds(r.Messages)
-	}
-	for i := 0; i < compose.MaxContexts+10; i++ {
-		ask(fmt.Sprintf("ctx-%d", i))
-	}
-	if n := c.RememberedContexts(); n != compose.MaxContexts {
-		t.Fatalf("%d contextes mémorisés, attendu au plus %d", n, compose.MaxContexts)
-	}
-	// Le plus ancien est évincé : il recrée une surface ; le plus récent non.
-	if got := ask("ctx-0"); got[0] != "createSurface" {
-		t.Errorf("ctx-0 aurait dû être évincé : %v", got)
-	}
-	if got := ask(fmt.Sprintf("ctx-%d", compose.MaxContexts+9)); got[0] == "createSurface" {
-		t.Errorf("le contexte le plus récent ne doit pas être évincé : %v", got)
+		if kinds(r.Messages)[0] != "createSurface" {
+			t.Errorf("appel %d : %v, le composeur ne doit rien mémoriser", i, kinds(r.Messages))
+		}
 	}
 }
 

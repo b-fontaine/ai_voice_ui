@@ -1,4 +1,4 @@
-package agent
+package kit
 
 import (
 	"context"
@@ -7,22 +7,27 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 const (
-	outOfScopeText = "Demande refusée : ce n'est pas supporté en J2, l'agent Qualité ne traite que la vue globale de la version 3.4 (pas de comparaison, pas de plateforme précise)."
-	failedText     = "L'agent Qualité n'a pas pu produire la réponse."
+	// ActiveSurfacesKey est la clé de metadata du message A2A par laquelle
+	// l'orchestrateur transmet les surfaces actives de l'agent.
+	ActiveSurfacesKey = "genesis/activeSurfaces"
+
+	maxActiveSurfaces    = 16
+	maxSurfaceNameLength = 64
 )
 
 // executor traduit la composition de l'agent en événements A2A.
 type executor struct {
-	composer compose.Composer
+	profile  Profile
+	composer Composer
 	ds       dataset.Dataset
 	log      *slog.Logger
 
@@ -32,8 +37,8 @@ type executor struct {
 
 var _ a2asrv.AgentExecutor = (*executor)(nil)
 
-func newExecutor(c compose.Composer, ds dataset.Dataset, log *slog.Logger) *executor {
-	return &executor{composer: c, ds: ds, log: log, running: map[a2a.TaskID]context.CancelFunc{}}
+func newExecutor(p Profile, c Composer, ds dataset.Dataset, log *slog.Logger) *executor {
+	return &executor{profile: p, composer: c, ds: ds, log: log, running: map[a2a.TaskID]context.CancelFunc{}}
 }
 
 // Execute émet submitted, puis working (un message A2UI par status-update), un
@@ -56,17 +61,18 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 				return
 			}
 		}
-		comp, err := e.composer.Compose(ctx, compose.Request{Text: messageText(ec.Message), ContextID: ec.ContextID}, e.ds)
+		req := Request{Text: messageText(ec.Message), ContextID: ec.ContextID, ActiveSurfaces: ActiveSurfacesFrom(messageMetadata(ec.Message))}
+		comp, err := e.composer.Compose(ctx, req, e.ds)
 		switch {
 		case ctx.Err() != nil:
 			// Annulée : l'événement terminal vient de Cancel ou le consommateur est parti.
 			return
-		case errors.Is(err, compose.ErrOutOfScope):
-			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(outOfScopeText)), nil)
+		case errors.Is(err, ErrOutOfScope):
+			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
 			return
 		case err != nil:
 			e.log.Error("composition en échec", "task", string(ec.TaskID), "error", err)
-			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateFailed, agentText(failedText)), nil)
+			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateFailed, agentText(e.profile.Texts.Failed)), nil)
 			return
 		}
 
@@ -84,10 +90,6 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			return
 		}
 		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCompleted, nil), nil)
-		// La surface est livrée : seulement maintenant le contexte est mémorisé.
-		if r, ok := e.composer.(compose.Rememberer); ok {
-			r.Remember(ec.ContextID)
-		}
 	}
 }
 
@@ -104,6 +106,34 @@ func (e *executor) Cancel(_ context.Context, ec *a2asrv.ExecutorContext) iter.Se
 		}()
 		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCanceled, nil), nil)
 	}
+}
+
+func messageMetadata(m *a2a.Message) map[string]any {
+	if m == nil {
+		return nil
+	}
+	return m.Metadata
+}
+
+// ActiveSurfacesFrom lit les surfaces actives dans les metadata d'un message A2A
+// (clé ActiveSurfacesKey, valeur []any de chaînes). Une valeur absente ou mal typée
+// donne une liste vide ; une liste de plus de 16 éléments est ignorée ; un élément qui
+// n'est pas une chaîne de 1 à 64 caractères est écarté. Ces bornes limitent ce qu'un
+// client A2A peut faire entrer dans le composeur.
+func ActiveSurfacesFrom(meta map[string]any) []string {
+	raw, ok := meta[ActiveSurfacesKey].([]any)
+	if !ok || len(raw) > maxActiveSurfaces {
+		return nil
+	}
+	var out []string
+	for _, v := range raw {
+		s, ok := v.(string)
+		if !ok || s == "" || utf8.RuneCountInString(s) > maxSurfaceNameLength {
+			continue
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 func messageText(m *a2a.Message) string {

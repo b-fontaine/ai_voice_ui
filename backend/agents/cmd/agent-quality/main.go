@@ -11,21 +11,28 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/quality"
 )
 
 func main() { os.Exit(run(os.Args[1:])) }
 
 func run(args []string) int {
-	s, err := agent.SettingsFromEnv(os.Getenv)
+	profile, err := quality.Profile()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "configuration :", err)
 		return 2
 	}
+	s, err := kit.SettingsFromEnv(os.Getenv, profile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "configuration :", err)
+		return 2
+	}
+	s.Composer = quality.NewKpiComposer(s.CatalogID)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	if len(args) > 0 && args[0] == "healthcheck" {
-		if err := agent.Healthcheck(ctx, s.ListenAddr); err != nil {
+		if err := kit.Healthcheck(ctx, s.ListenAddr); err != nil {
 			fmt.Fprintln(os.Stderr, "healthcheck :", err)
 			return 1
 		}
@@ -37,7 +44,7 @@ func run(args []string) int {
 		return 1
 	}
 	slog.Info("agent Qualité démarré", "addr", ln.Addr().String())
-	if err := agent.Run(ctx, ln, s); err != nil {
+	if err := kit.Run(ctx, ln, s); err != nil {
 		slog.Error("serveur arrêté", "error", err)
 		return 1
 	}

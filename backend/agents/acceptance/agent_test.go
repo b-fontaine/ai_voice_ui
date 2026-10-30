@@ -15,7 +15,8 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2aclient"
 	"github.com/a2aproject/a2a-go/v2/a2aclient/agentcard"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/quality"
 )
 
 const catalogID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
@@ -29,9 +30,13 @@ func startAgent(t *testing.T) string {
 		t.Fatalf("listen: %v", err)
 	}
 	base := "http://" + ln.Addr().String()
-	h, err := agent.NewServer(agent.Config{PublicURL: base, CatalogID: catalogID})
+	profile, err := quality.Profile()
 	if err != nil {
-		t.Fatalf("agent.NewServer: %v", err)
+		t.Fatalf("quality.Profile: %v", err)
+	}
+	h, err := kit.NewServer(kit.Config{PublicURL: base, CatalogID: catalogID, Profile: profile, Composer: quality.NewKpiComposer(catalogID)})
+	if err != nil {
+		t.Fatalf("kit.NewServer: %v", err)
 	}
 	srv := httptest.NewUnstartedServer(h)
 	srv.Listener.Close()
@@ -87,7 +92,7 @@ func statusMessage(ev a2a.Event) *a2a.Message {
 
 // B4 — L'agent Qualité répond en A2A avec la surface et un résumé factuel.
 //
-// Étant donné l'agent Qualité démarré en processus (agent.NewServer, servi par httptest) ;
+// Étant donné l'agent Qualité démarré en processus (kit.NewServer, servi par httptest) ;
 // quand un client a2a-go/v2 récupère la carte puis envoie SendStreamingMessage
 // « Où en est la qualité de la 3.4 ? » ;
 // alors la carte annonce capabilities.streaming et le skill quality-kpi ; le flux
@@ -176,8 +181,8 @@ func TestB4_QualityAgentAnswersWithSurfaceAndSummary(t *testing.T) {
 //
 // Étant donné l'agent Qualité démarré en processus ;
 // quand le client envoie « Compare avec la 3.3 sur Android » ;
-// alors la tâche se termine en rejected (ou failed) avec un message qui dit que ce
-// n'est pas supporté en J2, sans aucun message A2UI.
+// alors la tâche se termine en rejected (ou failed) avec un message qui dit que la
+// demande est refusée (sans numéro de jalon : texte du profil), sans aucun message A2UI.
 func TestB4_OutOfScopeRequestIsRejected(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -199,8 +204,8 @@ func TestB4_OutOfScopeRequestIsRejected(t *testing.T) {
 		text.WriteString(p.Text())
 	}
 	lower := strings.ToLower(text.String())
-	if !strings.Contains(lower, "pas supporté") || !strings.Contains(text.String(), "J2") {
-		t.Fatalf("message %q : il doit dire que ce n'est « pas supporté » en J2", text.String())
+	if !strings.Contains(lower, "refusée") {
+		t.Fatalf("message %q : il doit dire que la demande est refusée", text.String())
 	}
 	for _, ev := range events {
 		if e, ok := ev.(*a2a.TaskStatusUpdateEvent); ok && e.Status.Message != nil {

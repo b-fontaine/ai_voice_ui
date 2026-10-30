@@ -1,4 +1,4 @@
-package agent_test
+package kit_test
 
 import (
 	"bytes"
@@ -18,22 +18,21 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2aclient"
 	"github.com/a2aproject/a2a-go/v2/a2aclient/agentcard"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
 	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/kit"
 )
 
 const catalogID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
 
 // serve démarre l'agent sur un port local ; l'URL publique de la carte est celle du serveur.
-func serve(t *testing.T, composer compose.Composer) string {
+func serve(t *testing.T, p kit.Profile, composer kit.Composer) string {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	base := "http://" + ln.Addr().String()
-	h, err := agent.NewServer(agent.Config{PublicURL: base, CatalogID: catalogID, Composer: composer})
+	h, err := kit.NewServer(kit.Config{PublicURL: base, CatalogID: catalogID, Profile: p, Composer: composer})
 	if err != nil {
 		t.Fatalf("NewServer : %v", err)
 	}
@@ -76,15 +75,18 @@ func stateOf(ev a2a.Event) a2a.TaskState {
 }
 
 type fakeComposer struct {
-	fn func(ctx context.Context, req compose.Request) (compose.Composition, error)
+	fn func(ctx context.Context, req kit.Request) (kit.Composition, error)
 }
 
-func (f fakeComposer) Compose(ctx context.Context, req compose.Request, _ dataset.Dataset) (compose.Composition, error) {
+func (f fakeComposer) Compose(ctx context.Context, req kit.Request, _ dataset.Dataset) (kit.Composition, error) {
+	if f.fn == nil {
+		return kit.Composition{Messages: []map[string]any{}, Summary: "ok"}, nil
+	}
 	return f.fn(ctx, req)
 }
 
 func TestAgentCard(t *testing.T) {
-	base := serve(t, nil)
+	base := serve(t, testProfile(t), fakeComposer{})
 	resp, err := http.Get(base + "/.well-known/agent-card.json")
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +96,7 @@ func TestAgentCard(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
 		t.Fatalf("carte JSON : %v", err)
 	}
-	if raw["name"] != "Qualité" {
+	if raw["name"] != testProfile(t).Name {
 		t.Errorf("name = %v", raw["name"])
 	}
 	caps, _ := raw["capabilities"].(map[string]any)
@@ -114,7 +116,7 @@ func TestAgentCard(t *testing.T) {
 		t.Fatalf("skills = %v", skills)
 	}
 	s0, _ := skills[0].(map[string]any)
-	if s0["id"] != "quality-kpi" || s0["description"] == "" || s0["description"] == nil {
+	if s0["id"] != "essai-skill" || s0["description"] == "" || s0["description"] == nil {
 		t.Errorf("skill = %v", s0)
 	}
 }
@@ -124,11 +126,11 @@ func TestExecutorEmitsSubmittedWorkingCompleted(t *testing.T) {
 		{"version": "v0.9", "createSurface": map[string]any{"surfaceId": "s", "catalogId": catalogID}},
 		{"version": "v0.9", "updateDataModel": map[string]any{"surfaceId": "s", "path": "/a", "value": "x"}},
 	}
-	base := serve(t, fakeComposer{fn: func(_ context.Context, req compose.Request) (compose.Composition, error) {
+	base := serve(t, testProfile(t), fakeComposer{fn: func(_ context.Context, req kit.Request) (kit.Composition, error) {
 		if req.Text != "bonjour" || req.ContextID != "ctx-1" {
 			t.Errorf("requête transmise au composeur : %+v", req)
 		}
-		return compose.Composition{Messages: msgs, Summary: "résumé factuel"}, nil
+		return kit.Composition{Messages: msgs, Summary: "résumé factuel"}, nil
 	}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -177,38 +179,10 @@ func TestExecutorEmitsSubmittedWorkingCompleted(t *testing.T) {
 	}
 }
 
-func TestSameContextUpdatesInPlaceOverA2A(t *testing.T) {
-	base := serve(t, nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	c := newClient(ctx, t, base)
-	count := func() (creates int) {
-		for ev, err := range c.SendStreamingMessage(ctx, userMessage("Où en est la qualité ?", "ctx-same")) {
-			if err != nil {
-				t.Fatal(err)
-			}
-			if e, ok := ev.(*a2a.TaskStatusUpdateEvent); ok && e.Status.Message != nil {
-				for _, p := range e.Status.Message.Parts {
-					if d, ok := p.Data().(map[string]any); ok {
-						if _, ok := d["createSurface"]; ok {
-							creates++
-						}
-					}
-				}
-			}
-		}
-		return
-	}
-	if n := count(); n != 1 {
-		t.Errorf("1re demande : %d createSurface, attendu 1", n)
-	}
-	if n := count(); n != 0 {
-		t.Errorf("2e demande du même contexte : %d createSurface, attendu 0", n)
-	}
-}
-
 func TestOutOfScopeRejected(t *testing.T) {
-	base := serve(t, nil)
+	base := serve(t, testProfile(t), fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+		return kit.Composition{}, kit.ErrOutOfScope
+	}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	c := newClient(ctx, t, base)
@@ -223,14 +197,14 @@ func TestOutOfScopeRejected(t *testing.T) {
 		t.Fatalf("état final %q, attendu rejected", got)
 	}
 	msg := last.(*a2a.TaskStatusUpdateEvent).Status.Message
-	if msg == nil || !strings.Contains(msg.Parts[0].Text(), "pas supporté en J2") {
+	if msg == nil || msg.Parts[0].Text() != testProfile(t).Texts.Rejected {
 		t.Errorf("message : %+v", msg)
 	}
 }
 
 func TestComposerFailureIsFailedWithoutRawError(t *testing.T) {
-	base := serve(t, fakeComposer{fn: func(context.Context, compose.Request) (compose.Composition, error) {
-		return compose.Composition{}, errors.New("secret interne /etc/passwd")
+	base := serve(t, testProfile(t), fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+		return kit.Composition{}, errors.New("secret interne /etc/passwd")
 	}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -254,11 +228,11 @@ func TestComposerFailureIsFailedWithoutRawError(t *testing.T) {
 func TestCancelStopsExecutor(t *testing.T) {
 	started := make(chan struct{})
 	returned := make(chan error, 1)
-	base := serve(t, fakeComposer{fn: func(ctx context.Context, _ compose.Request) (compose.Composition, error) {
+	base := serve(t, testProfile(t), fakeComposer{fn: func(ctx context.Context, _ kit.Request) (kit.Composition, error) {
 		close(started)
 		<-ctx.Done()
 		returned <- ctx.Err()
-		return compose.Composition{}, ctx.Err()
+		return kit.Composition{}, ctx.Err()
 	}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -314,7 +288,7 @@ func TestCancelStopsExecutor(t *testing.T) {
 
 func newHandler(t *testing.T, publicURL string) http.Handler {
 	t.Helper()
-	h, err := agent.NewServer(agent.Config{PublicURL: publicURL, CatalogID: catalogID})
+	h, err := kit.NewServer(kit.Config{PublicURL: publicURL, CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -406,31 +380,34 @@ func TestHealthz(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	base := serve(t, nil)
-	if err := agent.Healthcheck(ctx, strings.TrimPrefix(base, "http://")); err != nil {
+	base := serve(t, testProfile(t), fakeComposer{})
+	if err := kit.Healthcheck(ctx, strings.TrimPrefix(base, "http://")); err != nil {
 		t.Errorf("Healthcheck sur un agent vivant : %v", err)
 	}
 	ln, _ := net.Listen("tcp", "127.0.0.1:0")
 	dead := ln.Addr().String()
 	ln.Close()
-	if err := agent.Healthcheck(ctx, dead); err == nil {
+	if err := kit.Healthcheck(ctx, dead); err == nil {
 		t.Error("Healthcheck sur un port fermé doit échouer")
 	}
 	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(500) }))
 	defer bad.Close()
-	if err := agent.Healthcheck(ctx, strings.TrimPrefix(bad.URL, "http://")); err == nil {
+	if err := kit.Healthcheck(ctx, strings.TrimPrefix(bad.URL, "http://")); err == nil {
 		t.Error("Healthcheck doit échouer sur un code 500")
 	}
 }
 
 func TestNewServerRejectsInvalidConfig(t *testing.T) {
-	for _, cfg := range []agent.Config{
-		{PublicURL: "", CatalogID: catalogID},
-		{PublicURL: "ftp://x:1", CatalogID: catalogID},
-		{PublicURL: "pas une url", CatalogID: catalogID},
-		{PublicURL: "http://127.0.0.1:1", CatalogID: ""},
+	p := testProfile(t)
+	for _, cfg := range []kit.Config{
+		{PublicURL: "", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
+		{PublicURL: "ftp://x:1", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
+		{PublicURL: "pas une url", CatalogID: catalogID, Profile: p, Composer: fakeComposer{}},
+		{PublicURL: "http://127.0.0.1:1", CatalogID: "", Profile: p, Composer: fakeComposer{}},
+		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Profile: p},               // composeur absent
+		{PublicURL: "http://127.0.0.1:1", CatalogID: catalogID, Composer: fakeComposer{}}, // profil non chargé
 	} {
-		if _, err := agent.NewServer(cfg); err == nil {
+		if _, err := kit.NewServer(cfg); err == nil {
 			t.Errorf("config %+v acceptée à tort", cfg)
 		}
 	}
@@ -441,13 +418,13 @@ func TestRunStopsOnContextCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := agent.Settings{Config: agent.Config{PublicURL: "http://" + ln.Addr().String(), CatalogID: catalogID}}
+	s := kit.Settings{Config: kit.Config{PublicURL: "http://" + ln.Addr().String(), CatalogID: catalogID, Profile: testProfile(t), Composer: fakeComposer{}}}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- agent.Run(ctx, ln, s) }()
+	go func() { done <- kit.Run(ctx, ln, s) }()
 	hctx, hcancel := context.WithTimeout(ctx, 5*time.Second)
 	defer hcancel()
-	for hctx.Err() == nil && agent.Healthcheck(hctx, ln.Addr().String()) != nil {
+	for hctx.Err() == nil && kit.Healthcheck(hctx, ln.Addr().String()) != nil {
 		time.Sleep(10 * time.Millisecond)
 	}
 	cancel()
