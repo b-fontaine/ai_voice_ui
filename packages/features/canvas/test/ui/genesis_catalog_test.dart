@@ -255,7 +255,7 @@ void main() {
     expect(
       catalog.items.map((i) => i.name),
       GenesisContract.components,
-      reason: 'ActionBar et CrashList n ont pas de schéma : hors catalogue',
+      reason: 'les 5 composants validés, dans l ordre ; CrashList est hors catalogue',
     );
   });
 }

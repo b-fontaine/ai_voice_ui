@@ -19,7 +19,28 @@ import (
 
 const genesisTestCatalogID = "https://example.test/catalogs/genesis/v1"
 
-var genesisComponents = []string{"KeyIndicator", "TrendChart", "ReviewSentiment", "ReleaseChecklist"}
+// genesisComponents est lu dans catalog.json (source de vérité, dans l'ordre) :
+// ajouter un composant au contrat ne demande aucune édition de cette liste.
+var genesisComponents = readCatalogComponents()
+
+func readCatalogComponents() []string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("chemin du fichier de test introuvable")
+	}
+	dir := filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "..", "contracts", "a2ui", "genesis", "v1")
+	raw, err := os.ReadFile(filepath.Join(dir, "catalog.json"))
+	if err != nil {
+		panic("catalog.json illisible : " + err.Error())
+	}
+	var cat struct {
+		Components []string `json:"components"`
+	}
+	if err := json.Unmarshal(raw, &cat); err != nil {
+		panic("catalog.json invalide : " + err.Error())
+	}
+	return cat.Components
+}
 
 // genesisExamples associe chaque exemple à la surface et au composant attendus.
 var genesisExamples = []struct {
@@ -69,7 +90,7 @@ func genesisMessages(t *testing.T, file string) []map[string]any {
 	return out
 }
 
-func TestGenesisFixtures_CatalogListsExactlyTheFourComponents(t *testing.T) {
+func TestGenesisFixtures_CatalogListsExactlyTheFiveComponents(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join(genesisContractDir(t), "catalog.json"))
 	if err != nil {
 		t.Fatalf("catalog.json illisible : %v", err)
@@ -84,12 +105,10 @@ func TestGenesisFixtures_CatalogListsExactlyTheFourComponents(t *testing.T) {
 	if cat.CatalogID != "${CATALOG_ID}" {
 		t.Errorf("catalogId = %q, placeholder attendu", cat.CatalogID)
 	}
-	got := append([]string(nil), cat.Components...)
-	want := append([]string(nil), genesisComponents...)
-	sort.Strings(got)
-	sort.Strings(want)
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("components = %v, attendu %v", cat.Components, genesisComponents)
+	// L'ordre compte : backend/check-compose.sh le compare à A2UI_COMPONENTS.
+	want := []string{"KeyIndicator", "TrendChart", "ReviewSentiment", "ReleaseChecklist", "ActionBar"}
+	if !reflect.DeepEqual(cat.Components, want) {
+		t.Fatalf("components = %v, attendu %v", cat.Components, want)
 	}
 
 	allowed := map[string]bool{}
@@ -359,8 +378,8 @@ func TestGenesisFixtures_CatalogComponentsAreThePdr0014Six(t *testing.T) {
 			t.Errorf("components contient %q absent de catalogComponents", c)
 		}
 	}
-	if len(cat.Components) != 4 {
-		t.Errorf("components = %v, 4 attendus (liste blanche J3)", cat.Components)
+	if len(cat.Components) != 5 {
+		t.Errorf("components = %v, 5 attendus (liste blanche J5)", cat.Components)
 	}
 }
 
@@ -471,6 +490,134 @@ func TestGenesisFixtures_FollowUpAloneIsUnknownSurface(t *testing.T) {
 				t.Fatal(err)
 			}
 			for _, msg := range genesisMessages(t, ex.file) {
+				op, err := v.Validate(msg)
+				if err == nil {
+					err = reg.Apply("agent", "task-1", op)
+				}
+				var ve *a2ui.ValidationError
+				if !errors.As(err, &ve) || ve.Code != a2ui.CodeUnknownSurface {
+					t.Fatalf("code unknown_surface attendu, obtenu %v", err)
+				}
+			}
+		})
+	}
+}
+
+// Acte 2, tâche Livraison (spec 009, T02) : la surface `actions` (Barre d'actions)
+// est créée en trois temps ; l'acte 3 écrit un sous-chemin de `checklist`.
+
+const (
+	actionsFixture = "act2-actions.jsonl"
+	act3Block      = "act3-block.jsonl"
+	act3Validate   = "act3-validate.jsonl"
+)
+
+func TestGenesisFixtures_ActionBarThreeStepsMatchCatalog(t *testing.T) {
+	def, ok := loadCatalogDefinitions(t)["ActionBar"]
+	if !ok {
+		t.Fatal("definitions.ActionBar absent de catalog.json")
+	}
+	if def.Surface != "actions" || def.DataModel.Path != "/actions" {
+		t.Fatalf("ActionBar : surface/chemin = %q/%q, attendu actions//actions", def.Surface, def.DataModel.Path)
+	}
+	msgs := genesisMessages(t, actionsFixture)
+	if len(msgs) != 3 {
+		t.Fatalf("%d messages, trois temps attendus", len(msgs))
+	}
+	body, ok := msgs[2]["updateDataModel"].(map[string]any)
+	if !ok {
+		t.Fatalf("troisième message : updateDataModel attendu, obtenu %v", msgs[2])
+	}
+	if body["surfaceId"] != "actions" || body["path"] != "/actions" {
+		t.Errorf("surfaceId/path = %v/%v, attendu actions//actions", body["surfaceId"], body["path"])
+	}
+	value, ok := body["value"].(map[string]any)
+	if !ok {
+		t.Fatalf("value : objet attendu, obtenu %T", body["value"])
+	}
+	checkObject(t, actionsFixture, value, def.DataModel.Fields)
+	if value["title"] != "Décision" {
+		t.Errorf("title = %v, « Décision » attendu", value["title"])
+	}
+	want := []any{
+		map[string]any{"id": "block_release", "label": "Bloquer la release", "tone": "danger"},
+		map[string]any{"id": "validate_release", "label": "Valider la release", "tone": "neutral"},
+	}
+	if !reflect.DeepEqual(value["actions"], want) {
+		t.Errorf("actions = %v, attendu %v", value["actions"], want)
+	}
+}
+
+func TestGenesisFixtures_Act3WritesOnlyTheDecisionStatusSubPath(t *testing.T) {
+	for file, status := range map[string]string{act3Block: "Bloquée", act3Validate: "Validée"} {
+		t.Run(file, func(t *testing.T) {
+			msgs := genesisMessages(t, file)
+			if len(msgs) != 1 {
+				t.Fatalf("%d messages, un seul updateDataModel attendu", len(msgs))
+			}
+			if msgs[0]["version"] != "v0.9" {
+				t.Errorf("version = %v, v0.9 attendu", msgs[0]["version"])
+			}
+			body, ok := msgs[0]["updateDataModel"].(map[string]any)
+			if !ok {
+				t.Fatalf("updateDataModel attendu, obtenu %v", msgs[0])
+			}
+			if body["surfaceId"] != "checklist" || body["path"] != "/checklist/decisionStatus" || body["value"] != status {
+				t.Errorf("message = %v, attendu checklist, /checklist/decisionStatus, %q", body, status)
+			}
+		})
+	}
+}
+
+func TestGenesisFixtures_Act3ReplayAfterActs1And2(t *testing.T) {
+	v := newProductionLikeValidator(t)
+	reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+	if err != nil {
+		t.Fatal(err)
+	}
+	creations := map[string]int{}
+	apply := func(file string) {
+		for _, msg := range genesisMessages(t, file) {
+			op, err := v.Validate(msg)
+			if err != nil {
+				t.Fatalf("%s refusé par le validateur : %v", file, err)
+			}
+			if op.Kind == a2ui.CreateSurface {
+				creations[op.SurfaceID]++
+			}
+			if err := reg.Apply("agent", "task-"+file, op); err != nil {
+				t.Fatalf("%s refusé par le registre : %v", file, err)
+			}
+		}
+	}
+	for _, ex := range genesisExamples { // acte 1
+		apply(ex.file)
+	}
+	for _, ex := range follow[:4] { // acte 2
+		apply(ex.file)
+	}
+	apply(actionsFixture)
+	apply(act3Block)
+	apply(act3Validate) // une seconde décision est permise (pdr-0065 D6)
+	for surface, n := range creations {
+		if n != 1 {
+			t.Errorf("surface %q créée %d fois, une seule attendue", surface, n)
+		}
+	}
+	if creations["actions"] != 1 {
+		t.Errorf("surface actions : %d création(s), une attendue", creations["actions"])
+	}
+}
+
+func TestGenesisFixtures_Act3AloneIsUnknownSurface(t *testing.T) {
+	for _, file := range []string{act3Block, act3Validate} {
+		t.Run(file, func(t *testing.T) {
+			v := newProductionLikeValidator(t)
+			reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, msg := range genesisMessages(t, file) {
 				op, err := v.Validate(msg)
 				if err == nil {
 					err = reg.Apply("agent", "task-1", op)

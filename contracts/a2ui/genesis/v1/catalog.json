@@ -6,7 +6,8 @@
     "KeyIndicator",
     "TrendChart",
     "ReviewSentiment",
-    "ReleaseChecklist"
+    "ReleaseChecklist",
+    "ActionBar"
   ],
   "catalogComponents": [
     "KeyIndicator",
@@ -300,6 +301,55 @@
             "type": "string",
             "required": true,
             "format": "libellé de Q-35, ex. « En attente de décision »"
+          }
+        }
+      }
+    },
+    "ActionBar": {
+      "surface": "actions",
+      "description": "Barre d'actions (décision humaine, acte 3)",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/actions"
+        }
+      },
+      "dataModel": {
+        "path": "/actions",
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "actions": {
+            "type": "array",
+            "required": true,
+            "items": {
+              "id": {
+                "type": "string",
+                "required": true,
+                "enum": [
+                  "block_release",
+                  "validate_release"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "required": true
+              },
+              "tone": {
+                "type": "string",
+                "required": true,
+                "enum": [
+                  "neutral",
+                  "danger"
+                ]
+              }
+            }
           }
         }
       }

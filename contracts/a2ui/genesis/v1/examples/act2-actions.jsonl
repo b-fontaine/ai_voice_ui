@@ -1,0 +1,3 @@
+{"version":"v0.9","createSurface":{"surfaceId":"actions","catalogId":"${CATALOG_ID}","sendDataModel":false}}
+{"version":"v0.9","updateComponents":{"surfaceId":"actions","components":[{"id":"root","component":"ActionBar","data":{"path":"/actions"}}]}}
+{"version":"v0.9","updateDataModel":{"surfaceId":"actions","path":"/actions","value":{"title":"Décision","actions":[{"id":"block_release","label":"Bloquer la release","tone":"danger"},{"id":"validate_release","label":"Valider la release","tone":"neutral"}]}}}

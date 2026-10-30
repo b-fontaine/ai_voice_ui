@@ -27,14 +27,30 @@ import (
 const (
 	// genesisCatalogID est la valeur de A2UI_CATALOG_ID de ces scénarios (Q-44 : paramètre).
 	genesisCatalogID = "https://genesis-canvas.example/a2ui/catalogs/genesis/v1"
-	// genesisComponents est la liste blanche de composants du catalogue fermé (A4).
-	genesisComponents = "KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist"
 
 	// Noms des agents tels qu'ils figurent dans leur carte A2A.
 	agentQuality  = "Qualité"
 	agentVoice    = "Voix du client"
 	agentDelivery = "Livraison"
 )
+
+// genesisComponents est la liste blanche de composants du catalogue fermé (A4),
+// lue dans le contrat (`components` de catalog.json, dans l'ordre).
+var genesisComponents = readGenesisComponents()
+
+func readGenesisComponents() string {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "contracts", "a2ui", "genesis", "v1", "catalog.json"))
+	if err != nil {
+		panic("catalog.json illisible : " + err.Error())
+	}
+	var cat struct {
+		Components []string `json:"components"`
+	}
+	if err := json.Unmarshal(raw, &cat); err != nil || len(cat.Components) == 0 {
+		panic(fmt.Sprintf("catalog.json : components illisible (%v)", err))
+	}
+	return strings.Join(cat.Components, ",")
+}
 
 // genesisBinaries : les trois binaires du module agents, dans l'ordre de AGENTS.
 var genesisBinaries = []struct{ Cmd, Name string }{
