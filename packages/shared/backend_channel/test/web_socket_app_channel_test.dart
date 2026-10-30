@@ -314,4 +314,46 @@ void main() {
       Uri.parse('wss://127.0.0.1:8443/app?session=b-2'),
     );
   });
+
+  test(
+    'baseUrl avec chemin, requête ou fragment : ArgumentError sans valeur',
+    () {
+      for (final raw in <String>[
+        'http://127.0.0.1:8080/api',
+        'http://127.0.0.1:8080/a/',
+        'http://127.0.0.1:8080?x=1',
+        'http://127.0.0.1:8080/#frag',
+      ]) {
+        Object? caught;
+        try {
+          WebSocketAppChannel.endpointFor(Uri.parse(raw), 'a');
+        } on ArgumentError catch (error) {
+          caught = error;
+        }
+        expect(caught, isA<ArgumentError>(), reason: raw);
+        expect('$caught', isNot(contains('127.0.0.1')), reason: raw);
+      }
+    },
+  );
+
+  test('closeTimeout borne une fermeture qui ne se termine pas', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final upgraded = Completer<void>();
+    server.listen((request) async {
+      final ws = await WebSocketTransformer.upgrade(request);
+      // Flux en pause : la trame de fermeture du client n'est jamais lue.
+      ws.listen((_) {}).pause();
+      upgraded.complete();
+    });
+    final slow = WebSocketAppChannel(
+      baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+      closeTimeout: const Duration(milliseconds: 200),
+    );
+    final subscription = slow.open('sess-1').listen((_) {});
+    await upgraded.future;
+    final watch = Stopwatch()..start();
+    await subscription.cancel();
+    expect(watch.elapsed, lessThan(const Duration(milliseconds: 1500)));
+  });
 }

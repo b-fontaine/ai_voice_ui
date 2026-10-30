@@ -11,6 +11,10 @@ import 'voice_relay.dart';
 /// `POST {baseUrl}/voice/sessions` (corps `application/sdp`) puis
 /// `DELETE {baseUrl}/voice/sessions/{id}`. Le client `http` injecté
 /// appartient à l'appelant : [close] ne ferme que celui créé ici.
+///
+/// [baseUrl] doit être une origine (schéma, hôte, port) : ni chemin autre
+/// que `/`, ni requête, ni fragment (sinon [ArgumentError] à la
+/// construction).
 class HttpVoiceRelay implements VoiceRelay {
   HttpVoiceRelay({
     required this.baseUrl,
@@ -18,9 +22,19 @@ class HttpVoiceRelay implements VoiceRelay {
     this.createTimeout = const Duration(seconds: 20),
     this.deleteTimeout = const Duration(seconds: 7),
   }) : _client = client ?? http.Client(),
-       _ownsClient = client == null;
+       _ownsClient = client == null {
+    if ((baseUrl.path.isNotEmpty && baseUrl.path != '/') ||
+        baseUrl.hasQuery ||
+        baseUrl.hasFragment) {
+      throw ArgumentError.value(
+        'baseUrl',
+        'baseUrl',
+        'doit être une origine (sans chemin, requête ni fragment)',
+      );
+    }
+  }
 
-  /// URL de base du backend (valeur de `GENESIS_BACKEND_URL`).
+  /// Origine du backend (valeur de `GENESIS_BACKEND_URL`).
   final Uri baseUrl;
 
   /// Délai maximal de `POST` (envoi de l'offre et lecture de l'answer).
@@ -124,19 +138,20 @@ class HttpVoiceRelay implements VoiceRelay {
     http.BaseRequest request,
     Duration timeout,
   ) async {
+    StreamSubscription<List<int>>? subscription;
     try {
       return await Future<(http.StreamedResponse, List<int>?)>(() async {
         final response = await _client.send(request);
         final bytes = <int>[];
         var tooBig = false;
         final done = Completer<void>();
-        late final StreamSubscription<List<int>> subscription;
-        subscription = response.stream.listen(
+        late final StreamSubscription<List<int>> current;
+        current = subscription = response.stream.listen(
           (chunk) {
             bytes.addAll(chunk);
             if (bytes.length > maxAnswerBytes) {
               tooBig = true;
-              unawaited(subscription.cancel());
+              unawaited(current.cancel());
               if (!done.isCompleted) done.complete();
             }
           },
@@ -152,12 +167,17 @@ class HttpVoiceRelay implements VoiceRelay {
         return (response, tooBig ? null : bytes);
       }).timeout(timeout);
     } on TimeoutException {
+      unawaited(subscription?.cancel());
       throw const RelayFailure(RelayFailureKind.timeout);
     } on SocketException {
       throw const RelayFailure(RelayFailureKind.unreachable);
     } on http.ClientException {
       throw const RelayFailure(RelayFailureKind.unreachable);
     } on HandshakeException {
+      throw const RelayFailure(RelayFailureKind.unreachable);
+    } on Object {
+      // TlsException, client fermé (StateError), lecture du corps : le
+      // contrat du port n'expose que RelayFailure, sans message d'origine.
       throw const RelayFailure(RelayFailureKind.unreachable);
     }
   }

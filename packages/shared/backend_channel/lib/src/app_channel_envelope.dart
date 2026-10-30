@@ -1,5 +1,9 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
+
+const DeepCollectionEquality _deep = DeepCollectionEquality();
+
 /// Taille maximale, en caractères, d'une enveloppe du canal app.
 const int maxEnvelopeLength = 262144;
 
@@ -101,39 +105,9 @@ class AppChannelEnvelope {
       other.tMs == tMs &&
       other.agent == agent &&
       other.task == task &&
-      _deepEquals(other.data, data);
+      _deep.equals(other.data, data);
 
   @override
   int get hashCode =>
-      Object.hash(version, type, session, tMs, agent, task, _deepHash(data));
-}
-
-/// Égalité profonde de valeurs JSON (listes, objets, scalaires).
-bool _deepEquals(Object? a, Object? b) {
-  if (a is Map && b is Map) {
-    if (a.length != b.length) return false;
-    for (final key in a.keys) {
-      if (!b.containsKey(key) || !_deepEquals(a[key], b[key])) return false;
-    }
-    return true;
-  }
-  if (a is List && b is List) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (!_deepEquals(a[i], b[i])) return false;
-    }
-    return true;
-  }
-  return a == b;
-}
-
-/// Hachage profond cohérent avec [_deepEquals] (indépendant de l'ordre des clés).
-int _deepHash(Object? value) {
-  if (value is Map) {
-    return Object.hashAllUnordered(
-      value.entries.map((e) => Object.hash(e.key, _deepHash(e.value))),
-    );
-  }
-  if (value is List) return Object.hashAll(value.map(_deepHash));
-  return value.hashCode;
+      Object.hash(version, type, session, tMs, agent, task, _deep.hash(data));
 }

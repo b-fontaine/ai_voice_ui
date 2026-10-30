@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
@@ -230,4 +234,100 @@ void main() {
       expect(backend.deletes, isEmpty);
     });
   });
+
+  group('erreurs imprévues (contrat : toujours RelayFailure)', () {
+    HttpVoiceRelay relayWith(
+      _ScriptedClient client, {
+      Duration timeout = const Duration(seconds: 2),
+    }) => HttpVoiceRelay(
+      baseUrl: Uri.parse('http://127.0.0.1:1'),
+      client: client,
+      createTimeout: timeout,
+    );
+
+    test('corps coupé en cours de lecture : unreachable', () async {
+      final client = _ScriptedClient.body(
+        Stream<List<int>>.multi((c) {
+          c.add(<int>[1, 2]);
+          c.addError(const HttpException('coupé https://secret'));
+          c.close();
+        }),
+      );
+      final error = await failureOf(() => relayWith(client).createSession('v'));
+      expect(error.kind, RelayFailureKind.unreachable);
+      expect('$error ${error.message}', isNot(contains('secret')));
+    });
+
+    test('client fermé (StateError) : unreachable', () async {
+      final client = _ScriptedClient.throwing(StateError('Client closed'));
+      await expectLater(
+        relayWith(client).createSession('v'),
+        throwsA(failure(RelayFailureKind.unreachable)),
+      );
+    });
+
+    test('TlsException : unreachable', () async {
+      final client = _ScriptedClient.throwing(const TlsException('x'));
+      await expectLater(
+        relayWith(client).createSession('v'),
+        throwsA(failure(RelayFailureKind.unreachable)),
+      );
+    });
+
+    test('délai dépassé : abonnement au corps annulé, timeout', () async {
+      var cancelled = false;
+      final controller = StreamController<List<int>>(
+        onCancel: () => cancelled = true,
+      );
+      addTearDown(controller.close);
+      final client = _ScriptedClient.body(controller.stream);
+      await expectLater(
+        relayWith(
+          client,
+          timeout: const Duration(milliseconds: 100),
+        ).createSession('v'),
+        throwsA(failure(RelayFailureKind.timeout)),
+      );
+      expect(cancelled, isTrue);
+    });
+  });
+
+  group('baseUrl', () {
+    test('chemin, requête ou fragment : ArgumentError sans valeur', () {
+      for (final raw in <String>[
+        'http://127.0.0.1:8080/api',
+        'http://127.0.0.1:8080?x=1',
+        'http://127.0.0.1:8080/#frag',
+      ]) {
+        Object? caught;
+        try {
+          HttpVoiceRelay(baseUrl: Uri.parse(raw)).close();
+        } on ArgumentError catch (error) {
+          caught = error;
+        }
+        expect(caught, isA<ArgumentError>(), reason: raw);
+        expect('$caught', isNot(contains('127.0.0.1')), reason: raw);
+      }
+      HttpVoiceRelay(baseUrl: Uri.parse('http://127.0.0.1:8080/')).close();
+    });
+  });
+}
+
+class _ScriptedClient extends http.BaseClient {
+  _ScriptedClient.body(Stream<List<int>> body) : _body = body, _error = null;
+  _ScriptedClient.throwing(Object error) : _body = null, _error = error;
+
+  final Stream<List<int>>? _body;
+  final Object? _error;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final error = _error;
+    if (error != null) throw error;
+    return http.StreamedResponse(
+      _body!,
+      200,
+      headers: <String, String>{'x-session-id': 'sess-1'},
+    );
+  }
 }

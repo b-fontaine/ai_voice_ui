@@ -12,33 +12,53 @@ import 'app_channel_envelope.dart';
 /// chemin `/app`, requête `?session=<id>`. Aucun en-tête `Origin` n'est
 /// envoyé, et l'hôte de [baseUrl] est utilisé tel quel : le backend répond
 /// 421 à un autre hôte que `127.0.0.1`.
+///
+/// [baseUrl] doit être une origine (schéma, hôte, port) : ni chemin autre
+/// que `/`, ni requête, ni fragment (sinon [ArgumentError]).
 class WebSocketAppChannel implements AppChannel {
   WebSocketAppChannel({
     required this.baseUrl,
     this.connectTimeout = const Duration(seconds: 5),
+    this.closeTimeout = const Duration(seconds: 2),
     this.onInvalid,
   });
 
-  /// URL de base du backend (valeur de `GENESIS_BACKEND_URL`).
+  /// Origine du backend (valeur de `GENESIS_BACKEND_URL`).
   final Uri baseUrl;
 
   /// Délai maximal d'établissement de la connexion.
   final Duration connectTimeout;
 
+  /// Délai maximal de la fermeture de la socket (au-delà, on abandonne).
+  final Duration closeTimeout;
+
   /// Appelé pour chaque enveloppe invalide, ignorée (jamais fatale).
   final void Function(AppChannelFormatException)? onInvalid;
 
   static final RegExp _idPattern = RegExp(r'^[A-Za-z0-9_-]{1,128}$');
-  static const Duration _closeTimeout = Duration(seconds: 2);
 
   /// URL WSS du canal de [sessionId] pour [baseUrl].
-  static Uri endpointFor(Uri baseUrl, String sessionId) => Uri(
-    scheme: baseUrl.scheme == 'https' ? 'wss' : 'ws',
-    host: baseUrl.host,
-    port: baseUrl.hasPort ? baseUrl.port : null,
-    path: '/app',
-    queryParameters: <String, String>{'session': sessionId},
-  );
+  ///
+  /// Lève [ArgumentError] (sans la valeur) si [baseUrl] n'est pas une
+  /// origine.
+  static Uri endpointFor(Uri baseUrl, String sessionId) {
+    if ((baseUrl.path.isNotEmpty && baseUrl.path != '/') ||
+        baseUrl.hasQuery ||
+        baseUrl.hasFragment) {
+      throw ArgumentError.value(
+        'baseUrl',
+        'baseUrl',
+        'doit être une origine (sans chemin, requête ni fragment)',
+      );
+    }
+    return Uri(
+      scheme: baseUrl.scheme == 'https' ? 'wss' : 'ws',
+      host: baseUrl.host,
+      port: baseUrl.hasPort ? baseUrl.port : null,
+      path: '/app',
+      queryParameters: <String, String>{'session': sessionId},
+    );
+  }
 
   @override
   Stream<AppChannelEnvelope> open(String sessionId) {
@@ -61,7 +81,7 @@ class WebSocketAppChannel implements AppChannel {
       socket = null;
       if (current == null) return;
       try {
-        await current.sink.close(1000).timeout(_closeTimeout);
+        await current.sink.close(1000).timeout(closeTimeout);
       } on Object {
         // Fermeture bornée : un échec ici n'est plus exploitable.
       }
