@@ -1,7 +1,8 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
-import 'package:genui/genui.dart' show SurfaceController;
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:genui/genui.dart' show DataPath, SurfaceController;
 
 import 'canvas_event.dart';
 import 'canvas_state.dart';
@@ -65,7 +66,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   void _onMessage(A2uiMessageReceived event, Emitter<CanvasState> emit) {
     final a2ui.A2uiMessage message = event.message;
     _controller.handleMessage(message);
-    emit(switch (message) {
+    final CanvasState next = switch (message) {
       a2ui.CreateSurfaceMessage(:final surfaceId) => state.withSurface(
         surfaceId,
       ),
@@ -81,7 +82,37 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         surfaceId,
       ),
       _ => state,
+    };
+    emit(switch (message) {
+      a2ui.UpdateDataModelMessage(:final surfaceId)
+          when surfaceId == _checklistSurface =>
+        next.withDecisionStatus(_readDecisionStatus()),
+      a2ui.DeleteSurfaceMessage(:final surfaceId)
+          when surfaceId == _checklistSurface =>
+        next.withDecisionStatus(null),
+      _ => next,
     });
+  }
+
+  static final String _checklistSurface = GenesisContract.surfaceOf(
+    'ReleaseChecklist',
+  )!;
+
+  /// `decisionStatus` de la checklist dans le data model, ou `null` s'il est
+  /// absent ou n'est pas une chaîne.
+  String? _readDecisionStatus() {
+    try {
+      final Object? checklist = _controller
+          .contextFor(_checklistSurface)
+          .dataModel
+          .getValue<Object?>(DataPath('/$_checklistSurface'));
+      final Object? status = checklist is Map
+          ? checklist['decisionStatus']
+          : null;
+      return status is String ? status : null;
+    } on StateError {
+      return null;
+    }
   }
 
   void _onReset(Emitter<CanvasState> emit) {

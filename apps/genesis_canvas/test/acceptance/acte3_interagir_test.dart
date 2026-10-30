@@ -23,6 +23,8 @@ import './step/le_faux_backend_suspend_laction_apres_lavoir_acceptee.dart';
 import './step/les_boutons_de_la_barre_dactions_sont_inactifs.dart';
 import './step/le_serveur_emet_le_debut_de_laction.dart';
 import './step/le_serveur_emet_le_resultat_de_laction.dart';
+import './step/le_bouton_affiche.dart';
+import './step/le_bouton_est_actif.dart';
 import './step/le_tableau_de_la_release34_est_affiche.dart';
 import './step/le_serveur_emet_la_barre_dactions_jusquau_temps.dart';
 import './step/un_squelette_est_visible_pour_la_surface.dart';
@@ -164,7 +166,8 @@ void main() {
           await lesBoutonsDeLaBarreDactionsSontInactifs(tester);
           await leServeurEmetLeResultatDeLaction(tester);
           await leStatutDeLaChecklistPasseA(tester, 'Bloquée');
-          await lesBoutonsDeLaBarreDactionsSontActifs(tester);
+          await leBoutonAffiche(tester, 'block_release', 'fait');
+          await leBoutonEstActif(tester, 'validate_release');
         } finally {
           await bddTearDown(tester);
         }

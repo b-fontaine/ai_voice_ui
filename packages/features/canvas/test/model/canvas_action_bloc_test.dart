@@ -342,4 +342,102 @@ void main() {
     client.gate!.complete();
     await _tick();
   });
+
+  group('décision prise (statut de la checklist)', () {
+    const grace = _fast;
+
+    void status(String s) => bloc.add(DecisionStatusObserved(s));
+
+    test(
+      'le statut qui change après un clic fixe l action comme faite',
+      () async {
+        build(_FakeActionClient(), grace);
+        status('En attente');
+        click();
+        await _tick();
+        status('Bloquée');
+        await _tick();
+
+        expect(bloc.state.doneAction, 'block_release');
+        expect(bloc.state, isA<ActionRunning>());
+      },
+    );
+
+    test('un nouveau changement de statut réactive l action', () async {
+      build(_FakeActionClient(), grace);
+      status('En attente');
+      click();
+      await _tick();
+      status('Bloquée');
+      await _tick();
+      status('En attente');
+      await _tick();
+
+      expect(bloc.state.doneAction, isNull);
+    });
+
+    test('clic sans changement de statut, puis réécriture vocale tardive : '
+        'pas de « fait »', () async {
+      build(_FakeActionClient(), grace);
+      status('En attente');
+      click();
+      await _tick();
+      bloc.add(const ActionSessionClosed());
+      await _tick();
+      expect(bloc.state, isA<ActionIdle>());
+      // Une demande vocale démarre une nouvelle activité.
+      bloc.add(const ActionActivityChanged(busy: true));
+      await _tick();
+
+      status('Validée');
+      await _tick();
+
+      expect(bloc.state.doneAction, isNull);
+    });
+
+    test('le statut qui arrive après la fin de l activité, sans nouvelle activité, compte', () async {
+      build(_FakeActionClient(), grace);
+      status('En attente');
+      click();
+      await _tick();
+      bloc.add(const ActionSessionClosed());
+      await _tick(5);
+      status('Bloquée');
+      await _tick();
+
+      expect(bloc.state.doneAction, 'block_release');
+    });
+
+    test('la remise à vide annule le clic en attente et la décision', () async {
+      build(_FakeActionClient(), grace);
+      status('En attente');
+      click();
+      await _tick();
+      bloc.add(const ActionStageReset());
+      await _tick();
+      status('Bloquée');
+      await _tick();
+      expect(bloc.state.doneAction, isNull);
+
+      click();
+      await _tick();
+      status('Validée');
+      await _tick();
+      expect(bloc.state.doneAction, 'block_release');
+      bloc.add(const ActionStageReset());
+      await _tick();
+      expect(bloc.state.doneAction, isNull);
+    });
+
+    test('un échec d envoi annule le clic en attente', () async {
+      build(_FakeActionClient([CanvasActionResult.rejected]), grace);
+      status('En attente');
+      click();
+      await _tick();
+      status('Bloquée');
+      await _tick();
+
+      expect(bloc.state.doneAction, isNull);
+    });
+  });
 }

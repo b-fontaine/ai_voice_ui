@@ -176,9 +176,19 @@ void main() {
               child: SizedBox(
                 width: 1366,
                 height: 568,
-                child: CanvasActionScope(
-                  enabled: true,
-                  child: CanvasBoard(controller: controller),
+                // Rôle de la page : relayer le statut du data model au Bloc
+                // d'action.
+                child: BlocListener<CanvasBloc, CanvasState>(
+                  listenWhen: (p, c) =>
+                      p.decisionStatus != c.decisionStatus &&
+                      c.decisionStatus != null,
+                  listener: (context, state) => actions.add(
+                    DecisionStatusObserved(state.decisionStatus!),
+                  ),
+                  child: CanvasActionScope(
+                    enabled: true,
+                    child: CanvasBoard(controller: controller),
+                  ),
                 ),
               ),
             ),
@@ -300,6 +310,59 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(client.actions, <String>['block_release', 'block_release']);
+      unawaited(actions.close());
+      await tester.pump();
+    });
+
+    testWidgets('clic sans changement de statut, puis réécriture vocale : '
+        'pas de « fait »', (tester) async {
+      await pumpBoard(tester);
+      await tester.tap(button('block_release'));
+      await tester.pump();
+      await tester.pump();
+      // Fin de l'activité sans nouveau statut, puis une demande vocale.
+      actions.add(const ActionActivityChanged(busy: true));
+      actions.add(const ActionActivityChanged(busy: false));
+      await tester.pump();
+      await tester.pump();
+      expect(enabled(tester, 'block_release'), isTrue);
+      actions.add(const ActionActivityChanged(busy: true));
+      await tester.pump();
+
+      await blocked(tester);
+
+      expect(
+        find.descendant(
+          of: button('block_release'),
+          matching: find.textContaining('fait'),
+        ),
+        findsNothing,
+      );
+      expect(enabled(tester, 'block_release'), isTrue);
+      unawaited(actions.close());
+      await tester.pump();
+    });
+
+    testWidgets('remise à vide : plus de « fait »', (tester) async {
+      await pumpBoard(tester);
+      await tester.tap(button('block_release'));
+      await tester.pump();
+      await tester.pump();
+      await blocked(tester);
+      expect(enabled(tester, 'block_release'), isFalse);
+
+      actions.add(const ActionStageReset());
+      await tester.pump();
+      await tester.pump();
+
+      expect(enabled(tester, 'block_release'), isTrue);
+      expect(
+        find.descendant(
+          of: button('block_release'),
+          matching: find.textContaining('fait'),
+        ),
+        findsNothing,
+      );
       unawaited(actions.close());
       await tester.pump();
     });

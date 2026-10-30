@@ -18,6 +18,7 @@ import 'package:feature_canvas/feature_canvas.dart'
         CanvasActionBloc,
         CanvasActionScope,
         CanvasActionSettings,
+        DecisionStatusObserved,
         CanvasActionState,
         CanvasBloc,
         CanvasBoard,
@@ -776,6 +777,15 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
           listenWhen: (previous, current) =>
               previous.sourceStatus != current.sourceStatus,
           listener: _onSourceChanged,
+        ),
+        // Le statut de décision du data model (`/checklist/decisionStatus`)
+        // alimente le Bloc d'action : c'est lui qui garde la décision prise.
+        BlocListener<CanvasBloc, CanvasState>(
+          listenWhen: (previous, current) =>
+              previous.decisionStatus != current.decisionStatus &&
+              current.decisionStatus != null,
+          listener: (context, state) =>
+              _actionBloc.add(DecisionStatusObserved(state.decisionStatus!)),
         ),
         // Avance automatique de l'indicateur d'acte (011, T24) : la surface
         // `actions` apparaît à la fin de l'acte 2 (pdr-0061).

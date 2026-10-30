@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
-import '../ui/action_availability.dart';
 import 'bound_item.dart';
 import 'text_metrics.dart';
 
@@ -90,54 +89,30 @@ class _Checklist {
 }
 
 /// Statut de décision en pastille, jamais tronqué ; un changement de valeur
-/// est mis en avant par une brève transition. Le statut est aussi signalé à la
-/// Barre d'actions (par `ActionAvailability`), qui en déduit la décision prise.
-class _DecisionStatus extends StatefulWidget {
+/// est mis en avant par une brève transition.
+class _DecisionStatus extends StatelessWidget {
   const _DecisionStatus({required this.status});
 
   final String status;
-
-  @override
-  State<_DecisionStatus> createState() => _DecisionStatusState();
-}
-
-class _DecisionStatusState extends State<_DecisionStatus> {
-  @override
-  void initState() {
-    super.initState();
-    _report();
-  }
-
-  @override
-  void didUpdateWidget(_DecisionStatus oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.status != widget.status) _report();
-  }
-
-  /// Signalé après l'image : le fournisseur se reconstruit, ce qui est
-  /// interdit pendant la construction.
-  void _report() {
-    final DecisionStatusCallback? report =
-        ActionAvailability.decisionReporterOf(context);
-    if (report == null) return;
-    final String status = widget.status;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) report(status);
-    });
-    WidgetsBinding.instance.ensureVisualUpdate();
-  }
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
     key: const Key('decision-status'),
     duration: const Duration(milliseconds: 400),
     child: DsStatusChip(
-      key: ValueKey<String>(widget.status),
+      key: ValueKey<String>(status),
       status: null,
-      label: widget.status,
+      label: status,
     ),
   );
 }
+
+/// Espace entre le titre, le statut et la recommandation.
+const double _headerGap = 16;
+
+/// Largeur de la puce en plus de son texte : remplissage horizontal des deux
+/// côtés, plus 1 px de marge d'arrondi.
+const double _chipExtraWidth = 2 * DsStatusChip.horizontalPadding + 1;
 
 class _ChecklistView extends StatelessWidget {
   const _ChecklistView({required this.checklist});
@@ -161,9 +136,9 @@ class _ChecklistView extends StatelessWidget {
                     checklist.recommendationLabel,
                     theme.label,
                   ).ceilToDouble() +
-                  33;
+                  _chipExtraWidth;
               final double statusMax =
-                  constraints.maxWidth - recommendation - 32;
+                  constraints.maxWidth - recommendation - 2 * _headerGap;
               return Row(
                 children: <Widget>[
                   Expanded(
@@ -174,14 +149,14 @@ class _ChecklistView extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: _headerGap),
                   ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth: statusMax > 0 ? statusMax : 0,
                     ),
                     child: _DecisionStatus(status: checklist.decisionStatus),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: _headerGap),
                   DsStatusChip(
                     status: checklist.recommendationLevel,
                     label: checklist.recommendationLabel,
@@ -313,9 +288,10 @@ class _Columns {
       return max == 0 ? 0 : max.ceilToDouble() + 1;
     }
 
-    // Puce : libellé en style `label` plus le remplissage horizontal (2 x 16).
+    // Puce : libellé en style `label` plus le remplissage horizontal.
     final double chip =
-        widest(items.map((_Item i) => i.levelLabel), theme.label) + 32;
+        widest(items.map((_Item i) => i.levelLabel), theme.label) +
+        2 * DsStatusChip.horizontalPadding;
     final double available =
         (maxWidth.isFinite ? maxWidth : double.maxFinite) - chip - 3 * gap;
     final double value = _clamp(
