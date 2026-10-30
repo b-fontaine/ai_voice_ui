@@ -3,8 +3,8 @@ id: p-fn-risks-acceptance
 title: Risques, plan B, DoD et métriques
 area: functional
 status: validated
-updated: 2026-10-29
-sources: [product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
+updated: 2026-10-30
+sources: [specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
 links: [p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [risques, plan-b, dod, metriques, repetition]
 ---
@@ -26,6 +26,8 @@ tags: [risques, plan-b, dod, metriques, repetition]
 | R8 | Texte illisible au projecteur | Moyenne | Moyen | Thème de scène en 24 px minimum ; test sur un vrai projecteur | NFR-05, RG-09, [ds-a11y-wcag-contrast] | [frontend](../architecture/frontend.md) (thème de scène), [stage-runtime](../architecture/stage-runtime.md) · SP-07, J7 |
 
 **Alerte précoce SP-02 (2026-10-29, R2 et R4)** : essai réel avec le porteur dans un navigateur (AEC activée, enceintes du PC) : décalage perceptible de la coupure (~0,6 à 1,0 s mesuré côté serveur, Q-67) puis 60 s de parole continue **sans auto-interruption ni transcript parasite** ([rt-barge-in], [rt-echo-cancellation], [p-rm-spikes](../roadmap/spikes.md)). **Limites** : une machine, un essai, AEC du navigateur ; `flutter_webrtc` sous Linux (SP-06, J7) et le test avec la sono de la salle (porteur) **non testés** ; le risque R2 n'est donc pas levé.
+
+**Constats de 008 (acte 2, 2026-10-30, lecture de l'assistant ; risques de délai RD-10 et RD-11 de [roadmap](../roadmap/roadmap.md))** : (1) une délégation pourrait couper « Concentre-toi sur Android et compare avec la 3.3 » en deux et faire refuser la seconde moitié (R5 : phrases clés courtes et rodées ; hypothèse non confirmée → Q-74, à observer en répétition) ; (2) app relancée alors que le backend tourne : remise à vide automatique au démarrage en mode vivant, sinon bouton « Remettre à vide » ([stage-runtime](../architecture/stage-runtime.md)) ; (3) la comparaison de l'acte 2 doit se lire au projecteur (R8) : valeurs de la checklist et titre de la courbe affichés en entier à 1920×1080, à confirmer sur un vrai projecteur.
 
 Les ids R1..R8 et la colonne « Porteur technique · jalon » sont une lecture de l'assistant ([p-rm-roadmap](../roadmap/roadmap.md)). Les risques **techniques** déjà connus sur le code voix (projet de référence) sont dans [proj-avw-risks].
 

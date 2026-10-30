@@ -1,16 +1,16 @@
 ---
 id: p-ar-frontend-screen
-title: Écran, catalogue genesis et remise à vide côté app (réel après 007)
+title: Écran, catalogue genesis et remise à vide côté app (réel après 007 et 008)
 area: architecture
 status: draft
 updated: 2026-10-30
-sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p10, knowledge:genui-custom-catalog-item, knowledge:genui-data-model, knowledge:genui-a2ui-security]
-links: [p-ar-frontend, di-micro-packages, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-security, p-ar-quality, p-ar-stage-runtime, p-fn-screen, p-fn-catalog, p-fn-business-rules, p-rm-open-questions, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0015-app-held-canvas-layout, pdr-0033-optional-shortcuts-mouse-first, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, pdr-0055-genesis-catalog-id-versioned-uri, pdr-0057-getit-composition-root-exception, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, genui-custom-catalog-item, genui-data-model, genui-a2ui-security, genui-multiple-surfaces, ds-a11y-wcag-contrast, ds-widgetbook-4-genui, test-golden-alchemist, bloc-event-transformers]
+sources: [specs/008-j4-act2-transform/spec.md, specs/008-j4-act2-transform/plan.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p10, knowledge:genui-custom-catalog-item, knowledge:genui-data-model, knowledge:genui-a2ui-security]
+links: [pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend, di-micro-packages, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-security, p-ar-quality, p-ar-stage-runtime, p-fn-screen, p-fn-catalog, p-fn-business-rules, p-rm-open-questions, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0015-app-held-canvas-layout, pdr-0033-optional-shortcuts-mouse-first, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, pdr-0055-genesis-catalog-id-versioned-uri, pdr-0057-getit-composition-root-exception, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, genui-custom-catalog-item, genui-data-model, genui-a2ui-security, genui-multiple-surfaces, ds-a11y-wcag-contrast, ds-widgetbook-4-genui, test-golden-alchemist, bloc-event-transformers]
 tags: [frontend, ecran, catalogue, genesis, validation, remise-a-vide, design-system]
 ---
-# Écran, catalogue `genesis` et remise à vide (réel après 007)
+# Écran, catalogue `genesis` et remise à vide (réel après 007 et 008)
 
-**En bref.** Détail de ce que la fonctionnalité 007 (J3-B, terminée le 2026-10-30) a livré côté app : l'écran à six zones, le catalogue fermé `genesis` rendu par genui 0.10.4, la validation A2UI côté client, la remise à vide et ses variables d'environnement. Vue d'ensemble, couches et Blocs : [p-ar-frontend](frontend.md) ; comportement visible : [p-fn-screen](../functional/screen.md), [p-fn-catalog](../functional/catalog.md).
+**En bref.** Détail de ce que la fonctionnalité 007 (J3-B, terminée le 2026-10-30) a livré côté app : l'écran à six zones, le catalogue fermé `genesis` rendu par genui 0.10.4, la validation A2UI côté client, la remise à vide et ses variables d'environnement. La fonctionnalité 008 (J4, 2026-10-30) y ajoute la ligne de comparaison, la légende des séries et la remise à vide de démarrage (§ Acte 2). Vue d'ensemble, couches et Blocs : [p-ar-frontend](frontend.md) ; comportement visible : [p-fn-screen](../functional/screen.md), [p-fn-catalog](../functional/catalog.md).
 
 ## Zones livrées (widgets de l'app)
 
@@ -41,7 +41,18 @@ Une seule instance de `A2uiGate` par page (`features/canvas`) possède l'unique 
 
 ## Remise à vide (`_resetStage`, FR-11)
 
-Unique coordinatrice dans `GenesisCanvasPage` ; `StageBar` n'expose que `onResetPressed`. Ordre : (1) `gate.reset()` synchrone ; (2) `CanvasResetRequested`, `ProtocolFeedCleared`, `CatalogShelfCleared`, `AgentActivityReset`, `StageResetRequested` ; (3) `unawaited(_requestBackendReset())` : `POST /canvas/reset` au mieux, réessayé tant que la réponse est `busy` (409) ; une nouvelle demande remplace la boucle en cours ; arrêt à la fermeture de la page. État cible = état initial (rail vide, acte 1). Contrat et route : [p-ar-app-channel-contract](app-channel-contract.md) ; limite jusqu'à J4 : Q-73 ([p-ar-stage-runtime](stage-runtime.md)).
+Unique coordinatrice dans `GenesisCanvasPage` ; `StageBar` n'expose que `onResetPressed`. Ordre : (1) `gate.reset()` synchrone ; (2) `CanvasResetRequested`, `ProtocolFeedCleared`, `CatalogShelfCleared`, `AgentActivityReset`, `StageResetRequested` ; (3) `unawaited(_requestBackendReset())` : `POST /canvas/reset` au mieux, réessayé tant que la réponse est `busy` (409) ; une nouvelle demande remplace la boucle en cours ; arrêt à la fermeture de la page. État cible = état initial (rail vide, acte 1). Contrat et route : [p-ar-app-channel-contract](app-channel-contract.md) ; depuis 008 le registre est partagé entre sessions (Q-73 résolue, [p-ar-stage-runtime](stage-runtime.md)).
+
+## Acte 2 : comparaison, séries et démarrage (008, 2026-10-30)
+
+Les quatre surfaces mutent par `updateDataModel` seul : aucun squelette n'est repeint, seul l'objet lié change ([pdr-0064](../decisions/pdr-0064-008-act2-transform-details-assistant-decided.md) D1). Valeurs : [p-fn-dataset-acts](../functional/dataset-acts.md).
+
+- **Ligne `comparison-<surface>`** (`bound_item.dart`, `comparisonLine`) : un seul `Text` « <label> : <value> · <delta> » (« 3.3 : 99,71 % · −0,28 pt » ; « 3.3 : 14 % négatifs · +16 pts »), couleur secondaire neutre (jamais déduite du `delta`, RG-09), une ligne. Omise si `label`, `value` ou `delta` manque, sans état neutre global (D7). Clés `comparison-kpi` et `comparison-reviews`.
+- **Courbe** (`trend_chart.dart`) : une entrée de légende par série, clé `trend-series-<nom>` (« Android 3.4 », « Android 3.3 », « iOS 3.4 »). Couleur **par plateforme** (préfixe du nom : iOS, Android), palette de graphique sans couleur de statut ; série 3.3 en pointillés ; le seuil garde la couleur « bloquant » (D8). Le titre passe seul sur sa ligne quand la légende ne tient pas (« Taux de crash du jour » jamais coupé).
+- **Checklist** : colonnes calculées (`text_metrics.dart`) ; la valeur d'un critère prend sa largeur mesurée **avant** le seuil et le libellé, donc « 99,43 % (3.3 : 99,71 %) » et « 30 % (3.3 : 14 %) » ne sont jamais tronqués (NFR-05). Les extraits d'avis restent tronqués par l'ellipse (`maxLines`).
+- **Remise à vide de démarrage** (D6) : en mode vivant, `GenesisCanvasPage` appelle une fois `_requestBackendReset()` avant la première session (le canevas est déjà vide : aucune remise à vide visuelle), car une mutation visant une surface inconnue de l'app est refusée (`unknown_surface`). Si elle réessaie encore (409) au premier passage à `Connecting`, elle est abandonnée (`_startupResetGeneration`) : elle viderait le tableau en pleine démo. Aucune requête en rejeu, même avec `GENESIS_BACKEND_URL`.
+- **Rejeu de l'acte 2** : asset `assets/replays/act2-replay.jsonl` (16 messages : acte 1 puis `act2-*`, **artefact dérivé** des fixtures du contrat, relu par un test) ; `app-smoke.sh act2-replay` produit la capture 1920×1080, conforme à la vérification du 2026-10-30 : quatre surfaces à leur place, Android seul, comparaison visible, deux séries (3.3 en pointillés) et seuil, « NO-GO Android » et « En attente de décision », étagère « 4 / 6 », panneau « 16 messages ». Test de page 1920×1080 étendu à l'acte 2 (textes ≥ 24 px, deux entrées de légende, deux lignes de comparaison).
+- **Essai réel avec micro : non fait** (voix non pilotable sans présence humaine) ; à faire en répétition avec le porteur.
 
 ## DI et fermeture de la page
 

@@ -25,7 +25,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 
 ## Hypothèses
 - ✅ Fiche muette sur ces détails ; ni périmètre, ni mise en scène, ni budget, ni fournisseur.
-- ⚠️ Hypothèse non confirmée : la demande transmise aux agents est la **transcription d'entrée du speaker** depuis la délégation précédente (la délégation ne transporte aucun texte) ; une délégation peut couper la phrase en deux (« Concentre-toi sur Android » puis « et compare avec la 3.3 », la seconde moitié serait refusée) ; les agents sont sans état. À vérifier à l'essai réel (J7, instructions vocales, pdr-0037).
+- ⚠️ Hypothèse non confirmée : la demande transmise aux agents est la **transcription d'entrée du speaker** depuis la délégation précédente (la délégation ne transporte aucun texte) ; une délégation peut couper la phrase en deux (« Concentre-toi sur Android » puis « et compare avec la 3.3 », la seconde moitié serait refusée) ; les agents sont sans état. À vérifier à l'essai réel (J7, instructions vocales, pdr-0037) ; suivi en Q-74.
 
 ## Décision
 - **D1 — Mutation par données seules** : sur une surface déjà active, l'agent n'émet que `updateDataModel` (chemin entier de la surface, jamais un sous-chemin) ; `createSurface` et `updateComponents` ne sont émis que si la surface manque. Le message du protocole et le contour pointillé de 007 désignent la surface mutée ; aucun squelette n'est repeint.
@@ -50,7 +50,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 - Livrer l'annulation en vol en J4 : sans détection d'interruption, ce serait une simulation.
 
 ## Conséquences
-- [p-fn-catalog](../functional/catalog.md), [p-fn-dataset](../functional/dataset.md), [p-ar-agents-protocols](../architecture/agents-protocols.md), [p-ar-app-channel-contract](../architecture/app-channel-contract.md) : à compléter à la clôture de 008.
+- [p-fn-catalog](../functional/catalog.md), [p-fn-dataset](../functional/dataset.md) et [p-fn-dataset-acts](../functional/dataset-acts.md), [p-ar-agents-protocols](../architecture/agents-protocols.md), [p-ar-app-channel-contract](../architecture/app-channel-contract.md) : complétés à la clôture de 008 (2026-10-30).
 - `specs/progress.md` : signalé au porteur (D4 en particulier).
 
 ## Réexaminer si
@@ -60,3 +60,4 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-30 | Acceptée sous la règle permanente pdr-0062 (fiche muette, détails d'interface et de mécanisme ; C7 déjà validée par pdr-0042). | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-30 | Clôture de 008 : D1 à D9 livrés et vérifiés (`gate --full` vert, capture `app-smoke act2-replay` conforme) ; documents `product/` complétés ; hypothèse de la demande coupée en deux suivie en Q-74. Aucun changement de décision. | Assistant (clôture de 008) |
