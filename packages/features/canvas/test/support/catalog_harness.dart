@@ -45,6 +45,8 @@ class CatalogHarness {
     this.surface,
     this.fixtureName, {
     this.size = const Size(940, 255),
+    this.fontFamily,
+    this.fontFamilyFallback,
   }) {
     controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
     bloc = CanvasBloc(controller);
@@ -60,6 +62,11 @@ class CatalogHarness {
   final String surface;
   final String fixtureName;
   final Size size;
+
+  /// Famille (et familles de repli) du thème Material : par défaut la police
+  /// de test (Ahem) ; un test de budget de hauteur y met des polices réelles.
+  final String? fontFamily;
+  final List<String>? fontFamilyFallback;
   late final SurfaceController controller;
   late final CanvasBloc bloc;
   late final StreamSubscription<dynamic> _sub;
@@ -75,6 +82,8 @@ class CatalogHarness {
     MaterialApp(
       theme: ThemeData(
         brightness: Brightness.dark,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
         extensions: const <ThemeExtension<dynamic>>[SceneTheme.dark()],
       ),
       home: Scaffold(
