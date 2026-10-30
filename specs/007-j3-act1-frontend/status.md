@@ -1,9 +1,9 @@
 # 007 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : L1 (R1, Flutter), LG (R9, Go)
+- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/lib/{pages,widgets/stage_bar,app/config}, packages/features/agent_activity ; backend/orchestrator/internal/{port,adapter/httpapi,app/a2ui}
 - **Branche** : feat/007-j3-act1-frontend
 - **Backlog** : EP-03, EP-04, EP-05, EP-08
 - **Mis à jour** : 2026-10-30
