@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' show ButtonStyleButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 
@@ -346,6 +347,78 @@ void main() {
       await tester.pump();
       expect(decision, findsOneWidget, reason: 'curseur à la fin');
       expect(rig.errors.toString(), isEmpty);
+    });
+  });
+
+  group('capture à mi-parcours : attente du rejeu bornée (R5)', () {
+    /// Page en mode scénario avec capture à mi-parcours ; un agent occupé
+    /// (activité reçue par la source vivante) fait refuser « Lecture ».
+    Future<
+      ({PageRig rig, List<int> exits, StreamController<ReplayedMessage> feed})
+    >
+    mountCapture(WidgetTester tester) async {
+      final rig = PageRig(
+        tester,
+        config: const GenesisConfig(replayCaptureAt: 0.5),
+      );
+      final exits = <int>[];
+      final feed = StreamController<ReplayedMessage>();
+      await rig.mount(
+        tester,
+        replay: feed.stream,
+        themed: true,
+        snapshotPath: '/nonexistent/capture.png',
+        onExit: exits.add,
+      );
+      await rig.start(tester);
+      final envelopes = await act1Envelopes(tester);
+      rig.receiveEnvelope(
+        envelopes.firstWhere((e) => e['type'] == 'agent.activity'),
+      );
+      await tester.pump();
+      await tester.pump();
+      final first = envelopes.firstWhere((e) => e['type'] == 'a2ui');
+      final raw = Map<String, Object?>.from(first['data']! as Map);
+      feed.add((raw: raw, message: A2uiMessage.fromJson(raw)));
+      await tester.pump();
+      await tester.pump();
+      return (rig: rig, exits: exits, feed: feed);
+    }
+
+    testWidgets('« Lecture » refusée : erreur et code 1 sans rester bloqué', (
+      tester,
+    ) async {
+      final m = await mountCapture(tester);
+      unawaited(m.feed.close());
+      await tester.pump();
+      await tester.pump();
+      expect(m.exits, isEmpty, reason: 'attente en cours');
+
+      await tester.pump(const Duration(seconds: 13));
+      await tester.pump();
+
+      expect(m.exits, <int>[1]);
+      expect(
+        m.rig.errors.toString(),
+        contains('Capture impossible : le rejeu n\'a pas démarré.'),
+      );
+    });
+
+    testWidgets('page démontée pendant l\'attente : aucune exception', (
+      tester,
+    ) async {
+      final m = await mountCapture(tester);
+      unawaited(m.feed.close());
+      await tester.pump();
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox());
+      await drain(tester);
+      await tester.pump(const Duration(seconds: 13));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(m.exits, isEmpty);
     });
   });
 }

@@ -220,6 +220,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   @visibleForTesting
   A2uiJournal get journal => _journal;
 
+  /// Routeur du rejeu, pour observer l'ordre de fermeture dans les tests.
+  @visibleForTesting
+  ReplayRouter get router => _router;
+
   // Seul flux qui entre dans le gate : vivant (ou scénario), enregistré au
   // passage ; le lecteur de rejeu s'y substituera. Créé dans `initState`.
   late final ReplayRouter _router;
@@ -280,26 +284,6 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
-    _activitySubscription = _agentsBloc.stream
-        .map((AgentActivityState state) => state.anyBusy)
-        .distinct()
-        .listen((bool busy) {
-          _actionBloc.add(ActionActivityChanged(busy: busy));
-          _agentsBusy = busy;
-          _relayBusy();
-        });
-    _actionBusySubscription = _actionBloc.stream
-        .map((CanvasActionState state) => state is! ActionIdle)
-        .distinct()
-        .listen((bool busy) {
-          _actionBusy = busy;
-          _relayBusy();
-        });
-    // Panneau et étagère lisent le flux validé (tous les messages, avec leur
-    // verdict) par des branches qui gardent en mémoire ce qui arrive avant
-    // l'abonnement effectif du Bloc.
-    _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
-    _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
     // Un seul flux de `SessionEvent` entre dans le gate : le flux vivant, ou
     // le rejeu encapsulé en enveloppes (la source vivante n'alimente alors pas
     // le canevas). Le Bloc ne reçoit que les messages acceptés.
@@ -337,6 +321,29 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
             clearStage: clearStage,
           ),
     );
+    // Le routeur et le Bloc du rejeu existent déjà : les relais d'occupation ci-dessous
+    // l'alimentent (ils ne tiennent pas seulement parce que les flux sont
+    // asynchrones).
+    _activitySubscription = _agentsBloc.stream
+        .map((AgentActivityState state) => state.anyBusy)
+        .distinct()
+        .listen((bool busy) {
+          _actionBloc.add(ActionActivityChanged(busy: busy));
+          _agentsBusy = busy;
+          _relayBusy();
+        });
+    _actionBusySubscription = _actionBloc.stream
+        .map((CanvasActionState state) => state is! ActionIdle)
+        .distinct()
+        .listen((bool busy) {
+          _actionBusy = busy;
+          _relayBusy();
+        });
+    // Panneau et étagère lisent le flux validé (tous les messages, avec leur
+    // verdict) par des branches qui gardent en mémoire ce qui arrive avant
+    // l'abonnement effectif du Bloc.
+    _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
+    _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
     if (replay != null) {
       // Le routeur ne ferme pas sa sortie à la fin du flux : la fin du
       // scénario déclenche la capture (comportement de 000).
@@ -361,6 +368,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   }
 
   /// Relaie au rejeu l'occupation combinée (agents ou action en cours).
+  ///
+  /// Le mode scénario n'interdit pas « Lecture » (pdr-0062) : il n'y a ni
+  /// session voix ni action, donc aucune occupation à protéger, et la Lecture
+  /// y reste cliquable même après la fin du scénario.
   void _relayBusy() =>
       _replayBloc.add(ReplayBusyChanged(_agentsBusy || _actionBusy));
 
@@ -541,14 +552,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       widget.exitHandler(1);
       return;
     }
+    // Chaque attente est bornée (« Lecture » peut être refusée : agent
+    // occupé, journal sans `createSurface`) et suivie d'une garde `mounted` :
+    // jamais d'`add` sur un Bloc fermé par `dispose`.
+    final Duration bound = _settings.exitCloseTimeout;
     final Future<ReplayActive> entered = _replayBloc.stream
         .where((ReplayState state) => state is ReplayActive)
         .cast<ReplayActive>()
-        .first;
+        .first
+        .timeout(bound);
     _replayBloc.add(const ReplayPlayPressed());
-    final Duration duration = (await entered).snapshot.duration;
+    final ReplayActive? active = await _awaitReplay(entered);
+    if (active == null || !mounted) return;
     final Duration target = Duration(
-      microseconds: (duration.inMicroseconds * at).round(),
+      microseconds: (active.snapshot.duration.inMicroseconds * at).round(),
     );
     final Future<ReplayActive> paused = _replayBloc.stream
         .where(
@@ -558,16 +575,35 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
               state.snapshot.position == target,
         )
         .cast<ReplayActive>()
-        .first;
+        .first
+        .timeout(bound);
     _replayBloc
       ..add(ReplaySeeked(target))
       ..add(const ReplayPausePressed());
-    await paused;
+    if (await _awaitReplay(paused) == null || !mounted) return;
     // La barrière du positionnement est un minuteur de durée nulle armé avant
     // celui-ci : une fois passé, les messages jusqu'à la position sont
     // réinjectés.
     await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
     await _captureWhenSettled();
+  }
+
+  /// Attend un état du rejeu ; rend `null` si l'attente échoue (délai dépassé,
+  /// Bloc fermé). Page encore montée : consigne l'erreur et demande la sortie
+  /// en erreur ; page démontée : silence (la fermeture a déjà la main).
+  Future<ReplayActive?> _awaitReplay(Future<ReplayActive> waiting) async {
+    try {
+      return await waiting;
+    } on Object {
+      if (mounted) {
+        widget.errorSink.writeln(
+          'Capture impossible : le rejeu n\'a pas démarré.',
+        );
+        widget.exitHandler(1);
+      }
+      return null;
+    }
   }
 
   /// Nombre maximal de frames attendues avant la capture.
@@ -606,8 +642,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
     // avant la source qu'elle écoute.
     _orb.dispose();
-    // Le lecteur de rejeu est détruit tout de suite (minuteurs coupés), sans
-    // attendre la fermeture asynchrone.
+    // Le Bloc du rejeu se ferme ici, avant tout le reste et une seule fois :
+    // sa partie synchrone détruit le lecteur (minuteurs coupés) sans attendre
+    // la fermeture asynchrone, et il n'écoute plus le routeur ni la scène.
     unawaited(_replayBloc.close());
     final closing = _shutdown();
     unawaited(closing);
@@ -622,8 +659,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 2. arrêt de la session, borné ;
   /// 3. libération de la session ;
   /// 4. source d'événements (la session ne lui émet plus rien) ;
-  /// 5. routeur du rejeu (il lit la source), filtre A2UI (il lit le routeur),
-  ///    puis Bloc du rejeu (son lecteur est déjà détruit par `dispose`) ;
+  /// 5. routeur du rejeu (il lit la source), puis filtre A2UI (il lit le
+  ///    routeur) ; le Bloc du rejeu, lui, est déjà fermé par `dispose`, avant
+  ///    toute cette séquence ;
   /// 6. Blocs de transcription, d'action, d'activité (que le Bloc d'action
   ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
@@ -637,7 +675,6 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     await _step('source d\'événements', _source.dispose);
     await _step('routeur du rejeu', () async => _router.dispose());
     await _step('filtre A2UI', _gate.dispose);
-    await _step('Bloc du rejeu', _replayBloc.close);
     await _step('Bloc de transcription', _transcriptBloc.close);
     await _step('Bloc d\'action', _actionBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);

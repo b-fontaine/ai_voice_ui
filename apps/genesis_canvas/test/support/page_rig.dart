@@ -156,6 +156,8 @@ class PageRig {
     Stream<ReplayedMessage>? replay,
     Size size = const Size(1920, 1080),
     bool themed = false,
+    String? snapshotPath,
+    void Function(int code)? onExit,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -166,11 +168,11 @@ class PageRig {
       catalogs: <Catalog>[genesisCatalog(catalogId: rigCatalog)],
       replay: replay,
       snapshotFactory: (exitHandler) => SnapshotService(
-        path: null,
+        path: snapshotPath,
         exitHandler: exitHandler,
         errorSink: errors,
       ),
-      exitHandler: (_) {},
+      exitHandler: onExit ?? (_) {},
       errorSink: errors,
       settings: settings,
     );
