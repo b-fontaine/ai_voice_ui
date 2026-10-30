@@ -63,10 +63,20 @@ type Intent struct {
 // IsZero indique la vue globale : ni plateforme ni comparaison.
 func (i Intent) IsZero() bool { return i == Intent{} }
 
+// Focus est la vue courante du canevas, transmise par l'orchestrateur (spec 011,
+// pdr-0071). Le zéro signifie « aucun focus ». Comme Intent, il ne porte que des
+// valeurs fermées ; ParseIntent ignore une plateforme que le jeu ne connaît pas.
+type Focus struct {
+	Platform  string
+	CompareTo string
+}
+
 // ParseIntent analyse une demande et en tire l'intention, ou une *ScopeError (qui
 // enveloppe ErrOutOfScope). Il refuse une autre version que ds.TargetVersion
 // (ds.CompareVersion n'est admise que dans une comparaison), une comparaison sans
 // plateforme ou que ds.Comparison refuse pour cette plateforme, et deux plateformes.
+// Une comparaison qui ne nomme aucune plateforme hérite de celle du focus (si le jeu la
+// connaît) ; une plateforme nommée par le texte prime toujours sur le focus.
 // Il n'applique aucun filtre thématique : le choix des agents revient à l'orchestrateur.
 // Le texte est coupé à 1 000 runes avant analyse.
 //
@@ -75,7 +85,7 @@ func (i Intent) IsZero() bool { return i == Intent{} }
 // « point(s) », « étoile(s) », « sur 5 », « / 5 », « million(s) » ou « millier(s) », et un
 // décimal précédé de « note » ou « moyenne » (à quatre mots près, hors « la », « version »,
 // « release »). « 1.000 » et « version 10.2 » ne sont pas des versions non plus.
-func ParseIntent(text string, ds dataset.Dataset) (Intent, error) {
+func ParseIntent(text string, focus Focus, ds dataset.Dataset) (Intent, error) {
 	if r := []rune(text); len(r) > maxRequestRunes {
 		text = string(r[:maxRequestRunes])
 	}
@@ -133,6 +143,9 @@ func ParseIntent(text string, ds dataset.Dataset) (Intent, error) {
 		in.Platform = found[0]
 	}
 	if comparing {
+		if in.Platform == "" && slices.Contains(knownPlatforms(ds), focus.Platform) {
+			in.Platform = focus.Platform
+		}
 		if in.Platform == "" {
 			return Intent{}, &ScopeError{Reason: ReasonCompareWithoutPlatform}
 		}

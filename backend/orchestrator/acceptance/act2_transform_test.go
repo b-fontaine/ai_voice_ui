@@ -149,9 +149,10 @@ func TestAct2_RefusHonnetes(t *testing.T) {
 // quand le speaker dit « Concentre-toi sur Android » puis, dans une seconde délégation,
 // « et compare avec la 3.3 » ;
 // alors la première met à jour les quatre surfaces en vue Android sans comparaison
-// (Android 99,43 %, aucune donnée 3.3), sans createSurface ; la seconde est refusée
-// honnêtement (la demande des agents est la seule transcription depuis la délégation
-// précédente : pas de plateforme, donc `rejected`), sans toucher aucune surface.
+// (Android 99,43 %, aucune donnée 3.3), sans createSurface ; la seconde hérite de la
+// plateforme du focus (spec 011, K-01, pdr-0071) : les trois agents sont `completed`
+// et la comparaison 3.3 est ajoutée, sans refus. (Avant 011, la demande, réduite à la
+// transcription depuis la délégation précédente, était refusée faute de plateforme.)
 func TestAct2_TwoDelegationsAndroidThenCompare(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -189,7 +190,8 @@ func TestAct2_TwoDelegationsAndroidThenCompare(t *testing.T) {
 	sayTurn(live, 3, "et compare avec la 3.3")
 	envs = collectDelegation(t, feed, "« et compare avec la 3.3 »")
 	requireSelected(t, envs, "deleg_3", allThreeAgents)
-	requireAllRejected(t, envs, "« et compare avec la 3.3 »")
-	requireNoA2UI(t, envs, "« et compare avec la 3.3 »")
-	waitCommentaryContaining(t, live, 0, phraseFromConfig(t, "failure_rejected"), "« et compare avec la 3.3 »")
+	if n := countState(envs, "completed"); n != 3 || countState(envs, "failed")+countState(envs, "rejected") != 0 {
+		t.Fatalf("« et compare avec la 3.3 » : %d completed, attendu 3 sans refus (reçu : %s)", n, describe(envs))
+	}
+	requireOnlyUpdates(t, envs, loadExamples(t, "act2"), "« et compare avec la 3.3 »")
 }

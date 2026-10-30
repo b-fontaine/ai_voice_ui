@@ -34,7 +34,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if !req.Action.IsZero() {
 		return composeAction(req, ds)
 	}
-	intent, err := kit.ParseIntent(req.Text, ds)
+	intent, err := kit.ParseIntent(req.Text, req.Focus, ds)
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -74,7 +74,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 		// checklist, une seule fois (elle ne dépend pas de la vue).
 		msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "actions", "ActionBar", "/actions", actionBarValue(ds.ActionBar))...)
 	}
-	return kit.Composition{Messages: msgs, Summary: summary(cl)}, nil
+	return kit.Composition{Messages: msgs, Summary: summary(cl), Intent: &intent}, nil
 }
 
 // actionBarValue construit la donnée de la surface `actions` depuis le jeu de données.

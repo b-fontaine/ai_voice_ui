@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +38,22 @@ const ActiveSurfacesKey = "genesis/activeSurfaces"
 // ActionKey est la clé de metadata du message A2A qui porte une action de
 // l'interface : {"name": <nom>}.
 const ActionKey = "genesis/action"
+
+// FocusKey est la clé de metadata du message A2A qui porte le focus du canevas :
+// {"platform", "compareTo"}.
+const FocusKey = "genesis/focus"
+
+// IntentKey est la clé de metadata du message de l'état completed par laquelle l'agent
+// renvoie l'intention résolue : {"platform", "compareTo"}.
+const IntentKey = "genesis/intent"
+
+// Listes blanches de l'intention renvoyée par un agent (valeurs fermées, pdr-0071) :
+// les plateformes et la version de comparaison du jeu de données de la démo. Une
+// valeur hors liste fait écarter toute l'intention (le focus reste inchangé).
+var (
+	intentPlatforms = []string{"", "Android", "iOS"}
+	intentCompareTo = []string{"", "3.3"}
+)
 
 // cancelTimeout borne l'appel CancelTask, émis avec un contexte neuf.
 const cancelTimeout = time.Second
@@ -382,6 +399,9 @@ func (s *stream) run(req port.AgentRequest) {
 	if req.Action != nil {
 		msg.Metadata[ActionKey] = map[string]any{"name": req.Action.Name}
 	}
+	if req.Focus != nil {
+		msg.Metadata[FocusKey] = map[string]any{"platform": req.Focus.Platform, "compareTo": req.Focus.CompareTo}
+	}
 	for ev, err := range client.SendStreamingMessage(s.ctx, &a2a.SendMessageRequest{Message: msg}) {
 		if err != nil {
 			s.a.log.Debug("a2aclient : erreur de flux", "err", err)
@@ -482,7 +502,7 @@ func (s *stream) status(st a2a.TaskState, msg *a2a.Message) bool {
 		return true
 	case a2a.TaskStateCompleted:
 		s.done = true
-		s.emit(port.AgentUpdate{Kind: port.UpdateCompleted})
+		s.emit(port.AgentUpdate{Kind: port.UpdateCompleted, Intent: intentFrom(msg)})
 		return false
 	case a2a.TaskStateFailed:
 		s.done = true
@@ -512,4 +532,23 @@ func (s *stream) cancelRemote() {
 	if _, err := s.client.CancelTask(ctx, &a2a.CancelTaskRequest{ID: s.taskID}); err != nil {
 		s.a.log.Debug("a2aclient : CancelTask", "err", err)
 	}
+}
+
+// intentFrom lit l'intention dans les metadata du message de l'état completed. Elle
+// n'est rendue que si elle est entièrement valide : exactement les champs platform et
+// compareTo, chacun chaîne de la liste blanche. Sinon nil (le focus reste inchangé).
+func intentFrom(msg *a2a.Message) *port.Focus {
+	if msg == nil {
+		return nil
+	}
+	raw, ok := msg.Metadata[IntentKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	platform, okP := raw["platform"].(string)
+	compareTo, okC := raw["compareTo"].(string)
+	if !okP || !okC || len(raw) != 2 || !slices.Contains(intentPlatforms, platform) || !slices.Contains(intentCompareTo, compareTo) {
+		return nil
+	}
+	return &port.Focus{Platform: platform, CompareTo: compareTo}
 }

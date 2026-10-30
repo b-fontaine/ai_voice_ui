@@ -24,7 +24,8 @@ type taskState struct {
 	// Issue, consignée sous mu au moment de `completed`/`failed`.
 	ok       bool
 	summary  string
-	rejected bool // l'agent a refusé la demande (hors délai et fermeture)
+	intent   *port.Focus // intention résolue renvoyée par l'agent à `completed` (nil : aucune)
+	rejected bool        // l'agent a refusé la demande (hors délai et fermeture)
 }
 
 // track enregistre la tâche en vol ; faux si le pipeline est déjà fermé ou si
@@ -91,7 +92,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 }
 
 // complete vérifie que les surfaces sont complètes, puis publie `completed`.
-func (p *Pipeline) complete(ts *taskState, summary string) bool {
+func (p *Pipeline) complete(ts *taskState, summary string, intent *port.Focus) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if ts.done || p.closed {
@@ -107,7 +108,7 @@ func (p *Pipeline) complete(ts *taskState, summary string) bool {
 		return false
 	}
 	ts.done = true
-	ts.ok, ts.summary = true, summary
+	ts.ok, ts.summary, ts.intent = true, summary, intent
 	p.untrackLocked(ts)
 	p.deps.Canvas.Registry().Forget(ts.taskID)
 	p.publishActivityLocked(ts, domain.ActivityCompleted, "")

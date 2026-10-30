@@ -211,6 +211,7 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 
 	n := len(selected)
 	tasks, succeeded, rejections := p.runTasks(ctx, agentCtx, d, cards, cardErrs, selected)
+	p.updateFocus(tasks)
 
 	if sessionClosed(ctx) {
 		p.seal()
@@ -377,7 +378,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 	card := ts.card
 	for u, err := range a.Send(ctx, port.AgentRequest{
 		Text: d.Request, ContextID: p.deps.SessionID, Card: &card, ActiveSurfaces: p.activeSurfaces(ts.owner),
-		Action: d.Action,
+		Action: d.Action, Focus: p.focusFor(d),
 	}) {
 		if err != nil {
 			p.fail(ctx, ts, err)
@@ -395,7 +396,7 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 		case port.UpdateText:
 			summary = appendSummary(summary, u.Text)
 		case port.UpdateCompleted:
-			p.complete(ts, summary)
+			p.complete(ts, summary, u.Intent)
 			return
 		case port.UpdateFailed:
 			err := u.Err
@@ -410,6 +411,46 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 		}
 	}
 	p.fail(ctx, ts, errNoFinalState)
+}
+
+// focusFor donne le focus du canevas à transmettre aux agents : nil pour une action de
+// l'interface (qui ne le lit ni ne le modifie) ou tant qu'aucun focus n'existe. Il prend
+// Canvas.mu sans autre verrou tenu.
+func (p *Pipeline) focusFor(d Delegation) *port.Focus {
+	if d.Action != nil {
+		return nil
+	}
+	f := p.deps.Canvas.Focus()
+	if f == (port.Focus{}) {
+		return nil
+	}
+	return &f
+}
+
+// updateFocus met à jour le focus du canevas d'après les intentions des agents réussis
+// d'une demande vocale : seulement si au moins un agent a renvoyé une intention et que
+// toutes celles reçues concordent. Un agent sans intention valide est ignoré ; un refus,
+// un échec ou un désaccord laissent le focus inchangé. Les actions n'y touchent pas
+// (leur chemin est runAction). p.mu est relâché avant de prendre Canvas.mu.
+func (p *Pipeline) updateFocus(tasks []*taskState) {
+	p.mu.Lock()
+	var agreed *port.Focus
+	conflict := false
+	for _, ts := range tasks {
+		if !ts.ok || ts.intent == nil {
+			continue
+		}
+		switch {
+		case agreed == nil:
+			agreed = ts.intent
+		case *agreed != *ts.intent:
+			conflict = true
+		}
+	}
+	p.mu.Unlock()
+	if agreed != nil && !conflict {
+		p.deps.Canvas.setFocus(*agreed)
+	}
 }
 
 // activeSurfaces donne les surfaces ouvertes qui appartiennent à owner, lues

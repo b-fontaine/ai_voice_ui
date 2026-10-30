@@ -9,13 +9,15 @@ import (
 	"sync"
 
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
 // Ordre des verrous (à respecter partout, jamais à l'envers) :
 //
 //	Canvas.mu → Manager.mu → session.mu → Pipeline.mu → Registry.mu → orphMu
 //
-// Canvas.mu protège le compteur running et sérialise la remise à vide face au
+// Canvas.mu protège le compteur running, le focus (setFocus ne le prend jamais sous un
+// autre verrou de cette liste) et sérialise la remise à vide face au
 // début et à la fin de toute exécution de Run. Pipeline.Close et seal ne touchent
 // jamais le registre ni Canvas.mu. orphMu est un verrou feuille : rien d'autre
 // n'est pris sous lui.
@@ -28,7 +30,8 @@ type Canvas struct {
 	reg *a2ui.Registry
 
 	mu      sync.Mutex
-	running int // exécutions de Run en cours (étape de plan comprise)
+	running int        // exécutions de Run en cours (étape de plan comprise)
+	focus   port.Focus // vue courante (pdr-0071) ; effacée par ResetCanvas
 
 	// Compensations (deleteSurface) retirées du registre à la fermeture d'une
 	// session, donc jamais reçues par l'app : la prochaine exécution de Run ou la
@@ -48,6 +51,21 @@ func NewCanvas(l a2ui.Limits) (*Canvas, error) {
 
 // Registry renvoie le registre unique, partagé par toutes les sessions.
 func (c *Canvas) Registry() *a2ui.Registry { return c.reg }
+
+// Focus renvoie la vue courante du canevas (zéro : aucune). Il prend Canvas.mu.
+func (c *Canvas) Focus() port.Focus {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.focus
+}
+
+// setFocus remplace la vue courante. Elle ne prend que Canvas.mu, jamais sous un
+// autre verrou de l'ordre documenté.
+func (c *Canvas) setFocus(f port.Focus) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.focus = f
+}
 
 // enter déclare une exécution de Run ; elle attend la fin d'une remise à vide
 // en cours (Canvas.mu), puis ResetCanvas la voit et répond ErrCanvasBusy.

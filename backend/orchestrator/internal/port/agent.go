@@ -40,12 +40,25 @@ type AgentCard struct {
 // Action, si non nil, transmet une action de l'interface (clic sur un bouton)
 // au lieu d'une demande vocale : seul son nom part vers l'agent, jamais une
 // surface ni une donnée venue du client. Text est alors ignoré par l'adaptateur.
+//
+// Focus, si non nil, est la vue courante du canevas (plateforme, comparaison) : l'agent
+// s'en sert pour compléter une demande vocale incomplète (« compare avec la 3.3 » après
+// un focus sur Android). Il ne part jamais avec une Action.
 type AgentRequest struct {
 	Text           string
 	ContextID      string
 	Card           *AgentCard
 	ActiveSurfaces []string
 	Action         *ActionCall
+	Focus          *Focus
+}
+
+// Focus est la vue courante du canevas, ou l'intention résolue par un agent : des
+// valeurs d'énumérations fermées, jamais un fragment de la demande. Platform vaut ""
+// (vue globale) ou une plateforme du jeu ; CompareTo vaut "" ou la version comparée.
+type Focus struct {
+	Platform  string
+	CompareTo string
 }
 
 // ActionCall est une action de l'interface adressée à un agent : son nom,
@@ -78,6 +91,9 @@ type AgentUpdate struct {
 	Err    error
 	Name   string
 	Label  string
+	// Intent n'est renseigné que sur UpdateCompleted : l'intention résolue par l'agent,
+	// déjà validée par l'adaptateur. nil : l'agent n'en a pas renvoyé (ou invalide).
+	Intent *Focus
 }
 
 // AgentErrorKind est la nature, fermée, d'un échec d'agent distant.

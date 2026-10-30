@@ -320,6 +320,7 @@ func (m *Manager) ResetCanvas(ctx context.Context) error {
 			return port.ErrCanvasBusy
 		}
 	}
+	c.focus = port.Focus{} // la remise à vide efface aussi la vue courante (pdr-0071)
 	msgs := mergeDeletions(c.takeOrphans(), c.reg.Reset())
 	if len(msgs) == 0 {
 		return nil
