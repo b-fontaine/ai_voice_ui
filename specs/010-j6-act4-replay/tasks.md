@@ -5,7 +5,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. Pile unique (Flutter) : **une tâche à la fois**. `product/`, `specs/`, `pubspec.yaml` racine, `workspace_dependency_rules_test.dart` : session principale seule.
 
 ## Sonde et socle
-- [ ] T05 Flutter — **sonde genui 0.10.4** : `deleteSurface` puis `createSurface` du même identifiant, validateur remis à zéro, redonne le même rendu (surfaces de l'acte 1) · test d'abord : le test lui-même ; **s'il échoue : fonctionnalité Bloquée, Q-xx pour le porteur** (pas de repli)
+- [x] T05 Flutter — **sonde genui 0.10.4** : `deleteSurface` puis `createSurface` du même identifiant, validateur remis à zéro, redonne le même rendu (surfaces de l'acte 1) · test d'abord : le test lui-même ; **s'il échoue : fonctionnalité Bloquée, Q-xx pour le porteur** (pas de repli)
 - [x] T03a session principale — workspace racine, `packages/features/replay/pubspec.yaml`, dépendance `feature_replay` dans `apps/genesis_canvas/pubspec.yaml`, ajout à `workspace_dependency_rules_test.dart` · test d'abord : le test de règles de dépendances
 - [ ] T11 Flutter — `testing/backend_fakes` : compteur de **toutes** les requêtes HTTP du `FakeBackend` (aujourd'hui seulement `canvasResets`) · test d'abord : `fake_backend_test.dart`
 - [ ] T12 Flutter — `GenesisApp` : paramètre `clock` (frontière « temps ») vers `AppClock` de la DI · test d'abord : une app lancée avec une horloge fausse l'utilise
