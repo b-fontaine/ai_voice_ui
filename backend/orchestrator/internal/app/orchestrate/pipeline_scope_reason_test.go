@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/domain"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
 
@@ -114,5 +115,32 @@ func TestPipelineViewRefusalDoesNotMaskASuccess(t *testing.T) {
 		if txt == pipePhrases.FailureRejectedView || txt == pipePhrases.FailureRejected {
 			t.Fatalf("un refus a masqué le résultat de l'agent réussi : %q", e.texts())
 		}
+	}
+}
+
+// Un refus de vue après un squelette déjà relayé est compensé comme un échec : les surfaces
+// créées sont supprimées dans l'ordre inverse de création (spec 012, R5).
+func TestPipelineViewRefusalAfterSkeletonIsCompensated(t *testing.T) {
+	err := &port.AgentError{Kind: port.AgentRejected, Reason: "refusée"}
+	agent := newAgent(agentQuality, submitted("t1"),
+		a2uiStep(createMsg("kpi")), a2uiStep(rootMsg("kpi")), a2uiStep(createMsg("trend")),
+		step{u: port.AgentUpdate{Kind: port.UpdateFailed, Err: err, ScopeReason: "view_unavailable"}, err: err})
+	e := newEnv(t, agent)
+	e.p.Run(context.Background(), e.delegation(t))
+
+	got := e.sink.snapshot()
+	expectSeq(t, got,
+		"activity:working",
+		"a2ui:createSurface@"+agentQuality, "a2ui:updateComponents@"+agentQuality, "a2ui:createSurface@"+agentQuality,
+		"a2ui:deleteSurface@orchestrateur", "a2ui:deleteSurface@orchestrateur",
+		"activity:rejected:hors périmètre")
+	ids := func(i int) any {
+		return got[i].Data.(domain.A2UI).Message["deleteSurface"].(map[string]any)["surfaceId"]
+	}
+	if ids(4) != "trend" || ids(5) != "kpi" {
+		t.Fatalf("ordre de compensation = %v puis %v, attendu trend puis kpi", ids(4), ids(5))
+	}
+	if want := []string{pipePhrases.Generic, pipePhrases.FailureRejectedView}; !reflect.DeepEqual(e.texts(), want) {
+		t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
 	}
 }

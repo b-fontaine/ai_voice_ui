@@ -278,14 +278,17 @@ func TestNew_Validation(t *testing.T) {
 	u := newUpstream(t, serve(`{}`))
 	good := options(u, &logs)
 	mut := map[string]func(*openaitext.Options){
-		"clé absente":   func(o *openaitext.Options) { o.APIKey = "" },
-		"URL absente":   func(o *openaitext.Options) { o.BaseURL = "" },
-		"URL invalide":  func(o *openaitext.Options) { o.BaseURL = "://x" },
-		"jetons":        func(o *openaitext.Options) { o.MaxOutputTokens = 0 },
-		"délai":         func(o *openaitext.Options) { o.Timeout = 0 },
-		"borne réponse": func(o *openaitext.Options) { o.MaxResponseBytes = 0 },
-		"horloge":       func(o *openaitext.Options) { o.Clock = nil },
-		"journal":       func(o *openaitext.Options) { o.Logger = nil },
+		"clé absente":      func(o *openaitext.Options) { o.APIKey = "" },
+		"URL absente":      func(o *openaitext.Options) { o.BaseURL = "" },
+		"URL invalide":     func(o *openaitext.Options) { o.BaseURL = "://x" },
+		"jetons":           func(o *openaitext.Options) { o.MaxOutputTokens = 0 },
+		"jetons < 16":      func(o *openaitext.Options) { o.MaxOutputTokens = 15 },
+		"http distant":     func(o *openaitext.Options) { o.BaseURL = "http://api.example.com/v1" },
+		"http IP publique": func(o *openaitext.Options) { o.BaseURL = "http://8.8.8.8/v1" },
+		"délai":            func(o *openaitext.Options) { o.Timeout = 0 },
+		"borne réponse":    func(o *openaitext.Options) { o.MaxResponseBytes = 0 },
+		"horloge":          func(o *openaitext.Options) { o.Clock = nil },
+		"journal":          func(o *openaitext.Options) { o.Logger = nil },
 	}
 	for name, m := range mut {
 		o := good
@@ -298,5 +301,56 @@ func TestNew_Validation(t *testing.T) {
 	}
 	if s := good.String(); strings.Contains(s, secretKey) {
 		t.Errorf("Options.String révèle la clé : %s", s)
+	}
+}
+
+func TestNew_BaseURLSchemeAndHost(t *testing.T) {
+	var logs bytes.Buffer
+	good := options(newUpstream(t, serve(`{}`)), &logs)
+	for _, url := range []string{
+		"https://api.openai.com/v1", "http://127.0.0.1:8080/v1", "http://127.1.2.3/v1",
+		"http://localhost:9/v1", "http://[::1]:9/v1",
+	} {
+		o := good
+		o.BaseURL = url
+		if _, err := openaitext.New(o); err != nil {
+			t.Errorf("%s devrait être accepté : %v", url, err)
+		}
+	}
+	o := good
+	o.MaxOutputTokens = 16
+	if _, err := openaitext.New(o); err != nil {
+		t.Errorf("MaxOutputTokens = 16 devrait être accepté : %v", err)
+	}
+}
+
+// Le client ne passe jamais par un proxy d'environnement : le Bearer n'y transiterait pas.
+func TestComplete_IgnoresEnvironmentProxy(t *testing.T) {
+	var hits int
+	var mu sync.Mutex
+	proxy := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		mu.Lock()
+		hits++
+		mu.Unlock()
+	}))
+	defer proxy.Close()
+	t.Setenv("HTTP_PROXY", proxy.URL)
+	t.Setenv("HTTPS_PROXY", proxy.URL)
+	t.Setenv("http_proxy", proxy.URL)
+	t.Setenv("https_proxy", proxy.URL)
+	t.Setenv("NO_PROXY", "")
+	t.Setenv("no_proxy", "")
+
+	var logs bytes.Buffer
+	o := options(newUpstream(t, serve(`{}`)), &logs)
+	// Hôte non bouclé pour que ProxyFromEnvironment s'appliquerait : un nom que seul
+	// le serveur de test résout n'existe pas, on vise donc 127.0.0.1 via « localhost. ».
+	o.BaseURL = strings.Replace(o.BaseURL, "127.0.0.1", "localhost", 1)
+	p := newProvider(t, o)
+	_, _ = p.Complete(context.Background(), request())
+	mu.Lock()
+	defer mu.Unlock()
+	if hits != 0 {
+		t.Fatalf("le proxy d'environnement a reçu %d requête(s)", hits)
 	}
 }

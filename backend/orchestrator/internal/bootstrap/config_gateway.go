@@ -56,7 +56,7 @@ type ComposerConfig struct {
 	RateWindow time.Duration
 	// Bornes de taille : COMPOSER_MAX_REQUEST_BYTES (64 Kio), COMPOSER_MAX_INSTRUCTIONS_BYTES
 	// (32 Kio), COMPOSER_MAX_INPUT_BYTES (4 Kio), COMPOSER_MAX_SCHEMA_BYTES (8 Kio) et
-	// COMPOSER_MAX_SCHEMA_DEPTH (8).
+	// COMPOSER_MAX_SCHEMA_DEPTH (12).
 	MaxRequestBytes      int64
 	MaxInstructionsBytes int
 	MaxInputBytes        int

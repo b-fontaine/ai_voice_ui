@@ -84,8 +84,8 @@ func New(o Options) (*Provider, error) {
 	switch {
 	case o.APIKey == "":
 		return nil, errors.New("openaitext: APIKey est requis")
-	case o.MaxOutputTokens <= 0:
-		return nil, errors.New("openaitext: MaxOutputTokens doit être > 0")
+	case o.MaxOutputTokens < minOutputTokens:
+		return nil, errors.New("openaitext: MaxOutputTokens doit être >= 16")
 	case o.Timeout <= 0:
 		return nil, errors.New("openaitext: Timeout doit être > 0")
 	case o.MaxResponseBytes <= 0:
@@ -95,13 +95,38 @@ func New(o Options) (*Provider, error) {
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 		return nil, errors.New("openaitext: BaseURL invalide")
 	}
+	if u.Scheme == "http" && !isLoopbackHost(u.Hostname()) {
+		// La clé partirait en clair : http n'est admis qu'en boucle locale.
+		return nil, errors.New("openaitext: BaseURL en http réservée à la boucle locale")
+	}
 	p.endpoint = strings.TrimRight(o.BaseURL, "/") + "/responses"
 	p.client = &http.Client{
 		Timeout: o.Timeout,
+		// Transport dédié : pas de proxy d'environnement, le Bearer ne transite que vers BaseURL.
+		Transport: &http.Transport{
+			Proxy:                 nil,
+			DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: o.Timeout,
+			MaxIdleConns:          2,
+			IdleConnTimeout:       30 * time.Second,
+		},
 		// Une redirection ne doit jamais emporter la clé ailleurs.
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	return p, nil
+}
+
+// minOutputTokens est le plancher de MaxOutputTokens (raisonnement et sortie visible).
+const minOutputTokens = 16
+
+// isLoopbackHost vaut vrai pour « localhost » et pour une adresse de boucle (127.0.0.0/8, ::1).
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 var schemaNameRE = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
