@@ -78,7 +78,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 		return false
 	}
 	if err == nil {
-		err = p.deps.Registry.Apply(ts.owner, ts.taskID, op)
+		err = p.deps.Canvas.Registry().Apply(ts.owner, ts.taskID, op)
 	}
 	if err != nil {
 		p.failLocked(ts, DetailInvalidA2UI)
@@ -101,7 +101,7 @@ func (p *Pipeline) complete(ts *taskState, summary string) bool {
 		p.failLocked(ts, DetailAgentFailed)
 		return false
 	}
-	if err := p.deps.Registry.Complete(ts.taskID); err != nil {
+	if err := p.deps.Canvas.Registry().Complete(ts.taskID); err != nil {
 		p.failLocked(ts, DetailInvalidA2UI)
 		p.log.Warn("surface incomplète à la fin de la tâche", "agent", ts.agent, "task", ts.taskID, "err", err)
 		return false
@@ -109,7 +109,7 @@ func (p *Pipeline) complete(ts *taskState, summary string) bool {
 	ts.done = true
 	ts.ok, ts.summary = true, summary
 	p.untrackLocked(ts)
-	p.deps.Registry.Forget(ts.taskID)
+	p.deps.Canvas.Registry().Forget(ts.taskID)
 	p.publishActivityLocked(ts, domain.ActivityCompleted, "")
 	return true
 }
@@ -147,12 +147,12 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 	ts.done = true
 	p.untrackLocked(ts)
 	if ts.taskID != "" {
-		compensation := p.deps.Registry.Compensation(ts.taskID)
+		compensation := p.deps.Canvas.Registry().Compensation(ts.taskID)
 		for _, m := range compensation {
 			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
 				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 		}
-		p.deps.Registry.Forget(ts.taskID)
+		p.deps.Canvas.Registry().Forget(ts.taskID)
 	}
 	state := domain.ActivityFailed
 	if ts.rejected {

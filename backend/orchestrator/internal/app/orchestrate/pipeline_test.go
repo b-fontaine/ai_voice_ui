@@ -296,8 +296,42 @@ type env struct {
 	p     *Pipeline
 	sink  *recSink
 	reply *fakeReply
-	reg   *a2ui.Registry
+	reg   *a2ui.Registry // registre du canevas (partagé)
 	start time.Time
+
+	canvas *Canvas
+
+	mOnce sync.Once
+	m     *Manager
+}
+
+// reset remet le canevas à vide par un Manager (ses sessions ouvertes sont
+// celles du test : ici une seule, dont le Runner est e.p, sans passer par la
+// file du Manager). Le Manager est créé à la première utilisation.
+func (e *env) reset(t *testing.T) error {
+	t.Helper()
+	e.mOnce.Do(func() {
+		opts := testOptions()
+		opts.Canvas = e.canvas
+		m, err := NewManager(factoryOf(e.p), pipePhrases, opts)
+		if err != nil {
+			panic(err)
+		}
+		s := m.Open(testSession, e.start, newFakeReply())
+		t.Cleanup(func() { s.Close(context.Background()) })
+		e.m = m
+	})
+	return e.m.ResetCanvas(context.Background())
+}
+
+// newTestCanvas construit un canevas aux limites de test.
+func newTestCanvas(t *testing.T) *Canvas {
+	t.Helper()
+	c, err := NewCanvas(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
 }
 
 func newEnv(t *testing.T, agents ...port.RemoteAgent) *env {
@@ -309,11 +343,8 @@ func newEnv(t *testing.T, agents ...port.RemoteAgent) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
-	if err != nil {
-		t.Fatal(err)
-	}
-	e := &env{sink: &recSink{}, reply: newFakeReply(), reg: reg, start: time.Unix(1000, 0)}
+	canvas := newTestCanvas(t)
+	e := &env{sink: &recSink{}, reply: newFakeReply(), canvas: canvas, reg: canvas.Registry(), start: time.Unix(1000, 0)}
 	e.p, err = NewPipeline(PipelineDeps{
 		SessionID: testSession,
 		Start:     e.start,
@@ -322,7 +353,7 @@ func newEnv(t *testing.T, agents ...port.RemoteAgent) *env {
 		Reply:     e.reply,
 		Agents:    agents,
 		Validator: val,
-		Registry:  reg,
+		Canvas:    canvas,
 		Phrases:   pipePhrases,
 		Logger:    slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
@@ -379,11 +410,11 @@ func TestNewPipelineValidatesDeps(t *testing.T) {
 	good := newEnv(t, newAgent("A"))
 	_ = good
 	val, _ := a2ui.NewValidator(a2ui.Options{CatalogID: "c", Components: []string{"Text"}, MaxMessageBytes: 10, MaxDepth: 2, MaxComponentsPerUpdate: 1})
-	reg, _ := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1})
+	canvas, _ := NewCanvas(a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1})
 	base := PipelineDeps{
 		SessionID: "s", Start: time.Now(), Clock: fixedClock{}, Sink: &recSink{}, Reply: newFakeReply(),
-		Agents:    []port.RemoteAgent{newAgent("A")}, // validateur et registre requis dès qu'il y a un agent
-		Validator: val, Registry: reg, Phrases: pipePhrases, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Agents:    []port.RemoteAgent{newAgent("A")}, // validateur et canevas requis dès qu'il y a un agent
+		Validator: val, Canvas: canvas, Phrases: pipePhrases, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 	if _, err := NewPipeline(base); err != nil {
 		t.Fatalf("dépendances valides refusées : %v", err)
@@ -394,7 +425,7 @@ func TestNewPipelineValidatesDeps(t *testing.T) {
 		"sink":       func(d *PipelineDeps) { d.Sink = nil },
 		"voix":       func(d *PipelineDeps) { d.Reply = nil },
 		"validateur": func(d *PipelineDeps) { d.Validator = nil },
-		"registre":   func(d *PipelineDeps) { d.Registry = nil },
+		"canevas":    func(d *PipelineDeps) { d.Canvas = nil },
 		"phrases":    func(d *PipelineDeps) { d.Phrases.Failure = "" },
 		"agent nil":  func(d *PipelineDeps) { d.Agents = []port.RemoteAgent{nil} },
 	}
@@ -435,10 +466,10 @@ func TestNewPipelineWithoutAgentsNeedsNoValidator(t *testing.T) {
 
 func TestNewPipelineFactoryValidatesOnce(t *testing.T) {
 	val, _ := a2ui.NewValidator(a2ui.Options{CatalogID: "c", Components: []string{"Text"}, MaxMessageBytes: 10, MaxDepth: 2, MaxComponentsPerUpdate: 1})
+	canvas, _ := NewCanvas(a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1})
 	good := PipelineConfig{
 		Clock: fixedClock{}, Sink: &recSink{}, Phrases: pipePhrases,
-		Agents: []port.RemoteAgent{newAgent("A")}, Validator: val,
-		Limits: a2ui.Limits{MaxSurfaces: 1, MaxComponentsPerSurface: 1, MaxMessagesPerTask: 1},
+		Agents: []port.RemoteAgent{newAgent("A")}, Validator: val, Canvas: canvas,
 	}
 	f, err := NewPipelineFactory(good) // Logger nil : slog.Default()
 	if err != nil {
@@ -453,7 +484,7 @@ func TestNewPipelineFactoryValidatesOnce(t *testing.T) {
 		"sink":       func(c *PipelineConfig) { c.Sink = nil },
 		"phrases":    func(c *PipelineConfig) { c.Phrases.Failure = "" },
 		"validateur": func(c *PipelineConfig) { c.Validator = nil },
-		"limites":    func(c *PipelineConfig) { c.Limits = a2ui.Limits{} },
+		"canevas":    func(c *PipelineConfig) { c.Canvas = nil },
 		"agent nil":  func(c *PipelineConfig) { c.Agents = []port.RemoteAgent{nil} },
 	}
 	for name, mutate := range bad {
@@ -463,7 +494,7 @@ func TestNewPipelineFactoryValidatesOnce(t *testing.T) {
 			t.Errorf("%s : configuration invalide acceptée", name)
 		}
 	}
-	// Sans agent : ni validateur ni limites de registre exigés.
+	// Sans agent : ni validateur ni canevas exigés.
 	if _, err := NewPipelineFactory(PipelineConfig{Clock: fixedClock{}, Sink: &recSink{}, Phrases: pipePhrases}); err != nil {
 		t.Fatalf("configuration sans agent refusée : %v", err)
 	}

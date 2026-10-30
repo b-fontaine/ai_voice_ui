@@ -53,13 +53,13 @@ func TestPipelineResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing
 	runToCompletion(t, e)
 	before := len(e.sink.snapshot())
 
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas : %v", err)
 	}
 	if got := deletesOf(t, e, before); !slices.Equal(got, []string{"alpha", "mid", "zeta"}) {
 		t.Fatalf("deleteSurface = %v, attendu l'ordre trié", got)
 	}
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("2e ResetCanvas : %v", err)
 	}
 	if n := len(e.sink.snapshot()); n != before+3 {
@@ -71,7 +71,7 @@ func TestPipelineResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
 	agent := newAgent("Qualité", surfaceSteps("kpi")...)
 	e := newEnv(t, agent)
 	runToCompletion(t, e)
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatal(err)
 	}
 	if got := e.reg.ActiveFor(agent.ID()); len(got) != 0 {
@@ -92,11 +92,11 @@ func TestPipelineResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
 
 // waitBusy attend que ResetCanvas réponde « occupé » : le drapeau est posé dès
 // le début de Run, sans signal externe à attendre.
-func waitBusy(t *testing.T, p *Pipeline) {
+func waitBusy(t *testing.T, e *env) {
 	t.Helper()
 	deadline := time.Now().Add(wait)
 	for time.Now().Before(deadline) {
-		if errors.Is(p.ResetCanvas(), port.ErrCanvasBusy) {
+		if errors.Is(e.reset(t), port.ErrCanvasBusy) {
 			return
 		}
 		time.Sleep(time.Millisecond)
@@ -111,7 +111,7 @@ func TestPipelineResetCanvasBusyDuringPlanStep(t *testing.T) {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	done := runAsync(e.p, ctx, e.delegation(t))
 
-	waitBusy(t, e.p)
+	waitBusy(t, e)
 	if n := len(e.sink.snapshotAll()); n != 0 {
 		t.Fatalf("%d message(s) publié(s) par un ResetCanvas refusé", n)
 	}
@@ -140,7 +140,7 @@ func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	e.sink.await(t, 4) // working, createSurface, updateComponents, updateDataModel
 	before := len(e.sink.snapshotAll())
 
-	if err := e.p.ResetCanvas(); !errors.Is(err, port.ErrCanvasBusy) {
+	if err := e.reset(t); !errors.Is(err, port.ErrCanvasBusy) {
 		t.Fatalf("ResetCanvas = %v, ErrCanvasBusy attendu", err)
 	}
 	if got := e.reg.ActiveFor(agent.ID()); !slices.Equal(got, []string{"kpi"}) {
@@ -153,28 +153,30 @@ func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	awaitDone(t, done)
 
 	// Le drapeau est levé à la fin de Run.
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas après Run : %v", err)
 	}
 }
 
 func TestPipelineResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
+	canvas := newTestCanvas(t)
 	p, err := NewPipeline(PipelineDeps{
 		SessionID: testSession, Start: time.Unix(1000, 0), Clock: fixedClock{time.Unix(1000, 0)},
-		Sink: &recSink{}, Reply: newFakeReply(), Phrases: pipePhrases,
+		Sink: &recSink{}, Reply: newFakeReply(), Canvas: canvas, Phrases: pipePhrases,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(p.Close)
-	if err := p.ResetCanvas(); err != nil {
-		t.Fatalf("sans agent ni registre : %v", err)
+	e := &env{p: p, canvas: canvas, start: time.Unix(1000, 0)}
+	if err := e.reset(t); err != nil {
+		t.Fatalf("sans agent : %v", err)
 	}
 	gen := make(chan struct{})
 	close(gen)
 	p.Run(context.Background(), Delegation{ID: "d", Request: "x", GenericDone: gen})
-	if err := p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("après Run sans agent : %v", err)
 	}
 }
@@ -184,7 +186,7 @@ func TestPipelineResetCanvasAfterCloseIsNoOp(t *testing.T) {
 	runToCompletion(t, e)
 	e.p.Close()
 	before := len(e.sink.snapshotAll())
-	if err := e.p.ResetCanvas(); err != nil {
+	if err := e.reset(t); err != nil {
 		t.Fatalf("ResetCanvas après Close : %v", err)
 	}
 	if n := len(e.sink.snapshotAll()); n != before {
@@ -202,7 +204,7 @@ func TestPipelineResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := e.p.ResetCanvas(); err != nil {
+			if err := e.reset(t); err != nil {
 				t.Errorf("ResetCanvas : %v", err)
 			}
 		}()

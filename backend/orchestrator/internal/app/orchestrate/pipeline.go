@@ -50,7 +50,7 @@ type PipelineDeps struct {
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
 	Planner   Planner            // nil : TagPlanner
 	Validator *a2ui.Validator    // nil permis sans agent
-	Registry  *a2ui.Registry     // propre à la session ; nil permis sans agent
+	Canvas    *Canvas            // canevas partagé par toutes les sessions ; nil permis sans agent
 	Phrases   Phrases
 	Logger    *slog.Logger // nil : slog.Default()
 }
@@ -62,18 +62,18 @@ type Pipeline struct {
 	deps PipelineDeps
 	log  *slog.Logger
 
-	// mu est le verrou de session : il protège Publish, le registre de
-	// surfaces (décompte atomique), l'état des tâches en vol et closed.
+	// mu est le verrou de session : il protège Publish, les écritures dans le
+	// registre partagé (décompte atomique avec la publication), l'état des tâches
+	// en vol et closed. Ordre des verrous : Canvas.mu → p.mu → Registry.mu.
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
-	running  int  // exécutions de Run en cours (étape de plan comprise) : ResetCanvas refuse
 	inflight []*taskState
 	wg       sync.WaitGroup
 }
 
 var _ Runner = (*Pipeline)(nil)
 
-// NewPipeline valide ses dépendances. Validator et Registry ne sont exigés que
+// NewPipeline valide ses dépendances. Validator et Canvas ne sont exigés que
 // si Agents n'est pas vide (sans agent, ils ne servent jamais) ; Logger nil :
 // slog.Default().
 func NewPipeline(d PipelineDeps) (*Pipeline, error) {
@@ -82,8 +82,8 @@ func NewPipeline(d PipelineDeps) (*Pipeline, error) {
 		return nil, errors.New("orchestrate : identifiant de session manquant")
 	case d.Reply == nil:
 		return nil, errors.New("orchestrate : voix manquante")
-	case len(d.Agents) > 0 && d.Registry == nil:
-		return nil, errors.New("orchestrate : registre de surfaces manquant")
+	case len(d.Agents) > 0 && d.Canvas == nil:
+		return nil, errors.New("orchestrate : canevas manquant")
 	}
 	if err := d.validateShared(); err != nil {
 		return nil, err
@@ -126,43 +126,37 @@ func newPipeline(d PipelineDeps) *Pipeline {
 }
 
 // PipelineConfig est la configuration partagée par les pipelines de toutes les
-// sessions ; NewPipelineFactory la valide une seule fois, au démarrage.
+// sessions ; NewPipelineFactory la valide une seule fois, au démarrage. Le
+// canevas (donc ses limites, validées par NewCanvas) est construit par la racine
+// de composition et aussi remis au Manager.
 type PipelineConfig struct {
 	Clock     port.Clock
 	Sink      port.Sink
 	Agents    []port.RemoteAgent // vide : « aucun agent disponible »
 	Planner   Planner            // choisit les agents de chaque délégation ; nil : TagPlanner
 	Validator *a2ui.Validator    // exigé si Agents n'est pas vide
-	Limits    a2ui.Limits        // limites du registre de chaque session
+	Canvas    *Canvas            // registre unique des surfaces, partagé par toutes les sessions ; exigé si Agents n'est pas vide
 	Phrases   Phrases
 	Logger    *slog.Logger // nil : slog.Default()
 }
 
 // NewPipelineFactory valide la configuration puis renvoie la fabrique de
-// runners des sessions : elle ne peut plus échouer ensuite (un registre de
-// surfaces neuf par session, limites déjà validées).
+// runners des sessions : elle ne peut plus échouer ensuite (le canevas, donc le
+// registre, est commun à toutes les sessions et déjà construit).
 func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
 	deps := PipelineDeps{
 		Clock: cfg.Clock, Sink: cfg.Sink, Agents: cfg.Agents, Planner: cfg.Planner, Validator: cfg.Validator,
-		Phrases: cfg.Phrases, Logger: cfg.Logger,
+		Canvas: cfg.Canvas, Phrases: cfg.Phrases, Logger: cfg.Logger,
 	}
 	if err := deps.validateShared(); err != nil {
 		return nil, err
 	}
-	if _, err := a2ui.NewRegistry(cfg.Limits); err != nil && len(cfg.Agents) > 0 {
-		return nil, err
+	if len(cfg.Agents) > 0 && cfg.Canvas == nil {
+		return nil, errors.New("orchestrate : canevas manquant")
 	}
-	withRegistry := len(cfg.Agents) > 0
 	return func(sessionID string, start time.Time, reply port.VoiceReply) Runner {
 		d := deps
 		d.SessionID, d.Start, d.Reply = sessionID, start, reply
-		if withRegistry {
-			reg, err := a2ui.NewRegistry(cfg.Limits)
-			if err != nil {
-				panic("orchestrate : limites A2UI validées au démarrage : " + err.Error()) // inatteignable
-			}
-			d.Registry = reg
-		}
 		return newPipeline(d)
 	}, nil
 }
@@ -171,16 +165,13 @@ func NewPipelineFactory(cfg PipelineConfig) (RunnerFactory, error) {
 // ou quand ctx est annulé ; après un ctx annulé par ErrSessionClosed, plus
 // rien n'est publié ni dit.
 func (p *Pipeline) Run(ctx context.Context, d Delegation) {
-	// Le drapeau est posé dès l'entrée, avant la lecture des cartes : l'étape de
-	// plan, qui ne publie encore rien, compte comme une délégation en cours.
-	p.mu.Lock()
-	p.running++
-	p.mu.Unlock()
-	defer func() {
-		p.mu.Lock()
-		p.running--
-		p.mu.Unlock()
-	}()
+	// Le compteur du canevas est levé dès l'entrée, avant la lecture des cartes :
+	// l'étape de plan, qui ne publie encore rien, compte comme une délégation en
+	// cours. p.mu n'est pas tenu (ordre Canvas.mu → p.mu).
+	if c := p.deps.Canvas; c != nil {
+		c.enter()
+		defer c.leave()
+	}
 
 	if len(p.deps.Agents) == 0 {
 		if p.waitGeneric(ctx, d) {
@@ -289,30 +280,21 @@ func (p *Pipeline) Close() {
 	p.wg.Wait()
 }
 
-// ResetCanvas supprime toutes les surfaces actives de la session : un
-// `deleteSurface` par surface (ordre trié par surfaceId), publié par
-// l'orchestrateur sous le verrou de session, donc sans entrelacement avec le
-// registre. Le hub oublie la rétention de chaque surface ; le journal, lui,
-// garde tout, si bien que le rejeu reste cohérent. Le ContextID de la session
-// est conservé. Session fermée : sans effet. Délégation en cours : ErrCanvasBusy,
-// rien n'est changé. Idempotent : sur un registre vide, rien n'est émis.
-func (p *Pipeline) ResetCanvas() error {
+// publishDeletions publie dans la session les `deleteSurface` d'une remise à vide
+// du canevas partagé, rendus par Registry.Reset (ordre trié par surfaceId). C'est
+// le Manager qui vide le registre, sous Canvas.mu ; la session ne touche jamais le
+// registre ici. Elle publie sous son verrou, donc sans entrelacement avec ses
+// autres messages, et ne publie rien si elle est fermée. Le hub oublie la
+// rétention de chaque surface ; le journal garde tout, si bien que le rejeu reste
+// cohérent. Le ContextID de la session est conservé.
+func (p *Pipeline) publishDeletions(msgs []map[string]any) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.closed {
-		return nil
-	}
-	if p.running > 0 {
-		return port.ErrCanvasBusy
-	}
-	if p.deps.Registry == nil { // sans agent, aucune surface n'existe
-		return nil
-	}
-	for _, m := range p.deps.Registry.Reset() {
+	for _, m := range msgs {
+		m = cloneDeletion(m)
 		p.publishLocked(domain.TypeA2UI, OrchestratorName, "",
 			domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 	}
-	return nil
 }
 
 func (p *Pipeline) seal() {
@@ -381,12 +363,13 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 }
 
 // activeSurfaces donne les surfaces ouvertes qui appartiennent à owner, lues
-// dans le registre sous le verrou de session au moment de l'envoi : le registre
-// de l'orchestrateur est la source de vérité de la composition (A2).
+// dans le registre partagé sous le verrou de session au moment de l'envoi : le
+// registre de l'orchestrateur est la source de vérité de la composition (A2), et
+// il survit aux sessions (une session B ne recrée pas les surfaces de la A).
 func (p *Pipeline) activeSurfaces(owner string) []string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.deps.Registry.ActiveFor(owner)
+	return p.deps.Canvas.Registry().ActiveFor(owner)
 }
 
 // outcomes lit les issues sous le verrou. Invariant : tout agent retenu reçoit

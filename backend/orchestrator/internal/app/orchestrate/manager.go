@@ -147,6 +147,9 @@ type Options struct {
 	GuardTimeout time.Duration // attente maximale de Close
 	SeenCap      int           // identifiants de délégation mémorisés
 	Logger       *slog.Logger  // nil : slog.Default()
+	// Canvas est le canevas partagé par toutes les sessions, le même que celui
+	// des pipelines (PipelineConfig.Canvas).
+	Canvas *Canvas
 }
 
 // Manager implémente port.Delegations.
@@ -155,7 +158,7 @@ type Manager struct {
 	phrases Phrases
 	opts    Options
 
-	mu       sync.Mutex // protège sessions ; jamais tenu pendant un appel à une session
+	mu       sync.Mutex // protège sessions ; jamais tenu pendant un appel à une session (ordre : Canvas.mu → m.mu → session.mu)
 	sessions map[*session]struct{}
 }
 
@@ -177,6 +180,8 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 		return nil, fmt.Errorf("orchestrate : GuardTimeout doit être > 0 (%s)", opts.GuardTimeout)
 	case opts.SeenCap <= 0:
 		return nil, fmt.Errorf("orchestrate : SeenCap doit être > 0 (%d)", opts.SeenCap)
+	case opts.Canvas == nil:
+		return nil, errors.New("orchestrate : canevas manquant")
 	}
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
@@ -217,40 +222,49 @@ func (m *Manager) openSessions() int {
 	return len(m.sessions)
 }
 
-// canvasResetter est implémentée par le Runner qui sait vider son canevas
-// (le Pipeline) ; un Runner qui ne l'implémente pas n'a rien à vider.
-type canvasResetter interface{ ResetCanvas() error }
+// deletionPublisher est implémentée par le Runner qui sait publier dans sa
+// session les `deleteSurface` d'une remise à vide (le Pipeline) ; un Runner qui
+// ne l'implémente pas n'a rien à publier.
+type deletionPublisher interface{ publishDeletions(msgs []map[string]any) }
 
-// ResetCanvas remet à vide le canevas de toutes les sessions ouvertes.
+// ResetCanvas remet à vide le canevas partagé, en une seule passe sous Canvas.mu.
 //
-// Tout ou rien : une première passe vérifie qu'aucune session n'a de délégation
-// en cours ou en file ; s'il y en a une, ErrCanvasBusy est renvoyée sans rien
-// changer nulle part. Annuler après coup des deleteSurface déjà publiés est
-// impossible, d'où cette vérification préalable. Une délégation qui démarrerait
-// entre les deux passes est tout de même refusée par le Pipeline (ErrCanvasBusy) :
-// seules les sessions déjà vidées le restent, ce qui est inoffensif car la
-// remise à vide est idempotente. La table est copiée sous verrou, puis chaque
-// session est appelée sans aucun verrou du Manager ni de la session.
+// ErrCanvasBusy, rien n'étant changé, si une exécution de Run est en cours
+// (Canvas.running, fermeture en cours comprise : le Manager a pu oublier la
+// session alors que son Run n'a pas rendu la main) ou si une session ouverte a une
+// délégation en file. Sinon le registre est vidé une seule fois, puis chaque
+// session ouverte publie les `deleteSurface` sous son propre verrou (rien si elle
+// est fermée). Sans session ouverte, rien n'est publié : le registre est vidé et
+// c'est tout. Un Run ou une délégation qui arrive pendant la passe attend
+// Canvas.mu (enter) : il commence sur un canevas déjà vide. La table des sessions
+// est copiée sous m.mu, puis relâchée avant d'appeler les sessions.
 func (m *Manager) ResetCanvas(ctx context.Context) error {
+	c := m.opts.Canvas
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if c.running > 0 {
+		return port.ErrCanvasBusy
+	}
 	m.mu.Lock()
-	snapshot := make([]*session, 0, len(m.sessions))
+	open := make([]*session, 0, len(m.sessions))
 	for s := range m.sessions {
-		snapshot = append(snapshot, s)
+		open = append(open, s)
 	}
 	m.mu.Unlock()
-
-	for _, s := range snapshot {
+	for _, s := range open {
 		if s.busy() {
 			return port.ErrCanvasBusy
 		}
 	}
-	for _, s := range snapshot {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if err := s.resetCanvas(); err != nil {
-			return err
-		}
+	msgs := c.reg.Reset()
+	if len(msgs) == 0 {
+		return nil
+	}
+	for _, s := range open {
+		s.publishDeletions(msgs)
 	}
 	return nil
 }
@@ -423,22 +437,18 @@ func (s *session) busy() bool {
 	return !s.closed && s.pending > 0
 }
 
-// resetCanvas vide le canevas de la session, sans effet si elle est fermée.
-// Le verrou de session n'est pas tenu pendant l'appel au Runner.
-func (s *session) resetCanvas() error {
-	if s.busy() {
-		return port.ErrCanvasBusy
-	}
+// publishDeletions confie les `deleteSurface` au Runner, sans effet si la session
+// est fermée. Aucun verrou de session n'est tenu pendant l'appel au Runner.
+func (s *session) publishDeletions(msgs []map[string]any) {
 	s.mu.Lock()
 	closed := s.closed
 	s.mu.Unlock()
 	if closed {
-		return nil
+		return
 	}
-	if r, ok := s.runner.(canvasResetter); ok {
-		return r.ResetCanvas()
+	if r, ok := s.runner.(deletionPublisher); ok {
+		r.publishDeletions(msgs)
 	}
-	return nil
 }
 
 // Close annule le travail en cours puis attend, au plus GuardTimeout (ou
