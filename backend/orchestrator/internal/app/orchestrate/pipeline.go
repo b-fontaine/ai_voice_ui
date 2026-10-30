@@ -31,6 +31,9 @@ const (
 	DetailSessionClosed = "session fermée"
 	// DetailOutOfScope accompagne l'état `rejected` (refus d'un agent retenu).
 	DetailOutOfScope = "hors périmètre"
+	// DetailCanceled est interne : detailFor le renvoie pour un arrêt demandé
+	// (ErrInterrupted) et failLocked publie alors l'état `canceled`, sans détail.
+	DetailCanceled = "arrêt demandé"
 )
 
 // errNoFinalState qualifie un flux terminé sans état final ; errProtocol une
@@ -200,6 +203,10 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		p.seal()
 		return
 	}
+	if interrupted(ctx) {
+		p.sayStopped(ctx, d) // arrêt avant le plan : aucun plan n'est publié
+		return
+	}
 	selected := p.selectAgents(d.Request, cards, cardErrs)
 	p.publishPlan(d.ID, selected)
 	if len(selected) == 0 {
@@ -215,6 +222,12 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 
 	if sessionClosed(ctx) {
 		p.seal()
+		return
+	}
+	if interrupted(ctx) {
+		// Chaque agent retenu a reçu son état terminal (`canceled`) : la voix ne
+		// dit ni échec ni résultat.
+		p.sayStopped(ctx, d)
 		return
 	}
 	allRejected := rejections == n // n : agents retenus seulement
@@ -359,8 +372,35 @@ func (p *Pipeline) isClosed() bool {
 	return p.closed
 }
 
+// sessionCtxKey range, dans le contexte d'une exécution vocale, le contexte de la
+// SESSION : une exécution déjà annulée par un arrêt (cause ErrInterrupted) doit
+// pouvoir savoir que la session s'est fermée ensuite, et la fermeture l'emporte.
+type sessionCtxKey struct{}
+
+func withSessionContext(ctx, session context.Context) context.Context {
+	return context.WithValue(ctx, sessionCtxKey{}, session)
+}
+
+// sessionContext renvoie le contexte de session porté par ctx, ou ctx lui-même
+// (Runner appelé sans Manager) : il n'est pas annulé par un arrêt.
+func sessionContext(ctx context.Context) context.Context {
+	if s, ok := ctx.Value(sessionCtxKey{}).(context.Context); ok {
+		return s
+	}
+	return ctx
+}
+
+// sessionClosed dit que la session est fermée, même si ctx a d'abord été annulé
+// par un arrêt ou une échéance.
 func sessionClosed(ctx context.Context) bool {
-	return errors.Is(context.Cause(ctx), ErrSessionClosed)
+	return errors.Is(context.Cause(sessionContext(ctx)), ErrSessionClosed) ||
+		errors.Is(context.Cause(ctx), ErrSessionClosed)
+}
+
+// interrupted dit que l'exécution a été arrêtée par l'utilisateur et que la
+// session est restée ouverte (la fermeture l'emporte).
+func interrupted(ctx context.Context) bool {
+	return errors.Is(context.Cause(ctx), ErrInterrupted) && !sessionClosed(ctx)
 }
 
 // runAgent suit une tâche d'agent de la carte à l'état final ; l'issue est

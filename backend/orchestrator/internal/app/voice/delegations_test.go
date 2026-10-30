@@ -42,6 +42,9 @@ func (f *fakeSessionDelegations) Transcript(ev port.LiveEvent) {
 	f.transcripts = append(f.transcripts, ev)
 }
 
+// Interrupt n'est pas observé par ces tests (câblage voix : spec 011, T15).
+func (f *fakeSessionDelegations) Interrupt(int64) {}
+
 func (f *fakeSessionDelegations) Delegate(id string, offsetMs int64) {
 	if f.delegateGate != nil {
 		<-f.delegateGate
@@ -337,6 +340,7 @@ func (o *orderDelegations) Open(string, time.Time, port.VoiceReply) port.Session
 }
 func (o *orderDelegations) Transcript(port.LiveEvent) {}
 func (o *orderDelegations) Close(context.Context)     {}
+func (o *orderDelegations) Interrupt(int64)           {}
 func (o *orderDelegations) Delegate(string, int64) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -405,6 +409,7 @@ func (g *gatedTranscripts) Delegate(id string, _ int64) {
 	g.dlgIDs = append(g.dlgIDs, id)
 	g.mu.Unlock()
 }
+func (g *gatedTranscripts) Interrupt(int64)       {}
 func (g *gatedTranscripts) Close(context.Context) {}
 
 // La file saturée de transcripts n'abandonne jamais une délégation : le plus

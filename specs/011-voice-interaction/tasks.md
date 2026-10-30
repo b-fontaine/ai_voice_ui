@@ -14,7 +14,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [x] T11 Go — focus : `genesis/intent` (agents → `a2aclient` liste blanche → `AgentUpdate.Intent`), `Canvas.Focus`, `AgentRequest.Focus`, `FocusFrom`, `ParseIntent(text, focus, ds)` dans les trois composeurs, `ResetCanvas` efface · `scope_test.go`, `canvas_test.go`, `a2aclient_test.go`
 - [x] T12 Go — motif de refus `genesis/scopeReason` (fermé) → slog du `Pipeline` seulement · `pipeline_plan_test.go`
 - [x] T13 [P] Go — `StopDetector` (règle A5, horloge injectée) + `VOICE_STOP_WORDS` borné · `stopword_test.go`
-- [ ] T14 Go — `a2ui.Registry` complétude par surface + `CancelCompensation` ; `port.SessionDelegations.Interrupt` ; époque, `WithCancelCause`, `ErrInterrupted`, `ActivityCanceled`, phrase `stopped` · `registry_test.go`, `manager_cancel_test.go` (-race, 7 cas du plan)
+- [x] T14 Go — `a2ui.Registry` complétude par surface + `CancelCompensation` ; `port.SessionDelegations.Interrupt` ; époque, `WithCancelCause`, `ErrInterrupted`, `ActivityCanceled`, phrase `stopped` · `registry_test.go`, `manager_cancel_test.go` (-race, 7 cas du plan)
 - [ ] T18 Go — `voice.interrupted` : domaine, `wire`, hub jamais rejoué, journal · `hub_test.go`, `wire_test.go`
 - [ ] T15 Go — câblage service voix : détecteur → `voice.interrupted` puis `fw.interrupt()` ; demande réduite aux mots d'arrêt non planifiée · `service_stop_test.go`
 - [ ] T19 Go — `bootstrap.ConfigFromEnv` : `VOICE_STOP_*`, `REQUEST_WINDOW_*`, bornes · `config_test.go`

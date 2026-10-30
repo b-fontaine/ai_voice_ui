@@ -211,6 +211,95 @@ func TestCompensationReverseOrderAndRemoves(t *testing.T) {
 	wantCode(t, r.Apply("a", "t9", create("kept")), a2ui.CodeSurfaceExists)
 }
 
+// withData est l'écriture du data model entier de la surface (« /<surface> »).
+func withData(id string) a2ui.Operation {
+	return a2ui.Operation{Kind: a2ui.UpdateDataModel, SurfaceID: id, DataPath: "/" + id}
+}
+
+// buildSurface applique à la surface id les étapes demandées : 0 créée, 1 avec
+// composants (root, références résolues), 2 avec données (« /<id> »).
+func buildSurface(t *testing.T, r *a2ui.Registry, owner, task, id string, stage int) {
+	t.Helper()
+	steps := []a2ui.Operation{create(id)}
+	if stage >= 1 {
+		steps = append(steps, update(id, []string{"root", "a"}, map[string][]string{"root": {"a"}}))
+	}
+	if stage >= 2 {
+		steps = append(steps, withData(id))
+	}
+	for _, op := range steps {
+		if err := r.Apply(owner, task, op); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestCancelCompensationReturnsOnlyIncompleteSurfaces(t *testing.T) {
+	r := newRegistry(t)
+	buildSurface(t, r, "a", "t", "quality", 2)   // complète
+	buildSurface(t, r, "a", "t", "trend", 2)     // complète
+	buildSurface(t, r, "a", "t", "reviews", 1)   // composants sans données
+	buildSurface(t, r, "a", "t", "checklist", 0) // seulement créée
+
+	got := r.CancelCompensation("t")
+	want := []map[string]any{
+		{"version": "v0.9", "deleteSurface": map[string]any{"surfaceId": "checklist"}},
+		{"version": "v0.9", "deleteSurface": map[string]any{"surfaceId": "reviews"}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("CancelCompensation = %v, attendu les deux surfaces inachevées (ordre inverse de création)", got)
+	}
+	if active := r.ActiveFor("a"); !reflect.DeepEqual(active, []string{"quality", "trend"}) {
+		t.Fatalf("surfaces actives = %v, les deux complètes doivent rester, avec leur propriétaire", active)
+	}
+	if again := r.CancelCompensation("t"); len(again) != 0 {
+		t.Fatalf("seconde annulation = %v", again)
+	}
+	r.Forget("t")
+	if n := r.TaskCount(); n != 0 {
+		t.Fatalf("%d tâche(s) suivie(s) après Forget", n)
+	}
+}
+
+func TestCancelCompensationDanglingReferenceIsIncomplete(t *testing.T) {
+	r := newRegistry(t)
+	_ = r.Apply("a", "t", create("s"))
+	_ = r.Apply("a", "t", update("s", []string{"root"}, map[string][]string{"root": {"missing"}}))
+	_ = r.Apply("a", "t", withData("s"))
+	if got := r.CancelCompensation("t"); len(got) != 1 {
+		t.Fatalf("référence non résolue : %v, attendu un deleteSurface", got)
+	}
+}
+
+func TestCancelCompensationDataOfOtherPathDoesNotComplete(t *testing.T) {
+	r := newRegistry(t)
+	_ = r.Apply("a", "t", create("s"))
+	_ = r.Apply("a", "t", update("s", []string{"root"}, nil))
+	_ = r.Apply("a", "t", a2ui.Operation{Kind: a2ui.UpdateDataModel, SurfaceID: "s", DataPath: "/s/value"})
+	if got := r.CancelCompensation("t"); len(got) != 1 {
+		t.Fatalf("seul un sous-chemin reçu : %v, attendu un deleteSurface (pas de /s)", got)
+	}
+}
+
+func TestCancelCompensationLeavesOtherTasksAndUnknownTask(t *testing.T) {
+	r := newRegistry(t)
+	buildSurface(t, r, "a", "other", "kept", 0)
+	if got := r.CancelCompensation("nope"); len(got) != 0 {
+		t.Fatalf("tâche inconnue : %v", got)
+	}
+	if active := r.ActiveFor("a"); !reflect.DeepEqual(active, []string{"kept"}) {
+		t.Fatalf("surface d'une autre tâche touchée : %v", active)
+	}
+}
+
+func TestCompensationStillRemovesCompleteSurfaces(t *testing.T) {
+	r := newRegistry(t)
+	buildSurface(t, r, "a", "t", "done", 2)
+	if got := r.Compensation("t"); len(got) != 1 {
+		t.Fatalf("Compensation d'origine = %v, attendu toutes les surfaces", got)
+	}
+}
+
 func TestRegistryConcurrent(t *testing.T) {
 	r := newRegistry(t)
 	var wg sync.WaitGroup

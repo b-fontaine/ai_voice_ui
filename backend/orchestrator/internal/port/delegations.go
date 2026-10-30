@@ -74,8 +74,16 @@ type Delegations interface {
 // SessionDelegations est la gestion des délégations d'une session. Transcript
 // et Delegate ne bloquent jamais ; Close annule le travail en cours, attend sa
 // fin (borné) et garantit qu'aucun commentaire n'est plus émis ensuite.
+//
+// Interrupt (« Stop » de l'utilisateur, spec 011) ne bloque pas non plus : il
+// annule l'exécution vocale en cours et retire les délégations vocales en file
+// (la session reste ouverte), sans attendre la compensation, que la goroutine
+// d'exécution publie. Les actions de l'interface ne sont pas annulées. Les
+// délégations créées après l'appel ne sont pas concernées. atMs est le temps du
+// fournisseur de l'arrêt (journal).
 type SessionDelegations interface {
 	Transcript(ev LiveEvent)
 	Delegate(id string, offsetMs int64)
+	Interrupt(atMs int64)
 	Close(ctx context.Context)
 }

@@ -85,6 +85,9 @@ const (
 	// ActivityRejected : l'agent retenu a refusé la demande (hors de son
 	// périmètre). Ce n'est pas un échec : aucune compensation vocale.
 	ActivityRejected = "rejected"
+	// ActivityCanceled : la tâche a été arrêtée à la demande de l'utilisateur
+	// (« Stop », spec 011). Terminal ; ce n'est ni un échec ni un refus.
+	ActivityCanceled = "canceled"
 )
 
 // OpDeleteSurface est l'opération A2UI qui retire une surface.

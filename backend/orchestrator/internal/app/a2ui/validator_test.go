@@ -272,3 +272,15 @@ func TestValidateAcceptsLoneUpdateDataModelOnActiveSurface(t *testing.T) {
 		t.Fatalf("op = %+v", op)
 	}
 }
+
+func TestValidateReportsDataPathOfUpdateDataModel(t *testing.T) {
+	v := newValidator(t)
+	op, err := v.Validate(parse(t, `{"version":"v0.9","updateDataModel":{"surfaceId":"s","path":"/s","value":{"a":1}}}`))
+	if err != nil || op.DataPath != "/s" {
+		t.Fatalf("op = %+v, err = %v, attendu DataPath « /s »", op, err)
+	}
+	op, err = v.Validate(parse(t, `{"version":"v0.9","updateDataModel":{"surfaceId":"s","value":1}}`))
+	if err != nil || op.DataPath != "" {
+		t.Fatalf("path absent : op = %+v, err = %v, attendu DataPath vide", op, err)
+	}
+}

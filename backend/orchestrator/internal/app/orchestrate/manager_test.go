@@ -21,7 +21,7 @@ const wait = 3 * time.Second
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
 	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
-	ActionResultTemplate: "AR:%s", ActionFailure: "AF",
+	ActionResultTemplate: "AR:%s", ActionFailure: "AF", Stopped: "S",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -255,6 +255,8 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.ActionResultTemplate = "100 % de %s" }),
 		blank(func(p *Phrases) { p.ActionResultTemplate = strings.Repeat("é", MaxCommentaryRunes) + "%s" }),
 		blank(func(p *Phrases) { p.ActionFailure = " " }),
+		blank(func(p *Phrases) { p.Stopped = "" }),
+		blank(func(p *Phrases) { p.Stopped = strings.Repeat("é", MaxCommentaryRunes+1) }),
 		blank(func(p *Phrases) { p.ActionFailure = strings.Repeat("é", MaxCommentaryRunes+1) }),
 	} {
 		if _, err := NewManager(factoryOf(r), p, testOptions()); err == nil {

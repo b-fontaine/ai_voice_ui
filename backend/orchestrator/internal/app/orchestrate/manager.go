@@ -22,6 +22,9 @@ var (
 	// ErrAgentTimeout est la cause d'annulation quand le délai de l'agent est
 	// dépassé.
 	ErrAgentTimeout = errors.New("délai de l'agent dépassé")
+	// ErrInterrupted est la cause d'annulation de l'exécution en cours quand
+	// l'utilisateur dit « Stop » (la session reste ouverte).
+	ErrInterrupted = errors.New("arrêt demandé")
 )
 
 // maxPendingSends borne les envois de commentaires simultanés d'une session.
@@ -44,6 +47,10 @@ type Delegation struct {
 	// jamais un identifiant du fournisseur voix (ni mémorisé dans `seen`, ni
 	// passé à AppendCommentary), Request est vide et GenericDone nil.
 	Action *port.ActionCall
+
+	// epoch est l'époque de la session à la création de la délégation : un arrêt
+	// (Interrupt) l'incrémente, et run() écarte une délégation d'époque périmée.
+	epoch uint64
 
 	// queuedAt est l'instant de la délégation (horloge du Manager) : l'attente
 	// de la fenêtre de demande s'en déduit.
@@ -104,6 +111,9 @@ type Phrases struct {
 	// ActionFailure est dite quand l'action a échoué (agent injoignable, résultat
 	// invalide, délai) : honnête, sans résumé ni décision annoncée, aucun chiffre.
 	ActionFailure string
+	// Stopped est dite quand l'utilisateur a arrêté une délégation (« Stop ») :
+	// courte, sans chiffre, jamais un échec ni un résultat.
+	Stopped string
 }
 
 // MaxCommentaryRunes est la borne d'un commentaire vocal. Elle duplique celle
@@ -119,7 +129,7 @@ func (p Phrases) Validate() error {
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
 		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
 		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "PartialFailure": p.PartialFailure, "ResultTemplate": p.ResultTemplate,
-		"ActionResultTemplate": p.ActionResultTemplate, "ActionFailure": p.ActionFailure,
+		"ActionResultTemplate": p.ActionResultTemplate, "ActionFailure": p.ActionFailure, "Stopped": p.Stopped,
 	} {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("orchestrate : phrase %s requise", name)
@@ -364,14 +374,19 @@ type session struct {
 
 	opened uint64 // numéro d'ouverture (Manager.openSeq), fixé à l'ouverture sous Manager.mu
 
-	mu      sync.Mutex // protège closed, pending, seen, order et wg.Add
+	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add
 	closed  bool
 	pending int // délégations en file ou en cours d'exécution
-	seen    map[string]struct{}
-	order   []string // ordre d'arrivée des identifiants, pour l'éviction
-	wg      sync.WaitGroup
-	drain   sync.Once
-	drained chan struct{}
+	// epoch compte les arrêts (Interrupt). cancelRun annule l'exécution vocale en
+	// cours (cause ErrInterrupted) ; nil hors exécution et pendant une action, qui
+	// est atomique et jamais annulée.
+	epoch     uint64
+	cancelRun context.CancelCauseFunc
+	seen      map[string]struct{}
+	order     []string // ordre d'arrivée des identifiants, pour l'éviction
+	wg        sync.WaitGroup
+	drain     sync.Once
+	drained   chan struct{}
 }
 
 func (s *session) Transcript(ev port.LiveEvent) {
@@ -408,21 +423,77 @@ func (s *session) Delegate(id string, offsetMs int64) {
 	if s.m.opts.Clock != nil {
 		d.queuedAt = s.m.opts.Clock.Now()
 	}
-	// pending est incrémenté AVANT la mise en file : une remise à vide ne peut
-	// pas voir une délégation défilée mais pas encore comptée.
+	// L'époque, pending et la mise en file sont décidés sous un même verrou : un
+	// arrêt ne peut pas voir une délégation comptée mais pas encore en file, ni la
+	// défiler avant qu'elle soit comptée. L'envoi est non bloquant.
 	s.mu.Lock()
-	s.pending++
-	s.mu.Unlock()
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
+	d.epoch = s.epoch
+	queued := false
 	select {
 	case s.queue <- d:
-		s.commentThen(id, s.m.phrases.Generic, func() { close(genericDone) })
+		s.pending++
+		queued = true
 	default:
-		s.mu.Lock()
-		s.pending--
-		s.mu.Unlock()
-		s.log.Warn("file de délégations pleine", "delegation", id)
-		s.comment(id, s.m.phrases.QueueFull)
 	}
+	s.mu.Unlock()
+	if queued {
+		s.commentThen(id, s.m.phrases.Generic, func() { close(genericDone) })
+		return
+	}
+	s.log.Warn("file de délégations pleine", "delegation", id)
+	s.comment(id, s.m.phrases.QueueFull)
+}
+
+// Interrupt traite le « Stop » de l'utilisateur (spec 011, A1). Sous session.mu
+// seulement (jamais Canvas.mu, jamais d'attente de la compensation : voir l'ordre
+// des verrous) : l'époque augmente, l'exécution vocale en cours est annulée (cause
+// ErrInterrupted) et les délégations vocales en file sont retirées ; les actions de
+// l'interface restent en file. La compensation et les états terminaux sont publiés
+// par la goroutine de Run. Chaque délégation retirée reçoit la phrase « stopped »
+// (après son générique) : une délégation du fournisseur reste ouverte tant que son
+// commentaire n'est pas acquitté [rt-gpt-live-delegation].
+func (s *session) Interrupt(atMs int64) {
+	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
+	s.epoch++
+	if s.cancelRun != nil {
+		s.cancelRun(ErrInterrupted)
+	}
+	var removed, kept []Delegation
+	for drained := false; !drained; {
+		select {
+		case d := <-s.queue:
+			if d.Action != nil {
+				kept = append(kept, d)
+			} else {
+				removed = append(removed, d)
+			}
+		default:
+			drained = true
+		}
+	}
+	for _, d := range kept {
+		s.queue <- d // place garantie : les envois se font sous s.mu, que nous tenons
+	}
+	s.pending -= len(removed)
+	s.mu.Unlock()
+	s.log.Info("arrêt demandé", "at_ms", atMs, "removed", len(removed))
+	for _, d := range removed {
+		s.stopped(d)
+	}
+}
+
+// stopped dit la phrase « stopped » d'une délégation vocale arrêtée avant ou
+// pendant sa préparation, une fois son commentaire générique acquitté.
+func (s *session) stopped(d Delegation) {
+	s.commentAfter(d.ID, s.m.phrases.Stopped, d.GenericDone, nil)
 }
 
 func (s *session) marginMs() int64 { return s.m.opts.RequestWindowMargin.Milliseconds() }
@@ -430,8 +501,8 @@ func (s *session) marginMs() int64 { return s.m.opts.RequestWindowMargin.Millise
 // settle attend, sans bloquer le forwarder (on est dans run), le reste de
 // RequestWindowSettle depuis la délégation, ou un delta postérieur à
 // offset + marge, ou la fermeture de la session ; puis prend la demande. ok est
-// faux si la session s'est fermée pendant l'attente.
-func (s *session) settle(d Delegation) (request string, ok bool) {
+// faux si ctx (session fermée ou arrêt) est annulé pendant l'attente.
+func (s *session) settle(ctx context.Context, d Delegation) (request string, ok bool) {
 	opts := s.m.opts
 	if opts.RequestWindowSettle > 0 {
 		remaining := opts.RequestWindowSettle - opts.Clock.Now().Sub(d.queuedAt)
@@ -440,7 +511,7 @@ func (s *session) settle(d Delegation) (request string, ok bool) {
 			select {
 			case <-opts.Clock.After(remaining):
 			case <-later:
-			case <-s.ctx.Done():
+			case <-ctx.Done():
 				cancel()
 				return "", false
 			}
@@ -456,9 +527,14 @@ func (s *session) settle(d Delegation) (request string, ok bool) {
 
 func (s *session) comment(id, text string) { s.commentThen(id, text, nil) }
 
-// commentThen envoie un commentaire dans une goroutine suivie, puis appelle
-// done (même en cas d'échec, d'abandon ou de session fermée).
 func (s *session) commentThen(id, text string, done func()) {
+	s.commentAfter(id, text, nil, done)
+}
+
+// commentAfter envoie un commentaire dans une goroutine suivie, après la fermeture
+// de after (nil : tout de suite), puis appelle done (même en cas d'échec,
+// d'abandon ou de session fermée).
+func (s *session) commentAfter(id, text string, after <-chan struct{}, done func()) {
 	finish := func() {
 		if done != nil {
 			done()
@@ -484,6 +560,13 @@ func (s *session) commentThen(id, text string, done func()) {
 		defer s.wg.Done()
 		defer func() { <-s.sends }()
 		defer finish()
+		if after != nil {
+			select {
+			case <-after:
+			case <-s.ctx.Done():
+				return
+			}
+		}
 		s.mu.Lock()
 		closed := s.closed
 		s.mu.Unlock()
@@ -519,9 +602,22 @@ func (s *session) run(d Delegation) {
 	if s.ctx.Err() != nil {
 		return
 	}
+	// Une action de l'interface est atomique : elle suit le contexte de session,
+	// jamais celui d'un arrêt.
+	ctx := s.ctx
 	if d.Action == nil {
-		request, ok := s.settle(d)
+		runCtx, end, ok := s.beginRun(d)
 		if !ok {
+			s.stopped(d) // arrêt survenu depuis la création de la délégation
+			return
+		}
+		defer end()
+		ctx = runCtx
+		request, ok := s.settle(ctx, d)
+		if !ok {
+			if interrupted(ctx) {
+				s.stopped(d)
+			}
 			return
 		}
 		if request == "" {
@@ -529,7 +625,10 @@ func (s *session) run(d Delegation) {
 			// Le commentaire vide part après le générique, pour garder l'ordre.
 			select {
 			case <-d.GenericDone:
-			case <-s.ctx.Done():
+			case <-ctx.Done():
+				if interrupted(ctx) {
+					s.stopped(d)
+				}
 				return
 			}
 			s.comment(d.ID, s.m.phrases.NoRequest)
@@ -543,7 +642,28 @@ func (s *session) run(d Delegation) {
 			s.log.Error("panique du runner", "delegation", d.ID, "panic", r)
 		}
 	}()
-	s.runner.Run(s.ctx, d)
+	s.runner.Run(ctx, d)
+}
+
+// beginRun crée le contexte d'une exécution vocale : enfant du contexte de session
+// (une fermeture l'annule avec ErrSessionClosed), annulable par Interrupt avec la
+// cause ErrInterrupted. Il porte le contexte de session (sessionContext) pour que le
+// Runner distingue une fermeture d'un arrêt. ok est faux si la délégation est d'une
+// époque périmée. end libère le contexte.
+func (s *session) beginRun(d Delegation) (ctx context.Context, end func(), ok bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if d.epoch != s.epoch {
+		return nil, nil, false
+	}
+	runCtx, cancel := context.WithCancelCause(s.ctx)
+	s.cancelRun = cancel
+	return withSessionContext(runCtx, s.ctx), func() {
+		s.mu.Lock()
+		s.cancelRun = nil
+		s.mu.Unlock()
+		cancel(nil)
+	}, true
 }
 
 // busy indique une délégation en file ou en cours (session fermée : jamais).

@@ -70,9 +70,19 @@ func (p *Pipeline) waitGeneric(ctx context.Context, d Delegation) bool {
 	return !sessionClosed(ctx) && !p.isClosed()
 }
 
-// say envoie un commentaire, une seule fois : l'échec est journalisé.
+// sayStopped dit la phrase « stopped » d'une délégation arrêtée, après son générique.
+// Elle ne dit rien si la session est fermée.
+func (p *Pipeline) sayStopped(ctx context.Context, d Delegation) {
+	if p.waitGeneric(ctx, d) {
+		p.say(ctx, d.ID, p.deps.Phrases.Stopped)
+	}
+}
+
+// say envoie un commentaire, une seule fois : l'échec est journalisé. Le contexte
+// d'envoi dérive de celui de la session : un arrêt (qui annule l'exécution) ne
+// doit pas empêcher de dire la phrase « stopped » ni un commentaire déjà décidé.
 func (p *Pipeline) say(ctx context.Context, delegationID, text string) {
-	ctx, cancel := context.WithTimeout(ctx, commentaryCap)
+	ctx, cancel := context.WithTimeout(sessionContext(ctx), commentaryCap)
 	defer cancel()
 	if err := p.deps.Reply.AppendCommentary(ctx, delegationID, text); err != nil {
 		p.log.Warn("commentaire non transmis", "delegation", delegationID, "err", err)
