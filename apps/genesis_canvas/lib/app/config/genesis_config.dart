@@ -1,3 +1,5 @@
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+
 /// Erreur de configuration de lancement. Le message nomme la variable
 /// d'environnement fautive, jamais sa valeur (elle pourrait être sensible).
 class GenesisConfigException implements Exception {
@@ -25,6 +27,7 @@ class GenesisConfig {
     this.scenario,
     this.snapshotPath,
     Uri? backendUrl,
+    String? catalogId,
     this.appLogPath,
     this.relayCreateTimeout = const Duration(seconds: 20),
     this.relayDeleteTimeout = const Duration(seconds: 7),
@@ -39,19 +42,23 @@ class GenesisConfig {
     this.orbSpeakingThreshold = 0.03,
     // Un paramètre nommé ne peut pas être un formel privé.
     // ignore: prefer_initializing_formals
-  }) : _backendUrl = backendUrl;
+  }) : _backendUrl = backendUrl,
+       // ignore: prefer_initializing_formals
+       _catalogId = catalogId;
 
   /// Construit la configuration à partir d'un environnement (en prod
   /// `Platform.environment`). Une variable absente ou vide vaut `null`
   /// (ou la valeur par défaut). Les constantes (délais, orbe) ne sont pas
   /// lues dans l'environnement.
   ///
-  /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` est invalide.
+  /// Lève [GenesisConfigException] si `GENESIS_BACKEND_URL` ou
+  /// `GENESIS_CATALOG_ID` est invalide.
   factory GenesisConfig.fromEnvironment(Map<String, String> environment) =>
       GenesisConfig(
         scenario: _read(environment, 'GENESIS_SCENARIO'),
         snapshotPath: _read(environment, 'GENESIS_SNAPSHOT'),
         backendUrl: _readBackendUrl(environment),
+        catalogId: _readCatalogId(environment),
         appLogPath: _read(environment, 'GENESIS_APP_LOG'),
       );
 
@@ -72,6 +79,14 @@ class GenesisConfig {
 
   /// URL de base du backend (`GENESIS_BACKEND_URL`).
   Uri get backendUrl => _backendUrl ?? defaultBackendUrl;
+
+  // Comme l'URL du backend : la valeur par défaut est portée par le getter.
+  final String? _catalogId;
+
+  /// Identifiant du catalogue A2UI (`GENESIS_CATALOG_ID`), passé au catalogue
+  /// de l'app et au validateur. Le défaut est celui du backend
+  /// (`A2UI_CATALOG_ID` de `docker-compose.yaml`).
+  String get catalogId => _catalogId ?? GenesisContract.defaultCatalogId;
 
   /// Chemin du journal des enveloppes (`GENESIS_APP_LOG`) ; `null` : inactif.
   final String? appLogPath;
@@ -136,6 +151,26 @@ class GenesisConfig {
     }
     return uri;
   }
+
+  static String? _readCatalogId(Map<String, String> environment) {
+    final raw = _read(environment, 'GENESIS_CATALOG_ID');
+    if (raw == null) return null;
+    final Uri uri;
+    try {
+      uri = Uri.parse(raw);
+    } on FormatException {
+      throw _invalidCatalogId();
+    }
+    if (!uri.hasScheme || uri.toString() != raw) throw _invalidCatalogId();
+    return raw;
+  }
+
+  static GenesisConfigException _invalidCatalogId() =>
+      const GenesisConfigException(
+        'La variable GENESIS_CATALOG_ID est invalide : une URI absolue est '
+        'attendue (par exemple '
+        'https://genesis-canvas.example/a2ui/catalogs/genesis/v1).',
+      );
 
   static GenesisConfigException _invalidBackendUrl() =>
       const GenesisConfigException(

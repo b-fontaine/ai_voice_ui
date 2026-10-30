@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show VoiceTransport;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
-import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
 import 'package:shared_core/shared_core.dart' show ExitHandler, ReplayDelay;
 
@@ -100,7 +101,8 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
         type: MaterialType.transparency,
         child: GenesisCanvasPage(
           getIt: _getIt,
-          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          catalogs: <Catalog>[genesisCatalog(catalogId: config.catalogId)],
+          catalogId: config.catalogId,
           replay: _replay,
           onClosing: (closing) => _pageClosing = closing,
           snapshotFactory: (exitHandler) => SnapshotService(

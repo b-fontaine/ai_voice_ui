@@ -1,4 +1,5 @@
 export 'src/catalog/genesis_catalog.dart' show genesisCatalog;
+export 'src/model/a2ui_gate.dart' show A2uiGate;
 export 'src/model/canvas_bloc.dart' show CanvasBloc;
 export 'src/model/canvas_event.dart'
     show

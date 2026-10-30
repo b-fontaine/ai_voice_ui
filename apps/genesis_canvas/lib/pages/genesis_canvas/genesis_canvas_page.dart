@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
-import 'package:entity_session/entity_session.dart'
-    show A2uiEnvelopeReceived, SessionEvent;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
     show AgentActivityBloc, AgentActivitySourceSubscribed;
 import 'package:feature_canvas/feature_canvas.dart'
     show
+        A2uiGate,
         CanvasBloc,
         CanvasBoard,
         CanvasSourceStatus,
@@ -57,6 +56,7 @@ class GenesisCanvasPage extends StatefulWidget {
     super.key,
     required this.getIt,
     required this.catalogs,
+    required this.catalogId,
     required this.snapshotFactory,
     required this.exitHandler,
     required this.errorSink,
@@ -69,6 +69,10 @@ class GenesisCanvasPage extends StatefulWidget {
   /// couche `app`).
   final GetIt getIt;
   final List<Catalog> catalogs;
+
+  /// Identifiant du catalogue que le validateur A2UI exige dans
+  /// `createSurface` (le même que celui de [catalogs]).
+  final String catalogId;
   final SnapshotFactory snapshotFactory;
   final ExitHandler exitHandler;
 
@@ -110,14 +114,23 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     catalogs: widget.catalogs,
   );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
+  // UNE instance du validateur A2UI pour la session, en direct comme en rejeu.
+  late final A2uiGate _gate = A2uiGate(
+    catalogId: widget.catalogId,
+    onRejected: _onMessageRejected,
+  );
+  // Refus vus : un rejeu qui en contient ne vaut pas succès (comme une erreur
+  // du moteur).
+  int _rejectedCount = 0;
   final GlobalKey _boundaryKey = GlobalKey();
   // Affecté dans `initState` : écoute dès la création (le moteur ne rejoue
   // pas les erreurs passées).
   late final EngineErrorWatcher _engineErrors;
   late final CaptureService _snapshot = widget.snapshotFactory(
     // Une capture réussie ne vaut pas succès si le moteur a signalé des erreurs.
-    (code) =>
-        widget.exitHandler(code == 0 && _engineErrors.count > 0 ? 1 : code),
+    (code) => widget.exitHandler(
+      code == 0 && (_engineErrors.count > 0 || _rejectedCount > 0) ? 1 : code,
+    ),
   );
 
   late final ExitGuard _exitGuard = ExitGuard(
@@ -156,12 +169,15 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
+    // Un seul flux de `SessionEvent` entre dans le gate : le flux vivant, ou
+    // le rejeu encapsulé en enveloppes (la source vivante n'alimente alors pas
+    // le canevas). Le Bloc ne reçoit que les messages acceptés.
     final replay = widget.replay;
-    if (replay != null) {
-      _bloc.add(CanvasSourceSubscribed(replay));
-    } else {
-      // Sous-flux dérivé UNE fois, donné une fois au Bloc du canevas.
-      _bloc.add(CanvasSourceSubscribed(_a2uiMessages(_source.events)));
+    _bloc.add(CanvasSourceSubscribed(_gate.accepted));
+    _gate.attach(
+      replay == null ? _source.events : A2uiGate.replayEvents(replay),
+    );
+    if (replay == null) {
       if (_snapshot.isActive) {
         // Sans scénario : capture du canevas vide après la première frame.
         WidgetsBinding.instance.addPostFrameCallback(
@@ -171,10 +187,11 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     }
   }
 
-  static Stream<A2uiMessage> _a2uiMessages(Stream<SessionEvent> events) =>
-      events
-          .where((event) => event is A2uiEnvelopeReceived)
-          .map((event) => (event as A2uiEnvelopeReceived).message);
+  /// Consigne le code fermé du refus, jamais le contenu du message.
+  void _onMessageRejected(String code) {
+    _rejectedCount++;
+    widget.errorSink.writeln('Message A2UI refusé : $code');
+  }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
     // « Rejeu impossible » ne concerne que le rejeu ; la source vivante ne
@@ -233,14 +250,16 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 2. arrêt de la session, borné ;
   /// 3. libération de la session ;
   /// 4. source d'événements (la session ne lui émet plus rien) ;
-  /// 5. Blocs de transcription, d'activité puis du canevas ;
-  /// 6. moteur genui, une fois le Bloc du canevas fermé.
+  /// 5. filtre A2UI (il se nourrit de la source) ;
+  /// 6. Blocs de transcription, d'activité puis du canevas ;
+  /// 7. moteur genui, une fois le Bloc du canevas fermé.
   Future<void> _shutdown() async {
     final bound = _settings.sessionCloseTimeout;
     await _step('Bloc de session', _voiceBloc.close);
     await _step('arrêt de la session', _session.stop, timeout: bound);
     await _step('libération de la session', _session.dispose, timeout: bound);
     await _step('source d\'événements', _source.dispose);
+    await _step('filtre A2UI', _gate.dispose);
     await _step('Bloc de transcription', _transcriptBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
     await _step('Bloc du canevas', _bloc.close);
@@ -263,11 +282,14 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
-    providers: <BlocProvider<dynamic>>[
+    providers: [
       BlocProvider<VoiceSessionBloc>.value(value: _voiceBloc),
       BlocProvider<TranscriptBloc>.value(value: _transcriptBloc),
       BlocProvider<AgentActivityBloc>.value(value: _agentsBloc),
       BlocProvider<CanvasBloc>.value(value: _bloc),
+      // Le gate est possédé par la page ; les futurs lecteurs (panneau du
+      // protocole, remise à vide) le lisent sans le fermer.
+      RepositoryProvider<A2uiGate>.value(value: _gate),
     ],
     child: BlocListener<CanvasBloc, CanvasState>(
       listenWhen: (previous, current) =>

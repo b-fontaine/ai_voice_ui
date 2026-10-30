@@ -1,9 +1,10 @@
 {"v":1,"type":"transcript","session":"{session}","t_ms":1200,"data":{"role":"user","text":"Prépare la release 3.4","start_ms":300,"end_ms":1200}}
 {"v":1,"type":"delegation","session":"{session}","t_ms":2100,"data":{"id":"deleg_1","offset_ms":2100}}
+{"v":1,"type":"plan","session":"{session}","t_ms":2100,"data":{"delegation":"deleg_1","selected":["Qualité"],"idle":["Voix du client","Livraison"]}}
 {"v":1,"type":"agent.activity","session":"{session}","t_ms":2150,"data":{"agent":"Qualité","task":"task_1","state":"working","label":"Qualité"},"agent":"Qualité","task":"task_1"}
 {"v":1,"type":"transcript","session":"{session}","t_ms":2600,"data":{"role":"ai","text":"Je lance l'analyse de la release.","start_ms":2300,"end_ms":2600}}
 {"v":1,"type":"usage","session":"{session}","t_ms":2700,"data":{"seconds":4,"context_ratio":0.02}}
-{"v":1,"type":"a2ui","session":"{session}","t_ms":4000,"data":{"version":"v0.9","createSurface":{"surfaceId":"quality","catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json","sendDataModel":true}},"agent":"Qualité","task":"task_1"}
-{"v":1,"type":"a2ui","session":"{session}","t_ms":4050,"data":{"version":"v0.9","updateComponents":{"surfaceId":"quality","components":[{"id":"root","component":"Column","children":["title","value"]},{"id":"title","component":"Text","text":"Sessions sans crash","variant":"h3"},{"id":"value","component":"Text","text":{"path":"/crashFree"}}]}},"agent":"Qualité","task":"task_1"}
-{"v":1,"type":"a2ui","session":"{session}","t_ms":4100,"data":{"version":"v0.9","updateDataModel":{"surfaceId":"quality","path":"/crashFree","value":"99,57 %"}},"agent":"Qualité","task":"task_1"}
+{"v":1,"type":"a2ui","session":"{session}","t_ms":4000,"data":{"version":"v0.9","createSurface":{"surfaceId":"kpi","catalogId":"https://genesis-canvas.example/a2ui/catalogs/genesis/v1","sendDataModel":false}},"agent":"Qualité","task":"task_1"}
+{"v":1,"type":"a2ui","session":"{session}","t_ms":4050,"data":{"version":"v0.9","updateComponents":{"surfaceId":"kpi","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}},"agent":"Qualité","task":"task_1"}
+{"v":1,"type":"a2ui","session":"{session}","t_ms":4100,"data":{"version":"v0.9","updateDataModel":{"surfaceId":"kpi","path":"/kpi","value":{"label":"Sessions sans crash","value":"99,57 %","trend":"−0,36 pt","threshold":"≥ 99,50 %","status":"risk","statusLabel":"À risque"}}},"agent":"Qualité","task":"task_1"}
 {"v":1,"type":"agent.activity","session":"{session}","t_ms":4300,"data":{"agent":"Qualité","task":"task_1","state":"completed","label":"Qualité"},"agent":"Qualité","task":"task_1"}

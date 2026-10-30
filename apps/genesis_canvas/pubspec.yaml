@@ -10,6 +10,8 @@ resolution: workspace
 
 dependencies:
   a2ui_core: 0.1.1
+  entity_catalog:
+    path: ../../packages/entities/catalog
   entity_session:
     path: ../../packages/entities/session
   feature_agent_activity:

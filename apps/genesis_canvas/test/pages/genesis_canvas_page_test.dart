@@ -13,7 +13,9 @@ import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
 import 'package:genesis_canvas/app/scenario/scenario_player.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
-import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
+import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
@@ -30,21 +32,23 @@ class _FakeBundle extends CachingAssetBundle {
   }
 }
 
-const _catalog =
-    'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
+const _catalog = GenesisContract.defaultCatalogId;
 
-// Composant hors catalogue : genui le signale par `reportError`
-// (« Unknown component type »), sans lever d'exception.
+// Composant hors catalogue fermé : le gate A2UI le refuse (le moteur ne le voit
+// jamais) ; le code fermé est consigné, jamais le contenu.
 const _unknownComponent =
     '''
 {"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s","catalogId":"$_catalog"}}}
 {"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"Inconnu"}]}}}
 ''';
 
+// Rejeu conforme au contrat. Avec un catalogue vide injecté, le gate l'accepte
+// mais genui signale une erreur par `reportError`, sans lever d'exception.
 const _valid =
     '''
 {"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s","catalogId":"$_catalog"}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"Text","text":"ok"}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s","path":"/kpi","value":{"label":"ok","value":"1","trend":"0","threshold":"1","status":"ok","statusLabel":"OK"}}}}
 ''';
 
 void main() {
@@ -77,6 +81,7 @@ void main() {
     bool capture = true,
     String scenario = 'demo',
     bool withReplay = true,
+    List<Catalog>? catalogs,
   }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
@@ -86,7 +91,8 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
           getIt: newGetIt(),
-          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          catalogs: catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
+          catalogId: _catalog,
           replay: withReplay
               ? ScenarioPlayer(
                   bundle: _FakeBundle(<String, String>{
@@ -123,13 +129,27 @@ void main() {
   testWidgets('erreur du moteur pendant le rejeu : message et sortie 1', (
     tester,
   ) async {
+    await launch(
+      tester,
+      _valid,
+      catalogs: <Catalog>[Catalog(const [], catalogId: _catalog)],
+    );
+
+    expect(exitCodes, <int>[1]);
+    expect(errors.toString(), contains('Erreur du moteur genui'));
+  });
+
+  testWidgets('message refusé pendant le rejeu : code fermé seul et sortie 1', (
+    tester,
+  ) async {
     await launch(tester, _unknownComponent);
 
     expect(exitCodes, <int>[1]);
-    expect(errors.toString(), contains('Unknown component type: Inconnu'));
+    expect(errors.toString(), contains('component_not_allowed'));
+    expect(errors.toString(), isNot(contains('Inconnu')));
   });
 
-  testWidgets('rejeu sans erreur : PNG écrit et sortie 0', (tester) async {
+  testWidgets('rejeu conforme : PNG écrit et sortie 0', (tester) async {
     await launch(tester, _valid);
 
     expect(exitCodes, <int>[0]);
@@ -193,7 +213,8 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
           getIt: newGetIt(),
-          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
+          catalogId: _catalog,
           replay: messages.stream,
           snapshotFactory: (exitHandler) => SnapshotService(
             path: '${dir.path}/out.png',

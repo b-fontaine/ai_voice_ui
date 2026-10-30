@@ -17,14 +17,14 @@ import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
-import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
+import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
-const _catalog =
-    'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
+const _catalog = GenesisContract.defaultCatalogId;
 
 /// Banc : la page, la vraie `VoiceSession` (et son `VoiceSessionBloc`) sur les
 /// faux de frontière (transport WebRTC, relais, canal). Les enveloppes sont
@@ -90,7 +90,8 @@ class _Rig {
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
           getIt: getIt,
-          catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+          catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
+          catalogId: _catalog,
           replay: replay,
           snapshotFactory: (exitHandler) => SnapshotService(
             path: null,
@@ -148,6 +149,10 @@ void main() {
       null,
       onDone: () => journal.add('bloc.session closed'),
     );
+    ctx.read<A2uiGate>().validated.listen(
+      null,
+      onDone: () => journal.add('gate closed'),
+    );
     ctx.read<TranscriptBloc>().stream.listen(
       null,
       onDone: () => journal.add('bloc.transcript closed'),
@@ -173,6 +178,11 @@ void main() {
     expect(statusDone, greaterThan(journal.indexOf('t1.dispose')));
     expect(statusDone, lessThan(journal.indexOf('bloc.transcript closed')));
     journal.remove('session.status done');
+    // Le gate A2UI se ferme avec la source qui l'alimente, avant les Blocs.
+    final gateClosed = journal.indexOf('gate closed');
+    expect(gateClosed, greaterThan(journal.indexOf('t1.dispose')));
+    expect(gateClosed, lessThan(journal.indexOf('bloc.transcript closed')));
+    journal.remove('gate closed');
     expect(journal, <String>[
       'bloc.session closed',
       'relay.delete(s1)',
@@ -248,21 +258,37 @@ void main() {
     Map<String, Object?> create() => <String, Object?>{
       'version': 'v0.9',
       'createSurface': <String, Object?>{
-        'surfaceId': 's',
+        'surfaceId': 'kpi',
         'catalogId': _catalog,
       },
     };
-    Map<String, Object?> text() => <String, Object?>{
-      'version': 'v0.9',
-      'updateComponents': <String, Object?>{
-        'surfaceId': 's',
-        'components': <Object?>[
-          <String, Object?>{
-            'id': 'root',
-            'component': 'Text',
-            'text': 'vivant',
+    Map<String, Object?> components({String component = 'KeyIndicator'}) =>
+        <String, Object?>{
+          'version': 'v0.9',
+          'updateComponents': <String, Object?>{
+            'surfaceId': 'kpi',
+            'components': <Object?>[
+              <String, Object?>{
+                'id': 'root',
+                'component': component,
+                'data': <String, Object?>{'path': '/kpi'},
+              },
+            ],
           },
-        ],
+        };
+    Map<String, Object?> data() => <String, Object?>{
+      'version': 'v0.9',
+      'updateDataModel': <String, Object?>{
+        'surfaceId': 'kpi',
+        'path': '/kpi',
+        'value': <String, Object?>{
+          'label': 'vivant',
+          'value': '1',
+          'trend': '0',
+          'threshold': '1',
+          'status': 'ok',
+          'statusLabel': 'OK',
+        },
       },
     };
 
@@ -280,10 +306,35 @@ void main() {
       await rig.start(tester);
 
       rig.receive(create());
-      rig.receive(text());
+      rig.receive(components());
+      rig.receive(data());
       await tester.pump();
       await tester.pump();
 
+      expect(find.text('vivant'), findsOneWidget);
+    });
+
+    testWidgets('un message vivant refusé par le gate : code consigné, '
+        'surface retirée, flux intact', (tester) async {
+      final rig = _Rig(tester);
+      await rig.mount(tester);
+      await rig.start(tester);
+
+      rig.receive(create());
+      rig.receive(components(component: 'Inconnu'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(rig.errors.toString(), contains('component_not_allowed'));
+      expect(rig.errors.toString(), isNot(contains('Inconnu')));
+      expect(find.byKey(const Key('surface-kpi')), findsNothing);
+
+      // Le flux continue : une nouvelle surface valide s'affiche.
+      rig.receive(create());
+      rig.receive(components());
+      rig.receive(data());
+      await tester.pump();
+      await tester.pump();
       expect(find.text('vivant'), findsOneWidget);
     });
 
@@ -297,7 +348,8 @@ void main() {
       await rig.start(tester);
 
       rig.receive(create());
-      rig.receive(text());
+      rig.receive(components());
+      rig.receive(data());
       await tester.pump();
       await tester.pump();
 

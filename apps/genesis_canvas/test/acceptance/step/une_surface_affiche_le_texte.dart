@@ -1,11 +1,16 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart';
 
 /// Usage: une surface affiche le texte {'Sessions sans crash'}
+///
+/// Migration A8b (catalogue `genesis`) : la surface est la cellule
+/// `surface-kpi` du contrat, qui contient ce texte (libellé du KPI).
 Future<void> uneSurfaceAfficheLeTexte(WidgetTester tester, String text) async {
-  expect(find.byType(Surface), findsOneWidget, reason: 'une surface attendue');
+  const kpi = Key('surface-kpi');
+  expect(find.byKey(kpi), findsOneWidget, reason: 'une surface attendue');
   expect(
-    find.descendant(of: find.byType(Surface), matching: find.text(text)),
+    find.ancestor(of: find.text(text), matching: find.byKey(kpi)),
     findsOneWidget,
+    reason: 'la cellule surface-kpi doit contenir « $text »',
   );
 }

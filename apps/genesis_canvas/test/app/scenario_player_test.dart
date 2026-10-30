@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart' show FlutterError;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +20,20 @@ class _FakeBundle extends CachingAssetBundle {
     final text = assets[key];
     if (text == null) throw FlutterError('asset absent : $key');
     return ByteData.sublistView(Uint8List.fromList(text.codeUnits));
+  }
+}
+
+/// Paquet d'assets en octets (l'asset contient de l'UTF-8).
+class _Utf8Bundle extends CachingAssetBundle {
+  _Utf8Bundle(this.assets);
+
+  final Map<String, List<int>> assets;
+
+  @override
+  Future<ByteData> load(String key) async {
+    final bytes = assets[key];
+    if (bytes == null) throw FlutterError('asset absent : $key');
+    return ByteData.sublistView(Uint8List.fromList(bytes));
   }
 }
 
@@ -56,6 +73,26 @@ void main() {
         ]);
       },
     );
+
+    test('lit l\'asset act1-replay versionné : douze messages que le gate '
+        'valide tous (toJson = ligne brute)', () async {
+      final file = File('assets/replays/act1-replay.jsonl');
+      final bundle = _Utf8Bundle(<String, List<int>>{
+        'assets/replays/act1-replay.jsonl': file.readAsBytesSync(),
+      });
+      final raws = const LineSplitter()
+          .convert(utf8.decode(file.readAsBytesSync()))
+          .map((l) => (jsonDecode(l) as Map<String, Object?>)['message'])
+          .toList();
+
+      final messages = await ScenarioPlayer(
+        bundle: bundle,
+        delay: (_) async {},
+      ).messages('act1-replay').toList();
+
+      expect(messages, hasLength(12));
+      expect(messages.map((m) => m.toJson()), raws);
+    });
 
     test('scénario inconnu : l\'erreur remonte', () async {
       final player = ScenarioPlayer(bundle: _FakeBundle(<String, String>{}));

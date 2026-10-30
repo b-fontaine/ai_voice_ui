@@ -29,19 +29,43 @@ class CanvasBoard extends StatelessWidget {
         next.surfaceIds.any(
           (String id) => previous.phaseOf(id) != next.phaseOf(id),
         ),
-    builder: (BuildContext context, CanvasState state) => Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (final String id in state.surfaceIds)
-          Expanded(
-            child: KeyedSubtree(
-              key: ValueKey<String>('surface-$id'),
-              child: state.phaseOf(id) == SurfacePhase.skeleton
-                  ? DsSkeleton(key: ValueKey<String>('skeleton-$id'))
-                  : Surface(surfaceContext: controller.contextFor(id)),
+    builder: (BuildContext context, CanvasState state) {
+      final List<String> ids = state.surfaceIds;
+      final int columns = _columnsFor(ids.length);
+      return Column(
+        children: <Widget>[
+          for (int start = 0; start < ids.length; start += columns)
+            Expanded(
+              child: Row(
+                children: <Widget>[
+                  for (int i = start; i < start + columns; i++)
+                    Expanded(
+                      child: i < ids.length
+                          ? _cell(ids[i], state)
+                          : const SizedBox.shrink(),
+                    ),
+                ],
+              ),
             ),
-          ),
-      ],
-    ),
+        ],
+      );
+    },
+  );
+
+  /// Grille tenue par l'app (pdr-0015) : une colonne pour une surface, 2 × 2
+  /// jusqu'à quatre, 3 × 2 pour cinq ou six (A7a du plan 007). L'ordre est
+  /// celui d'arrivée ; l'emplacement par surface (kpi, trend, reviews,
+  /// checklist) viendra avec la grille de la page.
+  static int _columnsFor(int count) => switch (count) {
+    <= 1 => 1,
+    <= 4 => 2,
+    _ => 3,
+  };
+
+  Widget _cell(String id, CanvasState state) => KeyedSubtree(
+    key: ValueKey<String>('surface-$id'),
+    child: state.phaseOf(id) == SurfacePhase.skeleton
+        ? DsSkeleton(key: ValueKey<String>('skeleton-$id'))
+        : Surface(surfaceContext: controller.contextFor(id)),
   );
 }

@@ -249,12 +249,13 @@ void main() {
     expect((await post('v=0')).statusCode, 200);
   });
 
-  test('la fixture réelle de 004 respecte l enveloppe du contrat', () async {
+  test('la fixture de session respecte l enveloppe du contrat', () async {
     final envelopes = await FakeBackend.fixtureEnvelopes('sess-9');
 
     expect(envelopes.map((e) => e['type']), <Object?>[
       'transcript',
       'delegation',
+      'plan',
       'agent.activity',
       'transcript',
       'usage',
@@ -281,6 +282,21 @@ void main() {
       isTrue,
     );
     expect(jsonEncode(a2ui.last), contains('99,57 %'));
+  });
+
+  test('la fixture de session reprend l exemple KPI du contrat genesis '
+      'et un plan avant l activité (A8b)', () async {
+    final envelopes = await FakeBackend.fixtureEnvelopes('sess-9');
+    final kpi = (await ContractFixtures.act1Surfaces()).firstWhere(
+      (s) => s.surfaceId == 'kpi',
+    );
+
+    expect(
+      envelopes.where((e) => e['type'] == 'a2ui').map((e) => e['data']),
+      kpi.messages,
+    );
+    final types = envelopes.map((e) => e['type']).toList();
+    expect(types.indexOf('plan'), lessThan(types.indexOf('agent.activity')));
   });
 
   group('acte 1 genesis (fixtures du contrat)', () {

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 
@@ -85,6 +86,71 @@ void main() {
                   'toString',
                   isNot(contains('secret')),
                 ),
+          ),
+        );
+      });
+    }
+  });
+
+  group('GenesisConfig.fromEnvironment : catalogue', () {
+    GenesisConfig read(String? id) => GenesisConfig.fromEnvironment(
+      id == null
+          ? const <String, String>{}
+          : <String, String>{'GENESIS_CATALOG_ID': id},
+    );
+
+    test('défaut : celui du contrat', () {
+      expect(read(null).catalogId, GenesisContract.defaultCatalogId);
+      expect(read('  ').catalogId, GenesisContract.defaultCatalogId);
+      expect(const GenesisConfig().catalogId, GenesisContract.defaultCatalogId);
+    });
+
+    test(
+      'A5e : le défaut égale celui de A2UI_CATALOG_ID de docker-compose',
+      () {
+        // docker-compose.yaml est retrouvé en remontant les répertoires.
+        var dir = Directory.current.absolute;
+        File? compose;
+        while (compose == null) {
+          final candidate = File('${dir.path}/docker-compose.yaml');
+          if (candidate.existsSync()) {
+            compose = candidate;
+          } else if (dir.parent.path == dir.path) {
+            fail('docker-compose.yaml introuvable');
+          } else {
+            dir = dir.parent;
+          }
+        }
+        final match = RegExp(r'\$\{A2UI_CATALOG_ID:-([^}]+)\}')
+            .firstMatch(compose.readAsStringSync());
+        expect(match, isNotNull, reason: 'défaut A2UI_CATALOG_ID introuvable');
+        expect(const GenesisConfig().catalogId, match!.group(1));
+      },
+    );
+
+    test('GENESIS_CATALOG_ID est lu et nettoyé', () {
+      expect(
+        read('  https://exemple.test/c/v1 ').catalogId,
+        'https://exemple.test/c/v1',
+      );
+    });
+
+    for (final bad in <String>[
+      'pas une uri',
+      'catalogue-sans-schema',
+      '/chemin',
+    ]) {
+      test('identifiant invalide : exception sans la valeur ($bad)', () {
+        expect(
+          () => read(bad),
+          throwsA(
+            isA<GenesisConfigException>()
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('GENESIS_CATALOG_ID'),
+                )
+                .having((e) => e.message, 'message', isNot(contains(bad))),
           ),
         );
       });

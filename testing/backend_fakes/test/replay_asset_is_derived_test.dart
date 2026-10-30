@@ -4,10 +4,33 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
-/// L'asset de rejeu de l'acte 1 est un artefact dérivé du contrat (A5d). Pour
-/// l'instant, le test vérifie le script ; la comparaison avec le fichier
-/// versionné arrive avec la migration de l'asset (tâche T12, A8a).
+/// L'asset de rejeu de l'acte 1 est un artefact dérivé du contrat (A5d) : le
+/// script le produit et le fichier versionné lui est identique. Après un
+/// changement du contrat : `dart run tool/gen_replay.dart --out
+/// ../../apps/genesis_canvas/assets/replays/act1-replay.jsonl`.
 void main() {
+  test('l\'asset versionné est identique à la sortie du script', () async {
+    final genesis = await ContractFixtures.genesisDirectory();
+    // contracts/a2ui/genesis/v1 : la racine du dépôt est 4 niveaux au-dessus.
+    final root = genesis.parent.parent.parent.parent;
+    final asset = File.fromUri(
+      root.uri.resolve('apps/genesis_canvas/assets/replays/act1-replay.jsonl'),
+    );
+    expect(asset.existsSync(), isTrue, reason: 'asset de rejeu introuvable');
+
+    final result = await Process.run('dart', <String>[
+      'run',
+      'tool/gen_replay.dart',
+    ], workingDirectory: Directory.current.path);
+    expect(result.exitCode, 0, reason: '${result.stderr}');
+
+    expect(
+      asset.readAsStringSync(),
+      result.stdout,
+      reason: 'asset périmé : régénérer avec tool/gen_replay.dart',
+    );
+  });
+
   test('le script produit exactement le rejeu dérivé du contrat', () async {
     final dir = await Directory.systemTemp.createTemp('gen_replay_');
     addTearDown(() => dir.delete(recursive: true));

@@ -134,4 +134,65 @@ void main() {
 
     expect(find.byType(Surface), findsNothing);
   });
+
+  testWidgets(
+    'quatre surfaces : grille 2 × 2 de cellules égales, dans l\'ordre '
+    'd\'arrivée',
+    (tester) async {
+      tester.view.physicalSize = const Size(1920, 520);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      createEngine();
+      await pumpBoard(tester);
+
+      for (final String id in <String>[
+        'kpi',
+        'trend',
+        'reviews',
+        'checklist',
+      ]) {
+        bloc.add(A2uiMessageReceived(createSurface(id)));
+      }
+      await settle(tester);
+
+      Rect cell(String id) => tester.getRect(find.byKey(Key('surface-$id')));
+      final Rect kpi = cell('kpi');
+      final Rect trend = cell('trend');
+      final Rect reviews = cell('reviews');
+      final Rect checklist = cell('checklist');
+      expect(kpi.size, trend.size);
+      expect(kpi.size, reviews.size);
+      expect(kpi.size, checklist.size);
+      expect(kpi.width, 960);
+      expect(kpi.height, 260);
+      expect(trend.topLeft, kpi.topRight);
+      expect(reviews.topLeft, kpi.bottomLeft);
+      expect(checklist.topLeft, kpi.bottomRight);
+    },
+  );
+
+  testWidgets('une surface occupe toute la largeur ; six surfaces : 3 × 2', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    createEngine();
+    await pumpBoard(tester);
+
+    bloc.add(A2uiMessageReceived(createSurface('a')));
+    await settle(tester);
+    expect(tester.getSize(find.byKey(const Key('surface-a'))).width, 1800);
+
+    for (final String id in <String>['b', 'c', 'd', 'e', 'f']) {
+      bloc.add(A2uiMessageReceived(createSurface(id)));
+    }
+    await settle(tester);
+    final Rect a = tester.getRect(find.byKey(const Key('surface-a')));
+    expect(a.size, const Size(600, 300));
+    expect(
+      tester.getRect(find.byKey(const Key('surface-d'))).topLeft,
+      a.bottomLeft,
+    );
+  });
 }
