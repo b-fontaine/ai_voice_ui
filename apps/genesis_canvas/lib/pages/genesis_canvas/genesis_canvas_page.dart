@@ -14,6 +14,7 @@ import 'package:feature_canvas/feature_canvas.dart'
         ActionSessionClosed,
         ActionStageReset,
         ActionIdle,
+        ActionRunning,
         CanvasActionBloc,
         CanvasActionScope,
         CanvasActionSettings,
@@ -49,7 +50,7 @@ import 'package:feature_replay/feature_replay.dart'
         ReplayState,
         ReplayStatus;
 import 'package:feature_stage_controls/feature_stage_controls.dart'
-    show StageBloc, StageResetRequested;
+    show StageActReached, StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
         Connecting,
@@ -428,6 +429,17 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_requestBackendReset());
   }
 
+  /// Identifiant de la surface de la Barre d'actions (fin de l'acte 2).
+  static const String _actionsSurfaceId = 'actions';
+
+  /// Fait avancer l'indicateur d'acte (jamais en arrière). Sans effet en mode
+  /// scénario et pendant le rejeu de l'acte 4 : un message rejoué ou vivant
+  /// ne décrit pas l'avancement de la démo.
+  void _reachAct(int act) {
+    if (_scenarioMode || _replayBloc.state is ReplayActive) return;
+    _stageBloc.add(StageActReached(act));
+  }
+
   /// Étapes 1 et 2 de [_resetStage] pour ce qui est visible de la scène
   /// (canevas, panneau, étagère), de façon synchrone : le validateur repart de
   /// zéro. Avec [keepPanelOpen] (positionnement du rejeu), le panneau garde
@@ -764,6 +776,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
           listenWhen: (previous, current) =>
               previous.sourceStatus != current.sourceStatus,
           listener: _onSourceChanged,
+        ),
+        // Avance automatique de l'indicateur d'acte (011, T24) : la surface
+        // `actions` apparaît à la fin de l'acte 2 (pdr-0061).
+        BlocListener<CanvasBloc, CanvasState>(
+          listenWhen: (previous, current) =>
+              previous.phaseOf(_actionsSurfaceId) == null &&
+              current.phaseOf(_actionsSurfaceId) != null,
+          listener: (context, state) => _reachAct(2),
+        ),
+        // Un clic accepté (202) : signal local, jamais rejoué.
+        BlocListener<CanvasActionBloc, CanvasActionState>(
+          listenWhen: (previous, current) =>
+              previous is! ActionRunning && current is ActionRunning,
+          listener: (context, state) => _reachAct(3),
         ),
         // Seule la cause fermée de l'échec est consignée, jamais le détail du
         // backend.
