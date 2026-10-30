@@ -1,7 +1,7 @@
 # 012 — État
 
 - **Étape** : Vérification
-- **Tentatives** : 0/3
+- **Tentatives** : 1/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
