@@ -1,7 +1,8 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
-// Deux entrées : la présentation (index.html) et la planche du guide de style
+// Trois entrées : la présentation (index.html), la fenêtre de notes orateur
+// (notes.html, ouverte par la touche N) et la planche du guide de style
 // (styleguide.html), qui n'est pas incluse dans la présentation.
 export default defineConfig({
   base: './',
@@ -14,6 +15,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         styleguide: resolve(import.meta.dirname, 'styleguide.html'),
+        notes: resolve(import.meta.dirname, 'notes.html'),
       },
     },
   },

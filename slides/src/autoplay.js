@@ -11,7 +11,7 @@ const FIRST_DELAY_MS = 450; // laisse finir la transition de slide
 const STEP_MS = 650;
 const CODE_STEP_MS = 2200; // étapes de surlignage de code : le temps de lire
 
-const NEXT_KEYS = [39, 40, 32, 34, 78, 76, 74]; // → ↓ espace PgDn N L J
+const NEXT_KEYS = [39, 40, 32, 34, 76, 74]; // → ↓ espace PgDn L J (N ouvre les notes)
 const PREV_KEYS = [37, 38, 33, 80, 72, 75]; // ← ↑ PgUp P H K
 
 export function setupAutoplay(deck) {
@@ -87,5 +87,5 @@ export function setupAutoplay(deck) {
   deck.on('overviewshown', stop);
   deck.on('overviewhidden', () => schedule(FIRST_DELAY_MS));
 
-  return { keyboard };
+  return { keyboard, advance, back };
 }

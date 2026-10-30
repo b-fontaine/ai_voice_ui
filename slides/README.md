@@ -24,6 +24,7 @@ Les slides s'enchaînent de gauche à droite uniquement (pas de pile verticale).
 |---|---|
 | `→` / `Espace` / `PgDn` | slide suivante (pendant l'affichage progressif : tout afficher d'un coup) |
 | `←` / `PgUp` | slide précédente, affichée en entier |
+| `N` | fenêtre de notes à placer sur le second écran : suit la présentation, affiche les notes en grand, le chrono et le titre de la slide suivante ; `←` `→` y pilotent la présentation, `+` `−` règlent la taille, `T` remet le chrono à zéro |
 | `S` | vue orateur (notes, minuteur, slide suivante) |
 | `O` ou `Échap` | vue d'ensemble |
 | `F` | plein écran |

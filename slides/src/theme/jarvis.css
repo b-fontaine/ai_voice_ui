@@ -256,6 +256,16 @@ body[data-hud='low']::after {
 .hud-chrome__label b { color: var(--j-cyan); font-weight: 500; }
 .hud-chrome__label--tl { top: 10px; left: 48px; }
 .hud-chrome__label--bl { bottom: 10px; left: 48px; }
+.hud-chrome__label--bc {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--j-cyan);
+  text-transform: none;
+  letter-spacing: 0.06em;
+  font-family: var(--j-font-mono);
+  font-size: 16px;
+}
 @media (max-width: 700px) {
   .hud-chrome__label { display: none; }
 }

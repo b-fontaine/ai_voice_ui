@@ -22,6 +22,7 @@ import './theme/code.css';
 
 import { startHud } from './background/hud.js';
 import { setupAutoplay } from './autoplay.js';
+import { setupNotesWindow } from './notes-window.js';
 
 /** Taille logique des slides (16:9). Reveal met à l'échelle pour l'écran. */
 export const SLIDE_WIDTH = 1600;
@@ -65,6 +66,7 @@ export function startDeck(options = {}) {
   deck.on('fragmentshown', () => hud.pulse(0.35));
 
   const autoplay = setupAutoplay(deck);
-  deck.initialize({ keyboard: autoplay.keyboard });
+  const notesWindow = setupNotesWindow(deck, autoplay);
+  deck.initialize({ keyboard: { ...autoplay.keyboard, 78: notesWindow.open } });
   return deck;
 }

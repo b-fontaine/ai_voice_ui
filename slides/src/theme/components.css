@@ -910,3 +910,27 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal .portrait::before, .reveal .portrait::after { animation: none; }
 }
+
+/* KPI compacts, côte à côte dans un panneau (slide budget) */
+.reveal .kpi-row--compact { flex-wrap: nowrap; gap: 18px; }
+.reveal .kpi-row--compact .kpi { flex: 1; min-width: 0; padding: 12px 14px; }
+.reveal .kpi-row--compact .kpi-value { font-size: 52px; }
+.reveal .kpi-row--compact .kpi-label { font-size: 18px; letter-spacing: 0.04em; }
+
+/* Slide « Ce que vous pouvez réutiliser » : cartes + QR code du dépôt */
+.reveal .reuse-split {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: stretch;
+}
+.reveal .repo-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.reveal .repo-qr img {
+  width: 260px;
+  height: 260px;
+  margin: 6px 0 14px;
+  image-rendering: pixelated;
+  border: 3px solid var(--j-cyan);
+  box-shadow: 0 0 26px var(--j-cyan-dim);
+}
+.reveal .repo-qr a { line-height: 1.3; white-space: nowrap; font-size: 24px; }
