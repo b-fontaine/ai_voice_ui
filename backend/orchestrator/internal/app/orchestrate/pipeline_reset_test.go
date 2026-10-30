@@ -47,7 +47,7 @@ func runToCompletion(t *testing.T, e *env) {
 	awaitDone(t, runAsync(e.p, context.Background(), e.delegation(t)))
 }
 
-func TestPipelineResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing.T) {
+func TestResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing.T) {
 	agent := newAgent("Qualité", surfaceSteps("zeta", "alpha", "mid")...)
 	e := newEnv(t, agent)
 	runToCompletion(t, e)
@@ -67,7 +67,7 @@ func TestPipelineResetCanvasDeletesActiveSurfacesSortedThenIdempotent(t *testing
 	}
 }
 
-func TestPipelineResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
+func TestResetCanvasKeepsContextIDAndAllowsRecreation(t *testing.T) {
 	agent := newAgent("Qualité", surfaceSteps("kpi")...)
 	e := newEnv(t, agent)
 	runToCompletion(t, e)
@@ -104,7 +104,7 @@ func waitBusy(t *testing.T, e *env) {
 	t.Fatal("ResetCanvas jamais occupé pendant Run")
 }
 
-func TestPipelineResetCanvasBusyDuringPlanStep(t *testing.T) {
+func TestResetCanvasBusyDuringPlanStep(t *testing.T) {
 	agent := newAgent("Qualité")
 	agent.blockCard = true // l'étape de plan (lecture des cartes) reste bloquée
 	e := newEnv(t, agent)
@@ -119,7 +119,7 @@ func TestPipelineResetCanvasBusyDuringPlanStep(t *testing.T) {
 	awaitDone(t, done)
 }
 
-func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
+func TestResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	release := make(chan struct{})
 	agent := newAgent("Qualité")
 	agent.script = func(ctx context.Context, yield func(port.AgentUpdate, error) bool) {
@@ -158,7 +158,7 @@ func TestPipelineResetCanvasBusyDuringExecutionChangesNothing(t *testing.T) {
 	}
 }
 
-func TestPipelineResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
+func TestResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
 	canvas := newTestCanvas(t)
 	p, err := NewPipeline(PipelineDeps{
 		SessionID: testSession, Start: time.Unix(1000, 0), Clock: fixedClock{time.Unix(1000, 0)},
@@ -181,7 +181,7 @@ func TestPipelineResetCanvasBusyFlagClearedEvenWithoutAgents(t *testing.T) {
 	}
 }
 
-func TestPipelineResetCanvasAfterCloseIsNoOp(t *testing.T) {
+func TestResetCanvasAfterCloseIsNoOp(t *testing.T) {
 	e := newEnv(t, newAgent("Qualité", surfaceSteps("kpi")...))
 	runToCompletion(t, e)
 	e.p.Close()
@@ -194,7 +194,7 @@ func TestPipelineResetCanvasAfterCloseIsNoOp(t *testing.T) {
 	}
 }
 
-func TestPipelineResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
+func TestResetCanvasConcurrentCallsDeleteEachSurfaceOnce(t *testing.T) {
 	e := newEnv(t, newAgent("Qualité", surfaceSteps("a", "b", "c", "d")...))
 	runToCompletion(t, e)
 	before := len(e.sink.snapshot())

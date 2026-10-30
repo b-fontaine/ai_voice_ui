@@ -103,6 +103,12 @@ type sharedEnv struct {
 
 func newSharedEnv(t *testing.T, canvas *Canvas, agent *canvasAgent) *sharedEnv {
 	t.Helper()
+	return newSharedEnvPlanner(t, canvas, agent, nil)
+}
+
+// newSharedEnvPlanner est newSharedEnv avec un planificateur choisi (nil : TagPlanner).
+func newSharedEnvPlanner(t *testing.T, canvas *Canvas, agent *canvasAgent, planner Planner) *sharedEnv {
+	t.Helper()
 	val, err := a2ui.NewValidator(a2ui.Options{
 		CatalogID: testCatalog, Components: []string{"Column", "Text"},
 		MaxMessageBytes: 64 << 10, MaxDepth: 16, MaxComponentsPerUpdate: 100,
@@ -112,7 +118,7 @@ func newSharedEnv(t *testing.T, canvas *Canvas, agent *canvasAgent) *sharedEnv {
 	}
 	e := &sharedEnv{t: t, canvas: canvas, sink: &recSink{}, agent: agent}
 	factory, err := NewPipelineFactory(PipelineConfig{
-		Clock: fixedClock{time.Unix(1000, 0)}, Sink: e.sink, Agents: []port.RemoteAgent{agent},
+		Clock: fixedClock{time.Unix(1000, 0)}, Sink: e.sink, Agents: []port.RemoteAgent{agent}, Planner: planner,
 		Validator: val, Canvas: canvas, Phrases: pipePhrases, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
@@ -430,4 +436,202 @@ func TestSharedCanvasConcurrentOpenCloseRunAndReset(t *testing.T) {
 		t.Fatalf("registre non vidé : %v", got)
 	}
 	t.Logf("%d remises à vide tentées, %d réussies", resets.Load(), resetsOK.Load())
+}
+
+// (g) La compensation d'une session fermée en pleine tâche atteint la session
+// suivante : B reçoit deleteSurface(kpi) (auteur orchestrateur) avant createSurface(kpi).
+func TestSharedCanvasCompensationOfClosedSessionReachesNextSession(t *testing.T) {
+	e := newSharedEnv(t, newTestCanvas(t), &canvasAgent{surfaces: []string{"kpi"}, hang: true})
+	a := e.open("A")
+	e.ask(a, "d1")
+	eventually(t, "surface créée", func() bool { return len(e.canvas.Registry().ActiveFor("id-canvas")) == 1 })
+	e.close(a)
+	eventually(t, "Run de A rendu", func() bool { return e.running() == 0 })
+
+	b := e.open("B")
+	e.ask(b, "d1")
+	eventually(t, "createSurface dans B", func() bool { return len(e.opsOf("B", "createSurface")) == 1 })
+
+	del, create := -1, -1
+	for i, m := range e.forSession("B") {
+		a, ok := m.Data.(domain.A2UI)
+		switch {
+		case !ok:
+		case a.Op == domain.OpDeleteSurface && a.SurfaceID == "kpi":
+			del = i
+			if m.Agent != OrchestratorName {
+				t.Fatalf("deleteSurface émis par %q, %q attendu", m.Agent, OrchestratorName)
+			}
+		case a.Op == "createSurface" && a.SurfaceID == "kpi":
+			create = i
+		}
+	}
+	if del < 0 || create < 0 || del > create {
+		t.Fatalf("deleteSurface(kpi) en %d, createSurface(kpi) en %d : suppression avant création attendue", del, create)
+	}
+	if n := len(e.canvas.takeOrphans()); n != 0 {
+		t.Fatalf("%d orphelin(s) restant après publication", n)
+	}
+}
+
+// Une remise à vide publie les orphelins (sans doublon avec le registre) puis vide la liste.
+func TestSharedCanvasResetPublishesOrphansAndEmptiesThem(t *testing.T) {
+	e := newSharedEnv(t, newTestCanvas(t), &canvasAgent{surfaces: []string{"kpi"}, hang: true})
+	a := e.open("A")
+	e.ask(a, "d1")
+	eventually(t, "surface créée", func() bool { return len(e.canvas.Registry().ActiveFor("id-canvas")) == 1 })
+	e.close(a)
+	eventually(t, "Run de A rendu", func() bool { return e.running() == 0 })
+	if err := e.canvas.Registry().Apply("id-canvas", "seed", a2ui.Operation{Kind: a2ui.CreateSurface, SurfaceID: "seed"}); err != nil {
+		t.Fatal(err)
+	}
+	e.open("B")
+
+	if err := e.reset(); err != nil {
+		t.Fatalf("ResetCanvas = %v", err)
+	}
+	if got := e.opsOf("B", "deleteSurface"); !slices.Equal(got, []string{"kpi", "seed"}) {
+		t.Fatalf("deleteSurface dans B = %v, [kpi seed] (trié, sans doublon) attendu", got)
+	}
+	if n := len(e.canvas.takeOrphans()); n != 0 {
+		t.Fatalf("%d orphelin(s) restant après la remise à vide", n)
+	}
+}
+
+func TestMergeDeletionsSortsAndDeduplicates(t *testing.T) {
+	del := func(id string) map[string]any {
+		return map[string]any{"deleteSurface": map[string]any{"surfaceId": id}}
+	}
+	got := mergeDeletions([]map[string]any{del("b"), del("a")}, []map[string]any{del("b"), del("c")})
+	var ids []string
+	for _, m := range got {
+		ids = append(ids, deletedSurface(m))
+	}
+	if !slices.Equal(ids, []string{"a", "b", "c"}) {
+		t.Fatalf("fusion = %v, [a b c] attendu", ids)
+	}
+}
+
+// panicPlanner fait paniquer la planification.
+type panicPlanner struct{ called *atomic.Bool }
+
+func (p panicPlanner) Plan(string, []port.AgentCard) []int {
+	p.called.Store(true)
+	panic("planificateur en panne")
+}
+
+// (h) Un Planner qui panique ne laisse pas le compteur levé : la remise à vide réussit.
+func TestSharedCanvasPlannerPanicReleasesRunning(t *testing.T) {
+	var called atomic.Bool
+	e := newSharedEnvPlanner(t, newTestCanvas(t), &canvasAgent{surfaces: []string{"kpi"}}, panicPlanner{&called})
+	s := e.open("A")
+	e.ask(s, "d1")
+	eventually(t, "planificateur appelé", called.Load)
+	eventually(t, "Run de A rendu malgré la panique", func() bool { return e.running() == 0 })
+	eventually(t, "ResetCanvas possible", func() bool { return e.reset() == nil })
+}
+
+// enteringRunner est un Runner qui déclare ses exécutions au canevas comme le vrai
+// pipeline, et note ce qu'il voit au moment d'entrer.
+type enteringRunner struct {
+	canvas  *Canvas
+	hook    func()
+	entered atomic.Bool
+	active  chan []string
+}
+
+func (r *enteringRunner) Run(context.Context, Delegation) {
+	r.canvas.enter()
+	defer r.canvas.leave()
+	r.entered.Store(true)
+	r.active <- r.canvas.Registry().ActiveFor("owner")
+}
+
+func (r *enteringRunner) publishDeletions([]map[string]any) {
+	if r.hook != nil {
+		r.hook()
+	}
+}
+
+// (i) Un Run lancé pendant une remise à vide attend sa fin, puis voit un canevas vide.
+func TestSharedCanvasRunStartedDuringResetEntersAfterItAndSeesEmptyCanvas(t *testing.T) {
+	opts := testOptions()
+	var runners []*enteringRunner
+	var mu sync.Mutex
+	factory := func(string, time.Time, port.VoiceReply) Runner {
+		r := &enteringRunner{canvas: opts.Canvas, active: make(chan []string, 1)}
+		mu.Lock()
+		runners = append(runners, r)
+		mu.Unlock()
+		return r
+	}
+	m, err := NewManager(factory, testPhrases, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := opts.Canvas.Registry().Apply("owner", "seed", a2ui.Operation{Kind: a2ui.CreateSurface, SurfaceID: "a"}); err != nil {
+		t.Fatal(err)
+	}
+	s1 := m.Open("S1", time.Now(), newFakeReply())
+	s2 := m.Open("S2", time.Now(), newFakeReply())
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), wait)
+		defer cancel()
+		s1.Close(ctx)
+		s2.Close(ctx)
+	}()
+	r2 := runners[1]
+	var once sync.Once
+	var enteredDuringReset atomic.Bool
+	hook := func() {
+		once.Do(func() { // sous Canvas.mu
+			delegate(s2, "d1")
+			time.Sleep(50 * time.Millisecond)
+			enteredDuringReset.Store(r2.entered.Load())
+		})
+	}
+	for _, r := range runners {
+		r.hook = hook
+	}
+
+	if err := m.ResetCanvas(context.Background()); err != nil {
+		t.Fatalf("ResetCanvas = %v", err)
+	}
+	if enteredDuringReset.Load() {
+		t.Fatal("le Run de S2 est entré pendant la remise à vide")
+	}
+	select {
+	case got := <-r2.active:
+		if len(got) != 0 {
+			t.Fatalf("le Run de S2 voit les surfaces %v, canevas vide attendu", got)
+		}
+	case <-time.After(wait):
+		t.Fatal("le Run de S2 n'est jamais entré")
+	}
+}
+
+// (j) Sans agent, le canevas peut être nil : le chemin « aucun agent » ne panique pas.
+func TestPipelineWithoutAgentAndWithoutCanvasDoesNotPanic(t *testing.T) {
+	factory, err := NewPipelineFactory(PipelineConfig{
+		Clock: fixedClock{time.Unix(1000, 0)}, Sink: &recSink{}, Phrases: pipePhrases,
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts := testOptions()
+	m, err := NewManager(factory, pipePhrases, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reply := newFakeReply()
+	s := m.Open("A", time.Unix(1000, 0), reply)
+	defer s.Close(context.Background())
+	say(s, "Prépare la release", 0)
+	s.Delegate("d1", 100)
+	eventually(t, "phrase « aucun agent »", func() bool {
+		reply.mu.Lock()
+		defer reply.mu.Unlock()
+		return len(reply.got) > 0 && reply.got[len(reply.got)-1].Text == pipePhrases.NoAgent
+	})
 }

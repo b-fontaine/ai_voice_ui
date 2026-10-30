@@ -152,6 +152,10 @@ func (p *Pipeline) failLocked(ts *taskState, detail string) {
 			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
 				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 		}
+		if detail == DetailSessionClosed {
+			// L'app a quitté cette session : la prochaine session publiera la compensation.
+			p.deps.Canvas.addOrphans(compensation)
+		}
 		p.deps.Canvas.Registry().Forget(ts.taskID)
 	}
 	state := domain.ActivityFailed

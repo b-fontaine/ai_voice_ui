@@ -62,9 +62,10 @@ type Pipeline struct {
 	deps PipelineDeps
 	log  *slog.Logger
 
-	// mu est le verrou de session : il protège Publish, les écritures dans le
-	// registre partagé (décompte atomique avec la publication), l'état des tâches
-	// en vol et closed. Ordre des verrous : Canvas.mu → p.mu → Registry.mu.
+	// mu est le verrou du pipeline (à ne pas confondre avec session.mu du Manager) :
+	// il protège Publish, les écritures dans le registre partagé (décompte
+	// atomique avec la publication), l'état des tâches en vol et closed. Ordre des
+	// verrous : voir canvas.go.
 	mu       sync.Mutex
 	closed   bool // plus aucune publication
 	inflight []*taskState
@@ -171,6 +172,7 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	if c := p.deps.Canvas; c != nil {
 		c.enter()
 		defer c.leave()
+		p.publishOrphans(c)
 	}
 
 	if len(p.deps.Agents) == 0 {
@@ -295,6 +297,27 @@ func (p *Pipeline) publishDeletions(msgs []map[string]any) {
 		p.publishLocked(domain.TypeA2UI, OrchestratorName, "",
 			domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 	}
+}
+
+// publishOrphans publie, avant tout plan, les compensations laissées par des
+// sessions fermées. Si ce pipeline est déjà scellé, rien n'est publié et les
+// compensations sont remises pour la prochaine exécution.
+func (p *Pipeline) publishOrphans(c *Canvas) {
+	msgs := c.takeOrphans()
+	if len(msgs) == 0 {
+		return
+	}
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		c.putBackOrphans(msgs)
+		return
+	}
+	for _, m := range msgs {
+		p.publishLocked(domain.TypeA2UI, OrchestratorName, "",
+			domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
+	}
+	p.mu.Unlock()
 }
 
 func (p *Pipeline) seal() {

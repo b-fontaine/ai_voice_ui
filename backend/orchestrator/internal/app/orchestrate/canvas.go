@@ -13,11 +13,12 @@ import (
 
 // Ordre des verrous (à respecter partout, jamais à l'envers) :
 //
-//	Canvas.mu → Manager.mu → session.mu → Pipeline.mu → Registry.mu
+//	Canvas.mu → Manager.mu → session.mu → Pipeline.mu → Registry.mu → orphMu
 //
 // Canvas.mu protège le compteur running et sérialise la remise à vide face au
 // début et à la fin de toute exécution de Run. Pipeline.Close et seal ne touchent
-// jamais le registre ni Canvas.mu.
+// jamais le registre ni Canvas.mu. orphMu est un verrou feuille : rien d'autre
+// n'est pris sous lui.
 
 // Canvas porte le registre unique des surfaces et le compteur des exécutions de
 // Run en cours, toutes sessions confondues (fermeture en cours comprise : une
@@ -28,6 +29,12 @@ type Canvas struct {
 
 	mu      sync.Mutex
 	running int // exécutions de Run en cours (étape de plan comprise)
+
+	// Compensations (deleteSurface) retirées du registre à la fermeture d'une
+	// session, donc jamais reçues par l'app : la prochaine exécution de Run ou la
+	// prochaine remise à vide les publie. Protégées par orphMu (verrou feuille).
+	orphMu  sync.Mutex
+	orphans []map[string]any
 }
 
 // NewCanvas valide les limites et construit un canevas vide.
@@ -56,6 +63,37 @@ func (c *Canvas) leave() {
 	c.mu.Lock()
 	c.running--
 	c.mu.Unlock()
+}
+
+// addOrphans consigne des copies de messages de compensation à publier plus tard.
+func (c *Canvas) addOrphans(msgs []map[string]any) {
+	if len(msgs) == 0 {
+		return
+	}
+	c.orphMu.Lock()
+	defer c.orphMu.Unlock()
+	for _, m := range msgs {
+		c.orphans = append(c.orphans, cloneDeletion(m))
+	}
+}
+
+// takeOrphans rend les compensations en attente et vide la liste.
+func (c *Canvas) takeOrphans() []map[string]any {
+	c.orphMu.Lock()
+	defer c.orphMu.Unlock()
+	out := c.orphans
+	c.orphans = nil
+	return out
+}
+
+// putBackOrphans remet en tête des compensations non publiées (ordre conservé).
+func (c *Canvas) putBackOrphans(msgs []map[string]any) {
+	if len(msgs) == 0 {
+		return
+	}
+	c.orphMu.Lock()
+	defer c.orphMu.Unlock()
+	c.orphans = append(append([]map[string]any(nil), msgs...), c.orphans...)
 }
 
 // cloneDeletion copie un message deleteSurface du registre : chaque session

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -259,7 +260,7 @@ func (m *Manager) ResetCanvas(ctx context.Context) error {
 			return port.ErrCanvasBusy
 		}
 	}
-	msgs := c.reg.Reset()
+	msgs := mergeDeletions(c.takeOrphans(), c.reg.Reset())
 	if len(msgs) == 0 {
 		return nil
 	}
@@ -267,6 +268,18 @@ func (m *Manager) ResetCanvas(ctx context.Context) error {
 		s.publishDeletions(msgs)
 	}
 	return nil
+}
+
+// mergeDeletions fusionne des messages deleteSurface : triés par surface, sans doublon.
+func mergeDeletions(lists ...[]map[string]any) []map[string]any {
+	var all []map[string]any
+	for _, l := range lists {
+		all = append(all, l...)
+	}
+	slices.SortStableFunc(all, func(a, b map[string]any) int {
+		return strings.Compare(deletedSurface(a), deletedSurface(b))
+	})
+	return slices.CompactFunc(all, func(a, b map[string]any) bool { return deletedSurface(a) == deletedSurface(b) })
 }
 
 func (m *Manager) forget(s *session) {
