@@ -1,8 +1,8 @@
 # 012 — État
 
-- **Étape** : Revue
+- **Étape** : Refactorisation
 - **Tentatives** : 1/3
-- **Tâche en cours** : —
+- **Tâche en cours** : Lot 1 (Go agents R1 R3), Lot 5 (Flutter R9 R10)
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
 - **Backlog** : EP-03, EP-04, EP-09
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-31 | Revue | architect-reviewer (Opus) : À REFACTORISER (0 bloquante, 5 importantes, 5 mineures, 4 conflits) ; rapport collé plus bas ; 6 lots. | § Revue d'architecte |
 | 2026-10-31 | TDD (fin) | **TDD terminé** (toutes les tâches cochées sauf T90, clôture) ; **`gate --full` VERT, 58 contrôles** (acceptation comprise : C-01 à C-08, F-01, F-02). Passage à la revue d'architecte du code. | `gates/20261031-000055-full.log` |
 | 2026-10-31 | TDD | T52 faite (squelette anticipé : `kit.SurfaceSkeleton`, `Validator.Expected`, squelette des surfaces du plan déterministe émis AVANT l'appel, surfaces anticipées traitées comme actives, plan à surfaces différentes = `invalid_plan` sans second `createSurface`, aucun `deleteSurface` de l'agent ; mutation vérifiée) ; acceptations agents adaptées par surface (l'entrelacement change : squelettes d'abord) ; `gate --unit go` vert. **Refus `view_unavailable` après squelette** : l'orchestrateur publie lui-même les `deleteSurface` de compensation pour tout `rejected`/`failed` (lecture de `task.go`) : le speaker voit brièvement les cadres avant leur retrait. T35 non retenue. Compose : `COMPOSER_MODEL` par défaut `gpt-6-luna`, `COMPOSER_RATE_WINDOW` 2 s. NFR-02 avec squelette : par construction (émission avant l'appel) ; à remesurer sur l'horloge de l'app en répétition. | `gates/20261030-235956-unit-go.log` |
 | 2026-10-30 | TDD | **T51 mesure réelle** (`composer-bench` dans le réseau `agents`, 5 répétitions × 5 demandes, budget vérifié avant chaque campagne, dépense totale de la mesure ≈ 0,13 € estimée par excès, registre `specs/openai-spend.tsv`) : **gpt-6-luna** 25/25 plans valides, 100 % d'accord avec le plan attendu, p50 1,79 s, p90 2,69 s (≈ 936 jetons en entrée, ≈ 68 en sortie par appel) ; **gpt-6.1-terra** 24/25 valides, 1 délai dépassé, p50 1,97 s, p90 3,06 s ; effort de raisonnement de luna : `minimal` refusé (400), `low` et `none` acceptés sans gain (p50 2,1-2,3 s). **Choix : `gpt-6-luna`, effort par défaut.** **NFR-02 (premier squelette < 1,5 s) NON tenu par l'appel seul (p50 1,8 s)** : le squelette anticipé (D8, T52) est donc déclenché ; NFR-03 (< 8 s) tenu. Découvertes : `COMPOSER_RATE_WINDOW` est la durée de recharge d'un jeton (défaut 10 s = 6 appels/min soutenus) : le banc passe en 500 ms ; une commande `docker compose` sans `COMPOSER_MODEL` exporté recrée l'orchestrateur avec la passerelle désactivée (503). | `specs/openai-spend.tsv` |
@@ -31,6 +32,21 @@
 
 ## Revue d'architecte
 **Revue du plan : À AMENDER → amendée.** A1 couture d'émission `emit` et critère de latence calculable (banc dans le réseau `agents`) ; A2 autorité de `ParseIntent`, `ActionBar` jamais choisie, acte 1 à quatre surfaces, `Intent.View` hors metadata ; A3 refus `view_unavailable` jusqu'à la voix (T25) ; A4 passerelle joignable des seuls agents ; A5 délais, débit, auto-test de `check-compose.sh` ; A6 paquets (`arch_test`, fabrique de composeur, `examples.json` embarqué, note Responses T19) ; A7 grille à parent unique, libellés sur deux lignes ; A8 contrat (négatives, fichiers à mettre à jour). Conflits : D7 remplacée (aucun tag), D8 voie intermédiaire signalée, pdr-0023 lue comme « sélection fermée ».
+
+
+**Revue du code (architect-reviewer, Opus) : À REFACTORISER** — 0 bloquante, 5 importantes, 5 mineures, 4 conflits signalés. Conforme : passerelle (gardes dans l'ordre, schéma borné, appel sous `r.Context()`, journaux fermés), adaptateur OpenAI, arrêt conjoint des serveurs, autorité de `ParseIntent`, squelette anticipé, couture `emit`, arch_test, Flutter (parent unique, `same(state)`, trois états, ≥ 24 px, aucune couleur en dur).
+- R1 [importante] le lexique fermé de vues inconnues contient « tableau(x) » : « Affiche le tableau de release 3.4 » serait refusé chez tous les agents (vocabulaire du produit, S-01) → retirer, ne garder que des formes explicites (`kit/scope.go`, `llmcompose/examples.json`).
+- R2 [importante] `${COMPOSER_MODEL:-gpt-6-luna}` remplace aussi une valeur vide : le filet « modèle vide = déterministe » n'est pas atteignable → `${VAR-défaut}` (sans deux-points), `default_value()` adapté, contrôle positif dans l'auto-test.
+- R3 [importante] un `Refusal view_unavailable` du modèle devient `ScopeError` même quand `ParseIntent` a reconnu une vue nommée (contredit A2) → seulement si `intent.View == ""`, sinon repli `refused_unknown`.
+- R4 [importante] profil Qualité dupliqué dans `cmd/composer-bench` (test d'identité sur du texte source) → `quality.ComposerProfile(ds)` partagé par l'agent et le banc.
+- R5 [importante] aucun test d'un refus `view_unavailable` APRÈS squelette (compensation) → `TestPipelineViewRefusalAfterSkeletonIsCompensated`.
+- R6 [mineure] « une vue nommée ne déplace pas le focus » tenue par Qualité seulement → `completedMessage` renvoie nil si `Intent.View != ""`.
+- R7 [mineure] client OpenAI : proxy d'environnement et `BaseURL` `http` hors loopback → `Proxy: nil`, refuser `http` hors loopback.
+- R8 [mineure] l'auto-test accepte toute surcharge qui fait échouer le script pour n'importe quelle raison → ligne `# attendu:` et `grep -F`.
+- R9 [mineure] harnais Flutter : titre et lignes recopiés à la main, commentaire « T11 » périmé → lire `crashlist-global.jsonl`.
+- R10 [mineure] commentaires et documents : profondeur 8 → 12 (`config_gateway.go`), « minimum 16 » non contrôlé (`openaitext`), « pdr-0062 D10 » inexistant (`crash_list.dart`), `maxLines: 2` (spec F-02, status), README du contrat « 1 à 5 lignes » (le builder peut renvoyer 0), constante `ComposerLLMPath` en double.
+- Conflits à remonter (sans refactoriser) : (a) la décision D10 (libellé sur une ligne, `sessions` non affiché) n'est pas enregistrée dans pdr-0074 → **à enregistrer** (product-decide) ; (b) la liste des vues refusées (lexique d'A3) est à valider par le porteur ; (c) A3 face à A2 : R3 tranche pour A2 sur les vues nommées, à valider ; (d) D8 face à pdr-0060 : un refus après squelette montre brièvement les cadres ; pendant l'appel (p50 1,8 s) le public voit des cellules « sans données » (`NoDataCell`), pas le squelette `DsSkeleton`.
+- Lots : 1 (Go agents : R1, R3), 2 (Go agents : R4, R6, R10 agents), 3 (Go orchestrateur : R5, R7, R10 orchestrateur), 4 (compose : R2, R8, session principale), 5 (Flutter : R9, R10 Flutter), D (documents : D10, spec, status, README du contrat, session principale).
 
 ## Questions pour le porteur
 Aucune bloquante. **Pour le porteur, sans bloquer** : l'appel au modèle passe par une passerelle interne de l'orchestrateur (pdr-0074 D1), car les agents n'ont ni clé ni sortie réseau ; le modèle choisit composants et paramètres, jamais les valeurs ; `COMPOSER_MODEL` vide = composition déterministe. **À brancher par le porteur** : `check-compose.sh` n'est lancé que par la CI GitHub, pas par `gate.sh`/`verify.sh` (`tools/loop/` est hors de portée de la boucle) ; l'auto-test `backend/check-compose-selftest.sh` (T24) est à ajouter à `verify.sh --full`. **D8 (squelette anticipé)** est une voie intermédiaire entre le modèle et les écrans fixes de pdr-0060 : conditionnelle, à valider si la mesure la déclenche.
