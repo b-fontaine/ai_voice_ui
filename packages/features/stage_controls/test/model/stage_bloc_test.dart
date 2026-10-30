@@ -50,6 +50,73 @@ void main() {
     expect(bloc.state.act, 1);
   });
 
+  test('StageActReached : 1 puis 2 puis 3, monotone', () async {
+    final bloc = StageBloc();
+    final states = await statesAfter(bloc, (bloc) {
+      bloc
+        ..add(const StageActReached(1))
+        ..add(const StageActReached(2))
+        ..add(const StageActReached(3));
+    });
+
+    expect(states.map((s) => s.act), <int>[2, 3]);
+    expect(bloc.state.act, 3);
+  });
+
+  test('StageActReached ne recule jamais : 3 puis 2 reste 3', () async {
+    final bloc = StageBloc();
+    await statesAfter(bloc, (bloc) {
+      bloc
+        ..add(const StageActReached(3))
+        ..add(const StageActReached(2));
+    });
+
+    expect(bloc.state.act, 3);
+  });
+
+  test('StageActReached saute directement à l\'acte demandé', () async {
+    final bloc = StageBloc();
+    await statesAfter(bloc, (bloc) => bloc.add(const StageActReached(3)));
+
+    expect(bloc.state.act, 3);
+  });
+
+  test('StageResetRequested après StageActReached ramène à 1', () async {
+    final bloc = StageBloc();
+    await statesAfter(bloc, (bloc) {
+      bloc
+        ..add(const StageActReached(3))
+        ..add(const StageResetRequested());
+    });
+
+    expect(bloc.state.act, 1);
+  });
+
+  test('un clic manuel corrige une avance automatique', () async {
+    final bloc = StageBloc();
+    await statesAfter(bloc, (bloc) {
+      bloc
+        ..add(const StageActReached(3))
+        ..add(const StageActAdvanced());
+    });
+
+    expect(bloc.state.act, 1);
+  });
+
+  test('StageActReached hors 1..3 est ignoré', () async {
+    final bloc = StageBloc();
+    final states = await statesAfter(bloc, (bloc) {
+      bloc
+        ..add(const StageActReached(2))
+        ..add(const StageActReached(0))
+        ..add(const StageActReached(4))
+        ..add(const StageActReached(-1));
+    });
+
+    expect(states.map((s) => s.act), <int>[2]);
+    expect(bloc.state.act, 2);
+  });
+
   test('StageState est une valeur et refuse un acte hors 1..3', () {
     expect(const StageState(act: 2), const StageState(act: 2));
     expect(
