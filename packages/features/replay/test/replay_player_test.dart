@@ -1,4 +1,3 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:feature_replay/feature_replay.dart';
@@ -9,12 +8,7 @@ JournalEntry _entry(int seq, int tMs, {String? id}) {
     'version': 'v0.9',
     'deleteSurface': <String, Object?>{'surfaceId': id ?? 's$seq'},
   };
-  return JournalEntry(
-    seq: seq,
-    tMs: tMs,
-    raw: raw,
-    message: A2uiMessage.fromJson(raw),
-  );
+  return JournalEntry(seq: seq, tMs: tMs, raw: raw);
 }
 
 /// Entrées à 0, 1000 et 2400 ms : durée comprimée 2400 ms (écarts < 3 s).

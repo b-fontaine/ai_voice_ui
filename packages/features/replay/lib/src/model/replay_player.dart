@@ -239,14 +239,7 @@ class ReplayPlayer {
   void _emitDue() {
     while (_cursor < _entries.length && _positions[_cursor] <= _position) {
       final JournalEntry e = _entries[_cursor++];
-      _inject(
-        A2uiEnvelopeReceived(
-          message: e.message,
-          raw: e.raw,
-          agent: e.agent,
-          task: e.task,
-        ),
-      );
+      _inject(e.toEnvelope());
       if (_disposed) return;
     }
   }

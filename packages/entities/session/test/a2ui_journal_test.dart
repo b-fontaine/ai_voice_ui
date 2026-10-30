@@ -1,4 +1,5 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart'
+    show A2uiMessage, DataModel, UpdateDataModelMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:test/test.dart';
 
@@ -137,5 +138,63 @@ void main() {
     expect(journal.hasCreateSurface, isFalse);
     journal.append(_event(_create('a')), 10);
     expect(journal.hasCreateSurface, isTrue);
+  });
+
+  group('toEnvelope', () {
+    Map<String, Object?> checklist() => <String, Object?>{
+      'version': 'v0.9',
+      'updateDataModel': <String, Object?>{
+        'surfaceId': 'checklist',
+        'path': '/checklist',
+        'value': <String, Object?>{'title': 'T', 'items': <Object?>[]},
+      },
+    };
+
+    test('une mutation en place du message vivant ne contamine pas '
+        'l\'entrée', () {
+      final A2uiEnvelopeReceived live = _event(checklist());
+      final A2uiJournal journal = A2uiJournal(maxEntries: 10);
+      journal.append(live, 0);
+
+      // Comme le gate : genui range la valeur par référence, puis une mise à
+      // jour de sous-chemin la modifie en place.
+      final UpdateDataModelMessage message =
+          live.message as UpdateDataModelMessage;
+      final DataModel model = DataModel();
+      model.set(message.path!, message.value);
+      model.set('/checklist/decisionStatus', 'go');
+      expect(
+        (message.value! as Map<Object?, Object?>).containsKey('decisionStatus'),
+        isTrue,
+        reason: 'la mutation en place est bien reproduite',
+      );
+
+      final A2uiEnvelopeReceived replayed = journal.entries.single.toEnvelope();
+      expect(replayed.raw.toString(), isNot(contains('decisionStatus')));
+      expect(
+        replayed.message.toJson().toString(),
+        isNot(contains('decisionStatus')),
+      );
+    });
+
+    test('chaque appel rend un message distinct, modifiable', () {
+      final A2uiJournal journal = A2uiJournal(maxEntries: 10);
+      journal.append(_event(checklist(), agent: 'x', task: 't'), 0);
+      final JournalEntry entry = journal.entries.single;
+
+      final A2uiEnvelopeReceived a = entry.toEnvelope();
+      final A2uiEnvelopeReceived b = entry.toEnvelope();
+
+      expect(a.message, isNot(same(b.message)));
+      expect(a.agent, 'x');
+      expect(a.task, 't');
+      expect(a.raw, entry.raw);
+      final UpdateDataModelMessage m = a.message as UpdateDataModelMessage;
+      (m.value! as Map<Object?, Object?>)['decisionStatus'] = 'go';
+      expect(
+        (b.message as UpdateDataModelMessage).value.toString(),
+        isNot(contains('decisionStatus')),
+      );
+    });
   });
 }

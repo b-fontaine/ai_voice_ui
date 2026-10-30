@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
@@ -6,7 +8,7 @@ import 'package:entity_session/entity_session.dart' show A2uiJournal;
 import 'package:feature_canvas/feature_canvas.dart'
     show ActionRequested, CanvasActionBloc, CanvasActionScope;
 import 'package:feature_replay/feature_replay.dart'
-    show ReplayActive, ReplayBloc, ReplayLive;
+    show ReplayActive, ReplayBloc, ReplayLive, ReplaySeeked;
 import 'package:flutter/material.dart' show ButtonStyleButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
@@ -285,6 +287,65 @@ void main() {
       await tester.pump();
 
       expect(rig.errors.toString(), 'Rejeu : 2 messages vivants écartés\n');
+    });
+  });
+
+  group('journal non contaminé par le direct (R1)', () {
+    testWidgets('après la décision de l\'acte 3, un curseur placé avant elle '
+        'ne l\'affiche pas', (tester) async {
+      final lines = (await tester.runAsync(
+        () => File('assets/replays/act3-replay.jsonl').readAsLines(),
+      ))!;
+      final envelopes = <Map<String, Object?>>[
+        for (final line in lines)
+          if (line.trim().isNotEmpty)
+            <String, Object?>{
+              'v': 1,
+              'type': 'a2ui',
+              'session': 's1',
+              't_ms': 10,
+              'data': (jsonDecode(line) as Map<String, Object?>)['message']!,
+            },
+      ];
+      final rig = PageRig(tester);
+      await rig.mount(tester, themed: true);
+      await rig.start(tester);
+      for (final envelope in envelopes) {
+        rig.receiveEnvelope(envelope);
+        await tester.pump();
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final decision = find.descendant(
+        of: find.byKey(const Key('surface-checklist')),
+        matching: find.text('Bloquée'),
+      );
+      expect(decision, findsOneWidget, reason: 'décision affichée en direct');
+
+      final bloc = rig.context.read<ReplayBloc>();
+      await tester.tap(find.byKey(play));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pump();
+      expect(bloc.state, isA<ReplayActive>());
+      final end = (bloc.state as ReplayActive).snapshot.duration;
+      expect(decision, findsOneWidget, reason: 'rejeu jusqu\'à la fin');
+
+      bloc.add(ReplaySeeked(end - const Duration(milliseconds: 1)));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(decision, findsNothing, reason: 'curseur avant la décision');
+      expect(find.byKey(const Key('surface-checklist')), findsOneWidget);
+
+      bloc.add(ReplaySeeked(end));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(decision, findsOneWidget, reason: 'curseur à la fin');
+      expect(rig.errors.toString(), isEmpty);
     });
   });
 }

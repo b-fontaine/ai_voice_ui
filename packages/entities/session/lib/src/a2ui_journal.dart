@@ -8,15 +8,17 @@ import 'session_event.dart' show A2uiEnvelopeReceived;
 
 /// Une enveloppe A2UI enregistrée, avec sa date relative au premier message.
 ///
-/// Le contenu (`raw`, `message`) peut provenir d'un modèle de langage : il
-/// n'apparaît jamais dans [toString], donc ni dans les logs ni dans un
-/// `errorSink`.
+/// Seul [raw] est conservé : le message décodé du direct n'est jamais gardé,
+/// car le gate le transmet à genui, qui le modifie en place. Il est redécodé
+/// à chaque injection ([toEnvelope]).
+///
+/// Le contenu peut provenir d'un modèle de langage : il n'apparaît jamais
+/// dans [toString], donc ni dans les logs ni dans un `errorSink`.
 final class JournalEntry {
   JournalEntry({
     required this.seq,
     required this.tMs,
     required Map<String, Object?> raw,
-    required this.message,
     this.agent,
     this.task,
   }) : raw = _freezeMap(raw);
@@ -30,9 +32,19 @@ final class JournalEntry {
   /// Enveloppe brute : copie profonde non modifiable.
   final Map<String, Object?> raw;
 
-  final A2uiMessage message;
   final String? agent;
   final String? task;
+
+  /// Reconstruit l'enveloppe à injecter : le message est redécodé à chaque
+  /// appel depuis une copie profonde modifiable de [raw], donc jamais partagé
+  /// avec le direct ni entre deux injections (genui range les valeurs par
+  /// référence et les modifie en place).
+  A2uiEnvelopeReceived toEnvelope() => A2uiEnvelopeReceived(
+    message: A2uiMessage.fromJson(_thaw(raw) as Map<String, Object?>),
+    raw: raw,
+    agent: agent,
+    task: task,
+  );
 
   @override
   String toString() => 'JournalEntry(seq: $seq, tMs: $tMs)';
@@ -43,6 +55,15 @@ Map<String, Object?> _freezeMap(Map<Object?, Object?> source) =>
       for (final MapEntry<Object?, Object?> e in source.entries)
         e.key! as String: _freeze(e.value),
     });
+
+Object? _thaw(Object? value) => switch (value) {
+  final Map<Object?, Object?> m => <String, Object?>{
+    for (final MapEntry<Object?, Object?> e in m.entries)
+      e.key! as String: _thaw(e.value),
+  },
+  final List<Object?> l => <Object?>[for (final Object? v in l) _thaw(v)],
+  _ => value,
+};
 
 Object? _freeze(Object? value) => switch (value) {
   final Map<Object?, Object?> m => _freezeMap(m),
@@ -87,7 +108,6 @@ final class A2uiJournal {
         seq: _entries.length,
         tMs: math.max(previous, nowMs - t0),
         raw: event.raw,
-        message: event.message,
         agent: event.agent,
         task: event.task,
       ),
