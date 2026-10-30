@@ -31,6 +31,9 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
+	if !req.Action.IsZero() {
+		return composeAction(req, ds)
+	}
 	intent, err := kit.ParseIntent(req.Text, ds)
 	if err != nil {
 		return kit.Composition{}, err
@@ -66,7 +69,41 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	}
 
 	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "checklist", "ReleaseChecklist", "/checklist", value)
+	if !intent.IsZero() && !slices.Contains(req.ActiveSurfaces, "actions") {
+		// Vue d'une plateforme (acte 2) : la barre d'actions suit la mutation de la
+		// checklist, une seule fois (elle ne dépend pas de la vue).
+		msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "actions", "ActionBar", "/actions", actionBarValue(ds.ActionBar))...)
+	}
 	return kit.Composition{Messages: msgs, Summary: summary(cl)}, nil
+}
+
+// actionBarValue construit la donnée de la surface `actions` depuis le jeu de données.
+func actionBarValue(bar dataset.ActionBar) map[string]any {
+	actions := make([]any, len(bar.Actions))
+	for i, a := range bar.Actions {
+		actions[i] = map[string]any{"id": a.ID, "label": a.Label, "tone": a.Tone}
+	}
+	return map[string]any{"title": bar.Title, "actions": actions}
+}
+
+// composeAction traite une action de la Barre d'actions : un seul updateDataModel du
+// sous-chemin /checklist/decisionStatus (pdr-0065 D3), sans createSurface. Sans la
+// surface `checklist` chez le client, il n'y a rien à mettre à jour (ErrOutOfScope).
+func composeAction(req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
+	dec, err := ds.Decision(req.Action.Name)
+	if err != nil {
+		return kit.Composition{}, fmt.Errorf("%w : %w", kit.ErrOutOfScope, err)
+	}
+	if !slices.Contains(req.ActiveSurfaces, "checklist") {
+		return kit.Composition{}, fmt.Errorf("%w : surface checklist absente", kit.ErrOutOfScope)
+	}
+	msg := map[string]any{"version": "v0.9", "updateDataModel": map[string]any{
+		"surfaceId": "checklist", "path": "/checklist/decisionStatus", "value": dec.Status,
+	}}
+	return kit.Composition{
+		Messages: []map[string]any{msg},
+		Summary:  fmt.Sprintf("La release %s est %s.", ds.TargetVersion, dec.Verb),
+	}, nil
 }
 
 // summary résume la checklist : recommandation, décompte des critères, valeurs clés.

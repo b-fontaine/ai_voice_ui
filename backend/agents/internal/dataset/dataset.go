@@ -58,6 +58,9 @@ type Dataset struct {
 	// Decisions associe chaque action de la Barre d'actions à son libellé (acte 3).
 	Decisions map[string]Decision `json:"decisions"`
 
+	// ActionBar est la donnée de la surface `actions` créée à l'acte 2.
+	ActionBar ActionBar `json:"actionBar"`
+
 	Rows       []Row            `json:"rows"`
 	ReviewRows []ReviewRow      `json:"reviews"`
 	Excerpts   []Excerpt        `json:"excerpts"`
@@ -80,6 +83,9 @@ func LoadFrom(data []byte) (Dataset, error) {
 		return Dataset{}, fmt.Errorf("jeu de données embarqué incomplet (decisionStatus vide)")
 	}
 	if err := d.validateDecisions(); err != nil {
+		return Dataset{}, err
+	}
+	if err := d.validateActionBar(); err != nil {
 		return Dataset{}, err
 	}
 	if strings.TrimSpace(d.TargetVersion) == "" || strings.TrimSpace(d.CompareVersion) == "" {

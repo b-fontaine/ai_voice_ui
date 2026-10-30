@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -34,6 +35,11 @@ type Profile struct {
 	ListenPort  int    `json:"listenPort"` // port d'écoute par défaut (127.0.0.1)
 	Skill       Skill  `json:"skill"`
 	Texts       Texts  `json:"texts"`
+}
+
+// acceptsAction indique si le profil déclare le tag `action:<name>`.
+func (p Profile) acceptsAction(name string) bool {
+	return slices.Contains(p.Skill.Tags, actionTagPrefix+name)
 }
 
 // milestone repère un numéro de jalon (« J2 », « J12 ») comme mot entier.

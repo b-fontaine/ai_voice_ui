@@ -134,6 +134,9 @@ func requireOnlyUpdates(t *testing.T, envs []sessionEnvelope, want map[string]ma
 	got := map[string]map[string]any{}
 	for _, e := range a2uiEnvelopes(envs) {
 		op, surface, _ := a2uiBody(t, e)
+		if surface == "actions" {
+			continue // la cinquième surface naît à l'acte 2 : vérifiée par requireActionBar
+		}
 		if op != "updateDataModel" {
 			t.Fatalf("%s : a2ui %s sur %q, attendu updateDataModel seulement (reçu : %s)", what, op, surface, describe(envs))
 		}
@@ -157,6 +160,33 @@ func requireOnlyUpdates(t *testing.T, envs []sessionEnvelope, want map[string]ma
 	}
 	if len(got) != len(want) {
 		t.Fatalf("%s : %d surface(s) mise(s) à jour, attendu %d (reçu : %s)", what, len(got), len(want), describe(envs))
+	}
+}
+
+// requireActionBar vérifie les messages relayés pour la surface `actions` (la Barre
+// d'actions, créée par Livraison à l'acte 2, pdr-0065 D2) : exactement ceux de
+// act2-actions.jsonl, dans l'ordre, si created ; aucun sinon (correction de plateforme :
+// la barre est déjà ouverte). Les assertions « updateDataModel seulement » de 008 ne
+// portent que sur les quatre surfaces de l'acte 1.
+func requireActionBar(t *testing.T, envs []sessionEnvelope, created bool, what string) {
+	t.Helper()
+	var got []map[string]any
+	for _, e := range a2uiEnvelopes(envs) {
+		if _, surface, _ := a2uiBody(t, e); surface != "actions" {
+			continue
+		}
+		var msg map[string]any
+		if err := json.Unmarshal(e.Data, &msg); err != nil {
+			t.Fatalf("%s : a2ui illisible %s : %v", what, e.Data, err)
+		}
+		got = append(got, msg)
+	}
+	var want []map[string]any
+	if created {
+		want = loadFixtureLines(t, "act2-actions")
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("%s : messages de la surface actions\n reçus   %v\n attendus %v", what, got, want)
 	}
 }
 

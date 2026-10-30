@@ -56,6 +56,7 @@ func TestAct2_S02_TransformsWithoutRecreating(t *testing.T) {
 	}
 	want := loadExamples(t, "act2")
 	requireOnlyUpdates(t, envs, want, "acte 2")
+	requireActionBar(t, envs, true, "acte 2")
 	for _, e := range a2uiEnvelopes(envs) {
 		if iosWord.Match(e.Data) {
 			t.Fatalf("acte 2 : data model contenant « iOS » : %s", e.Data)
@@ -97,6 +98,7 @@ func TestAct2_CorrectionToIOS(t *testing.T) {
 		t.Fatalf("correction : %d completed, attendu 3 sans failed ni rejected (reçu : %s)", n, describe(envs))
 	}
 	requireOnlyUpdates(t, envs, loadExamples(t, "correction-ios"), "correction iOS")
+	requireActionBar(t, envs, false, "correction iOS")
 	for _, e := range a2uiEnvelopes(envs) {
 		if strings.Contains(string(e.Data), "3.3") || strings.Contains(string(e.Data), `"comparison"`) {
 			t.Fatalf("correction iOS : donnée de comparaison 3.3 émise : %s", e.Data)
@@ -163,8 +165,12 @@ func TestAct2_TwoDelegationsAndroidThenCompare(t *testing.T) {
 		t.Fatalf("vue Android : createSurface émis sur une surface de l'acte 1 (reçu : %s)", describe(envs))
 	}
 	got := map[string]map[string]any{}
+	requireActionBar(t, envs, true, "vue Android")
 	for _, e := range a2uiEnvelopes(envs) {
 		op, surface, body := a2uiBody(t, e)
+		if surface == "actions" {
+			continue // la barre est vérifiée par requireActionBar
+		}
 		if op != "updateDataModel" {
 			t.Fatalf("vue Android : a2ui %s sur %q, attendu updateDataModel seulement", op, surface)
 		}
