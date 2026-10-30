@@ -27,15 +27,15 @@ Voir `product/decisions/pdr-0065-009-act3-interact-details-assistant-decided.md`
 - Les scénarios de 000, 005, 007 et 008 restent **verts**. Les assertions « aucun `createSurface` » de 008 (S-02, B1, B2) se **restreignent aux quatre surfaces de l'acte 1** (la création de `actions` est attendue, D2), sans affaiblir le reste.
 
 ## Critères d'acceptation
-- [ ] S-03 (Flutter et Go), C1 à C6 automatisés et verts ; scénarios antérieurs toujours verts
-- [ ] Contrat `contracts/a2ui/genesis/v1/` : `ActionBar` avec schéma (cinq composants `components`), fixtures `act2-actions.jsonl` et `act3-*.jsonl` produites à l'identique par le composeur Livraison et rejouées par le validateur client et le moteur genui (parité Go/Dart)
-- [ ] Mise à jour par sous-chemin vérifiée sur genui 0.10.4 : `BoundObject` de `/checklist` se reconstruit sur `updateDataModel /checklist/decisionStatus` sans recréer la surface (sinon repli du plan)
-- [ ] Libellés « Bloquée » / « Validée » lus dans le jeu de données (`dataset.json`), pas codés dans le composeur
-- [ ] Tests unitaires de chaque unité nouvelle (action dans le jeu de données, composeur Livraison, planificateur d'action, exécution d'une action, route HTTP, `Announce`, `CatalogItem`, `ActionBloc`)
-- [ ] `tools/loop/gate.sh --full` vert (Flutter et Go)
-- [ ] Revue d'architecte : CONFORME (ou refactorisations appliquées)
-- [ ] `app-smoke.sh` : capture de l'acte 3 (rejeu des fixtures actes 1, 2, 3), Barre d'actions et « Bloquée » lisibles, texte ≥ 24 px
-- [ ] Essai réel unique (budget, `openai-budget.sh check`) : acte 1, acte 2, clic ; consigne dans `knowledge/` la stratégie qui a fait parler la voix (Q-75) ; si indisponible (pas de micro), noté dans `status.md`
+- [x] S-03 (Flutter et Go), C1 à C6 automatisés et verts ; scénarios antérieurs toujours verts
+- [x] Contrat `contracts/a2ui/genesis/v1/` : `ActionBar` avec schéma (cinq composants `components`), fixtures `act2-actions.jsonl` et `act3-*.jsonl` produites à l'identique par le composeur Livraison et rejouées par le validateur client et le moteur genui (parité Go/Dart)
+- [x] Mise à jour par sous-chemin vérifiée sur genui 0.10.4 : `BoundObject` de `/checklist` se reconstruit sur `updateDataModel /checklist/decisionStatus` sans recréer la surface (sinon repli du plan)
+- [x] Libellés « Bloquée » / « Validée » lus dans le jeu de données (`dataset.json`), pas codés dans le composeur
+- [x] Tests unitaires de chaque unité nouvelle (action dans le jeu de données, composeur Livraison, planificateur d'action, exécution d'une action, route HTTP, `Announce`, `CatalogItem`, `ActionBloc`)
+- [x] `tools/loop/gate.sh --full` vert (Flutter et Go)
+- [x] Revue d'architecte : CONFORME (ou refactorisations appliquées)
+- [x] `app-smoke.sh` : capture de l'acte 3 (rejeu des fixtures actes 1, 2, 3), Barre d'actions et « Bloquée » lisibles, texte ≥ 24 px
+- [ ] Essai réel unique (budget, `openai-budget.sh check`) : acte 1, acte 2, clic ; consigne dans `knowledge/` la stratégie qui a fait parler la voix (Q-75) ; si indisponible (pas de micro), noté dans `status.md` — **non abouti** : actes 1 et 2 validés en réel, clic refusé en 409 `busy` par défaut du client d'essai, voix non observée (Q-75 ouverte) ; voir `status.md`
 
 ## Questions ouvertes
 **Q-75** (non bloquante, avant J7) : la voix dit-elle un texte hors délégation ? **Q-76** (non bloquante, avant J7) : la décision « Bloquée » est perdue par une demande vocale ultérieure (agent sans état). Q-40 à Q-42, Q-67, Q-68, Q-74 restent à J7. ⚠️ Hypothèse non confirmée : « Bloquer » depuis un clic ne crée pas de délégation GPT-Live ; le commentaire à `delegation_id` nul est documenté par le SDK mais jamais observé (Q-75).

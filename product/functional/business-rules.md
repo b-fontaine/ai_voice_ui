@@ -4,8 +4,8 @@ title: Règles de fonctionnement RG-01 à RG-30
 area: functional
 status: draft
 updated: 2026-10-30
-sources: [specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [pdr-0064-008-act2-transform-details-assistant-decided, p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
+sources: [specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
+links: [pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -53,9 +53,9 @@ Repère technique : couper la voix n'annule pas d'elle-même les outils en cours
 
 | RG | Règle | Source |
 |---|---|---|
-| RG-18 | Un clic sur un composant généré est transmis à l'agent concerné, qui s'allume dans le rail et répond à la voix **et** dans l'interface. | FR-08, § 6 (modes), S-03 |
-| RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; statuts de la fiche § 7 : validé / à risque / bloquant (E17 · Q-35 → pdr-0054) |
-| RG-30 | « Valider la release » se comporte comme « Bloquer la release » (RG-18, RG-28) : clic transmis à Livraison, confirmation vocale, statut de la checklist mis à jour (par exemple « Validée »). | § 7 (Barre d'actions) ; [pdr-0016](../decisions/pdr-0016-validate-release-action.md) (Q-62) |
+| RG-18 | Un clic sur un composant généré est transmis à l'agent concerné, qui s'allume dans le rail et répond à la voix **et** dans l'interface. | FR-08, § 6 (modes), S-03 ; **livrée par 009 (2026-10-30)** : le clic part en `POST /canvas/actions`, Livraison s'allume seul dans le rail (`plan` Livraison seul), la voix confirme **après** `completed` ([pdr-0065](../decisions/pdr-0065-009-act3-interact-details-assistant-decided.md)) ; ⚠️ la voix hors délégation n'a pas été observée en réel (Q-75) |
+| RG-28 | Le statut de la checklist go/no-go évolue après une action (ex. « Bloquer la release » → statut « Bloquée »). | § 7 (checklist), S-03 ; statuts de la fiche § 7 : validé / à risque / bloquant (E17 · Q-35 → pdr-0054) ; **livrée par 009** : `updateDataModel` du seul sous-chemin `/checklist/decisionStatus`, libellé lu dans le jeu de données ([p-fn-dataset-acts](dataset-acts.md)) ; critères, recommandation et comparaison inchangés ; limite connue : une demande vocale ultérieure réécrit la checklist et efface la décision (Q-76) |
+| RG-30 | « Valider la release » se comporte comme « Bloquer la release » (RG-18, RG-28) : clic transmis à Livraison, confirmation vocale, statut de la checklist mis à jour (par exemple « Validée »). | § 7 (Barre d'actions) ; [pdr-0016](../decisions/pdr-0016-validate-release-action.md) (Q-62) ; **livrée par 009** : « Bloquer » puis « Valider » donne « Validée » (la décision humaine prime sur la recommandation) |
 
 ## Régie de scène et rejeu
 

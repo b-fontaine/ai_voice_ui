@@ -4,8 +4,8 @@ title: Personas et parcours en 3 actes
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [product/sources/product-description.pdf#p2, product/sources/design-example.pdf]
-links: [p-fn-vision, p-fn-scope, p-fn-requirements, p-fn-mockups, p-fn-dataset, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, p-rm-open-questions, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
+sources: [specs/009-j5-act3-interact/status.md, product/sources/product-description.pdf#p2, product/sources/design-example.pdf]
+links: [pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-fn-vision, p-fn-scope, p-fn-requirements, p-fn-mockups, p-fn-dataset, pdr-0004-mvp-three-acts, pdr-0006-replay-fallback-must, p-rm-open-questions, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
 tags: [personas, parcours, actes, demo]
 ---
 # Personas et parcours de la démo
@@ -31,7 +31,7 @@ Conséquences fonctionnelles directes :
 |---|---|---|---|
 | 1. **Créer** | Le speaker dit « Prépare la release 3.4 » | Trois agents s'allument ; **quatre surfaces** se construisent progressivement ; le panneau JSON se déplie **une fois** | FR-02, FR-03, FR-04, FR-05, NFR-02, NFR-03 |
 | 2. **Transformer** | « Concentre-toi sur Android et compare avec la 3.3 » | Les surfaces existantes **mutent sur place** au lieu d'être recréées | FR-07 |
-| 3. **Interagir** | Clic sur le bouton généré « Bloquer la release » | L'événement repart vers l'agent, qui confirme à la voix et met à jour la checklist | FR-08 |
+| 3. **Interagir** | Clic sur le bouton généré « Bloquer la release » (ou « Valider la release »), dans la Barre d'actions apparue à la fin de l'acte 2 | L'événement repart vers l'agent Livraison, qui s'allume dans le rail, met à jour la checklist (« Bloquée » / « Validée ») ; la voix confirme ensuite. **Livré par 009 (2026-10-30)**, essai réel de la voix à faire en répétition (Q-75) | FR-08 |
 | 4. **Rejouer** (optionnel) | Curseur de rejeu | La génération de l'acte 1 repasse au ralenti, synchronisée avec le JSON | FR-09 |
 
 Le parcours fixe le périmètre du MVP : [pdr-0004-mvp-three-acts](../decisions/pdr-0004-mvp-three-acts.md).
