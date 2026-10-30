@@ -49,14 +49,13 @@ abstract class AppModule {
   );
 
   @LazySingleton(dispose: closeCanvasResetClient)
-  CanvasResetClient canvasResetClient(
-    GenesisConfig config,
-    StringSink errorSink,
-  ) => HttpCanvasResetClient(
-    baseUrl: config.backendUrl,
-    timeout: config.canvasResetTimeout,
-    onError: errorSink.writeln,
-  );
+  CanvasResetClient canvasResetClient(GenesisConfig config) =>
+      // Pas de journal ici : la page consigne l'échec une seule fois, avec le
+      // contexte (réessais épuisés ou refus définitif).
+      HttpCanvasResetClient(
+        baseUrl: config.backendUrl,
+        timeout: config.canvasResetTimeout,
+      );
 
   @lazySingleton
   AppChannel appChannel(GenesisConfig config, StringSink errorSink) =>

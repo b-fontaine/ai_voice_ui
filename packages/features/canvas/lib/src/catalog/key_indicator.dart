@@ -4,22 +4,9 @@ import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
 
-/// Champs obligatoires de l'objet `/kpi` (contrat `genesis` v1).
-///
-/// Le champ optionnel `comparison` (acte 2) est toléré et ignoré.
-const List<String> keyIndicatorRequiredFields = <String>[
-  'label',
-  'value',
-  'trend',
-  'threshold',
-  'status',
-  'statusLabel',
-];
-
 /// `KeyIndicator` : un indicateur clé (libellé, valeur, tendance, seuil, statut).
 final CatalogItem keyIndicatorItem = boundCatalogItem<_Kpi>(
   name: 'KeyIndicator',
-  path: '/kpi',
   description: 'Indicateur clé lié à /kpi.',
   parse: _Kpi.tryParse,
   build: (BuildContext context, _Kpi kpi) => _Complete(kpi: kpi),

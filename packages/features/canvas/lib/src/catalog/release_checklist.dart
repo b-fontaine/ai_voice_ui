@@ -10,7 +10,6 @@ import 'bound_item.dart';
 /// tels quels (jamais interprétés).
 final CatalogItem releaseChecklistItem = boundCatalogItem<_Checklist>(
   name: 'ReleaseChecklist',
-  path: '/checklist',
   description: 'Checklist go/no-go liée à /checklist.',
   parse: _Checklist.tryParse,
   build: (BuildContext context, _Checklist c) => _ChecklistView(checklist: c),

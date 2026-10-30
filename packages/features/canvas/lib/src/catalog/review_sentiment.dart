@@ -8,7 +8,6 @@ import 'bound_item.dart';
 /// 3 extraits d'avis. Le champ réservé `comparison` (acte 2) est toléré.
 final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
-  path: '/reviews',
   description: 'Sentiment des avis lié à /reviews.',
   parse: _Reviews.tryParse,
   build: (BuildContext context, _Reviews r) => _ReviewsView(reviews: r),

@@ -1,3 +1,5 @@
+import 'package:meta/meta.dart' show immutable;
+
 /// Opération A2UI d'un message.
 enum ProtocolOperation {
   createSurface,
@@ -8,7 +10,8 @@ enum ProtocolOperation {
 }
 
 /// Une ligne du flux du protocole.
-class ProtocolEntry {
+@immutable
+final class ProtocolEntry {
   const ProtocolEntry({
     required this.index,
     required this.timestampMs,
@@ -73,7 +76,8 @@ class ProtocolEntry {
 }
 
 /// État du panneau du protocole.
-class ProtocolFeedState {
+@immutable
+final class ProtocolFeedState {
   const ProtocolFeedState({
     required this.entries,
     required this.expanded,

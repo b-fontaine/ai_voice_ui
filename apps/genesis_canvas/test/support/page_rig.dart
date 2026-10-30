@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
+import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
@@ -118,7 +118,7 @@ class PageRig {
   /// `MaterialApp` et le thème de l'app (SceneTheme installé), comme en prod.
   Future<void> mount(
     WidgetTester tester, {
-    Stream<A2uiMessage>? replay,
+    Stream<ReplayedMessage>? replay,
     Size size = const Size(1920, 1080),
     bool themed = false,
   }) async {
@@ -128,7 +128,6 @@ class PageRig {
     final page = GenesisCanvasPage(
       getIt: getIt,
       catalogs: <Catalog>[genesisCatalog(catalogId: rigCatalog)],
-      catalogId: rigCatalog,
       replay: replay,
       snapshotFactory: (exitHandler) => SnapshotService(
         path: null,

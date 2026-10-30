@@ -131,8 +131,11 @@ class _Entries extends StatelessWidget {
         ),
       );
     }
-    final List<ProtocolEntry> shown = state.entries.length > 4
-        ? state.entries.sublist(state.entries.length - 4)
+    final List<ProtocolEntry> shown =
+        state.entries.length > ProtocolPanel.visibleEntries
+        ? state.entries.sublist(
+            state.entries.length - ProtocolPanel.visibleEntries,
+          )
         : state.entries;
     return ClipRect(
       child: Column(

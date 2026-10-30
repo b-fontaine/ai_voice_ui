@@ -1,10 +1,12 @@
+import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart'
     show BoundObject, CatalogItem, CatalogItemContext;
 import 'package:json_schema_builder/json_schema_builder.dart' show S, Schema;
 import 'package:shared_design_system/shared_design_system.dart';
 
-/// Fabrique un `CatalogItem` du catalogue `genesis` lié à l'objet [path].
+/// Fabrique un `CatalogItem` du catalogue `genesis` lié à l'objet du contrat
+/// (`GenesisContract.boundPathOf(name)`, source unique du chemin).
 ///
 /// L'objet est lu avec `BoundObject` (jamais `dataContext.subscribe` dans le
 /// `widgetBuilder`, A1b). Trois états distincts :
@@ -14,43 +16,47 @@ import 'package:shared_design_system/shared_design_system.dart';
 /// - objet valide ([parse] renvoie une valeur) : [build].
 CatalogItem boundCatalogItem<T extends Object>({
   required String name,
-  required String path,
   required String description,
   required T? Function(Object raw) parse,
   required Widget Function(BuildContext context, T value) build,
-}) => CatalogItem(
-  name: name,
-  dataSchema: S.object(
-    description: description,
-    properties: <String, Schema>{
-      'data': S.object(
-        description: 'Liaison au data model : {"path": "$path"}.',
-        properties: <String, Schema>{'path': S.string()},
-        required: <String>['path'],
-      ),
-    },
-    required: <String>['data'],
-  ),
-  widgetBuilder: (CatalogItemContext ctx) {
-    final Object data = ctx.data;
-    return BoundObject(
-      dataContext: ctx.dataContext,
-      value: data is Map ? data['data'] : null,
-      builder: (BuildContext context, Object? object) {
-        if (object == null) {
-          return NoDataCell(key: Key('nodata-${ctx.surfaceId}'));
-        }
-        final T? value = _safeParse(parse, object);
-        if (value == null) {
-          return SizedBox.expand(
-            child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
-          );
-        }
-        return build(context, value);
+}) {
+  final String path =
+      GenesisContract.boundPathOf(name) ??
+      (throw ArgumentError.value(name, 'name', 'composant sans liaison'));
+  return CatalogItem(
+    name: name,
+    dataSchema: S.object(
+      description: description,
+      properties: <String, Schema>{
+        'data': S.object(
+          description: 'Liaison au data model : {"path": "$path"}.',
+          properties: <String, Schema>{'path': S.string()},
+          required: <String>['path'],
+        ),
       },
-    );
-  },
-);
+      required: <String>['data'],
+    ),
+    widgetBuilder: (CatalogItemContext ctx) {
+      final Object data = ctx.data;
+      return BoundObject(
+        dataContext: ctx.dataContext,
+        value: data is Map ? data['data'] : null,
+        builder: (BuildContext context, Object? object) {
+          if (object == null) {
+            return NoDataCell(key: Key('nodata-${ctx.surfaceId}'));
+          }
+          final T? value = _safeParse(parse, object);
+          if (value == null) {
+            return SizedBox.expand(
+              child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
+            );
+          }
+          return build(context, value);
+        },
+      );
+    },
+  );
+}
 
 /// Un analyseur qui lèverait une exception donne l'état neutre (RG-10).
 T? _safeParse<T extends Object>(T? Function(Object raw) parse, Object raw) {

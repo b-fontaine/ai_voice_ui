@@ -4,12 +4,14 @@ import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_stage_controls/feature_stage_controls.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart' hide testWidgets;
 import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/stage_bar/stage_bar.dart';
+import 'package:shared_design_system/shared_design_system.dart';
 
 void main() {
   late StageBloc stage;
@@ -73,6 +75,19 @@ void main() {
       find.descendant(of: indicator(), matching: find.text('Acte 1/3 · Créer')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('l\'indicateur d\'acte prend le style actIndicator du thème', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+
+    final style = tester
+        .renderObject<RenderParagraph>(find.text('Acte 1/3 · Créer'))
+        .text
+        .style;
+    expect(style?.fontSize, const SceneTheme.dark().actIndicator.fontSize);
+    expect(style?.fontSize, greaterThanOrEqualTo(24));
   });
 
   testWidgets(

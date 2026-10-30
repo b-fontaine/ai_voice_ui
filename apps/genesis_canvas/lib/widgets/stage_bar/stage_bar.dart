@@ -40,7 +40,7 @@ class StageBar extends StatelessWidget {
                     context.read<StageBloc>().add(const StageActAdvanced()),
                 style: TextButton.styleFrom(
                   foregroundColor: theme.accent,
-                  textStyle: theme.title.copyWith(fontSize: 28),
+                  textStyle: theme.actIndicator,
                   minimumSize: const Size(0, 44),
                 ),
                 child: Text(

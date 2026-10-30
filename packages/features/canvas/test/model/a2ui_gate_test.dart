@@ -48,6 +48,11 @@ A2uiEnvelopeReceived _event(Map<String, Object?> raw, {String? agent}) =>
       task: agent == null ? null : 'task_1',
     );
 
+typedef Replayed = ({Map<String, Object?> raw, a2ui.A2uiMessage message});
+
+Replayed _replayed(Map<String, Object?> raw) =>
+    (raw: raw, message: a2ui.A2uiMessage.fromJson(raw));
+
 String _kind(a2ui.A2uiMessage m) =>
     m.toJson().keys.firstWhere((k) => k != 'version');
 
@@ -66,7 +71,7 @@ void main() {
     gate = A2uiGate(catalogId: _catalog, onRejected: rejected.add);
     validated = <ValidatedEnvelope>[];
     accepted = <a2ui.A2uiMessage>[];
-    gate.validated.listen(validated.add);
+    gate.validatedBranch().listen(validated.add);
     gate.accepted.listen(accepted.add);
     gate.attach(input.stream);
   });
@@ -199,21 +204,19 @@ void main() {
     expect(validated.last.verdict, const ValidationAccepted());
   });
 
-  test('le rejeu passe par le même gate (raw = JSON du message)', () async {
-    final replay = StreamController<a2ui.A2uiMessage>();
+  test('le rejeu passe par le même gate (raw = ligne brute)', () async {
+    final replay = StreamController<Replayed>();
     final second = A2uiGate(catalogId: _catalog, onRejected: rejected.add);
     addTearDown(second.dispose);
     final out = <a2ui.A2uiMessage>[];
     final seen = <ValidatedEnvelope>[];
-    second.validated.listen(seen.add);
+    second.validatedBranch().listen(seen.add);
     second.accepted.listen(out.add);
     second.attach(A2uiGate.replayEvents(replay.stream));
 
     replay
-      ..add(a2ui.A2uiMessage.fromJson(_create('kpi')))
-      ..add(
-        a2ui.A2uiMessage.fromJson(_components('kpi', component: 'Inconnu')),
-      );
+      ..add(_replayed(_create('kpi')))
+      ..add(_replayed(_components('kpi', component: 'Inconnu')));
     await settle();
 
     expect(seen.map((e) => e.verdict), <ValidationVerdict>[
@@ -222,6 +225,31 @@ void main() {
     ]);
     expect(seen.first.raw['createSurface'], isA<Map<String, Object?>>());
     expect(out.map(_kind), <String>['createSurface', 'deleteSurface']);
+  });
+
+  test('le rejeu valide la ligne BRUTE, pas le JSON reconstruit : une '
+      'propriété que le décodeur écarte est refusée', () async {
+    final replay = StreamController<Replayed>();
+    final second = A2uiGate(catalogId: _catalog, onRejected: rejected.add);
+    addTearDown(second.dispose);
+    final seen = <ValidatedEnvelope>[];
+    second.validatedBranch().listen(seen.add);
+    second.attach(A2uiGate.replayEvents(replay.stream));
+    // Le message décodé ne porte pas `color` ; la ligne brute, si.
+    final Map<String, Object?> decodedSide = _components('kpi');
+    final Map<String, Object?> raw = _components('kpi');
+    final List<Object?> components =
+        (raw['updateComponents']! as Map<String, Object?>)['components']!
+            as List<Object?>;
+    (components.single! as Map<String, Object?>)['color'] = '#ff0000';
+
+    replay
+      ..add(_replayed(_create('kpi')))
+      ..add((raw: raw, message: a2ui.A2uiMessage.fromJson(decodedSide)));
+    await settle();
+
+    expect(seen.last.verdict, const ValidationRejected('bad_property'));
+    expect(rejected, contains('bad_property'));
   });
 
   test(
@@ -249,7 +277,7 @@ void main() {
   test('dispose ferme les flux et se désabonne de la source', () async {
     final done = <String>[];
     final other = A2uiGate(catalogId: _catalog);
-    other.validated.listen(null, onDone: () => done.add('validated'));
+    other.validatedBranch().listen(null, onDone: () => done.add('validated'));
     other.accepted.listen(null, onDone: () => done.add('accepted'));
     other.attach(input.stream);
 

@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/page_rig.dart';
 
 import 'package:genesis_canvas/app/config/genesis_config.dart';
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasResetResult;
 
@@ -46,10 +46,6 @@ void main() {
     ctx.read<VoiceSessionBloc>().stream.listen(
       null,
       onDone: () => journal.add('bloc.session closed'),
-    );
-    ctx.read<A2uiGate>().validated.listen(
-      null,
-      onDone: () => journal.add('gate closed'),
     );
     ctx.read<TranscriptBloc>().stream.listen(
       null,
@@ -88,11 +84,15 @@ void main() {
     expect(statusDone, greaterThan(journal.indexOf('t1.dispose')));
     expect(statusDone, lessThan(journal.indexOf('bloc.transcript closed')));
     journal.remove('session.status done');
-    // Le gate A2UI se ferme avec la source qui l'alimente, avant les Blocs.
-    final gateClosed = journal.indexOf('gate closed');
+    // Le gate A2UI se ferme avec la source qui l'alimente, avant les Blocs : la
+    // fin de son flux accepté (le Bloc du canevas passe à `completed`, repère
+    // « source disposed ») n'arrive qu'à ce moment-là.
+    final gateClosed = journal.indexOf('source disposed');
     expect(gateClosed, greaterThan(journal.indexOf('t1.dispose')));
     expect(gateClosed, lessThan(journal.indexOf('bloc.transcript closed')));
-    journal.remove('gate closed');
+    expect(gateClosed, lessThan(journal.indexOf('bloc.canvas closed')));
+    expect(gateClosed, lessThan(journal.indexOf('bloc.protocol closed')));
+    expect(gateClosed, lessThan(journal.indexOf('bloc.shelf closed')));
     expect(journal, <String>[
       'bloc.session closed',
       'relay.delete(s1)',
@@ -256,7 +256,7 @@ void main() {
     testWidgets('avec scénario : la source vivante n\'est pas branchée au '
         'canevas et Démarrer est désactivé', (tester) async {
       final rig = PageRig(tester);
-      final replay = StreamController<A2uiMessage>();
+      final replay = StreamController<ReplayedMessage>();
       addTearDown(replay.close);
       await rig.mount(tester, replay: replay.stream);
       expect(startEnabled(tester), isFalse);

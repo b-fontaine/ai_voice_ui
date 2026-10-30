@@ -10,8 +10,8 @@ import 'package:entity_session/entity_session.dart';
 /// appliquée au flux unique de `SessionEvent`, en direct comme en rejeu
 /// (voir [replayEvents]). Pour chaque `A2uiEnvelopeReceived` :
 ///
-/// - [validated] reçoit TOUS les messages avec leur verdict (futur panneau du
-///   protocole), y compris les `ignored` ;
+/// - les [validatedBranch] reçoivent TOUS les messages avec leur verdict
+///   (panneau du protocole, étagère), y compris les `ignored` ;
 /// - [accepted] ne reçoit que les messages `accepted`, plus les
 ///   `deleteSurface` locaux de compensation ; c'est le flux du `CanvasBloc`.
 ///
@@ -20,10 +20,9 @@ import 'package:entity_session/entity_session.dart';
 ///
 /// [accepted] est à abonné unique et met en mémoire tant qu'il n'est pas
 /// écouté (aucun message perdu si le Bloc s'abonne un peu plus tard) ;
-/// [validated] est en diffusion : ses abonnés se branchent avant [attach] ;
-/// un Bloc, lui, s'abonne quelques tours de boucle après son `add` : il prend
-/// donc une [validatedBranch], à abonné unique, qui garde en mémoire ce qui
-/// arrive avant son écoute.
+/// un Bloc s'abonne quelques tours de boucle après son `add` : il prend donc
+/// une [validatedBranch], à abonné unique, qui garde en mémoire ce qui arrive
+/// avant son écoute.
 /// La fin et les erreurs de la source sont relayées à [accepted] (le Bloc en
 /// déduit « rejeu terminé » ou « rejeu impossible »).
 class A2uiGate {
@@ -34,8 +33,6 @@ class A2uiGate {
   final void Function(String code)? onRejected;
 
   final GenesisMessageValidator _validator;
-  final StreamController<ValidatedEnvelope> _validated =
-      StreamController<ValidatedEnvelope>.broadcast();
   final StreamController<a2ui.A2uiMessage> _accepted =
       StreamController<a2ui.A2uiMessage>();
   final List<StreamController<ValidatedEnvelope>> _branches =
@@ -43,17 +40,14 @@ class A2uiGate {
   StreamSubscription<SessionEvent>? _subscription;
   bool _disposed = false;
 
-  /// Tous les messages A2UI, avec leur verdict.
-  Stream<ValidatedEnvelope> get validated => _validated.stream;
-
-  /// Nouvelle branche de [validated] à abonné unique : les messages validés
+  /// Nouvelle branche des messages A2UI avec leur verdict, à abonné unique : les messages validés
   /// depuis cet appel sont mis en mémoire jusqu'à son écoute (aucun n'est
   /// perdu si le consommateur s'abonne un peu plus tard) ; elle se termine
   /// avec le gate. Déjà terminée si le gate est fermé.
   Stream<ValidatedEnvelope> validatedBranch() {
     final StreamController<ValidatedEnvelope> branch =
         StreamController<ValidatedEnvelope>();
-    if (_disposed || _validated.isClosed) {
+    if (_disposed) {
       unawaited(branch.close());
     } else {
       _branches.add(branch);
@@ -64,15 +58,18 @@ class A2uiGate {
   /// Messages à appliquer au canevas, dans l'ordre.
   Stream<a2ui.A2uiMessage> get accepted => _accepted.stream;
 
-  /// Adapte un flux de rejeu au flux unique de `SessionEvent` : `raw` est le
-  /// JSON du message, sans agent ni tâche.
-  static Stream<SessionEvent> replayEvents(Stream<a2ui.A2uiMessage> replay) =>
-      replay.map(
-        (message) => A2uiEnvelopeReceived(
-          message: message,
-          raw: Map<String, Object?>.from(message.toJson()),
-        ),
-      );
+  /// Adapte un flux de rejeu au flux unique de `SessionEvent`. `raw` est le
+  /// JSON **brut** du message, tel qu'il a été lu (sans agent ni tâche) : c'est
+  /// lui que le validateur contrôle, jamais le JSON reconstruit depuis le
+  /// message décodé (le décodeur peut écarter ou normaliser une propriété).
+  static Stream<SessionEvent> replayEvents(
+    Stream<({Map<String, Object?> raw, a2ui.A2uiMessage message})> replay,
+  ) => replay.map(
+    (entry) => A2uiEnvelopeReceived(
+      message: entry.message,
+      raw: Map<String, Object?>.from(entry.raw),
+    ),
+  );
 
   /// Branche la source (une seule fois). Les événements qui ne sont pas des
   /// messages A2UI sont ignorés.
@@ -100,7 +97,6 @@ class A2uiGate {
       agent: event.agent,
       task: event.task,
     );
-    _validated.add(envelope);
     for (final StreamController<ValidatedEnvelope> branch in _branches) {
       if (!branch.isClosed) branch.add(envelope);
     }
@@ -121,16 +117,12 @@ class A2uiGate {
     final Future<void> accepted = _accepted.isClosed
         ? Future<void>.value()
         : _accepted.close();
-    final Future<void> validated = _validated.isClosed
-        ? Future<void>.value()
-        : _validated.close();
     // Sans abonné, la fin d'un flux à abonné unique n'est jamais notifiée :
     // les branches se ferment sans être attendues.
     for (final StreamController<ValidatedEnvelope> branch in _branches) {
       if (!branch.isClosed) unawaited(branch.close());
     }
     _branches.clear();
-    await validated;
     if (_accepted.hasListener) await accepted;
   }
 

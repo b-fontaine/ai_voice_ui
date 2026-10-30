@@ -1,7 +1,9 @@
 import 'package:entity_catalog/entity_catalog.dart';
+import 'package:meta/meta.dart' show immutable;
 
 /// Un composant de l'étagère.
-class ShelfComponent {
+@immutable
+final class ShelfComponent {
   const ShelfComponent(this.name, {required this.used});
 
   final String name;
@@ -16,19 +18,12 @@ class ShelfComponent {
 }
 
 /// État de l'étagère : les composants du contrat, dans l'ordre du contrat.
-class CatalogShelfState {
+@immutable
+final class CatalogShelfState {
   const CatalogShelfState(this.components);
 
-  /// Tous les composants éteints.
-  const CatalogShelfState.empty()
-    : components = const <ShelfComponent>[
-        ShelfComponent('KeyIndicator', used: false),
-        ShelfComponent('TrendChart', used: false),
-        ShelfComponent('ReviewSentiment', used: false),
-        ShelfComponent('ReleaseChecklist', used: false),
-        ShelfComponent('ActionBar', used: false),
-        ShelfComponent('CrashList', used: false),
-      ];
+  /// Tous les composants éteints (dérivé du contrat).
+  factory CatalogShelfState.empty() => CatalogShelfState.fromUsed(const {});
 
   /// État où seuls les composants de [used] sont allumés.
   factory CatalogShelfState.fromUsed(Set<String> used) =>

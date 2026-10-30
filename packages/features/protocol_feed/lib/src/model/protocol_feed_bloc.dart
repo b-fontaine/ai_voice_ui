@@ -25,11 +25,6 @@ class ProtocolFeedBloc extends Bloc<ProtocolFeedEvent, ProtocolFeedState> {
       (event, emit) => emit(state.copyWith(expanded: !state.expanded)),
       transformer: droppable(),
     );
-    on<MessageHighlighted>(
-      (event, emit) =>
-          emit(state.copyWith(highlightedIndex: () => event.index)),
-      transformer: sequential(),
-    );
   }
 
   /// Taille maximale du JSON affiché par entrée.

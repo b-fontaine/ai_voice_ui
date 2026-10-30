@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart' show immutable;
+
 /// État de la régie : l'acte courant de la démo (FR-11, pdr-0054).
-class StageState {
+@immutable
+final class StageState {
   const StageState({required this.act})
     : assert(
         act >= 1 && act <= actCount,

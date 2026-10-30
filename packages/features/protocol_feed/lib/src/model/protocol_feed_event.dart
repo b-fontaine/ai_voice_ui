@@ -21,10 +21,3 @@ final class ProtocolFeedCleared extends ProtocolFeedEvent {
 final class PanelToggled extends ProtocolFeedEvent {
   const PanelToggled();
 }
-
-/// Commande : met en évidence le message d'[index] (`null` : aucun).
-final class MessageHighlighted extends ProtocolFeedEvent {
-  const MessageHighlighted(this.index);
-
-  final int? index;
-}

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +15,7 @@ import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:genui/genui.dart' show Catalog;
+import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:get_it/get_it.dart';
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
@@ -92,13 +92,12 @@ void main() {
         child: GenesisCanvasPage(
           getIt: newGetIt(),
           catalogs: catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
-          catalogId: _catalog,
           replay: withReplay
               ? ScenarioPlayer(
                   bundle: _FakeBundle(<String, String>{
                     'assets/replays/demo.jsonl': ?jsonl,
                   }),
-                ).messages(scenario)
+                ).entries(scenario)
               : null,
           snapshotFactory: (exitHandler) => SnapshotService(
             path: capture ? '${dir.path}/out.png' : null,
@@ -125,6 +124,34 @@ void main() {
     });
     await tester.pump();
   }
+
+  test('une seule source du catalogue : deux catalogues sont refusés', () {
+    GenesisCanvasPage page(List<Catalog> catalogs) => GenesisCanvasPage(
+      getIt: GetIt.asNewInstance(),
+      catalogs: catalogs,
+      snapshotFactory: (exitHandler) => SnapshotService(
+        path: null,
+        exitHandler: exitHandler,
+        errorSink: errors,
+      ),
+      exitHandler: exitCodes.add,
+      errorSink: errors,
+      settings: pageSettingsOf(),
+    );
+
+    expect(
+      () => page(<Catalog>[
+        genesisCatalog(catalogId: _catalog),
+        genesisCatalog(catalogId: '$_catalog-bis'),
+      ]),
+      throwsAssertionError,
+    );
+    expect(() => page(const <Catalog>[]), throwsAssertionError);
+    expect(
+      page(<Catalog>[genesisCatalog(catalogId: _catalog)]).catalogId,
+      _catalog,
+    );
+  });
 
   testWidgets('erreur du moteur pendant le rejeu : message et sortie 1', (
     tester,
@@ -207,14 +234,13 @@ void main() {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final messages = StreamController<A2uiMessage>();
+    final messages = StreamController<ReplayedMessage>();
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
         child: GenesisCanvasPage(
           getIt: newGetIt(),
           catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
-          catalogId: _catalog,
           replay: messages.stream,
           snapshotFactory: (exitHandler) => SnapshotService(
             path: '${dir.path}/out.png',

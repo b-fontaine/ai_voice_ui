@@ -160,7 +160,7 @@ void main() {
     expect(backend.deletes, <String>['sess-1']);
   });
 
-  test('client de remise à vide : URL, délai et journal injectés', () async {
+  test('client de remise à vide : URL et délai injectés, aucune journalisation propre', () async {
     final sink = StringBuffer();
     final getIt = build(
       withConfig: GenesisConfig(
@@ -174,7 +174,8 @@ void main() {
     expect(client.baseUrl, Uri.parse('http://127.0.0.1:1'));
     expect(client.timeout, const Duration(milliseconds: 700));
     expect(await client.reset(), CanvasResetResult.unreachable);
-    expect(sink.toString(), contains('Remise à vide'));
+    // La page consigne l'échec, une seule fois : le client reste muet.
+    expect(sink.toString(), isEmpty);
   });
 
   test('reset ferme le client de remise à vide', () async {

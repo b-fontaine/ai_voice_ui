@@ -279,25 +279,6 @@ void main() {
     expect(states.map((s) => s.expanded), [true, false]);
   });
 
-  test(
-    'MessageHighlighted change la mise en évidence ; null l efface',
-    () async {
-      final states = await run(
-        [for (final m in fixture('kpi')) accepted(m)],
-        after: (bloc) async {
-          bloc.add(const MessageHighlighted(0));
-          await Future<void>.delayed(Duration.zero);
-          bloc.add(const MessageHighlighted(null));
-          await Future<void>.delayed(Duration.zero);
-        },
-      );
-      expect(states[states.length - 2].highlightedIndex, 0);
-      expect(states[states.length - 2].highlightedSurfaceId, 'kpi');
-      expect(states.last.highlightedIndex, isNull);
-      expect(states.last.highlightedSurfaceId, isNull);
-    },
-  );
-
   test('ProtocolFeedCleared remet l état initial (replié, vide)', () async {
     final states = await run(
       [for (final m in fixture('kpi')) accepted(m)],

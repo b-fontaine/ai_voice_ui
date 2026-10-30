@@ -4,7 +4,6 @@ library;
 export 'src/model/protocol_feed_bloc.dart' show ProtocolFeedBloc;
 export 'src/model/protocol_feed_event.dart'
     show
-        MessageHighlighted,
         PanelToggled,
         ProtocolFeedCleared,
         ProtocolFeedEvent,

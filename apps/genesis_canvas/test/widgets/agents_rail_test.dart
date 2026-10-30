@@ -107,6 +107,48 @@ void main() {
     expect(find.text('en cours'), findsNothing);
   });
 
+  testWidgets(
+    'la couleur du point vient des jetons du thème de scène (RG-09)',
+    (tester) async {
+      await pumpRail(tester);
+      const theme = SceneTheme.dark();
+      Color? dot(String agent) => tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: row(agent),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .map((b) => (b.decoration as BoxDecoration).color)
+          .first;
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 'analyse',
+          state: AgentTaskState.working,
+        ),
+      );
+      expect(dot('Qualité'), theme.agentWorking);
+
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 'analyse',
+          state: AgentTaskState.completed,
+        ),
+      );
+      expect(dot('Qualité'), theme.okForeground);
+      // L'état reste dit en toutes lettres : la couleur n'est qu'un renfort.
+      expect(
+        find.descendant(of: row('Qualité'), matching: find.text('terminé')),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('un échec affiche son détail', (tester) async {
     await pumpRail(tester);
 

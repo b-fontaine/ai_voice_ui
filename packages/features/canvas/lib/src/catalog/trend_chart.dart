@@ -8,7 +8,6 @@ import 'trend_chart_painter.dart';
 /// `TrendChart` : courbes par série (3.3 / 3.4), seuil, jours, légende.
 final CatalogItem trendChartItem = boundCatalogItem<_Trend>(
   name: 'TrendChart',
-  path: '/trend',
   description: 'Courbe de tendance liée à /trend.',
   parse: _Trend.tryParse,
   build: (BuildContext context, _Trend trend) => _TrendView(trend: trend),

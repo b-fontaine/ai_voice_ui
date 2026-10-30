@@ -7,6 +7,11 @@ import '../a2ui/a2ui_decoder.dart';
 /// Attente injectable entre deux messages (remplaçable dans les tests).
 typedef ReplayDelay = Future<void> Function(Duration duration);
 
+/// Un message rejoué : le JSON `message` **brut** de la ligne et le message
+/// décodé. La validation porte sur le brut (le décodeur peut écarter ou
+/// normaliser une propriété).
+typedef ReplayedMessage = ({Map<String, Object?> raw, A2uiMessage message});
+
 /// Ligne de rejeu invalide : JSON illisible, `t_ms` absent ou décroissant,
 /// message absent ou refusé par le décodeur A2UI v0.9 (version, corps).
 class A2uiReplayFormatException implements Exception {
@@ -40,7 +45,10 @@ class A2uiReplaySource {
       Future<void>.delayed(duration);
 
   /// Flux des messages décodés, à consommer une seule fois.
-  Stream<A2uiMessage> messages() async* {
+  Stream<A2uiMessage> messages() => entries().map((entry) => entry.message);
+
+  /// Comme [messages], avec en plus le JSON brut de chaque message.
+  Stream<ReplayedMessage> entries() async* {
     var lineNumber = 0;
     var previousMs = 0;
     await for (final raw in lines) {
@@ -56,11 +64,14 @@ class A2uiReplaySource {
       final wait = entry.tMs - previousMs;
       if (wait > 0) await delay(Duration(milliseconds: wait));
       previousMs = entry.tMs;
-      yield entry.message;
+      yield (raw: entry.raw, message: entry.message);
     }
   }
 
-  static ({int tMs, A2uiMessage message}) _parse(String raw, int lineNumber) {
+  static ({int tMs, Map<String, Object?> raw, A2uiMessage message}) _parse(
+    String raw,
+    int lineNumber,
+  ) {
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);
@@ -85,7 +96,11 @@ class A2uiReplaySource {
       throw A2uiReplayFormatException(lineNumber, 'message manquant');
     }
     try {
-      return (tMs: tMs, message: A2uiDecoder.decode(message));
+      return (
+        tMs: tMs,
+        raw: Map<String, Object?>.from(message),
+        message: A2uiDecoder.decode(message),
+      );
     } on A2uiDecodeException catch (e) {
       throw A2uiReplayFormatException(lineNumber, e.message);
     }

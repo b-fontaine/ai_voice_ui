@@ -162,7 +162,7 @@ void main() {
           // Après remise à vide, un deleteSurface ne doit rien casser.
         },
       );
-      expect(states.last, const CatalogShelfState.empty());
+      expect(states.last, CatalogShelfState.empty());
     },
   );
 
@@ -212,7 +212,7 @@ void main() {
           await Future<void>.delayed(Duration.zero);
         },
       );
-      expect(states.last, const CatalogShelfState.empty());
+      expect(states.last, CatalogShelfState.empty());
 
       // Une surface « trend » posée après Cleared, puis delete de l'ancienne
       // « kpi » : seule « trend » compte, et rien n'est libéré par erreur.

@@ -58,12 +58,13 @@ void main() {
           delay: (d) async => delays.add(d),
         );
 
-        final received = await player.messages('demo').toList();
+        final received = await player.entries('demo').toList();
 
         expect(bundle.requested, <String>['assets/replays/demo.jsonl']);
         expect(
           received.map(
-            (m) => m.toJson().keys.toSet().difference({'version'}).single,
+            (m) =>
+                m.message.toJson().keys.toSet().difference({'version'}).single,
           ),
           <String>['createSurface', 'updateComponents', 'updateDataModel'],
         );
@@ -88,16 +89,18 @@ void main() {
       final messages = await ScenarioPlayer(
         bundle: bundle,
         delay: (_) async {},
-      ).messages('act1-replay').toList();
+      ).entries('act1-replay').toList();
 
       expect(messages, hasLength(12));
-      expect(messages.map((m) => m.toJson()), raws);
+      expect(messages.map((m) => m.message.toJson()), raws);
+      // La ligne brute est transmise telle quelle, pour la validation.
+      expect(messages.map((m) => m.raw), raws);
     });
 
     test('scénario inconnu : l\'erreur remonte', () async {
       final player = ScenarioPlayer(bundle: _FakeBundle(<String, String>{}));
 
-      expect(player.messages('absent').toList(), throwsA(isA<FlutterError>()));
+      expect(player.entries('absent').toList(), throwsA(isA<FlutterError>()));
     });
 
     test('ligne invalide : A2uiReplayFormatException', () async {
@@ -108,7 +111,7 @@ void main() {
       );
 
       expect(
-        player.messages('mauvais').toList(),
+        player.entries('mauvais').toList(),
         throwsA(isA<A2uiReplayFormatException>()),
       );
     });

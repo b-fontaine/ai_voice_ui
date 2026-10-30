@@ -23,10 +23,15 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.neutralBackground,
     required this.neutralForeground,
     required this.highlightOutline,
+    required this.agentWorking,
+    required this.agentIdle,
+    required this.agentRejected,
+    required this.agentInterrupted,
     required this.body,
     required this.label,
     required this.value,
     required this.title,
+    required this.actIndicator,
   });
 
   /// Thème sombre de la démo (fond aligné sur la page : 0xFF0B0B14).
@@ -45,6 +50,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground = const Color(0xFF2A2A40),
       neutralForeground = const Color(0xFFD8D8E6),
       highlightOutline = const Color(0xFFB39DFF),
+      agentWorking = const Color(0xFFFFC107),
+      agentIdle = const Color(0xFF90A4AE),
+      agentRejected = const Color(0xFFFFAB40),
+      agentInterrupted = const Color(0xFFB0B0BC),
       body = const TextStyle(
         fontSize: 24,
         height: 1.3,
@@ -67,6 +76,12 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
         height: 1.2,
         fontWeight: FontWeight.w700,
         color: Color(0xFFF2F2F8),
+      ),
+      actIndicator = const TextStyle(
+        fontSize: 28,
+        height: 1.2,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFFF2F2F8),
       );
 
   final Color background;
@@ -86,12 +101,23 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Contour pointillé de mise en évidence d'une surface.
   final Color highlightOutline;
 
+  /// Couleurs d'état d'agent (renfort du libellé, jamais seules). Les autres
+  /// états empruntent `accent`, `riskForeground`, `okForeground` et
+  /// `blockingForeground`.
+  final Color agentWorking;
+  final Color agentIdle;
+  final Color agentRejected;
+  final Color agentInterrupted;
+
   final TextStyle body;
   final TextStyle label;
 
   /// Grande valeur d'indicateur.
   final TextStyle value;
   final TextStyle title;
+
+  /// Indicateur d'acte de la régie (>= 24 px).
+  final TextStyle actIndicator;
 
   /// Lit l'extension dans le thème courant ; repli sur le thème sombre.
   static SceneTheme of(BuildContext context) =>
@@ -129,10 +155,15 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     Color? neutralBackground,
     Color? neutralForeground,
     Color? highlightOutline,
+    Color? agentWorking,
+    Color? agentIdle,
+    Color? agentRejected,
+    Color? agentInterrupted,
     TextStyle? body,
     TextStyle? label,
     TextStyle? value,
     TextStyle? title,
+    TextStyle? actIndicator,
   }) {
     return SceneTheme(
       background: background ?? this.background,
@@ -149,10 +180,15 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground: neutralBackground ?? this.neutralBackground,
       neutralForeground: neutralForeground ?? this.neutralForeground,
       highlightOutline: highlightOutline ?? this.highlightOutline,
+      agentWorking: agentWorking ?? this.agentWorking,
+      agentIdle: agentIdle ?? this.agentIdle,
+      agentRejected: agentRejected ?? this.agentRejected,
+      agentInterrupted: agentInterrupted ?? this.agentInterrupted,
       body: body ?? this.body,
       label: label ?? this.label,
       value: value ?? this.value,
       title: title ?? this.title,
+      actIndicator: actIndicator ?? this.actIndicator,
     );
   }
 
@@ -176,10 +212,15 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground: c(neutralBackground, other.neutralBackground),
       neutralForeground: c(neutralForeground, other.neutralForeground),
       highlightOutline: c(highlightOutline, other.highlightOutline),
+      agentWorking: c(agentWorking, other.agentWorking),
+      agentIdle: c(agentIdle, other.agentIdle),
+      agentRejected: c(agentRejected, other.agentRejected),
+      agentInterrupted: c(agentInterrupted, other.agentInterrupted),
       body: s(body, other.body),
       label: s(label, other.label),
       value: s(value, other.value),
       title: s(title, other.title),
+      actIndicator: s(actIndicator, other.actIndicator),
     );
   }
 
@@ -200,13 +241,18 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.neutralBackground == neutralBackground &&
       other.neutralForeground == neutralForeground &&
       other.highlightOutline == highlightOutline &&
+      other.agentWorking == agentWorking &&
+      other.agentIdle == agentIdle &&
+      other.agentRejected == agentRejected &&
+      other.agentInterrupted == agentInterrupted &&
       other.body == body &&
       other.label == label &&
       other.value == value &&
-      other.title == title;
+      other.title == title &&
+      other.actIndicator == actIndicator;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll(<Object>[
     background,
     surface,
     textPrimary,
@@ -221,9 +267,14 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     neutralBackground,
     neutralForeground,
     highlightOutline,
+    agentWorking,
+    agentIdle,
+    agentRejected,
+    agentInterrupted,
     body,
     label,
     value,
     title,
-  );
+    actIndicator,
+  ]);
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
     show AgentActivityBloc, AgentActivityReset, AgentActivitySourceSubscribed;
 import 'package:feature_canvas/feature_canvas.dart'
@@ -39,7 +38,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasResetClient, CanvasResetResult;
 import 'package:shared_core/shared_core.dart'
-    show AppClock, ExitGuard, ExitHandler;
+    show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
 import '../../widgets/agents_rail/agents_rail.dart';
@@ -79,23 +78,29 @@ class GenesisCanvasPage extends StatefulWidget {
     super.key,
     required this.getIt,
     required this.catalogs,
-    required this.catalogId,
     required this.snapshotFactory,
     required this.exitHandler,
     required this.errorSink,
     required this.settings,
     this.replay,
     this.onClosing,
-  });
+  }) : assert(
+         catalogs.length == 1,
+         'la page attend exactement un catalogue (source unique de son id)',
+       );
 
   /// Graphe de dépendances de cette app (instance propre, configurée par la
   /// couche `app`).
   final GetIt getIt;
+
+  /// Catalogue du moteur : exactement un.
   final List<Catalog> catalogs;
 
   /// Identifiant du catalogue que le validateur A2UI exige dans
-  /// `createSurface` (le même que celui de [catalogs]).
-  final String catalogId;
+  /// `createSurface` : dérivé de [catalogs], jamais fourni à part.
+  String get catalogId =>
+      catalogs.single.catalogId ??
+      (throw StateError("le catalogue de la page n'a pas d'identifiant"));
   final SnapshotFactory snapshotFactory;
   final ExitHandler exitHandler;
 
@@ -105,8 +110,8 @@ class GenesisCanvasPage extends StatefulWidget {
   /// Réglages de l'orbe et délais de fermeture (fournis par la couche `app`).
   final GenesisCanvasPageSettings settings;
 
-  /// Messages A2UI à rejouer ; `null` : source vivante, canevas vide au départ.
-  final Stream<A2uiMessage>? replay;
+  /// Messages A2UI à rejouer (ligne brute et message décodé) ; `null` : source vivante, canevas vide au départ.
+  final Stream<ReplayedMessage>? replay;
 
   /// Reçoit la fermeture asynchrone lancée par le `dispose` de la page, pour
   /// que le propriétaire du graphe ne le libère qu'une fois la page fermée.
@@ -423,9 +428,6 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       BlocProvider<ProtocolFeedBloc>.value(value: _protocolBloc),
       BlocProvider<CatalogShelfBloc>.value(value: _shelfBloc),
       BlocProvider<StageBloc>.value(value: _stageBloc),
-      // Le gate est possédé par la page ; les futurs lecteurs le lisent sans
-      // le fermer.
-      RepositoryProvider<A2uiGate>.value(value: _gate),
     ],
     child: BlocListener<CanvasBloc, CanvasState>(
       listenWhen: (previous, current) =>

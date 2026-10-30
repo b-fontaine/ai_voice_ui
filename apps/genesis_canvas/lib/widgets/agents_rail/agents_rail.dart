@@ -55,16 +55,17 @@ class _AgentRow extends StatelessWidget {
     AgentRunState.interrupted => 'interrompu',
   };
 
-  static Color _stateColor(AgentRunState state) => switch (state) {
-    AgentRunState.orchestrating => Colors.lightBlueAccent,
-    AgentRunState.idle => Colors.blueGrey,
-    AgentRunState.pending => Colors.amberAccent,
-    AgentRunState.working => Colors.amber,
-    AgentRunState.completed => Colors.greenAccent,
-    AgentRunState.failed => Colors.redAccent,
-    AgentRunState.rejected => Colors.orangeAccent,
-    AgentRunState.interrupted => Colors.grey,
-  };
+  static Color _stateColor(SceneTheme theme, AgentRunState state) =>
+      switch (state) {
+        AgentRunState.orchestrating => theme.accent,
+        AgentRunState.idle => theme.agentIdle,
+        AgentRunState.pending => theme.riskForeground,
+        AgentRunState.working => theme.agentWorking,
+        AgentRunState.completed => theme.okForeground,
+        AgentRunState.failed => theme.blockingForeground,
+        AgentRunState.rejected => theme.agentRejected,
+        AgentRunState.interrupted => theme.agentInterrupted,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +84,7 @@ class _AgentRow extends StatelessWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _stateColor(agent.state),
+              color: _stateColor(theme, agent.state),
             ),
             child: const SizedBox.square(dimension: 14),
           ),

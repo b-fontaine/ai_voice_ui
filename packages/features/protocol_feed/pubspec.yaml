@@ -11,6 +11,7 @@ resolution: workspace
 dependencies:
   bloc: 9.2.1
   bloc_concurrency: 0.3.0
+  meta: 1.19.0
   entity_catalog:
     path: ../../entities/catalog
   shared_core:

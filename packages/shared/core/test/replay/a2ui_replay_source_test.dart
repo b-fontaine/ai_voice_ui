@@ -40,6 +40,30 @@ void main() {
       expect(messages.every((m) => m.version == 'v0.9'), isTrue);
     });
 
+    test('entries() fournit la ligne brute avec le message décodé', () async {
+      final source = build([_createSurface, _updateComponents]);
+
+      final entries = await source.entries().toList();
+
+      expect(entries.map((e) => e.raw), [
+        {
+          'version': 'v0.9',
+          'createSurface': {'surfaceId': 's1', 'catalogId': 'c'},
+        },
+        {
+          'version': 'v0.9',
+          'updateComponents': {'surfaceId': 's1', 'components': <Object?>[]},
+        },
+      ]);
+      // Le décodeur normalise (il ajoute `sendDataModel`) : la ligne brute,
+      // elle, reste celle de la source.
+      expect(
+        (entries.first.message.toJson()['createSurface']
+            as Map<String, Object?>)['sendDataModel'],
+        isFalse,
+      );
+    });
+
     test('attend l\'écart relatif entre deux t_ms', () async {
       final source = build([
         _createSurface,

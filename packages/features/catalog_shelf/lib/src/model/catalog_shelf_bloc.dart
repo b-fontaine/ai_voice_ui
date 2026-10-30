@@ -9,11 +9,11 @@ import 'catalog_shelf_state.dart';
 /// surface acceptée le porte. Seuls les messages `accepted` comptent ; un refus
 /// n'agit que par ses compensations (surfaces retirées localement).
 class CatalogShelfBloc extends Bloc<CatalogShelfEvent, CatalogShelfState> {
-  CatalogShelfBloc() : super(const CatalogShelfState.empty()) {
+  CatalogShelfBloc() : super(CatalogShelfState.empty()) {
     on<CatalogShelfSourceSubscribed>(_onSubscribed, transformer: restartable());
     on<CatalogShelfCleared>((event, emit) {
       _bySurface.clear();
-      _emitIfChanged(const CatalogShelfState.empty(), emit);
+      _emitIfChanged(CatalogShelfState.empty(), emit);
     }, transformer: sequential());
   }
 

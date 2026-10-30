@@ -54,12 +54,36 @@ void main() {
     });
   });
 
+  group(
+    'contraste des éléments graphiques sur la surface (3:1, WCAG 1.4.11)',
+    () {
+      final graphics = <String, Color>{
+        'accent': theme.accent,
+        'ok premier plan (série, seuil)': theme.okForeground,
+        'risk premier plan (série)': theme.riskForeground,
+        'blocking premier plan (seuil)': theme.blockingForeground,
+        'contour de mise en évidence': theme.highlightOutline,
+        'agent en cours': theme.agentWorking,
+        'agent en veille': theme.agentIdle,
+        'agent hors périmètre': theme.agentRejected,
+        'agent interrompu': theme.agentInterrupted,
+      };
+      graphics.forEach((name, color) {
+        test('$name / surface', () {
+          expect(contrast(color, theme.surface), greaterThanOrEqualTo(3));
+          expect(contrast(color, theme.background), greaterThanOrEqualTo(3));
+        });
+      });
+    },
+  );
+
   test('toutes les tailles de texte sont >= 24 px', () {
     final styles = {
       'body': theme.body,
       'label': theme.label,
       'value': theme.value,
       'title': theme.title,
+      'actIndicator': theme.actIndicator,
     };
     styles.forEach((name, style) {
       expect(style.fontSize, isNotNull, reason: name);
