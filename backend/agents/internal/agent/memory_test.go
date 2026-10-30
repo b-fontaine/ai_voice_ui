@@ -9,8 +9,8 @@ import (
 
 	"github.com/a2aproject/a2a-go/v2/a2a"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/compose"
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 // memoryComposer enveloppe le vrai KpiComposer pour observer ce que chaque

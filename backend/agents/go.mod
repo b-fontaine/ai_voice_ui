@@ -1,4 +1,4 @@
-module github.com/b-fontaine/ai_voice_ui/backend/agents/quality
+module github.com/b-fontaine/ai_voice_ui/backend/agents
 
 go 1.27.3
 

@@ -15,7 +15,7 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2aclient"
 	"github.com/a2aproject/a2a-go/v2/a2aclient/agentcard"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/agent"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
 )
 
 const catalogID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"

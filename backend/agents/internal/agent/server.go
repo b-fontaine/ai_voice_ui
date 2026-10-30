@@ -17,8 +17,8 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2a"
 	"github.com/a2aproject/a2a-go/v2/a2asrv"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/compose"
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 const (

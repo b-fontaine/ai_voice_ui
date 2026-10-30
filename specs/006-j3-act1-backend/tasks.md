@@ -3,7 +3,7 @@
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. Toutes les tâches sont Go (une seule à la fois, même pile). Ordre amendé par la revue du plan (A1-A8, `plan.md`).
 
 ## Préparation (avant les Gherkin)
-- [ ] T05 Go/Infra — **Déplacement pur** `backend/agents/quality` → `backend/agents` (`git mv`, nouveau chemin de module, `cmd/agent-quality`, Dockerfile paramétré `ARG AGENT` + `RUN test -n "$AGENT"`, compose, CI, `check-compose.sh`) ; B4 et les tests de 004 passent **sans changement d'assertion** · test d'abord : `go build ./...` et B4 rouges tant que les chemins ne sont pas migrés ; `gate.sh --full` vert à la fin
+- [x] T05 Go/Infra — **Déplacement pur** `backend/agents/quality` → `backend/agents` (`git mv`, nouveau chemin de module, `cmd/agent-quality`, Dockerfile paramétré `ARG AGENT` + `RUN test -n "$AGENT"`, compose, CI, `check-compose.sh`) ; B4 et les tests de 004 passent **sans changement d'assertion** · test d'abord : `go build ./...` et B4 rouges tant que les chemins ne sont pas migrés ; `gate.sh --full` vert à la fin
 - [ ] T06 Contrat — fixtures `contracts/a2ui/genesis/v1/` : `catalog.json` (4 composants, propriétés admises, forme de `data`, champs réservés acte 2) et `examples/act1-{kpi,trend,reviews,checklist}.jsonl` (trois temps) ; test de l'orchestrateur : chaque exemple passe le validateur configuré comme dans le compose · test d'abord : `TestExamplesPassConfiguredValidator`, `TestComposeAllowlistMatchesContractFixture`
 
 ## Gherkin (acceptation Go, build tag `acceptance` ; vrais agents compilés par `TestMain`)

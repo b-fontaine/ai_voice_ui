@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 func TestKpiComputedFromRows(t *testing.T) {
@@ -78,7 +78,7 @@ func num(t *testing.T, cell string) int {
 // TestDatasetMatchesProductSheet compare le JSON embarqué au tableau « Séries
 // quotidiennes » de product/functional/dataset.md.
 func TestDatasetMatchesProductSheet(t *testing.T) {
-	raw, err := os.ReadFile("../../../../../product/functional/dataset.md")
+	raw, err := os.ReadFile("../../../../product/functional/dataset.md")
 	if err != nil {
 		t.Fatalf("fiche produit : %v", err)
 	}

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/compose"
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/compose"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 const testCatalog = "https://example.test/catalog.json"
@@ -28,7 +28,7 @@ func load(t *testing.T) dataset.Dataset {
 }
 
 func TestThreeMessagesEqualReplay(t *testing.T) {
-	f, err := os.Open("../../../../../apps/genesis_canvas/assets/replays/act1-replay.jsonl")
+	f, err := os.Open("../../../../apps/genesis_canvas/assets/replays/act1-replay.jsonl")
 	if err != nil {
 		t.Fatalf("replay : %v", err)
 	}
@@ -188,7 +188,7 @@ func TestNoFileAccess(t *testing.T) {
 	seen := 0
 	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 		path, imports, _ := strings.Cut(line, "=")
-		if !strings.Contains(path, "/backend/agents/quality/") {
+		if !strings.Contains(path, "/backend/agents/internal/") {
 			continue
 		}
 		seen++

@@ -65,7 +65,9 @@ services:
 
   agent-quality:
     build:
-      context: backend/agents/quality
+      context: backend/agents
+      args:
+        AGENT: quality
     # Pas de env_file : l'agent n'a pas besoin de la clé OpenAI. Aucun port publié.
     environment:
       AGENT_LISTEN_ADDR: 0.0.0.0:8090
@@ -74,7 +76,7 @@ services:
       A2UI_CATALOG_ID: *a2ui_catalog
     networks: [agents]
     healthcheck:
-      test: ["CMD", "/agent-quality", "healthcheck"]
+      test: ["CMD", "/agent", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 3

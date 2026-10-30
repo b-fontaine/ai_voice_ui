@@ -9,7 +9,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 // ErrOutOfScope signale une demande que l'agent ne prend pas en charge en J2

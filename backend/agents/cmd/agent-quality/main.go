@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/agent"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/agent"
 )
 
 func main() { os.Exit(run(os.Args[1:])) }

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/b-fontaine/ai_voice_ui/backend/agents/quality/internal/dataset"
+	"github.com/b-fontaine/ai_voice_ui/backend/agents/internal/dataset"
 )
 
 const (

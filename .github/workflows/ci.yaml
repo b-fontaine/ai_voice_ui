@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [backend/orchestrator, backend/agents/quality]
+        module: [backend/orchestrator, backend/agents]
     defaults:
       run:
         working-directory: ${{ matrix.module }}
