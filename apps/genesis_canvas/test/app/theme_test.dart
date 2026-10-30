@@ -24,9 +24,9 @@ const _catalog = GenesisContract.defaultCatalogId;
 
 const _replay =
     '''
-{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s","catalogId":"$_catalog"}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
-{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s","path":"/kpi","value":{"label":"Sessions sans crash","value":"99,57 %","trend":"-0,36 pt","threshold":"99,50 %","status":"risk","statusLabel":"Risque"}}}}
+{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"kpi","catalogId":"$_catalog"}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateComponents":{"surfaceId":"kpi","components":[{"id":"root","component":"KeyIndicator","data":{"path":"/kpi"}}]}}}
+{"t_ms": 0, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"kpi","path":"/kpi","value":{"label":"Sessions sans crash","value":"99,57 %","trend":"-0,36 pt","threshold":"99,50 %","status":"risk","statusLabel":"Risque"}}}}
 ''';
 
 void main() {

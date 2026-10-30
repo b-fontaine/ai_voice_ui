@@ -27,7 +27,10 @@ import 'package:entity_session/entity_session.dart';
 /// déduit « rejeu terminé » ou « rejeu impossible »).
 class A2uiGate {
   A2uiGate({required String catalogId, this.onRejected})
-    : _validator = GenesisMessageValidator(catalogId: catalogId);
+    : _validator = GenesisMessageValidator(
+        catalogId: catalogId,
+        writableSubPaths: GenesisContract.writableSubPaths,
+      );
 
   /// Reçoit le code de refus (valeur de [ValidationCodes]).
   final void Function(String code)? onRejected;
