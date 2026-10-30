@@ -233,4 +233,71 @@ void main() {
     expect(allowed, contains(painter.thresholdColor));
     expect(allowed, contains(painter.axisColor));
   });
+
+  testWidgets('acte 2 : une entrée de légende par série, couleurs stables', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    final first = find.byKey(const Key('trend-series-Android 3.4'));
+    final second = find.byKey(const Key('trend-series-Android 3.3'));
+    expect(h.inCell(first), findsOneWidget);
+    expect(h.inCell(second), findsOneWidget);
+    expect(
+      tester.getTopLeft(first).dx,
+      lessThan(tester.getTopLeft(second).dx),
+      reason: 'ordre du data model',
+    );
+    expect(
+      find.descendant(of: first, matching: find.text('Android 3.4')),
+      findsOneWidget,
+    );
+
+    TrendChartPainter painter() =>
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    final theme = const SceneTheme.dark();
+    expect(painter().series.map((s) => s.name), <String>[
+      'Android 3.4',
+      'Android 3.3',
+    ]);
+    expect(painter().series.map((s) => s.color), <Color>[
+      theme.accent,
+      theme.okForeground,
+    ]);
+    expect(
+      painter().series[0].color,
+      isNot(painter().series[1].color),
+      reason: 'une couleur distincte par série',
+    );
+    h.expectTextAtLeast24(tester);
+    expect(tester.takeException(), isNull);
+    expect(h.engineErrors, isEmpty);
+  });
+
+  testWidgets('correction iOS : une seule série, la couleur de rang 0', (
+    tester,
+  ) async {
+    final h = CatalogHarness('trend', 'trend');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+    await h.sendVariant(tester, 'correction-ios');
+
+    expect(find.byKey(const Key('trend-series-iOS 3.4')), findsOneWidget);
+    expect(find.byKey(const Key('trend-series-Android 3.4')), findsNothing);
+    expect(find.byKey(const Key('trend-series-Android 3.3')), findsNothing);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+                .painter!
+            as TrendChartPainter;
+    expect(painter.series.single.color, const SceneTheme.dark().accent);
+    expect(tester.takeException(), isNull);
+  });
 }

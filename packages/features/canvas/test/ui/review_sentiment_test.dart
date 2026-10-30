@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_design_system/shared_design_system.dart';
 
 import '../support/catalog_harness.dart';
 
@@ -103,20 +104,76 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('le champ comparison est toléré et ignoré', (tester) async {
+  testWidgets('acte 2 : une seule ligne de comparaison neutre (D7)', (
+    tester,
+  ) async {
+    final h = CatalogHarness('reviews', 'reviews');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    final line = find.byKey(const Key('comparison-reviews'));
+    expect(h.inCell(line), findsOneWidget);
+    final text = tester.widget<Text>(line);
+    expect(text.data, '3.3 : 14 % négatifs · +16 pts');
+    final theme = const SceneTheme.dark();
+    expect(text.style?.color, theme.textSecondary);
+    expect(text.style?.fontSize, greaterThanOrEqualTo(24));
+    expect(text.maxLines, 1);
+    expect(text.overflow, TextOverflow.ellipsis);
+    expect(h.inCell(find.textContaining('Avis · Android')), findsOneWidget);
+    h.expectTextAtLeast24(tester);
+    expect(tester.takeException(), isNull);
+    expect(h.engineErrors, isEmpty);
+  });
+
+  for (final field in <String>['label', 'value', 'delta']) {
+    testWidgets('comparison sans $field : ligne omise, reste rendu', (
+      tester,
+    ) async {
+      final h = CatalogHarness('reviews', 'reviews');
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      await h.sendVariant(tester, 'act2');
+      final data = h.variantData('act2');
+      (data['comparison'] as Map).remove(field);
+      await h.sendData(tester, data);
+
+      expect(find.byKey(const Key('comparison-reviews')), findsNothing);
+      expect(find.byKey(const Key('neutral-reviews')), findsNothing);
+      expect(h.inCell(find.textContaining('30 %')), findsWidgets);
+      expect(tester.takeException(), isNull);
+      expect(h.engineErrors, isEmpty);
+    });
+  }
+
+  testWidgets('comparison de mauvais type : ligne omise, reste rendu', (
+    tester,
+  ) async {
     final h = CatalogHarness('reviews', 'reviews');
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     await h.sendData(tester, <String, dynamic>{
       ...h.data,
-      'comparison': <String, String>{
-        'label': 'Version précédente',
-        'value': '90 %',
-        'delta': '+2',
-      },
+      'comparison': <String, dynamic>{'label': 3, 'value': 'x', 'delta': 'y'},
     });
+    expect(find.byKey(const Key('comparison-reviews')), findsNothing);
     expect(find.byKey(const Key('neutral-reviews')), findsNothing);
     expect(h.inCell(find.text('Sentiment des avis')), findsOneWidget);
-    expect(find.textContaining('Version précédente'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('correction iOS : la ligne de comparaison disparaît', (
+    tester,
+  ) async {
+    final h = CatalogHarness('reviews', 'reviews');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+    expect(find.byKey(const Key('comparison-reviews')), findsOneWidget);
+    await h.sendVariant(tester, 'correction-ios');
+    expect(find.byKey(const Key('comparison-reviews')), findsNothing);
+    expect(h.inCell(find.text('Avis · iOS')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

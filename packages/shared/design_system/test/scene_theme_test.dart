@@ -39,6 +39,10 @@ void main() {
         theme.blockingForeground,
         theme.blockingBackground,
       ),
+      'ligne de comparaison (neutre) / surface': (
+        theme.textSecondary,
+        theme.surface,
+      ),
       'contour de mise en évidence / fond de scène': (
         theme.highlightOutline,
         theme.background,
@@ -58,7 +62,7 @@ void main() {
     'contraste des éléments graphiques sur la surface (3:1, WCAG 1.4.11)',
     () {
       final graphics = <String, Color>{
-        'accent': theme.accent,
+        'accent (série de rang 0)': theme.accent,
         'ok premier plan (série, seuil)': theme.okForeground,
         'risk premier plan (série)': theme.riskForeground,
         'blocking premier plan (seuil)': theme.blockingForeground,

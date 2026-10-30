@@ -126,7 +126,11 @@ class _TrendView extends StatelessWidget {
               ),
               for (final TrendSeries s in series)
                 Flexible(
-                  child: _LegendEntry(color: s.color, text: s.name),
+                  child: _LegendEntry(
+                    key: Key('trend-series-${s.name}'),
+                    color: s.color,
+                    text: s.name,
+                  ),
                 ),
               Flexible(
                 child: _LegendEntry(
@@ -161,7 +165,7 @@ class _TrendView extends StatelessWidget {
 }
 
 class _LegendEntry extends StatelessWidget {
-  const _LegendEntry({required this.color, required this.text});
+  const _LegendEntry({super.key, required this.color, required this.text});
 
   final Color color;
   final String text;

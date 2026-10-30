@@ -194,4 +194,38 @@ void main() {
     await h.sendData(tester, data);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'acte 2 : valeurs avec version, NO-GO Android, sans débordement',
+    (tester) async {
+      final h = CatalogHarness('checklist', 'checklist');
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      await h.sendVariant(tester, 'act2');
+
+      expect(h.inCell(find.text('99,43 % (3.3 : 99,71 %)')), findsOneWidget);
+      expect(h.inCell(find.text('30 % (3.3 : 14 %)')), findsOneWidget);
+      expect(h.inCell(find.text('NO-GO Android')), findsOneWidget);
+      expect(h.inCell(find.text('Bloquant')), findsNWidgets(2));
+      expect(find.byKey(const Key('neutral-checklist')), findsNothing);
+      h.expectTextAtLeast24(tester);
+      expect(tester.takeException(), isNull);
+      expect(h.engineErrors, isEmpty);
+    },
+  );
+
+  testWidgets('correction iOS : GO iOS rendu sans état neutre', (tester) async {
+    final h = CatalogHarness('checklist', 'checklist');
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+    await h.sendVariant(tester, 'correction-ios');
+
+    expect(h.inCell(find.text('GO iOS')), findsOneWidget);
+    expect(h.inCell(find.text('99,80 %')), findsOneWidget);
+    expect(find.byKey(const Key('neutral-checklist')), findsNothing);
+    h.expectTextAtLeast24(tester);
+    expect(tester.takeException(), isNull);
+    expect(h.engineErrors, isEmpty);
+  });
 }
