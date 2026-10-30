@@ -1,6 +1,6 @@
 import 'package:a2ui_core/a2ui_core.dart' show CreateSurfaceMessage;
 import 'package:entity_session/entity_session.dart';
-import 'package:feature_voice_session/feature_voice_session.dart';
+import 'package:feature_voice_session/src/api/session_event_converter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 

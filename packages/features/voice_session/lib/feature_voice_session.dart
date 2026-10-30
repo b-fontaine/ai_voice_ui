@@ -4,8 +4,7 @@ library;
 export 'src/api/flutter_web_rtc_platform.dart' show FlutterWebRtcPlatform;
 export 'src/api/flutter_web_rtc_transport.dart' show FlutterWebRtcTransport;
 export 'src/api/live_session_event_source.dart' show LiveSessionEventSource;
-export 'src/api/session_event_converter.dart' show SessionEventConverter;
-export 'src/api/web_rtc_platform.dart' show RtcMic, RtcPeer, WebRtcPlatform;
+export 'src/api/web_rtc_platform.dart' show WebRtcPlatform;
 export 'src/model/orb_smoother.dart' show OrbSmoother;
 export 'src/model/transcript_bloc.dart'
     show

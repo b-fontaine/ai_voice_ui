@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:feature_voice_session/feature_voice_session.dart';
+import 'package:feature_voice_session/src/api/web_rtc_platform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Faux de plateforme (frontière libwebrtc) : journalise chaque appel et
@@ -16,6 +17,7 @@ class _FakePlatform implements WebRtcPlatform {
   Object? answerError;
   Object? micStopError;
   Object? peerCloseError;
+  Object? peerDisposeError;
   int openMicCalls = 0;
 
   @override
@@ -79,6 +81,12 @@ class _FakePeer implements RtcPeer {
   Future<void> close() async {
     _platform.log.add('peer.close');
     if (_platform.peerCloseError != null) throw _platform.peerCloseError!;
+  }
+
+  @override
+  Future<void> dispose() async {
+    _platform.log.add('peer.dispose');
+    if (_platform.peerDisposeError != null) throw _platform.peerDisposeError!;
   }
 }
 
@@ -218,7 +226,55 @@ void main() {
     await transport.dispose();
     await transport.dispose();
 
+    expect(platform.log, <String>['mic.stop', 'peer.close', 'peer.dispose']);
+  });
+
+  test('stop sans dispose n\'appelle pas peer.dispose', () async {
+    await transport.createOfferSdp();
+    platform.log.clear();
+
+    await transport.stop();
+
     expect(platform.log, <String>['mic.stop', 'peer.close']);
+  });
+
+  test('dispose deux fois : un seul peer.dispose', () async {
+    await transport.createOfferSdp();
+    platform.log.clear();
+
+    await transport.dispose();
+    await transport.dispose();
+
+    expect(platform.log.where((e) => e == 'peer.dispose'), hasLength(1));
+  });
+
+  test('une erreur de peer.dispose est absorbée', () async {
+    await transport.createOfferSdp();
+    platform.peerDisposeError = Exception('natif');
+
+    await transport.dispose();
+
+    expect(platform.log.last, 'peer.dispose');
+  });
+
+  test('dispose pendant la collecte ICE : le pair est aussi disposé', () async {
+    final gate = Completer<void>();
+    platform.offerGate = () => gate.future;
+    final failed = expectLater(
+      transport.createOfferSdp(),
+      _failure(VoiceTransportFailure.failed),
+    );
+    await pumpEventQueue();
+
+    await transport.dispose();
+    gate.complete();
+    await failed;
+
+    expect(platform.log.skip(5), <String>[
+      'mic.stop',
+      'peer.close',
+      'peer.dispose',
+    ]);
   });
 
   test('stop avant tout appel ne crée rien et interdit la suite', () async {
@@ -234,7 +290,7 @@ void main() {
 
     await transport.dispose();
 
-    expect(platform.log, <String>['mic.stop', 'peer.close']);
+    expect(platform.log, <String>['mic.stop', 'peer.close', 'peer.dispose']);
     await expectLater(transport.createOfferSdp(), throwsStateError);
     await expectLater(transport.applyAnswer('a'), throwsStateError);
   });

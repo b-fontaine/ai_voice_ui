@@ -439,6 +439,121 @@ void main() {
       },
     );
 
+    group('robustesse du démarrage (R4)', () {
+      test(
+        'fabrique de transport qui lève : Failed, puis start possible',
+        () async {
+          final h = VoiceHarness();
+          final seen = <VoiceSessionStatus>[];
+          h.session.status.listen(seen.add);
+          h.transportFactoryError = StateError('fabrique');
+
+          await h.session.start();
+          await pumpEventQueue();
+
+          expect(seen, <VoiceSessionStatus>[
+            const Idle(),
+            const Connecting(),
+            const Failed(RelayFailed()),
+          ]);
+          h.transportFactoryError = null;
+          await h.session.start();
+          expect(h.session.current, const Active());
+          await h.session.dispose();
+        },
+      );
+
+      test(
+        'fabrique de journal qui lève : DELETE, stop puis dispose',
+        () async {
+          final h = VoiceHarness();
+          h.logFactoryOverride = () => throw StateError('journal');
+
+          await h.session.start();
+
+          expect(h.session.current, const Failed(RelayFailed()));
+          expect(h.events, <String>[
+            't1.createOfferSdp',
+            'relay.create',
+            't1.applyAnswer',
+            'relay.delete(s1)',
+            't1.stop',
+            't1.dispose',
+          ]);
+          await h.session.dispose();
+        },
+      );
+
+      test('log.open qui lève : DELETE, stop puis dispose', () async {
+        final h = VoiceHarness();
+        h.logFactoryOverride = ThrowingOpenLog.new;
+
+        await h.session.start();
+
+        expect(h.session.current, const Failed(RelayFailed()));
+        expect(h.events, <String>[
+          't1.createOfferSdp',
+          'relay.create',
+          't1.applyAnswer',
+          'relay.delete(s1)',
+          't1.stop',
+          't1.dispose',
+        ]);
+        await h.session.dispose();
+      });
+    });
+
+    group('journal des enveloppes (R8)', () {
+      test('une enveloppe reçue pendant Stopping est journalisée', () async {
+        final dir = Directory.systemTemp.createTempSync('voice_session_test');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        final h = VoiceHarness(logPath: '${dir.path}/session.jsonl');
+        final received = <AppChannelEnvelope>[];
+        h.session.envelopes.listen(received.add);
+        final gate = Completer<void>();
+        h.relay.deleteHook = (_) => gate.future;
+        await h.session.start();
+
+        final stopped = h.session.stop();
+        await pumpEventQueue();
+        expect(h.session.current, const Stopping());
+        h.channel.last.add(envelopeOf('usage', <String, Object?>{'tokens': 3}));
+        await pumpEventQueue();
+        gate.complete();
+        await stopped;
+
+        expect(received, isEmpty);
+        final lines = File('${dir.path}/session.jsonl').readAsLinesSync();
+        expect(lines, hasLength(1));
+        expect(lines.single, contains('"type":"usage"'));
+        await h.session.dispose();
+      });
+
+      test(
+        'une enveloppe d\'une génération précédente n\'est pas écrite',
+        () async {
+          final dir = Directory.systemTemp.createTempSync('voice_session_test');
+          addTearDown(() => dir.deleteSync(recursive: true));
+          final h = VoiceHarness(logPath: '${dir.path}/session.jsonl');
+          final old = LeakyStream();
+          var opened = 0;
+          h.channel.streamBuilder = (id) => ++opened == 1
+              ? old
+              : StreamController<AppChannelEnvelope>().stream;
+          await h.session.start();
+          await h.session.stop();
+          await h.session.start();
+
+          old.onData!(envelopeOf('transcript', <String, Object?>{'text': 'x'}));
+          await pumpEventQueue();
+          await h.session.stop();
+
+          expect(File('${dir.path}/session.jsonl').readAsLinesSync(), isEmpty);
+          await h.session.dispose();
+        },
+      );
+    });
+
     test('envelopes : diffusées et écrites dans le journal', () async {
       final dir = Directory.systemTemp.createTempSync('voice_session_test');
       addTearDown(() => dir.deleteSync(recursive: true));

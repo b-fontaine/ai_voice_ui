@@ -120,10 +120,9 @@ class VoiceSession {
   }
 
   Future<void> _connect(int generation) async {
-    final transport = _transportFactory();
-    _transport = transport;
     VoiceFailure? failure;
     try {
+      final transport = _transport = _transportFactory();
       final String offer;
       try {
         offer = await transport.createOfferSdp();
@@ -170,6 +169,9 @@ class VoiceSession {
       // Arrêt demandé : libération ci-dessous.
     } on _StartFailure catch (error) {
       failure = error.failure;
+    } on Object {
+      // Imprévu (fabrique, journal…) : jamais d'état bloqué, on libère.
+      failure = const RelayFailed();
     }
     await _release(deleteRemote: true);
     if (generation != _generation) return;
@@ -183,8 +185,11 @@ class VoiceSession {
   }
 
   void _onEnvelope(int generation, AppChannelEnvelope envelope) {
-    if (_isStale(generation)) return;
+    if (generation != _generation) return;
+    // Journal : toute enveloppe de la session courante, même pendant la
+    // libération (dernier `usage`, `closed`, derniers transcripts).
     _log?.append(envelope);
+    if (_isStale(generation)) return;
     _envelopeController.add(envelope);
     if (envelope.type == AppChannelTypes.sessionState &&
         envelope.session == _sessionId &&
@@ -239,7 +244,6 @@ class VoiceSession {
     final transport = _transport;
     _sessionId = null;
     _subscription = null;
-    _log = null;
     _transport = null;
 
     if (deleteRemote && sessionId != null) {
@@ -255,10 +259,12 @@ class VoiceSession {
       // Le canal est abandonné de toute façon.
     }
     try {
+      // Le journal reste branché pendant le `DELETE` (cf. [_onEnvelope]).
       await log?.close();
     } on Object {
       // Le journal ne casse jamais la session.
     }
+    if (identical(_log, log)) _log = null;
     try {
       await transport?.stop();
     } on Object {

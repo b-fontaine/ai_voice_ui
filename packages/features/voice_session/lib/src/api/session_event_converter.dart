@@ -46,6 +46,10 @@ class SessionEventConverter {
           endMs: _int(data, 'end_ms'),
         );
       case AppChannelTypes.sessionState:
+        // `connecting` et `active` du backend sont redondants avec l'état
+        // local (`VoiceSessionStatus`, source de vérité de `LiveSessionEventSource`) ;
+        // ils sont convertis par fidélité au contrat (testé par T17) et seul
+        // `closed` est exploité par la source d'événements.
         return SessionStateChanged(
           state: _enumValue(data, 'state', const <String, SessionState>{
             'connecting': SessionState.connecting,

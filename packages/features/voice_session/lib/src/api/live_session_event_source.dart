@@ -86,7 +86,11 @@ class LiveSessionEventSource implements SessionEventSource {
             _emit(const ChannelLost('connection_lost'));
           case SessionClosed(:final reason):
             _emitClosed(reason);
-          default:
+          case BackendUnreachable() ||
+              RateLimited() ||
+              RelayFailed() ||
+              MicUnavailable() ||
+              IceTimeout():
             _emitClosed(null);
         }
     }

@@ -37,4 +37,8 @@ abstract interface class RtcPeer {
 
   /// Ferme le canal de données puis la connexion.
   Future<void> close();
+
+  /// Libère l'objet natif et son canal d'événements (que [close] ne libère
+  /// pas). À appeler une seule fois, après [close].
+  Future<void> dispose();
 }

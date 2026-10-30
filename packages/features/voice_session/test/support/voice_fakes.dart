@@ -89,6 +89,7 @@ class FakeChannel implements AppChannel {
 /// ancienne connexion qui parviendrait quand même à la session.
 class LeakyStream extends Stream<AppChannelEnvelope> {
   void Function()? onDone;
+  void Function(AppChannelEnvelope event)? onData;
 
   @override
   StreamSubscription<AppChannelEnvelope> listen(
@@ -98,6 +99,7 @@ class LeakyStream extends Stream<AppChannelEnvelope> {
     bool? cancelOnError,
   }) {
     this.onDone = onDone;
+    this.onData = onData;
     return LeakySubscription();
   }
 }
@@ -121,6 +123,14 @@ class LeakySubscription implements StreamSubscription<AppChannelEnvelope> {
   Future<E> asFuture<E>([E? futureValue]) => Completer<E>().future;
 }
 
+/// Journal dont l'ouverture échoue.
+class ThrowingOpenLog extends EnvelopeLog {
+  ThrowingOpenLog() : super(path: null, nowUnixMs: () => 0);
+
+  @override
+  Future<void> open() async => throw StateError('journal');
+}
+
 AppChannelEnvelope envelopeOf(
   String type,
   Map<String, Object?> data, {
@@ -142,6 +152,7 @@ class VoiceHarness {
     channel = FakeChannel(events);
     session = VoiceSession(
       transportFactory: () {
+        if (transportFactoryError != null) throw transportFactoryError!;
         final transport = FakeTransport(transports.length + 1, events);
         transports.add(transport);
         onNewTransport?.call(transport);
@@ -149,7 +160,10 @@ class VoiceHarness {
       },
       relay: relay,
       channel: channel,
-      logFactory: () => EnvelopeLog(path: logPath, nowUnixMs: () => 1000),
+      logFactory: () {
+        if (logFactoryOverride != null) return logFactoryOverride!();
+        return EnvelopeLog(path: logPath, nowUnixMs: () => 1000);
+      },
       closeTimeout: closeTimeout,
     );
   }
@@ -158,6 +172,8 @@ class VoiceHarness {
   final List<String> events = <String>[];
   final List<FakeTransport> transports = <FakeTransport>[];
   void Function(FakeTransport transport)? onNewTransport;
+  Object? transportFactoryError;
+  EnvelopeLog Function()? logFactoryOverride;
   late final FakeRelay relay;
   late final FakeChannel channel;
   late final VoiceSession session;

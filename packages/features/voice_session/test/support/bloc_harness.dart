@@ -7,7 +7,7 @@ import 'package:bloc/bloc.dart';
 ///
 /// Remplace `blocTest` : `bloc_test` 10.0.0 dépend de `test`, dont les versions
 /// compatibles avec `test_api` 0.7.12 (Flutter 3.47.8) exigent `analyzer` < 14,
-/// alors que `build_runner` 2.16.2 de l'app exige `analyzer` ^14.3.
+/// alors que `build_runner` 2.16.1 de l'app exige `analyzer` ^14.3.
 Future<List<S>> statesAfter<B extends BlocBase<S>, S>(
   B bloc,
   FutureOr<void> Function(B bloc) act,

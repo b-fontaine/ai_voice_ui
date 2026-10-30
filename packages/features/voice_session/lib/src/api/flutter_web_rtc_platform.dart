@@ -101,4 +101,7 @@ class _Peer implements RtcPeer {
       await _connection.close();
     }
   }
+
+  @override
+  Future<void> dispose() => _connection.dispose();
 }
