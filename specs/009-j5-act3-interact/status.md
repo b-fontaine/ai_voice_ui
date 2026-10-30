@@ -1,7 +1,7 @@
 # 009 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
+- **Tentatives** : 1/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/009-j5-act3-interact

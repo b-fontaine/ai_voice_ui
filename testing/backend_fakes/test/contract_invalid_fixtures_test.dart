@@ -43,6 +43,7 @@ void main() {
       'unknown_surface',
       'too_large',
       'bad_pointer',
+      'path_not_allowed',
     };
     for (final name in files()) {
       final lines = File.fromUri(invalid.uri.resolve(name))
