@@ -11,11 +11,12 @@
 | 003 | J2 : backend squelette (relais SDP, sideband, app-channel, compose, CI) | EP-01, EP-02 | J2 | Terminée ✅, publiée (`c193434`) | 2026-10-29 |
 | 004 | J2 : orchestrateur, agent A2A Qualité, première surface | EP-03, EP-02 | J2 | Terminée ✅, publiée (`0d979f9`) | 2026-10-29 |
 | 005 | J2 : app Flutter (session voix, orbe, rendu A2UI du flux vivant, activité des agents, `app/di`) | EP-01, EP-02 | J2 | Terminée ⚠️ (essai réel avec micro à faire en répétition), publiée (`33f475f`) | 2026-10-29 |
-| 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | TDD (T10 à T16 à faire) | 2026-10-30 |
+| 006 | J3-A : acte 1 côté backend (jeu de données, catalogue `genesis` côté contrat, agents Voix du client et Livraison, quatre surfaces) | EP-03, EP-04, EP-09 | J3 | Revue | 2026-10-30 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-30 | 006 : **TDD terminé** (T05, T06, T01-T04, T10-T16 : noyau `internal/kit`, jeu de données, agents Qualité / Voix du client / Livraison, planificateur par tags de carte, message `plan`, état `rejected`, surfaces actives, validateur de propriétés, échec partiel honnête, noms dans `AGENTS`, compose à trois agents) ; `gate --full` vert sur arbre propre (40 contrôles) ; passage à la revue d'architecte du code. |
 | 2026-10-30 | 006 : **Gherkin terminé** (T05 déplacement du module `agents` ; T06 fixtures `contracts/a2ui/genesis/v1/` ; G1, G1bis, G2, G2bis, G3, G4 rouges pour la bonne raison ; `gate --unit go` vert sur arbre propre) ; passage au TDD (T10 : noyau `internal/kit`). |
 | 2026-10-30 | 006 : revue du plan rendue (À AMENDER : 1 bloquant, 6 importants) ; amendements A1-A8 intégrés (choix des agents par l'orchestrateur, registre source de vérité, contrat en fixtures, validateur de propriétés, tâches réordonnées) ; passage à Gherkin (T05 d'abord). |
 | 2026-10-30 | 006 : étape Définir faite (spec, plan, 16 tâches) ; branche `feat/006-j3-act1-backend`. **J3 coupé en deux** : 006 backend, 007 Flutter (catalogue côté client, Q-71, étagère, rail, panneau protocole, remise à vide). Raison : Q-22, Q-30, Q-31, Q-35, Q-44, Q-17, Q-69, Q-71 (échéance 2/11) restent au porteur ; aucune ne bloque le backend (`catalogId` en variable d'environnement, valeur provisoire ; composition déterministe derrière `Composer`). **Pour le porteur, avant 007** : Q-71, Q-22, Q-30, Q-31 (recommandations dans `open-questions.md`). |
