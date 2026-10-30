@@ -26,7 +26,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [x] T22 Flutter — `VoiceTransport.setRemoteAudioEnabled`, `RtcPeer`, `onTrack` tardif · `flutter_web_rtc_transport_test.dart` (faux `RtcPeer`)
 - [x] T23 [P] Flutter — `StageActReached` monotone · `stage_bloc_test.dart`
 - [ ] T24 Flutter — câblage page (surface `actions`, `ActionRunning`), mode scénario et rejeu sans effet, goldens « Acte n/3 » · `genesis_canvas_page_act_test.dart`
-- [ ] T25 [P] Flutter — `ReleaseChecklist` pastille de décision, `ActionBar` « en cours » / « fait » désactivé (idempotence côté client), réactivation après réécriture · tests de widget (aucun débordement ni troncature)
+- [x] T25 [P] Flutter — `ReleaseChecklist` pastille de décision, `ActionBar` « en cours » / « fait » désactivé (idempotence côté client), réactivation après réécriture · tests de widget (aucun débordement ni troncature)
 - [ ] T26 Flutter — états visuels de `top_bar/voice_orb.dart` (« Interrompue »), orbe à 0 pendant l'interruption · test de widget
 
 ## Clôture

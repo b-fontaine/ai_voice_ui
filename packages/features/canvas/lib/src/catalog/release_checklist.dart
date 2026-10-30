@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/action_availability.dart';
 import 'bound_item.dart';
 import 'text_metrics.dart';
 
@@ -88,6 +89,56 @@ class _Checklist {
   }
 }
 
+/// Statut de décision en pastille, jamais tronqué ; un changement de valeur
+/// est mis en avant par une brève transition. Le statut est aussi signalé à la
+/// Barre d'actions (par `ActionAvailability`), qui en déduit la décision prise.
+class _DecisionStatus extends StatefulWidget {
+  const _DecisionStatus({required this.status});
+
+  final String status;
+
+  @override
+  State<_DecisionStatus> createState() => _DecisionStatusState();
+}
+
+class _DecisionStatusState extends State<_DecisionStatus> {
+  @override
+  void initState() {
+    super.initState();
+    _report();
+  }
+
+  @override
+  void didUpdateWidget(_DecisionStatus oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.status != widget.status) _report();
+  }
+
+  /// Signalé après l'image : le fournisseur se reconstruit, ce qui est
+  /// interdit pendant la construction.
+  void _report() {
+    final DecisionStatusCallback? report =
+        ActionAvailability.decisionReporterOf(context);
+    if (report == null) return;
+    final String status = widget.status;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) report(status);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    key: const Key('decision-status'),
+    duration: const Duration(milliseconds: 400),
+    child: DsStatusChip(
+      key: ValueKey<String>(widget.status),
+      status: null,
+      label: widget.status,
+    ),
+  );
+}
+
 class _ChecklistView extends StatelessWidget {
   const _ChecklistView({required this.checklist});
 
@@ -100,30 +151,44 @@ class _ChecklistView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  checklist.title,
-                  style: theme.label.copyWith(color: theme.textPrimary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  checklist.decisionStatus,
-                  style: theme.body.copyWith(color: theme.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 16),
-              DsStatusChip(
-                status: checklist.recommendationLevel,
-                label: checklist.recommendationLabel,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              // Le titre cède la place au statut, qui n'est réduit que si la
+              // largeur ne suffit physiquement pas (jamais de débordement).
+              final double recommendation =
+                  measureTextWidth(
+                    context,
+                    checklist.recommendationLabel,
+                    theme.label,
+                  ).ceilToDouble() +
+                  33;
+              final double statusMax =
+                  constraints.maxWidth - recommendation - 32;
+              return Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      checklist.title,
+                      style: theme.label.copyWith(color: theme.textPrimary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: statusMax > 0 ? statusMax : 0,
+                    ),
+                    child: _DecisionStatus(status: checklist.decisionStatus),
+                  ),
+                  const SizedBox(width: 16),
+                  DsStatusChip(
+                    status: checklist.recommendationLevel,
+                    label: checklist.recommendationLabel,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 4),
           Expanded(child: _ItemList(items: checklist.items)),

@@ -105,6 +105,8 @@ class _ActionBarView extends StatelessWidget {
       context,
     );
     final bool enabled = availability?.enabled ?? false;
+    final String? busy = availability?.busyAction;
+    final Set<String> done = availability?.doneActions ?? const <String>{};
     return CellFrame(
       // 12 + 48 + 12 = 72 : le bouton tient, centré, dans le bandeau.
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -123,23 +125,65 @@ class _ActionBarView extends StatelessWidget {
             Flexible(
               child: OutlinedButton(
                 key: Key('action-${action.id}'),
-                onPressed: enabled
+                // Décision en place : inactif et sans rappel, quoi qu'il arrive.
+                onPressed: enabled && !done.contains(action.id)
                     ? () => availability!.onAction(action.id, surfaceId)
                     : null,
                 style: _style(theme, action.tone),
-                child: Text(
-                  action.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.body.copyWith(
-                    color: _toneColors(theme, action.tone).foreground,
-                  ),
+                child: _ButtonLabel(
+                  label: action.label,
+                  tone: action.tone,
+                  done: done.contains(action.id),
+                  busy: !done.contains(action.id) && busy == action.id,
                 ),
               ),
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Contenu d'un bouton : libellé, précédé d'un indicateur quand l'action est
+/// en cours, ou suivi de « fait ✓ » quand la décision est en place.
+class _ButtonLabel extends StatelessWidget {
+  const _ButtonLabel({
+    required this.label,
+    required this.tone,
+    required this.done,
+    required this.busy,
+  });
+
+  final String label;
+  final String tone;
+  final bool done;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    final Color color = _toneColors(theme, tone).foreground;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (busy) ...<Widget>[
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 3, color: color),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Flexible(
+          child: Text(
+            done ? '$label \u00B7 fait \u2713' : label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.body.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

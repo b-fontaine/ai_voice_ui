@@ -32,6 +32,9 @@ void main() {
       ).single,
     );
 
+    // L'ancien statut quitte la pastille à la fin de la transition.
+    await tester.pump(const Duration(seconds: 1));
+
     expect(h.inCell(find.text('Bloquée')), findsOneWidget);
     expect(h.inCell(find.text('En attente de décision')), findsNothing);
     expect(h.inCell(find.text('Checklist go/no-go')), findsOneWidget);
@@ -54,6 +57,8 @@ void main() {
         variant: 'act3',
       ).single,
     );
+
+    await tester.pump(const Duration(seconds: 1));
 
     expect(h.inCell(find.text('Validée')), findsOneWidget);
     expect(h.inCell(find.text('Bloquée')), findsNothing);
