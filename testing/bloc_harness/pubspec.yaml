@@ -1,0 +1,15 @@
+name: testing_bloc_harness
+description: Banc de test des Blocs (états émis après une action) partagé par les slices.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  bloc: 9.2.1
+
+dev_dependencies:
+  flutter_lints: 6.0.0

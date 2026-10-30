@@ -3,8 +3,8 @@ id: di-setup-versions
 title: get_it + injectable — versions et mise en place
 tags: [di, get_it, injectable, build_runner, versions]
 status: verified
-updated: 2026-10-26
-sources: [https://pub.dev/packages/get_it, https://pub.dev/packages/injectable, https://pub.dev/packages/injectable_generator, https://pub.dev/packages/injectable/changelog]
+updated: 2026-10-30
+sources: [https://pub.dev/packages/get_it, https://pub.dev/packages/injectable, https://pub.dev/packages/injectable_generator, https://pub.dev/packages/injectable/changelog, https://pub.dev/packages/build_runner/versions]
 links: [di-registration-annotations, di-micro-packages, di-testing, proj-avw-overview, proj-sk-patterns]
 ---
 # get_it + injectable : versions et mise en place
@@ -40,4 +40,6 @@ Générer le code : `dart run build_runner build -d`.
 
 ## ⚠️ Pièges
 - Un seul `getIt` par application. `features/ai` du saaster kit avait son propre `getIt`, ce qui crée un risque de conflit (voir proj-sk-overview).
+- **`injectable_generator` 3.1.3 impose `build_runner` ≤ 2.16.1 (vérifié le 2026-10-30, Flutter 3.47.8 / Dart 3.13.7).** `injectable_generator` ≥ 3.1.3 dépend de `lean_builder ^1.2.2`, qui borne `_fe_analyzer_shared` < 106 ; `build_runner` ≥ 2.16.2 exige `analyzer ^14.3`, donc `_fe_analyzer_shared` ≥ 107 : `pub get` échoue (« injectable_generator >=3.1.3 is incompatible with build_runner >=2.16.2 »). `build_runner` 2.16.1 (avec `analyzer` 14.1.0) résout ; avec lui, `bdd_widget_test` 3.0.4 et `injectable_generator` génèrent ensemble (`dart run build_runner build`). À reprendre quand `lean_builder` suit `analyzer` 14.
+- **`injectable` ne sait pas enregistrer un type fonction** (`VoiceTransport Function()`) : erreur « is not a class element » pour un retour de type fonction et « Can not resolve function type » pour un paramètre non aliasé. Utiliser un `typedef` pour le paramètre d'une factory du module et enregistrer la fabrique à la main (`registerLazySingleton`) après l'`init` généré.
 - Après une montée de version majeure, régénérer tout le code (`*.config.dart`) plutôt que de garder l'ancien fichier généré (précaution, opinion).

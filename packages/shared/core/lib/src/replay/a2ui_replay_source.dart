@@ -1,6 +1,8 @@
 import 'dart:convert';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage, A2uiValidationError;
+import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+
+import '../a2ui/a2ui_decoder.dart';
 
 /// Attente injectable entre deux messages (remplaçable dans les tests).
 typedef ReplayDelay = Future<void> Function(Duration duration);
@@ -83,14 +85,9 @@ class A2uiReplaySource {
       throw A2uiReplayFormatException(lineNumber, 'message manquant');
     }
     try {
-      return (tMs: tMs, message: A2uiMessage.fromJson(message));
-    } on A2uiValidationError catch (e) {
+      return (tMs: tMs, message: A2uiDecoder.decode(message));
+    } on A2uiDecodeException catch (e) {
       throw A2uiReplayFormatException(lineNumber, e.message);
-    } on TypeError catch (e) {
-      throw A2uiReplayFormatException(
-        lineNumber,
-        'corps de message A2UI mal formé : $e',
-      );
     }
   }
 }
