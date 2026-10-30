@@ -3,14 +3,14 @@ id: p-ar-replay
 title: Journal A2UI et rejeu (acte 4)
 area: architecture
 status: draft
-updated: 2026-10-29
+updated: 2026-10-30
 sources: [product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
 links: [p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
 tags: [rejeu, replay, journal, acte-4, determinisme]
 ---
 # Journal A2UI et rejeu (acte 4)
 
-**En bref.** Chaque session écrit un **journal horodaté du flux A2UI** : les messages v0.9 tels que reçus par l'app, et rien d'autre n'est rejoué (Q-18 : « Flux A2UI seul »). Ni voix, ni transcription, ni actions utilisateur. Seuls des marqueurs de mesure, non rejoués, s'y ajoutent (proposition de l'assistant, voir plus bas). Le lecteur réinjecte ce journal dans le **même port** `SessionEventSource` que le direct : le canevas se reconstruit à l'identique, de 0,25× à 2×, sans réseau ni LLM. C'est l'**acte 4** de la démo (FR-09, Must). Il n'y a **plus de mode secours intégré** : le secours est une vidéo OBS gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md), qui remplace [pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)).
+**En bref.** Chaque session écrit un **journal horodaté du flux A2UI** : les messages v0.9 tels que reçus par l'app, et rien d'autre n'est rejoué (Q-18 : « Flux A2UI seul »). Ni voix, ni transcription, ni actions utilisateur. Aucun marqueur n'est enregistré en J6 (les marqueurs de mesure relèvent de J8, voir plus bas). Le lecteur réinjecte ce journal dans le **même `A2uiGate`** que le direct (pdr-0066 D2) : le canevas se reconstruit à l'identique, de 0,25× à 2×, sans réseau ni LLM. C'est l'**acte 4** de la démo (FR-09, Must). Il n'y a **plus de mode secours intégré** : le secours est une vidéo OBS gérée par le porteur ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md), qui remplace [pdr-0006](../decisions/pdr-0006-replay-fallback-must.md)).
 
 > Statut : **draft**. Conception proposée par l'assistant ; périmètre décidé par le porteur (pdr-0032).
 
@@ -18,7 +18,7 @@ tags: [rejeu, replay, journal, acte-4, determinisme]
 
 | Exigence | Contrainte | Mécanisme |
 |---|---|---|
-| FR-09 | génération enregistrée, rejouable de 0,25× à 2× | journal JSONL du flux A2UI + horloge virtuelle à vitesse variable |
+| FR-09 | génération enregistrée, rejouable de 0,25× à 2× | journal en mémoire du flux A2UI brut + lecteur à pas fixe à vitesse variable |
 | Acte 4 | l'acte 1 repasse au ralenti, synchronisé avec le JSON (fiche § 2) | le panneau protocole lit les mêmes entrées que le canevas |
 | NFR-02, NFR-03 | mesure par « horodatage du journal A2UI » | horodatages monotones de l'app ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) |
 | NFR-08 | données figées, seule la composition varie | jeu figé derrière les agents + snapshot de leurs réponses |
@@ -32,7 +32,7 @@ Journal **en mémoire** côté client (`A2uiJournal`, `entity_session`), jamais 
 |---|---|
 | `seq` | numéro d'ordre strict (l'ordre A2UI est obligatoire, [genui-a2ui-messages]) |
 | `t_ms` | temps depuis le premier message, horloge de l'app, croissant ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) |
-| `raw` | message A2UI **brut** tel que reçu (copie profonde non modifiable) |
+| `raw` | message A2UI **brut** tel que reçu (copie profonde non modifiable ; le message décodé n'est **jamais** conservé : il est redécodé depuis `raw` à chaque injection, car le moteur genui modifie en place les valeurs d'un `updateDataModel`) |
 | `agent`, `task` | agent émetteur et tâche (lien protocole ↔ composant, FR-05) |
 
 Aucun marqueur en J6 : les marqueurs de mesure (fin de phrase du speaker, début d'acte) servent NFR-02/03 et relèvent de J8. Les actions utilisateur ne sont pas enregistrées : leurs effets arrivent déjà sous forme de messages A2UI des agents. Le format de fichier JSONL `{t_ms, message}` n'est lu que par le rejeu scripté de la boucle (`GENESIS_SCENARIO`).

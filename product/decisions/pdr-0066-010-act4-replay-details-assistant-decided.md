@@ -37,7 +37,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 ## Décision
 | Id | Décision |
 |---|---|
-| **D1** | **Journal client en mémoire**, une entrée par événement `A2uiEnvelopeReceived` du flux vivant : `seq`, `t_ms` (horloge de l'app, pdr-0038, depuis le premier message), JSON **brut** tel que reçu, `agent`, `task`. Les messages refusés ou ignorés y sont aussi (le validateur rejoué redonne les mêmes verdicts). Aucun fichier, aucune voix, aucune transcription, aucune action. Il est vidé par la remise à vide de la scène (nouvelle session de démo). Le format sérialisé est le JSONL `{t_ms, message}` existant, plus `seq`, `agent`, `task` facultatifs à la lecture. |
+| **D1** | **Journal client en mémoire**, une entrée par événement `A2uiEnvelopeReceived` du flux vivant : `seq`, `t_ms` (horloge de l'app, pdr-0038, depuis le premier message), JSON **brut** tel que reçu, `agent`, `task`. Les messages refusés ou ignorés y sont aussi (le validateur rejoué redonne les mêmes verdicts). Aucun fichier, aucune voix, aucune transcription, aucune action. Il est vidé par la remise à vide de la scène (nouvelle session de démo).  Aucune sérialisation du journal (amendement A7 de la revue du plan : aucun usage, la fiche § 3 exclut la persistance) ; le message décodé n'est pas conservé, il est redécodé depuis le JSON brut à chaque injection. |
 | **D2** | **Le rejeu repasse par le même `A2uiGate`** (validateur remis à zéro, même instance) : canevas, panneau du protocole (message rejoué mis en évidence, contour pointillé de sa surface) et étagère se reconstruisent donc d'un seul flux, comme en direct. |
 | **D3** | **Entrée et sortie.** « Lecture » entre en rejeu s'il y a un journal et qu'aucun agent n'est occupé : le canevas est vidé (sans appel au backend), le flux vivant n'alimente plus le gate, le journal ne s'enrichit plus, les actions du canevas et « Démarrer » sont inactifs, l'indicateur d'acte affiche « Acte 4 · Rejeu » (non cliquable). La session voix en cours n'est pas touchée (pdr-0032). « Direct » quitte le rejeu par la remise à vide complète de la scène (backend compris) ; le journal est alors vidé. |
 | **D4** | **Commandes** : Lecture/Pause, Recommencer, curseur de position sur l'historique, cinq vitesses discrètes 0,25× · 0,5× · 1× · 1,5× · 2×, « Direct ». Pas de pas-à-pas ←/→ (pdr-0059), aucun raccourci (pdr-0033). Changer de vitesse en cours de lecture ne saute pas : la position continue à la nouvelle vitesse. |
@@ -63,6 +63,7 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 ## Historique
 | Date | Événement | Qui |
 |---|---|---|
+| 2026-10-30 | Texte de D1 aligné sur la revue du plan (A7, pas de sérialisation) et sur la revue du code (R1, redécodage à chaque injection). | Assistant (boucle) |
 | 2026-10-30 | Acceptée sur délégation (pdr-0062) : la fiche et pdr-0032 sont muettes sur le mécanisme du rejeu et sur ses commandes ; signalée au porteur dans `specs/progress.md`. | Assistant (boucle) |
 
 Pas d'archive brute.
