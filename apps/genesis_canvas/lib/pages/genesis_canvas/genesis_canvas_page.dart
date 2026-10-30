@@ -484,15 +484,17 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     }
   }
 
-  /// Marges et intervalles entre zones (budget de `plan.md` : 60 px au total
-  /// à la verticale).
+  /// Marges et intervalles entre zones : 40 px au total à la verticale (20 px
+  /// de moins qu'en 007, repris par le bandeau de la Barre d'actions, A1 de
+  /// 009).
   static const double _marginX = 24;
-  static const double _marginY = 18;
+  static const double _marginY = 8;
   static const double _gap = 8;
 
   /// Hauteurs fixes du budget des zones à 1920 × 1080 ; le canevas prend le
-  /// reste (520 px).
-  static const double _railHeight = 200;
+  /// reste (580 px : grille 2 × 250 et bandeau de 80). Le rail (quatre lignes
+  /// de 39 px) cède 40 px de ses 200 px (A1 de 009).
+  static const double _railHeight = 160;
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 340;
 

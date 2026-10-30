@@ -82,7 +82,8 @@ class CatalogHarness {
           value: bloc,
           child: SizedBox(
             width: size.width,
-            height: size.height,
+            // La cellule garde `size` : le bandeau réservé s'ajoute (A1).
+            height: size.height + CanvasBoard.actionsBandHeight,
             child: CanvasBoard(controller: controller),
           ),
         ),

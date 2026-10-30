@@ -83,7 +83,7 @@ void main() {
           value: bloc,
           child: SizedBox(
             width: 940,
-            height: 255,
+            height: 255 + CanvasBoard.actionsBandHeight,
             child: CanvasBoard(controller: controller),
           ),
         ),

@@ -98,15 +98,16 @@ void main() {
       );
     });
 
-    test('acte 1 (douze messages) puis quatre updateDataModel, horodatage '
-        'strictement croissant', () async {
+    test('acte 1 (douze messages), quatre updateDataModel, puis la création de '
+        'la Barre d\'actions : dix-neuf lignes, horodatage strictement '
+        'croissant', () async {
       final act1 = const LineSplitter().convert(
         await ContractFixtures.act1ReplayJsonl(),
       );
       final lines = const LineSplitter().convert(
         await ContractFixtures.act2ReplayJsonl(),
       );
-      expect(lines, hasLength(16));
+      expect(lines, hasLength(19));
       // Les douze premières lignes sont celles de l'acte 1, à l'identique.
       expect(lines.take(12).toList(), act1);
 
@@ -117,7 +118,7 @@ void main() {
       for (var i = 1; i < times.length; i++) {
         expect(times[i], greaterThan(times[i - 1]));
       }
-      for (final entry in entries.skip(12)) {
+      for (final entry in entries.skip(12).take(4)) {
         final message = entry['message']! as Map<String, Object?>;
         expect(message.keys.toSet(), <String>{'version', 'updateDataModel'});
       }
@@ -127,6 +128,7 @@ void main() {
           .toList();
       final mutated = entries
           .skip(12)
+          .take(4)
           .map(
             (e) =>
                 ((e['message']! as Map)['updateDataModel']! as Map)['surfaceId']
@@ -134,10 +136,76 @@ void main() {
           )
           .toList();
       expect(mutated, act1Surfaces);
+
+      // La Barre d'actions arrive après la mutation de la checklist (A2).
+      final actions = (await ContractFixtures.actionsMessages());
+      expect(entries.skip(16).map((e) => e['message']).toList(), actions);
     });
 
     test('catalogId substitué dans tout le rejeu', () async {
       final text = await ContractFixtures.act2ReplayJsonl(
+        catalogId: 'https://exemple.test/c/v1',
+      );
+      expect(text, isNot(contains(r'${CATALOG_ID}')));
+    });
+  });
+
+  group('rejeu de l\'acte 3', () {
+    test('l\'asset versionné est identique à la sortie du script', () async {
+      final genesis = await ContractFixtures.genesisDirectory();
+      final root = genesis.parent.parent.parent.parent;
+      final asset = File.fromUri(
+        root.uri.resolve(
+          'apps/genesis_canvas/assets/replays/act3-replay.jsonl',
+        ),
+      );
+      expect(asset.existsSync(), isTrue, reason: 'asset de rejeu introuvable');
+
+      final result = await Process.run('dart', <String>[
+        'run',
+        'tool/gen_replay.dart',
+        '--scenario',
+        'act3',
+      ], workingDirectory: Directory.current.path);
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+
+      expect(
+        asset.readAsStringSync(),
+        result.stdout,
+        reason: 'asset périmé : régénérer avec tool/gen_replay.dart',
+      );
+    });
+
+    test('actes 1 et 2 à l\'identique, puis le résultat du clic sur '
+        '« Bloquer la release » : vingt lignes', () async {
+      final act2 = const LineSplitter().convert(
+        await ContractFixtures.act2ReplayJsonl(),
+      );
+      final lines = const LineSplitter().convert(
+        await ContractFixtures.act3ReplayJsonl(),
+      );
+      expect(lines, hasLength(20));
+      expect(lines.take(19).toList(), act2);
+
+      final entries = lines
+          .map((l) => jsonDecode(l) as Map<String, Object?>)
+          .toList();
+      final times = entries.map((e) => e['t_ms']! as int).toList();
+      for (var i = 1; i < times.length; i++) {
+        expect(times[i], greaterThan(times[i - 1]));
+      }
+      expect(
+        entries.last['message'],
+        (await ContractFixtures.actionResultMessages('block_release')).single,
+      );
+      final update =
+          (entries.last['message']! as Map)['updateDataModel']! as Map;
+      expect(update['path'], '/checklist/decisionStatus');
+      expect(update['value'], 'Bloquée');
+    });
+
+    test('catalogId substitué dans tout le rejeu', () async {
+      final text = await ContractFixtures.act3ReplayJsonl(
         catalogId: 'https://exemple.test/c/v1',
       );
       expect(text, isNot(contains(r'${CATALOG_ID}')));

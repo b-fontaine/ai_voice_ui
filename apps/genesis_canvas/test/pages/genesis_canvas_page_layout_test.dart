@@ -60,10 +60,11 @@ void main() {
       expect(cell.width, greaterThanOrEqualTo(900));
       expect(cell.height, greaterThanOrEqualTo(250));
     }
-    // Budget des zones (A7b) : barre 160, rail 200, canevas 520, rangée 140.
+    // Budget des zones (A7b, amendé par A1 de 009) : barre 160, rail 160,
+    // canevas 580 (grille 2 × 250 et bandeau de 80), rangée 140.
     expect(tester.getSize(find.byType(TopBar)).height, 160);
-    expect(rectOf(tester, 'agents-rail').height, lessThanOrEqualTo(200));
-    expect(rectOf(tester, 'canvas-board').height, 520);
+    expect(rectOf(tester, 'agents-rail').height, lessThanOrEqualTo(160));
+    expect(rectOf(tester, 'canvas-board').height, 580);
     expect(rectOf(tester, 'catalog-shelf').height, lessThanOrEqualTo(140));
     expect(rectOf(tester, 'protocol-panel').height, 140);
     expect(rectOf(tester, 'replay-bar').height, lessThanOrEqualTo(140));
@@ -119,9 +120,43 @@ void main() {
         await tester.pump();
       }
     }
+    // Fin de l'acte 2 : la Barre d'actions arrive sous la grille (A1).
+    final before = {
+      for (final id in const ['kpi', 'trend', 'reviews', 'checklist'])
+        id: rectOf(tester, 'surface-$id'),
+    };
+    final actions = (await tester.runAsync(
+      () => ContractFixtures.actionsMessages(catalogId: rigCatalog),
+    ))!;
+    for (final message in actions) {
+      rig.receiveEnvelope(<String, Object?>{
+        'v': 1,
+        'type': 'a2ui',
+        'session': 's1',
+        't_ms': 10,
+        'data': message,
+        'agent': ContractFixtures.actionAgent,
+        'task': ContractFixtures.act2ActionsTask,
+      });
+      await tester.pump();
+      await tester.pump();
+    }
     await tester.pump(const Duration(milliseconds: 50));
 
     expectCleanScreen(tester, rig);
+    // Cinq surfaces : les quatre cellules n'ont pas bougé, le bandeau est sous
+    // la grille et dans l'écran.
+    for (final entry in before.entries) {
+      expect(rectOf(tester, 'surface-${entry.key}'), entry.value);
+    }
+    final band = rectOf(tester, 'surface-actions');
+    expect(band.top, greaterThanOrEqualTo(before['checklist']!.bottom));
+    expect(band.height, 80);
+    expect(
+      band.bottom,
+      lessThanOrEqualTo(rectOf(tester, 'canvas-board').bottom),
+    );
+    expect(find.text('5 / 6 utilisés'), findsOneWidget);
     expect(find.byKey(const Key('comparison-kpi')), findsOneWidget);
     expect(find.byKey(const Key('comparison-reviews')), findsOneWidget);
     expect(find.byKey(const Key('trend-series-Android 3.4')), findsOneWidget);

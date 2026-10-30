@@ -237,7 +237,9 @@ abstract final class ContractFixtures {
   /// Contenu de `assets/replays/act2-replay.jsonl` dérivé du contrat : l'acte 1
   /// à l'identique ([act1ReplayJsonl]), puis les `updateDataModel` du tour de
   /// transformation ([GenesisFollowUp.act2]), une surface toutes les 500 ms,
-  /// la première 500 ms après la dernière surface de l'acte 1.
+  /// la première 500 ms après la dernière surface de l'acte 1, enfin la
+  /// création de la Barre d'actions ([actionsMessages], A2 : après la mutation
+  /// de la checklist), 500 ms plus tard, les messages espacés de 50 ms.
   static Future<String> act2ReplayJsonl({
     String catalogId = defaultCatalogId,
   }) async {
@@ -256,6 +258,39 @@ abstract final class ContractFixtures {
           }),
         );
       }
+    }
+    final actions = await actionsMessages(catalogId: catalogId);
+    for (var m = 0; m < actions.length; m++) {
+      buffer.writeln(
+        jsonEncode(<String, Object?>{
+          't_ms': (act1Count + updates.length) * 500 + m * 50,
+          'message': actions[m],
+        }),
+      );
+    }
+    return buffer.toString();
+  }
+
+  /// Contenu de `assets/replays/act3-replay.jsonl` dérivé du contrat : l'acte 2
+  /// à l'identique ([act2ReplayJsonl], Barre d'actions comprise), puis le
+  /// résultat du clic sur « Bloquer la release » (`act3-block.jsonl`), 500 ms
+  /// après la création de la barre.
+  static Future<String> act3ReplayJsonl({
+    String catalogId = defaultCatalogId,
+  }) async {
+    final buffer = StringBuffer(await act2ReplayJsonl(catalogId: catalogId));
+    final block = await actionResultMessages(
+      'block_release',
+      catalogId: catalogId,
+    );
+    final start = (act1Files.length * 2) * 500 + 500;
+    for (var m = 0; m < block.length; m++) {
+      buffer.writeln(
+        jsonEncode(<String, Object?>{
+          't_ms': start + m * 50,
+          'message': block[m],
+        }),
+      );
     }
     return buffer.toString();
   }
