@@ -1,0 +1,80 @@
+---
+id: p-ar-frontend-screen
+title: Écran, catalogue genesis et remise à vide côté app (réel après 007)
+area: architecture
+status: draft
+updated: 2026-10-30
+sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, contracts/a2ui/genesis/v1/README.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p10, knowledge:genui-custom-catalog-item, knowledge:genui-data-model, knowledge:genui-a2ui-security]
+links: [p-ar-frontend, di-micro-packages, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-security, p-ar-quality, p-ar-stage-runtime, p-fn-screen, p-fn-catalog, p-fn-business-rules, p-rm-open-questions, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0015-app-held-canvas-layout, pdr-0033-optional-shortcuts-mouse-first, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, pdr-0055-genesis-catalog-id-versioned-uri, pdr-0057-getit-composition-root-exception, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, genui-custom-catalog-item, genui-data-model, genui-a2ui-security, genui-multiple-surfaces, ds-a11y-wcag-contrast, ds-widgetbook-4-genui, test-golden-alchemist, bloc-event-transformers]
+tags: [frontend, ecran, catalogue, genesis, validation, remise-a-vide, design-system]
+---
+# Écran, catalogue `genesis` et remise à vide (réel après 007)
+
+**En bref.** Détail de ce que la fonctionnalité 007 (J3-B, terminée le 2026-10-30) a livré côté app : l'écran à six zones, le catalogue fermé `genesis` rendu par genui 0.10.4, la validation A2UI côté client, la remise à vide et ses variables d'environnement. Vue d'ensemble, couches et Blocs : [p-ar-frontend](frontend.md) ; comportement visible : [p-fn-screen](../functional/screen.md), [p-fn-catalog](../functional/catalog.md).
+
+## Zones livrées (widgets de l'app)
+
+| Widget (`apps/genesis_canvas/lib/widgets/`) | Source d'état | Livré |
+|---|---|---|
+| `top_bar` (+ `stage_bar` empilé) | `VoiceSessionBloc`, `TranscriptBloc`, `StageBloc` | orbe, transcription, bouton Démarrer ; `act-indicator` « Acte n/3 · Créer / Transformer / Interagir » (un clic passe à l'acte suivant, cyclique) ; `reset-button` « Remettre à vide », inactif tant qu'un agent est `working` ou `pending` (`anyBusy`) |
+| `agents_rail` | `AgentActivityBloc` | orchestrateur puis `selected` puis `idle` du dernier `plan`, aucun nom codé en dur (RG-29) ; états « orchestre », « en veille », « en attente », « en cours », « terminé », « échec », « hors périmètre », « interrompu » ; « aucun agent retenu » si `selected` vide ; vide jusqu'au premier `plan` (RG-01) |
+| `CanvasBoard` (`features/canvas`) | `CanvasBloc` + `ProtocolFeedBloc.highlightedSurfaceId` | grille tenue par l'app ([pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : emplacement déterministe kpi, trend, reviews, checklist puis surfaces inconnues ; 1 colonne pour 1 surface, 2×2 jusqu'à 4, 3×2 pour 5 ou 6 ; contour pointillé `highlight-<id>` sur la surface du message en cours (D2) |
+| `protocol_panel` | `ProtocolFeedBloc` | replié par défaut (460×140), déplié (780×620) il recouvre le canevas à droite sans le redimensionner ; 4 dernières entrées, JSON compact du corps de l'opération sans `version`, borné à 2 000 caractères, rétention 200 entrées, horodaté sur l'`AppClock` ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) ; message refusé marqué « refusé » + code ; JSON en `Text` brut, jamais en Markdown |
+| `catalog_shelf` | `CatalogShelfBloc` | « CATALOGUE · n / 6 utilisés » sur `catalogComponents`, pastilles « utilisé » / « inutilisé » (la couleur n'est qu'un renfort) ; libère un composant au `deleteSurface`, y compris de compensation |
+| `replay_bar` | — | emplacement « REJEU », commandes inactives jusqu'à J6 (D3) |
+
+Aucune zone « régie » séparée : indicateur d'acte et remise à vide sont dans la barre supérieure ([pdr-0063](../decisions/pdr-0063-007-stage-ui-details-assistant-decided.md), D1 et D4). Pas de raccourci `R` ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)).
+
+## Catalogue `genesis` côté client
+
+- `entities/catalog` (Dart pur, sans `flutter` ni `genui`) : `GenesisContract` (4 `components`, 6 `catalogComponents`, propriétés admises `id`/`component`/`data`, champs requis, `catalogId` par défaut, chemin lié par surface), égal à `contracts/a2ui/genesis/v1/catalog.json` par test ; `GenesisMessageValidator` et ses verdicts.
+- `features/canvas` : `genesisCatalog({catalogId})` (4 `CatalogItem` : `KeyIndicator`, `TrendChart` en `CustomPainter`, `ReviewSentiment`, `ReleaseChecklist`) ; `ActionBar` et `CrashList` hors catalogue (sans schéma). Chaque item lit son objet avec **`BoundObject`** (`ctx.data['data']`) ; `dataContext.subscribe` et `getValue<T>` sont interdits dans un `widgetBuilder` ([genui-custom-catalog-item], [genui-data-model]).
+- **Trois états distincts** par composant : *squelette* (peint par `CanvasBoard`, `skeleton-<id>`, tant que la phase est `skeleton`), *sans données* (`nodata-<id>`, composants reçus mais objet absent), *neutre* (`neutral-<id>`, objet incomplet, de mauvais type ou statut hors enum, RG-10, jamais d'exception). Complet : le composant.
+- **Squelette peint par `CanvasBoard`** : avec genui 0.10.4 le `defaultBuilder` de `Surface` ne s'affiche jamais après `createSurface` (définition sans `root`) ; `Surface` n'est montée qu'à partir de `updateComponents`. Le premier squelette se peint à la frame qui suit `createSurface`.
+- `json_schema_builder` (0.1.7, version du lock) n'est pas ré-exporté par `genui` : il est **déclaré** dans le `pubspec` de `feature_canvas`.
+- Thème : `shared/design_system` (`SceneTheme`, `ThemeExtension`) : couleurs de statut `ok|risk|blocking` par code fermé, jetons du rail et de l'indicateur d'acte, tous textes ≥ 24 px, contrastes ≥ 8,36:1 mesurés sur les paires texte/fond, paires graphiques 3:1 ; briques `DsSkeleton`, `DsNeutralState`, `DsStatusChip`. `genesisThemeData()` (app) applique un plancher de 24 px au thème Material. Aucune couleur ne dépend d'un libellé français.
+- Débordement : `maxLines` + ellipse, jamais de `FittedBox` ni d'échelle sous 24 px ; la checklist annonce « + N autres critères » (priorité `blocking` puis `risk`) au lieu de rogner.
+
+## Flux unique, validation et `A2uiGate`
+
+Une seule instance de `A2uiGate` par page (`features/canvas`) possède l'unique `GenesisMessageValidator` (à état : surfaces actives, plafond 6) et reçoit le flux de `SessionEvent`, **en direct comme en rejeu** (`A2uiGate.replayEvents` rejoue la ligne brute `raw`, pas le message décodé). `validatedBranch()` (abonné unique avec tampon) alimente le panneau et l'étagère avec **tous** les messages et leur verdict ; `accepted` n'alimente que `CanvasBloc` (messages acceptés plus `deleteSurface` locaux de compensation) ; le rail lit le flux brut. Refus : code fermé consigné par `errorSink` (« Message A2UI refusé : <code> »), jamais le contenu. Règles et codes : [p-ar-agents-protocols](agents-protocols.md) § Validation côté client ([pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)).
+
+## Remise à vide (`_resetStage`, FR-11)
+
+Unique coordinatrice dans `GenesisCanvasPage` ; `StageBar` n'expose que `onResetPressed`. Ordre : (1) `gate.reset()` synchrone ; (2) `CanvasResetRequested`, `ProtocolFeedCleared`, `CatalogShelfCleared`, `AgentActivityReset`, `StageResetRequested` ; (3) `unawaited(_requestBackendReset())` : `POST /canvas/reset` au mieux, réessayé tant que la réponse est `busy` (409) ; une nouvelle demande remplace la boucle en cours ; arrêt à la fermeture de la page. État cible = état initial (rail vide, acte 1). Contrat et route : [p-ar-app-channel-contract](app-channel-contract.md) ; limite jusqu'à J4 : Q-73 ([p-ar-stage-runtime](stage-runtime.md)).
+
+## DI et fermeture de la page
+
+- **État réel de la DI, écarts assumés** par rapport à « un module par package » ([di-micro-packages]) : modules injectable écrits **dans `app/di`** (les paquets ne dépendent pas d'`injectable`) ; graphe `live` **seul**, sans fake dans `lib/` (les tests ne remplacent que la fabrique de transport et pointent `GENESIS_BACKEND_URL` sur un faux backend local réel) ; **un `GetIt` par instance d'app** (`GetIt.asNewInstance()`), pas de scope par session ; fabriques `VoiceTransport Function()` et `EnvelopeLog Function()` enregistrées à la main (injectable ne sait pas enregistrer un type fonction) ; `VoiceSession` résolue **une seule fois** par la page racine de composition ; `getIt` n'est appelé nulle part ailleurs ([pdr-0057](../decisions/pdr-0057-getit-composition-root-exception.md)). **007** : le `CanvasResetClient` HTTP est enregistré dans `app/di` et fermé par `getIt.reset()` comme le relais ; les nouveaux Blocs sont créés par la page.
+- **Fermeture** (`_shutdown`, ordre testé par `genesis_canvas_page_composition_test`) : `VoiceSessionBloc`, arrêt puis libération de la session, source d'événements, **gate A2UI**, `TranscriptBloc`, `AgentActivityBloc`, `CanvasBloc`, `ProtocolFeedBloc`, `CatalogShelfBloc`, `StageBloc`, surveillance du moteur, `SurfaceController`. Les Blocs du panneau, de l'étagère et de la régie se ferment après le gate dont ils lisent le flux. Sortie de la fenêtre : `AppLifecycleListener(onExitRequested)` + `ExitGuard`.
+- **Délais par défaut** : `relayDeleteTimeout` 7 s, `channelCloseTimeout` 2 s, `sessionCloseTimeout` 10 s, `exitCloseTimeout` 12 s (invariants testés : 10 s > 7 s + 2 s ; 12 s > 10 s + 1 s) ; réglages posés par l'assistant, à confirmer par le porteur, sans bloquer.
+- Chaque nouveau Bloc : commandes `sealed` en `sequential`, source en `restartable` (`emit.onEach`), `PanelToggled` en `droppable` ([bloc-event-transformers]).
+
+## Variables d'environnement de l'app (`GenesisConfig`)
+
+| Variable | Rôle | Défaut / bornes |
+|---|---|---|
+| `GENESIS_BACKEND_URL` | origine du backend | `http://127.0.0.1:8080` |
+| `GENESIS_CATALOG_ID` | `catalogId` du catalogue de l'app et du validateur | = défaut `A2UI_CATALOG_ID` de `docker-compose.yaml` ([pdr-0055](../decisions/pdr-0055-genesis-catalog-id-versioned-uri.md)), égalité testée |
+| `GENESIS_CANVAS_RESET_TIMEOUT_MS` | délai du `POST /canvas/reset` | 2 000 ms ; 100 à 10 000 |
+| `GENESIS_CANVAS_RESET_RETRIES` | réessais tant que la réponse est `busy` | 8 ; 0 à 30 |
+| `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS` | intervalle entre deux réessais | 1 500 ms ; 100 à 10 000 |
+| `GENESIS_SCENARIO`, `GENESIS_SNAPSHOT`, `GENESIS_APP_LOG` | rejeu scripté, capture PNG, journal local des enveloppes | inactifs sans valeur |
+
+## Budget des zones à 1920×1080 et fenêtre Linux
+
+| Zone | Hauteur |
+|---|---|
+| Barre supérieure (orbe, transcription, acte, remise à vide) | 160 px |
+| Rail des agents | ≤ 200 px |
+| Canevas (2×2, cellules ≈ 940×255) | 520 px |
+| Rangée du bas (étagère, Rejeu, panneau replié) | ≤ 140 px |
+| Marges et intervalles | 60 px |
+
+Le runner Linux ouvre la fenêtre en **1920×1080** (`gtk_window_set_default_size`, `my_application.cc`) : la première capture `app-smoke` en 1280×720 débordait. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 ; en dessous, les six zones débordent (texte ≥ 24 px, NFR-05) ; la machine de démo projette en 1080p ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
+
+## Écarts consignés
+
+- **Stories Widgetbook et goldens par `CatalogItem` reportés** (prévus par [p-ar-frontend](frontend.md), [ds-widgetbook-4-genui], [test-golden-alchemist]) : coupes C1 et C3 de la roadmap ; les états sont couverts par des tests de widgets et la capture `app-smoke`.
+- Le rail est une bande vide en rejeu : le rejeu de 004/000 ne contient pas de `plan` ; l'enregistrer avec `agent.activity` est l'affaire de J6.
+- Détails d'interface tranchés par la boucle sous [pdr-0062](../decisions/pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details.md) : D1 à D6 de [pdr-0063](../decisions/pdr-0063-007-stage-ui-details-assistant-decided.md), le porteur peut les contester.

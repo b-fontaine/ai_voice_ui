@@ -3,9 +3,9 @@ id: p-ar-stage-runtime
 title: Environnement de scène et répétitions
 area: architecture
 status: draft
-updated: 2026-10-29
-sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
-links: [p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended]
+updated: 2026-10-30
+sources: [specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
+links: [p-ar-frontend-screen, p-ar-app-channel-contract, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended]
 tags: [scene, demo, machine, reseau, audio, linux, repetition]
 ---
 # Environnement de scène et répétitions
@@ -23,7 +23,7 @@ tags: [scene, demo, machine, reseau, audio, linux, repetition]
 | Voix | `flutter_webrtc` 1.6.3 vérifié : build Linux, 6 entrées et 6 sorties audio, `getUserMedia`, offre SDP Opus | [rt-flutter-webrtc-overview] |
 | genui | build Linux bloqué sans les en-têtes GStreamer (`libgstreamer1.0-dev`, `libgstreamer-plugins-base1.0-dev`) ; rendu Linux à confirmer par SP-10 | [genui-overview], [p-rm-spikes](../roadmap/spikes.md) |
 | Permissions | pas de manifeste micro spécifique relevé sous Linux | [rt-flutter-webrtc-permissions] |
-| Sortie vidéo | projection 1920×1080, 16:9 | fiche § 1 |
+| Sortie vidéo | projection 1920×1080, 16:9 ; la fenêtre Linux de l'app s'ouvre en **1920×1080** (007) et l'écran **suppose** cette taille : en dessous, les six zones débordent (texte ≥ 24 px) | fiche § 1 ; [p-ar-frontend-screen](frontend-screen.md) |
 | Lancement | backend et agents par `docker compose` ; app Flutter en debug | [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) |
 
 ## Réseau
@@ -52,6 +52,15 @@ Matériel, réglage de la sono et test sur place : gérés par le porteur (micro
 
 - Toute action critique est faisable à la souris ; raccourcis facultatifs ([pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)).
 - Si des raccourcis sont ajoutés, le focus doit rester dans l'arbre des `Shortcuts` ([ux-desktop-shortcuts], [ux-desktop-focus]).
+
+## Remise à vide en répétition (007, FR-11)
+
+Le bouton **« Remettre à vide »** (barre supérieure, souris d'abord, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) ramène l'écran à l'état initial entre deux répétitions, sans relancer l'app.
+
+1. Attendre la fin du tour : le bouton est inactif tant qu'un agent est « en cours » ou « en attente » (le backend refuserait, 409).
+2. Cliquer : canevas vide, panneau du protocole vide, étagère « 0 / 6 utilisés », rail vide, « Acte 1/3 », aussitôt. La session voix n'est ni ouverte ni fermée, le journal n'est pas touché.
+3. L'app demande ensuite au backend de retirer ses surfaces (`POST /canvas/reset` : [contrat](app-channel-contract.md)) ; sur 409 elle réessaie (8 fois, 1,5 s d'intervalle par défaut, réglables : [p-ar-frontend-screen](frontend-screen.md)). En cas d'échec, une ligne « Remise à vide : le backend ne l'a pas appliquée (…) » est écrite sur `stderr`.
+4. **Consigne de régie : remettre à vide avant toute nouvelle session voix**, jusqu'à J4. Le registre de surfaces du backend est encore **par session voix** alors que l'app garde ses surfaces d'une session à l'autre : sans remise à vide, la nouvelle session ferait recréer `kpi`, `trend`… et l'app refuserait ces doublons (`surface_exists`, la surface existante est conservée). ⚠️ Hypothèse non confirmée : cette consigne est la recommandation de l'assistant, non une décision (Q-73 ouverte, décision du porteur avant J4 ; la survie du canevas arrive avec [pdr-0058](../decisions/pdr-0058-backend-canvas-registry-survives-voice-sessions.md)).
 
 ## Avant le talk : repères techniques
 

@@ -1,16 +1,16 @@
 ---
 id: p-ar-app-channel-contract
-title: Contrat v1 de l'app-channel (implémenté par 003, 004 et 006)
+title: Contrat v1 de l'app-channel (implémenté par 003, 004, 006 et 007)
 area: architecture
 status: draft
 updated: 2026-10-30
-sources: [specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, specs/005-j2-app-voice-orb/status.md, specs/003-j2-voice-relay-backend/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, knowledge:genui-a2ui-messages, knowledge:genui-a2ui-security, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-sideband]
-links: [p-ar-frontend, genui-data-model, p-fn-catalog, p-fn-dataset, p-fn-business-rules, p-rm-roadmap, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0023-example-guided-composition,  pdr-0038-latency-measured-on-app-clock, p-ar-agents-protocols, p-ar-backend, p-ar-security, p-ar-replay, p-rm-open-questions, pdr-0019-six-limit-applies-to-surfaces, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-graceful-close, genui-a2ui-messages, genui-a2ui-security, proto-a2a-task-lifecycle, ma-real-tool-results]
+sources: [specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, contracts/a2ui/genesis/v1/README.md, specs/005-j2-app-voice-orb/status.md, specs/003-j2-voice-relay-backend/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, knowledge:genui-a2ui-messages, knowledge:genui-a2ui-security, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-sideband]
+links: [p-ar-frontend, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0055-genesis-catalog-id-versioned-uri, pdr-0056-failed-agent-partial-surfaces-removed, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, genui-data-model, p-fn-catalog, p-fn-dataset, p-fn-business-rules, p-rm-roadmap, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0023-example-guided-composition,  pdr-0038-latency-measured-on-app-clock, p-ar-agents-protocols, p-ar-backend, p-ar-security, p-ar-replay, p-rm-open-questions, pdr-0019-six-limit-applies-to-surfaces, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0045-app-backend-channel-wss-recommended, pdr-0051-orb-level-from-sideband-rms-recommended, pdr-0052-one-gpt-live-session-per-act-recommended, rt-gpt-live-output-level, rt-gpt-live-lifecycle, rt-gpt-live-sideband, rt-graceful-close, genui-a2ui-messages, genui-a2ui-security, proto-a2a-task-lifecycle, ma-real-tool-results]
 tags: [protocoles, app-channel, a2ui, wss, contrat, agent-activity, validation]
 ---
-# Contrat v1 de l'app-channel (fonctionnalités 003, 004, 006 et côté client 005)
+# Contrat v1 de l'app-channel (fonctionnalités 003, 004, 006, 007 et côté client 005)
 
-**En bref.** Ce que le backend expose réellement à l'app : routes HTTP et WSS `GET /app`, enveloppe `{v:1, type, session, t_ms, data}` et 8 types de messages. 003 (2026-10-29) a livré la voix (`orb.level`, `transcript`, `session.state`, `usage`) ; 004 (2026-10-29, vérifié en réel) ajoute l'A2UI relayé, l'activité des agents et la délégation ; 006 (J3-A, 2026-10-30, vérifiée en réel) ajoute le message `plan` (choix des agents, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)), l'état `rejected` et le catalogue fermé `genesis`. Ancrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md), [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md), [pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md). Contexte et séquences : [p-ar-agents-protocols](agents-protocols.md).
+**En bref.** Ce que le backend expose réellement à l'app : routes HTTP et WSS `GET /app`, enveloppe `{v:1, type, session, t_ms, data}` et 8 types de messages. 003 (2026-10-29) a livré la voix (`orb.level`, `transcript`, `session.state`, `usage`) ; 004 (2026-10-29, vérifié en réel) ajoute l'A2UI relayé, l'activité des agents et la délégation ; 006 (J3-A, 2026-10-30, vérifiée en réel) ajoute le message `plan` (choix des agents, [pdr-0013](../decisions/pdr-0013-orchestrator-visible-agent-selection.md)), l'état `rejected` et le catalogue fermé `genesis` ; 007 (J3-B, 2026-10-30) ajoute la route `POST /canvas/reset` et décrit le côté client du catalogue `genesis`. Ancrage : [pdr-0045](../decisions/pdr-0045-app-backend-channel-wss-recommended.md), [pdr-0051](../decisions/pdr-0051-orb-level-from-sideband-rms-recommended.md), [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md), [pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md). Contexte et séquences : [p-ar-agents-protocols](agents-protocols.md).
 
 ## Routes
 
@@ -18,6 +18,7 @@ tags: [protocoles, app-channel, a2ui, wss, contrat, agent-activity, validation]
 |---|---|---|
 | `POST /voice/sessions` | corps `application/sdp` (offre) → answer SDP + en-tête `X-Session-Id` | 200 ; 400 corps vide ou illisible ; 413 trop gros ; 415 pas `application/sdp` ; 429 + `Retry-After` ; 502 `{error}` opaque |
 | `DELETE /voice/sessions/{id}` | fermeture propre ([rt-graceful-close]) | 204 ; 404 inconnue ; 504 fermeture non confirmée à temps ; 502 sinon |
+| `POST /canvas/reset` (007) | corps JSON `{}` : remet à vide le canevas des sessions ouvertes (§ Remise à vide) | 204 ; 400 corps illisible ou qui n'est pas un objet JSON ; 403 en-tête `Origin` présent ; 409 `{error}` opaque (délégation en file ou en cours) ; 413 corps > 1 Kio ; 415 sans `Content-Type: application/json` ; 405 autres méthodes |
 | `GET /healthz` | sonde du conteneur | 200 `ok` |
 | `GET /app` (WSS) | toutes les sessions, y compris futures ; `?session=<id>` = filtre facultatif | 400 identifiant invalide ; 404 identifiant inconnu ; 1008 abonné trop lent |
 
@@ -52,6 +53,20 @@ Toutes les routes : 421 `{error}` si l'en-tête `Host` n'est pas autorisé (anti
 - **Portée** : registre de surfaces et rétention sont **par session voix** ; depuis 006, `ContextID` A2A = id de session (la mémoire par contexte et son renouvellement après compensation ont disparu des agents : le **registre de surfaces de l'orchestrateur est la seule source de vérité**, voir § Surfaces actives) ; avec [pdr-0052](../decisions/pdr-0052-one-gpt-live-session-per-act-recommended.md) (une session par acte), le registre de canevas vit donc **côté backend** et survit aux sessions voix, la session voix ne portant que la conversation ; la remise à vide (FR-11) le réinitialise (Q-70 → [pdr-0058](../decisions/pdr-0058-backend-canvas-registry-survives-voice-sessions.md)).
 - **Surfaces actives** (006) : à chaque requête, l'orchestrateur lit sous le verrou les surfaces actives de l'agent (`Registry.ActiveFor`) et les passe dans les `metadata` du message A2A, clé **`genesis/activeSurfaces`** (`[]any` de chaînes ; liste vide = clé présente). Le composeur de l'agent n'émet `createSurface` que pour une surface qu'il produit et qui manque à cette liste (bornes côté agent : ≤ 16 éléments, ≤ 64 runes). Effet : une surface déjà ouverte n'est jamais recréée ; elle ne se rouvre qu'après un `deleteSurface` (pdr-0058).
 
+## Remise à vide du canevas : `POST /canvas/reset` (007, FR-11, RG-23)
+
+Livrée pour que la remise à vide de l'app vide aussi le registre de surfaces du backend ([pdr-0058](../decisions/pdr-0058-backend-canvas-registry-survives-voice-sessions.md), [pdr-0063](../decisions/pdr-0063-007-stage-ui-details-assistant-decided.md) D4). Sans cela, une nouvelle demande ne recréerait aucune surface (le registre les croirait actives).
+
+| Point | Contrat |
+|---|---|
+| Gardes (dans l'ordre) | `Host` (421, toutes routes) ; `Origin` présent → **403** (le client Flutter n'en envoie pas) ; `Content-Type: application/json` → sinon **415** ; corps ≤ **1 Kio** (`MaxBytesReader`, 413) ; corps illisible ou non objet JSON → **400** ; aucun en-tête CORS émis. Raisons : [p-ar-security](security.md) |
+| Effet | pour chaque session ouverte, un `deleteSurface` par surface active, **triés par `surfaceId`**, publiés par l'agent `orchestrateur` sous le verrou de session ; registre vidé ; **`ContextID` conservé** ; le hub oublie la rétention de chaque surface, le **journal garde tout** (le rejeu reste cohérent) ; **idempotent** (registre vide : rien d'émis, 204) ; session fermée : sans effet |
+| Occupé (409) | refusé tant qu'une délégation est **en file ou en cours**, étape `plan` comprise (compteur `pending` du `Manager` incrémenté avant la mise en file, drapeau `running` du `Pipeline` posé dès l'entrée de `Run`) ; réponse `{error}` opaque, aucun changement sur la session occupée |
+| Tout ou rien | première passe : aucune session occupée, sinon 409 sans rien changer ; seconde passe : vidage de chaque session. **Course documentée** : une délégation qui démarre entre les deux passes est refusée par le `Pipeline` (409) alors que d'autres sessions ont déjà été vidées ; inoffensif, la remise à vide étant idempotente |
+| Autres erreurs | 500 `{error}` opaque (jamais de détail) |
+
+Détail Go : [p-ar-backend](backend.md). Tests : acceptation G7 sous `-race` (remise à vide pendant une délégation → 409, aucune surface perdue ni recréée ; après `Close` → 204 sans message ; deux remises concurrentes → chaque surface supprimée une fois).
+
 ## Politique d'échec (004, 006)
 
 Relais **message par message** dès validation (RG-02, NFR-02), sans attendre la fin de la tâche. Au premier message invalide, à `failed`/`rejected`/`canceled`, à `AGENT_TIMEOUT` ou à un flux terminé sans état final :
@@ -82,7 +97,7 @@ Les agents produisent l'A2UI ; l'orchestrateur la **valide et la relaie** ([pdr-
 | Session (registre) | `createSurface` refusé si la surface existe ou si **6 surfaces** sont ouvertes ([pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) ; toute autre opération exige une surface active **du même agent** (identifiant d'agent, pas son nom affiché) ; ≤ 200 composants par surface, ≤ 64 messages par tâche |
 | Fin de tâche | chaque surface créée a un `root` et toutes ses références sont résolues, sinon échec (le rendu progressif est valide en v0.9) |
 
-Codes d'erreur fermés, jamais exposés à l'app ni à la voix. `NewValidator` refuse une configuration où `A2UI_BINDING_PROPS` contient une propriété absente de `A2UI_ALLOWED_PROPS`. Les entrées de l'orchestrateur sont bornées : tags de carte (≤ 32, de 1 à 40 runes, sans caractère de contrôle), noms d'agent nettoyés (40 runes, contrôles et bidi retirés), doublons de `AGENTS` refusés. Validation côté client : livrée en 007 (Q-71 → [pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)).
+Codes d'erreur fermés, jamais exposés à l'app ni à la voix. `NewValidator` refuse une configuration où `A2UI_BINDING_PROPS` contient une propriété absente de `A2UI_ALLOWED_PROPS`. Les entrées de l'orchestrateur sont bornées : tags de carte (≤ 32, de 1 à 40 runes, sans caractère de contrôle), noms d'agent nettoyés (40 runes, contrôles et bidi retirés), doublons de `AGENTS` refusés. Validation côté client : livrée en 007, voir § Côté client (Q-71 → [pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md)).
 
 ## Catalogue fermé `genesis` v1 (006, contrat exécutable)
 
@@ -92,13 +107,13 @@ Contrat dans `contracts/a2ui/genesis/v1/` (`catalog.json`, `examples/act1-*.json
 |---|---|
 | Liste blanche J3 (`A2UI_COMPONENTS`) | **4** composants qui ont un schéma : `KeyIndicator`, `TrendChart`, `ReviewSentiment`, `ReleaseChecklist` (ni `Column` ni `Text`) ; `ActionBar` et `CrashList` s'ajoutent avec leur fonctionnalité (les 6 de [pdr-0014](../decisions/pdr-0014-six-component-catalog.md) : `catalogComponents`) |
 | Forme | composants **plats**, un `root` par surface (`kpi`, `trend`, `reviews`, `checklist`) ; propriétés admises `id`, `component`, `data` ; `data = {path: "/<surface>"}` |
-| Trois temps (RG-02) | `createSurface` (`sendDataModel: false`) → `updateComponents` (donnée absente : squelette) → `updateDataModel` du chemin **entier** ; le backend ne garantit que l'**ordre**, pas la durée du squelette (visible côté client : 007) |
+| Trois temps (RG-02) | `createSurface` (`sendDataModel: false`) → `updateComponents` (donnée absente : squelette) → `updateDataModel` du chemin **entier** ; le backend ne garantit que l'**ordre**, pas la durée du squelette (rendu visible côté client par 007 : [p-ar-frontend-screen](frontend-screen.md)) |
 | Données | codes de statut fermés `ok\|risk\|blocking` + libellé séparé ; nombres JSON (`thresholdPct`, `yMaxPct`) ; champs `comparison` réservés à l'acte 2 (FR-07 = `updateDataModel` du chemin entier, [genui-data-model]) |
 | Composition | déterministe derrière `Composer` : les messages émis sont **exactement** les fixtures (Q-17 ouverte ; conflit connu avec [pdr-0023](../decisions/pdr-0023-example-guided-composition.md), les fixtures servant d'exemples d'écrans) |
 
-## Côté client (005, 2026-10-30)
+## Côté client (005 et 007, 2026-10-30)
 
-Implémenté dans `shared/backend_channel` et `features/voice_session` ([p-ar-frontend](frontend.md)).
+Implémenté dans `shared/backend_channel`, `features/voice_session`, `entities/catalog` et `features/canvas` ([p-ar-frontend](frontend.md), [p-ar-frontend-screen](frontend-screen.md)).
 
 | Point | Comportement |
 |---|---|
@@ -106,7 +121,11 @@ Implémenté dans `shared/backend_channel` et `features/voice_session` ([p-ar-fr
 | Messages illisibles | type inconnu ou enveloppe illisible : **ignoré et consigné** (phrases fermées, jamais le contenu), jamais fatal ; un message A2UI refusé par le décodeur est écarté de la même façon |
 | Perte du canal | événement `ChannelLost` (le flux d'événements n'émet jamais d'erreur) ; `closed` du backend de la session courante : libération locale sans `DELETE` ; perte du WSS : `DELETE` au mieux puis libération (pas de session facturée sans visuels) |
 | Journal local | `EnvelopeLog` (`GENESIS_APP_LOG`, inactif sans chemin) : format du journal backend (enveloppe sans `v`, mêmes noms de champs) + `unix_ms` lu sur l'**horloge de l'app** à la réception ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)), jamais le `t_ms` du backend ; **base du rejeu (J6)** |
+| Validation A2UI (007) | `GenesisMessageValidator` (Dart, **à état**, portage du validateur Go, mêmes codes fermés) : **une instance par page**, appliquée au **flux unique direct ET rejeu** ; verdicts `accepted \| rejected(code) \| ignored` ; `deleteSurface` d'une surface absente → `ignored` (le Go le refuse) ; refus visant une surface active → **compensation locale** (`deleteSurface` local, surface bloquée jusqu'à un nouveau `createSurface`, [pdr-0056](../decisions/pdr-0056-failed-agent-partial-surfaces-removed.md)), **sauf `surface_exists`** (le doublon est refusé, la surface existante reste). **Règles serveur non portées** : `foreign_surface`, `message_cap`, `incomplete_surface`. Détail : [p-ar-agents-protocols](agents-protocols.md) ; [pdr-0053](../decisions/pdr-0053-client-side-a2ui-validation-from-007.md) |
+| `plan` et `rejected` (007) | `plan` converti en `PlanReceived` (rail : orchestrateur, `selected`, `idle`) ; `agent.activity rejected` consommé (« hors périmètre ») ; un `plan` ou un état illisible reste ignoré et compté |
+| Remise à vide (007) | `HttpCanvasResetClient` : `POST /canvas/reset`, `{}` en JSON, **sans `Origin`** ; 204 → `done`, 409 → `busy`, autre → `rejected`, `unreachable`, `timeout` (jamais d'exception) ; **réessai sur `busy`** par la page, `GENESIS_CANVAS_RESET_TIMEOUT_MS` (2 s), `GENESIS_CANVAS_RESET_RETRIES` (8), `GENESIS_CANVAS_RESET_RETRY_INTERVAL_MS` (1,5 s) ; la remise à vide locale n'attend pas le backend |
+| `catalogId` (007) | `GENESIS_CATALOG_ID`, défaut = `A2UI_CATALOG_ID` du compose ([pdr-0055](../decisions/pdr-0055-genesis-catalog-id-versioned-uri.md)), passé au catalogue de l'app et au validateur ; le `theme` de `createSurface` reste ignoré |
 
 ## Non couvert (à venir)
 
-Actions utilisateur typées (J5), annulation « Stop » et état `canceled` (J7), révision de consigne (J4), côté client du catalogue `genesis` (007). Variables d'environnement : [p-ar-backend](backend.md) § Configuration injectée ; sécurité : [p-ar-security](security.md).
+Actions utilisateur typées (J5), annulation « Stop » et état `canceled` (J7), révision de consigne (J4), survie du registre de canevas à la session voix (J4, [pdr-0058](../decisions/pdr-0058-backend-canvas-registry-survives-voice-sessions.md), Q-73). Variables d'environnement : [p-ar-backend](backend.md) § Configuration injectée ; sécurité : [p-ar-security](security.md).

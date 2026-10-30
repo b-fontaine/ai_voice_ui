@@ -4,8 +4,8 @@ title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
+sources: [specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -26,6 +26,23 @@ Un pointillé relie le message en cours dans le flux du protocole au composant q
 | **Rejeu** | Un curseur sur l'historique de la session | Rejoue la construction au ralenti ou en accéléré ; sert aussi de mode secours | FR-09, FR-10 — mode secours retiré ([pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md)) : la zone sert l'acte 4 (flux A2UI seul) |
 
 Libellés vus dans les maquettes : « AGENTS A2A » (rail), « FLUX A2UI · live » (flux), « CATALOGUE · n / 6 utilisés » (étagère), « CANEVAS · release-3-4 ». La zone Rejeu n'apparaît sur aucune maquette (écart E13 · Q-31, [p-fn-mockups](mockups.md)).
+
+## Les six zones telles que livrées (007, 2026-10-30)
+
+Fiche muette sur les détails d'interface : tranchés par la boucle sous [pdr-0062](../decisions/pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details.md), contestables par le porteur ([pdr-0063](../decisions/pdr-0063-007-stage-ui-details-assistant-decided.md)). Implémentation : [p-ar-frontend-screen](../architecture/frontend-screen.md).
+
+| Zone | Telle que livrée |
+|---|---|
+| **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée ; l'indicateur vaut 1 par défaut, un clic passe à l'acte suivant (souris d'abord), retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
+| **Rail des agents** | piloté par le message `plan` (D5, RG-29) : l'orchestrateur, puis les agents du plan, sans nom codé en dur ; états en toutes lettres (« en attente », « en cours », « terminé », « échec », « hors périmètre ») ; un agent non retenu est **« en veille »** ; plan vide : **« aucun agent retenu »** (RG-08) ; rail vide tant qu'aucun `plan` n'est arrivé (RG-01) |
+| **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille 2×2 puis 3×2 (6 max) ; **contour pointillé** autour de la surface du message en cours (D2) |
+| **Flux du protocole** | **replié en bas à droite** ; déplié (clic), il recouvre le canevas à droite **sans le redimensionner** ; message en cours mis en évidence, messages refusés marqués « refusé » ; JSON affiché brut |
+| **Étagère** | « CATALOGUE · n / 6 utilisés » ; « 4 / 6 » en fin d'acte 1, Barre d'actions et Liste des crashs « inutilisés » (FR-06) |
+| **Rejeu** | **emplacement** « REJEU », commandes inactives jusqu'à J6 (D3) |
+
+D6 : composants au seul thème de scène (RG-09), statuts par codes fermés `ok|risk|blocking`, courbe dessinée sans nouvelle dépendance.
+
+**Budget des zones à 1920×1080** : barre 160 px, rail ≤ 200 px, canevas 520 px (cellules ≈ 940×255), rangée du bas ≤ 140 px (étagère, Rejeu, panneau replié), marges 60 px ; texte ≥ 24 px partout (NFR-05), aucun défilement ni mise à l'échelle. ⚠️ **Limite assumée** : l'écran suppose 1920×1080 (la fenêtre Linux s'ouvre à cette taille) ; en dessous, les zones débordent ; projection 16:9 en 1080p de la machine de démo ([pdr-0028](../decisions/pdr-0028-linux-demo-machine.md)).
 
 ## États de l'orbe vocal (fiche § 6, p. 9)
 
@@ -75,7 +92,7 @@ Tranché (E5 · Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-
 | Espace | Faire taire l'IA | FR-20 |
 | M | Couper ou rétablir le micro | FR-12 |
 | P | Déplier ou replier le flux du protocole | FR-05 (zone flux) |
-| R | Remettre le canevas à vide | FR-11 |
+| R | Remettre le canevas à vide | FR-11 ; **non fourni** : bouton « Remettre à vide » (007, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) |
 | ~~B~~ | ~~Basculer en mode secours~~ | ~~FR-10~~ retirée (pdr-0032) |
 | ← / → | Reculer ou avancer dans le rejeu | FR-09 ; pas de pas-à-pas : lecture, pause et vitesse suffisent (Q-52 → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)) |
 
