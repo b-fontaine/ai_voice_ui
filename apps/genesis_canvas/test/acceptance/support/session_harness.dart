@@ -8,11 +8,12 @@ import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 
 import '../../support/pump_until.dart';
-import 'fake_voice_transport.dart';
+
+import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 /// État partagé entre les étapes des scénarios de session voix.
 ///
-/// Frontières : réseau local réel (`FakeBackend`) et WebRTC (`FakeVoiceTransport`).
+/// Frontières : réseau local réel (`FakeBackend`) et WebRTC (`FakeTransport`).
 /// L'app est l'app réelle, configurée par `GENESIS_BACKEND_URL` comme en
 /// production ; seule la fabrique de transport est remplacée.
 class SessionHarness {
@@ -23,7 +24,7 @@ class SessionHarness {
 
   static bool started = false;
   static late FakeBackend backend;
-  static late FakeVoiceTransportFactory transports;
+  static late FakeTransportFactory transports;
 
   /// Journal commun (backend et transports) pour vérifier un ordre.
   static final List<String> journal = <String>[];
@@ -36,7 +37,11 @@ class SessionHarness {
     // Le binding de test refuse tout HTTP (400) : on rend le réseau local réel.
     HttpOverrides.global = null;
     journal.clear();
-    transports = FakeVoiceTransportFactory(journal.add);
+    transports = FakeTransportFactory(
+      journal.add,
+      offerFor: (index) =>
+          'v=0\r\no=fake-transport-$index 0 0 IN IP4 0.0.0.0\r\n',
+    );
     backend = (await tester.runAsync(
       () => FakeBackend.start(onEvent: journal.add),
     ))!;

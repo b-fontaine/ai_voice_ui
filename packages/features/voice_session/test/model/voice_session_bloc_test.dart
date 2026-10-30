@@ -4,8 +4,8 @@ import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 
-import '../support/bloc_harness.dart';
-import '../support/voice_fakes.dart';
+import 'package:testing_bloc_harness/testing_bloc_harness.dart';
+import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 void main() {
   late VoiceHarness h;

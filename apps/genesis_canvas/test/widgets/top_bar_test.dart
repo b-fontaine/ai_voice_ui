@@ -12,22 +12,55 @@ import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
-
-import 'support/stub_voice_session_bloc.dart';
+import 'package:shared_backend_channel/shared_backend_channel.dart';
+import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 const Key _start = Key('start-button');
 const Key _stop = Key('stop-button');
 const Key _status = Key('status-message');
 
+/// Enregistre les commandes (events) reçues par le `VoiceSessionBloc` réel,
+/// via l'observateur global de Bloc ; l'abonnement au statut, posé par le
+/// banc, n'est pas une commande des widgets et est écarté.
+class _CommandRecorder extends BlocObserver {
+  final List<VoiceSessionEvent> received = <VoiceSessionEvent>[];
+
+  @override
+  void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
+    super.onEvent(bloc, event);
+    if (event is VoiceSessionEvent && event is! VoiceSessionSubscribed) {
+      received.add(event);
+    }
+  }
+}
+
 /// Hôte : Blocs réels pour la transcription et les agents (alimentés par un
-/// flux d'événements de session), substitut pour la session voix.
+/// flux d'événements de session) et pour la session voix : un vrai
+/// `VoiceSessionBloc` sur une vraie `VoiceSession`, dont seules les
+/// frontières (transport WebRTC, relais, canal) sont fausses. Les statuts
+/// sont obtenus en pilotant ces frontières.
 class _Rig {
-  final StubVoiceSessionBloc voice = StubVoiceSessionBloc();
+  _Rig() {
+    _previousObserver = Bloc.observer;
+    Bloc.observer = commands;
+    voice = VoiceSessionBloc(harness.session);
+  }
+
+  final VoiceHarness harness = VoiceHarness();
+  final _CommandRecorder commands = _CommandRecorder();
+  late final BlocObserver _previousObserver;
+  late final VoiceSessionBloc voice;
   final TranscriptBloc transcript = TranscriptBloc();
   final AgentActivityBloc agents = AgentActivityBloc();
   final StreamController<SessionEvent> events =
       StreamController<SessionEvent>.broadcast();
   final ValueNotifier<double> level = ValueNotifier<double>(0);
+
+  /// Réponses du relais en attente (connexion ou fermeture en cours).
+  Completer<RelayAnswer>? _pendingCreate;
+  Completer<void>? _pendingDelete;
+
+  List<VoiceSessionEvent> get received => commands.received;
 
   Widget host({Widget? bar}) => Directionality(
     textDirection: TextDirection.ltr,
@@ -44,17 +77,83 @@ class _Rig {
   /// Monte l'hôte puis branche les Blocs sur la source, dans la zone du test.
   Future<void> pump(WidgetTester tester, {Widget? bar}) async {
     await tester.pumpWidget(host(bar: bar));
+    voice.add(const VoiceSessionSubscribed());
     transcript.add(TranscriptSourceSubscribed(events.stream));
     agents.add(AgentActivitySourceSubscribed(events.stream));
     await tester.pump();
   }
 
+  /// Laisse les chaînes asynchrones de la session avancer.
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 4; i++) {
+      await tester.pump();
+    }
+  }
+
+  /// `Connecting` : le relais n'a pas encore répondu à l'offre.
+  Future<void> connecting(WidgetTester tester) async {
+    final pending = _pendingCreate = Completer<RelayAnswer>();
+    harness.relay.createHook = (_) => pending.future;
+    unawaited(harness.session.start());
+    await settle(tester);
+  }
+
+  /// Le relais répond : la connexion aboutit.
+  Future<void> answerRelay(WidgetTester tester) async {
+    _pendingCreate!.complete(
+      const RelayAnswer(answerSdp: 'answer-1', sessionId: 's1'),
+    );
+    await settle(tester);
+  }
+
+  /// `Active` : connexion complète (relais, transport, canal).
+  Future<void> active(WidgetTester tester) async {
+    unawaited(harness.session.start());
+    await settle(tester);
+  }
+
+  /// `Stopping` : session active dont le `DELETE` du relais n'a pas répondu.
+  Future<void> stopping(WidgetTester tester) async {
+    await active(tester);
+    final pending = _pendingDelete = Completer<void>();
+    harness.relay.deleteHook = (_) => pending.future;
+    unawaited(harness.session.stop());
+    await settle(tester);
+  }
+
+  /// `Failed(BackendUnreachable)` : le relais est injoignable.
+  Future<void> backendUnreachable(WidgetTester tester) async {
+    harness.relay.createHook = (_) async =>
+        throw const RelayFailure(RelayFailureKind.unreachable);
+    unawaited(harness.session.start());
+    await settle(tester);
+  }
+
+  /// `Failed(MicUnavailable)` : le transport ne peut pas ouvrir le micro.
+  Future<void> micUnavailable(WidgetTester tester) async {
+    harness.onNewTransport = (transport) => transport.offerHook = () async =>
+        throw const VoiceTransportException(
+          VoiceTransportFailure.micUnavailable,
+        );
+    unawaited(harness.session.start());
+    await settle(tester);
+  }
+
   Future<void> dispose() async {
+    // Libère ce qui attend une réponse de frontière, puis ferme.
+    final create = _pendingCreate;
+    if (create != null && !create.isCompleted) {
+      create.completeError(const RelayFailure(RelayFailureKind.unreachable));
+    }
+    final delete = _pendingDelete;
+    if (delete != null && !delete.isCompleted) delete.complete();
     await events.close();
     await voice.close();
+    await harness.session.dispose();
     await transcript.close();
     await agents.close();
     level.dispose();
+    Bloc.observer = _previousObserver;
   }
 }
 
@@ -72,13 +171,8 @@ void main() {
     // Démontage puis fermeture, vidée par `pump` (zone FakeAsync).
     await tester.pumpWidget(const SizedBox());
     unawaited(rig.dispose());
-    await tester.pump();
+    await rig.settle(tester);
   });
-
-  Future<void> status(WidgetTester tester, VoiceSessionStatus s) async {
-    rig.voice.setStatus(s);
-    await tester.pump();
-  }
 
   testWidgets("l'orbe est présent et alimenté par orbLevel", (tester) async {
     await rig.pump(tester);
@@ -103,23 +197,25 @@ void main() {
       await tester.tap(find.byKey(_start));
       await tester.pump();
 
-      expect(rig.voice.received, <Matcher>[isA<VoiceSessionStarted>()]);
+      expect(rig.received, <Matcher>[isA<VoiceSessionStarted>()]);
+      // La commande atteint la vraie session : le relais reçoit l'offre.
+      expect(rig.harness.events, contains('relay.create'));
     });
 
-    for (final (name, s) in <(String, VoiceSessionStatus)>[
-      ('Connecting', const Connecting()),
-      ('Active', const Active()),
+    for (final (name, s) in <(String, Future<void> Function(WidgetTester))>[
+      ('Connecting', (tester) => rig.connecting(tester)),
+      ('Active', (tester) => rig.active(tester)),
     ]) {
       testWidgets('$name : Arrêter actif, Démarrer absent', (tester) async {
         await rig.pump(tester);
-        await status(tester, s);
+        await s(tester);
 
         expect(find.byKey(_start), findsNothing);
         expect(find.text('Arrêter'), findsOneWidget);
 
         await tester.tap(find.byKey(_stop));
         await tester.pump();
-        expect(rig.voice.received, <Matcher>[isA<VoiceSessionStopped>()]);
+        expect(rig.received, <Matcher>[isA<VoiceSessionStopped>()]);
       });
     }
 
@@ -135,24 +231,24 @@ void main() {
       expect(tester.widget<FilledButton>(find.byKey(_start)).onPressed, isNull);
       await tester.tap(find.byKey(_start), warnIfMissed: false);
       await tester.pump();
-      expect(rig.voice.received, isEmpty);
+      expect(rig.received, isEmpty);
     });
 
     testWidgets('Stopping : Arrêter désactivé', (tester) async {
       await rig.pump(tester);
-      await status(tester, const Stopping());
+      await rig.stopping(tester);
 
       expect(find.byKey(_stop), findsOneWidget);
       await tester.tap(find.byKey(_stop), warnIfMissed: false);
       await tester.pump();
 
-      expect(rig.voice.received, isEmpty);
+      expect(rig.received, isEmpty);
       expect(find.text('Arrêt…'), findsOneWidget);
     });
 
     testWidgets('Failed : Démarrer revient, avec le message', (tester) async {
       await rig.pump(tester);
-      await status(tester, const Failed(BackendUnreachable()));
+      await rig.backendUnreachable(tester);
 
       expect(find.byKey(_start), findsOneWidget);
       expect(find.byKey(_stop), findsNothing);
@@ -169,10 +265,10 @@ void main() {
       tester,
     ) async {
       await rig.pump(tester);
-      await status(tester, const Connecting());
+      await rig.connecting(tester);
       expect(find.text('Connexion…'), findsOneWidget);
 
-      await status(tester, const Active());
+      await rig.answerRelay(tester);
       expect(find.byKey(_status), findsNothing);
     });
   });
@@ -193,7 +289,7 @@ void main() {
       tester,
     ) async {
       await rig.pump(tester);
-      await status(tester, const Active());
+      await rig.active(tester);
       expect(thinking(tester), isFalse);
 
       await working(tester, AgentTaskState.working);
@@ -275,7 +371,7 @@ void main() {
       "d'assistance", (tester) async {
     final semantics = tester.ensureSemantics();
     await rig.pump(tester);
-    await status(tester, const Failed(MicUnavailable()));
+    await rig.micUnavailable(tester);
 
     expect(find.bySemanticsLabel(RegExp('Démarrer')), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Micro indisponible')), findsWidgets);
@@ -307,7 +403,7 @@ void main() {
           builder: (context) => TopBar(orbLevel: rig.level),
         ),
       );
-      await status(tester, const Active());
+      await rig.active(tester);
       final topBefore = topBarBuilds;
       final pageBefore = pageBuilds;
       final orbBefore = orbBuilds;

@@ -18,3 +18,5 @@ dev_dependencies:
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
+  testing_bloc_harness:
+    path: ../../../testing/bloc_harness

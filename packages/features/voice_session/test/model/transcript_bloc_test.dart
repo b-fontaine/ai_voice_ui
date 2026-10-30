@@ -4,7 +4,7 @@ import 'package:entity_session/entity_session.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/bloc_harness.dart';
+import 'package:testing_bloc_harness/testing_bloc_harness.dart';
 
 TranscriptDelta _delta(TranscriptRole role, String text) =>
     TranscriptDelta(role: role, text: text, startMs: 0, endMs: 1);

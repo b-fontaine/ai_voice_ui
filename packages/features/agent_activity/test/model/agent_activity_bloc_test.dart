@@ -4,7 +4,7 @@ import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/bloc_harness.dart';
+import 'package:testing_bloc_harness/testing_bloc_harness.dart';
 
 AgentActivityReceived activity(
   String agent,

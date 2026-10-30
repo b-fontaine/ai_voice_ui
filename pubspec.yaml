@@ -15,3 +15,5 @@ workspace:
   - packages/features/voice_session
   - packages/features/agent_activity
   - testing/backend_fakes
+  - testing/bloc_harness
+  - testing/voice_fakes

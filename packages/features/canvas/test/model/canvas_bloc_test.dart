@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart'
     show BasicCatalogItems, Catalog, SurfaceController;
 
-import '../support/bloc_harness.dart';
+import 'package:testing_bloc_harness/testing_bloc_harness.dart';
+
 import '../support/messages.dart';
 
 void main() {

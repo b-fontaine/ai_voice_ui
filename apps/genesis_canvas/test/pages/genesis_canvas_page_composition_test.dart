@@ -21,96 +21,65 @@ import 'package:genui/genui.dart' show BasicCatalogItems, Catalog;
 import 'package:get_it/get_it.dart';
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
+import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 const _catalog =
     'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
 
-/// `VoiceSession` réelle dont on observe `stop`/`dispose` et dont on pilote
-/// les enveloppes (le canal réseau est la frontière : pas de socket ici).
-class _ObservedSession extends VoiceSession {
-  _ObservedSession(
-    GetIt getIt,
-    this.journal, {
-    required super.closeTimeout,
-    this.stopNeverEnds = false,
-  }) : super(
-         transportFactory: getIt<VoiceTransport Function()>(),
-         relay: getIt<VoiceRelay>(),
-         channel: getIt<AppChannel>(),
-         logFactory: getIt<EnvelopeLog Function()>(),
-       );
-
-  final List<String> journal;
-  final bool stopNeverEnds;
-  final StreamController<AppChannelEnvelope> incoming =
-      StreamController<AppChannelEnvelope>.broadcast();
-  bool _disposing = false;
-  int stopCalls = 0;
-
-  @override
-  Stream<AppChannelEnvelope> get envelopes => incoming.stream;
-
-  @override
-  Future<void> stop() {
-    if (!_disposing) {
-      stopCalls++;
-      journal.add('session.stop');
-    }
-    if (stopNeverEnds && !_disposing) return Completer<void>().future;
-    return super.stop();
-  }
-
-  @override
-  Future<void> dispose() {
-    _disposing = true;
-    journal.add('session.dispose');
-    return super.dispose();
-  }
-
-  void receive(Map<String, Object?> a2uiMessage) => incoming.add(
-    AppChannelEnvelope(
-      version: 1,
-      type: AppChannelTypes.a2ui,
-      session: 's1',
-      tMs: 0,
-      data: a2uiMessage,
-    ),
-  );
-}
-
+/// Banc : la page, la vraie `VoiceSession` (et son `VoiceSessionBloc`) sur les
+/// faux de frontière (transport WebRTC, relais, canal). Les enveloppes sont
+/// poussées par le faux canal ; la fermeture s'observe par le journal des
+/// faux (`relay.delete`, `t1.stop`, `t1.dispose`) et par la fin du flux
+/// `status` de la session.
 class _Rig {
   _Rig(WidgetTester tester, {GenesisConfig? config, bool stopNeverEnds = false})
     : getIt = GetIt.asNewInstance() {
-    configureDependencies(
-      getIt,
-      config: config ?? const GenesisConfig(),
-      errorSink: errors,
-    );
-    settings = pageSettingsOf(config ?? const GenesisConfig());
-    final closeTimeout = (config ?? const GenesisConfig()).sessionCloseTimeout;
-    session = _ObservedSession(
-      getIt,
-      journal,
-      closeTimeout: closeTimeout,
-      stopNeverEnds: stopNeverEnds,
-    );
+    final cfg = config ?? const GenesisConfig();
+    configureDependencies(getIt, config: cfg, errorSink: errors);
+    settings = pageSettingsOf(cfg);
+    harness = VoiceHarness(closeTimeout: cfg.sessionCloseTimeout);
+    if (stopNeverEnds) {
+      // Le transport ne rend jamais la main sur `stop` (frontière WebRTC).
+      harness.onNewTransport = (transport) =>
+          transport.stopHook = () => Completer<void>().future;
+    }
     getIt.unregister<VoiceSession>();
     getIt.registerFactory<VoiceSession>(() {
       resolved++;
-      return session;
+      return harness.session;
     });
     addTearDown(() async {
-      await session.incoming.close();
+      for (final controller in harness.channel.controllers) {
+        await controller.close();
+      }
       await getIt.reset();
     });
   }
 
   final GetIt getIt;
   late final GenesisCanvasPageSettings settings;
-  final List<String> journal = <String>[];
-  late final _ObservedSession session;
+  late final VoiceHarness harness;
   int resolved = 0;
   final StringBuffer errors = StringBuffer();
+
+  /// Journal commun des faux (relais, canal, transport) et des observateurs
+  /// que les tests y ajoutent.
+  List<String> get journal => harness.events;
+
+  /// Démarre la session par les frontières (le bouton Démarrer est inactif en
+  /// mode scénario) puis vide le journal : seule la suite est observée.
+  Future<void> start(WidgetTester tester) async {
+    unawaited(harness.session.start());
+    for (var i = 0; i < 4; i++) {
+      await tester.pump();
+    }
+    expect(harness.session.current, isA<Active>());
+    journal.clear();
+  }
+
+  /// Pousse un message A2UI par le faux canal WSS.
+  void receive(Map<String, Object?> a2uiMessage) =>
+      harness.channel.emit(envelopeOf(AppChannelTypes.a2ui, a2uiMessage));
 
   Future<void> mount(WidgetTester tester, {Stream<A2uiMessage>? replay}) async {
     tester.view.physicalSize = const Size(1200, 800);
@@ -145,7 +114,7 @@ class _Rig {
 /// `emit.forEach` est en cours demande un tour de la boucle d'événements
 /// RÉELLE, que `pump` seul (zone FakeAsync) ne donne pas.
 Future<void> drain(WidgetTester tester) async {
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 10; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );
@@ -159,6 +128,7 @@ void main() {
   ) async {
     final rig = _Rig(tester);
     await rig.mount(tester);
+    await rig.start(tester);
 
     expect(rig.resolved, 1);
   });
@@ -167,8 +137,13 @@ void main() {
       'puis les autres Blocs', (tester) async {
     final rig = _Rig(tester);
     await rig.mount(tester);
+    await rig.start(tester);
     final journal = rig.journal;
     final ctx = rig.context;
+    rig.harness.session.status.listen(
+      null,
+      onDone: () => journal.add('session.status done'),
+    );
     ctx.read<VoiceSessionBloc>().stream.listen(
       null,
       onDone: () => journal.add('bloc.session closed'),
@@ -190,10 +165,19 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await drain(tester);
 
+    // La fin du flux `status` (libération de la session) est notifiée de façon
+    // asynchrone : on la situe entre la libération du transport et la fermeture
+    // du Bloc de transcription, sans l'ordonner finement par rapport à la
+    // source (que la page ne ferme qu'après l'avoir attendue).
+    final statusDone = journal.indexOf('session.status done');
+    expect(statusDone, greaterThan(journal.indexOf('t1.dispose')));
+    expect(statusDone, lessThan(journal.indexOf('bloc.transcript closed')));
+    journal.remove('session.status done');
     expect(journal, <String>[
       'bloc.session closed',
-      'session.stop',
-      'session.dispose',
+      'relay.delete(s1)',
+      't1.stop',
+      't1.dispose',
       'source disposed',
       'bloc.transcript closed',
       'bloc.agents closed',
@@ -210,16 +194,30 @@ void main() {
       stopNeverEnds: true,
     );
     await rig.mount(tester);
+    await rig.start(tester);
+    rig.context.read<CanvasBloc>().stream.listen(
+      null,
+      onDone: () => rig.journal.add('bloc.canvas closed'),
+    );
 
     await tester.pumpWidget(const SizedBox());
     await drain(tester);
     await tester.pump(const Duration(seconds: 2));
-    expect(rig.journal, <String>['session.stop']);
+    expect(rig.journal, <String>['relay.delete(s1)', 't1.stop']);
+    expect(rig.errors.toString(), isEmpty);
 
     await tester.pump(const Duration(seconds: 1));
     await drain(tester);
-    expect(rig.journal, contains('session.dispose'));
     expect(rig.errors.toString(), contains('arrêt de la session a échoué'));
+
+    // La libération, bornée à son tour, échoue sans bloquer la suite.
+    await tester.pump(const Duration(seconds: 3));
+    await drain(tester);
+    expect(
+      rig.errors.toString(),
+      contains('libération de la session a échoué'),
+    );
+    expect(rig.journal, contains('bloc.canvas closed'));
   });
 
   testWidgets('sortie de l\'app : stop attendu, borné par exitCloseTimeout', (
@@ -231,13 +229,15 @@ void main() {
       stopNeverEnds: true,
     );
     await rig.mount(tester);
+    await rig.start(tester);
 
     AppExitResponse? response;
     unawaited(
       tester.binding.handleRequestAppExit().then((value) => response = value),
     );
+    await drain(tester);
     await tester.pump(const Duration(seconds: 1));
-    expect(rig.session.stopCalls, 1);
+    expect(rig.journal, <String>['relay.delete(s1)', 't1.stop']);
     expect(response, isNull);
 
     await tester.pump(const Duration(seconds: 1));
@@ -276,14 +276,15 @@ void main() {
         'canevas et Démarrer est actif', (tester) async {
       final rig = _Rig(tester);
       await rig.mount(tester);
+      expect(startEnabled(tester), isTrue);
+      await rig.start(tester);
 
-      rig.session.receive(create());
-      rig.session.receive(text());
+      rig.receive(create());
+      rig.receive(text());
       await tester.pump();
       await tester.pump();
 
       expect(find.text('vivant'), findsOneWidget);
-      expect(startEnabled(tester), isTrue);
     });
 
     testWidgets('avec scénario : la source vivante n\'est pas branchée au '
@@ -292,14 +293,15 @@ void main() {
       final replay = StreamController<A2uiMessage>();
       addTearDown(replay.close);
       await rig.mount(tester, replay: replay.stream);
+      expect(startEnabled(tester), isFalse);
+      await rig.start(tester);
 
-      rig.session.receive(create());
-      rig.session.receive(text());
+      rig.receive(create());
+      rig.receive(text());
       await tester.pump();
       await tester.pump();
 
       expect(find.text('vivant'), findsNothing);
-      expect(startEnabled(tester), isFalse);
       expect(rig.errors.toString(), isEmpty);
     });
 

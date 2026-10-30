@@ -17,7 +17,7 @@ Future<void> leTransportEstLibereDansLordreApresLeDelete(
   final journal = SessionHarness.journal;
   expect(
     journal.indexOf('relay DELETE ${SessionHarness.backend.lastSessionId}'),
-    lessThan(journal.indexOf('transport#1 stop')),
+    lessThan(journal.indexOf('t1.stop')),
     reason: 'DELETE avant la libération du micro et de la connexion',
   );
 }
