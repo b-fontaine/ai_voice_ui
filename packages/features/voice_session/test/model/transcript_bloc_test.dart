@@ -106,4 +106,89 @@ void main() {
 
     expect(states, <TranscriptState>[_line('nouveau', '')]);
   });
+
+  group('réplique tronquée par une interruption (FR-19)', () {
+    TranscriptDelta at(TranscriptRole role, String text, int startMs) =>
+        TranscriptDelta(
+          role: role,
+          text: text,
+          startMs: startMs,
+          endMs: startMs + 500,
+        );
+
+    test('écarte les deltas IA qui commencent à at_ms ou après', () async {
+      final List<TranscriptState> states = await _play(<SessionEvent>[
+        at(ai, 'Le tableau est prêt', 2000),
+        const VoiceInterrupted(atMs: 2500),
+        at(ai, ' et la décision attend', 3000),
+        at(ai, ' encore', 2500),
+      ]);
+
+      expect(states, <TranscriptState>[_line('', 'Le tableau est prêt')]);
+    });
+
+    test('garde un delta IA commencé avant at_ms', () async {
+      final List<TranscriptState> states = await _play(<SessionEvent>[
+        const VoiceInterrupted(atMs: 2500),
+        at(ai, ' fin de mot', 2499),
+      ]);
+
+      expect(states, <TranscriptState>[_line('', ' fin de mot')]);
+    });
+
+    test('ne touche pas aux deltas de l\'utilisateur', () async {
+      final List<TranscriptState> states = await _play(<SessionEvent>[
+        const VoiceInterrupted(atMs: 2500),
+        at(user, 'stop', 2600),
+      ]);
+
+      expect(states, <TranscriptState>[_line('stop', '')]);
+    });
+
+    test('la reprise rétablit l\'affichage des deltas IA', () async {
+      final StreamController<SessionEvent> source =
+          StreamController<SessionEvent>();
+      final List<TranscriptState> states = await statesAfter(TranscriptBloc(), (
+        bloc,
+      ) async {
+        bloc.add(TranscriptSourceSubscribed(source.stream));
+        source
+          ..add(const VoiceInterrupted(atMs: 2500))
+          ..add(at(ai, 'écartée', 3000));
+        await pumpEventQueue();
+        bloc.add(const TranscriptResumed());
+        await pumpEventQueue();
+        source.add(at(ai, 'Reprise', 9000));
+        await pumpEventQueue();
+      });
+
+      expect(states, <TranscriptState>[_line('', 'Reprise')]);
+      await source.close();
+    });
+
+    test('une nouvelle session lève la troncature', () async {
+      final List<TranscriptState> states = await _play(<SessionEvent>[
+        const VoiceInterrupted(atMs: 2500),
+        const SessionStateChanged(state: SessionState.connecting),
+        at(ai, 'Bonjour', 0),
+      ]);
+
+      expect(states.last, _line('', 'Bonjour'));
+    });
+
+    test('la fin de session ou la perte du canal lève la troncature', () async {
+      for (final SessionEvent end in <SessionEvent>[
+        const SessionStateChanged(state: SessionState.closed),
+        const ChannelLost('connection_lost'),
+      ]) {
+        final List<TranscriptState> states = await _play(<SessionEvent>[
+          const VoiceInterrupted(atMs: 2500),
+          end,
+          at(ai, 'Bonjour', 3000),
+        ]);
+
+        expect(states.last, _line('', 'Bonjour'), reason: '$end');
+      }
+    });
+  });
 }

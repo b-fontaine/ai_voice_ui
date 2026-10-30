@@ -28,6 +28,7 @@ class FlutterWebRtcTransport implements VoiceTransport {
   RtcPeer? _closedPeer;
   bool _offerStarted = false;
   bool _offerCreated = false;
+  bool _remoteAudioEnabled = true;
   bool _stopped = false;
   bool _disposed = false;
 
@@ -50,6 +51,7 @@ class FlutterWebRtcTransport implements VoiceTransport {
       );
       _peer = peer;
       await _abortIfStopped();
+      if (!_remoteAudioEnabled) await _applyRemoteAudio(peer, false);
       await _guard(() => peer.addMic(mic), VoiceTransportFailure.failed);
       await _abortIfStopped();
       await _guard(
@@ -79,6 +81,23 @@ class FlutterWebRtcTransport implements VoiceTransport {
     }
     await _abortIfStopped();
     await _guard(() => peer.setRemoteAnswer(sdp), VoiceTransportFailure.failed);
+  }
+
+  @override
+  Future<void> setRemoteAudioEnabled(bool enabled) async {
+    if (_stopped) return;
+    _remoteAudioEnabled = enabled;
+    final peer = _peer;
+    if (peer != null) await _applyRemoteAudio(peer, enabled);
+  }
+
+  /// Applique l'état au pair ; l'échec est absorbé (la voix continue, au pire).
+  Future<void> _applyRemoteAudio(RtcPeer peer, bool enabled) async {
+    try {
+      await peer.setRemoteAudioEnabled(enabled);
+    } catch (_) {
+      // Coupure au mieux : ne doit pas faire échouer la session.
+    }
   }
 
   @override

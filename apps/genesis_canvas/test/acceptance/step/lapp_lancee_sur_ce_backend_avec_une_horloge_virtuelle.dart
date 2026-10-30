@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/acte2_harness.dart';
 import '../support/acte3_harness.dart';
 import '../support/acte4_harness.dart';
+import '../support/interruption_harness.dart';
 import '../support/session_harness.dart';
 
 /// Usage: l'app lancée sur ce backend avec une horloge virtuelle
@@ -15,6 +16,7 @@ Future<void> lappLanceeSurCeBackendAvecUneHorlogeVirtuelle(
   Acte2Harness.reset();
   Acte3Harness.reset();
   Acte4Harness.reset();
+  InterruptionHarness.reset();
   Acte4Harness.ensureSemantics(tester);
   await SessionHarness.launchApp(
     tester,

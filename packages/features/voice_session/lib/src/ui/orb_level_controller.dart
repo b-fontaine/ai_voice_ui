@@ -13,6 +13,10 @@ import '../model/orb_smoother.dart';
 /// événement pendant `silenceTimeout` (temps du ticker, pas de `Timer`), la
 /// cible retombe à 0. La fin de session ([SessionStateChanged] `closed`,
 /// [ChannelLost]) remet tout à 0 immédiatement.
+///
+/// Interruption (FR-19) : [VoiceInterrupted] ramène l'orbe à 0 aussitôt et
+/// les niveaux suivants sont ignorés jusqu'à [resume] (appelé par la page quand
+/// la phase de l'orbe quitte « interrompue ») ou une nouvelle session.
 class OrbLevelController {
   OrbLevelController({
     required TickerProvider vsync,
@@ -35,6 +39,7 @@ class OrbLevelController {
   Duration _lastElapsed = Duration.zero;
   Duration _sinceEvent = Duration.zero;
   bool _disposed = false;
+  bool _interrupted = false;
 
   /// Niveau lissé, dans 0..1.
   ValueListenable<double> get level => _level;
@@ -42,8 +47,11 @@ class OrbLevelController {
   void _onEvent(SessionEvent event) {
     if (_disposed) return;
     switch (event) {
+      case VoiceInterrupted():
+        _interrupted = true;
+        _reset();
       case OrbLevelChanged(:final double level):
-        if (level.isNaN) return;
+        if (level.isNaN || _interrupted) return;
         _target = level.clamp(0.0, 1.0);
         _sinceEvent = Duration.zero;
         if ((_target > 0 || _level.value > 0) && !_ticker.isActive) {
@@ -52,11 +60,15 @@ class OrbLevelController {
         }
       case SessionStateChanged(state: SessionState.closed):
       case ChannelLost():
+        _interrupted = false;
         _reset();
       case _:
         break;
     }
   }
+
+  /// Rend la main aux niveaux reçus après une interruption.
+  void resume() => _interrupted = false;
 
   // Le flux de la source n'émet jamais d'erreur ; on ne plante pas si besoin.
   void _onError(Object error, StackTrace stackTrace) {}

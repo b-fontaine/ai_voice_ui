@@ -174,4 +174,60 @@ void main() {
     expect(seen.length, count);
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
+
+  group('interruption (FR-19)', () {
+    testWidgets('voice.interrupted ramène le niveau à 0 aussitôt', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const OrbLevelChanged(0.8));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(controller.level.value, greaterThan(0.3));
+
+      await pumpEvent(tester, const VoiceInterrupted(atMs: 2500));
+      expect(controller.level.value, 0.0);
+      controller.dispose();
+    });
+
+    testWidgets('les niveaux reçus pendant l\'interruption sont ignorés', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const VoiceInterrupted(atMs: 2500));
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(controller.level.value, 0.0);
+      controller.dispose();
+    });
+
+    testWidgets('la reprise rend la main aux niveaux suivants', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const VoiceInterrupted(atMs: 2500));
+      controller.resume();
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(controller.level.value, greaterThan(0.3));
+      controller.dispose();
+    });
+
+    testWidgets('une nouvelle session lève l\'interruption', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const VoiceInterrupted(atMs: 2500));
+      await pumpEvent(
+        tester,
+        const SessionStateChanged(state: SessionState.closed),
+      );
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(controller.level.value, greaterThan(0.3));
+      controller.dispose();
+    });
+  });
 }

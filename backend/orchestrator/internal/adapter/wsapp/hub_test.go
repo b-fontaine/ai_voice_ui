@@ -161,6 +161,31 @@ func TestHubBacklogExcludesLevels(t *testing.T) {
 	}
 }
 
+// voice.interrupted est un instant, pas un état : jamais rejoué à un abonné tardif et
+// sans effet sur le backlog de 50 (plan 011, A6).
+func TestHubNeverReplaysVoiceInterrupted(t *testing.T) {
+	h, srv := newTestHub(t, Options{Backlog: 2, SendBuffer: 16, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
+	early := dial(t, srv, "")
+	waitAll(t, h, 1)
+	h.Publish("s1", transcript(1))
+	h.Publish("s1", domain.Message{Type: domain.TypeVoiceInterrupted, TMs: 7, Data: domain.VoiceInterrupted{AtMs: 5400}})
+	h.Publish("s1", transcript(2))
+	e := read(t, early)
+	e = read(t, early)
+	if e.Type != domain.TypeVoiceInterrupted || string(e.Data) != `{"at_ms":5400}` {
+		t.Fatalf("abonné en direct : reçu %s %s, attendu voice.interrupted", e.Type, e.Data)
+	}
+	c := dial(t, srv, "s1")
+	waitSubs(t, h, "s1", 1)
+	h.Publish("s1", transcript(3))
+	for _, want := range []string{"1", "2", "3"} { // aucun voice.interrupted rejoué, aucun transcript évincé
+		e := read(t, c)
+		if e.Type != domain.TypeTranscript || textOf(t, e) != want {
+			t.Fatalf("reçu %s %s, attendu transcript %s", e.Type, e.Data, want)
+		}
+	}
+}
+
 func TestHubNoDuplicateBetweenBacklogAndLive(t *testing.T) {
 	h, srv := newTestHub(t, Options{Backlog: 1000, SendBuffer: 1000, WriteTimeout: testWriteTimeout, RetainedMax: testRetained})
 	const total = 300

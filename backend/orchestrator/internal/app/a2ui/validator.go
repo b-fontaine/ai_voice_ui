@@ -135,6 +135,9 @@ type Operation struct {
 	Children       map[string][]string
 	RootPresent    bool
 	ComponentCount int
+	// DataPath est le `path` d'un updateDataModel (vide si absent) : le registre
+	// y reconnaît l'écriture de l'objet entier de la surface (« /<surface> »).
+	DataPath string
 }
 
 // Validator vérifie un message à la fois, sans état.
@@ -257,6 +260,7 @@ func (v *Validator) Validate(msg map[string]any) (Operation, error) {
 			if !isStr || !validPointer(s) {
 				return Operation{}, fail(CodeBadPointer, "path n'est pas un JSON Pointer valide")
 			}
+			op.DataPath = s
 		}
 		if err := v.checkWritablePath(sid, body); err != nil {
 			return Operation{}, err

@@ -32,6 +32,10 @@ abstract interface class VoiceTransport {
   /// Applique l'answer SDP du relais. Lève [VoiceTransportException].
   Future<void> applyAnswer(String sdp);
 
+  /// Coupe (`false`) ou rétablit (`true`) la lecture de la voix de l'IA, sans
+  /// toucher au micro ni à la connexion. Sans effet après [stop]. Ne lève pas.
+  Future<void> setRemoteAudioEnabled(bool enabled);
+
   /// Arrête la capture et ferme la connexion. Ne lève pas.
   Future<void> stop();
 

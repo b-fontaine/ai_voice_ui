@@ -18,7 +18,7 @@ import (
 const forwardQueue = 256
 
 type fwItem struct {
-	what string // "transcript" ou "delegation"
+	what string // "transcript", "delegation" ou "interrupt"
 	fn   func()
 }
 
@@ -74,7 +74,7 @@ func (f *forwarder) submit(what string, fn func()) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if len(f.items) >= forwardQueue {
-		if what != "delegation" {
+		if what != "delegation" && what != "interrupt" { // jamais abandonnés
 			f.log.Warn("file de délégations pleine : événement abandonné", "session", f.session, "event", what)
 			return
 		}
@@ -110,6 +110,15 @@ func (f *forwarder) delegate(id string, offsetMs int64) {
 		return
 	}
 	f.submit("delegation", func() { f.dg.Delegate(id, offsetMs) })
+}
+
+// interrupt transmet un arrêt demandé à la voix (« Stop »), dans l'ordre : après les
+// transcripts déjà reçus, dont celui du mot d'arrêt. Il n'est jamais abandonné.
+func (f *forwarder) interrupt(atMs int64) {
+	if f == nil {
+		return
+	}
+	f.submit("interrupt", func() { f.dg.Interrupt(atMs) })
 }
 
 // shutdown vide la file (borné par guard), puis appelle SessionDelegations.Close

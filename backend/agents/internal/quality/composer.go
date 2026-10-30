@@ -33,7 +33,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	intent, err := kit.ParseIntent(req.Text, ds)
+	intent, err := kit.ParseIntent(req.Text, req.Focus, ds)
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -54,7 +54,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "kpi", "KeyIndicator", "/kpi", kpiValue)...)
 	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "trend", "TrendChart", "/trend", trendValue)...)
 
-	return kit.Composition{Messages: msgs, Summary: summary}, nil
+	return kit.Composition{Messages: msgs, Summary: summary, Intent: &intent}, nil
 }
 
 // statusLabel met la première lettre du libellé en capitale : « À risque ».

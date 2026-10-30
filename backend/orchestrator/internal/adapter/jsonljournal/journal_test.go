@@ -69,6 +69,19 @@ func readLines(t *testing.T, path string) []string {
 	return out
 }
 
+func TestPublishKeepsVoiceInterrupted(t *testing.T) {
+	dir := t.TempDir()
+	r, e := newRecorder(t, dir)
+	r.Publish("s1", domain.Message{Type: domain.TypeVoiceInterrupted, TMs: 900, Data: domain.VoiceInterrupted{AtMs: 5400}})
+	lines := readLines(t, filepath.Join(dir, "s1.jsonl"))
+	if len(lines) != 1 || !strings.Contains(lines[0], `"type":"voice.interrupted"`) || !strings.Contains(lines[0], `"data":{"at_ms":5400}`) {
+		t.Fatalf("journal = %v, attendu une ligne voice.interrupted {at_ms:5400}", lines)
+	}
+	if e.count() != 0 {
+		t.Fatalf("erreurs : %v", e.list)
+	}
+}
+
 func TestPublishWritesOneLinePerMessage(t *testing.T) {
 	dir := t.TempDir()
 	r, e := newRecorder(t, dir)

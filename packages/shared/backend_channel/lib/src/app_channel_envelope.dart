@@ -17,6 +17,7 @@ abstract final class AppChannelTypes {
   static const String plan = 'plan';
   static const String agentActivity = 'agent.activity';
   static const String a2ui = 'a2ui';
+  static const String voiceInterrupted = 'voice.interrupted';
 }
 
 /// Enveloppe invalide. Le motif est une phrase fermée : il ne reprend jamais

@@ -59,6 +59,16 @@ services:
       VOICE_CLOSE_GUARD: ${VOICE_CLOSE_GUARD:-5s}
       SESSION_RATE_BURST: ${SESSION_RATE_BURST:-5}
       SESSION_RATE_WINDOW: ${SESSION_RATE_WINDOW:-10s}
+      # Fenêtre de demande (bogue du mot à l'offset) : attente des deltas tardifs et marge.
+      REQUEST_WINDOW_SETTLE: ${REQUEST_WINDOW_SETTLE:-300ms}
+      REQUEST_WINDOW_MARGIN: ${REQUEST_WINDOW_MARGIN:-400ms}
+      # « Stop » vocal (pdr-0069) : mots d'arrêt (liste vide = détecteur coupé), énoncé, confirmation, anti-rebond.
+      VOICE_STOP_WORDS: ${VOICE_STOP_WORDS:-stop,tais-toi,annule,arrête}
+      VOICE_STOP_UTTERANCE_GAP: ${VOICE_STOP_UTTERANCE_GAP:-1500ms}
+      VOICE_STOP_MAX_WORDS: ${VOICE_STOP_MAX_WORDS:-4}
+      VOICE_STOP_SETTLE: ${VOICE_STOP_SETTLE:-400ms}
+      VOICE_STOP_DEBOUNCE: ${VOICE_STOP_DEBOUNCE:-2s}
+      VOICE_STOP_SPAN: ${VOICE_STOP_SPAN:-3s}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

@@ -127,4 +127,31 @@ void main() {
       expect(bloc.state.sourceStatus, CanvasSourceStatus.playing);
     });
   });
+
+  test('decisionStatus suit /checklist/decisionStatus du data model', () async {
+    bloc
+      ..add(A2uiMessageReceived(createSurface('checklist')))
+      ..add(
+        A2uiMessageReceived(
+          updateDataModel('checklist', '/checklist', <String, dynamic>{
+            'decisionStatus': 'En attente',
+          }),
+        ),
+      );
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.decisionStatus, 'En attente');
+
+    bloc.add(
+      A2uiMessageReceived(
+        updateDataModel('checklist', '/checklist/decisionStatus', 'Bloquée'),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.decisionStatus, 'Bloquée');
+
+    bloc.add(const CanvasResetRequested());
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.decisionStatus, isNull);
+    await bloc.close();
+  });
 }

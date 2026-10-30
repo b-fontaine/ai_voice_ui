@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +38,26 @@ const ActiveSurfacesKey = "genesis/activeSurfaces"
 // ActionKey est la clé de metadata du message A2A qui porte une action de
 // l'interface : {"name": <nom>}.
 const ActionKey = "genesis/action"
+
+// FocusKey est la clé de metadata du message A2A qui porte le focus du canevas :
+// {"platform", "compareTo"}.
+const FocusKey = "genesis/focus"
+
+// IntentKey est la clé de metadata du message de l'état completed par laquelle l'agent
+// renvoie l'intention résolue : {"platform", "compareTo"}.
+const IntentKey = "genesis/intent"
+
+// ScopeReasonKey est la clé de metadata du message de l'état rejected qui porte le motif
+// du refus (ensemble fermé).
+const ScopeReasonKey = "genesis/scopeReason"
+
+// scopeReasons est la liste blanche des motifs de refus d'un agent.
+var scopeReasons = []string{"version", "two_platforms", "compare_without_platform", "compare_unavailable"}
+
+// Forme admise des valeurs de l'intention renvoyée par un agent (pdr-0071) : l'adaptateur
+// ne valide que la forme (longueur et jeu de caractères fermés) ; les agents restent
+// seuls juges des valeurs (plateformes, versions du jeu de données).
+const intentValueMaxRunes = 16
 
 // cancelTimeout borne l'appel CancelTask, émis avec un contexte neuf.
 const cancelTimeout = time.Second
@@ -325,8 +346,10 @@ type stream struct {
 }
 
 // fail émet UpdateFailed (et l'erreur) ; renvoie false : l'itération s'arrête.
-func (s *stream) fail(err *port.AgentError) bool {
-	s.yield(port.AgentUpdate{Kind: port.UpdateFailed, TaskID: string(s.taskID), Err: err}, err)
+func (s *stream) fail(err *port.AgentError) bool { return s.failWith(err, "") }
+
+func (s *stream) failWith(err *port.AgentError, scopeReason string) bool {
+	s.yield(port.AgentUpdate{Kind: port.UpdateFailed, TaskID: string(s.taskID), Err: err, ScopeReason: scopeReason}, err)
 	return false
 }
 
@@ -381,6 +404,9 @@ func (s *stream) run(req port.AgentRequest) {
 	msg.Metadata = map[string]any{ActiveSurfacesKey: active}
 	if req.Action != nil {
 		msg.Metadata[ActionKey] = map[string]any{"name": req.Action.Name}
+	}
+	if req.Focus != nil {
+		msg.Metadata[FocusKey] = map[string]any{"platform": req.Focus.Platform, "compareTo": req.Focus.CompareTo}
 	}
 	for ev, err := range client.SendStreamingMessage(s.ctx, &a2a.SendMessageRequest{Message: msg}) {
 		if err != nil {
@@ -482,14 +508,14 @@ func (s *stream) status(st a2a.TaskState, msg *a2a.Message) bool {
 		return true
 	case a2a.TaskStateCompleted:
 		s.done = true
-		s.emit(port.AgentUpdate{Kind: port.UpdateCompleted})
+		s.emit(port.AgentUpdate{Kind: port.UpdateCompleted, Intent: intentFrom(msg)})
 		return false
 	case a2a.TaskStateFailed:
 		s.done = true
 		return s.fail(&port.AgentError{Kind: port.AgentFailed, Reason: "tâche échouée"})
 	case a2a.TaskStateRejected:
 		s.done = true
-		return s.fail(&port.AgentError{Kind: port.AgentRejected, Reason: "demande refusée"})
+		return s.failWith(&port.AgentError{Kind: port.AgentRejected, Reason: "demande refusée"}, scopeReasonFrom(msg))
 	case a2a.TaskStateCanceled:
 		s.done = true
 		return s.fail(&port.AgentError{Kind: port.AgentCanceled, Reason: "tâche annulée"})
@@ -512,4 +538,51 @@ func (s *stream) cancelRemote() {
 	if _, err := s.client.CancelTask(ctx, &a2a.CancelTaskRequest{ID: s.taskID}); err != nil {
 		s.a.log.Debug("a2aclient : CancelTask", "err", err)
 	}
+}
+
+// intentFrom lit l'intention dans les metadata du message de l'état completed. Elle
+// n'est rendue que si elle est bien formée : exactement les champs platform et
+// compareTo, chacun chaîne de 0 à 16 runes parmi [A-Za-z0-9.]. Sinon nil (le focus
+// reste inchangé).
+func intentFrom(msg *a2a.Message) *port.Focus {
+	if msg == nil {
+		return nil
+	}
+	raw, ok := msg.Metadata[IntentKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	platform, okP := raw["platform"].(string)
+	compareTo, okC := raw["compareTo"].(string)
+	if !okP || !okC || len(raw) != 2 || !intentValueWellFormed(platform) || !intentValueWellFormed(compareTo) {
+		return nil
+	}
+	return &port.Focus{Platform: platform, CompareTo: compareTo}
+}
+
+// intentValueWellFormed dit si v a la forme d'une valeur d'intention : au plus
+// intentValueMaxRunes runes, toutes dans [A-Za-z0-9.].
+func intentValueWellFormed(v string) bool {
+	if utf8.RuneCountInString(v) > intentValueMaxRunes {
+		return false
+	}
+	for _, r := range v {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '.' {
+			return false
+		}
+	}
+	return true
+}
+
+// scopeReasonFrom lit le motif de refus dans les metadata du message de l'état rejected ;
+// "" s'il est absent, mal typé ou hors de la liste blanche.
+func scopeReasonFrom(msg *a2a.Message) string {
+	if msg == nil {
+		return ""
+	}
+	r, _ := msg.Metadata[ScopeReasonKey].(string)
+	if !slices.Contains(scopeReasons, r) {
+		return ""
+	}
+	return r
 }

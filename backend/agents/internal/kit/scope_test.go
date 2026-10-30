@@ -91,7 +91,7 @@ func TestParseIntentTable(t *testing.T) {
 	}
 	ds := testDataset(t)
 	for _, tc := range cases {
-		got, err := kit.ParseIntent(tc.text, ds)
+		got, err := kit.ParseIntent(tc.text, kit.Focus{}, ds)
 		if tc.ok {
 			if err != nil || got != tc.want {
 				t.Errorf("ParseIntent(%q) = %+v, %v ; attendu %+v", tc.text, got, err, tc.want)
@@ -117,7 +117,7 @@ func TestParseIntentReasons(t *testing.T) {
 		{"Compare iOS", kit.ReasonCompareUnavailable},
 	}
 	for _, tc := range cases {
-		_, err := kit.ParseIntent(tc.text, ds)
+		_, err := kit.ParseIntent(tc.text, kit.Focus{}, ds)
 		var se *kit.ScopeError
 		if !errors.Is(err, kit.ErrOutOfScope) || !errors.As(err, &se) || se.Reason != tc.reason {
 			t.Errorf("ParseIntent(%q) : erreur %v, motif attendu %q", tc.text, err, tc.reason)
@@ -127,16 +127,16 @@ func TestParseIntentReasons(t *testing.T) {
 
 func TestParseIntentTruncatesAtOneThousandRunes(t *testing.T) {
 	ds := testDataset(t)
-	if got, err := kit.ParseIntent(strings.Repeat("é", 1000)+" Android", ds); err != nil || got != (kit.Intent{}) {
+	if got, err := kit.ParseIntent(strings.Repeat("é", 1000)+" Android", kit.Focus{}, ds); err != nil || got != (kit.Intent{}) {
 		t.Errorf("« Android » après la 1 000ᵉ rune doit être ignoré, obtenu %+v, %v", got, err)
 	}
-	if got, err := kit.ParseIntent(strings.Repeat("é", 900)+" Android", ds); err != nil || got.Platform != "Android" {
+	if got, err := kit.ParseIntent(strings.Repeat("é", 900)+" Android", kit.Focus{}, ds); err != nil || got.Platform != "Android" {
 		t.Errorf("« Android » avant la 1 000ᵉ rune doit être reconnu, obtenu %+v, %v", got, err)
 	}
-	if _, err := kit.ParseIntent(strings.Repeat("é", 1000)+" la 3.5", ds); err != nil {
+	if _, err := kit.ParseIntent(strings.Repeat("é", 1000)+" la 3.5", kit.Focus{}, ds); err != nil {
 		t.Errorf("une version après la 1 000ᵉ rune doit être ignorée, obtenu %v", err)
 	}
-	if _, err := kit.ParseIntent(strings.Repeat("é", 900)+" la 3.5", ds); !errors.Is(err, kit.ErrOutOfScope) {
+	if _, err := kit.ParseIntent(strings.Repeat("é", 900)+" la 3.5", kit.Focus{}, ds); !errors.Is(err, kit.ErrOutOfScope) {
 		t.Errorf("une version avant la 1 000ᵉ rune doit être refusée, obtenu %v", err)
 	}
 }
@@ -144,10 +144,10 @@ func TestParseIntentTruncatesAtOneThousandRunes(t *testing.T) {
 func TestParseIntentUsesDatasetVersions(t *testing.T) {
 	ds := testDataset(t)
 	ds.TargetVersion = "3.5"
-	if _, err := kit.ParseIntent("la release 3.5", ds); err != nil {
+	if _, err := kit.ParseIntent("la release 3.5", kit.Focus{}, ds); err != nil {
 		t.Errorf("3.5 doit être acceptée quand c'est la version cible : %v", err)
 	}
-	if _, err := kit.ParseIntent("la release 3.4", ds); !errors.Is(err, kit.ErrOutOfScope) {
+	if _, err := kit.ParseIntent("la release 3.4", kit.Focus{}, ds); !errors.Is(err, kit.ErrOutOfScope) {
 		t.Errorf("3.4 doit être refusée quand la cible est 3.5, obtenu %v", err)
 	}
 }

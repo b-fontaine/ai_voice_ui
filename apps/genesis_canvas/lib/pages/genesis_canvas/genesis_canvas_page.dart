@@ -14,9 +14,11 @@ import 'package:feature_canvas/feature_canvas.dart'
         ActionSessionClosed,
         ActionStageReset,
         ActionIdle,
+        ActionRunning,
         CanvasActionBloc,
         CanvasActionScope,
         CanvasActionSettings,
+        DecisionStatusObserved,
         CanvasActionState,
         CanvasBloc,
         CanvasBoard,
@@ -49,17 +51,22 @@ import 'package:feature_replay/feature_replay.dart'
         ReplayState,
         ReplayStatus;
 import 'package:feature_stage_controls/feature_stage_controls.dart'
-    show StageBloc, StageResetRequested;
+    show StageActReached, StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
         Connecting,
         Failed,
         Idle,
         LiveSessionEventSource,
+        Interrupted,
         OrbLevelController,
+        OrbPhase,
+        OrbPhaseBloc,
+        OrbPhaseSourceSubscribed,
         OrbSmoother,
         Stopping,
         TranscriptBloc,
+        TranscriptResumed,
         TranscriptSourceSubscribed,
         VoiceSession,
         VoiceSessionBloc,
@@ -167,6 +174,16 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   );
   late final VoiceSessionBloc _voiceBloc = VoiceSessionBloc(_session);
   late final TranscriptBloc _transcriptBloc = widget.getIt<TranscriptBloc>();
+  // Phase de l'orbe (écoute, parole, interrompue) : réglée par la
+  // configuration, construite ici (racine de composition) avec la source.
+  late final OrbPhaseBloc _phaseBloc = OrbPhaseBloc(
+    speakingThreshold: _settings.orbSpeakingThreshold,
+    resumeSilence: _settings.interruptResumeSilence,
+    maxInterruption: _settings.interruptMaxDuration,
+    stopSpan: _settings.interruptStopSpan,
+  );
+  StreamSubscription<OrbPhase>? _phaseSubscription;
+  bool _wasInterrupted = false;
   late final AgentActivityBloc _agentsBloc = widget.getIt<AgentActivityBloc>();
   // Écran de fabrication : panneau du protocole (horloge de l'app, pdr-0038),
   // étagère du catalogue et régie des actes.
@@ -283,6 +300,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // Tous les abonnés se branchent avant toute connexion.
     _voiceBloc.add(const VoiceSessionSubscribed());
     _transcriptBloc.add(TranscriptSourceSubscribed(_source.events));
+    _phaseBloc.add(OrbPhaseSourceSubscribed(_source.events));
+    _phaseSubscription = _phaseBloc.stream.listen(_onOrbPhase);
     _agentsBloc.add(AgentActivitySourceSubscribed(_source.events));
     // Un seul flux de `SessionEvent` entre dans le gate : le flux vivant, ou
     // le rejeu encapsulé en enveloppes (la source vivante n'alimente alors pas
@@ -410,6 +429,17 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _stageBloc.add(const StageResetRequested());
     _actionBloc.add(const ActionStageReset());
     unawaited(_requestBackendReset());
+  }
+
+  /// Identifiant de la surface de la Barre d'actions (fin de l'acte 2).
+  static const String _actionsSurfaceId = 'actions';
+
+  /// Fait avancer l'indicateur d'acte (jamais en arrière). Sans effet en mode
+  /// scénario et pendant le rejeu de l'acte 4 : un message rejoué ou vivant
+  /// ne décrit pas l'avancement de la démo.
+  void _reachAct(int act) {
+    if (_scenarioMode || _replayBloc.state is ReplayActive) return;
+    _stageBloc.add(StageActReached(act));
   }
 
   /// Étapes 1 et 2 de [_resetStage] pour ce qui est visible de la scène
@@ -634,6 +664,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     _resetGeneration++;
     _cancelRetryWait();
     unawaited(_statusSubscription?.cancel());
+    unawaited(_phaseSubscription?.cancel());
     unawaited(_activitySubscription?.cancel());
     unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
@@ -646,10 +677,26 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // sa partie synchrone détruit le lecteur (minuteurs coupés) sans attendre
     // la fermeture asynchrone, et il n'écoute plus le routeur ni la scène.
     unawaited(_replayBloc.close());
+    // Le minuteur d'une action en cours (60 s) dort dans `_sleep` : la remise à
+    // zéro, synchrone, le réveille avant que le teardown n'attende le Bloc.
+    _actionBloc.add(const ActionStageReset());
     final closing = _shutdown();
     unawaited(closing);
     widget.onClosing?.call(closing);
     super.dispose();
+  }
+
+  // Fin d'une interruption vocale (FR-19) : la page relie la phase de l'orbe
+  // aux trois consommateurs qui ne se lisent pas entre eux : la voix de l'IA,
+  // le niveau de l'orbe et la ligne de transcription.
+  void _onOrbPhase(OrbPhase phase) {
+    final interrupted = phase is Interrupted;
+    final resumed = _wasInterrupted && !interrupted;
+    _wasInterrupted = interrupted;
+    if (!resumed) return;
+    unawaited(_session.resumeRemoteAudio());
+    _orb.resume();
+    _transcriptBloc.add(const TranscriptResumed());
   }
 
   /// Fermeture ordonnée, jamais d'exception non gérée : un objet n'est libéré
@@ -662,7 +709,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 5. routeur du rejeu (il lit la source), puis filtre A2UI (il lit le
   ///    routeur) ; le Bloc du rejeu, lui, est déjà fermé par `dispose`, avant
   ///    toute cette séquence ;
-  /// 6. Blocs de transcription, d'action, d'activité (que le Bloc d'action
+  /// 6. Blocs de transcription, de phase de l'orbe, d'action, d'activité (que le Bloc d'action
   ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
   ///    lisent le gate, donc ils ne se ferment qu'après lui ;
@@ -676,6 +723,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     await _step('routeur du rejeu', () async => _router.dispose());
     await _step('filtre A2UI', _gate.dispose);
     await _step('Bloc de transcription', _transcriptBloc.close);
+    await _step('Bloc de phase de l\'orbe', _phaseBloc.close);
     await _step('Bloc d\'action', _actionBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
     await _step('Bloc du canevas', _bloc.close);
@@ -718,6 +766,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     providers: [
       BlocProvider<VoiceSessionBloc>.value(value: _voiceBloc),
       BlocProvider<TranscriptBloc>.value(value: _transcriptBloc),
+      BlocProvider<OrbPhaseBloc>.value(value: _phaseBloc),
       BlocProvider<AgentActivityBloc>.value(value: _agentsBloc),
       BlocProvider<CanvasActionBloc>.value(value: _actionBloc),
       BlocProvider<CanvasBloc>.value(value: _bloc),
@@ -732,6 +781,29 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
           listenWhen: (previous, current) =>
               previous.sourceStatus != current.sourceStatus,
           listener: _onSourceChanged,
+        ),
+        // Le statut de décision du data model (`/checklist/decisionStatus`)
+        // alimente le Bloc d'action : c'est lui qui garde la décision prise.
+        BlocListener<CanvasBloc, CanvasState>(
+          listenWhen: (previous, current) =>
+              previous.decisionStatus != current.decisionStatus &&
+              current.decisionStatus != null,
+          listener: (context, state) =>
+              _actionBloc.add(DecisionStatusObserved(state.decisionStatus!)),
+        ),
+        // Avance automatique de l'indicateur d'acte (011, T24) : la surface
+        // `actions` apparaît à la fin de l'acte 2 (pdr-0061).
+        BlocListener<CanvasBloc, CanvasState>(
+          listenWhen: (previous, current) =>
+              previous.phaseOf(_actionsSurfaceId) == null &&
+              current.phaseOf(_actionsSurfaceId) != null,
+          listener: (context, state) => _reachAct(2),
+        ),
+        // Un clic accepté (202) : signal local, jamais rejoué.
+        BlocListener<CanvasActionBloc, CanvasActionState>(
+          listenWhen: (previous, current) =>
+              previous is! ActionRunning && current is ActionRunning,
+          listener: (context, state) => _reachAct(3),
         ),
         // Seule la cause fermée de l'échec est consignée, jamais le détail du
         // backend.

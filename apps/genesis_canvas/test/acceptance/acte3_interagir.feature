@@ -74,7 +74,8 @@ Fonctionnalité: Acte 3 - interagir avec un composant généré
     Et les boutons de la Barre d'actions sont inactifs
     Quand le serveur émet le résultat de l'action
     Alors le statut de la checklist passe à {'Bloquée'}
-    Et les boutons de la Barre d'actions sont actifs
+    Et le bouton {'block_release'} affiche {'fait'}
+    Et le bouton {'validate_release'} est actif
 
   Scénario: C6 La Barre d'actions passe par le squelette puis les composants puis les données
     Soit le tableau de la release 3.4 est affiché

@@ -42,7 +42,7 @@ entrypoints:
   - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
   - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
   - {id: p-rm-roadmap, why: "jalons J0-J9 datés, dépendances, ordre de coupe"}
-  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-76)"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-80)"}
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
@@ -56,8 +56,8 @@ tasks:
   - task: "Implémenter l'acte 1 « Créer » (construction des surfaces)"
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-screen, p-fn-catalog, p-fn-dataset, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-backend, p-ar-agents-protocols, p-ar-app-channel-contract, p-rm-backlog, pdr-0004-mvp-three-acts, pdr-0008-single-screen-show-the-making]
     knowledge: [genui-a2ui-messages, genui-multiple-surfaces, genui-custom-catalog-item, proto-a2a-task-lifecycle, ma-filler-acknowledgements, ux-genui-streaming-loading]
-  - task: "Implémenter ou modifier l'acte 2 « Transformer » (mutation sur place par updateDataModel, comparaison 3.3, correction de plateforme, canevas partagé ; livré par 008, annulation en vol à J7)"
-    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-dataset-acts, p-fn-catalog, p-fn-mockups, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-backend, p-ar-frontend-screen, p-ar-frontend, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0042-calendar-and-cut-order-validated, p-rm-open-questions]
+  - task: "Implémenter ou modifier l'acte 2 « Transformer » (mutation sur place par updateDataModel, comparaison 3.3, correction de plateforme, canevas partagé ; livré par 008 ; mémoire de focus et « Stop » en vol livrés par 011, correction sans mot d'arrêt à J7)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-dataset-acts, p-fn-catalog, p-fn-mockups, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-voice-interruption, p-ar-backend, p-ar-frontend-screen, p-ar-frontend, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0042-calendar-and-cut-order-validated, p-rm-open-questions]
     knowledge: [genui-a2ui-messages, genui-data-model, genui-multiple-surfaces]
   - task: "Implémenter ou modifier l'acte 3 « Interagir » (clic sur la Barre d'actions → POST /canvas/actions → agent Livraison → vrai résultat → voix ; livré par 009)"
     docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-catalog, p-fn-dataset-acts, p-fn-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-backend, p-ar-frontend-screen, p-ar-frontend, p-ar-security, p-ar-quality, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0061-action-bar-appears-end-of-act-2, pdr-0016-validate-release-action, pdr-0058-backend-canvas-registry-survives-voice-sessions, p-rm-open-questions]
@@ -65,11 +65,11 @@ tasks:
   - task: "Ajouter ou modifier un composant du catalogue Genesis"
     docs: [p-fn-catalog, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-quality, pdr-0007-closed-catalog-stage-theme, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-test-catalog-items, ux-genui-catalog-as-ds, ds-component-api, ds-widgetbook-4-genui, test-golden-alchemist]
-  - task: "Implémenter le barge-in, « Stop », le bruit court et le faire-taire clavier"
-    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-screen, p-ar-agents-protocols, p-ar-frontend, p-ar-stage-runtime, p-rm-spikes]
+  - task: "Implémenter le barge-in, « Stop », le bruit court et le faire-taire clavier (« Stop » vocal livré par 011 ; micro coupé et faire taire à J7)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-screen, p-ar-voice-interruption, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-frontend, p-ar-frontend-screen, p-ar-stage-runtime, p-rm-spikes, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, p-rm-open-questions]
     knowledge: [rt-barge-in, rt-gpt-live-lifecycle, rt-transcription, rt-echo-cancellation, rt-graceful-close, proto-a2a-task-lifecycle, proj-avw-risks]
   - task: "Implémenter la session voix (gpt-live-1, session créée par relais SDP backend, aucune clé dans l'app, délégation)"
-    docs: [pdr-0012-voice-provider-openai, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-nfr]
+    docs: [pdr-0012-voice-provider-openai, p-ar-voice-interruption, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-nfr]
     knowledge: [rt-gpt-live-overview, rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-ephemeral-keys, rt-provider-abstraction, rt-graceful-close, proj-avw-risks]
   - task: "Implémenter l'enregistrement du flux A2UI et le rejeu (acte 4)"
     docs: [p-ar-replay, p-ar-frontend-screen, p-fn-screen, p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-risks-acceptance, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0005-frozen-fictional-dataset]
@@ -87,7 +87,7 @@ tasks:
     docs: [p-ar-frontend-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-backend, p-ar-stage-runtime, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-a2ui-security, genui-custom-catalog-item, genui-data-model]
   - task: "Écrire ou faire évoluer un scénario BDD"
-    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-requirements, p-ar-quality]
+    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-requirements, p-ar-quality]
     knowledge: [test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-app-running-fixture, test-tdd-red-green-refactor]
   - task: "Mesurer les NFR (latence, 60 i/s, lisibilité, coût)"
     docs: [p-fn-nfr, p-ar-quality, p-ar-replay, p-fn-risks-acceptance, pdr-0038-latency-measured-on-app-clock, pdr-0030-llm-budget-20-eur]
@@ -115,9 +115,9 @@ requirement_index:
   "RG-01..RG-30": p-fn-business-rules
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-76 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-80 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
-  "SP-00..SP-10 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0065": decisions/index.yaml
+  "SP-00..SP-11 (spikes)": p-rm-spikes
+  "pdr-0001..pdr-0073": decisions/index.yaml

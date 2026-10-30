@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:feature_voice_session/feature_voice_session.dart';
+import 'package:feature_voice_session/src/api/remote_audio_switch.dart';
 import 'package:feature_voice_session/src/api/web_rtc_platform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,6 +19,7 @@ class _FakePlatform implements WebRtcPlatform {
   Object? micStopError;
   Object? peerCloseError;
   Object? peerDisposeError;
+  Object? remoteAudioError;
   int openMicCalls = 0;
 
   @override
@@ -78,6 +80,12 @@ class _FakePeer implements RtcPeer {
   }
 
   @override
+  Future<void> setRemoteAudioEnabled(bool enabled) async {
+    _platform.log.add('peer.remoteAudio($enabled)');
+    if (_platform.remoteAudioError != null) throw _platform.remoteAudioError!;
+  }
+
+  @override
   Future<void> close() async {
     _platform.log.add('peer.close');
     if (_platform.peerCloseError != null) throw _platform.peerCloseError!;
@@ -94,6 +102,51 @@ Matcher _failure(VoiceTransportFailure kind) =>
     throwsA(isA<VoiceTransportException>().having((e) => e.kind, 'kind', kind));
 
 void main() {
+  group('RemoteAudioSwitch (piste distante captée par onTrack)', () {
+    test('coupure après onTrack : la piste est coupée puis rétablie', () {
+      final switcher = RemoteAudioSwitch();
+      final track = <bool>[];
+      switcher.attach(track.add);
+
+      switcher.setEnabled(false);
+      switcher.setEnabled(true);
+
+      expect(track, <bool>[false, true]);
+    });
+
+    test('coupure avant onTrack : la piste qui arrive ensuite est coupée', () {
+      final switcher = RemoteAudioSwitch();
+      final track = <bool>[];
+
+      switcher.setEnabled(false);
+      expect(track, isEmpty);
+      switcher.attach(track.add);
+
+      expect(track, <bool>[false]);
+    });
+
+    test('rien à appliquer tant que le son n\'a pas été coupé', () {
+      final switcher = RemoteAudioSwitch();
+      final track = <bool>[];
+
+      switcher.attach(track.add);
+
+      expect(track, isEmpty);
+    });
+
+    test('un nouvel interrupteur repart de « son actif »', () {
+      final first = RemoteAudioSwitch()..setEnabled(false);
+      final second = RemoteAudioSwitch();
+      final track = <bool>[];
+
+      second.attach(track.add);
+
+      expect(first.enabled, isFalse);
+      expect(second.enabled, isTrue);
+      expect(track, isEmpty);
+    });
+  });
+
   late _FakePlatform platform;
   late FlutterWebRtcTransport transport;
 
@@ -338,5 +391,66 @@ void main() {
 
     expect(platform.log.where((e) => e == 'mic.stop'), hasLength(1));
     expect(platform.log.where((e) => e == 'peer.close'), hasLength(1));
+  });
+
+  group('setRemoteAudioEnabled', () {
+    test('coupure puis rétablissement transmis au pair', () async {
+      await transport.createOfferSdp();
+
+      await transport.setRemoteAudioEnabled(false);
+      await transport.setRemoteAudioEnabled(true);
+
+      expect(
+        platform.log.where((e) => e.startsWith('peer.remoteAudio')),
+        <String>['peer.remoteAudio(false)', 'peer.remoteAudio(true)'],
+      );
+    });
+
+    test('coupure demandée avant le pair : appliquée à sa création', () async {
+      await transport.setRemoteAudioEnabled(false);
+      expect(platform.log, isEmpty);
+
+      await transport.createOfferSdp();
+
+      expect(platform.log, contains('peer.remoteAudio(false)'));
+      expect(
+        platform.log.indexOf('peer.remoteAudio(false)'),
+        lessThan(platform.log.indexOf('createOffer(50ms)')),
+      );
+    });
+
+    test(
+      'redémarrage : un nouveau transport repart avec le son actif',
+      () async {
+        await transport.setRemoteAudioEnabled(false);
+        await transport.stop();
+        final restarted = FlutterWebRtcTransport(platform: platform);
+        platform.log.clear();
+
+        await restarted.createOfferSdp();
+
+        expect(
+          platform.log.where((e) => e.startsWith('peer.remoteAudio')),
+          isEmpty,
+        );
+      },
+    );
+
+    test('après stop : sans effet et sans erreur', () async {
+      await transport.createOfferSdp();
+      await transport.stop();
+      platform.log.clear();
+
+      await transport.setRemoteAudioEnabled(false);
+
+      expect(platform.log, isEmpty);
+    });
+
+    test('l\'échec du pair est absorbé', () async {
+      await transport.createOfferSdp();
+      platform.remoteAudioError = Exception('boom');
+
+      await transport.setRemoteAudioEnabled(false);
+    });
   });
 }

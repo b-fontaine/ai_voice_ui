@@ -69,6 +69,14 @@ void main() {
     expect(rig.router.hasPlayableJournal, isFalse);
   });
 
+  test('en direct : voice.interrupted n\'est ni transmis ni enregistré', () {
+    final _Rig rig = _Rig();
+    rig.live.add(const VoiceInterrupted(atMs: 2500));
+
+    expect(rig.out, isEmpty);
+    expect(rig.journal.length, 0);
+  });
+
   test('journalSize émet à chaque ajout et à chaque vidage', () async {
     final _Rig rig = _Rig();
     final List<int> sizes = <int>[];

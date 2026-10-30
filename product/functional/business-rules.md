@@ -4,8 +4,8 @@ title: Règles de fonctionnement RG-01 à RG-30
 area: functional
 status: draft
 updated: 2026-10-30
-sources: [specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
-links: [pdr-0066-010-act4-replay-details-assistant-decided, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
+sources: [specs/011-voice-interaction/status.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
+links: [p-ar-voice-interruption, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0066-010-act4-replay-details-assistant-decided, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-requirements, p-fn-nfr, p-fn-catalog, p-fn-screen, p-fn-risks-acceptance, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0007-closed-catalog-stage-theme, pdr-0009-french-only, rt-barge-in, genui-multiple-surfaces, ux-genui-streaming-loading, ux-genui-errors-validation, ma-filler-acknowledgements, pdr-0013-orchestrator-visible-agent-selection, pdr-0015-app-held-canvas-layout, pdr-0016-validate-release-action, pdr-0019-six-limit-applies-to-surfaces, pdr-0024-act2-android-only, pdr-0025-top-bar-speaker-and-ai-lines, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0039-component-voice-interactions-via-fr07]
 tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 ---
 # Règles de fonctionnement
@@ -38,13 +38,13 @@ tags: [regles, fonctionnement, interruption, catalogue, rejeu]
 
 | RG | Règle | Source |
 |---|---|---|
-| RG-11 | Quand le speaker parle pendant que l'IA parle, l'IA se tait immédiatement et écoute. | FR-13, S-05 |
-| RG-12 | Après une interruption, la nouvelle phrase devient la consigne en vigueur. | FR-14 |
-| RG-13 | Une interruption ne détruit jamais les surfaces déjà construites. | FR-15, S-05 |
-| RG-14 | « Stop » ou « annule » arrête la voix **et** la génération en cours ; les surfaces inachevées sont retirées proprement ; les surfaces complètes restent. | FR-16, S-06 |
+| RG-11 | Quand le speaker parle pendant que l'IA parle, l'IA se tait immédiatement et écoute. | FR-13, S-05 ; **011** : appliquée sur mot d'arrêt (`voice.interrupted`) et par consigne au modèle ; sans mot d'arrêt, repose sur le modèle (Q-77) |
+| RG-12 | Après une interruption, la nouvelle phrase devient la consigne en vigueur. | FR-14 ; **011** : chemin « Stop » seulement |
+| RG-13 | Une interruption ne détruit jamais les surfaces déjà construites. | FR-15, S-05 ; **011** : K-03, K-05 |
+| RG-14 | « Stop » ou « annule » arrête la voix **et** la génération en cours ; les surfaces inachevées sont retirées proprement ; les surfaces complètes restent. | FR-16, S-06 ; **011** : livrée (surfaces inachevées par complétude, K-03) |
 | RG-15 | Une correction en cours de génération (« non, plutôt iOS ») réoriente la génération : les surfaces déjà construites passent sur les nouvelles données, sans repartir d'un canevas vide. | FR-17, S-07 ; **partielle** : correction de plateforme livrée (008), annulation en vol : J7 |
 | RG-16 | Un bruit court (toux, applaudissements d'une seconde, rire) n'interrompt pas l'IA. | FR-18, S-08, § 8 (seuil réglé en répétition) |
-| RG-17 | Une interruption est visible : l'orbe passe par « Interrompue » (arrêt net, bref flash) puis « Écoute » ; la réplique de l'IA est tronquée dans la transcription là où elle a été coupée. | FR-19, § 6 (états de l'orbe) |
+| RG-17 | Une interruption est visible : l'orbe passe par « Interrompue » (arrêt net, bref flash) puis « Écoute » ; la réplique de l'IA est tronquée dans la transcription là où elle a été coupée. | FR-19, § 6 (états de l'orbe) ; **011** : livrée sur `voice.interrupted` (K-05) |
 | RG-27 | Les répliques de l'IA sont **courtes**, par consigne. | § 8 (parade « l'IA ne s'arrête pas ») |
 
 Repère technique : couper la voix n'annule pas d'elle-même les outils en cours ; RG-14 impose donc une annulation explicite de la génération ([rt-barge-in]).
@@ -81,7 +81,7 @@ Les RG sont numérotées dans l'ordre de rédaction, puis regroupées par thème
 ## Points ouverts
 
 - RG-06 : la maquette de l'acte 2 retire une surface et en crée une nouvelle (E8 · Q-21 tranché : aucune suppression, pdr-0059). Son critère iOS est sans portée : uniquement Android (E19 · Q-58 tranché, [pdr-0024](../decisions/pdr-0024-act2-android-only.md)).
-- RG-17 : tranché (E20 · Q-59, [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)) : répliques du speaker et de l'IA, réplique coupée tronquée ; la détection de l'interruption reste ouverte (Q-40).
+- RG-17 : tranché (E20 · Q-59, [pdr-0025](../decisions/pdr-0025-top-bar-speaker-and-ai-lines.md)) : répliques du speaker et de l'IA, réplique coupée tronquée ; la détection de l'interruption est tranchée (Q-40 → pdr-0069) et livrée par 011.
 - Interactions vocales propres à chaque composant (fiche § 7) : tranché (Q-61, [pdr-0039](../decisions/pdr-0039-component-voice-interactions-via-fr07.md)) : couvertes par FR-07 / RG-06 uniquement, sans règle dédiée.
 - RG-14 / RG-15 : modèle de surfaces tranché (E11 · Q-29, [pdr-0015](../decisions/pdr-0015-app-held-canvas-layout.md)) : N surfaces dans une grille de l'app ([genui-multiple-surfaces]).
 

@@ -7,7 +7,8 @@ export 'src/model/canvas_action_event.dart'
         ActionRequested,
         ActionSessionClosed,
         ActionStageReset,
-        CanvasActionEvent;
+        CanvasActionEvent,
+        DecisionStatusObserved;
 export 'src/model/canvas_action_settings.dart' show CanvasActionSettings;
 export 'src/model/canvas_action_state.dart'
     show

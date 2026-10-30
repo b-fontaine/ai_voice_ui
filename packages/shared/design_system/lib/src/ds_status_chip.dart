@@ -8,6 +8,9 @@ import 'scene_theme.dart';
 class DsStatusChip extends StatelessWidget {
   const DsStatusChip({super.key, required this.status, required this.label});
 
+  /// Remplissage horizontal de chaque côté du libellé.
+  static const double horizontalPadding = 16;
+
   final SceneStatus? status;
   final String label;
 
@@ -20,7 +23,10 @@ class DsStatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: 6,
+        ),
         child: Text(
           label,
           style: theme.label.copyWith(color: theme.statusForeground(status)),

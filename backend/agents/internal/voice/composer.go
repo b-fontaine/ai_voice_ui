@@ -38,7 +38,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
-	intent, err := kit.ParseIntent(req.Text, ds)
+	intent, err := kit.ParseIntent(req.Text, req.Focus, ds)
 	if err != nil {
 		return kit.Composition{}, err
 	}
@@ -92,7 +92,7 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	}
 
 	msgs := kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "reviews", "ReviewSentiment", "/reviews", value)
-	return kit.Composition{Messages: msgs, Summary: summary + "."}, nil
+	return kit.Composition{Messages: msgs, Summary: summary + ".", Intent: &intent}, nil
 }
 
 // groupThousands écrit un entier avec une espace entre les milliers : 1164 → « 1 164 ».

@@ -29,3 +29,14 @@ final class ActionSessionClosed extends CanvasActionEvent {
 final class ActionStageReset extends CanvasActionEvent {
   const ActionStageReset();
 }
+
+/// Statut de décision lu dans le data model de la checklist
+/// (`/checklist/decisionStatus`), relayé par la page à chaque changement.
+///
+/// Un statut qui change après un clic fixe l'action cliquée comme « faite » ;
+/// un nouveau changement la réactive.
+final class DecisionStatusObserved extends CanvasActionEvent {
+  const DecisionStatusObserved(this.status);
+
+  final String status;
+}

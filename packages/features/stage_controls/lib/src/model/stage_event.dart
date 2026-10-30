@@ -12,3 +12,15 @@ final class StageActAdvanced extends StageEvent {
 final class StageResetRequested extends StageEvent {
   const StageResetRequested();
 }
+
+/// Avance automatique : l'acte [act] vient d'être atteint (action exécutée).
+///
+/// Monotone : l'état devient `max(acte courant, act)`, jamais en arrière.
+/// Un [act] hors de 1 à 3 est ignoré. La correction se fait par
+/// [StageActAdvanced] (clic manuel) ou [StageResetRequested].
+final class StageActReached extends StageEvent {
+  const StageActReached(this.act);
+
+  /// Acte atteint (1 à 3).
+  final int act;
+}

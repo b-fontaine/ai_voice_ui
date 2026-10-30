@@ -24,7 +24,8 @@ type taskState struct {
 	// Issue, consignée sous mu au moment de `completed`/`failed`.
 	ok       bool
 	summary  string
-	rejected bool // l'agent a refusé la demande (hors délai et fermeture)
+	intent   *port.Focus // intention résolue renvoyée par l'agent à `completed` (nil : aucune)
+	rejected bool        // l'agent a refusé la demande (hors délai et fermeture)
 }
 
 // track enregistre la tâche en vol ; faux si le pipeline est déjà fermé ou si
@@ -49,7 +50,7 @@ func (p *Pipeline) begin(ts *taskState, u port.AgentUpdate) bool {
 		return false
 	}
 	if taskID == "" || ts.taskID != "" {
-		p.failLocked(ts, DetailAgentFailed)
+		p.failLocked(ts, failed(DetailAgentFailed))
 		p.mu.Unlock()
 		p.log.Warn("identifiant de tâche absent ou répété", "agent", ts.agent)
 		return false
@@ -73,7 +74,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 		return false
 	}
 	if ts.taskID == "" {
-		p.failLocked(ts, DetailAgentFailed)
+		p.failLocked(ts, failed(DetailAgentFailed))
 		p.log.Warn("message A2UI avant « submitted »", "agent", ts.agent)
 		return false
 	}
@@ -81,7 +82,7 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 		err = p.deps.Canvas.Registry().Apply(ts.owner, ts.taskID, op)
 	}
 	if err != nil {
-		p.failLocked(ts, DetailInvalidA2UI)
+		p.failLocked(ts, failed(DetailInvalidA2UI))
 		p.log.Warn("message A2UI refusé", "agent", ts.agent, "task", ts.taskID, "err", err)
 		return false
 	}
@@ -91,23 +92,23 @@ func (p *Pipeline) relay(ts *taskState, msg map[string]any) bool {
 }
 
 // complete vérifie que les surfaces sont complètes, puis publie `completed`.
-func (p *Pipeline) complete(ts *taskState, summary string) bool {
+func (p *Pipeline) complete(ts *taskState, summary string, intent *port.Focus) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if ts.done || p.closed {
 		return false
 	}
 	if ts.taskID == "" {
-		p.failLocked(ts, DetailAgentFailed)
+		p.failLocked(ts, failed(DetailAgentFailed))
 		return false
 	}
 	if err := p.deps.Canvas.Registry().Complete(ts.taskID); err != nil {
-		p.failLocked(ts, DetailInvalidA2UI)
+		p.failLocked(ts, failed(DetailInvalidA2UI))
 		p.log.Warn("surface incomplète à la fin de la tâche", "agent", ts.agent, "task", ts.taskID, "err", err)
 		return false
 	}
 	ts.done = true
-	ts.ok, ts.summary = true, summary
+	ts.ok, ts.summary, ts.intent = true, summary, intent
 	p.untrackLocked(ts)
 	p.deps.Canvas.Registry().Forget(ts.taskID)
 	p.publishActivityLocked(ts, domain.ActivityCompleted, "")
@@ -116,51 +117,78 @@ func (p *Pipeline) complete(ts *taskState, summary string) bool {
 
 // fail termine la tâche en échec : compensation, `failed`, sans erreur brute.
 func (p *Pipeline) fail(ctx context.Context, ts *taskState, err error) {
-	detail := detailFor(ctx, err)
+	p.failWithReason(ctx, ts, err, "")
+}
+
+// failWithReason est fail avec le motif de refus de l'agent (ensemble fermé). Le motif
+// n'est journalisé qu'en slog (clé scope_reason) : jamais dans le détail d'agent.activity.
+func (p *Pipeline) failWithReason(ctx context.Context, ts *taskState, err error, scopeReason string) {
+	// Le détail est figé sous p.mu : la décision (fermeture ou arrêt) est prise au
+	// moment de la publication.
 	p.mu.Lock()
+	out := detailFor(ctx, err)
 	if !ts.done {
 		ts.rejected = isRejected(ctx, err)
 	}
-	p.failLocked(ts, detail)
+	p.failLocked(ts, out)
 	p.mu.Unlock()
-	p.log.Warn("tâche d'agent en échec", "agent", ts.agent, "task", ts.taskID, "detail", detail, "err", err)
+	attrs := []any{"agent", ts.agent, "task", ts.taskID, "detail", out.detail, "err", err}
+	if scopeReason != "" {
+		attrs = append(attrs, "scope_reason", scopeReason)
+	}
+	p.log.Warn("tâche d'agent en échec", attrs...)
 }
 
 // failInflight termine en échec toutes les tâches encore en vol, quelle que
 // soit la bonne volonté de l'agent à rendre la main.
 func (p *Pipeline) failInflight(ctx context.Context) {
-	detail := detailFor(ctx, nil)
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	out := detailFor(ctx, nil)
 	for _, ts := range append([]*taskState(nil), p.inflight...) {
-		p.failLocked(ts, detail)
+		p.failLocked(ts, out)
 	}
 }
 
 // failLocked (mu tenu) : (1) compense les surfaces créées, dans l'ordre
 // inverse, (2) oublie la tâche, (3) publie `failed` (ou `rejected`, détail
-// « hors périmètre », si l'agent a refusé la demande) ; idempotent.
-func (p *Pipeline) failLocked(ts *taskState, detail string) {
+// « hors périmètre », si l'agent a refusé la demande, ou `canceled` pour un arrêt
+// demandé) ; idempotent.
+//
+// Pour un arrêt (outcomeCanceled), seules les surfaces INACHEVÉES sont retirées
+// (RG-14, Registry.CancelCompensation) ; les complètes restent, avec leur
+// propriétaire. Hypothèse (spec 011, A2) : un arrêt pendant une transformation
+// d'acte 2 peut laisser des surfaces sur la nouvelle vue et d'autres non. Une
+// fermeture de session garde la compensation complète (orphelins).
+func (p *Pipeline) failLocked(ts *taskState, out outcome) {
 	if ts.done {
 		return
 	}
 	ts.done = true
 	p.untrackLocked(ts)
 	if ts.taskID != "" {
-		compensation := p.deps.Canvas.Registry().Compensation(ts.taskID)
+		var compensation []map[string]any
+		if out.kind == outcomeCanceled {
+			compensation = p.deps.Canvas.Registry().CancelCompensation(ts.taskID)
+		} else {
+			compensation = p.deps.Canvas.Registry().Compensation(ts.taskID)
+		}
 		for _, m := range compensation {
 			p.publishLocked(domain.TypeA2UI, OrchestratorName, ts.taskID,
 				domain.A2UI{Message: m, Op: domain.OpDeleteSurface, SurfaceID: deletedSurface(m)})
 		}
-		if detail == DetailSessionClosed {
+		if out.kind == outcomeClosed {
 			// L'app a quitté cette session : la prochaine session publiera la compensation.
 			p.deps.Canvas.addOrphans(compensation)
 		}
 		p.deps.Canvas.Registry().Forget(ts.taskID)
 	}
-	state := domain.ActivityFailed
+	state, detail := domain.ActivityFailed, out.detail
 	if ts.rejected {
 		state, detail = domain.ActivityRejected, DetailOutOfScope
+	}
+	if out.kind == outcomeCanceled {
+		state, detail = domain.ActivityCanceled, ""
 	}
 	p.publishActivityLocked(ts, state, detail)
 }
@@ -201,29 +229,52 @@ func (p *Pipeline) publishLocked(typ, agent, task string, data domain.Payload) {
 	})
 }
 
-// detailFor associe une cause à un détail de l'ensemble fermé. La cause du
-// contexte (session fermée, délai) prime sur l'erreur de l'agent.
-func detailFor(ctx context.Context, err error) string {
+// outcomeKind distingue les issues d'une tâche qui ne se réduisent pas à un détail.
+type outcomeKind int
+
+const (
+	outcomeFailed   outcomeKind = iota // échec : état `failed`, détail de l'ensemble fermé
+	outcomeClosed                      // session fermée : compensation complète, orphelins
+	outcomeCanceled                    // arrêt demandé : état `canceled`, sans détail
+)
+
+// outcome est l'issue d'une tâche en échec, typée plutôt que déduite d'une chaîne.
+type outcome struct {
+	kind   outcomeKind
+	detail string
+}
+
+func failed(detail string) outcome { return outcome{outcomeFailed, detail} }
+
+// detailFor associe une cause à une issue (détail de l'ensemble fermé). La cause du
+// contexte (session fermée, arrêt, délai) prime sur l'erreur de l'agent ; la
+// fermeture de la session l'emporte sur l'arrêt.
+func detailFor(ctx context.Context, err error) outcome {
 	switch cause := context.Cause(ctx); {
 	case errors.Is(cause, ErrSessionClosed):
-		return DetailSessionClosed
+		return outcome{outcomeClosed, DetailSessionClosed}
+	case errors.Is(cause, ErrInterrupted):
+		if sessionClosed(ctx) {
+			return outcome{outcomeClosed, DetailSessionClosed}
+		}
+		return outcome{outcomeCanceled, "arrêt demandé"} // détail journalisé seulement
 	case errors.Is(cause, ErrAgentTimeout):
-		return DetailTimeout
+		return failed(DetailTimeout)
 	}
 	var ve *a2ui.ValidationError
 	if errors.As(err, &ve) {
-		return DetailInvalidA2UI
+		return failed(DetailInvalidA2UI)
 	}
 	var ae *port.AgentError
 	if errors.As(err, &ae) {
 		switch ae.Kind {
 		case port.AgentUnreachable:
-			return DetailUnreachable
+			return failed(DetailUnreachable)
 		case port.AgentTimeout:
-			return DetailTimeout
+			return failed(DetailTimeout)
 		}
 	}
-	return DetailAgentFailed
+	return failed(DetailAgentFailed)
 }
 
 // isRejected indique que l'agent a refusé la demande ; la cause du contexte

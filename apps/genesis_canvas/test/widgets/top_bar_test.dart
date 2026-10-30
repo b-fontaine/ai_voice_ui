@@ -55,6 +55,12 @@ class _Rig {
   late final VoiceSessionBloc voice;
   final TranscriptBloc transcript = TranscriptBloc();
   final AgentActivityBloc agents = AgentActivityBloc();
+  final OrbPhaseBloc phase = OrbPhaseBloc(
+    speakingThreshold: 0.03,
+    resumeSilence: const Duration(seconds: 3),
+    maxInterruption: const Duration(seconds: 10),
+    stopSpan: const Duration(seconds: 3),
+  );
   final StreamController<SessionEvent> events =
       StreamController<SessionEvent>.broadcast();
   final ValueNotifier<double> level = ValueNotifier<double>(0);
@@ -72,6 +78,7 @@ class _Rig {
         BlocProvider<VoiceSessionBloc>.value(value: voice),
         BlocProvider<TranscriptBloc>.value(value: transcript),
         BlocProvider<AgentActivityBloc>.value(value: agents),
+        BlocProvider<OrbPhaseBloc>.value(value: phase),
       ],
       child: bar ?? TopBar(orbLevel: level),
     ),
@@ -83,6 +90,7 @@ class _Rig {
     voice.add(const VoiceSessionSubscribed());
     transcript.add(TranscriptSourceSubscribed(events.stream));
     agents.add(AgentActivitySourceSubscribed(events.stream));
+    phase.add(OrbPhaseSourceSubscribed(events.stream));
     await tester.pump();
   }
 
@@ -155,6 +163,7 @@ class _Rig {
     await harness.session.dispose();
     await transcript.close();
     await agents.close();
+    await phase.close();
     level.dispose();
     Bloc.observer = _previousObserver;
   }
@@ -273,6 +282,36 @@ void main() {
 
       await rig.answerRelay(tester);
       expect(find.byKey(_status), findsNothing);
+    });
+  });
+
+  group('interruption (FR-19)', () {
+    VoiceOrb orb(WidgetTester tester) =>
+        tester.widget<VoiceOrb>(find.byKey(const Key('voice-orb')));
+
+    testWidgets('session active et IA muette : l\'orbe écoute', (tester) async {
+      await rig.pump(tester);
+      expect(orb(tester).listening, isFalse, reason: 'pas de session');
+
+      await rig.active(tester);
+
+      expect(orb(tester).listening, isTrue);
+      expect(orb(tester).interrupted, isFalse);
+    });
+
+    testWidgets('voice.interrupted : l\'orbe est interrompue, puis écoute', (
+      tester,
+    ) async {
+      await rig.pump(tester);
+      await rig.active(tester);
+
+      rig.events.add(const VoiceInterrupted(atMs: 2500));
+      await rig.settle(tester);
+      expect(orb(tester).interrupted, isTrue);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(orb(tester).interrupted, isFalse);
+      expect(orb(tester).listening, isTrue);
     });
   });
 

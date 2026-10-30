@@ -105,15 +105,13 @@ func (s *session) enqueueAction(d Delegation) error {
 		s.mu.Unlock()
 		return port.ErrNoSession
 	}
-	s.pending++
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+	// pending et la mise en file sous un même verrou (voir session.Delegate).
 	select {
 	case s.queue <- d:
+		s.pending++
 		return nil
 	default:
-		s.mu.Lock()
-		s.pending--
-		s.mu.Unlock()
 		return port.ErrCanvasBusy
 	}
 }

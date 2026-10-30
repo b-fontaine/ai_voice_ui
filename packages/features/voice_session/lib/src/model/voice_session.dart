@@ -46,6 +46,8 @@ class VoiceSession {
   // Ressources de la session courante.
   VoiceTransport? _transport;
   String? _sessionId;
+  // Vrai tant que la voix de l'IA est coupée par `voice.interrupted`.
+  bool _remoteMuted = false;
   EnvelopeLog? _log;
   StreamSubscription<AppChannelEnvelope>? _subscription;
 
@@ -100,6 +102,14 @@ class VoiceSession {
         _stopRequested = true;
         return _beginRelease(deleteRemote: true, failure: null);
     }
+  }
+
+  /// Rétablit la voix de l'IA coupée par `voice.interrupted`. Sans effet si
+  /// elle n'a pas été coupée. Ne lève pas.
+  Future<void> resumeRemoteAudio() async {
+    if (!_remoteMuted) return;
+    _remoteMuted = false;
+    await _transport?.setRemoteAudioEnabled(true);
   }
 
   /// [stop] (borné), puis ferme les flux. Plus aucun état ensuite.
@@ -190,6 +200,12 @@ class VoiceSession {
     // libération (dernier `usage`, `closed`, derniers transcripts).
     _log?.append(envelope);
     if (_isStale(generation)) return;
+    if (envelope.type == AppChannelTypes.voiceInterrupted &&
+        envelope.session == _sessionId) {
+      // Coupure aussitôt, avant toute autre réaction (FR-13, pdr-0069).
+      _remoteMuted = true;
+      unawaited(_transport?.setRemoteAudioEnabled(false));
+    }
     _envelopeController.add(envelope);
     if (envelope.type == AppChannelTypes.sessionState &&
         envelope.session == _sessionId &&
@@ -245,6 +261,7 @@ class VoiceSession {
     _sessionId = null;
     _subscription = null;
     _transport = null;
+    _remoteMuted = false;
 
     if (deleteRemote && sessionId != null) {
       try {

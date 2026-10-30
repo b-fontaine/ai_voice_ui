@@ -4,8 +4,8 @@ title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
 updated: 2026-10-30
-sources: [specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [pdr-0066-010-act4-replay-details-assistant-decided, pdr-0072-design-ergonomics-013, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
+sources: [specs/011-voice-interaction/spec.md, specs/011-voice-interaction/status.md, specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, p-ar-voice-interruption, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0072-design-ergonomics-013, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -33,7 +33,7 @@ Fiche muette sur les détails d'interface : tranchés par la boucle sous [pdr-00
 
 | Zone | Telle que livrée |
 |---|---|
-| **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée ; l'indicateur vaut 1 par défaut, un clic passe à l'acte suivant (souris d'abord), retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
+| **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée ; l'indicateur vaut 1 par défaut et **avance tout seul depuis 011** ([pdr-0071](../decisions/pdr-0071-act2-focus-memory-act-indicator-click-feedback.md)) : acte 2 quand la Barre d'actions apparaît, acte 3 au clic accepté, jamais en arrière, sans effet en rejeu ; un clic manuel passe à l'acte suivant pour corriger (souris d'abord) ; retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
 | **Rail des agents** | piloté par le message `plan` (D5, RG-29) : l'orchestrateur, puis les agents du plan, sans nom codé en dur ; états en toutes lettres (« en attente », « en cours », « terminé », « échec », « hors périmètre ») ; un agent non retenu est **« en veille »** ; plan vide : **« aucun agent retenu »** (RG-08) ; rail vide tant qu'aucun `plan` n'est arrivé (RG-01) |
 | **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille 2×2 (6 surfaces au plus) ; **bandeau de 72 px sous la grille** pour la Barre d'actions (009, pdr-0065 D7), réservé dès la première surface ; **contour pointillé** autour de la surface du message en cours (D2) |
 | **Flux du protocole** | **replié en bas à droite** ; déplié (clic), il recouvre le canevas à droite **sans le redimensionner** ; message en cours mis en évidence, messages refusés marqués « refusé » ; JSON affiché brut |
@@ -69,7 +69,7 @@ FR-09 livrée ; la fiche ne détaille pas les commandes : détails tranchés par
 | Écoute | Le speaker parle | L'orbe suit le volume de la voix |
 | Réflexion | Les agents travaillent | Rotation, agents allumés dans le rail |
 | Parole | L'IA parle | L'orbe suit la voix de l'IA |
-| Interrompue | Le speaker vient de couper l'IA | Arrêt net, bref flash, retour à « Écoute » |
+| Interrompue | Le speaker vient de couper l'IA | Arrêt net, bref flash, retour à « Écoute » ; **livré par 011** sur « Stop » (orbe à niveau 0, son distant coupé, réplique tronquée) |
 | Micro coupé | Le speaker a coupé son micro | Orbe grisé barré |
 | Secours | Rejeu d'une session enregistrée | Indicateur discret dans un coin — **retiré (pdr-0032)** |
 
@@ -82,11 +82,13 @@ stateDiagram-v2
     Ecoute --> Reflexion : fin de phrase, agents sollicités
     Reflexion --> Parole : l'IA commente (RG-04)
     Parole --> Interrompue : le speaker parle (FR-13) ou raccourci silence (FR-20)
-    Interrompue --> Ecoute : immédiat
+    Interrompue --> Ecoute : silence de 3 s ou 15 s au plus (011)
     Parole --> Repos : fin de réplique
     Repos --> MicroCoupe : touche M (FR-12)
     MicroCoupe --> Repos : touche M
 ```
+
+⚠️ **À voir avec le porteur en répétition** (détail tranché par la boucle sous pdr-0062, la fiche ne chiffre pas la durée) : « Interrompue » est tenue jusqu'à 3 s de silence (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`) ou 15 s au plus, pas seulement un flash ; la transition « immédiat » du schéma est une déduction de l'assistant. Couper la parole **sans** dire « Stop » ne passe pas par « Interrompue » (S-05 en partie, Q-77).
 
 L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) : le secours est une vidéo gérée par le porteur.
 
@@ -97,7 +99,7 @@ L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0
 | Mode | Usage | Qui |
 |---|---|---|
 | **Voix** (principal) | Demander, modifier, corriger, couper la parole à l'IA | Speaker |
-| **Clic sur un composant généré** | La réponse de l'agent arrive à la voix et dans l'interface ; livré par 009 pour la Barre d'actions (boutons inactifs pendant l'action) | Speaker |
+| **Clic sur un composant généré** | La réponse de l'agent arrive à la voix et dans l'interface ; livré par 009 pour la Barre d'actions ; **retour au clic fort depuis 011** : indicateur « en cours » pendant l'envoi, pastille de décision (« Bloquée » / « Validée ») visible en entier, bouton « <libellé> · fait ✓ » désactivé sans nouvelle requête, réactivé si une demande vocale réécrit la checklist (Q-76) | Speaker |
 | **Clavier** | Régie de scène (raccourcis ci-dessous) | Réservé au speaker |
 
 ## Raccourcis clavier proposés (fiche § 6, p. 10)
