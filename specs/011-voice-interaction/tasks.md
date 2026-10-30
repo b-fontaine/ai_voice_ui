@@ -5,8 +5,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements », prioritaire). Go **séquentiel** (fichiers partagés) ; Flutter en parallèle de Go.
 
 ## Gherkin
-- [ ] T01 Go — acceptation (tag `acceptance`) K-01, K-02, K-03 (avec `startTestAgent`), K-04 · rouges : `compare_without_platform` au lieu de la comparaison ; mot à l'offset absent ; aucune annulation sur « Stop »
-- [ ] T02 Flutter — `acte_interruption.feature` K-05, K-06, K-07 (+ « réécriture vocale puis bouton réactivé ») · rouges : événement `voice.interrupted` inconnu ; indicateur bloqué à « Acte 1/3 » ; statut tronqué
+- [x] T01 Go — acceptation (tag `acceptance`) K-01, K-02, K-03 (avec `startTestAgent`), K-04 · rouges : `compare_without_platform` au lieu de la comparaison ; mot à l'offset absent ; aucune annulation sur « Stop »
+- [x] T02 Flutter — `acte_interruption.feature` K-05, K-06, K-07 (+ « réécriture vocale puis bouton réactivé ») · rouges : événement `voice.interrupted` inconnu ; indicateur bloqué à « Acte 1/3 » ; statut tronqué
 - [ ] T03 Flutter — **spike manuel** : `track.enabled = false` sur la piste distante, `flutter_webrtc` Linux (résultat dans `status.md` ; échec → repli à documenter, Q-xx)
 
 ## TDD Go (séquentiel)
@@ -17,7 +17,7 @@ Ordre amendé par la revue du plan (A1 à A8, `plan.md`, bloc « Amendements »,
 - [x] T14 Go — `a2ui.Registry` complétude par surface + `CancelCompensation` ; `port.SessionDelegations.Interrupt` ; époque, `WithCancelCause`, `ErrInterrupted`, `ActivityCanceled`, phrase `stopped` · `registry_test.go`, `manager_cancel_test.go` (-race, 7 cas du plan)
 - [ ] T18 Go — `voice.interrupted` : domaine, `wire`, hub jamais rejoué, journal · `hub_test.go`, `wire_test.go`
 - [ ] T15 Go — câblage service voix : détecteur → `voice.interrupted` puis `fw.interrupt()` ; demande réduite aux mots d'arrêt non planifiée · `service_stop_test.go`
-- [ ] T19 Go — `bootstrap.ConfigFromEnv` : `VOICE_STOP_*`, `REQUEST_WINDOW_*`, bornes · `config_test.go`
+- [x] T19 Go — `bootstrap.ConfigFromEnv` : `VOICE_STOP_*`, `REQUEST_WINDOW_*`, bornes · `config_test.go`
 - [ ] T17 Go — consignes vocales (`voice-instructions.fr.md`) · test du texte (trois règles)
 
 ## TDD Flutter
