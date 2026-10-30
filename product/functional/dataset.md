@@ -3,9 +3,9 @@ id: p-fn-dataset
 title: Jeu de données fictif et figé
 area: functional
 status: draft
-updated: 2026-10-29
-sources: [product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
+updated: 2026-10-30
+sources: [specs/006-j3-act1-backend/status.md, specs/006-j3-act1-backend/plan.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [p-ar-backend, p-ar-app-channel-contract, p-rm-roadmap, p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
 tags: [donnees, dataset, determinisme, release]
 ---
 # Jeu de données fictif — jeu de référence
@@ -142,8 +142,9 @@ Paiement : flux 3-D Secure 2 (feat, 11 PR) · Panier : sauvegarde hors ligne (fe
 | Avis | 37 + 240 = 277 négatifs ; 372 + 792 = 1 164 ; chaque répartition somme à 100 % |
 | Top 5 crashs ≤ sessions avec crash | Android 352 + 139 + 66 = 557 ≤ 694 sessions avec crash ; iOS 55 + 39 = 94 ≤ 151 |
 | Tendances | J1 global = 58 / 21 800 ; J7 global = 219 / 35 000 ; signes cohérents avec les courbes |
+| Code du backend (J3-A, 006) | `backend/agents/internal/dataset` (lignes brutes embarquées, rien de dérivé stocké) **recalcule toutes les valeurs de l'acte 1** par tests, sans écart : 99,57 % ; 99,80 % ; 99,43 % ; −0,36 pt ; 1 164 avis ; 24 % / 76 % ; note 4,0 ; 37 PR ; 2 critères « à risque », 1 « validé » ; recommandation À RISQUE. Statuts calculés sur valeurs non arrondies (`FormatPct(v, décimales)` : 99,57 % mais 24 %), bords testés à 0,10 pt et 2 pts. Chaînes émises avec une espace simple (la fiche écrit l'espace insécable). Cas hors fiche, jamais déclenchés par le jeu actuel : changelog vide = « bloquant », avis 3.3 refusés avant J4 ([p-ar-backend](../architecture/backend.md)) |
 
 ## Différences avec l'illustration et points ouverts
 
 - Valeurs des maquettes (99,53 %, 99,39 %, 1 284 avis, 37 % vs 18 %, 212 mentions…) **non reprises** ([pdr-0021](../decisions/pdr-0021-mockup-data-not-corrected.md), [pdr-0040](../decisions/pdr-0040-reference-dataset-adjusted-by-assistant.md)) ; écarts détaillés dans [p-fn-mockups](mockups.md). Les identifiants techniques (surfaces, chemins du data model) relèvent de l'architecture, pas des maquettes ([pdr-0017](../decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)).
-- ⚠️ Hypothèse non confirmée : libellés du statut global (« En attente de décision », « Bloquée », « Validée ») et recommandation « À RISQUE », en attente de Q-35 ([p-rm-open-questions](../roadmap/open-questions.md)). Les statuts des critères suivent la fiche § 7. Moment d'apparition de la Barre d'actions : Q-20 (ouverte). Stockage et relecture : [p-ar-replay](../architecture/replay.md).
+- ⚠️ Hypothèse non confirmée : libellés du statut global (« En attente de décision », « Bloquée », « Validée ») et recommandation « À RISQUE », en attente de Q-35 ([p-rm-open-questions](../roadmap/open-questions.md)). Les statuts des critères suivent la fiche § 7. Côté code, « En attente de décision » (`decisionStatus`) est une **donnée** de `dataset.json` : trancher Q-35 ne touche que ce champ. Moment d'apparition de la Barre d'actions : Q-20 (ouverte). Stockage et relecture : [p-ar-replay](../architecture/replay.md).

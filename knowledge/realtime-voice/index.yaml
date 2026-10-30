@@ -18,6 +18,7 @@ notes:
   - {id: rt-gpt-live-session-config, path: openai/gpt-live-session-config.md, summary: "Champs de session immuables, voix (FR : brise, sillage), historique input", tags: [openai, gpt-live, voices, config]}
   - {id: rt-gpt-live-sideband, path: openai/gpt-live-sideband.md, summary: "Attache serveur wss /v1/live/sessions/{id}/attach : orchestrateur backend, un seul propriétaire des résultats", tags: [openai, gpt-live, backend, tools]}
   - {id: rt-gpt-live-webrtc-session, path: openai/gpt-live-webrtc-session.md, summary: "POST /v1/live/sessions via relais SDP backend (SDK Go vérifié), data channel oai-events, durée 2 h", tags: [openai, gpt-live, webrtc, sdp, security]}
+  - {id: rt-openai-tts-test-audio, path: openai/tts-test-audio.md, summary: "Audio de test d'un essai vocal réel : TTS gpt-4o-mini-tts en opus = Ogg/Opus lu tel quel, coût, pièges clé", tags: [openai, tts, testing, gpt-live, webrtc, cost]}
   - {id: rt-openai-realtime-vs-live, path: openai/openai-realtime-vs-live.md, summary: "Différences API Realtime (gpt-realtime-2.1, client_secrets) vs GPT-Live", tags: [openai, realtime-api, comparison]}
   - {id: rt-openai-webrtc-package, path: openai/openai-webrtc-package.md, summary: "openai_webrtc 0.5.0 : communautaire, Realtime seulement, à ne pas utiliser", tags: [openai, packages, flutter]}
   # patterns/
