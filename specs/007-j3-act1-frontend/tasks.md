@@ -23,6 +23,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T17 [P] Go — `Manager` tient les sessions ouvertes ; `Registry.Reset` (ordre déterministe) ; `Pipeline.ResetCanvas` (`ErrBusy` → 409, drapeau posé pendant tout `Run`, étape `plan` comprise) ; port `httpapi.CanvasResetter` exigé par `Options.validate` ; handler avec contrôles A6 ; câblage `cmd` ; test Go du validateur sur les fixtures négatives partagées · test d'abord : tests unitaires (registre, pipeline, manager, handler) puis G7 de T04 vert
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert (Flutter + Go)
+- [x] T90 `tools/loop/gate.sh --full` vert (Flutter + Go)
 - [ ] T91 Revue architect-reviewer (mode CODE) et refactorisations par lots
 - [ ] T92 Vérification : `gate --full`, `app-smoke.sh` (capture à lire), essai réel unique si le budget le permet ; clôture : docs `product/` (frontend, screen, catalog, security, app-channel-contract, roadmap, backlog ; écart consigné : stories Widgetbook et goldens par `CatalogItem` reportés), correction de la note [genui-custom-catalog-item] (`BoundObject`, piège du `defaultBuilder`) via kb-curate, fusion, `publish.sh`, `fresh_session`
