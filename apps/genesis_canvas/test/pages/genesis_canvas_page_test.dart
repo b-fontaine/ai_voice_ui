@@ -8,6 +8,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasResetClient, CanvasResetResult;
 
 import '../support/page_settings.dart';
+import '../support/replay_rig.dart' show withOverlay;
 
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
@@ -19,8 +20,6 @@ import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:genui/genui.dart' show Catalog;
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:get_it/get_it.dart';
-
-import '../support/replay_rig.dart';
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
@@ -100,30 +99,28 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      ReplayScope(
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: withOverlay(
-            GenesisCanvasPage(
-              getIt: newGetIt(),
-              catalogs:
-                  catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
-              replay: withReplay
-                  ? ScenarioPlayer(
-                      bundle: _FakeBundle(<String, String>{
-                        'assets/replays/demo.jsonl': ?jsonl,
-                      }),
-                    ).entries(scenario)
-                  : null,
-              snapshotFactory: (exitHandler) => SnapshotService(
-                path: capture ? '${dir.path}/out.png' : null,
-                exitHandler: exitHandler,
-                errorSink: errors,
-              ),
-              exitHandler: exitCodes.add,
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: withOverlay(
+          GenesisCanvasPage(
+            getIt: newGetIt(),
+            catalogs:
+                catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
+            replay: withReplay
+                ? ScenarioPlayer(
+                    bundle: _FakeBundle(<String, String>{
+                      'assets/replays/demo.jsonl': ?jsonl,
+                    }),
+                  ).entries(scenario)
+                : null,
+            snapshotFactory: (exitHandler) => SnapshotService(
+              path: capture ? '${dir.path}/out.png' : null,
+              exitHandler: exitHandler,
               errorSink: errors,
-              settings: pageSettingsOf(),
             ),
+            exitHandler: exitCodes.add,
+            errorSink: errors,
+            settings: pageSettingsOf(),
           ),
         ),
       ),
@@ -254,23 +251,21 @@ void main() {
     addTearDown(tester.view.reset);
     final messages = StreamController<ReplayedMessage>();
     await tester.pumpWidget(
-      ReplayScope(
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: withOverlay(
-            GenesisCanvasPage(
-              getIt: newGetIt(),
-              catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
-              replay: messages.stream,
-              snapshotFactory: (exitHandler) => SnapshotService(
-                path: '${dir.path}/out.png',
-                exitHandler: exitHandler,
-                errorSink: errors,
-              ),
-              exitHandler: exitCodes.add,
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: withOverlay(
+          GenesisCanvasPage(
+            getIt: newGetIt(),
+            catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
+            replay: messages.stream,
+            snapshotFactory: (exitHandler) => SnapshotService(
+              path: '${dir.path}/out.png',
+              exitHandler: exitHandler,
               errorSink: errors,
-              settings: pageSettingsOf(),
             ),
+            exitHandler: exitCodes.add,
+            errorSink: errors,
+            settings: pageSettingsOf(),
           ),
         ),
       ),

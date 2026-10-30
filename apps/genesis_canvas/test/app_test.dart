@@ -6,8 +6,6 @@ import 'package:genesis_canvas/app/app.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:shared_core/shared_core.dart' show AppClock;
 
-import 'support/replay_rig.dart';
-
 /// Taille de l'écran de la démo (six zones, budget de la spec 007).
 void _demoScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(1920, 1080);
@@ -54,17 +52,15 @@ void main() {
       final clock = _CountingClock();
       const catalog = GenesisContract.defaultCatalogId;
       await tester.pumpWidget(
-        ReplayScope(
-          child: GenesisCanvasApp(
-            config: const GenesisConfig(scenario: 'demo'),
-            errorSink: StringBuffer(),
-            exitHandler: (_) {},
-            clock: clock,
-            replayDelay: (_) async {},
-            assetBundle: _FakeBundle(
-              '{"t_ms": 0, "message": {"version":"v0.9","createSurface":'
-              '{"surfaceId":"kpi","catalogId":"$catalog"}}}\n',
-            ),
+        GenesisCanvasApp(
+          config: const GenesisConfig(scenario: 'demo'),
+          errorSink: StringBuffer(),
+          exitHandler: (_) {},
+          clock: clock,
+          replayDelay: (_) async {},
+          assetBundle: _FakeBundle(
+            '{"t_ms": 0, "message": {"version":"v0.9","createSurface":'
+            '{"surfaceId":"kpi","catalogId":"$catalog"}}}\n',
           ),
         ),
       );
@@ -79,9 +75,7 @@ void main() {
     tester,
   ) async {
     _demoScreen(tester);
-    await tester.pumpWidget(
-      ReplayScope(child: GenesisCanvasApp(errorSink: StringBuffer())),
-    );
+    await tester.pumpWidget(GenesisCanvasApp(errorSink: StringBuffer()));
     await _settleStartupReset(tester);
 
     expect(find.byKey(const Key('voice-orb')), findsOneWidget);
@@ -92,11 +86,9 @@ void main() {
       'résiduel, même avec une autre configuration', (tester) async {
     _demoScreen(tester);
     await tester.pumpWidget(
-      ReplayScope(
-        child: GenesisCanvasApp(
-          errorSink: StringBuffer(),
-          config: GenesisConfig(backendUrl: Uri.parse('http://127.0.0.1:1')),
-        ),
+      GenesisCanvasApp(
+        errorSink: StringBuffer(),
+        config: GenesisConfig(backendUrl: Uri.parse('http://127.0.0.1:1')),
       ),
     );
     await _settleStartupReset(tester);
@@ -109,11 +101,9 @@ void main() {
     await tester.pump();
 
     await tester.pumpWidget(
-      ReplayScope(
-        child: GenesisCanvasApp(
-          errorSink: StringBuffer(),
-          config: GenesisConfig(backendUrl: Uri.parse('http://127.0.0.1:2')),
-        ),
+      GenesisCanvasApp(
+        errorSink: StringBuffer(),
+        config: GenesisConfig(backendUrl: Uri.parse('http://127.0.0.1:2')),
       ),
     );
     await _settleStartupReset(tester);

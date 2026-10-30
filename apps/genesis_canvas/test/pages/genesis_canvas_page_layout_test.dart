@@ -68,6 +68,11 @@ void main() {
     expect(rectOf(tester, 'catalog-shelf').height, lessThanOrEqualTo(140));
     expect(rectOf(tester, 'protocol-panel').height, 140);
     expect(rectOf(tester, 'replay-bar').height, lessThanOrEqualTo(140));
+    // A6 de 010 : zone Rejeu de 480 px, étagère de 900 px (1920 - marges,
+    // intervalles, zone Rejeu et panneau replié).
+    expect(rectOf(tester, 'replay-bar').width, 480);
+    expect(rectOf(tester, 'catalog-shelf').width, 900);
+    expect(rectOf(tester, 'catalog-shelf').height, lessThanOrEqualTo(140));
     // Le tout tient dans l'écran.
     for (final key in const [
       'agents-rail',

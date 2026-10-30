@@ -153,6 +153,12 @@ void main() {
       expect(state, isA<ReplayActive>());
       expect((state as ReplayActive).snapshot.status, ReplayStatus.playing);
       expect(state.snapshot.duration, const Duration(seconds: 2));
+      // D3 : la scène est vidée à l'entrée, puis (après la barrière d'un tour
+      // de boucle) l'entrée à t=0 est injectée.
+      expect(rig.log, <String>['clear']);
+      expect(rig.out, isEmpty, reason: 'rien avant la barrière');
+      async.elapse(Duration.zero);
+      expect(rig.log, <String>['clear', 'inject']);
       expect(rig.out, hasLength(1), reason: 'entrée à t=0 injectée');
 
       async.elapse(const Duration(seconds: 1));

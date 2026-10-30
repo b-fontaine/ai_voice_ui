@@ -87,7 +87,9 @@ class ReplayBloc extends Bloc<ReplayEvent, ReplayState> {
     );
     _player = player;
     add(ReplayPlayerSubscribed(player));
-    player.play();
+    // Entrer en rejeu = repartir de 0 : scène vidée, barrière, puis lecture
+    // (D3, A1).
+    player.restart();
     emit(ReplayActive(player.snapshot));
   }
 

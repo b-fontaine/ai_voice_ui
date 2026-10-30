@@ -100,11 +100,13 @@ class Acte4Harness {
   static Duration seconds(num value) =>
       Duration(milliseconds: (value * 1000).round());
 
-  /// Deux cadres sans durée : laisse passer les microtâches, la barrière d'un
-  /// tour de boucle du lecteur et les Blocs.
+  /// Deux cadres de durée nulle : laisse passer les microtâches, la barrière
+  /// d'un tour de boucle du lecteur et les Blocs. `pump()` sans argument
+  /// n'écoule aucun minuteur (même de durée nulle) : `Duration.zero` est
+  /// nécessaire pour que la barrière du lecteur s'exécute.
   static Future<void> settle(WidgetTester tester) async {
-    await tester.pump();
-    await tester.pump();
+    await tester.pump(Duration.zero);
+    await tester.pump(Duration.zero);
   }
 
   // --- Zone Rejeu -----------------------------------------------------------

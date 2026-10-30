@@ -4,7 +4,6 @@ import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:feature_replay/feature_replay.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 A2uiEnvelopeReceived _envelope(Map<String, Object?> raw) =>
     A2uiEnvelopeReceived(message: A2uiMessage.fromJson(raw), raw: raw);
@@ -80,32 +79,6 @@ class ReplayRig {
     router.dispose();
     unawaited(live.close());
   }
-}
-
-/// Fournit un `ReplayBloc` (journal vide) aux tests qui montent la page ou
-/// l'app entière : les widgets `ReplayBar` et `StageBar` le lisent dans
-/// l'arbre. Le Bloc et son routeur sont fermés au démontage.
-class ReplayScope extends StatefulWidget {
-  const ReplayScope({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  State<ReplayScope> createState() => _ReplayScopeState();
-}
-
-class _ReplayScopeState extends State<ReplayScope> {
-  final ReplayRig _rig = ReplayRig(withJournal: false);
-
-  @override
-  void dispose() {
-    _rig.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      BlocProvider<ReplayBloc>.value(value: _rig.bloc, child: widget.child);
 }
 
 /// Pose un `Overlay` autour de [child] : le curseur de `ReplayBar` en exige un,

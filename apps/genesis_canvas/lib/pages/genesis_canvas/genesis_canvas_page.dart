@@ -29,8 +29,12 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
     show
         ProtocolFeedBloc,
         ProtocolFeedCleared,
+        ProtocolFeedEntriesCleared,
         ProtocolFeedState,
         ProtocolSourceSubscribed;
+import 'package:entity_session/entity_session.dart' show A2uiJournal;
+import 'package:feature_replay/feature_replay.dart'
+    show ReplayBloc, ReplayPlayer, ReplayRouter, ReplaySettings, ReplayStage;
 import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
@@ -187,6 +191,22 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     catalogId: widget.catalogId,
     onRejected: _onMessageRejected,
   );
+  // Journal des messages A2UI de la session (rejeu de l'acte 4) : en mémoire
+  // seulement, jamais écrit ailleurs.
+  late final A2uiJournal _journal = A2uiJournal(
+    maxEntries: _settings.replayJournalMaxEntries,
+  );
+
+  /// Journal des messages enregistrés (lecture seule pour les tests).
+  @visibleForTesting
+  A2uiJournal get journal => _journal;
+
+  // Seul flux qui entre dans le gate : vivant (ou scénario), enregistré au
+  // passage ; le lecteur de rejeu s'y substituera. Créé dans `initState`.
+  late final ReplayRouter _router;
+  // Pilote du rejeu de l'acte 4 : seul appelant du routeur (mode) et du port
+  // `ReplayStage` (créé dans `initState`, après le routeur).
+  late final ReplayBloc _replayBloc;
   // Refus vus : un rejeu qui en contient ne vaut pas succès (comme une erreur
   // du moteur).
   int _rejectedCount = 0;
@@ -207,11 +227,14 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   );
   late final AppLifecycleListener _lifecycle;
 
-  bool get _replayMode => widget.replay != null;
+  /// Mode scénario (000) : un flux de messages fourni remplace la source
+  /// vivante. À ne pas confondre avec le rejeu de l'acte 4 (journal de la
+  /// session en cours).
+  bool get _scenarioMode => widget.replay != null;
 
-  /// Captures et rejeus : l'animation de l'orbe est coupée pour que les images
-  /// restent déterministes (et que `pumpAndSettle` converge).
-  bool get _animationsOff => _replayMode || _snapshot.isActive;
+  /// Captures et scénarios : l'animation de l'orbe est coupée pour que les
+  /// images restent déterministes (et que `pumpAndSettle` converge).
+  bool get _animationsOff => _scenarioMode || _snapshot.isActive;
 
   @override
   void initState() {
@@ -253,10 +276,37 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // le canevas). Le Bloc ne reçoit que les messages acceptés.
     final replay = widget.replay;
     _bloc.add(CanvasSourceSubscribed(_gate.accepted));
-    _gate.attach(
-      replay == null ? _source.events : A2uiGate.replayEvents(replay),
+    _router = ReplayRouter(
+      live: replay == null ? _source.events : A2uiGate.replayEvents(replay),
+      journal: _journal,
+      nowMs: widget.getIt<AppClock>().nowUnixMs,
     );
-    if (replay == null) {
+    _gate.attach(_router.events);
+    final replaySettings = ReplaySettings(
+      tick: _settings.replayTick,
+      maxGap: _settings.replayMaxGap,
+      defaultSpeed: _settings.replayDefaultSpeed,
+    );
+    _replayBloc = ReplayBloc(
+      router: _router,
+      stage: _PageReplayStage(
+        clear: () => _clearScene(keepPanelOpen: true),
+        exit: _resetStage,
+      ),
+      settings: replaySettings,
+      playerFactory: (entries, {required inject, required clearStage}) =>
+          ReplayPlayer(
+            entries: entries,
+            settings: replaySettings,
+            inject: inject,
+            clearStage: clearStage,
+          ),
+    );
+    if (replay != null) {
+      // Le routeur ne ferme pas sa sortie à la fin du flux : la fin du
+      // scénario déclenche la capture (comportement de 000).
+      unawaited(_router.liveDone.then((_) => _onScenarioDone()));
+    } else {
       // Démarrage en mode vivant (pdr-0064, D6) : l'écran est déjà vide, mais
       // le canevas du backend peut garder des surfaces d'une exécution
       // précédente ; une mutation par données seules viserait alors une
@@ -293,14 +343,29 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// Le Bloc d'action abandonne l'action en cours (étape 2, avec les autres
   /// Blocs) : les boutons redeviennent actifs.
   void _resetStage() {
-    _gate.reset();
-    _bloc.add(const CanvasResetRequested());
-    _protocolBloc.add(const ProtocolFeedCleared());
-    _shelfBloc.add(const CatalogShelfCleared());
+    _clearScene(keepPanelOpen: false);
+    _router.clearJournal();
     _agentsBloc.add(const AgentActivityReset());
     _stageBloc.add(const StageResetRequested());
     _actionBloc.add(const ActionStageReset());
     unawaited(_requestBackendReset());
+  }
+
+  /// Étapes 1 et 2 de [_resetStage] pour ce qui est visible de la scène
+  /// (canevas, panneau, étagère), de façon synchrone : le validateur repart de
+  /// zéro. Avec [keepPanelOpen] (positionnement du rejeu), le panneau garde
+  /// son état replié ou déplié : le JSON ouvert ne se referme pas. Ni le
+  /// backend, ni le journal, ni l'acte, ni les agents, ni le Bloc d'action ne
+  /// sont touchés.
+  void _clearScene({required bool keepPanelOpen}) {
+    _gate.reset();
+    _bloc.add(const CanvasResetRequested());
+    _protocolBloc.add(
+      keepPanelOpen
+          ? const ProtocolFeedEntriesCleared()
+          : const ProtocolFeedCleared(),
+    );
+    _shelfBloc.add(const CatalogShelfCleared());
   }
 
   /// Génération de la demande de remise à vide en cours. Une nouvelle demande
@@ -386,19 +451,24 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   }
 
   void _onSourceChanged(BuildContext context, CanvasState state) {
-    // « Rejeu impossible » ne concerne que le rejeu ; la source vivante ne
-    // se termine qu'à la fermeture de la page.
-    if (!_replayMode) return;
+    // « Rejeu impossible » ne concerne que le mode scénario ; la source
+    // vivante ne se termine qu'à la fermeture de la page.
+    if (!_scenarioMode) return;
     switch (state.sourceStatus) {
-      case CanvasSourceStatus.completed:
-        if (_snapshot.isActive) unawaited(_captureWhenSettled());
       case CanvasSourceStatus.failed:
         widget.errorSink.writeln('Rejeu impossible : ${state.sourceError}');
         if (_snapshot.isActive) widget.exitHandler(1);
       case CanvasSourceStatus.none:
       case CanvasSourceStatus.playing:
+      case CanvasSourceStatus.completed:
         break;
     }
+  }
+
+  /// Fin du flux du scénario : capture, sauf si le flux a échoué (la sortie en
+  /// erreur est alors déjà demandée par [_onSourceChanged]).
+  void _onScenarioDone() {
+    if (_snapshot.isActive) unawaited(_captureWhenSettled());
   }
 
   /// Nombre maximal de frames attendues avant la capture.
@@ -414,6 +484,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       await binding.endOfFrame;
       frames++;
     } while (frames < _maxSettleFrames && binding.hasScheduledFrame);
+    if (_bloc.state.sourceStatus == CanvasSourceStatus.failed) return;
     if (!mounted) {
       widget.errorSink.writeln('Capture impossible : page démontée.');
       widget.exitHandler(1);
@@ -434,6 +505,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
     // avant la source qu'elle écoute.
     _orb.dispose();
+    // Le lecteur de rejeu est détruit tout de suite (minuteurs coupés), sans
+    // attendre la fermeture asynchrone.
+    unawaited(_replayBloc.close());
     final closing = _shutdown();
     unawaited(closing);
     widget.onClosing?.call(closing);
@@ -447,7 +521,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// 2. arrêt de la session, borné ;
   /// 3. libération de la session ;
   /// 4. source d'événements (la session ne lui émet plus rien) ;
-  /// 5. filtre A2UI (il se nourrit de la source) ;
+  /// 5. routeur du rejeu (il lit la source), filtre A2UI (il lit le routeur),
+  ///    puis Bloc du rejeu (son lecteur est déjà détruit par `dispose`) ;
   /// 6. Blocs de transcription, d'action, d'activité (que le Bloc d'action
   ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
@@ -459,7 +534,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     await _step('arrêt de la session', _session.stop, timeout: bound);
     await _step('libération de la session', _session.dispose, timeout: bound);
     await _step('source d\'événements', _source.dispose);
+    await _step('routeur du rejeu', () async => _router.dispose());
     await _step('filtre A2UI', _gate.dispose);
+    await _step('Bloc du rejeu', _replayBloc.close);
     await _step('Bloc de transcription', _transcriptBloc.close);
     await _step('Bloc d\'action', _actionBloc.close);
     await _step('Bloc des agents', _agentsBloc.close);
@@ -509,6 +586,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       BlocProvider<ProtocolFeedBloc>.value(value: _protocolBloc),
       BlocProvider<CatalogShelfBloc>.value(value: _shelfBloc),
       BlocProvider<StageBloc>.value(value: _stageBloc),
+      BlocProvider<ReplayBloc>.value(value: _replayBloc),
     ],
     child: MultiBlocListener(
       listeners: [
@@ -545,7 +623,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                       child: TopBar(
                         orbLevel: _orb.level,
                         speakingThreshold: _settings.orbSpeakingThreshold,
-                        startEnabled: !_replayMode,
+                        startEnabled: !_scenarioMode,
                         stage: StageBar(onResetPressed: _resetStage),
                       ),
                     ),
@@ -563,7 +641,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             builder: (context, highlighted) =>
                                 CanvasActionScope(
                                   // Rejeu : aucune requête ne part.
-                                  enabled: !_replayMode,
+                                  enabled: !_scenarioMode,
                                   child: CanvasBoard(
                                     key: const Key('canvas-board'),
                                     controller: _controller,
@@ -603,4 +681,18 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
       ),
     ),
   );
+}
+
+/// Port du rejeu vers la scène : la page lui prête ses deux gestes.
+class _PageReplayStage implements ReplayStage {
+  const _PageReplayStage({required this._clear, required this._exit});
+
+  final void Function() _clear;
+  final void Function() _exit;
+
+  @override
+  void clear() => _clear();
+
+  @override
+  void exit() => _exit();
 }
