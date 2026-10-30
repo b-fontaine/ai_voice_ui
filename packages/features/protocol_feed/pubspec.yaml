@@ -1,0 +1,20 @@
+name: feature_protocol_feed
+description: Slice protocol_feed, journal du protocole A2UI.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  bloc: 9.2.1
+  bloc_concurrency: 0.3.0
+
+dev_dependencies:
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+  testing_bloc_harness:
+    path: ../../../testing/bloc_harness
