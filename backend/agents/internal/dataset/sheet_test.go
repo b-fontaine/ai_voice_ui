@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -16,10 +17,17 @@ const sheetPath = "../../../../product/functional/dataset.md"
 
 func readSheet(t *testing.T) string {
 	t.Helper()
+	// La fiche est répartie sur deux documents : acte 1 (dataset.md) et actes 2 et 3,
+	// vue iOS (dataset-acts.md, scindé du premier à la clôture de 008).
 	b, err := os.ReadFile(sheetPath)
 	if err != nil {
 		t.Fatalf("fiche produit : %v", err)
 	}
+	acts, err := os.ReadFile(filepath.Join(filepath.Dir(sheetPath), "dataset-acts.md"))
+	if err != nil {
+		t.Fatalf("fiche produit (actes) : %v", err)
+	}
+	b = append(append(b, '\n'), acts...)
 	// La fiche utilise des espaces insécables (U+00A0, U+202F) avant « % » et
 	// « pt » et dans les milliers ; les formats du code utilisent l'espace simple.
 	return strings.NewReplacer("\u00a0", " ", "\u202f", " ").Replace(string(b))
