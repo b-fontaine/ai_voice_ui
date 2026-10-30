@@ -1,8 +1,8 @@
 # 007 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T12b (Flutter)
 - **Fichiers touchés** (tâche en cours) : packages/features/canvas/*, packages/entities/catalog/*, packages/shared/design_system (lecture) ; backend/orchestrator/internal/{adapter/httpapi,app/a2ui,app/orchestrate}, backend/orchestrator/cmd
 - **Branche** : feat/007-j3-act1-frontend
 - **Backlog** : EP-03, EP-04, EP-05, EP-08
