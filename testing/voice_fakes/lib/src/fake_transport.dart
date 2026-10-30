@@ -56,6 +56,7 @@ class FakeTransport implements VoiceTransport {
   }
 
   /// Coupe ou rétablit la piste distante (frontière WebRTC, spec 011).
+  @override
   Future<void> setRemoteAudioEnabled(bool enabled) async {
     _record('setRemoteAudioEnabled($enabled)');
     remoteAudioEnabled = enabled;

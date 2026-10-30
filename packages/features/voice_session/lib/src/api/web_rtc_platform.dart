@@ -35,6 +35,11 @@ abstract interface class RtcPeer {
   /// Applique l'answer SDP du relais.
   Future<void> setRemoteAnswer(String sdp);
 
+  /// Coupe (`false`) ou rétablit (`true`) la lecture de la piste audio
+  /// distante. Si la piste n'est pas encore arrivée, l'état s'applique à son
+  /// arrivée.
+  Future<void> setRemoteAudioEnabled(bool enabled);
+
   /// Ferme le canal de données puis la connexion.
   Future<void> close();
 
