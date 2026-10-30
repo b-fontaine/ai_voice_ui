@@ -1,4 +1,4 @@
-import 'package:entity_session/entity_session.dart' hide AgentActivityState;
+import 'package:entity_session/entity_session.dart';
 
 /// Events de `AgentActivityBloc`.
 sealed class AgentActivityEvent {

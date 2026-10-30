@@ -72,10 +72,10 @@ class SessionEventConverter {
         return AgentActivityReceived(
           agent: _optionalString(data, 'agent') ?? _required(envelope.agent),
           task: _optionalString(data, 'task') ?? _required(envelope.task),
-          state: _enumValue(data, 'state', const <String, AgentActivityState>{
-            'working': AgentActivityState.working,
-            'completed': AgentActivityState.completed,
-            'failed': AgentActivityState.failed,
+          state: _enumValue(data, 'state', const <String, AgentTaskState>{
+            'working': AgentTaskState.working,
+            'completed': AgentTaskState.completed,
+            'failed': AgentTaskState.failed,
           }),
           label: _optionalString(data, 'label'),
           detail: _optionalString(data, 'detail'),

@@ -1,9 +1,6 @@
 import 'dart:async';
 
-import 'package:entity_session/entity_session.dart' hide AgentActivityState;
-import 'package:entity_session/entity_session.dart'
-    as entity
-    show AgentActivityState;
+import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:flutter/material.dart' show FilledButton;
@@ -181,10 +178,7 @@ void main() {
   });
 
   group('réflexion', () {
-    Future<void> working(
-      WidgetTester tester,
-      entity.AgentActivityState s,
-    ) async {
+    Future<void> working(WidgetTester tester, AgentTaskState s) async {
       rig.events.add(
         AgentActivityReceived(agent: 'Qualité', task: 't', state: s),
       );
@@ -202,10 +196,10 @@ void main() {
       await status(tester, const Active());
       expect(thinking(tester), isFalse);
 
-      await working(tester, entity.AgentActivityState.working);
+      await working(tester, AgentTaskState.working);
       expect(thinking(tester), isTrue);
 
-      await working(tester, entity.AgentActivityState.completed);
+      await working(tester, AgentTaskState.completed);
       expect(thinking(tester), isFalse);
     });
 
@@ -213,7 +207,7 @@ void main() {
       tester,
     ) async {
       await rig.pump(tester);
-      await working(tester, entity.AgentActivityState.working);
+      await working(tester, AgentTaskState.working);
 
       expect(thinking(tester), isFalse);
     });

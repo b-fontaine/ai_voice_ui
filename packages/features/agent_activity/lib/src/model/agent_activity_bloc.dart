@@ -1,9 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
-import 'package:entity_session/entity_session.dart' hide AgentActivityState;
-import 'package:entity_session/entity_session.dart'
-    as entity
-    show AgentActivityState;
+import 'package:entity_session/entity_session.dart';
 
 import 'agent_activity_event.dart';
 import 'agent_activity_state.dart';
@@ -50,9 +47,9 @@ class AgentActivityBloc extends Bloc<AgentActivityEvent, AgentActivityState> {
       agent: received.agent,
       task: received.task,
       state: switch (received.state) {
-        entity.AgentActivityState.working => AgentRunState.working,
-        entity.AgentActivityState.completed => AgentRunState.completed,
-        entity.AgentActivityState.failed => AgentRunState.failed,
+        AgentTaskState.working => AgentRunState.working,
+        AgentTaskState.completed => AgentRunState.completed,
+        AgentTaskState.failed => AgentRunState.failed,
       },
       label: received.label,
       detail: received.detail,

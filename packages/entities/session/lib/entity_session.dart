@@ -3,7 +3,7 @@ export 'src/session_event.dart'
     show
         A2uiEnvelopeReceived,
         AgentActivityReceived,
-        AgentActivityState,
+        AgentTaskState,
         ChannelLost,
         DelegationStarted,
         OrbLevelChanged,

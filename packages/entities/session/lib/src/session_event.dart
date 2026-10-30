@@ -1,4 +1,7 @@
 import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:collection/collection.dart' show DeepCollectionEquality;
+
+const DeepCollectionEquality _deepEq = DeepCollectionEquality();
 
 /// Rôle d'un fragment de transcription.
 enum TranscriptRole { user, ai }
@@ -6,8 +9,8 @@ enum TranscriptRole { user, ai }
 /// État de la session vocale vu par l'application.
 enum SessionState { connecting, active, closed }
 
-/// État d'une activité d'agent.
-enum AgentActivityState { working, completed, failed }
+/// État d'une tâche A2A d'agent.
+enum AgentTaskState { working, completed, failed }
 
 /// Événement de session, produit par le canal applicatif et consommé par les
 /// Blocs. Hiérarchie fermée : un `switch` sans `default` doit être exhaustif.
@@ -101,7 +104,7 @@ final class AgentActivityReceived extends SessionEvent {
 
   final String agent;
   final String task;
-  final AgentActivityState state;
+  final AgentTaskState state;
   final String? label;
   final String? detail;
 
@@ -140,10 +143,10 @@ final class A2uiEnvelopeReceived extends SessionEvent {
       other is A2uiEnvelopeReceived &&
       other.agent == agent &&
       other.task == task &&
-      _deepEquals(other.raw, raw);
+      _deepEq.equals(other.raw, raw);
 
   @override
-  int get hashCode => Object.hash(agent, task, _deepHash(raw));
+  int get hashCode => Object.hash(agent, task, _deepEq.hash(raw));
 }
 
 /// Consommation de la session : durée écoulée et taux de remplissage du contexte.
@@ -175,35 +178,4 @@ final class ChannelLost extends SessionEvent {
 
   @override
   int get hashCode => reason.hashCode;
-}
-
-bool _deepEquals(Object? a, Object? b) {
-  if (a is Map && b is Map) {
-    if (a.length != b.length) return false;
-    for (final Object? key in a.keys) {
-      if (!b.containsKey(key) || !_deepEquals(a[key], b[key])) return false;
-    }
-    return true;
-  }
-  if (a is List && b is List) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (!_deepEquals(a[i], b[i])) return false;
-    }
-    return true;
-  }
-  return a == b;
-}
-
-int _deepHash(Object? value) {
-  if (value is Map) {
-    // Indépendant de l'ordre des clés, comme l'égalité.
-    int hash = value.length;
-    for (final MapEntry<Object?, Object?> e in value.entries) {
-      hash ^= Object.hash(e.key, _deepHash(e.value));
-    }
-    return hash;
-  }
-  if (value is List) return Object.hashAll(value.map(_deepHash));
-  return value.hashCode;
 }

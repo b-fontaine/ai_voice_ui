@@ -55,21 +55,21 @@ void main() {
           const AgentActivityReceived(
             agent: 'a',
             task: 't',
-            state: AgentActivityState.failed,
+            state: AgentTaskState.failed,
             label: 'l',
             detail: 'd',
           ),
           const AgentActivityReceived(
             agent: 'a',
             task: 't',
-            state: AgentActivityState.failed,
+            state: AgentTaskState.failed,
             label: 'l',
             detail: 'd',
           ),
           const AgentActivityReceived(
             agent: 'a',
             task: 't',
-            state: AgentActivityState.working,
+            state: AgentTaskState.working,
           ),
         ),
         'A2uiEnvelopeReceived': (

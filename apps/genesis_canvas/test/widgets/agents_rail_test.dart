@@ -1,9 +1,6 @@
 import 'dart:async';
 
-import 'package:entity_session/entity_session.dart' hide AgentActivityState;
-import 'package:entity_session/entity_session.dart'
-    as entity
-    show AgentActivityState;
+import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,7 +69,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Qualité',
         task: 'analyse',
-        state: entity.AgentActivityState.working,
+        state: AgentTaskState.working,
         label: 'Analyse de la release',
       ),
     );
@@ -97,7 +94,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Qualité',
         task: 'analyse',
-        state: entity.AgentActivityState.completed,
+        state: AgentTaskState.completed,
       ),
     );
     expect(
@@ -115,7 +112,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Risques',
         task: 'scan',
-        state: entity.AgentActivityState.failed,
+        state: AgentTaskState.failed,
         detail: 'délai dépassé',
       ),
     );
@@ -146,7 +143,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Qualité',
         task: 'analyse',
-        state: entity.AgentActivityState.working,
+        state: AgentTaskState.working,
       ),
     );
 
@@ -165,7 +162,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Qualité',
         task: 'a',
-        state: entity.AgentActivityState.working,
+        state: AgentTaskState.working,
       ),
     );
     await emit(
@@ -173,7 +170,7 @@ void main() {
       const AgentActivityReceived(
         agent: 'Risques',
         task: 'b',
-        state: entity.AgentActivityState.working,
+        state: AgentTaskState.working,
       ),
     );
 

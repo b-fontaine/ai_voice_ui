@@ -103,7 +103,7 @@ void main() {
         const AgentActivityReceived(
           agent: 'Qualité',
           task: 't1',
-          state: AgentActivityState.failed,
+          state: AgentTaskState.failed,
           label: 'Qualité',
           detail: 'délai dépassé',
         ),
@@ -118,7 +118,7 @@ void main() {
         const AgentActivityReceived(
           agent: 'Env',
           task: 'tEnv',
-          state: AgentActivityState.working,
+          state: AgentTaskState.working,
         ),
       ),
       'agent.activity : data prime sur l\'enveloppe': (
@@ -131,7 +131,7 @@ void main() {
         const AgentActivityReceived(
           agent: 'D',
           task: 'tD',
-          state: AgentActivityState.completed,
+          state: AgentTaskState.completed,
         ),
       ),
     };

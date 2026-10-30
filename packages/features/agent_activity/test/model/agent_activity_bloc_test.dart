@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:entity_session/entity_session.dart' as entity;
-import 'package:entity_session/entity_session.dart' hide AgentActivityState;
+import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,7 +9,7 @@ import '../support/bloc_harness.dart';
 AgentActivityReceived activity(
   String agent,
   String task,
-  entity.AgentActivityState state, {
+  AgentTaskState state, {
   String? label,
   String? detail,
 }) => AgentActivityReceived(
@@ -48,10 +47,9 @@ Future<List<AgentActivityState>> run(List<SessionEvent> events) async {
 }
 
 void main() {
-  const entity.AgentActivityState working = entity.AgentActivityState.working;
-  const entity.AgentActivityState completed =
-      entity.AgentActivityState.completed;
-  const entity.AgentActivityState failed = entity.AgentActivityState.failed;
+  const AgentTaskState working = AgentTaskState.working;
+  const AgentTaskState completed = AgentTaskState.completed;
+  const AgentTaskState failed = AgentTaskState.failed;
 
   test('état initial vide, aucun agent en cours', () {
     const AgentActivityState s = AgentActivityState.empty();

@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | Refactorisation | lot 3 (entités) : R6 (enum `AgentTaskState`, `hide`/alias supprimés, grep de contrôle vide) et R10 part entity_session (`DeepCollectionEquality`) | `.omc/state/loop/gates/20261030-011953-unit-flutter.log` (VERT, 29 contrôles) ; acceptation 15 tests verts |
 | 2026-10-30 | Refactorisation | lot 2 (backend_channel) : R7 (clause finale `unreachable`, abonnement au corps annulé au délai ; rouge cité : 4 échecs), `closeTimeout` injectable sur `WebSocketAppChannel` (part paquet de R5), égalité profonde par `DeepCollectionEquality` (`collection` 1.19.1 déjà au lock), `baseUrl` = origine seule (`ArgumentError` sans la valeur sur `endpointFor` et `HttpVoiceRelay`) | `.omc/state/loop/gates/20261030-011651-unit-flutter.log` (VERT, 29 contrôles) ; acceptation 15 tests verts |
 | 2026-10-30 | Refactorisation | lot 1 (voice_session) : R3 (`RtcPeer.dispose()`, `stop` ≠ `dispose`, prémisse revérifiée dans la source de flutter_webrtc 1.6.3 : `close()` et `dispose()` sont deux appels natifs distincts), R4 (clause finale, libération dans tous les chemins), R8 (journal dès que la génération est courante, `_log` remis à nul après `close`), R10 part voice_session (barrel, `default:` sur sealed, commentaire `connecting`, commentaire périmé) ; rouge cité (5 + 3 + 1 échecs avant code) | `.omc/state/loop/gates/20261030-011302-unit-flutter.log` (VERT, 29 contrôles) ; acceptation 15 tests verts |
 | 2026-10-30 | Revue | Revue d'architecte (mode CODE) rendue : CONFORME SOUS RÉSERVE, 0 bloquante, 5 importantes (R1-R5), 5 mineures (R6-R10) ; Q-71 et Q-72 ouvertes (conflits avec une décision, non bloquantes) ; `product_lint` 0 erreur | rapport collé ci-dessous |
@@ -51,7 +52,7 @@
 - [x] R3 importante — `RTCPeerConnection.dispose()` jamais appelé : `RtcPeer.dispose()`, `stop` ≠ `dispose` effectif, ordre `[mic.stop, peer.close, peer.dispose]`
 - [x] R4 importante — `VoiceSession._connect` : exceptions imprévues (fabrique de transport, `logFactory`, `log.open`) sans libération ni `Failed` ; clause finale + tests
 - [ ] R5 importante — budget des délais de fermeture incohérent (`exitCloseTimeout` 8 s = `sessionCloseTimeout` 8 s > `relayDeleteTimeout` 7 s, WSS 2 s/5 s en dur) : `channelConnectTimeout`/`channelCloseTimeout` injectés, invariant testé sur les valeurs par défaut (valeurs à confirmer par le porteur ; la spec dit « ~8 s »)
-- [ ] R6 mineure — collision `AgentActivityState` : enum de l'entité → `AgentTaskState`
+- [x] R6 mineure — collision `AgentActivityState` : enum de l'entité → `AgentTaskState`
 - [x] R7 mineure (clause finale + annulation de l'abonnement ; `close()` à brancher au DI au lot 4) — `HttpVoiceRelay._exchange` : clause finale `unreachable`, annulation de l'abonnement au délai, `close()` branché au DI
 - [x] R8 mineure — `VoiceSession._onEnvelope` : journaliser dès que la génération est courante (y compris pendant `Stopping`)
 - [ ] R9 mineure — doublures de classes internes et faux dupliqués : `StubVoiceSessionBloc` et `_ObservedSession` à remplacer par de vrais objets sur faux de frontières ; paquets `testing/voice_fakes` et `testing/bloc_harness`
