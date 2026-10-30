@@ -84,6 +84,40 @@ void main() {
     },
   );
 
+  group('boutons d\'action (ton neutral/danger, RG-09)', () {
+    final texts = <String, Color>{
+      'texte neutre': theme.textPrimary,
+      'texte danger': theme.blockingForeground,
+    };
+    texts.forEach((name, color) {
+      test('$name / surface >= 8,36:1', () {
+        expect(contrast(color, theme.surface), greaterThanOrEqualTo(8.36));
+      });
+    });
+    final borders = <String, Color>{
+      'bordure neutre': theme.actionNeutralBorder,
+      'bordure danger': theme.actionDangerBorder,
+    };
+    borders.forEach((name, color) {
+      test('$name / surface et fond >= 3:1', () {
+        expect(contrast(color, theme.surface), greaterThanOrEqualTo(3));
+        expect(contrast(color, theme.background), greaterThanOrEqualTo(3));
+      });
+    });
+    test('les deux bordures sont distinctes', () {
+      expect(theme.actionNeutralBorder, isNot(theme.actionDangerBorder));
+    });
+    test('copyWith et lerp portent les bordures', () {
+      final copy = theme.copyWith(actionDangerBorder: const Color(0xFF00FF00));
+      expect(copy.actionDangerBorder, const Color(0xFF00FF00));
+      expect(copy.actionNeutralBorder, theme.actionNeutralBorder);
+      final other = theme.copyWith(
+        actionNeutralBorder: const Color(0xFFFFFFFF),
+      );
+      expect(theme.lerp(other, 1).actionNeutralBorder, const Color(0xFFFFFFFF));
+    });
+  });
+
   test('la palette de graphique ne reprend aucune couleur de statut', () {
     final chart = <Color>{theme.chartIos, theme.chartAndroid, theme.chartOther};
     expect(chart, hasLength(3));

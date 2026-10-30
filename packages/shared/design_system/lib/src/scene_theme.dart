@@ -23,6 +23,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.neutralBackground,
     required this.neutralForeground,
     required this.highlightOutline,
+    required this.actionNeutralBorder,
+    required this.actionDangerBorder,
     required this.agentWorking,
     required this.agentIdle,
     required this.agentRejected,
@@ -53,6 +55,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground = const Color(0xFF2A2A40),
       neutralForeground = const Color(0xFFD8D8E6),
       highlightOutline = const Color(0xFFB39DFF),
+      actionNeutralBorder = const Color(0xFF9A9AB8),
+      actionDangerBorder = const Color(0xFFFF6B75),
       agentWorking = const Color(0xFFFFC107),
       agentIdle = const Color(0xFF90A4AE),
       agentRejected = const Color(0xFFFFAB40),
@@ -106,6 +110,11 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
 
   /// Contour pointillé de mise en évidence d'une surface.
   final Color highlightOutline;
+
+  /// Bordures des boutons de la Barre d'actions, par ton (`neutral`/`danger`).
+  /// Le texte reprend `textPrimary` (neutre) ou `blockingForeground` (danger).
+  final Color actionNeutralBorder;
+  final Color actionDangerBorder;
 
   /// Couleurs d'état d'agent (renfort du libellé, jamais seules). Les autres
   /// états empruntent `accent`, `riskForeground`, `okForeground` et
@@ -167,6 +176,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     Color? neutralBackground,
     Color? neutralForeground,
     Color? highlightOutline,
+    Color? actionNeutralBorder,
+    Color? actionDangerBorder,
     Color? agentWorking,
     Color? agentIdle,
     Color? agentRejected,
@@ -195,6 +206,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground: neutralBackground ?? this.neutralBackground,
       neutralForeground: neutralForeground ?? this.neutralForeground,
       highlightOutline: highlightOutline ?? this.highlightOutline,
+      actionNeutralBorder: actionNeutralBorder ?? this.actionNeutralBorder,
+      actionDangerBorder: actionDangerBorder ?? this.actionDangerBorder,
       agentWorking: agentWorking ?? this.agentWorking,
       agentIdle: agentIdle ?? this.agentIdle,
       agentRejected: agentRejected ?? this.agentRejected,
@@ -230,6 +243,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       neutralBackground: c(neutralBackground, other.neutralBackground),
       neutralForeground: c(neutralForeground, other.neutralForeground),
       highlightOutline: c(highlightOutline, other.highlightOutline),
+      actionNeutralBorder: c(actionNeutralBorder, other.actionNeutralBorder),
+      actionDangerBorder: c(actionDangerBorder, other.actionDangerBorder),
       agentWorking: c(agentWorking, other.agentWorking),
       agentIdle: c(agentIdle, other.agentIdle),
       agentRejected: c(agentRejected, other.agentRejected),
@@ -262,6 +277,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.neutralBackground == neutralBackground &&
       other.neutralForeground == neutralForeground &&
       other.highlightOutline == highlightOutline &&
+      other.actionNeutralBorder == actionNeutralBorder &&
+      other.actionDangerBorder == actionDangerBorder &&
       other.agentWorking == agentWorking &&
       other.agentIdle == agentIdle &&
       other.agentRejected == agentRejected &&
@@ -291,6 +308,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     neutralBackground,
     neutralForeground,
     highlightOutline,
+    actionNeutralBorder,
+    actionDangerBorder,
     agentWorking,
     agentIdle,
     agentRejected,

@@ -84,9 +84,17 @@ class NoDataCell extends StatelessWidget {
 
 /// Fond arrondi commun aux cellules complètes.
 class CellFrame extends StatelessWidget {
-  const CellFrame({super.key, required this.child});
+  const CellFrame({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
 
   final Widget child;
+
+  /// Marge intérieure (la Barre d'actions réduit la marge verticale pour tenir
+  /// dans son bandeau de 72 px).
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) => SizedBox.expand(
@@ -95,7 +103,7 @@ class CellFrame extends StatelessWidget {
         color: SceneTheme.of(context).surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(padding: const EdgeInsets.all(16), child: child),
+      child: Padding(padding: padding, child: child),
     ),
   );
 }

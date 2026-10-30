@@ -61,6 +61,34 @@ class _ActionBar {
 /// Surface qui porte la Barre d'actions (le contrat n'en admet qu'une).
 final String _surfaceId = GenesisContract.surfaceOf('ActionBar')!;
 
+Color _foreground(SceneTheme theme, String tone) =>
+    tone == 'danger' ? theme.blockingForeground : theme.textPrimary;
+
+/// Style d'un bouton selon son `tone` (code fermé `neutral|danger`), jamais
+/// selon son libellé (RG-09). Le texte reste lisible quand le bouton est
+/// inactif ; seule l'épaisseur de la bordure distingue les deux états.
+ButtonStyle _style(SceneTheme theme, String tone) {
+  final bool danger = tone == 'danger';
+  final Color foreground = danger
+      ? theme.blockingForeground
+      : theme.textPrimary;
+  final Color borderColor = danger
+      ? theme.actionDangerBorder
+      : theme.actionNeutralBorder;
+  return OutlinedButton.styleFrom(
+    minimumSize: const Size(0, 48),
+    foregroundColor: foreground,
+    disabledForegroundColor: foreground,
+  ).copyWith(
+    side: WidgetStateProperty.resolveWith(
+      (Set<WidgetState> states) => BorderSide(
+        color: borderColor,
+        width: states.contains(WidgetState.disabled) ? 1 : 2,
+      ),
+    ),
+  );
+}
+
 class _ActionBarView extends StatelessWidget {
   const _ActionBarView({required this.bar});
 
@@ -74,6 +102,8 @@ class _ActionBarView extends StatelessWidget {
     );
     final bool enabled = availability?.enabled ?? false;
     return CellFrame(
+      // 12 + 48 + 12 = 72 : le bouton tient, centré, dans le bandeau.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Wrap(
         spacing: 16,
         runSpacing: 8,
@@ -86,13 +116,13 @@ class _ActionBarView extends StatelessWidget {
               onPressed: enabled
                   ? () => availability!.onAction(action.id, _surfaceId)
                   : null,
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 48),
-                disabledForegroundColor: action.tone == 'danger'
-                    ? theme.blockingForeground
-                    : theme.textPrimary,
+              style: _style(theme, action.tone),
+              child: Text(
+                action.label,
+                style: theme.body.copyWith(
+                  color: _foreground(theme, action.tone),
+                ),
               ),
-              child: Text(action.label, style: theme.body),
             ),
         ],
       ),
