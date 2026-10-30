@@ -29,6 +29,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T09d Flutter — `replayMaxGap`, `replayJournalMaxEntries`, `tick`, `defaultSpeed` dans `GenesisCanvasPageSettings`/`GenesisConfig` (tests de réglages), `GENESIS_REPLAY_AT` et capture sur `liveDone` (A3) · test d'abord : `genesis_config_test.dart`, `loop_harness.feature`
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
+- [x] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer (mode CODE) + refactorisations par lots
 - [ ] T92 Vérification : `gate --full`, `GENESIS_REPLAY_AT=0.5 app-smoke.sh` (capture lue) ; clôture : docs `product/` (screen budget, business-rules, frontend-screen, backlog EP-07/EP-05, roadmap J6, requirements FR-09 livrée), note `knowledge/` si fait nouveau, `specs/progress.md`, `publish.sh`
