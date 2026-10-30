@@ -2,4 +2,5 @@
 library;
 
 export 'src/fake_backend.dart' show FakeBackend, PostMode, SurfaceStage;
-export 'src/contract_fixtures.dart' show Act1Surface, ContractFixtures;
+export 'src/contract_fixtures.dart'
+    show Act1Surface, ContractFixtures, GenesisFollowUp;

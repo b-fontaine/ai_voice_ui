@@ -58,6 +58,21 @@ abstract final class AcceptanceKeys {
   /// Bouton « Remettre à vide » de la régie.
   static const Key resetButton = Key('reset-button');
 
+  /// Ligne de comparaison (pdr-0064, D2) de la surface [id] (`KeyIndicator`,
+  /// `ReviewSentiment`) : un seul `Text` « 3.3 : 99,71 % · −0,28 pt » ou
+  /// « 3.3 : 14 % négatifs · +16 pts » (`<label> : <value> · <delta>`), de
+  /// couleur neutre (jamais celle d'un statut, RG-09), descendant de
+  /// [surface]. Absente quand `comparison` manque ou est incomplet (D7).
+  static Key comparison(String id) => Key('comparison-$id');
+
+  /// Entrée de légende de la série [name] dans la courbe (`TrendChart`),
+  /// descendante de [surface]`('trend')`, une par série nommée du data model.
+  /// La pastille et le nom de la série partagent une couleur stable par rang.
+  static Key trendSeries(String name) => Key('trend-series-$name');
+
+  /// Préfixe commun des clés [trendSeries] (pour compter les séries).
+  static const String trendSeriesPrefix = 'trend-series-';
+
   /// Canevas (existe déjà).
   static const Key canvasBoard = Key('canvas-board');
 

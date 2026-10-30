@@ -23,6 +23,11 @@ class SessionHarness {
   static const Duration wait = Duration(seconds: 10);
 
   static bool started = false;
+
+  /// Nombre de requêtes `POST /canvas/reset` déjà reçues quand le speaker clique
+  /// sur « Remettre à vide » : l'app en envoie aussi une au démarrage (A3),
+  /// l'étape d'acceptation de A4 ne compte que celle qui suit le clic.
+  static int resetsBeforeClick = 0;
   static late FakeBackend backend;
   static late FakeTransportFactory transports;
 
@@ -79,6 +84,7 @@ class SessionHarness {
     WidgetTester tester, {
     String? appLogPath,
     StringSink? errorSink,
+    String? scenario,
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -88,10 +94,13 @@ class SessionHarness {
         config: GenesisConfig.fromEnvironment(<String, String>{
           'GENESIS_BACKEND_URL': backend.url,
           'GENESIS_APP_LOG': ?appLogPath,
+          'GENESIS_SCENARIO': ?scenario,
         }),
         voiceTransportFactory: transports.call,
         exitHandler: (_) {},
         errorSink: errorSink,
+        // Frontière « temps » : le rejeu enchaîne ses messages sans attente.
+        replayDelay: scenario == null ? null : (_) async {},
       ),
     );
     await tester.pump();

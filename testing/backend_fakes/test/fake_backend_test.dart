@@ -525,6 +525,146 @@ void main() {
       },
     );
   });
+
+  group('acte 2 et correction iOS (fixtures du contrat)', () {
+    Future<WebSocket> connect(List<Map<String, Object?>> into) async {
+      final socket = await WebSocket.connect(
+        'ws://127.0.0.1:${backend.port}/app?session=sess-1',
+      );
+      socket.listen(
+        (m) =>
+            into.add(Map<String, Object?>.from(jsonDecode(m as String) as Map)),
+      );
+      return socket;
+    }
+
+    String op(Map<String, Object?> e) =>
+        (e['data']! as Map).keys.firstWhere((k) => k != 'version') as String;
+
+    test(
+      'la phrase du speaker et sa délégation précèdent la mutation',
+      () async {
+        await read(await post('v=0'));
+        backend.emitGenesisUserPhrase(
+          'sess-1',
+          'Concentre-toi sur Android',
+          delegation: 'deleg_2',
+        );
+        final received = <Map<String, Object?>>[];
+        final socket = await connect(received);
+        await _until(() => received.length >= 4);
+        final phrase = received.skip(2).toList();
+        expect(phrase.map((e) => e['type']), <Object?>[
+          'transcript',
+          'delegation',
+        ]);
+        expect((phrase.first['data']! as Map)['role'], 'user');
+        expect(
+          (phrase.first['data']! as Map)['text'],
+          'Concentre-toi sur Android',
+        );
+        expect((phrase.last['data']! as Map)['id'], 'deleg_2');
+        await socket.close();
+      },
+    );
+
+    test('acte 2 : plan, working, quatre updateDataModel seuls, completed, '
+        'identifiants de tâche distincts de ceux de l acte 1', () async {
+      await read(await post('v=0'));
+      await backend.emitGenesisAct1('sess-1');
+      await backend.emitGenesisFollowUp(
+        'sess-1',
+        GenesisFollowUp.act2,
+        delegation: 'deleg_2',
+      );
+      final received = <Map<String, Object?>>[];
+      final socket = await connect(received);
+      // backlog : 21 messages (acte 1, session.state compris), puis 11.
+      await _until(() => received.length >= 32);
+
+      final act = received.skip(21).toList();
+      expect(act.first['type'], 'plan');
+      expect((act.first['data']! as Map)['delegation'], 'deleg_2');
+      expect((act.first['data']! as Map)['selected'], <Object?>[
+        'Qualité',
+        'Voix du client',
+        'Livraison',
+      ]);
+      final a2ui = act.where((e) => e['type'] == 'a2ui').toList();
+      expect(a2ui.map(op), everyElement('updateDataModel'));
+      expect(
+        a2ui.map(
+          (e) => ((e['data']! as Map)['updateDataModel'] as Map)['surfaceId'],
+        ),
+        <Object?>['kpi', 'trend', 'reviews', 'checklist'],
+      );
+      expect(a2ui.map((e) => e['agent']), <Object?>[
+        'Qualité',
+        'Qualité',
+        'Voix du client',
+        'Livraison',
+      ]);
+      final act1Tasks = received
+          .take(21)
+          .map((e) => e['task'])
+          .whereType<String>()
+          .toSet();
+      final act2Tasks = act.map((e) => e['task']).whereType<String>().toSet();
+      expect(act2Tasks, hasLength(3));
+      expect(act2Tasks.intersection(act1Tasks), isEmpty);
+      expect(
+        act
+            .where((e) => e['type'] == 'agent.activity')
+            .map((e) => (e['data']! as Map)['state']),
+        <Object?>[
+          'working',
+          'working',
+          'working',
+          'completed',
+          'completed',
+          'completed',
+        ],
+      );
+      expect(jsonEncode(act), contains('NO-GO Android'));
+      expect(jsonEncode(act), isNot(contains(r'${CATALOG_ID}')));
+      await socket.close();
+    });
+
+    test('correction iOS : tâches distinctes de l acte 2, vue iOS', () async {
+      await read(await post('v=0'));
+      await backend.emitGenesisFollowUp('sess-1', GenesisFollowUp.act2);
+      await backend.emitGenesisFollowUp(
+        'sess-1',
+        GenesisFollowUp.correctionIos,
+        delegation: 'deleg_3',
+      );
+      final received = <Map<String, Object?>>[];
+      final socket = await connect(received);
+      await _until(() => received.length >= 2 + 11 + 11);
+      final act2 = received.skip(2).take(11).toList();
+      final ios = received.skip(13).toList();
+      expect((ios.first['data']! as Map)['delegation'], 'deleg_3');
+      final act2Tasks = act2.map((e) => e['task']).whereType<String>().toSet();
+      final iosTasks = ios.map((e) => e['task']).whereType<String>().toSet();
+      expect(iosTasks.intersection(act2Tasks), isEmpty);
+      expect(jsonEncode(ios), contains('GO iOS'));
+      expect(jsonEncode(ios), isNot(contains('comparison')));
+      await socket.close();
+    });
+
+    test('les messages de mutation se lisent par ContractFixtures', () async {
+      final surfaces = await ContractFixtures.followUpSurfaces(
+        GenesisFollowUp.act2,
+      );
+      expect(surfaces.map((s) => s.surfaceId), <String>[
+        'kpi',
+        'trend',
+        'reviews',
+        'checklist',
+      ]);
+      expect(surfaces.map((s) => s.messages.length), everyElement(1));
+    });
+  });
 }
 
 Future<void> _until(bool Function() condition) async {
