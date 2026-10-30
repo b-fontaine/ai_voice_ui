@@ -116,6 +116,15 @@ type Config struct {
 	// (liste séparée par des virgules) en ajoute.
 	AllowedHosts []string
 
+	// Composer et passerelle LLM interne (spec 012, config_gateway.go). LLMGatewayAddr
+	// (LLM_GATEWAY_ADDR, `IP:port`) vide : second écouteur non démarré.
+	// LLMGatewayAllowedSources (LLM_GATEWAY_ALLOWED_SOURCES, IP ou CIDR) est obligatoire
+	// quand l'écouteur est actif ; LLMGatewayAllowedHosts en est déduit.
+	Composer                 ComposerConfig
+	LLMGatewayAddr           string
+	LLMGatewayAllowedSources []string
+	LLMGatewayAllowedHosts   []string
+
 	// Agents : cartes d'agent A2A (AGENTS, séparées par des virgules ; chaque
 	// entrée est `URL` ou `Nom=URL`, URL en http ou https). Vide : l'orchestrateur
 	// démarre et répond « aucun agent ».
@@ -273,6 +282,10 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	}
 
 	if err := parseOrchestration(getenv, &cfg); err != nil {
+		return Config{}, err
+	}
+
+	if err := parseGateway(getenv, &cfg); err != nil {
 		return Config{}, err
 	}
 

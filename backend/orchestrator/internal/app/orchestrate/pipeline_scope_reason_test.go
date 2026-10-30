@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -63,5 +64,55 @@ func TestPipelineNoScopeReasonKeyWithoutReason(t *testing.T) {
 	e.p.Run(context.Background(), e.delegation(t))
 	if strings.Contains(logs.String(), "scope_reason") {
 		t.Errorf("clé scope_reason inattendue :\n%s", logs.String())
+	}
+}
+
+// Choix de la phrase quand tous les agents retenus refusent (spec 012, T25, plan A3) :
+// la phrase dépend du motif ; un refus de vue ne parle jamais des plateformes.
+func TestPipelineSaysViewPhraseWhenAllRefuseWithViewUnavailable(t *testing.T) {
+	e := newEnv(t, rejectedWithReason("A", "view_unavailable"))
+	e.p.Run(context.Background(), e.delegation(t))
+	if want := []string{pipePhrases.Generic, pipePhrases.FailureRejectedView}; !reflect.DeepEqual(e.texts(), want) {
+		t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
+	}
+}
+
+// L'adaptateur A2A rend la mise à jour d'échec ET l'erreur dans le même couple (u, err) :
+// le motif doit être lu sur ce couple.
+func TestPipelineReadsScopeReasonFromUpdateYieldedWithItsError(t *testing.T) {
+	err := &port.AgentError{Kind: port.AgentRejected, Reason: "refusée"}
+	a := newAgent("A", step{u: port.AgentUpdate{Kind: port.UpdateFailed, Err: err, ScopeReason: "view_unavailable"}, err: err})
+	e := newEnv(t, a)
+	e.p.Run(context.Background(), e.delegation(t))
+	if want := []string{pipePhrases.Generic, pipePhrases.FailureRejectedView}; !reflect.DeepEqual(e.texts(), want) {
+		t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
+	}
+}
+
+func TestPipelineSaysPlatformPhraseForOtherReasons(t *testing.T) {
+	for _, reason := range []string{"", "two_platforms", "version"} {
+		e := newEnv(t, rejectedWithReason("A", reason))
+		e.p.Run(context.Background(), e.delegation(t))
+		if want := []string{pipePhrases.Generic, pipePhrases.FailureRejected}; !reflect.DeepEqual(e.texts(), want) {
+			t.Fatalf("motif %q : commentaires = %q, attendu %q", reason, e.texts(), want)
+		}
+	}
+}
+
+func TestPipelineMixedRefusalReasonsKeepGenericRejectedPhrase(t *testing.T) {
+	e := newEnv(t, rejectedWithReason("A", "view_unavailable"), rejectedWithReason("B", "two_platforms"))
+	e.p.Run(context.Background(), e.delegation(t))
+	if want := []string{pipePhrases.Generic, pipePhrases.FailureRejected}; !reflect.DeepEqual(e.texts(), want) {
+		t.Fatalf("commentaires = %q, attendu %q", e.texts(), want)
+	}
+}
+
+func TestPipelineViewRefusalDoesNotMaskASuccess(t *testing.T) {
+	e := newEnv(t, rejectedWithReason("A", "view_unavailable"), newAgent("B", okSteps()...))
+	e.p.Run(context.Background(), e.delegation(t))
+	for _, txt := range e.texts() {
+		if txt == pipePhrases.FailureRejectedView || txt == pipePhrases.FailureRejected {
+			t.Fatalf("un refus a masqué le résultat de l'agent réussi : %q", e.texts())
+		}
 	}
 }

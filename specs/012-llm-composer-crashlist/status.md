@@ -2,7 +2,7 @@
 
 - **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : T22+T23+T25 (Go orchestrateur)
+- **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/012-llm-composer-crashlist
 - **Backlog** : EP-03, EP-04, EP-09
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | TDD | T22 (config `COMPOSER_*`, `LLM_GATEWAY_*`, `OPENAI_BASE_URL`, second serveur, arrêt conjoint `errors.Join`), T25 (`view_unavailable`, phrase `failure_rejected_view`, choix par `ScopeReason`) et T23 (planificateur inchangé, 3 cas) faites ; C-07 vert (7/7), C-08 (b) vert ; C-08 (a) et (c) restent rouges jusqu'à l'agent Qualité (T30/T31). Bogue existant corrigé : `ScopeReason` n'atteignait jamais le pipeline en production (`UpdateFailed` et l'erreur dans le même retour). `COMPOSER_TIMEOUT` 4 s provisoire (T51). Variables à poser au compose en T24. | `gates/20261030-231552-unit-go.log` |
 | 2026-10-30 | TDD | T40 (faite par T11), T41 (`CrashList`, trois états, 6 items du catalogue) et T42 (grille à parent unique `CustomMultiChildLayout`, `State` conservés à l'arrivée de `crashes`, étagère) faites ; F-01 et F-02 verts (5 scénarios) ; `gate --unit flutter` vert. Correctif collatéral : `ReviewSentiment` débordait en 3 colonnes (Flexible + ellipse). **Pour le porteur / 013, sans bloquer (pdr-0062)** : avec les polices réelles, cinq lignes se partagent ~187 px dans une cellule 3×2 de 250 px (~37 px par ligne) : un libellé sur deux lignes serait rogné (`ClipRect`, `maxLines: 2` conservé) ; choix à faire en 013 entre cellule plus haute, libellé sur une ligne ou moins de lignes ; unité « sess. » choisie sans la fiche. Pas de golden dans le dépôt : tests de géométrie à polices réelles (`cell_height_real_fonts_test`). | `gates/20261030-231307-unit-flutter.log` |
 | 2026-10-30 | TDD | T20 (port `LlmText`, adaptateur `openaitext` Responses strict, erreurs fermées) et T21 (passerelle `llmgateway`, gardes C-07, serveur à délais) faites, `gate --unit go` vert. Formes fixées : `BaseURL` de l'adaptateur inclut `/v1` (T22 transmet `OPENAI_BASE_URL` tel quel, défaut `https://api.openai.com/v1`) ; erreurs de la passerelle `{"error":motif}` (503 disabled, 504 timeout, 502 transport/upstream_status/incomplete/refusal/invalid) ; `AllowedHosts` déduit de `LLM_GATEWAY_ADDR` en T22 ; bornes de champs et de profondeur par défaut à fixer en T22. | `gates/20261030-230959-unit-go.log` |
 | 2026-10-30 | TDD | T19 : notes `ma-openai-responses-structured-request` et `-response` (doc officielle, `kb_lint` 0 erreur). À retenir pour T20 : les jetons de raisonnement comptent dans `max_output_tokens` (réponse `incomplete` sans texte possible) ; `reasoning.effort` à rendre configurable (`none` refusé par certains modèles) ; la page Models liste `gpt-6-luna`, `gpt-6.1-terra`, `gpt-6.1-sol`, `gpt-6-astra` (pas de « mini »), choix par la mesure T51 ; l'override de base URL n'est pas documenté pour Go : la base est une configuration de l'adaptateur. | `kb_lint.py` |

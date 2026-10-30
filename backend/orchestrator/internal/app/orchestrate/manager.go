@@ -90,6 +90,10 @@ type Phrases struct {
 	// FailureRejected est dite quand l'agent a refusé la demande (nature
 	// AgentRejected) : aucun chiffre.
 	FailureRejected string
+	// FailureRejectedView est dite quand tous les agents retenus ont refusé avec le motif
+	// `view_unavailable` (vue ou liste inconnue, spec 012) : elle ne parle pas des
+	// limites de plateforme et propose les vues du catalogue. Aucun chiffre.
+	FailureRejectedView string
 	// NoSummary est dite quand la tâche est terminée avec une surface valide
 	// mais sans résumé exploitable : vraie, sans chiffre.
 	NoSummary string
@@ -127,7 +131,7 @@ const MaxCommentaryRunes = 1000
 func (p Phrases) Validate() error {
 	for name, v := range map[string]string{
 		"Generic": p.Generic, "QueueFull": p.QueueFull, "NoRequest": p.NoRequest,
-		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "NoSummary": p.NoSummary,
+		"Failure": p.Failure, "FailureRejected": p.FailureRejected, "FailureRejectedView": p.FailureRejectedView, "NoSummary": p.NoSummary,
 		"NoAgent": p.NoAgent, "OutOfCatalog": p.OutOfCatalog, "PartialFailure": p.PartialFailure, "ResultTemplate": p.ResultTemplate,
 		"ActionResultTemplate": p.ActionResultTemplate, "ActionFailure": p.ActionFailure, "Stopped": p.Stopped,
 	} {

@@ -105,6 +105,7 @@ func TestRejectedScopeReasonIsReadAndValidated(t *testing.T) {
 		{"deux plateformes", map[string]any{"genesis/scopeReason": "two_platforms"}, "two_platforms"},
 		{"comparaison sans plateforme", map[string]any{"genesis/scopeReason": "compare_without_platform"}, "compare_without_platform"},
 		{"comparaison indisponible", map[string]any{"genesis/scopeReason": "compare_unavailable"}, "compare_unavailable"},
+		{"vue indisponible", map[string]any{"genesis/scopeReason": "view_unavailable"}, "view_unavailable"},
 		{"motif hors liste", map[string]any{"genesis/scopeReason": "Android 3.4 demandé"}, ""},
 		{"motif mal typé", map[string]any{"genesis/scopeReason": 3}, ""},
 		{"motif trop long", map[string]any{"genesis/scopeReason": strings.Repeat("v", 5000)}, ""},

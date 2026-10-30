@@ -20,7 +20,7 @@ const wait = 3 * time.Second
 
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
-	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
+	Failure: "F", FailureRejected: "FR", FailureRejectedView: "FRV", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
 	ActionResultTemplate: "AR:%s", ActionFailure: "AF", Stopped: "S",
 }
 
@@ -240,6 +240,7 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.NoRequest = "" }),
 		blank(func(p *Phrases) { p.Failure = "" }),
 		blank(func(p *Phrases) { p.FailureRejected = "" }),
+		blank(func(p *Phrases) { p.FailureRejectedView = "" }),
 		blank(func(p *Phrases) { p.NoSummary = " " }),
 		blank(func(p *Phrases) { p.NoAgent = "\n" }),
 		blank(func(p *Phrases) { p.OutOfCatalog = "" }),

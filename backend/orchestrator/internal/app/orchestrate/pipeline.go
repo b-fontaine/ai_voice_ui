@@ -228,13 +228,17 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		return
 	}
 	allRejected := rejections == n // n : agents retenus seulement
+	viewRefused := allRejected && p.allRefusedWith(tasks, scopeViewUnavailable)
 	if !p.waitGeneric(ctx, d) {
 		return
 	}
 	oks := succeeded
 	if len(oks) == 0 {
 		failure := p.deps.Phrases.Failure
-		if allRejected {
+		switch {
+		case viewRefused:
+			failure = p.deps.Phrases.FailureRejectedView
+		case allRejected:
 			failure = p.deps.Phrases.FailureRejected
 		}
 		p.say(ctx, d.ID, failure)
@@ -418,7 +422,9 @@ func (p *Pipeline) runAgent(ctx context.Context, a port.RemoteAgent, ts *taskSta
 		Action: d.Action, Focus: p.focusFor(d),
 	}) {
 		if err != nil {
-			p.fail(ctx, ts, err)
+			// L'adaptateur rend UpdateFailed et son erreur dans le même couple : le
+			// motif de refus se lit ici.
+			p.failWithReason(ctx, ts, err, u.ScopeReason)
 			return
 		}
 		switch u.Kind {
@@ -521,4 +527,24 @@ func (p *Pipeline) outcomes(agentCtx context.Context, tasks []*taskState) (summa
 		}
 	}
 	return summaries, rejections
+}
+
+// scopeViewUnavailable est le motif de refus d'une vue ou d'une liste que le profil ne
+// produit pas (spec 012, plan A3) ; il choisit la phrase FailureRejectedView.
+const scopeViewUnavailable = "view_unavailable"
+
+// allRefusedWith est vrai si chaque tâche a été refusée avec ce motif. Mélange de
+// motifs ou motif absent : faux (la phrase générique des refus s'applique).
+func (p *Pipeline) allRefusedWith(tasks []*taskState, reason string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(tasks) == 0 {
+		return false
+	}
+	for _, ts := range tasks {
+		if !ts.rejected || ts.scopeReason != reason {
+			return false
+		}
+	}
+	return true
 }
