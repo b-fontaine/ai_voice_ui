@@ -1,7 +1,7 @@
 # 005 — État
 
-- **Étape** : Refactorisation
-- **Tentatives** : 0/3
+- **Étape** : Vérification
+- **Tentatives** : 1/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/005-j2-app-voice-orb
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-30 | Refactorisation | `gate.sh --full` unique de l'étape : VERT, 40 contrôles, arbre propre à `748be0a` (HEAD = commit du porteur `perf(loop): porte rapide…` qui ne touche que `tools/loop/verify.sh`, arrivé sur la branche pendant la refactorisation ; non modifié par la boucle) | `.omc/state/loop/gates/` dernier `*-full.log` ; `last_green_sha` = `748be0a` |
 | 2026-10-30 | Refactorisation | lot 5 (tests) : R9 — paquets `testing/voice_fakes` (faux transport unique, `FakeRelay`, `FakeChannel` pilotable, `VoiceHarness`) et `testing/bloc_harness` (`statesAfter`, 3 copies supprimées) ; `StubVoiceSessionBloc` et `_ObservedSession` supprimés, `top_bar_test` et le test de composition réécrits sur de vrais objets et des faux de frontières ; tests avant/après identiques (app 78/78, voice_session 119/119, canvas 10/10, agent_activity 14/14) ; écarts : l'ordre de fermeture est vérifié par un journal (la fin du flux `status` ne peut pas être ordonnée strictement avec la libération de la source) ; `stop` bloqué : deux erreurs bornées observées | `.omc/state/loop/gates/20261030-013652-unit-flutter.log` (VERT, 33 contrôles) |
 | 2026-10-30 | Refactorisation | lot 4 (app) : R1 (`ExitGuard` → `shared_core`, `GenesisCanvasPageSettings`, test d'architecture `layer_imports_test` : `pages`/`widgets` n'importent plus `app/`), R2 (puits `errorSink` : 3 rappels branchés, `diagnostics_test`, `emitRaw` du faux backend), R5 (`channelConnectTimeout` 5 s/`channelCloseTimeout` 2 s injectés ; invariants testés : session 10 s > delete 7 s + canal 2 s, sortie 12 s > session + 1 s — **valeurs de réglage choisies par l'assistant, la spec disait « ~8 s » : à confirmer par le porteur, sans bloquer**), R7 (relais fermé par `getIt.reset()`), R10 app (`liveEnvironment` retiré, résolutions uniques, initialisations explicites, raisons de fermeture en textes fixes, URL = origine seule) ; rouges cités R1 et R7 ; R2/R5/URL tests écrits avant le code sans rouge formel relancé | `.omc/state/loop/gates/20261030-012710-unit-flutter.log` (VERT, 29 contrôles) ; acceptation 15 tests verts (rapport de l'agent) |
 | 2026-10-30 | Refactorisation | lot 3 (entités) : R6 (enum `AgentTaskState`, `hide`/alias supprimés, grep de contrôle vide) et R10 part entity_session (`DeepCollectionEquality`) | `.omc/state/loop/gates/20261030-011953-unit-flutter.log` (VERT, 29 contrôles) ; acceptation 15 tests verts |
