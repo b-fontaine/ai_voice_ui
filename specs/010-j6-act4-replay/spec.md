@@ -25,7 +25,7 @@ La fiche n'a pas de scénario pour FR-09 (vérifié par revue, pdr-0049) ; les s
 
 ## Critères d'acceptation
 - [ ] R-01 à R-09 automatisés (Flutter) et verts
-- [ ] Tests unitaires : journal (ajout, JSONL aller-retour, ordre), lecteur (vitesses, pause, seek, plafond), Bloc, routeur vivant/rejeu, barre Rejeu, indicateur d'acte
+- [ ] Tests unitaires : journal (ajout, ordre, plafond, copie profonde, redécodage), lecteur (vitesses, pause, seek, plafond), Bloc, routeur vivant/rejeu, barre Rejeu, indicateur d'acte
 - [ ] `tools/loop/gate.sh --full` vert
 - [ ] Capture `app-smoke` avec `GENESIS_REPLAY_AT=0.5` (rejeu en pause à mi-parcours) : zone Rejeu lisible (boutons ≥ 48 px, texte ≥ 24 px, pas de débordement), indicateur « Acte 4 · Rejeu »
 - [ ] Revue d'architecte : CONFORME (ou refactorisations appliquées)
