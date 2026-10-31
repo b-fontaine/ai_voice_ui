@@ -56,8 +56,9 @@ type Options struct {
 	// AnnounceObserveTimeout borne l'observation (journal seulement) d'une
 	// parole sortante après une annonce acquittée ; 0 : pas d'observation.
 	AnnounceObserveTimeout time.Duration
-	// Stop règle le détecteur de mots d'arrêt (spec 011, A5). Words vide : pas de
-	// détecteur, aucun arrêt vocal. Le minuteur de confirmation est After.
+	// Stop règle le classifieur d'énoncé (011 mots d'arrêt, 014 corrections, 015
+	// chevauchement). Sans mot d'arrêt, sans mot de correction et chevauchement coupé
+	// (StopConfig.Active faux) : pas de détecteur. Le minuteur de confirmation est After.
 	Stop StopConfig
 }
 
@@ -230,7 +231,7 @@ func NewService(live port.LiveProvider, sink port.Sink, clock port.Clock, opts O
 	if _, err := level.NewMeter(opts.SampleRate, opts.WindowMs); err != nil {
 		return nil, err
 	}
-	if len(opts.Stop.Words) > 0 || len(opts.Stop.CorrectionWords) > 0 { // même validation que le détecteur créé par session
+	if opts.Stop.Active() { // même validation que le détecteur créé par session
 		if _, err := NewStopDetector(opts.Stop, clock); err != nil {
 			return nil, err
 		}
@@ -504,8 +505,10 @@ loop:
 				closedReason = ev.Reason
 				fw.shutdown(s.opts.DelegationsCloseTimeout)
 			}
-			s.translate(sess, ev)
+			levels := s.translate(sess, ev)
 			switch ev.Type {
+			case port.EventOutputAudio:
+				stop.noteOutput(levels)
 			case port.EventInputTranscriptDelta:
 				fw.transcript(ev)
 				if det, ok := stop.feed(ev); ok {
@@ -514,6 +517,7 @@ loop:
 				stop.rearm(s.opts.After)
 			case port.EventOutputTranscriptDelta:
 				rep.noteSpeech()
+				stop.feedOutput(ev)
 			case port.EventDelegationCreated:
 				rep.noteDelegation(ev.DelegationID)
 				fw.delegate(ev.DelegationID, ev.OffsetMs)
@@ -562,13 +566,30 @@ func (s *Service) supersede(sess *session, fw *forwarder, det Detection) {
 	})
 }
 
-// onDetection route le verdict du classifieur : « Stop » interrompt, une correction
-// remplace la demande antérieure (Supersede).
+// overlap traite une phrase du speaker dite par-dessus l'IA, sans mot d'arrêt (spec 015) :
+// voice.interrupted {cause: overlap} d'abord, publié ici même sans exécution en vol (le client
+// coupe la voix), puis Supersede sans annonce (il ne publie rien : un seul message par énoncé),
+// qui annule l'exécution antérieure et laisse la phrase ouvrir la demande suivante. Interrupt
+// n'est jamais utilisé.
+func (s *Service) overlap(sess *session, fw *forwarder, det Detection, cause domain.InterruptCause) {
+	s.announceInterrupted(sess, det.AtMs, cause)
+	fw.supersede(det.AtMs, nil)
+}
+
+// onDetection route le verdict du classifieur : « Stop » interrompt, un chevauchement ou une
+// correction dite pendant que l'IA parle coupent la voix puis remplacent la demande antérieure
+// (Supersede sans annonce), une correction ordinaire laisse Supersede annoncer (014).
 func (s *Service) onDetection(sess *session, fw *forwarder, det Detection) {
 	switch det.Kind {
 	case KindStop:
 		s.interrupt(sess, fw, det)
+	case KindOverlap:
+		s.overlap(sess, fw, det, domain.CauseOverlap)
 	case KindCorrection:
+		if det.Speaking {
+			s.overlap(sess, fw, det, domain.CauseCorrection)
+			return
+		}
 		s.supersede(sess, fw, det)
 	}
 }
@@ -583,7 +604,7 @@ type stopWatch struct {
 
 func (s *Service) newStopWatch() *stopWatch {
 	w := &stopWatch{}
-	if len(s.opts.Stop.Words) == 0 && len(s.opts.Stop.CorrectionWords) == 0 {
+	if !s.opts.Stop.Active() {
 		return w
 	}
 	det, err := NewStopDetector(s.opts.Stop, s.clock)
@@ -593,6 +614,23 @@ func (s *Service) newStopWatch() *stopWatch {
 	}
 	w.det = det
 	return w
+}
+
+// noteOutput transmet au détecteur les niveaux d'un bloc d'audio de sortie.
+func (w *stopWatch) noteOutput(levels []float64) {
+	if w.det == nil {
+		return
+	}
+	for _, l := range levels {
+		w.det.NoteOutput(l)
+	}
+}
+
+// feedOutput transmet au détecteur un delta de transcription de sortie.
+func (w *stopWatch) feedOutput(ev port.LiveEvent) {
+	if w.det != nil {
+		w.det.FeedOutput(ev.StartMs, ev.EndMs, ev.Text)
+	}
 }
 
 func (w *stopWatch) feed(ev port.LiveEvent) (Detection, bool) {
@@ -650,14 +688,18 @@ func (s *Service) expire(sess *session) {
 	_ = s.closeSession(context.Background(), sess)
 }
 
-func (s *Service) translate(sess *session, ev port.LiveEvent) {
+// translate publie l'événement en message applicatif. Pour un bloc d'audio de sortie, il
+// rend les niveaux qu'il vient de calculer (un seul calcul RMS, réutilisé par la garde du
+// chevauchement) ; nil pour les autres événements.
+func (s *Service) translate(sess *session, ev port.LiveEvent) (levels []float64) {
 	switch ev.Type {
 	case port.EventInputTranscriptDelta:
 		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleUser, Text: ev.Text, StartMs: ev.StartMs, EndMs: ev.EndMs})
 	case port.EventOutputTranscriptDelta:
 		s.publish(sess, domain.TypeTranscript, domain.Transcript{Role: domain.RoleAI, Text: ev.Text, StartMs: ev.StartMs, EndMs: ev.EndMs})
 	case port.EventOutputAudio:
-		for _, l := range sess.meter.Write(ev.PCM) {
+		levels = sess.meter.Write(ev.PCM)
+		for _, l := range levels {
 			s.publish(sess, domain.TypeOrbLevel, domain.OrbLevel{Level: l})
 		}
 	case port.EventUsageUpdated:
@@ -673,6 +715,7 @@ func (s *Service) translate(sess *session, ev port.LiveEvent) {
 		}
 		s.publish(sess, domain.TypeSessionState, domain.SessionState{State: domain.StateClosed, Reason: reason})
 	}
+	return levels
 }
 
 func (s *Service) publish(sess *session, typ string, data domain.Payload) {

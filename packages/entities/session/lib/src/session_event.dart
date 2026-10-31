@@ -196,8 +196,9 @@ final class UsageUpdated extends SessionEvent {
 }
 
 /// Cause d'une interruption de l'IA (`voice.interrupted`) : un mot d'arrêt
-/// (`stop`) ou une correction de la demande (`correction`, pdr-0076).
-enum InterruptionCause { stop, correction }
+/// (`stop`), une correction de la demande (`correction`, pdr-0076) ou une prise
+/// de parole sur la voix de l'IA sans mot d'arrêt (`overlap`, pdr-0077).
+enum InterruptionCause { stop, correction, overlap }
 
 /// L'utilisateur a interrompu l'IA (`voice.interrupted`). [atMs] est l'horloge
 /// média des transcripts (`start_ms` du delta déclencheur). [cause] vaut

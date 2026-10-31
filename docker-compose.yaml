@@ -78,6 +78,15 @@ services:
       VOICE_STOP_SETTLE: ${VOICE_STOP_SETTLE:-400ms}
       VOICE_STOP_DEBOUNCE: ${VOICE_STOP_DEBOUNCE:-2s}
       VOICE_STOP_SPAN: ${VOICE_STOP_SPAN:-3s}
+      # Interruption sur chevauchement de parole (pdr-0077, pdr-0080) : tout mot significatif du speaker, hors écho de l'IA, pendant qu'elle parle.
+      # Valeurs de départ, à régler en répétition (Q-80) ; VOICE_OVERLAP_INTERRUPT=false rend le comportement de 014.
+      VOICE_OVERLAP_INTERRUPT: ${VOICE_OVERLAP_INTERRUPT:-true}
+      VOICE_OVERLAP_SPEAKING_LEVEL: ${VOICE_OVERLAP_SPEAKING_LEVEL:-0.02}
+      VOICE_OVERLAP_SPEAKING_WINDOW: ${VOICE_OVERLAP_SPEAKING_WINDOW:-2s}
+      VOICE_OVERLAP_ECHO_WINDOW: ${VOICE_OVERLAP_ECHO_WINDOW:-8s}
+      VOICE_OVERLAP_MIN_WORDS: ${VOICE_OVERLAP_MIN_WORDS:-1}
+      VOICE_OVERLAP_MIN_WORD_LEN: ${VOICE_OVERLAP_MIN_WORD_LEN:-3}
+      VOICE_OVERLAP_IGNORE_WORDS: ${VOICE_OVERLAP_IGNORE_WORDS:-les,une,des,que,qui,est,pas,mais,donc,car,pour,dans,avec,sur,par,très,bien,alors,aussi,comme,ok,oui,super,merci,d'accord,parfait,voilà,vas-y,euh,hum,ben,bah,bon}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

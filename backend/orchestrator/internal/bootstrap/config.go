@@ -114,6 +114,9 @@ type Config struct {
 	VoiceStopSettle       time.Duration
 	VoiceStopDebounce     time.Duration
 	VoiceStopSpan         time.Duration
+	// VoiceOverlap : chevauchement (spec 015, VOICE_OVERLAP_*, plan § Configuration). Valeur
+	// nulle : coupé, aucune variable requise.
+	VoiceOverlap voice.OverlapConfig
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
@@ -468,7 +471,98 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 		return err
 	}
 	cfg.VoiceStopSpan, err = parseBoundedDuration(getenv, "VOICE_STOP_SPAN", defaultVoiceStopSpan, maxVoiceStopSpan)
-	return err
+	if err != nil {
+		return err
+	}
+	if err := parseVoiceOverlap(getenv, cfg); err != nil {
+		return err
+	}
+	if cfg.VoiceOverlap.Enabled && cfg.VoiceStopSettle == 0 {
+		return errors.New("VOICE_OVERLAP_INTERRUPT actif exige VOICE_STOP_SETTLE strictement positif (sinon le jeton ouvert est jugé aussitôt)")
+	}
+	return nil
+}
+
+// parseVoiceOverlap lit les variables VOICE_OVERLAP_* (spec 015). Valeur nulle : chevauchement
+// coupé. Une variable présente est toujours bornée ; chevauchement actif, les cinq réglages
+// numériques sont obligatoires (aucun défaut codé en dur). Les erreurs nomment la variable
+// sans afficher de valeur ni recopier de mot.
+func parseVoiceOverlap(getenv func(string) string, cfg *Config) error {
+	o := &cfg.VoiceOverlap
+	if raw := strings.TrimSpace(getenv("VOICE_OVERLAP_INTERRUPT")); raw != "" {
+		on, err := strconv.ParseBool(raw)
+		if err != nil {
+			return errors.New("VOICE_OVERLAP_INTERRUPT doit être un booléen (true ou false)")
+		}
+		o.Enabled = on
+	}
+	present := func(name string) (string, bool, error) {
+		raw := strings.TrimSpace(getenv(name))
+		if raw == "" && o.Enabled {
+			return "", false, fmt.Errorf("%s est requise quand VOICE_OVERLAP_INTERRUPT est actif", name)
+		}
+		return raw, raw != "", nil
+	}
+	if raw, ok, err := present("VOICE_OVERLAP_SPEAKING_LEVEL"); err != nil {
+		return err
+	} else if ok {
+		v, perr := strconv.ParseFloat(raw, 64)
+		if perr != nil || !(v > 0 && v <= 1) {
+			return errors.New("VOICE_OVERLAP_SPEAKING_LEVEL doit être un nombre supérieur à 0 et au plus 1 (par exemple 0.02)")
+		}
+		o.SpeakingLevel = v
+	}
+	for _, d := range []struct {
+		name     string
+		min, max time.Duration
+		dst      *time.Duration
+	}{
+		{"VOICE_OVERLAP_SPEAKING_WINDOW", voice.MinOverlapSpeakingWindow, voice.MaxOverlapSpeakingWindow, &o.SpeakingWindow},
+		{"VOICE_OVERLAP_ECHO_WINDOW", voice.MinOverlapEchoWindow, voice.MaxOverlapEchoWindow, &o.EchoWindow},
+	} {
+		raw, ok, err := present(d.name)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		v, perr := time.ParseDuration(raw)
+		if perr != nil || v < d.min || v > d.max {
+			return fmt.Errorf("%s doit être une durée comprise entre %s et %s (par exemple 2s)", d.name, d.min, d.max)
+		}
+		*d.dst = v
+	}
+	for _, n := range []struct {
+		name string
+		max  int
+		dst  *int
+	}{
+		{"VOICE_OVERLAP_MIN_WORDS", voice.MaxOverlapMinWords, &o.MinWords},
+		{"VOICE_OVERLAP_MIN_WORD_LEN", voice.MaxOverlapMinWordLen, &o.MinWordLen},
+	} {
+		raw, ok, err := present(n.name)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		v, perr := strconv.Atoi(raw)
+		if perr != nil || v < 1 || v > n.max {
+			return fmt.Errorf("%s doit être un entier compris entre 1 et %d", n.name, n.max)
+		}
+		*n.dst = v
+	}
+	if raw := strings.TrimSpace(getenv("VOICE_OVERLAP_IGNORE_WORDS")); raw != "" {
+		for _, w := range strings.Split(raw, ",") {
+			o.IgnoreWords = append(o.IgnoreWords, strings.TrimSpace(w))
+		}
+		if err := voice.ValidateOverlapIgnoreWords(o.IgnoreWords); err != nil {
+			return fmt.Errorf("VOICE_OVERLAP_IGNORE_WORDS : %w (liste séparée par des virgules, sans élément vide)", err)
+		}
+	}
+	return nil
 }
 
 // parseBoundedDuration lit une durée facultative comprise entre 0 et max.

@@ -120,7 +120,7 @@ sequenceDiagram
 GPT-Live n'expose **aucun événement d'interruption** ([rt-barge-in], [rt-gpt-live-lifecycle]) : l'événement est donc **produit par l'orchestrateur** à partir de la transcription d'entrée, sur mot d'arrêt seulement ([pdr-0069](../decisions/pdr-0069-voice-interruption-hybrid-stop-011.md), Q-40 et Q-42 tranchées). Interrompre la parole **n'annule pas** le travail backend : l'orchestrateur annule explicitement, confirme, puis annonce ([rt-gpt-live-delegation]) ; les surfaces complètes restent (RG-14, FR-15), les actions `act-<n>` ne sont pas annulées. Détail (détecteur, époque, complétude de surface, réglages) : [p-ar-voice-interruption](voice-interruption.md).
 
 - **Délai d'arrêt (Q-67 tranchée)** : la voix de l'IA continue ~0,6 à 1,0 s après le premier son de l'interruption (SP-02, horloge du relais) ; la coupure locale de la piste distante par l'app supprime le tampon de lecture ([pdr-0069](../decisions/pdr-0069-voice-interruption-hybrid-stop-011.md)).
-- ⚠️ **Hypothèses non confirmées** : `track.enabled = false` coupe la lecture sous `flutter_webrtc` Linux (Q-79) ; GPT-Live crée une délégation pour « Stop » (Q-78) ; couper la parole **sans** « Stop » repose sur le modèle seul (S-05 en partie, Q-77).
+- ⚠️ **Hypothèses non confirmées** : `track.enabled = false` coupe la lecture sous `flutter_webrtc` Linux (Q-79) ; GPT-Live crée une délégation pour « Stop » (Q-78) ; couper la parole **sans** « Stop » est livré par 015 (S-05 complet, Q-77 → pdr-0077) ; faux positifs d'écho, latence et fenêtre de parole à observer (Q-80).
 
 ## Composition par modèle et vue indisponible (012)
 
@@ -145,5 +145,5 @@ Effets techniques des écarts de [p-fn-mockups](../functional/mockups.md) (E1 à
 
 ## Points ouverts (registre : [p-rm-open-questions](../roadmap/open-questions.md))
 
-- **Interruption et « Stop »** : Q-40, Q-42 et Q-67 tranchées (pdr-0069, 011) ; bruits courts (FR-18) conformes (Q-41) ; déclencheur sur prise de parole → Q-77 ; hypothèses d'observation → Q-78 à Q-80. **Agents A2A réels**, processus séparés : tranché ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-16) ; pas d'agent d'un autre éditeur ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md), Q-10).
+- **Interruption et « Stop »** : Q-40, Q-42 et Q-67 tranchées (pdr-0069, 011) ; bruits courts (FR-18) conformes (Q-41) ; déclencheur sur prise de parole : Q-77 → pdr-0077, livré par 015 ; hypothèses d'observation → Q-78 à Q-80. **Agents A2A réels**, processus séparés : tranché ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-16) ; pas d'agent d'un autre éditeur ([pdr-0035](../decisions/pdr-0035-no-third-party-agent.md), Q-10).
 - **Après l'essai au micro** : interruption vocale hybride (pdr-0069) et mémoire de focus par canevas (pdr-0071, Q-74), livrées par 011.

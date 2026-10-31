@@ -108,7 +108,7 @@ Aucune de ces vérifications n'a été faite en réel ; chacune est une ⚠️ h
 |---|---|
 | Dire « Stop » pendant que l'IA parle : le son s'arrête-t-il réellement (spike T03, piste distante sous Linux) ? la session reste-t-elle ouverte, l'orbe repasse-t-elle à « Écoute » ? | Q-79 |
 | GPT-Live crée-t-il une délégation pour « Stop » ? Un double accusé vocal (« D'accord. » puis l'accusé du modèle) est-il audible ? | Q-78 |
-| Couper la parole sans dire « Stop » : l'IA se tait-elle d'elle-même (consigne) ? | Q-77 (S-05 en partie) |
+| Couper la parole sans dire « Stop » (015, [p-ar-voice-overlap](voice-overlap.md)) : faux positifs d'écho sur enceinte, latence ≈ 1 s, fenêtre de parole de 2 s, seuils `VOICE_OVERLAP_*` | Q-80 (Q-77 livrée par 015) |
 | Horloges de `start_ms` et de `at_ms` alignées ? deltas d'entrée jamais révisés ? « Stop » transcrit de façon fiable ? NFR-02 avec la fenêtre de +300 ms (à remesurer) ? | Q-80 |
 | « Compare avec la 3.3 » dit en second tour hérite-t-il bien d'Android ? | Q-74 tranchée, à confirmer en réel |
 
@@ -123,7 +123,7 @@ Tests, captures 1920×1080 et `gate --full` sont verts ; aucune de ces vérifica
 | « Non, plutôt iOS » dit pendant une génération : GPT-Live crée-t-il une délégation ? (sinon l'app annule et fait taire, sans replanifier) | Q-87 |
 | Un « non » ordinaire en tête de phrase déclenche-t-il des annulations indues ? (`VOICE_CORRECTION_WORDS=non,plutôt,en fait`, réduire ou vider la liste sinon) | pdr-0076 « Réexaminer si » |
 | `M` et `Échap` répondent-ils sans conflit de focus à la machine de démo ? | NFR-12 |
-| Couper la parole sans mot (déclencheur sur prise de parole) ; barge-in 10/10 sur enceinte | Q-77 ; SP-06, FR-18 |
+| Barge-in 10/10 sur enceinte (AEC, réglage des seuils du chevauchement) | SP-06, FR-18, Q-80 |
 
 ## À observer en répétition (design et ergonomie, 013)
 
@@ -134,4 +134,4 @@ Tests et captures 1920×1080 sont verts ; ce qui suit ne se vérifie qu'en salle
 | Les 60 i/s pendant l'acte 1, la liste des crashs et un rejeu à 2× (DevTools Performance, profil `--profile` sur la machine de démo) | NFR-04 |
 | Lisibilité depuis le fond de salle sur le vidéoprojecteur réel (texte ≥ 24 px, contraste) ; logistique de la salle : gérée par le porteur | NFR-05 |
 | En 3×2 avec l'acte 2 : « Changelog validé » masqué derrière « + 1 autres critères », un seul avis, sixième cellule vide : acceptable en salle ? | Q-83 (tranchée → pdr-0075 D2, contestable) |
-| Le rail de 96 px (au lieu de la colonne de la maquette) et son intervalle libre de 48 px : faut-il dessiner la liaison animée de délégation ? | Q-85 |
+| Le rail de 96 px (au lieu de la colonne de la maquette) et la liaison animée de délégation (livrée par 015, Q-85 → pdr-0077) : la lisibilité à la projection et les 60 i/s avec la liaison animée restent à observer | Q-85, NFR-04 |

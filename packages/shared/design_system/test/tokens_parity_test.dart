@@ -139,6 +139,7 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.status', SceneMotion.status, _ms);
   add('scene.motion.floor', SceneMotion.floor, _ms);
   add('scene.motion.translation', SceneMotion.translation, _px);
+  add('scene.motion.link', SceneMotion.link, _ms);
   return readings;
 }
 

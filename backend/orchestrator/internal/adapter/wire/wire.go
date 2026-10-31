@@ -60,7 +60,7 @@ func WireData(d domain.Payload) any {
 		// cause : énumération fermée, absente pour un « Stop » (charge utile de la spec 011)
 		// et pour toute valeur inconnue.
 		cause := ""
-		if v.Cause == domain.CauseCorrection {
+		if v.Cause == domain.CauseCorrection || v.Cause == domain.CauseOverlap {
 			cause = string(v.Cause)
 		}
 		return struct {

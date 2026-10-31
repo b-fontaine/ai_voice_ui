@@ -150,6 +150,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 			Words: cfg.VoiceStopWords, UtteranceGap: cfg.VoiceStopUtteranceGap, MaxWords: cfg.VoiceStopMaxWords,
 			Settle: cfg.VoiceStopSettle, Debounce: cfg.VoiceStopDebounce,
 			CorrectionWords: cfg.VoiceCorrectionWords,
+			Overlap:         cfg.VoiceOverlap,
 		},
 		Logger: logger,
 	})

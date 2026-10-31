@@ -1,16 +1,16 @@
 ---
 id: p-ar-voice-interruption
-title: Interruption vocale, « Stop », correction en vol, focus et fenêtre de demande (livrés par 011 et 014)
+title: Interruption vocale, « Stop », correction en vol, chevauchement, focus et fenêtre de demande (livrés par 011, 014 et 015)
 area: architecture
 status: draft
 updated: 2026-10-31
-sources: [specs/014-j7-silence-micro-correction/spec.md, specs/014-j7-silence-micro-correction/plan.md, specs/014-j7-silence-micro-correction/status.md, specs/011-voice-interaction/spec.md, specs/011-voice-interaction/plan.md, specs/011-voice-interaction/tasks.md, specs/011-voice-interaction/status.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md, knowledge:rt-barge-in, knowledge:rt-gpt-live-delegation, knowledge:rt-gpt-live-sideband, knowledge:rt-transcription, knowledge:proto-a2a-task-lifecycle]
-links: [pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, p-fn-feature-silence-micro-correction-014, p-ar-llm-composer, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-backend, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-rm-open-questions, p-rm-spikes, rt-barge-in, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-lifecycle, rt-transcription, proto-a2a-task-lifecycle]
-tags: [barge-in, stop, voix, focus, annulation, app-channel, 011, 014, correction, silence, micro]
+sources: [specs/015-j7-overlap-interrupt-delegation-link/spec.md, specs/015-j7-overlap-interrupt-delegation-link/plan.md, specs/015-j7-overlap-interrupt-delegation-link/status.md, specs/014-j7-silence-micro-correction/spec.md, specs/014-j7-silence-micro-correction/plan.md, specs/014-j7-silence-micro-correction/status.md, specs/011-voice-interaction/spec.md, specs/011-voice-interaction/plan.md, specs/011-voice-interaction/tasks.md, specs/011-voice-interaction/status.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md, knowledge:rt-barge-in, knowledge:rt-gpt-live-delegation, knowledge:rt-gpt-live-sideband, knowledge:rt-transcription, knowledge:proto-a2a-task-lifecycle]
+links: [p-ar-voice-overlap, p-fn-feature-chevauchement-liaison-015, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, p-fn-feature-silence-micro-correction-014, p-ar-llm-composer, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-backend, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-rm-open-questions, p-rm-spikes, rt-barge-in, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-lifecycle, rt-transcription, proto-a2a-task-lifecycle]
+tags: [barge-in, stop, voix, focus, annulation, app-channel, 011, 014, 015, correction, silence, micro, chevauchement]
 ---
-# Interruption vocale, « Stop », correction en vol, focus et fenêtre de demande (011, 014)
+# Interruption vocale, « Stop », correction en vol, chevauchement, focus et fenêtre de demande (011, 014, 015)
 
-**En bref.** Livré par la fonctionnalité 011 (2026-10-30, `gate --full` vert, 58 contrôles) : le backend repère « Stop » dans la transcription d'entrée, annule les délégations en vol sans fermer la session, retire les surfaces inachevées et publie `voice.interrupted` ; l'app coupe la piste audio distante. Le même lot corrige la fenêtre de demande et ajoute la mémoire de focus de l'acte 2. Décisions : [pdr-0069](../decisions/pdr-0069-voice-interruption-hybrid-stop-011.md), [pdr-0071](../decisions/pdr-0071-act2-focus-memory-act-indicator-click-feedback.md) (porteur) ; mécanismes : [pdr-0073](../decisions/pdr-0073-011-voice-interaction-details-assistant-decided.md) (boucle, pdr-0062). Côté app : [p-ar-frontend-screen](frontend-screen.md) § 011. **014 (2026-10-31, `gate --full` vert, 67 contrôles)** ajoute la correction en vol, « Faire taire » et le micro coupé (§ Correction en vol, [pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md)).
+**En bref.** Livré par la fonctionnalité 011 (2026-10-30, `gate --full` vert, 58 contrôles) : le backend repère « Stop » dans la transcription d'entrée, annule les délégations en vol sans fermer la session, retire les surfaces inachevées et publie `voice.interrupted` ; l'app coupe la piste audio distante. Le même lot corrige la fenêtre de demande et ajoute la mémoire de focus de l'acte 2. Décisions : [pdr-0069](../decisions/pdr-0069-voice-interruption-hybrid-stop-011.md), [pdr-0071](../decisions/pdr-0071-act2-focus-memory-act-indicator-click-feedback.md) (porteur) ; mécanismes : [pdr-0073](../decisions/pdr-0073-011-voice-interaction-details-assistant-decided.md) (boucle, pdr-0062). Côté app : [p-ar-frontend-screen](frontend-screen.md) § 011. **014 (2026-10-31, `gate --full` vert, 67 contrôles)** ajoute la correction en vol, « Faire taire » et le micro coupé (§ Correction en vol, [pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md)). **015 (2026-10-31, `gate --full` vert, 67 contrôles)** ajoute le **chevauchement de parole** : couper l'IA en parlant, sans mot d'arrêt (S-05 complet ; § Chevauchement de parole, détail dans [p-ar-voice-overlap](voice-overlap.md)).
 
 ## Chaîne « Stop »
 
@@ -71,11 +71,26 @@ FR-17 (second temps) et FR-14 (chemin « correction ») : un mot de correction d
 
 **Faire taire et micro coupé : locaux** (FR-20, FR-12, [pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D1, D6). Aucun message au backend, aucune écriture au journal : l'app coupe sa piste distante (événement local `VoiceSilenced`, traité comme `voice.interrupted` par la session, l'orbe, la transcription et le niveau) ou désactive sa piste micro locale (`track.enabled=false`, capture non arrêtée). `session.input_audio.mute` du sideband n'est pas utilisé ([rt-gpt-live-sideband]). « Faire taire » **n'annule aucune génération** (« Stop » vocal le fait) : si l'IA marque une pause d'au moins `GENESIS_INTERRUPT_RESUME_SILENCE_MS`, sa voix revient au milieu de la réplique ; ⚠️ non observé en réel. Côté app : [p-ar-frontend-screen](frontend-screen.md) § 014.
 
+## Chevauchement de parole (015)
+
+FR-13, FR-19, FR-18 (écho, côté logiciel seulement) : le speaker coupe l'IA en prenant la parole ([pdr-0077](../decisions/pdr-0077-011b-overlap-interrupt-delegation-link.md), porteur ; [pdr-0080](../decisions/pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided.md), boucle). Détail, configuration et hypothèses : **[p-ar-voice-overlap](voice-overlap.md)**. Scénarios S-05, O-01 à O-08, L-01 à L-04 : [p-fn-feature-chevauchement-liaison-015](../functional/features/chevauchement-liaison-015.feature).
+
+| Point | Contrat |
+|---|---|
+| Classifieur | troisième genre `Overlap` du classifieur de 014 ; priorité correction, arrêt, chevauchement ; anti-rebond asymétrique (un Stop n'est jamais filtré par un Overlap) |
+| Garde « l'IA parle » | niveau de sortie ≥ `VOICE_OVERLAP_SPEAKING_LEVEL` ou delta de sortie dans `VOICE_OVERLAP_SPEAKING_WINDOW` ; **verrouillée à l'ouverture de l'énoncé** (le flux d'audio de sortie est continu, silence compris) |
+| Mot significatif | jetons fermés, hors écho de la transcription de sortie (`VOICE_OVERLAP_ECHO_WINDOW`, mémo borné à 256), longueur et liste ignorée ; un nombre est dispensé de la longueur et de la liste, jamais de l'écho |
+| Effet | `at_ms` = `start_ms` du premier delta de l'énoncé ; `voice.interrupted {cause: overlap}` **toujours**, puis `Supersede(atMs, nil)` (jamais `Interrupt`) ; une correction dite pendant que l'IA parle coupe aussi la voix |
+| Configuration | sept variables `VOICE_OVERLAP_*` ; code = coupé, compose = activé ; `VOICE_STOP_SETTLE` > 0 exigé |
+| Orbe | `overlap` en `Listening` : `Interrupted` puis `Listening` aussitôt ; en `Interrupted` : requalifié ; fin par délégation d'offset ≥ `at_ms` ou silence de reprise |
+
+⚠️ Réglages à observer en répétition avec le porteur (Q-80, SP-06 pour l'AEC sur enceinte) : faux positifs d'écho, latence ≈ 1 s, fenêtre de parole de 2 s.
+
 ## Contrat ajouté à l'app-channel
 
 | Élément | Contrat |
 |---|---|
-| `voice.interrupted` | `{at_ms}` (+ `cause?` depuis 014 : `stop` ou `correction`, absent = `stop`) ; `at_ms` = `start_ms` du delta déclencheur (horloge média des transcripts, pas `t_ms`) ; **jamais rejoué** par le hub (comme `orb.level`) ; gardé dans le journal JSONL ; ignoré par `ReplayRouter` ; non A2UI |
+| `voice.interrupted` | `{at_ms}` (+ `cause?` depuis 014 : `stop`, `correction` ou (015) `overlap`, absent ou inconnu = `stop`) ; `at_ms` = `start_ms` du delta déclencheur (horloge média des transcripts, pas `t_ms`) ; **jamais rejoué** par le hub (comme `orb.level`) ; gardé dans le journal JSONL ; ignoré par `ReplayRouter` ; non A2UI |
 | `agent.activity canceled` | **émis** depuis 011 (réservé depuis 004), sans `detail` ; terminal pour chaque agent de `plan.selected` ; le rail affiche « interrompu » |
 | `genesis/intent` | métadonnée de l'état A2A `completed`, posée par l'agent : `{platform, compareTo}` ; validée par `a2aclient` **sur la forme seulement** (2 clés, 0 à 16 caractères `[A-Za-z0-9.]`) → `AgentUpdate.Intent` |
 | `genesis/focus` | métadonnée de la requête A2A, posée par l'orchestrateur : `{platform, compareTo}` (`AgentRequest.Focus`) ; absente sans focus ; les agents restent sans état |
@@ -98,6 +113,7 @@ Bogue corrigé (`window.go`) : un mot commencé à l'offset de la délégation �
 | `VOICE_CORRECTION_WORDS` (014) | mots de correction de tête | code : vide ; compose : `non,plutôt,en fait` ; ≤ 16 mots de 32 runes ; réutilise les trois variables d'écart, de confirmation et d'anti-rebond ci-dessous |
 | `VOICE_STOP_UTTERANCE_GAP`, `VOICE_STOP_MAX_WORDS` | écart d'un énoncé ; mots maximum | 1,5 s (1 ms à 10 s) ; 4 (1 à 32) |
 | `VOICE_STOP_SETTLE`, `VOICE_STOP_DEBOUNCE`, `VOICE_STOP_SPAN` | confirmation ; anti-rebond ; écart de la demande vide | 400 ms (0 à 2 s) ; 2 s (0 à 10 s) ; 3 s (0 à 10 s) |
+| `VOICE_OVERLAP_*` (015, sept variables) | chevauchement de parole | code : coupé ; compose : activé ; tableau dans [p-ar-voice-overlap](voice-overlap.md) |
 | `VOICE_PHRASES_FILE` | phrase `stopped` **obligatoire** (`Phrases.Validate`) | défaut embarqué |
 
 Consignes vocales (`voice-instructions.fr.md`) : se taire si le speaker parle, attendre la fin de phrase après une hésitation, commentaire final court ; `session.instructions.append` n'est pas utilisé (effet non démontré, [rt-gpt-live-lifecycle]). Variables de l'app : [p-ar-frontend-screen](frontend-screen.md).
@@ -109,6 +125,6 @@ Consignes vocales (`voice-instructions.fr.md`) : se taire si le speaker parle, a
 | GPT-Live crée une délégation pour « Stop » ; double accusé vocal possible (« D'accord. » par la délégation arrêtée, plus l'accusé du modèle) | Q-78 |
 | `track.enabled = false` coupe la lecture (piste distante, 011) et la capture (piste micro locale, 014) sous `flutter_webrtc` Linux (spike T03 non fait) ; le setter de 1.6.3 n'attend pas l'appel natif : un échec n'est pas observable | Q-79 |
 | `start_ms` de sortie et `at_ms` sur la même horloge ; deltas d'entrée jamais révisés ; « Stop » transcrit de façon fiable ; NFR-02 +300 ms | Q-80 |
-| Couper la parole **sans** « Stop » repose sur le modèle (S-05 en partie) | Q-77 |
+| Couper la parole **sans** « Stop » : livré par 015 (Q-77 → pdr-0077) ; faux positifs d'écho sans AEC, latence ≈ 1 s, fenêtre de parole de 2 s à observer ([p-ar-voice-overlap](voice-overlap.md)) | Q-77, Q-80 |
 | GPT-Live crée une délégation pour une correction prononcée pendant qu'une délégation est ouverte ; sans elle, le code annule et fait taire sans replanifier | Q-87 |
 | Un « non » ordinaire en tête de phrase ne déclenche pas d'annulation indue ; la voix de l'IA qui revient après « Faire taire » (pause ≥ `resumeSilence`) est acceptable | pdr-0076 « Réexaminer si » |

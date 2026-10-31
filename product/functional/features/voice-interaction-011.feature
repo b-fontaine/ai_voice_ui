@@ -41,7 +41,7 @@ Fonctionnalité: Interruption vocale, indicateur d'acte et retour au clic
     Alors la génération est annulée
     Et l'interruption est signalée à l'application
 
-  # Automatisé (Flutter) : K-05, deux scénarios. Couvre S-05 en partie seulement (Q-77).
+  # Automatisé (Flutter) : K-05, deux scénarios. Couvre S-05 en partie seulement (sur mot d'arrêt) ; complété par 015 (S-05 complet, chevauchement-liaison-015.feature).
   @K-05 @S-05 @FR-13 @FR-15 @FR-19
   Scénario: K-05 Une interruption coupe le son, passe l'orbe à Interrompue et tronque la réplique
     Soit le tableau de la release 3.4 est affiché

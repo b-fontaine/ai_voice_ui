@@ -342,4 +342,147 @@ void main() {
       await rig.close(tester);
     });
   });
+
+  group('cause overlap', () {
+    const SessionEvent overlap = VoiceInterrupted(
+      atMs: 2500,
+      cause: InterruptionCause.overlap,
+    );
+
+    testWidgets('pendant la parole : interrompue', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, overlap);
+      expect(rig.phases, <OrbPhase>[speaking, interrupted]);
+      await rig.close(tester);
+    });
+
+    testWidgets('pendant la parole : la délégation à at_ms rend l\'écoute', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, overlap);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2499));
+      expect(rig.bloc.state, interrupted, reason: 'avant at_ms : sans effet');
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[speaking, interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('pendant la parole : le silence de reprise rend l\'écoute', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, overlap);
+      await rig.send(tester, const OrbLevelChanged(0));
+      await tester.pump(_resume);
+      expect(rig.phases, <OrbPhase>[speaking, interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('pendant la parole : délégation déjà reçue à at_ms ou après, '
+        'interrompue puis écoute aussitôt', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 4000));
+      await rig.send(tester, overlap);
+      expect(rig.phases, <OrbPhase>[speaking, interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('pendant la parole : délégation antérieure à at_ms, reste '
+        'interrompue', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2000));
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.close(tester);
+    });
+
+    testWidgets('règle P6 : reçue pendant l\'écoute, interrompue puis écoute '
+        'aussitôt', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, overlap);
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('règle P6 : l\'écoute rendue, aucune échéance ne reste armée', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, overlap);
+      await tester.pump(_max);
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted(stop) : requalifiée, délégation à '
+        'at_ms attendue', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, interrupt);
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2499));
+      expect(rig.bloc.state, interrupted, reason: 'avant at_ms : sans effet');
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted(silence) : requalifiée, la voix reste '
+        'coupée jusqu\'à la délégation à at_ms', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const VoiceSilenced());
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2499));
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted(correction) : requalifiée avec le '
+        'at_ms du chevauchement', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(
+        tester,
+        const VoiceInterrupted(atMs: 1000, cause: InterruptionCause.correction),
+      );
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 1500));
+      expect(rig.bloc.state, interrupted, reason: 'avant le at_ms de overlap');
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted : le silence de reprise rend l\'écoute', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, interrupt);
+      await rig.send(tester, overlap);
+      await tester.pump(_resume);
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('règle P6 : la parole suivante repasse en Speaking', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, overlap);
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      expect(rig.phases, <OrbPhase>[interrupted, listening, speaking]);
+      await rig.close(tester);
+    });
+  });
 }

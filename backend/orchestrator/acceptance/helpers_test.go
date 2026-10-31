@@ -58,6 +58,7 @@ func startAppWithLogger(t *testing.T, logger *slog.Logger) (srv *httptest.Server
 		"LISTEN_PORT":           "8080",
 		"ALLOWED_HOSTS":         ln.Addr().String(),
 	}
+	applyComposeOverlap(t, env) // défaut 015 : valeurs VOICE_OVERLAP_* du compose
 	cfg, err := bootstrap.ConfigFromEnv(func(k string) string { return env[k] })
 	if err != nil {
 		t.Fatalf("ConfigFromEnv: %v", err)
