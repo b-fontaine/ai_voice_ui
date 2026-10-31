@@ -13,7 +13,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T11 Flutter — `DelegationLinkGeometry` et `DelegationLinkPainter` (pointillés, phase, arc au-dessus des pastilles, épaisseur ≥ 3 px, préfixe commun, cache de chemin) · test d'abord : tests sur rectangles de tuiles donnés (départ, arrivée, arc sans intersection avec un `RenderParagraph`)
 - [x] T12a Flutter — `DelegationLinks` et `AgentsRail` : `KeyedSubtree` + `GlobalKey` (la `Column` garde `Key('agent-…')`), mesure aussi au changement de contraintes, filtre par état dans `DelegationLinks`, clés `delegation-link-<agent>` · test d'abord : widget tests L-01, L-02, L-04, redimensionnement, tuile la plus éloignée, plan vide
 - [x] T12b Flutter — animation : `State` à ticker, `repeat`/`stop` selon `SceneMotionScope`, `CustomPainter(repaint:)`, `RepaintBoundary` · test d'abord : L-03, bascule de `disabled` en cours de route, aucun frame planifié sans lien, aucune reconstruction des tuiles sur 10 images
-- [ ] T13 Flutter — capture `app-smoke` 1920×1080 relue (liaison visible, aucun libellé couvert, contraste)
+- [x] T13 Flutter — capture `app-smoke` 1920×1080 relue (liaison visible, aucun libellé couvert, contraste)
 
 ## TDD — lot B (Go), ordre T20 → T21 → T22 → T23
 - [x] T20 Go — `CauseOverlap`, `VOICE_OVERLAP_*` : lecture, bornes (tableau du plan), validation sans recopier de mot, valeur nulle = coupé · test d'abord : `config_test` pour **chaque défaut, chaque borne et chaque refus**
