@@ -11,7 +11,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T11 Go — port `SessionDelegations.NoteOverlap` (commentaire du port), `forwarder.noteOverlap` (jamais abandonné, ordre avant `supersede`), `Service.overlap` l'appelle (y compris correction dite pendant que l'IA parle), `session.NoteOverlap` (`hasOverlap`, plus grand `atMs`, sans effet fermée) ; mise à jour des trois faux de `voice/delegations_test.go` qui enregistrent l'appel et son ordre · test d'abord : `service_overlap_test.go`, `forward_test`, `delegations_test.go`
 - [x] T12a Go — Manager : `session.run` pose `Delegation.recovery` (lecture sous `session.mu`, fenêtre, consommation, `repeatPending`, jamais pour une action) · test d'abord : tests unitaires de `session.run` avec un faux `Runner` qui lit la dégradation (chevauchement avant `Delegate`, entre `Delegate` et fin de `settle`, après le refus ; borne incluse ; deuxième délégation non dégradée)
 - [x] T12b Go — Pipeline : `Phrases.NoRequest` aux trois points de refus si `recovery()` dégrade · test d'abord : `pipeline_recovery_test.go`, table : refus de vue, refus simple, aucun agent retenu → reprise ; `Failure`, mélange refus + échec, réussite partielle, réussite, action → inchangés
-- [ ] T13 Go — consigne de silence dans `voice-instructions.fr.md`, compose (`VOICE_RECOVERY_WINDOW: 8s`), `config/README.md` · test d'abord : G-01, G-02, test de lecture du compose
+- [x] T13 Go — consigne de silence dans `voice-instructions.fr.md`, compose (`VOICE_RECOVERY_WINDOW: 8s`), `config/README.md` · test d'abord : G-01, G-02, test de lecture du compose
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
