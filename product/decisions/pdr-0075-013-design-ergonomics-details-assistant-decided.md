@@ -4,8 +4,8 @@ title: "PDR-0075 — 013 : détails de design et d'ergonomie tranchés par la bo
 area: decisions
 status: validated
 updated: 2026-10-31
-sources: [specs/013-design-ergonomie/spec.md, specs/013-design-ergonomie/plan.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md]
-links: [pdr-0072-design-ergonomics-013, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0007-closed-catalog-stage-theme, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0074-012-llm-composer-gateway-crashlist-details, p-fn-screen, p-fn-nfr, p-rm-open-questions, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, ds-motion, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target]
+sources: [specs/013-design-ergonomie/status.md, specs/013-design-ergonomie/spec.md, specs/013-design-ergonomie/plan.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md]
+links: [p-ar-design-system, p-fn-feature-design-ergonomics-013, p-ar-frontend-screen, p-ar-quality, pdr-0072-design-ergonomics-013, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0007-closed-catalog-stage-theme, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0074-012-llm-composer-gateway-crashlist-details, p-fn-screen, p-fn-nfr, p-rm-open-questions, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, ds-motion, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target]
 tags: [pdr, decision, design, ergonomie, widgetbook, 013]
 decision_status: acceptée
 decided_on: 2026-10-31
@@ -25,7 +25,7 @@ Captures 1920×1080 de 012 : bande vide d'environ 220 px sous la barre du haut (
 
 ## Hypothèses
 - ✅ La fiche ne fixe ni disposition fine ni animation (p-fn-screen) ; la maquette n'est qu'une inspiration ([pdr-0017](pdr-0017-source-hierarchy-sheet-over-mockups.md)).
-- ⚠️ Hypothèse non confirmée : Node (Style Dictionary) est disponible chez le porteur. Parade : le code généré est committé et un test Dart de parité remplace la génération dans la porte ; Node n'est jamais requis pour lancer l'app.
+- ⚠️ Hypothèse non confirmée : Node (Style Dictionary) est disponible chez le porteur. Parade : le code généré est committé et un test Dart de parité remplace la génération dans la porte ; Node n'est jamais requis pour lancer l'app. Toujours non confirmée à la clôture : [Q-86](../roadmap/open-questions.md) (option 3 seulement si Node est requis chez le porteur).
 
 ## Options
 1. **Rail horizontal de 96 px, canevas élastique, retour à la ligne, transitions implicites, tokens générés, Widgetbook isolé** (retenue).
@@ -51,11 +51,12 @@ Captures 1920×1080 de 012 : bande vide d'environ 220 px sous la barre du haut (
 - Paquet Widgetbook « isolé » sous `design_system` : membre du workspace, il entre dans la résolution unique et dans `verify.sh` ; sous `shared/` il violerait la règle d'import.
 
 ## Conséquences
-- [p-fn-screen](../functional/screen.md) : budget des zones (rail 96, canevas ≈ 676), régie, repères de zone, à mettre à jour à la clôture de 013 ; [Q-83](../roadmap/open-questions.md) tranchée par D2 ; NFR-04 et NFR-05 mesurées par tests (la mesure DevTools reste à J7).
+- [p-fn-screen](../functional/screen.md) : budget des zones (rail 96, canevas 676), régie, repères de zone, **mis à jour à la clôture de 013** ; [Q-83](../roadmap/open-questions.md) **tranchée par D2** (2026-10-31, contestable) ; NFR-04 et NFR-05 mesurées par tests (la mesure DevTools reste à J7).
 - Aucun contrat A2UI ni code Go ne change.
 
 ## Réexaminer si
 - Le porteur préfère la maquette (rail en colonne) après avoir vu les captures de 013.
+- ⚠️ Observation à juger sur la capture (D2, option 2 de Q-83) : en 3×2 avec les données de l'acte 2, « Changelog validé » est masqué derrière « + 1 autres critères », un seul avis tient et la sixième cellule reste vide ; l'option 2 (disposition de la cinquième surface) toucherait S-02 et reste au porteur.
 - Une cellule ne tient pas à 1366×768 (machine de répétition différente).
 - Widgetbook 4 bêta casse le build (coupe du lot C).
 
@@ -65,5 +66,6 @@ Captures 1920×1080 de 012 : bande vide d'environ 220 px sous la barre du haut (
 | 2026-10-31 | Acceptée (délégation pdr-0062) à l'étape « Définir » de 013. | Assistant (délégation du porteur) |
 | 2026-10-31 | Précision D3 à l'implémentation de T21c (squelette retiré aussitôt, pas de fondu croisé ; règle de la surface déjà présente). | Assistant (délégation du porteur) |
 | 2026-10-31 | Amendée par la revue du plan (verdict À AMENDER, P1 à P8) : D1 (676 px, rail de hauteur fixe, régie empilée, Q-85), D2 (extraits entiers), D3 (contrôleur par surface, `SceneMotionScope`), D4 (constantes, hash, `apps/genesis_widgetbook`). | Assistant (délégation du porteur) |
+| 2026-10-31 | **Livrée** par 013 (`gate --full` vert, captures 1920×1080 relues). Précisions de réalisation, mêmes réserves (délégation pdr-0062, contestables) : D1 régie large de 520 px aux couleurs du thème de scène (« Remettre à vide » contouré comme l'indicateur d'acte, après la revue du code R2), panneau déplié de hauteur min(620, place) (le débordement de 39 px n'a pas été reproduit), intervalle libre `AgentsRail.delegationGap` de 48 px ; D2 mesures en 3×2 (2 critères + « + 1 autres critères », 1 extrait + « + 2 avis ») ; D3 durée de statut de décision de 400 ms passée par `SceneMotion`, translation de 8 px tokenisée et clippée ; D4 `SceneTokens` interne au paquet, hash sha256 portant aussi sur le générateur, `.gitattributes` en `eol=lf`, `sceneMaterialTheme()` partagé, viewports Widgetbook 640×318 et 952×318, pas de coupe C2. Q-83 tranchée ; Q-85 et Q-86 restent ouvertes (porteur). | Assistant (délégation du porteur) |
 
 Pas d'archive brute.

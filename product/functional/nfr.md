@@ -4,8 +4,8 @@ title: Exigences non fonctionnelles NFR-01 à NFR-12
 area: functional
 status: validated
 updated: 2026-10-31
-sources: [product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
-links: [p-ar-llm-composer, p-ar-voice-interruption, ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
+sources: [specs/013-design-ergonomie/status.md, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
+links: [pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, p-fn-feature-design-ergonomics-013, p-ar-llm-composer, p-ar-voice-interruption, ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
 tags: [nfr, latence, lisibilite, resilience, securite]
 ---
 # Exigences non fonctionnelles (NFR-01 à NFR-12)
@@ -41,6 +41,15 @@ Le texte de la fiche ci-dessus est inchangé ; ces lignes le précisent.
 | NFR-11 | Précision porteur : budget total de **20 €** pour l'ensemble des modèles ; plafond par session et par répétition : proposition de l'assistant, après la 1re mesure | [pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md) |
 | NFR-12 | Toute action critique est faisable à la souris ; raccourci ajouté s'il ne pose pas de problème | [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) |
 
+## État de mesure après 013 (2026-10-31)
+
+Détails d'interface tranchés par la boucle sous pdr-0062 ([pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md), contestables) ; protocole : [p-ar-quality](../architecture/quality.md) § 013.
+
+| NFR | Acquis | Reste |
+|---|---|---|
+| NFR-04 | périmètre de reconstruction et de peinture prouvé par test (l'arrivée d'une surface ne reconstruit ni ne repeint ses voisines ; fondus de 200 ms et de 150 ms, durée nulle sous `disableAnimations`) ; scénarios D-06 et D-07 ([p-fn-feature-design-ergonomics-013](features/design-ergonomie-013.feature)) | les **60 i/s eux-mêmes** : DevTools au profil `--profile` sur la machine de démo, en répétition (J7) |
+| NFR-05 | texte ≥ 24 px et contraste AA vérifiés par tests et par les captures 1920×1080 ; cibles ≥ 48 px sous Linux ; aucun libellé de checklist ni d'avis tronqué (Q-83 → pdr-0075 D2) | mesure sur **vidéoprojecteur réel** et fond de salle : J7, porteur |
+
 ## Décisions liées
 
 | NFR | Décision produit |
@@ -51,7 +60,8 @@ Le texte de la fiche ci-dessus est inchangé ; ces lignes le précisent.
 | NFR-09, NFR-11 | [pdr-0012-voice-provider-openai](../decisions/pdr-0012-voice-provider-openai.md) (acceptée) ; NFR-11 : [pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md) ; NFR-09 : [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) |
 | NFR-12 | [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) |
 | NFR-01..NFR-03 | [pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md) |
-| NFR-05 | [pdr-0007-closed-catalog-stage-theme](../decisions/pdr-0007-closed-catalog-stage-theme.md) (thème de scène) |
+| NFR-05 | [pdr-0007-closed-catalog-stage-theme](../decisions/pdr-0007-closed-catalog-stage-theme.md) (thème de scène) ; 013 : [pdr-0072](../decisions/pdr-0072-design-ergonomics-013.md), [pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) |
+| NFR-04 | 013 : [pdr-0072](../decisions/pdr-0072-design-ergonomics-013.md), [pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) D3 |
 
 ✅ **Confirmé le 2026-10-29.** NFR-09 (« aucune clé OpenAI ») et NFR-11 (« tableau de bord d'usage OpenAI ») supposaient OpenAI : le porteur a accepté `gpt-live-1` ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md), Q-11). Quel que soit le fournisseur, la règle générale reste : aucune clé longue durée côté client.
 

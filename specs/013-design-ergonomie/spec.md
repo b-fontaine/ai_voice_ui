@@ -57,12 +57,12 @@ Nouveaux (ajoutés à `product/functional/features/` à la clôture, pdr-0062 po
 - **D-07** (Flutter) aucun rectangle ne bouge à l'arrivée du premier `plan`, pendant une mutation de l'acte 2 ni à l'arrivée du bandeau `actions` ; à l'arrivée d'une surface de la grille aucun `State` existant n'est recréé ; pendant une transition le rectangle de `surface-<id>` reste constant (S-02 ; les changements de colonnes 1 → 2 et 2×2 → 3×2 sont acceptés, pdr-0074).
 
 ## Critères d'acceptation
-- [ ] Scénarios D-01 à D-07 automatisés et verts
-- [ ] Tests unitaires des unités nouvelles ; test de parité tokens ↔ `SceneTheme`
-- [ ] `tools/loop/gate.sh --full` vert
-- [ ] Revue d'architecte : CONFORME (ou refactorisations appliquées)
-- [ ] Captures 1920×1080 (`app-smoke`, `act1-replay`, `crashlist-replay`) relues : pas de bande vide, aucun libellé de checklist ni d'avis tronqué, texte ≥ 24 px
-- [ ] Catalogue Widgetbook : build web réussi et `testWidgetbook` vert, porte verte avec le membre du workspace (ou coupe C2 déclarée)
+- [x] Scénarios D-01 à D-07 automatisés et verts (`acte_design_ergonomie_test.dart`, `gate --full` du 2026-10-31)
+- [x] Tests unitaires des unités nouvelles ; test de hash et de parité tokens ↔ `SceneTheme`/`SceneMotion`
+- [x] `tools/loop/gate.sh --full` vert (65 contrôles, `7a256f6`, `.omc/state/loop/gates/20261031-041824-full.log`)
+- [x] Revue d'architecte : À REFACTORISER, R1 à R10 appliquées (5 lots)
+- [x] Captures 1920×1080 (`app-smoke`, `act1-replay`, `crashlist-replay`) relues : pas de bande vide, aucun libellé de checklist ni d'avis tronqué, texte ≥ 24 px
+- [x] Catalogue Widgetbook : build web réussi et `testWidgetbook` vert, porte verte avec le membre du workspace (ou coupe C2 déclarée)
 
 ## Questions ouvertes
 Q-83 (cellules lisibles) : traitée ici par l'option 1, à clore à la clôture. [Q-85](../../product/roadmap/open-questions.md) (liaison animée de délégation, au porteur) : non bloquante, hors périmètre tant que non tranchée.

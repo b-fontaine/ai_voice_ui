@@ -53,7 +53,7 @@ Aucun changement Go ni contrat : tout est Flutter. Revue du plan (2026-10-31) : 
 - RG-09 inchangée : aucune couleur ni taille ne vient d'un message A2UI.
 
 ## Contrats
-Aucun contrat A2UI, canal ou Go. Tokens : DTCG (`$value`, `$type`, alias `{…}`). API publique de `shared_design_system` : ajout de `SceneMotion`, `SceneMotionScope`, `SceneTokens`.
+Aucun contrat A2UI, canal ou Go. Tokens : DTCG (`$value`, `$type`, alias `{…}`). API publique de `shared_design_system` (livrée) : ajout de `SceneMotion`, `SceneMotionScope` (dont `play`), `sceneTextStyle` et `sceneMaterialTheme()` ; `SceneTokens` reste **interne** au paquet (non exporté).
 
 ## Cycle de vie et erreurs
 `AnimationController` et `SurfaceController` créés et libérés par leurs widgets (`dispose`) ; aucun détenu par un Bloc ; le `ValueListenable` de surbrillance est libéré par la page. Un message A2UI refusé n'anime rien. Pas de `getIt` dans les widgets (pdr-0057), aucun Cubit.

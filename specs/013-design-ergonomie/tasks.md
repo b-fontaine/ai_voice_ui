@@ -25,7 +25,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T21a Flutter — périmètre de reconstruction (P6) : `CanvasBoard` se reconstruit sur `surfaceIds` seulement ; `_SurfaceCell(id)` avec `BlocSelector<CanvasBloc, CanvasState, SurfacePhase?>` ; surbrillance par `ValueListenable<String?>` de la page (libéré dans `dispose`) · test d'abord : `canvas_board_rebuild_test.dart` (`debugOnRebuildDirtyWidget`, `debugSymmetricPaintCount` : l'arrivée d'une surface ne reconstruit ni ne repeint les voisines)
 - [x] T21b Flutter — câblage de la page : `SceneMotionScope` (durée nulle si `disableAnimationsOf` ou `_animationsOff`, vitesse de `ReplayActive.snapshot.speed`) ; aucun `TickerMode` sur le canevas ; `_captureWhenSettled` compatible · test d'abord : `genesis_canvas_page_motion_test.dart` (durée nulle en scénario, vitesse 2× propagée)
 - [x] T21c Flutter — transitions : `_SurfaceAppearance` (un `AnimationController`, fondu squelette → composants, translation de 8 px sous `surface-<id>`, `RepaintBoundary` fixe), fondu des valeurs dans `boundCatalogItem` (clé par état) ; mise à jour de `catalog_harness.dart` (l. 205), `canvas_board_test.dart` (l. 123), `genesis_catalog_test.dart` (l. 125), `crash_list_test.dart` (l. 138) · test d'abord : `canvas_board_appearance_test.dart` (opacité à t=0, 200 ms, `disableAnimations`, 2× ≤ 100 ms, aucune relecture sur `updateDataModel`)
-- [ ] T22 Flutter — note de mesure NFR-04 (profil `--profile` à J7) dans `quality.md` à la clôture ; test d'ensemble de T21a renommé « périmètre de reconstruction et de peinture » · preuve : test T21a vert
+- [x] T22 Flutter — note de mesure NFR-04 (profil `--profile` à J7) dans `quality.md` à la clôture ; test d'ensemble de T21a renommé « périmètre de reconstruction et de peinture » · preuve : test T21a vert
 
 ## Lot C — design system et Widgetbook
 - [x] T30a Flutter — tokens DTCG (`tokens/*.tokens.json`) repris de `SceneTheme` et `SceneMotion` ; test de hash et de parité · test d'abord : `tokens_hash_test.dart` (sha256 des `.tokens.json` ≠ en-tête absent), `tokens_parity_test.dart`
@@ -36,6 +36,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T34 Flutter — scripts manuels `tool/build_tokens.sh` et `tool/build_widgetbook.sh`, README ; vérifiés une fois à la main, sortie dans `status.md` · documentation (aucun test)
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
-- [ ] T91 Revue architect-reviewer + refactorisations
-- [ ] T92 `gate.sh --full` vert après refactorisation ; captures relues ; `progress.md` ; documents `product/` (écran, NFR, quality, Q-83 tranchée) ; fusion et `publish.sh`
+- [x] T90 `tools/loop/gate.sh --full` vert
+- [x] T91 Revue architect-reviewer + refactorisations
+- [x] T92 `gate.sh --full` vert après refactorisation ; captures relues ; `progress.md` ; documents `product/` (écran, NFR, quality, Q-83 tranchée) ; fusion et `publish.sh`
