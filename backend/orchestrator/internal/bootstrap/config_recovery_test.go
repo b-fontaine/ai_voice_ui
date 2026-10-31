@@ -66,18 +66,15 @@ func TestNew_WarnsWhenRecoveryWindowHasNoOverlap(t *testing.T) {
 
 func TestNew_NoRecoveryWarnWhenConsistent(t *testing.T) {
 	for name, mod := range map[string]func(*Config){
-		"fenêtre nulle":       func(c *Config) { c.VoiceRecoveryWindow = 0 },
-		"chevauchement actif": func(c *Config) { c.VoiceRecoveryWindow = 8 * time.Second; c.VoiceOverlap.Enabled = true },
-		"les deux coupés":     func(c *Config) { c.VoiceRecoveryWindow = 0; c.VoiceOverlap.Enabled = false },
+		"fenêtre nulle": func(c *Config) { c.VoiceRecoveryWindow = 0 },
+		"chevauchement actif": func(c *Config) {
+			*c = mustLoad(t, overlapEnv())
+			c.DelegationType, c.JournalDir = "client", ""
+			c.VoiceRecoveryWindow = 8 * time.Second
+		},
+		"les deux coupés": func(c *Config) { c.VoiceRecoveryWindow = 0; c.VoiceOverlap.Enabled = false },
 	} {
 		cfg := testConfig(t)
-		if name == "chevauchement actif" {
-			var err error
-			if cfg, err = load(overlapEnv()); err != nil {
-				t.Fatal(err)
-			}
-			cfg.DelegationType, cfg.JournalDir = "client", ""
-		}
 		mod(&cfg)
 		logger, buf := capture()
 		app, err := New(cfg, Deps{Live: newStubLive(), JournalDir: t.TempDir(), Logger: logger})
@@ -89,4 +86,13 @@ func TestNew_NoRecoveryWarnWhenConsistent(t *testing.T) {
 			t.Errorf("%s : aucun Warn attendu, journal : %q", name, buf.String())
 		}
 	}
+}
+
+func mustLoad(t *testing.T, env map[string]string) Config {
+	t.Helper()
+	cfg, err := load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cfg
 }

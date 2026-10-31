@@ -67,6 +67,9 @@ func (f *forwarder) run() {
 	}
 }
 
+// neverDropped liste les éléments que la file pleine n'abandonne jamais.
+var neverDropped = map[string]bool{"delegation": true, "interrupt": true, "supersede": true, "noteOverlap": true}
+
 func (f *forwarder) submit(what string, fn func()) {
 	if f == nil || f.stopped {
 		return
@@ -74,7 +77,7 @@ func (f *forwarder) submit(what string, fn func()) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if len(f.items) >= forwardQueue {
-		if what != "delegation" && what != "interrupt" && what != "supersede" && what != "noteOverlap" { // jamais abandonnés
+		if !neverDropped[what] {
 			f.log.Warn("file de délégations pleine : événement abandonné", "session", f.session, "event", what)
 			return
 		}

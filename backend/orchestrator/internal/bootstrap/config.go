@@ -482,28 +482,13 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 	if err := parseVoiceOverlap(getenv, cfg); err != nil {
 		return err
 	}
-	if cfg.VoiceRecoveryWindow, err = parseVoiceRecoveryWindow(getenv); err != nil {
+	if cfg.VoiceRecoveryWindow, err = parseBoundedDuration(getenv, "VOICE_RECOVERY_WINDOW", 0, maxVoiceRecoveryWindow); err != nil {
 		return err
 	}
 	if cfg.VoiceOverlap.Enabled && cfg.VoiceStopSettle == 0 {
 		return errors.New("VOICE_OVERLAP_INTERRUPT actif exige VOICE_STOP_SETTLE strictement positif (sinon le jeton ouvert est jugé aussitôt)")
 	}
 	return nil
-}
-
-// parseVoiceRecoveryWindow lit VOICE_RECOVERY_WINDOW (spec 016) : durée de 0 à
-// maxVoiceRecoveryWindow, 0 par défaut (reprise coupée). L'erreur nomme la variable sans
-// recopier la valeur.
-func parseVoiceRecoveryWindow(getenv func(string) string) (time.Duration, error) {
-	raw := strings.TrimSpace(getenv("VOICE_RECOVERY_WINDOW"))
-	if raw == "" {
-		return 0, nil
-	}
-	d, err := time.ParseDuration(raw)
-	if err != nil || d < 0 || d > maxVoiceRecoveryWindow {
-		return 0, fmt.Errorf("VOICE_RECOVERY_WINDOW doit être une durée comprise entre 0 et %s (par exemple 8s ; 0 coupe la reprise)", maxVoiceRecoveryWindow)
-	}
-	return d, nil
 }
 
 // parseVoiceOverlap lit les variables VOICE_OVERLAP_* (spec 015). Valeur nulle : chevauchement
