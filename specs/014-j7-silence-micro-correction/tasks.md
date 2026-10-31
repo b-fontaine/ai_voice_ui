@@ -11,7 +11,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [ ] T03 Go — C-01 à C-05 (tag `acceptance`, agents scriptés bloquants `startTestAgent`), pilotés par le faux fournisseur et `VOICE_CORRECTION_WORDS`, sans référencer le classifieur · test d'abord : rouge parce qu'aucun `voice.interrupted` n'est publié (pas une erreur de compilation du paquet)
 
 ## TDD — lot A (Flutter)
-- [ ] T10 [P] Flutter — `RtcMic.setEnabled`, `VoiceTransport.setMicEnabled`, `FlutterWebRtcTransport` (jamais d'arrêt de capture ; échec plateforme → non coupé) · test d'abord : faux pair, piste `enabled=false`
+- [x] T10 [P] Flutter — `RtcMic.setEnabled`, `VoiceTransport.setMicEnabled`, `FlutterWebRtcTransport` (jamais d'arrêt de capture ; échec plateforme → non coupé) · test d'abord : faux pair, piste `enabled=false`
 - [ ] T11 [P] Flutter — `VoiceMicMuteRequested` (`sequential()`, valeur cible), `Active(micMuted)` avec égalité, remise à faux dans `start()`/`_release()`, `silenceRemote()` + variante `VoiceSilenced` · test d'abord : couper, `stop`, `start` → `micMuted: false` et micro neuf actif ; commande en `Connecting`/`Stopping` sans effet ; faire taire pendant micro coupé
 - [ ] T12 Flutter — `cause` de `voice.interrupted` (converter, défaut `stop`, inconnu = `stop`) ; `OrbPhaseBloc` (silence + fin d'interruption sur correction), `TranscriptBloc` (troncature), `OrbLevelController` (niveau 0) ; voile « Micro coupé » · test d'abord : Bloc tests des quatre effets et de la reprise
 - [ ] T13 Flutter — disposition de la barre du haut (deux colonnes, voir plan) puis boutons `silence-button` (actif si `Active` et phase ≠ `Interrupted`) et `mic-button` · test d'abord : widget test (cibles ≥ 48 px, libellés entiers à 24 px, états, absence de débordement)

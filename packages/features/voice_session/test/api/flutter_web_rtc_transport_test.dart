@@ -20,6 +20,10 @@ class _FakePlatform implements WebRtcPlatform {
   Object? peerCloseError;
   Object? peerDisposeError;
   Object? remoteAudioError;
+  Object? micEnabledError;
+
+  /// État de la piste locale du micro (`track.enabled`).
+  bool micTrackEnabled = true;
   int openMicCalls = 0;
 
   @override
@@ -42,6 +46,13 @@ class _FakePlatform implements WebRtcPlatform {
 class _FakeMic implements RtcMic {
   _FakeMic(this._platform);
   final _FakePlatform _platform;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    _platform.log.add('mic.setEnabled($enabled)');
+    if (_platform.micEnabledError != null) throw _platform.micEnabledError!;
+    _platform.micTrackEnabled = enabled;
+  }
 
   @override
   Future<void> stop() async {
@@ -452,5 +463,58 @@ void main() {
 
       await transport.setRemoteAudioEnabled(false);
     });
+  });
+
+  group('setMicEnabled', () {
+    test(
+      'coupure puis rétablissement : la piste change, jamais arrêtée',
+      () async {
+        await transport.createOfferSdp();
+
+        await transport.setMicEnabled(false);
+        expect(platform.micTrackEnabled, isFalse);
+        await transport.setMicEnabled(true);
+        expect(platform.micTrackEnabled, isTrue);
+
+        expect(platform.log.where((e) => e.startsWith('mic.')), <String>[
+          'mic.setEnabled(false)',
+          'mic.setEnabled(true)',
+        ]);
+        expect(platform.log, isNot(contains('mic.stop')));
+        expect(platform.log, isNot(contains('peer.close')));
+        expect(platform.openMicCalls, 1);
+      },
+    );
+
+    test('avant l\'ouverture du micro : sans effet et sans erreur', () async {
+      await transport.setMicEnabled(false);
+
+      expect(platform.log, isEmpty);
+      expect(platform.micTrackEnabled, isTrue);
+    });
+
+    test('après stop : sans effet et sans erreur', () async {
+      await transport.createOfferSdp();
+      await transport.stop();
+      platform.log.clear();
+
+      await transport.setMicEnabled(false);
+
+      expect(platform.log, isEmpty);
+      expect(platform.micTrackEnabled, isTrue);
+    });
+
+    test(
+      'échec de la plateforme : ne lève pas, le micro reste non coupé',
+      () async {
+        await transport.createOfferSdp();
+        platform.micEnabledError = Exception('SDP secret v=0');
+
+        await transport.setMicEnabled(false);
+
+        expect(platform.micTrackEnabled, isTrue);
+        expect(platform.log, isNot(contains('mic.stop')));
+      },
+    );
   });
 }

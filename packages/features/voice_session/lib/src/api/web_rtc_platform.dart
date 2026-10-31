@@ -14,6 +14,10 @@ abstract interface class WebRtcPlatform {
 
 /// Capture micro ouverte.
 abstract interface class RtcMic {
+  /// Désactive (`false`) ou réactive (`true`) la piste audio locale
+  /// (`track.enabled`) sans arrêter la capture.
+  Future<void> setEnabled(bool enabled);
+
   /// Arrête les pistes audio puis libère le flux.
   Future<void> stop();
 }

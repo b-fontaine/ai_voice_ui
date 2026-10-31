@@ -67,8 +67,8 @@ class FakeTransport implements VoiceTransport {
   }
 
   /// Désactive ou réactive la piste du micro local (frontière WebRTC, spec
-  /// 014). Aucun `@override` tant que `VoiceTransport` n'expose pas la méthode
-  /// (tâche T10) ; le faux la fournit déjà sans dépendance de compilation.
+  /// 014).
+  @override
   Future<void> setMicEnabled(bool enabled) async {
     _record('setMicEnabled($enabled)');
     micEnabled = enabled;

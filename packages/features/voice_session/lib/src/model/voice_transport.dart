@@ -36,6 +36,12 @@ abstract interface class VoiceTransport {
   /// toucher au micro ni à la connexion. Sans effet après [stop]. Ne lève pas.
   Future<void> setRemoteAudioEnabled(bool enabled);
 
+  /// Désactive (`false`) ou réactive (`true`) la piste du micro local, sans
+  /// jamais arrêter la capture. Sans effet avant l'ouverture du micro et
+  /// après [stop]. Ne lève pas : en cas d'échec de la plateforme, le micro
+  /// reste dans son état précédent.
+  Future<void> setMicEnabled(bool enabled);
+
   /// Arrête la capture et ferme la connexion. Ne lève pas.
   Future<void> stop();
 

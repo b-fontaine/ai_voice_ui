@@ -40,6 +40,13 @@ class _Mic implements RtcMic {
   final MediaStream stream;
 
   @override
+  Future<void> setEnabled(bool enabled) async {
+    for (final track in stream.getAudioTracks()) {
+      track.enabled = enabled;
+    }
+  }
+
+  @override
   Future<void> stop() async {
     try {
       for (final track in stream.getTracks()) {
