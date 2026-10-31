@@ -420,12 +420,57 @@ void main() {
       await rig.close(tester);
     });
 
-    testWidgets('règle P6 : reçue pendant une interruption, écoute aussitôt', (
+    testWidgets('reçue en Interrupted(stop) : requalifiée, délégation à '
+        'at_ms attendue', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, interrupt);
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2499));
+      expect(rig.bloc.state, interrupted, reason: 'avant at_ms : sans effet');
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted(silence) : requalifiée, la voix reste '
+        'coupée jusqu\'à la délégation à at_ms', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const VoiceSilenced());
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 2499));
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted(correction) : requalifiée avec le '
+        'at_ms du chevauchement', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(
+        tester,
+        const VoiceInterrupted(atMs: 1000, cause: InterruptionCause.correction),
+      );
+      await rig.send(tester, overlap);
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 1500));
+      expect(rig.bloc.state, interrupted, reason: 'avant le at_ms de overlap');
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 2500));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('reçue en Interrupted : le silence de reprise rend l\'écoute', (
       tester,
     ) async {
       final _Rig rig = _Rig();
       await rig.send(tester, interrupt);
       await rig.send(tester, overlap);
+      await tester.pump(_resume);
       expect(rig.phases, <OrbPhase>[interrupted, listening]);
       await rig.close(tester);
     });

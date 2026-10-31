@@ -60,8 +60,10 @@ enum _InterruptionKind { stop, silence, correction, overlap }
 /// local, aucune délégation n'est exemptée. Après une interruption de cause
 /// `correction` ou `overlap`, la première délégation datée au plus tôt de
 /// `at_ms` (celle de la correction) met fin à l'interruption. Un `overlap` reçu
-/// alors que la phase n'est pas [Speaking] (le fournisseur a déjà coupé sa
-/// voix) donne [Interrupted] puis [Listening] aussitôt (règle P6). Pendant l'interruption, le
+/// alors que la phase est [Listening] (le fournisseur a déjà coupé sa voix)
+/// donne [Interrupted] puis [Listening] aussitôt (règle P6) ; reçu en
+/// [Interrupted], il requalifie la coupure en cours en `overlap` (pdr-0080 D5).
+/// Pendant l'interruption, le
 /// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée. Si la
 /// délégation de la correction est arrivée avant `voice.interrupted`, le Bloc
 /// émet [Interrupted] puis [Listening] aussitôt.
@@ -116,11 +118,13 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
     onData: (sessionEvent) {
       switch (sessionEvent) {
         case VoiceInterrupted(:final int atMs, :final InterruptionCause cause):
-          // Hors de la parole de l'IA, le fournisseur a déjà coupé sa voix
-          // avant le message (règle P6) : le chevauchement n'a plus rien à
-          // couper et la piste doit être rétablie aussitôt.
+          // À l'écoute, le fournisseur a déjà coupé sa voix avant le message
+          // (règle P6) : le chevauchement n'a plus rien à couper et la piste
+          // doit être rétablie aussitôt. En Interrupted, la coupure en cours
+          // continue : elle est requalifiée en `overlap` (fin par la
+          // délégation d'offset >= at_ms ou par le silence de reprise).
           final bool overlapOutsideSpeech =
-              cause == InterruptionCause.overlap && state is! Speaking;
+              cause == InterruptionCause.overlap && state is Listening;
           _beginInterruption(
             emit,
             atMs: atMs,

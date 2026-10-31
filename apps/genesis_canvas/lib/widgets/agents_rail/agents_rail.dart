@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
+import 'delegation_link_geometry.dart' show DelegationLinkGeometry;
 import 'delegation_links.dart';
 
 /// Rail des agents, en rangée horizontale de [height] px (A1 de 013, pdr-0075
@@ -135,7 +136,9 @@ class _AgentTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: _stateColor(theme, agent.state),
               ),
-              child: const SizedBox.square(dimension: 14),
+              child: const SizedBox.square(
+                dimension: DelegationLinkGeometry.dotSize,
+              ),
             ),
             const SizedBox(width: 12),
             Flexible(

@@ -5,7 +5,7 @@ import 'dart:ui';
 /// l'orchestrateur et celle d'un agent, en coordonnées de la zone de peinture.
 ///
 /// Le trait part au-dessus de la pastille de l'orchestrateur, monte dans la
-/// bande libre au-dessus des tuiles (96 - 2 x (24 x 1,3) = 16,8 px), file à
+/// bande libre au-dessus des tuiles ((96 - 2 × 24 × 1,3) / 2 = 16,8 px), file à
 /// l'horizontale au-dessus des tuiles intermédiaires puis redescend au-dessus
 /// de la pastille de l'agent. Aucune partie du trait ne recouvre un libellé.
 ///
@@ -19,9 +19,12 @@ final class DelegationLinkGeometry {
   /// Épaisseur du trait (élément graphique lisible, >= 3 px).
   static const double strokeWidth = 3;
 
+  /// Diamètre de la pastille d'état d'une tuile.
+  static const double dotSize = 14;
+
   /// Décalage horizontal depuis le bord gauche d'une tuile : centre de sa
-  /// pastille (14 px).
-  static const double inset = 7;
+  /// pastille.
+  static const double inset = dotSize / 2;
 
   /// Écart entre le pied du trait et le haut de la tuile.
   static const double clearance = 2;

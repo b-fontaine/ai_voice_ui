@@ -1,5 +1,5 @@
 import 'package:feature_agent_activity/feature_agent_activity.dart'
-    show AgentRunState, AgentStatus;
+    show AgentActivityState, AgentRunState, AgentStatus;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
@@ -19,8 +19,9 @@ typedef DelegationRowBuilder = Widget Function(
 /// (Q-85, FR-03) : un trait pointillé relie l'orchestrateur à chaque agent
 /// « en attente » ou « en cours ».
 ///
-/// Les tuiles sont mesurées par `GlobalKey` après chaque image et à chaque
-/// changement de contraintes ; l'état n'est modifié que si un rectangle change.
+/// Les tuiles sont mesurées par `GlobalKey` après la construction qui suit un
+/// changement de contraintes ou d'agents ; l'état n'est modifié que si un
+/// rectangle change.
 /// Le filtre par état est ici, le peintre dessine toutes les liaisons reçues.
 /// Chaque liaison est repérée par une clé `delegation-link-<agent>`, posée sur
 /// un repère transparent qui contient son tracé.
@@ -124,12 +125,8 @@ class DelegationLinksState extends State<DelegationLinks>
 
   // Géométries des liens à dessiner ; celles dont les rectangles n'ont pas
   // changé sont reprises telles quelles (leur chemin est déjà calculé).
-  List<DelegationLinkGeometry> _activeLinks() {
-    final String? orchestrator = widget.agents
-        .where((a) => a.state == AgentRunState.orchestrating)
-        .map((a) => a.agent)
-        .firstOrNull;
-    final Rect? origin = orchestrator == null ? null : _rects[orchestrator];
+  Map<String, DelegationLinkGeometry> _activeLinks() {
+    final Rect? origin = _rects[AgentActivityState.orchestratorName];
     final Map<String, DelegationLinkGeometry> next =
         <String, DelegationLinkGeometry>{};
     if (origin != null) {
@@ -145,7 +142,7 @@ class DelegationLinksState extends State<DelegationLinks>
       }
     }
     _geometries = next;
-    return next.values.toList(growable: false);
+    return next;
   }
 
   @override
@@ -155,7 +152,7 @@ class DelegationLinksState extends State<DelegationLinks>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         _scheduleMeasure();
-        final List<DelegationLinkGeometry> links = _activeLinks();
+        final Map<String, DelegationLinkGeometry> links = _activeLinks();
         return Stack(
           fit: StackFit.passthrough,
           children: <Widget>[
@@ -166,7 +163,7 @@ class DelegationLinksState extends State<DelegationLinks>
                   child: RepaintBoundary(
                     child: CustomPaint(
                       painter: DelegationLinkPainter(
-                        links: links,
+                        links: links.values.toList(growable: false),
                         color: theme.accent,
                         phase: _phase,
                       ),
@@ -175,7 +172,7 @@ class DelegationLinksState extends State<DelegationLinks>
                 ),
               ),
             for (final MapEntry<String, DelegationLinkGeometry> link
-                in _geometries.entries)
+                in links.entries)
               Positioned.fromRect(
                 rect: link.value.path.getBounds().inflate(
                   DelegationLinkGeometry.strokeWidth / 2,
