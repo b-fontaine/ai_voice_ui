@@ -18,11 +18,12 @@
 | 010 | J6 : acte 4 « Rejouer » (journal client du flux A2UI, rejeu par le même gate de 0,25× à 2×, curseur, Direct) | EP-07, EP-05 | J6 | Terminée ✅ (rejeu identique au direct, sans réseau ; la voix n'est pas rejouée, pdr-0032), publiée (`04e8f47`) | 2026-10-30 |
 | 011 | Interaction vocale et corrections de l'essai au micro (« Stop » hybride, couper la parole, mémoire de focus, indicateur d'acte automatique, retour au clic) | EP-02, EP-03, EP-04, EP-06 | avant J7 | Terminée ⚠️ (essai réel au micro : voix, « Stop », coupure de piste à observer en répétition ; Q-77 à Q-80), publiée (`6209a18`) | 2026-10-30 |
 | 012 | Compositeur LLM (passerelle interne, plan structuré, repli, squelette anticipé) puis CrashList réel | EP-03, EP-04, EP-09 | avant J7 | Terminée ⚠️ (essai vocal avec micro à faire en répétition ; NFR-02 avec squelette à remesurer ; Q-81 à Q-84), publiée (`90b69fe`) | 2026-10-31 |
-| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : Vérification | 2026-10-31 |
+| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : Clôture | 2026-10-31 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : **vérification terminée** (`gate --full` vert sur arbre propre, captures 1920×1080 conformes). Prochaine étape : clôture (documents `product/` : écran, NFR, qualité, Q-83, scénarios D-xx ; T22 ; fusion et `publish.sh`). |
 | 2026-10-31 | 013 : **refactorisation terminée** (R1 à R10 appliquées en 5 lots, dont l'hôte Widgetbook qui montrait un faux état, la régie aux couleurs de la scène, la police du thème sur l'axe X, le fondu de statut sous `SceneMotionScope`), `gate --full` vert sur arbre propre (65 contrôles, `7a256f6`). Prochaine étape : vérification (captures 1920×1080), puis clôture. |
 | 2026-10-31 | 013 : **revue du code rendue** (À REFACTORISER : 0 bloquante, 4 importantes — hôte Widgetbook qui montre un faux état, régie hors thème de scène, fondu de statut qui ignore `SceneMotionScope`, police de l'axe X du graphique —, 6 mineures), regroupées en 5 lots. **Q-86** ouverte pour le porteur : l'écart de 013 à adr-0005 (tokens en constantes + test de hash au lieu de `ThemeExtension` générée + régénération en CI). Prochaine étape : refactorisation. |
 | 2026-10-31 | 013 : **TDD terminé**, `gate --full` vert sur arbre propre (65 contrôles, `d874a79`). La première passe `--full` avait échoué (pubspec d'exemple de `node_modules` pris pour un paquet) : corrigé dans `build_tokens.sh`. Prochaine étape : revue d'architecte (mode CODE). |
