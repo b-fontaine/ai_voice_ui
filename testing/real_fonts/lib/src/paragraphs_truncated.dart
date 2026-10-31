@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Les paragraphes rendus sous [root] (toute l'arborescence si `null`) dont le
 /// texte est tronqué (`RenderParagraph.didExceedMaxLines` : `maxLines` atteint,
-/// avec ou sans ellipse), décrits par leur texte.
+/// avec ou sans ellipse) ou coupé verticalement par son parent (hauteur du
+/// paragraphe inférieure à sa hauteur intrinsèque, y compris sans `maxLines`),
+/// décrits par leur texte.
 ///
 /// Les libellés de crash (clés `crash-label-*`) sont exclus : leur ligne
 /// unique avec ellipse est voulue (pdr-0074 D10).
@@ -19,12 +21,17 @@ List<String> paragraphsTruncated(WidgetTester tester, {Finder? root}) {
   for (final Element element in paragraphs.evaluate()) {
     if (_insideCrashLabel(element)) continue;
     final RenderParagraph paragraph = element.renderObject! as RenderParagraph;
-    if (paragraph.didExceedMaxLines) {
+    if (paragraph.didExceedMaxLines || _clippedVertically(paragraph)) {
       truncated.add('« ${paragraph.text.toPlainText()} »');
     }
   }
   return truncated;
 }
+
+/// Tolérance de 0,5 px : arrondis de mise en page.
+bool _clippedVertically(RenderParagraph paragraph) =>
+    paragraph.size.height <
+    paragraph.getMaxIntrinsicHeight(paragraph.size.width) - 0.5;
 
 bool _insideCrashLabel(Element element) {
   var inside = false;

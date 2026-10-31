@@ -109,4 +109,54 @@ void main() {
       hasLength(1),
     );
   });
+
+  testWidgets('un texte sans maxLines coupé verticalement par son parent est '
+      'détecté', (tester) async {
+    await tester.pumpWidget(
+      _box(
+        const SizedBox(
+          height: 20,
+          child: Text(
+            'Un libellé assez long pour passer sur plusieurs lignes',
+            style: _style,
+          ),
+        ),
+      ),
+    );
+
+    expect(paragraphsTruncated(tester), hasLength(1));
+  });
+
+  testWidgets('un texte sans maxLines qui tient dans sa hauteur n\'est pas '
+      'signalé', (tester) async {
+    await tester.pumpWidget(
+      _box(
+        const Text(
+          'Un libellé assez long pour passer sur plusieurs lignes',
+          style: _style,
+        ),
+      ),
+    );
+
+    expect(paragraphsTruncated(tester), isEmpty);
+  });
+
+  testWidgets('un libellé de crash coupé verticalement reste exclu', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _box(
+        const SizedBox(
+          height: 20,
+          child: Text(
+            'Un libellé de crash assez long pour passer sur plusieurs lignes',
+            key: Key('crash-label-2'),
+            style: _style,
+          ),
+        ),
+      ),
+    );
+
+    expect(paragraphsTruncated(tester), isEmpty);
+  });
 }

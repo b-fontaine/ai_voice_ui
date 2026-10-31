@@ -72,80 +72,122 @@ Duration _ms(Object? value) {
 FontWeight _weight(Object? value) =>
     FontWeight.values.firstWhere((w) => w.value == (value! as num).toInt());
 
-void main() {
-  const theme = SceneTheme.dark();
-  final tokens = _loadTokens();
-  final checked = <String>{};
+/// Lecture d'un token dans le code : la valeur actuelle et la façon d'analyser
+/// le token DTCG résolu pour la comparer.
+typedef _Reading = ({Object? actual, Object? Function(Object?) parse});
 
-  void expectToken<T>(String path, T actual, T Function(Object?) parse) {
-    checked.add(path);
-    expect(tokens, contains(path));
-    expect(actual, parse(tokens[path]), reason: path);
+/// Table unique `chemin de token -> lecture dans SceneTheme / SceneMotion`.
+/// L'ensemble attendu des tokens `scene.*` en est déduit : les tests ne
+/// dépendent donc pas de leur ordre d'exécution.
+final Map<String, _Reading> _sceneReadings = _buildReadings();
+
+const SceneTheme _theme = SceneTheme.dark();
+
+Map<String, _Reading> _buildReadings() {
+  final readings = <String, _Reading>{};
+  void add(String path, Object? actual, Object? Function(Object?) parse) {
+    readings[path] = (actual: actual, parse: parse);
+  }
+
+  final colors = <String, Color>{
+    'background': _theme.background,
+    'surface': _theme.surface,
+    'textPrimary': _theme.textPrimary,
+    'textSecondary': _theme.textSecondary,
+    'accent': _theme.accent,
+    'okBackground': _theme.okBackground,
+    'okForeground': _theme.okForeground,
+    'riskBackground': _theme.riskBackground,
+    'riskForeground': _theme.riskForeground,
+    'blockingBackground': _theme.blockingBackground,
+    'blockingForeground': _theme.blockingForeground,
+    'neutralBackground': _theme.neutralBackground,
+    'neutralForeground': _theme.neutralForeground,
+    'highlightOutline': _theme.highlightOutline,
+    'actionNeutralBorder': _theme.actionNeutralBorder,
+    'actionDangerBorder': _theme.actionDangerBorder,
+    'agentWorking': _theme.agentWorking,
+    'agentIdle': _theme.agentIdle,
+    'agentRejected': _theme.agentRejected,
+    'agentInterrupted': _theme.agentInterrupted,
+    'chartIos': _theme.chartIos,
+    'chartAndroid': _theme.chartAndroid,
+    'chartOther': _theme.chartOther,
+  };
+  colors.forEach((name, color) => add('scene.color.$name', color, _color));
+
+  final styles = <String, TextStyle>{
+    'body': _theme.body,
+    'label': _theme.label,
+    'value': _theme.value,
+    'title': _theme.title,
+    'actIndicator': _theme.actIndicator,
+  };
+  styles.forEach((name, style) {
+    final base = 'scene.text.$name';
+    add('$base.fontSize', style.fontSize, _px);
+    add('$base.height', style.height, (v) => (v! as num).toDouble());
+    add('$base.color', style.color, _color);
+    // Une graisse non définie par le style n'a pas de token (voir le test).
+    if (style.fontWeight != null) {
+      add('$base.fontWeight', style.fontWeight, _weight);
+    }
+  });
+
+  add('scene.motion.appear', SceneMotion.appear, _ms);
+  add('scene.motion.value', SceneMotion.value, _ms);
+  add('scene.motion.status', SceneMotion.status, _ms);
+  add('scene.motion.floor', SceneMotion.floor, _ms);
+  add('scene.motion.translation', SceneMotion.translation, _px);
+  return readings;
+}
+
+void main() {
+  final tokens = _loadTokens();
+
+  void expectGroup(String prefix) {
+    final group = _sceneReadings.entries.where((e) => e.key.startsWith(prefix));
+    expect(group, isNotEmpty, reason: prefix);
+    for (final entry in group) {
+      expect(tokens, contains(entry.key));
+      expect(
+        entry.value.actual,
+        entry.value.parse(tokens[entry.key]),
+        reason: entry.key,
+      );
+    }
   }
 
   test('couleurs : chaque token de scène égale le champ de SceneTheme', () {
-    final colors = <String, Color>{
-      'background': theme.background,
-      'surface': theme.surface,
-      'textPrimary': theme.textPrimary,
-      'textSecondary': theme.textSecondary,
-      'accent': theme.accent,
-      'okBackground': theme.okBackground,
-      'okForeground': theme.okForeground,
-      'riskBackground': theme.riskBackground,
-      'riskForeground': theme.riskForeground,
-      'blockingBackground': theme.blockingBackground,
-      'blockingForeground': theme.blockingForeground,
-      'neutralBackground': theme.neutralBackground,
-      'neutralForeground': theme.neutralForeground,
-      'highlightOutline': theme.highlightOutline,
-      'actionNeutralBorder': theme.actionNeutralBorder,
-      'actionDangerBorder': theme.actionDangerBorder,
-      'agentWorking': theme.agentWorking,
-      'agentIdle': theme.agentIdle,
-      'agentRejected': theme.agentRejected,
-      'agentInterrupted': theme.agentInterrupted,
-      'chartIos': theme.chartIos,
-      'chartAndroid': theme.chartAndroid,
-      'chartOther': theme.chartOther,
-    };
-    colors.forEach((name, color) {
-      expectToken('scene.color.$name', color, _color);
-    });
+    expectGroup('scene.color.');
   });
 
   test('typographie : taille, hauteur, graisse et couleur de chaque style', () {
-    final styles = <String, TextStyle>{
-      'body': theme.body,
-      'label': theme.label,
-      'value': theme.value,
-      'title': theme.title,
-      'actIndicator': theme.actIndicator,
-    };
-    styles.forEach((name, style) {
-      final base = 'scene.text.$name';
-      expectToken('$base.fontSize', style.fontSize, (v) => _px(v));
-      expectToken('$base.height', style.height, (v) => (v! as num).toDouble());
-      expectToken('$base.color', style.color, _color);
-      if (style.fontWeight == null) {
-        expect(tokens, isNot(contains('$base.fontWeight')), reason: name);
-      } else {
-        expectToken('$base.fontWeight', style.fontWeight, _weight);
+    expectGroup('scene.text.');
+    for (final entry in <String, TextStyle>{
+      'body': _theme.body,
+      'label': _theme.label,
+      'value': _theme.value,
+      'title': _theme.title,
+      'actIndicator': _theme.actIndicator,
+    }.entries) {
+      if (entry.value.fontWeight == null) {
+        expect(
+          tokens,
+          isNot(contains('scene.text.${entry.key}.fontWeight')),
+          reason: entry.key,
+        );
       }
-    });
+    }
   });
 
   test('mouvement : durées, plancher et translation de SceneMotion', () {
-    expectToken('scene.motion.appear', SceneMotion.appear, _ms);
-    expectToken('scene.motion.value', SceneMotion.value, _ms);
-    expectToken('scene.motion.status', SceneMotion.status, _ms);
-    expectToken('scene.motion.floor', SceneMotion.floor, _ms);
-    expectToken('scene.motion.translation', SceneMotion.translation, _px);
+    expectGroup('scene.motion.');
   });
 
   test('aucun token de scène sans contrepartie dans le code', () {
     final scene = tokens.keys.where((p) => p.startsWith('scene.')).toSet();
-    // Les tests ci-dessus s'exécutent avant : `checked` est alors complet.
-    expect(scene.difference(checked), isEmpty);
+    expect(scene.difference(_sceneReadings.keys.toSet()), isEmpty);
+    expect(_sceneReadings.keys.toSet().difference(scene), isEmpty);
   });
 }

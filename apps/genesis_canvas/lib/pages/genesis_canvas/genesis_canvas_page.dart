@@ -97,9 +97,9 @@ import 'genesis_canvas_page_settings.dart';
 /// finale (code ajusté par les erreurs du moteur).
 typedef SnapshotFactory = CaptureService Function(ExitHandler exitHandler);
 
-/// Page unique à six zones (écran de 1920 × 1080, budget de `plan.md` de la
-/// spec 007) : barre du haut (orbe, transcription, acte, remise à vide,
-/// bouton), rail des agents, canevas, puis une rangée du bas (étagère du
+/// Page unique à six zones (écran de 1920 × 1080, budget des hauteurs :
+/// pdr-0075 D1, spec 013) : barre du haut (orbe, transcription, acte, remise
+/// à vide, bouton), rail des agents, canevas, puis une rangée du bas (étagère du
 /// catalogue, zone Rejeu et panneau du protocole). Le panneau déplié recouvre
 /// le canevas à droite sans le redimensionner.
 ///
@@ -760,7 +760,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _gap = 8;
 
   /// Hauteurs fixes du budget des zones à 1920 × 1080 ; le canevas prend le
-  /// reste (676 px : grille 2 × 302 et bandeau de 72). La barre supérieure fait
+  /// reste (676 px : grille 2 × 302 et bandeau de 72, soit 1080 moins 128, 96 et
+  /// 140 px de zones et 40 px d'écarts : 3 écarts de 8 et 2 marges verticales de
+  /// 8). La barre supérieure fait
   /// 128 px et le rail, horizontal et de hauteur fixe même vide, 96 px (A1 de
   /// 013, pdr-0075 D1).
   static const double _railHeight = AgentsRail.height;

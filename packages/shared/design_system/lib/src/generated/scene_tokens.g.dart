@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 56ee1d9552b505c1e779a340f465bddd6bb3d239d01400860e999fc19f4cbc47
+// tokens-sha256: eab399cf7bbb0c0756f8fd8b6cadf52ed07b7498a156240e1ff3fe69b0c328f2
 
 import 'dart:ui' show Color, FontWeight;
 

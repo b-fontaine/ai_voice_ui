@@ -3,7 +3,9 @@
 // Outil de développement uniquement : l'application n'exécute jamais Node.
 // Le fichier généré est committé ; son en-tête porte le sha256 des tokens,
 // recalculé par test/tokens_hash_test.dart (même algorithme : fichiers
-// triés par nom, contenu brut concaténé).
+// *.tokens.json triés par nom, puis ce script, contenu brut concaténé). Le
+// script entre dans le hash : modifier le générateur sans régénérer fait
+// échouer le test.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -26,6 +28,7 @@ if (tokenFiles.length === 0) {
 
 const hash = createHash('sha256');
 for (const name of tokenFiles) hash.update(readFileSync(join(tokensDir, name)));
+hash.update(readFileSync(fileURLToPath(import.meta.url)));
 const tokensSha256 = hash.digest('hex');
 
 const upperFirst = (word) => word.charAt(0).toUpperCase() + word.slice(1);
