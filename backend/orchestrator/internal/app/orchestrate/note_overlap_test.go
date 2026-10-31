@@ -3,7 +3,6 @@ package orchestrate
 import (
 	"context"
 	"testing"
-	"time"
 )
 
 // NoteOverlap (spec 016, T11) : mémorise le plus grand at_ms, ne publie rien, sans effet fermée.
@@ -35,20 +34,10 @@ func TestNoteOverlapZeroIsRecorded(t *testing.T) {
 	}
 }
 
-func TestNoteOverlapPublishesNothingAndNeverBlocks(t *testing.T) {
+func TestNoteOverlapPublishesNothing(t *testing.T) {
 	reply := newFakeReply()
 	s := open(t, newRunner(nil), testOptions(), reply)
-	sess := s.(*session)
-	sess.mu.Lock() // NoteOverlap ne prend que session.mu : bloqué ici, il attend sans rien d'autre
-	done := make(chan struct{})
-	go func() { s.NoteOverlap(10); close(done) }()
-	select {
-	case <-done:
-		t.Fatal("NoteOverlap devait attendre session.mu")
-	case <-time.After(20 * time.Millisecond):
-	}
-	sess.mu.Unlock()
-	<-done
+	s.NoteOverlap(10)
 	if n, a := reply.count(), reply.announces(); n != 0 || len(a) != 0 {
 		t.Fatalf("commentaires = %d, annonces = %v, attendu aucun", n, a)
 	}

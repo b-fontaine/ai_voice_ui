@@ -95,15 +95,80 @@ func TestRecoveryDegradedWhenOverlapNotedDuringSettle(t *testing.T) {
 	}
 }
 
-// Course perdue : le chevauchement noté après la lecture n'a pas d'effet sur elle.
-func TestRecoveryNotDegradedWhenOverlapNotedAfterRefusal(t *testing.T) {
-	r, probes := probingRunner(nil)
+// waitSessionIdle attend la fin de toutes les délégations de la session (file vide, run terminé).
+func waitSessionIdle(t *testing.T, s port.SessionDelegations) {
+	t.Helper()
+	deadline := time.Now().Add(wait)
+	for s.(*session).busy() {
+		if time.Now().After(deadline) {
+			t.Fatal("la session n'est jamais redevenue inactive")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+// laterProbingRunner ne lit la reprise que pour la délégation dont l'identifiant est probed :
+// les autres réussissent sans jamais passer par un point de refus.
+func laterProbingRunner(probed string) (*fakeRunner, chan recoveryProbe) {
+	out := make(chan recoveryProbe, 16)
+	r := newRunner(func(_ context.Context, d Delegation) {
+		if d.ID != probed {
+			return
+		}
+		p := recoveryProbe{present: d.recovery != nil}
+		if p.present {
+			p.degraded, p.overlap = d.recovery()
+		}
+		out <- p
+	})
+	return r, out
+}
+
+// Une marque appartient à la première délégation vocale qui la suit : celle d'une demande
+// réussie (jamais refusée) n'est pas reprise par la suivante, dite au calme.
+func TestRecoveryMarkOfSucceededDelegationNotReusedByNext(t *testing.T) {
+	r, probes := laterProbingRunner("d2")
+	s, clk := openRecovery(t, r, recoveryWindow)
+	s.NoteOverlap(1000)
+	delegateSettled(t, s, clk, "d1", 2000) // réussie : ne lit jamais la reprise
+	waitSessionIdle(t, s)
+	delegateSettled(t, s, clk, "d2", 3000)
+	if p := nextProbe(t, probes); !p.present || p.degraded {
+		t.Fatalf("d2 : %+v, attendu non dégradée (la marque appartenait à d1)", p)
+	}
+}
+
+// Une marque notée après la fin du run de d1 (course perdue) ne rend pas d2 dégradée.
+func TestRecoveryMarkNotedAfterRunEndNotReusedByNext(t *testing.T) {
+	r, probes := laterProbingRunner("d2")
 	s, clk := openRecovery(t, r, recoveryWindow)
 	delegateSettled(t, s, clk, "d1", 2000)
-	p := nextProbe(t, probes)
-	s.NoteOverlap(1500)
-	if p.degraded {
-		t.Fatalf("lecture = %+v, attendu non dégradée (marque notée après le refus)", p)
+	waitSessionIdle(t, s)
+	s.NoteOverlap(1500) // après la fin de d1, pour un énoncé qui précède son offset
+	delegateSettled(t, s, clk, "d2", 3000)
+	if p := nextProbe(t, probes); !p.present || p.degraded {
+		t.Fatalf("d2 : %+v, attendu non dégradée (marque notée après la fin de d1)", p)
+	}
+}
+
+// Une délégation qui n'atteint pas le Runner (demande vide) ne consomme pas repeatPending.
+func TestRecoveryEmptyDelegationKeepsRepeatPending(t *testing.T) {
+	r, probes := probingRunner(nil)
+	s, clk := openRecovery(t, r, recoveryWindow)
+	s.NoteOverlap(1000)
+	delegateSettled(t, s, clk, "d1", 2000)
+	if p := nextProbe(t, probes); !p.degraded {
+		t.Fatalf("d1 : %+v, attendu dégradée", p)
+	}
+	waitSessionIdle(t, s)
+	s.Delegate("d2", 3000) // aucune parole : demande vide, le Runner n'est pas appelé
+	clk.waitArmed(t)
+	clk.fire()
+	waitSessionIdle(t, s)
+	s.NoteOverlap(4000)
+	delegateSettled(t, s, clk, "d3", 5000)
+	if p := nextProbe(t, probes); p.degraded {
+		t.Fatalf("d3 : %+v, attendu non dégradée (suit toujours la reprise de d1)", p)
 	}
 }
 
@@ -187,7 +252,7 @@ func TestRecoveryMarkConsumedOnDegradation(t *testing.T) {
 	}
 }
 
-// Sans degradation, ni la marque ni le drapeau ne bougent.
+// Sans dégradation, ni la marque ni le drapeau ne bougent.
 func TestRecoveryOutOfWindowKeepsMark(t *testing.T) {
 	r, probes := probingRunner(nil)
 	s, clk := openRecovery(t, r, recoveryWindow)
@@ -207,8 +272,9 @@ func TestRecoveryNeverSetForAction(t *testing.T) {
 	r, probes := probingRunner(nil)
 	s, _ := openRecovery(t, r, recoveryWindow)
 	s.NoteOverlap(0)
-	sess := s.(*session)
-	sess.run(Delegation{ID: "act-1", Action: &port.ActionCall{}})
+	if err := s.(*session).enqueueAction(Delegation{ID: "act-1", Action: &port.ActionCall{}}); err != nil {
+		t.Fatal(err)
+	}
 	if p := nextProbe(t, probes); p.present {
 		t.Fatalf("lecture = %+v, attendu aucune fonction recovery pour une action", p)
 	}

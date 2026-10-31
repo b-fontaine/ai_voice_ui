@@ -405,7 +405,7 @@ type session struct {
 
 	// Ordre des verrous : Canvas.mu → m.mu → session.mu → window.mu (Supersede appelle
 	// window.ConsumeBefore sous session.mu ; RequestWindow ne prend jamais session.mu).
-	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add
+	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add, ainsi que les champs ci-dessous
 	closed  bool
 	pending int // délégations en file ou en cours d'exécution
 	// epoch compte les arrêts (Interrupt). cancelRun annule l'exécution vocale en
@@ -421,6 +421,11 @@ type session struct {
 	// repeatPending : la phrase de reprise vient d'être dite ; la délégation vocale suivante
 	// n'est jamais dégradée (run le lit puis le remet à faux).
 	repeatPending bool
+	// claimedUpTo est le plus grand offset d'une délégation vocale dont le run a commencé,
+	// valable si hasClaimed : une marque de chevauchement notée au plus à cet offset appartient
+	// à une délégation déjà passée et ne sert plus (spec 016).
+	claimedUpTo int64
+	hasClaimed  bool
 	// runOffset est l'offset de la délégation vocale en cours (posé par beginRun, valable si
 	// cancelRun != nil). supersededBefore est le at_ms de la dernière correction (Supersede) :
 	// une délégation vocale d'offset inférieur qui arrive ensuite est écartée.
@@ -592,8 +597,8 @@ func (s *session) run(d Delegation) {
 			return
 		}
 		defer end()
+		defer s.claimOverlap(d.OffsetMs)
 		ctx = runCtx
-		d.recovery = s.recoveryFor(d)
 		request, ok := s.settle(ctx, d)
 		if !ok {
 			if interrupted(ctx) {
@@ -632,6 +637,7 @@ func (s *session) run(d Delegation) {
 			return
 		}
 		d.Request = request
+		d.recovery = s.recoveryFor(d)
 	}
 	d.Timeout = s.m.opts.AgentTimeout
 	defer func() {
@@ -655,12 +661,22 @@ func (s *session) recoveryFor(d Delegation) func() (bool, int64) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		at := s.overlapAt
-		if window <= 0 || !s.hasOverlap || afterRepeat ||
+		if window <= 0 || !s.hasOverlap || afterRepeat || (s.hasClaimed && at <= s.claimedUpTo) ||
 			at > d.OffsetMs || d.OffsetMs > at+window.Milliseconds() {
 			return false, at
 		}
 		s.hasOverlap, s.repeatPending = false, true
 		return true, at
+	}
+}
+
+// claimOverlap note qu'une délégation vocale d'offset offsetMs est passée : la marque de
+// chevauchement qui la précède lui appartenait (spec 016). Garde le maximum.
+func (s *session) claimOverlap(offsetMs int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.hasClaimed || offsetMs > s.claimedUpTo {
+		s.claimedUpTo, s.hasClaimed = offsetMs, true
 	}
 }
 
