@@ -27,10 +27,10 @@ Q-77 option B et Q-85 sont tranchées. La fiche et la PDR fixent les règles (mo
 
 ## Décision
 - **D1** Le déclencheur est un troisième genre (`Overlap`) du classifieur d'énoncé unique de 014 : un seul minuteur, un seul énoncé, anti-rebond partagé. **Priorité** : correction, puis arrêt (y compris un début de mot d'arrêt), puis chevauchement ; un énoncé ne produit jamais deux `voice.interrupted`.
-- **D2** « L'IA parle » = une sortie (audio ou delta de transcription) a eu lieu dans `VOICE_OVERLAP_SPEAKING_WINDOW` (horloge injectée). Sinon, une phrase du speaker est un tour de parole ordinaire.
-- **D3** Mot significatif : longueur ≥ `VOICE_OVERLAP_MIN_WORD_LEN`, hors `VOICE_OVERLAP_IGNORE_WORDS`, hors écho (mots de la transcription de **sortie** de la fenêtre média `VOICE_OVERLAP_ECHO_WINDOW`) ; `VOICE_OVERLAP_MIN_WORDS` mots distincts. Valeurs de départ dans le compose, à régler en répétition.
-- **D4** Effet : `voice.interrupted {cause: overlap}` publié **toujours**, puis `Supersede` (jamais `Interrupt`) : l'exécution antérieure est annulée avec les effets de 014 (surfaces complètes conservées), la demande du speaker est conservée et planifiée. Aucun message n'est envoyé au fournisseur.
-- **D5** App : `overlap` est traité comme `correction` (fin à la première délégation d'offset ≥ `at_ms`, sinon au silence de reprise).
+- **D2** « L'IA parle » = un bloc d'audio de sortie de niveau ≥ `VOICE_OVERLAP_SPEAKING_LEVEL` (le flux est continu, silence compris : sa seule présence ne prouve rien) ou un delta de transcription de sortie a eu lieu dans `VOICE_OVERLAP_SPEAKING_WINDOW` (horloge injectée). La garde est verrouillée à l'ouverture de l'énoncé. Sinon, une phrase du speaker est un tour de parole ordinaire.
+- **D3** Seuls les jetons fermés sont jugés (les deltas sont des fragments de mot). Mot significatif : nombre quelle que soit sa longueur, sinon longueur ≥ `VOICE_OVERLAP_MIN_WORD_LEN`, hors `VOICE_OVERLAP_IGNORE_WORDS`, hors écho (mots de la transcription de **sortie** de la fenêtre média `VOICE_OVERLAP_ECHO_WINDOW`) ; `VOICE_OVERLAP_MIN_WORDS` mots distincts. Valeurs de départ dans le compose, à régler en répétition.
+- **D4** Effet : `at_ms` = début du premier delta de l'énoncé ; `voice.interrupted {cause: overlap}` publié **toujours**, puis `Supersede` (jamais `Interrupt`) : l'exécution antérieure est annulée avec les effets de 014 (surfaces complètes conservées), la demande du speaker est conservée et planifiée. Aucun message n'est envoyé au fournisseur.
+- **D5** App : `overlap` est traité comme `correction` (fin à la première délégation d'offset ≥ `at_ms`, sinon au silence de reprise) ; reçu alors que l'orbe n'est pas `Speaking` (le fournisseur coupe sa voix avant notre message), il donne `Interrupted` puis `Listening` aussitôt. Anti-rebond asymétrique : un Stop n'est jamais filtré par un Overlap. Une correction dite pendant que l'IA parle coupe aussi la voix.
 - **D6** Liaison de délégation : trait pointillé animé du bord de la tuile de l'orchestrateur à la tuile de chaque agent « en attente » ou « en cours » (arc au-dessus des pastilles, rien n'est couvert), animation coupée par `SceneMotionScope.disabled`, repeinture isolée. Elle disparaît à la fin de l'état. Aucun libellé ajouté.
 
 ## Raisons
@@ -48,6 +48,7 @@ Q-77 option B et Q-85 sont tranchées. La fiche et la PDR fixent les règles (mo
 - Nouvelles variables : `VOICE_OVERLAP_INTERRUPT`, `VOICE_OVERLAP_SPEAKING_WINDOW`, `VOICE_OVERLAP_ECHO_WINDOW`, `VOICE_OVERLAP_MIN_WORDS`, `VOICE_OVERLAP_MIN_WORD_LEN`, `VOICE_OVERLAP_IGNORE_WORDS`.
 
 ## Réexaminer si
+- Un commentaire (« super ») par-dessus l'accusé de **sa propre** demande l'annule et laisse le canevas interrompu (pdr-0077 l'impose ; acquiescements dans la liste des mots ignorés) : à juger par le porteur.
 - Fausses interruptions en répétition sur enceinte (monter `MIN_WORDS`, allonger `ECHO_WINDOW`, ou couper `VOICE_OVERLAP_INTERRUPT`) ; latence nettement supérieure à 1 s (Q-80) ; la liaison gêne la lecture du rail à la projection.
 
 ## Historique
