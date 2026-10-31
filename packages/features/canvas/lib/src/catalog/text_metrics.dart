@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart';
+import 'package:shared_design_system/shared_design_system.dart'
+    show sceneTextStyle;
 
 /// Largeur d'une ligne de texte sur une seule ligne, sans contrainte, telle
 /// que la rendrait un `Text` placé dans [context].
@@ -40,10 +42,7 @@ TextPainter _painter(
 }) => TextPainter(
   // Même résolution de style que `Text` : le style par défaut du contexte
   // (espacement des lettres, famille) entre dans la mesure.
-  text: TextSpan(
-    text: text,
-    style: DefaultTextStyle.of(context).style.merge(style),
-  ),
+  text: TextSpan(text: text, style: sceneTextStyle(context, style)),
   textDirection: Directionality.of(context),
   textScaler: MediaQuery.textScalerOf(context),
   maxLines: maxLines,

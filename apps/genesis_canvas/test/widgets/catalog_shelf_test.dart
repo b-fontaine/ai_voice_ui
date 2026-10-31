@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_catalog_shelf/feature_catalog_shelf.dart';
@@ -13,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart'
 import 'package:genesis_canvas/widgets/catalog_shelf/catalog_shelf.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
+
+import '../support/contrast.dart';
 
 ValidatedEnvelope _update(String surface, String component) =>
     ValidatedEnvelope(
@@ -35,18 +36,6 @@ ValidatedEnvelope _delete(String surface) => ValidatedEnvelope(
   },
   verdict: const ValidationAccepted(),
 );
-
-double _luminance(Color c) {
-  double channel(double v) =>
-      v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
-  return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
-}
-
-double _contrast(Color a, Color b) {
-  final la = _luminance(a);
-  final lb = _luminance(b);
-  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
-}
 
 void main() {
   late CatalogShelfBloc bloc;
@@ -230,7 +219,7 @@ void main() {
       final Color fill = (box.decoration as BoxDecoration).color ?? background;
       expect(fill, background, reason: component);
       expect(icon, isNotNull, reason: component);
-      expect(_contrast(icon!, fill), greaterThanOrEqualTo(4.5));
+      expect(contrast(icon!, fill), greaterThanOrEqualTo(4.5));
     }
   });
 

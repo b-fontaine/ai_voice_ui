@@ -6,7 +6,8 @@ import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageActAdvanced, StageBloc, StageState;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneTheme, sceneTextStyle;
 
 /// Régie de scène : l'indicateur d'acte (D1) et la remise à vide (D4).
 ///
@@ -45,15 +46,8 @@ class StageBar extends StatelessWidget {
     // Le style d'un bouton Material remplace celui de l'ambiance : sans cela,
     // les deux contrôles se rendraient dans la police par défaut du moteur et
     // non dans celle du reste de la scène.
-    final TextStyle ambient = DefaultTextStyle.of(context).style;
-    final TextStyle actStyle = theme.actIndicator.copyWith(
-      fontFamily: ambient.fontFamily,
-      fontFamilyFallback: ambient.fontFamilyFallback,
-    );
-    final TextStyle resetStyle = theme.label.copyWith(
-      fontFamily: ambient.fontFamily,
-      fontFamilyFallback: ambient.fontFamilyFallback,
-    );
+    final TextStyle actStyle = sceneTextStyle(context, theme.actIndicator);
+    final TextStyle resetStyle = sceneTextStyle(context, theme.label);
     return Material(
       type: MaterialType.transparency,
       child: SizedBox(
@@ -128,6 +122,11 @@ class StageBar extends StatelessWidget {
                                   )
                                 : (working ? null : onResetPressed),
                             style: FilledButton.styleFrom(
+                              // Même rendu contouré que l'indicateur d'acte :
+                              // fond de scène + texte principal, bordure
+                              // neutre (A5, C3), actif comme inactif.
+                              backgroundColor: theme.neutralBackground,
+                              foregroundColor: theme.textPrimary,
                               textStyle: resetStyle,
                               visualDensity: VisualDensity.standard,
                               minimumSize: const Size(

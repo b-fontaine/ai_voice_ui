@@ -18,6 +18,7 @@ import 'package:shared_design_system/shared_design_system.dart';
 
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../support/contrast.dart';
 import '../support/replay_rig.dart';
 
 void main() {
@@ -88,6 +89,57 @@ void main() {
   Finder indicator() => find.byKey(const Key('act-indicator'));
   FilledButton resetButton(WidgetTester tester) =>
       tester.widget<FilledButton>(find.byKey(const Key('reset-button')));
+
+  group('couleurs de la régie (thème de scène)', () {
+    const theme = SceneTheme.dark();
+
+    ButtonStyle styleOf(WidgetTester tester, String key) =>
+        tester.widget<ButtonStyleButton>(find.byKey(Key(key))).style!;
+
+    Color? resolve(WidgetStateProperty<Color?>? p, Set<WidgetState> states) =>
+        p?.resolve(states);
+
+    void expectGroup(WidgetTester tester, Set<WidgetState> resetStates) {
+      for (final entry in <String, Set<WidgetState>>{
+        'act-indicator': <WidgetState>{},
+        'reset-button': resetStates,
+      }.entries) {
+        final style = styleOf(tester, entry.key);
+        final fg = resolve(style.foregroundColor, entry.value)!;
+        final bg =
+            resolve(style.backgroundColor, entry.value) ?? theme.background;
+        final border = style.side!.resolve(entry.value)!.color;
+        expect(
+          contrast(fg, bg),
+          greaterThanOrEqualTo(4.5),
+          reason: '${entry.key} texte/fond',
+        );
+        expect(
+          contrast(border, theme.background),
+          greaterThanOrEqualTo(3),
+          reason: '${entry.key} bordure/fond de page',
+        );
+      }
+    }
+
+    testWidgets('actifs : texte 4,5:1 et bordure 3:1', (tester) async {
+      await pumpBar(tester);
+      expectGroup(tester, <WidgetState>{});
+    });
+
+    testWidgets('inactifs : texte 4,5:1 et bordure 3:1', (tester) async {
+      await pumpBar(tester);
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 't1',
+          state: AgentTaskState.working,
+        ),
+      );
+      expectGroup(tester, <WidgetState>{WidgetState.disabled});
+    });
+  });
 
   testWidgets('acte 1 par défaut : « Acte 1/3 · Créer »', (tester) async {
     await pumpBar(tester);

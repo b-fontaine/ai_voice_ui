@@ -24,6 +24,21 @@ final Finder _cell = find.byKey(const Key('surface-trend'));
 void main() {
   setUpAll(loadRealFonts);
 
+  testWidgets('les étiquettes de l\'axe X prennent la police du thème', (
+    tester,
+  ) async {
+    final h = _realFontsHarness(size: const Size(624, 302));
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+
+    final paint = tester.widget<CustomPaint>(
+      find.byKey(const Key('trend-chart-paint')),
+    );
+    final painter = paint.painter! as TrendChartPainter;
+    expect(painter.labelStyle.fontFamily, realFontFamily);
+    expect(painter.labelStyle.fontFamilyFallback, realFontFallback);
+  });
+
   defineCommonStateTests(
     component: 'TrendChart',
     surface: 'trend',
