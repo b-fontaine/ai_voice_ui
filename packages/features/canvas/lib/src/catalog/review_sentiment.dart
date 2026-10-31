@@ -215,9 +215,7 @@ class _Excerpts extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double lineHeight =
-            (theme.body.fontSize ?? 24) * (theme.body.height ?? 1);
-        final double moreHeight = lineHeight + _excerptGap;
+        final double moreHeight = lineHeightOf(theme.body) + _excerptGap;
         final double budget = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : double.infinity;
@@ -243,16 +241,10 @@ class _Excerpts extends StatelessWidget {
             for (int i = 0; i < shown; i++)
               _ExcerptRow(key: Key('review-excerpt-$i'), excerpt: excerpts[i]),
             if (hidden > 0 && moreHeight <= budget)
-              SizedBox(
+              MoreLine(
+                textKey: const Key('review-more'),
+                text: '+ $hidden avis',
                 height: moreHeight,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '+ $hidden avis',
-                    key: const Key('review-more'),
-                    style: theme.body.copyWith(color: theme.textSecondary),
-                  ),
-                ),
               ),
           ],
         );

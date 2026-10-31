@@ -1,6 +1,7 @@
 import 'package:feature_canvas/src/catalog/text_metrics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_design_system/shared_design_system.dart';
 
 /// Police de test (Ahem) : chaque glyphe fait la taille de la police, donc la
 /// largeur et le nombre de lignes se calculent de tête.
@@ -46,6 +47,51 @@ void main() {
       final BuildContext context = await _pumpContext(tester);
       final TextStyle tall = _style.copyWith(height: 1.5);
       expect(measureTextHeight(context, 'aaaa bbbb', tall, 50), 30);
+    },
+  );
+
+  test('lineHeightOf : taille de police fois hauteur de ligne', () {
+    expect(lineHeightOf(_style.copyWith(fontSize: 20, height: 1.5)), 30);
+  });
+
+  test('lineHeightOf : hauteur de ligne absente = 1, taille absente = 24', () {
+    expect(lineHeightOf(const TextStyle(fontSize: 20)), 20);
+    expect(lineHeightOf(const TextStyle()), 24);
+  });
+
+  testWidgets(
+    'MoreLine : texte et clé donnés, hauteur fixée, aligné à gauche',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            extensions: const <ThemeExtension<dynamic>>[SceneTheme.dark()],
+          ),
+          home: const Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 300,
+                child: MoreLine(
+                  textKey: Key('more'),
+                  text: '+ 3 autres',
+                  height: 30,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(const Key('more')), findsOneWidget);
+      expect(find.text('+ 3 autres'), findsOneWidget);
+      expect(tester.getSize(find.byType(MoreLine)).height, 30);
+      expect(tester.getTopLeft(find.byKey(const Key('more'))).dx, 0);
+      final SceneTheme theme = SceneTheme.dark();
+      final TextStyle style = tester
+          .widget<Text>(find.byKey(const Key('more')))
+          .style!;
+      expect(style.color, theme.textSecondary);
+      expect(style.fontSize, theme.body.fontSize);
     },
   );
 }

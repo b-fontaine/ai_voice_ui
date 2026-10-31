@@ -11,6 +11,9 @@ class DsStatusChip extends StatelessWidget {
   /// Remplissage horizontal de chaque côté du libellé.
   static const double horizontalPadding = 16;
 
+  /// Remplissage vertical au-dessus et au-dessous du libellé.
+  static const double verticalPadding = 6;
+
   final SceneStatus? status;
   final String label;
 
@@ -25,7 +28,7 @@ class DsStatusChip extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: horizontalPadding,
-          vertical: 6,
+          vertical: verticalPadding,
         ),
         child: Text(
           label,

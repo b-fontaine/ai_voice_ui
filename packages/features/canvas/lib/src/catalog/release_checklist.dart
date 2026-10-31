@@ -158,10 +158,8 @@ const double _gap = 8;
 /// Espace entre le seuil et la valeur d'un critère présenté sur deux lignes.
 const double _pairGap = 12;
 
-double _lineHeight(TextStyle style) =>
-    (style.fontSize ?? 24) * (style.height ?? 1);
-
-double _chipHeight(SceneTheme theme) => _lineHeight(theme.label) + 12;
+double _chipHeight(SceneTheme theme) =>
+    lineHeightOf(theme.label) + 2 * DsStatusChip.verticalPadding;
 
 /// Liste des critères : jamais de troncature muette, les textes passent à la
 /// ligne. Deux présentations, choisies pour toute la liste :
@@ -197,7 +195,7 @@ class _ItemList extends StatelessWidget {
           items,
           constraints.maxWidth,
         );
-        final double moreHeight = _lineHeight(theme.body) + _rowPadding;
+        final double moreHeight = lineHeightOf(theme.body) + _rowPadding;
         final double budget = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : double.infinity;
@@ -234,16 +232,10 @@ class _ItemList extends StatelessWidget {
           children: <Widget>[
             for (final int i in kept) layout.row(items[i]),
             if (showMore)
-              SizedBox(
+              MoreLine(
+                textKey: const Key('checklist-more'),
+                text: '+ ${items.length - kept.length} autres critères',
                 height: moreHeight,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '+ ${items.length - kept.length} autres critères',
-                    key: const Key('checklist-more'),
-                    style: theme.body.copyWith(color: theme.textSecondary),
-                  ),
-                ),
               ),
           ],
         );
@@ -308,6 +300,15 @@ abstract class _Layout {
   }
 }
 
+/// Cellule de puce d'un critère : largeur commune, puce alignée à droite.
+Widget _chipCell(_Item item, double width) => SizedBox(
+  width: width,
+  child: Align(
+    alignment: Alignment.centerRight,
+    child: DsStatusChip(status: item.level, label: item.levelLabel),
+  ),
+);
+
 /// Tableau : une ligne de texte par critère, colonnes communes.
 class _TableLayout extends _Layout {
   _TableLayout({
@@ -319,8 +320,8 @@ class _TableLayout extends _Layout {
     required this.chip,
   }) : super(<double>[
          for (int i = 0; i < count; i++)
-           (_lineHeight(theme.body) > _chipHeight(theme)
-                   ? _lineHeight(theme.body)
+           (lineHeightOf(theme.body) > _chipHeight(theme)
+                   ? lineHeightOf(theme.body)
                    : _chipHeight(theme)) +
                _rowPadding,
        ]);
@@ -354,13 +355,7 @@ class _TableLayout extends _Layout {
           child: Text(item.value, style: theme.body),
         ),
         const SizedBox(width: _gap),
-        SizedBox(
-          width: chip,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: DsStatusChip(status: item.level, label: item.levelLabel),
-          ),
-        ),
+        _chipCell(item, chip),
       ],
     ),
   );
@@ -448,13 +443,7 @@ class _StackedLayout extends _Layout {
           ),
         ),
         const SizedBox(width: _gap),
-        SizedBox(
-          width: chip,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: DsStatusChip(status: item.level, label: item.levelLabel),
-          ),
-        ),
+        _chipCell(item, chip),
       ],
     ),
   );

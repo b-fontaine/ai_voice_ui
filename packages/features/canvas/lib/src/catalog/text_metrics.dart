@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show sceneTextStyle;
+    show SceneTheme, sceneTextStyle;
 
 /// Largeur d'une ligne de texte sur une seule ligne, sans contrainte, telle
 /// que la rendrait un `Text` placé dans [context].
@@ -32,6 +32,44 @@ double measureTextHeight(
   final double height = painter.height;
   painter.dispose();
   return height;
+}
+
+/// Hauteur d'une ligne de [style] : taille de police fois hauteur de ligne
+/// (24 px et 1 quand ils sont absents).
+double lineHeightOf(TextStyle style) =>
+    (style.fontSize ?? 24) * (style.height ?? 1);
+
+/// Dernière ligne d'une liste tronquée (« + N autres critères ») : texte
+/// secondaire du thème de scène, aligné à gauche dans une hauteur fixée par
+/// l'appelant (la même que celle réservée dans son budget).
+class MoreLine extends StatelessWidget {
+  const MoreLine({
+    super.key,
+    required this.textKey,
+    required this.text,
+    required this.height,
+  });
+
+  /// Clé posée sur le `Text`.
+  final Key textKey;
+  final String text;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return SizedBox(
+      height: height,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          key: textKey,
+          style: theme.body.copyWith(color: theme.textSecondary),
+        ),
+      ),
+    );
+  }
 }
 
 TextPainter _painter(
