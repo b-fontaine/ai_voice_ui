@@ -106,7 +106,8 @@ Détails tranchés par la boucle sous [pdr-0062](../decisions/pdr-0062-standing-
 - **Panneau du protocole** (EP-05) : suit le message rejoué (contour pointillé sur sa surface) ; reste déplié pendant un positionnement.
 - **Fermeture** : `dispose` de la page ferme d'abord le `ReplayBloc`, dont la partie synchrone détruit le lecteur (aucun minuteur actif après démontage) ; `_shutdown` ferme ensuite, dans l'ordre, session, source, **routeur**, gate, puis les autres Blocs.
 - **Capture** : `GENESIS_REPLAY_AT=0.5 app-smoke.sh act3-replay` (1920×1080) **conforme** : indicateur « Acte 4 · Rejeu », « Démarrer » grisé, deux rangées lisibles, quatre surfaces de l'acte 1, panneau « 13 messages ». Pas d'essai avec micro : sans objet (aucun réseau ni LLM en rejeu).
-- **Observations, non tranchées** : le titre du panneau reste « FLUX A2UI · live » pendant le rejeu (cosmétique) ; le rail des agents est dit vide en rejeu (seul le flux A2UI est rejoué, pdr-0032) mais l'écran **garde les tuiles terminées d'un direct** (aucune liaison, L-04) : écart documentation/écran porté par **Q-88**, non tranché. Points à voir avec le porteur en répétition ([p-fn-screen](../functional/screen.md)).
+- **Rail en rejeu (état réel, décidé : Q-88 → [pdr-0081](../decisions/pdr-0081-rail-in-replay-and-ignore-stray-speech.md))** : seul le flux A2UI est rejoué (pdr-0032) ; le rail **garde les tuiles terminées du dernier direct**, sans liaison (L-04). Aucun changement de code.
+- **Observations, non tranchées** : le titre du panneau reste « FLUX A2UI · live » pendant le rejeu (cosmétique) ; Points à voir avec le porteur en répétition ([p-fn-screen](../functional/screen.md)).
 
 ## Liste des crashs : `CrashList` et grille à parent unique (012, 2026-10-31)
 

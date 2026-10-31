@@ -121,7 +121,7 @@ Fonctionnalité: Couper la parole à l'IA en parlant, et liaison animée de dél
     Quand le temps passe
     Alors la liaison reste affichée et son image ne change pas
 
-  # Automatisé (Flutter) : L-04. ⚠️ Écart documentation/écran sur le contenu du rail en rejeu : Q-88 (non tranché). Seule l'absence de liaison est testée.
+  # Automatisé (Flutter) : L-04. Le rail garde les tuiles du dernier direct en rejeu (Q-88 tranchée → pdr-0081). Seule l'absence de liaison est testée.
   @L-04 @FR-03 @FR-09
   Scénario: L-04 Pendant le rejeu, aucune liaison n'est affichée
     Soit un direct dont les agents sont terminés
