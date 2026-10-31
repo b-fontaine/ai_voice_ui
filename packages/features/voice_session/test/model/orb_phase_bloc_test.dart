@@ -302,6 +302,34 @@ void main() {
       },
     );
 
+    testWidgets(
+      'ordre inversé : délégation déjà reçue, puis interruption correction',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd', offsetMs: 4000),
+        );
+        await rig.send(tester, correction);
+        expect(rig.phases, <OrbPhase>[interrupted, listening]);
+        await rig.close(tester);
+      },
+    );
+
+    testWidgets(
+      'ordre inversé : une délégation antérieure à at_ms laisse interrompue',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd', offsetMs: 2000),
+        );
+        await rig.send(tester, correction);
+        expect(rig.bloc.state, interrupted);
+        await rig.close(tester);
+      },
+    );
+
     testWidgets('cause stop explicite : exemption stopSpan inchangée', (
       tester,
     ) async {

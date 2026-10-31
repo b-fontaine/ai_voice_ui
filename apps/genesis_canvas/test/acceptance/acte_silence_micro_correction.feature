@@ -78,3 +78,13 @@ Fonctionnalité: Faire taire l'IA, couper le micro et corriger en vol
     Alors l'orbe est à l'état {'Écoute'}
     Et la piste distante est rétablie
     Et les surfaces affichées sont {'kpi,trend,reviews,checklist'}
+
+  @S-07 @FR-14 @FR-17
+  Scénario: S-07 bis La délégation de la correction arrive avant l'interruption
+    Soit le tableau de la release 3.4 est affiché
+    Et le serveur émet un niveau d'orbe de {'0.4'}
+    Quand le serveur émet la délégation de la correction à {4000} ms
+    Et le serveur émet l'interruption de cause correction à {2500} ms
+    Alors l'orbe est à l'état {'Écoute'}
+    Et la piste distante est rétablie
+    Et les surfaces affichées sont {'kpi,trend,reviews,checklist'}

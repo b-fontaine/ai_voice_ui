@@ -471,9 +471,9 @@ void main() {
       () async {
         await transport.createOfferSdp();
 
-        await transport.setMicEnabled(false);
+        expect(await transport.setMicEnabled(false), isTrue);
         expect(platform.micTrackEnabled, isFalse);
-        await transport.setMicEnabled(true);
+        expect(await transport.setMicEnabled(true), isTrue);
         expect(platform.micTrackEnabled, isTrue);
 
         expect(platform.log.where((e) => e.startsWith('mic.')), <String>[
@@ -487,7 +487,7 @@ void main() {
     );
 
     test('avant l\'ouverture du micro : sans effet et sans erreur', () async {
-      await transport.setMicEnabled(false);
+      expect(await transport.setMicEnabled(false), isFalse);
 
       expect(platform.log, isEmpty);
       expect(platform.micTrackEnabled, isTrue);
@@ -498,7 +498,7 @@ void main() {
       await transport.stop();
       platform.log.clear();
 
-      await transport.setMicEnabled(false);
+      expect(await transport.setMicEnabled(false), isFalse);
 
       expect(platform.log, isEmpty);
       expect(platform.micTrackEnabled, isTrue);
@@ -510,7 +510,7 @@ void main() {
         await transport.createOfferSdp();
         platform.micEnabledError = Exception('SDP secret v=0');
 
-        await transport.setMicEnabled(false);
+        expect(await transport.setMicEnabled(false), isFalse);
 
         expect(platform.micTrackEnabled, isTrue);
         expect(platform.log, isNot(contains('mic.stop')));

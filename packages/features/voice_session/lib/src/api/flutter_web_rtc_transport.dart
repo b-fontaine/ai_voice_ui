@@ -103,16 +103,18 @@ class FlutterWebRtcTransport implements VoiceTransport {
   }
 
   @override
-  Future<void> setMicEnabled(bool enabled) async {
+  Future<bool> setMicEnabled(bool enabled) async {
     final mic = _mic;
-    if (_stopped || mic == null) return;
+    if (_stopped || mic == null) return false;
     try {
       await mic.setEnabled(enabled);
+      return true;
     } catch (error) {
       // Ni SDP ni détail de plateforme : seul le type de l'erreur est consigné.
       debugPrint(
         'Transport voix : micro non (dé)sactivé (${error.runtimeType}).',
       );
+      return false;
     }
   }
 

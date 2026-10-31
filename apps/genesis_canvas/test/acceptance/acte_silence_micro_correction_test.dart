@@ -130,5 +130,23 @@ void main() {
       },
       tags: ['S-07', 'FR-14', 'FR-17'],
     );
+    testWidgets(
+      '''S-07 bis La délégation de la correction arrive avant l'interruption''',
+      (tester) async {
+        try {
+          await bddSetUp(tester);
+          await leTableauDeLaRelease34EstAffiche(tester);
+          await leServeurEmetUnNiveauDorbeDe(tester, '0.4');
+          await leServeurEmetLaDelegationDeLaCorrectionAMs(tester, 4000);
+          await leServeurEmetLinterruptionDeCauseCorrectionAMs(tester, 2500);
+          await lorbeEstALetat(tester, 'Écoute');
+          await laPisteDistanteEstRetablie(tester);
+          await lesSurfacesAfficheesSont(tester, 'kpi,trend,reviews,checklist');
+        } finally {
+          await bddTearDown(tester);
+        }
+      },
+      tags: ['S-07', 'FR-14', 'FR-17'],
+    );
   });
 }

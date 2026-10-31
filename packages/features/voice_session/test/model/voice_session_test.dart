@@ -668,8 +668,7 @@ void main() {
 
       test('échec de la plateforme : micMuted reste faux', () async {
         final h = VoiceHarness();
-        h.onNewTransport = (t) =>
-            t.micHook = (_) async => throw StateError('x');
+        h.onNewTransport = (t) => t.micResult = false;
         await h.session.start();
 
         await h.session.setMicMuted(true);

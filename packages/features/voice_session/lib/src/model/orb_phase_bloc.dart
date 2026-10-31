@@ -57,7 +57,9 @@ final class _InterruptionEnded extends OrbPhaseEvent {
 /// local, aucune délégation n'est exemptée. Après une interruption de cause
 /// `correction`, la première délégation datée au plus tôt de `at_ms` (celle de
 /// la correction) met fin à l'interruption. Pendant l'interruption, le
-/// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée.
+/// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée. Si la
+/// délégation de la correction est arrivée avant `voice.interrupted`, le Bloc
+/// émet [Interrupted] puis [Listening] aussitôt.
 ///
 /// Le Bloc ne rétablit pas lui-même le son : la page de composition relie le
 /// retour hors de [Interrupted] à `VoiceSession.resumeRemoteAudio`.
@@ -95,6 +97,8 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   // lui-même ; `correction` attend la délégation d'offset >= `at_ms`.
   bool _stopExemption = false;
   bool _correction = false;
+  // Plus grand offset de `DelegationStarted` reçu depuis le début de la session.
+  int? _lastDelegationOffsetMs;
 
   Timer? _silenceTimer;
   Timer? _maxTimer;
@@ -113,6 +117,15 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
             stopExemption: cause == InterruptionCause.stop,
             correction: cause == InterruptionCause.correction,
           );
+          // La délégation de la correction a pu arriver avant l'interruption :
+          // on passe par Interrupted (la page coupe la piste) puis on en sort
+          // aussitôt (la page la rétablit).
+          final int? lastOffset = _lastDelegationOffsetMs;
+          if (cause == InterruptionCause.correction &&
+              lastOffset != null &&
+              lastOffset >= atMs) {
+            _endInterruption(emit);
+          }
         case VoiceSilenced():
           _beginInterruption(
             emit,
@@ -128,6 +141,10 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
             emit(loud ? const Speaking() : const Listening());
           }
         case DelegationStarted(:final int offsetMs):
+          if (_lastDelegationOffsetMs == null ||
+              offsetMs > _lastDelegationOffsetMs!) {
+            _lastDelegationOffsetMs = offsetMs;
+          }
           if (state is! Interrupted) {
             _endInterruption(emit);
           } else if (_stopExemption) {
@@ -140,6 +157,7 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
         case SessionStateChanged(state: SessionState.closed) ||
             SessionStateChanged(state: SessionState.connecting) ||
             ChannelLost():
+          _lastDelegationOffsetMs = null;
           _endInterruption(emit);
         default:
           break;

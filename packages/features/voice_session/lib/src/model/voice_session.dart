@@ -127,12 +127,8 @@ class VoiceSession {
     final status = _current;
     if (transport == null || status is! Active) return;
     if (status.micMuted == muted) return;
-    try {
-      await transport.setMicEnabled(!muted);
-    } on Object {
-      // Le micro reste dans son état précédent.
-      return;
-    }
+    // Le micro reste dans son état précédent si la commande n'est pas appliquée.
+    if (!await transport.setMicEnabled(!muted)) return;
     // La session a pu se terminer ou changer pendant l'attente.
     if (_isStale(generation) || _current is! Active) return;
     _set(Active(micMuted: muted));
