@@ -260,3 +260,66 @@ func TestNewServiceOverlapConfig(t *testing.T) {
 		t.Fatalf("chevauchement seul : %v", err)
 	}
 }
+
+// Spec 016 : le chevauchement note sa marque (NoteOverlap) puis remplace la demande
+// (Supersede), dans cet ordre, pour un chevauchement comme pour une correction dite
+// pendant que l'IA parle ; jamais pour une correction ordinaire (014) ni sans chevauchement.
+func requireOrder(t *testing.T, e *stopEnv, want ...string) {
+	t.Helper()
+	e.fd.sess.mu.Lock()
+	defer e.fd.sess.mu.Unlock()
+	var got []string
+	for _, w := range e.fd.sess.order {
+		if w == "noteOverlap" || w == "supersede" {
+			got = append(got, w)
+		}
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("ordre = %v, attendu %v", got, want)
+	}
+}
+
+func TestOverlapNotesOverlapBeforeSupersede(t *testing.T) {
+	e := newStopEnv(t, withOverlap)
+	e.aiSpeaks()
+	e.say("Montre la sécurité ", 3000)
+	waitFor(t, func() bool { return len(e.fd.sess.supersedeCalls()) == 1 })
+	e.flush(t)
+	if got := e.fd.sess.overlapCalls(); !slices.Equal(got, []int64{3000}) {
+		t.Fatalf("NoteOverlap = %v, attendu [3000]", got)
+	}
+	requireOrder(t, e, "noteOverlap", "supersede")
+}
+
+func TestOverlapCorrectionWhileAISpeaksNotesOverlap(t *testing.T) {
+	e := newStopEnv(t, withOverlap)
+	e.aiSpeaks()
+	e.say("Non, plutôt iOS.", 3000)
+	waitFor(t, func() bool { return len(e.fd.sess.supersedeCalls()) == 1 })
+	e.flush(t)
+	if got := e.fd.sess.overlapCalls(); !slices.Equal(got, []int64{3000}) {
+		t.Fatalf("NoteOverlap = %v, attendu [3000]", got)
+	}
+	requireOrder(t, e, "noteOverlap", "supersede")
+}
+
+func TestOrdinaryCorrectionDoesNotNoteOverlap(t *testing.T) {
+	e := newStopEnv(t, withOverlap)
+	e.aiSilent()
+	e.say("Non, plutôt iOS.", 3000)
+	waitFor(t, func() bool { return len(e.fd.sess.supersedeCalls()) == 1 })
+	e.flush(t)
+	if got := e.fd.sess.overlapCalls(); len(got) != 0 {
+		t.Fatalf("NoteOverlap = %v, attendu aucun (correction 014)", got)
+	}
+}
+
+func TestNoOverlapNoNoteOverlap(t *testing.T) {
+	e := newStopEnv(t, withOverlap)
+	e.aiSilent()
+	e.say("Montre la sécurité ", 3000)
+	requireNoInterruption(t, e, "IA silencieuse")
+	if got := e.fd.sess.overlapCalls(); len(got) != 0 {
+		t.Fatalf("NoteOverlap = %v, attendu aucun", got)
+	}
+}

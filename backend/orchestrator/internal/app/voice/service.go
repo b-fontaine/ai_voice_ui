@@ -570,9 +570,11 @@ func (s *Service) supersede(sess *session, fw *forwarder, det Detection) {
 // voice.interrupted {cause: overlap} d'abord, publié ici même sans exécution en vol (le client
 // coupe la voix), puis Supersede sans annonce (il ne publie rien : un seul message par énoncé),
 // qui annule l'exécution antérieure et laisse la phrase ouvrir la demande suivante. Interrupt
-// n'est jamais utilisé.
+// n'est jamais utilisé. NoteOverlap (spec 016) précède Supersede dans la file : la marque est
+// posée avant que la demande qui suit soit lancée.
 func (s *Service) overlap(sess *session, fw *forwarder, det Detection, cause domain.InterruptCause) {
 	s.announceInterrupted(sess, det.AtMs, cause)
+	fw.noteOverlap(det.AtMs)
 	fw.supersede(det.AtMs, nil)
 }
 

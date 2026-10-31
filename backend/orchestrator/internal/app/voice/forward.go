@@ -18,7 +18,7 @@ import (
 const forwardQueue = 256
 
 type fwItem struct {
-	what string // "transcript", "delegation", "interrupt" ou "supersede"
+	what string // "transcript", "delegation", "interrupt", "supersede" ou "noteOverlap"
 	fn   func()
 }
 
@@ -74,7 +74,7 @@ func (f *forwarder) submit(what string, fn func()) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if len(f.items) >= forwardQueue {
-		if what != "delegation" && what != "interrupt" && what != "supersede" { // jamais abandonnés
+		if what != "delegation" && what != "interrupt" && what != "supersede" && what != "noteOverlap" { // jamais abandonnés
 			f.log.Warn("file de délégations pleine : événement abandonné", "session", f.session, "event", what)
 			return
 		}
@@ -130,6 +130,16 @@ func (f *forwarder) supersede(atMs int64, announce func()) {
 		return
 	}
 	f.submit("supersede", func() { f.dg.Supersede(atMs, announce) })
+}
+
+// noteOverlap transmet la marque d'un chevauchement (spec 016), dans l'ordre : appelé juste
+// avant le supersede du même énoncé, il est vu avant lui par la gestion des délégations.
+// Jamais abandonné.
+func (f *forwarder) noteOverlap(atMs int64) {
+	if f == nil {
+		return
+	}
+	f.submit("noteOverlap", func() { f.dg.NoteOverlap(atMs) })
 }
 
 // shutdown vide la file (borné par guard), puis appelle SessionDelegations.Close

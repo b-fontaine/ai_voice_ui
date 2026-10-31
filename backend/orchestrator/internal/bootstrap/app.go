@@ -105,6 +105,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
+	warnInertRecovery(cfg, logger)
 	journalDir := deps.JournalDir
 	if journalDir == "" {
 		journalDir = cfg.JournalDir
@@ -168,6 +169,15 @@ func New(cfg Config, deps Deps) (*App, error) {
 		return nil, err
 	}
 	return &App{handler: handler, service: service, hub: hub, journal: journal}, nil
+}
+
+// warnInertRecovery signale une configuration cohérente mais inerte : la reprise (spec 016)
+// ne s'arme que sur un chevauchement. Jamais de refus de démarrage, pour que le retour
+// arrière VOICE_OVERLAP_INTERRUPT=false reste possible sans toucher à la fenêtre.
+func warnInertRecovery(cfg Config, logger *slog.Logger) {
+	if cfg.VoiceRecoveryWindow > 0 && !cfg.VoiceOverlap.Enabled {
+		logger.Warn("VOICE_RECOVERY_WINDOW est ignorée : VOICE_OVERLAP_INTERRUPT est coupé, la reprise ne s'arme jamais")
+	}
 }
 
 func newOpenAI(cfg Config, logger *slog.Logger) (port.LiveProvider, error) {
@@ -244,6 +254,7 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
 		Clock: asWaitClock(clock), RequestWindowSettle: cfg.RequestWindowSettle, RequestWindowMargin: cfg.RequestWindowMargin,
+		RecoveryWindow: cfg.VoiceRecoveryWindow,
 	})
 }
 

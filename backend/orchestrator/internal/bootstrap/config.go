@@ -50,6 +50,7 @@ const (
 	maxVoiceStopDebounce         = 10 * time.Second
 	defaultVoiceStopSpan         = 3 * time.Second
 	maxVoiceStopSpan             = 10 * time.Second
+	maxVoiceRecoveryWindow       = 30 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -117,6 +118,10 @@ type Config struct {
 	// VoiceOverlap : chevauchement (spec 015, VOICE_OVERLAP_*, plan § Configuration). Valeur
 	// nulle : coupé, aucune variable requise.
 	VoiceOverlap voice.OverlapConfig
+	// VoiceRecoveryWindow (VOICE_RECOVERY_WINDOW, de 0 à 30 s, défaut 0 : reprise coupée,
+	// spec 016) : durée après un chevauchement pendant laquelle une demande refusée est
+	// jugée mal comprise.
+	VoiceRecoveryWindow time.Duration
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
@@ -477,10 +482,28 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 	if err := parseVoiceOverlap(getenv, cfg); err != nil {
 		return err
 	}
+	if cfg.VoiceRecoveryWindow, err = parseVoiceRecoveryWindow(getenv); err != nil {
+		return err
+	}
 	if cfg.VoiceOverlap.Enabled && cfg.VoiceStopSettle == 0 {
 		return errors.New("VOICE_OVERLAP_INTERRUPT actif exige VOICE_STOP_SETTLE strictement positif (sinon le jeton ouvert est jugé aussitôt)")
 	}
 	return nil
+}
+
+// parseVoiceRecoveryWindow lit VOICE_RECOVERY_WINDOW (spec 016) : durée de 0 à
+// maxVoiceRecoveryWindow, 0 par défaut (reprise coupée). L'erreur nomme la variable sans
+// recopier la valeur.
+func parseVoiceRecoveryWindow(getenv func(string) string) (time.Duration, error) {
+	raw := strings.TrimSpace(getenv("VOICE_RECOVERY_WINDOW"))
+	if raw == "" {
+		return 0, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil || d < 0 || d > maxVoiceRecoveryWindow {
+		return 0, fmt.Errorf("VOICE_RECOVERY_WINDOW doit être une durée comprise entre 0 et %s (par exemple 8s ; 0 coupe la reprise)", maxVoiceRecoveryWindow)
+	}
+	return d, nil
 }
 
 // parseVoiceOverlap lit les variables VOICE_OVERLAP_* (spec 015). Valeur nulle : chevauchement

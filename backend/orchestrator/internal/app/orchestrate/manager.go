@@ -223,6 +223,11 @@ type Options struct {
 	// seul. Nil : aucune demande n'est reconnue ainsi.
 	StopSpan   time.Duration
 	IsStopOnly func(request string) bool
+
+	// RecoveryWindow est la durée, après un chevauchement de la voix, pendant laquelle une
+	// demande vocale refusée est jugée mal comprise (spec 016, VOICE_RECOVERY_WINDOW) :
+	// 0 coupe la reprise.
+	RecoveryWindow time.Duration
 }
 
 // Manager implémente port.Delegations.
@@ -264,6 +269,8 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 		return nil, fmt.Errorf("orchestrate : RequestWindowMargin doit être >= 0 (%s)", opts.RequestWindowMargin)
 	case opts.StopSpan < 0:
 		return nil, fmt.Errorf("orchestrate : StopSpan doit être >= 0 (%s)", opts.StopSpan)
+	case opts.RecoveryWindow < 0:
+		return nil, fmt.Errorf("orchestrate : RecoveryWindow doit être >= 0 (%s)", opts.RecoveryWindow)
 	case opts.RequestWindowSettle > 0 && opts.Clock == nil:
 		return nil, errors.New("orchestrate : Clock requise quand RequestWindowSettle > 0")
 	}
@@ -400,6 +407,10 @@ type session struct {
 	epoch   uint64
 	stopAt  int64 // at_ms du dernier arrêt, valable si hasStop
 	hasStop bool
+	// overlapAt est le plus grand at_ms de chevauchement noté (NoteOverlap), valable si
+	// hasOverlap (spec 016).
+	overlapAt  int64
+	hasOverlap bool
 	// runOffset est l'offset de la délégation vocale en cours (posé par beginRun, valable si
 	// cancelRun != nil). supersededBefore est le at_ms de la dernière correction (Supersede) :
 	// une délégation vocale d'offset inférieur qui arrive ensuite est écartée.
