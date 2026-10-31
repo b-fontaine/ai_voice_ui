@@ -75,6 +75,7 @@ func startDelegatingAppWith(t *testing.T, agentCardURLs []string, opts ...appOpt
 		"AGENT_TIMEOUT":         "5s",
 		"VOICE_STOP_WORDS":      "stop,tais-toi,annule", // mots d'arrêt (spec 011, K-03 et K-04)
 	}
+	applyOverlapReplay(env) // rejeu 015 (T03) : valeurs du compose si ACCEPTANCE_OVERLAP=compose
 	for _, opt := range opts {
 		opt(env)
 	}
@@ -213,6 +214,7 @@ func postSessionAndRelease(t *testing.T, srv *httptest.Server, live *fakeDelegat
 	t.Helper()
 	id := postSession(t, srv.URL)
 	live.Release()
+	waitSideband(t, live) // Emit exige un sideband ouvert (course sinon, K-04)
 	return id
 }
 
