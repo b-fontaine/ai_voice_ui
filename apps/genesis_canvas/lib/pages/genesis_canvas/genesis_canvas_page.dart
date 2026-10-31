@@ -755,9 +755,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _gap = 8;
 
   /// Hauteurs fixes du budget des zones à 1920 × 1080 ; le canevas prend le
-  /// reste (572 px : grille 2 × 250 et bandeau de 72). La barre supérieure cède
-  /// 32 px (160 → 128), le rail garde ses 200 px (cinq lignes possibles).
-  static const double _railHeight = 200;
+  /// reste (676 px : grille 2 × 302 et bandeau de 72). La barre supérieure fait
+  /// 128 px et le rail, horizontal et de hauteur fixe même vide, 96 px (A1 de
+  /// 013, pdr-0075 D1).
+  static const double _railHeight = AgentsRail.height;
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 

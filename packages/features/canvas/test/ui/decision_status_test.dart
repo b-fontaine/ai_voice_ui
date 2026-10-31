@@ -35,7 +35,7 @@ void main() {
   setUpAll(loadRealFonts);
 
   /// Cellule d'une colonne à 1366 px de large (1366 − 2 × 24 − 8, divisé par 2).
-  const Size narrowCell = Size(655, 250);
+  const Size narrowCell = Size(655, 302);
 
   for (final (String name, Size cell) in <(String, Size)>[
     ('1366 x 768', narrowCell),

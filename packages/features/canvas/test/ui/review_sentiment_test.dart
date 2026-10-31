@@ -85,7 +85,7 @@ void main() {
 
   testWidgets('cellule 3 × 2 (618 px) : la ligne des pourcentages ne déborde '
       'pas, même avec la police de test large', (tester) async {
-    final h = CatalogHarness('reviews', 'reviews', size: const Size(618, 250));
+    final h = CatalogHarness('reviews', 'reviews', size: const Size(618, 302));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 

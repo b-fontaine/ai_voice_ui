@@ -6,9 +6,9 @@ import 'package:testing_real_fonts/testing_real_fonts.dart';
 import '../support/catalog_harness.dart';
 
 /// Hauteur d'une cellule de la grille à 1920 × 1080 (budget des zones de la
-/// page : canevas de 572 px, bandeau de 72 px, deux rangées) et largeur d'une
+/// page : canevas de 676 px, bandeau de 72 px, deux rangées) et largeur d'une
 /// colonne (1920 − 2 × 24 de marge − 8 d'intervalle, divisé par 2).
-const Size gridCell = Size(936, 250);
+const Size gridCell = Size(936, 302);
 
 void main() {
   setUpAll(loadRealFonts);
@@ -23,7 +23,7 @@ void main() {
   ];
   for (final (String surface, String component) in cases) {
     testWidgets('$component : le contenu de l\'acte 2 tient dans une cellule '
-        'de 250 px avec les polices réelles', (tester) async {
+        'de 302 px avec les polices réelles', (tester) async {
       final h = CatalogHarness(
         surface,
         surface,
@@ -43,10 +43,10 @@ void main() {
 }
 
 /// Cellule 3 × 2 à 1920 × 1080 : (1920 − 2 × 24 − 2 × 8) / 3 = 618 de large.
-const Size gridCell3x2 = Size(618, 250);
+const Size gridCell3x2 = Size(618, 302);
 
 void defineCrashListFit() {
-  testWidgets('CrashList : cinq lignes dans une cellule 3 × 2 de 250 px, polices '
+  testWidgets('CrashList : cinq lignes dans une cellule 3 × 2 de 302 px, polices '
       'réelles, sans débordement ni chevauchement', (tester) async {
     final h = CatalogHarness(
       'crashes',

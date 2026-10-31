@@ -4,43 +4,73 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
-/// Rail des agents : une ligne par agent (`agent-<nom>`) avec son état en
-/// toutes lettres ; la couleur du point n'est qu'un renfort.
+/// Rail des agents, en rangée horizontale de [height] px (A1 de 013, pdr-0075
+/// D1) : le repère « AGENTS A2A » en colonne de tête, puis une tuile par agent
+/// (`agent-<nom>`), l'orchestrateur d'abord.
 ///
-/// Texte du thème de scène (>= 24 px, RG-09) ; une ligne par agent, le libellé
-/// de tâche et le détail s'abrègent avec une ellipse plutôt que de déborder
-/// (budget : l'orchestrateur et trois agents tiennent dans 200 px).
+/// Une tuile tient sur deux lignes : pastille et nom, puis « état · tâche ».
+/// L'état est dit en toutes lettres (la couleur de la pastille n'est qu'un
+/// renfort) ; seule la tâche s'abrège avec une ellipse. Texte du thème de scène
+/// (>= 24 px, RG-09). La hauteur et la largeur sont celles du budget, vide ou
+/// rempli : l'arrivée du premier plan ne déplace rien. L'intervalle entre
+/// l'orchestrateur et les agents reste libre, pour un connecteur futur (Q-85).
 class AgentsRail extends StatelessWidget {
   const AgentsRail({super.key = const Key('agents-rail')});
 
+  /// Hauteur fixe du rail, en points.
+  static const double height = 96;
+
+  /// Intervalle réservé entre l'orchestrateur et les agents.
+  static const double delegationGap = 48;
+
   @override
-  Widget build(BuildContext context) => Material(
-    type: MaterialType.transparency,
-    child: BlocBuilder<AgentActivityBloc, AgentActivityState>(
-      builder: (context, state) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          for (final agent in state.agents) _AgentRow(agent: agent),
-          if (state.noAgentSelected)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                'aucun agent retenu',
-                key: const Key('agents-none'),
-                style: SceneTheme.of(context).body,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-        ],
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return Material(
+      type: MaterialType.transparency,
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: BlocBuilder<AgentActivityBloc, AgentActivityState>(
+          builder: (context, state) {
+            final List<AgentStatus> agents = state.agents;
+            return Row(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 24),
+                  child: Text(
+                    'AGENTS A2A',
+                    style: theme.label.copyWith(color: theme.textSecondary),
+                    maxLines: 1,
+                  ),
+                ),
+                for (int i = 0; i < agents.length; i++) ...<Widget>[
+                  if (i == 1) const SizedBox(width: delegationGap),
+                  if (i > 1) const SizedBox(width: 16),
+                  Expanded(child: _AgentTile(agent: agents[i])),
+                ],
+                if (state.noAgentSelected) ...<Widget>[
+                  const SizedBox(width: delegationGap),
+                  Text(
+                    'aucun agent retenu',
+                    key: const Key('agents-none'),
+                    style: theme.body,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (agents.length < 2 && !state.noAgentSelected) const Spacer(),
+              ],
+            );
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-class _AgentRow extends StatelessWidget {
-  const _AgentRow({required this.agent});
+class _AgentTile extends StatelessWidget {
+  const _AgentTile({required this.agent});
 
   final AgentStatus agent;
 
@@ -70,59 +100,54 @@ class _AgentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = SceneTheme.of(context);
-    final label = agent.label;
     final stateText = _stateText(agent.state);
     // Un détail identique au libellé d'état (« hors périmètre ») n'est pas
     // répété.
     final detail = agent.detail == stateText ? null : agent.detail;
+    final task = <String>[?agent.label, ?detail].join(' · ');
     final secondary = theme.body.copyWith(color: theme.textSecondary);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        key: Key('agent-${agent.agent}'),
-        children: <Widget>[
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _stateColor(theme, agent.state),
+    return Column(
+      key: Key('agent-${agent.agent}'),
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _stateColor(theme, agent.state),
+              ),
+              child: const SizedBox.square(dimension: 14),
             ),
-            child: const SizedBox.square(dimension: 14),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              agent.agent,
-              style: theme.label.copyWith(color: theme.textPrimary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (label != null) ...<Widget>[
             const SizedBox(width: 12),
             Flexible(
               child: Text(
-                label,
-                style: secondary,
+                agent.agent,
+                style: theme.label.copyWith(color: theme.textPrimary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
-          const SizedBox(width: 12),
-          Text(stateText, style: theme.body, maxLines: 1),
-          if (detail != null) ...<Widget>[
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                detail,
-                style: secondary,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        ),
+        Row(
+          children: <Widget>[
+            Text(stateText, style: theme.body, maxLines: 1),
+            if (task.isNotEmpty) ...<Widget>[
+              Text(' · ', style: secondary, maxLines: 1),
+              Flexible(
+                child: Text(
+                  task,
+                  style: secondary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

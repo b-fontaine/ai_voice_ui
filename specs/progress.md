@@ -23,6 +23,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : TDD en cours — T10 (rail horizontal 96 px) et T11 (canevas 676 px) faites ; D-01 et D-07 « premier plan » verts. Restent : T12a à T17 (lisibilité, régie, captures), lot B, lot C. |
 | 2026-10-31 | 013 : **Gherkin terminé** (D-01 à D-07 automatisés : 7 rouges pour la bonne raison, 5 gardes verts ; outillage de polices réelles `testing/real_fonts`, `gate --unit flutter` vert). Prochaine étape : TDD, lot A (T10, T11, …). |
 | 2026-10-31 | 013 : **revue du plan rendue** (À AMENDER, 8 amendements dont 2 bloquants, tous intégrés : Widgetbook en `apps/genesis_widgetbook` avec coupe C2 prévue, tests de lisibilité en polices réelles, apparition par `SceneMotionScope`, cellules sélectives pour NFR-04, tokens en constantes avec test de hash). **Q-85** ouverte pour le porteur (liaison animée de délégation, jamais livrée). Prochaine étape : Gherkin (T03, T01, T02). |
 | 2026-10-31 | 013 : **Définir terminé** (spec en trois lots A corrections visuelles, B apparition animée, C tokens et Widgetbook ; [pdr-0075](../product/decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) tranchée sous pdr-0062 : rail horizontal de 96 px plutôt que la colonne de la maquette, contestable). Prochaine étape : revue du plan par `architect-reviewer`. `loop` est en retard de 2 commits sur `origin/main` (`tools/loop/verify.sh`, Q-84) : à intégrer par `publish.sh`. |

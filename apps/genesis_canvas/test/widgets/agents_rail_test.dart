@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart'
     show testWidgets;
 import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/paragraphs.dart';
 
@@ -23,6 +24,10 @@ void main() {
     String description,
     Future<void> Function(WidgetTester tester) body,
   ) => flutter_test.testWidgets(description, (tester) async {
+    // Écran de la démo : le rail dispose de 1872 px (1920 - 2 × 24).
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     bloc = AgentActivityBloc();
     events = StreamController<SessionEvent>.broadcast();
     await body(tester);
@@ -39,7 +44,10 @@ void main() {
         textDirection: TextDirection.ltr,
         child: BlocProvider<AgentActivityBloc>.value(
           value: bloc,
-          child: const AgentsRail(),
+          child: const Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(width: 1872, height: 96, child: AgentsRail()),
+          ),
         ),
       ),
     );
@@ -61,7 +69,118 @@ void main() {
     await pumpRail(tester);
 
     expect(find.byKey(const Key('agents-rail')), findsOneWidget);
-    expect(find.byWidgetPredicate((w) => w is Text), findsNothing);
+    // Seul le repère de zone est affiché ; aucune tuile.
+    expect(find.text('AGENTS A2A'), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is Text), findsOneWidget);
+  });
+
+  testWidgets(
+    'le rail fait 96 px de haut et toute la largeur, vide ou rempli',
+    (tester) async {
+      await pumpRail(tester);
+      final Size empty = tester.getSize(find.byKey(const Key('agents-rail')));
+      expect(empty, const Size(1872, 96));
+
+      await emit(
+        tester,
+        PlanReceived(
+          delegation: 'd1',
+          selected: const <String>['Qualité', 'Voix du client'],
+          idle: const <String>['Livraison'],
+        ),
+      );
+      expect(tester.getSize(find.byKey(const Key('agents-rail'))), empty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('tuiles à droite du repère, dans l\'ordre, sur une rangée', (
+    tester,
+  ) async {
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd1',
+        selected: const <String>['Qualité'],
+        idle: const <String>['Livraison'],
+      ),
+    );
+    final Rect title = tester.getRect(find.text('AGENTS A2A'));
+    final List<Rect> tiles = <Rect>[
+      for (final String n in <String>['Orchestrateur', 'Qualité', 'Livraison'])
+        tester.getRect(row(n)),
+    ];
+    for (final Rect t in tiles) {
+      expect(t.left, greaterThanOrEqualTo(title.right));
+      expect(t.top, tiles.first.top);
+      expect(t.height, lessThanOrEqualTo(96));
+    }
+    expect(tiles[1].left, greaterThanOrEqualTo(tiles[0].right));
+    expect(tiles[2].left, greaterThanOrEqualTo(tiles[1].right));
+  });
+
+  testWidgets('cinq tuiles au pire cas : polices réelles, rien de tronqué '
+      'sauf la tâche, aucun débordement', (tester) async {
+    await loadRealFonts(alsoAs: const <String>['Roboto']);
+    await pumpRail(tester);
+    await emit(
+      tester,
+      PlanReceived(
+        delegation: 'd1',
+        selected: const <String>['Voix du client', 'Qualité', 'Livraison'],
+        idle: const <String>['Conformité'],
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Voix du client',
+        task: 't1',
+        state: AgentTaskState.working,
+        label: 'Analyse des avis des utilisateurs',
+      ),
+    );
+    await emit(
+      tester,
+      const AgentActivityReceived(
+        agent: 'Qualité',
+        task: 't2',
+        state: AgentTaskState.rejected,
+        detail: 'hors périmètre',
+      ),
+    );
+
+    expect(find.byKey(const Key('agent-Orchestrateur')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(paragraphsBelowMinimum(tester), isEmpty);
+    // Le nom, l'état et le repère ne sont jamais tronqués.
+    final List<String> truncated = paragraphsTruncated(tester);
+    expect(truncated, isNot(contains('« Voix du client »')));
+    expect(truncated, isNot(contains('« hors périmètre »')));
+    expect(truncated, isNot(contains('« en cours »')));
+    expect(truncated, isNot(contains('« Orchestrateur »')));
+    expect(truncated, isNot(contains('« AGENTS A2A »')));
+    // La tâche reste affichée (même abrégée) : son texte est dans l'arbre.
+    expect(
+      find.descendant(
+        of: row('Voix du client'),
+        matching: find.textContaining('Analyse des avis', findRichText: true),
+      ),
+      findsOneWidget,
+    );
+    // Chaque tuile reste dans la largeur du rail.
+    for (final String n in <String>[
+      'Orchestrateur',
+      'Voix du client',
+      'Qualité',
+      'Livraison',
+      'Conformité',
+    ]) {
+      final Rect r = tester.getRect(row(n));
+      expect(r.right, lessThanOrEqualTo(1872), reason: n);
+      expect(r.height, lessThanOrEqualTo(96), reason: n);
+    }
   });
 
   testWidgets('un agent au travail puis terminé', (tester) async {

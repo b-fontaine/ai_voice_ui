@@ -58,13 +58,16 @@ void main() {
     expect(cells[3].topLeft, Offset(cells[1].left, cells[2].top));
     for (final cell in cells) {
       expect(cell.width, greaterThanOrEqualTo(900));
-      expect(cell.height, greaterThanOrEqualTo(250));
+      expect(cell.height, greaterThanOrEqualTo(302));
     }
-    // Budget des zones (A7b, amendé par A1 de 009) : barre 128, rail 200,
-    // canevas 572 (grille 2 × 250 et bandeau de 72), rangée 140.
+    // Budget des zones (A1 de 013, pdr-0075 D1) : barre 128, rail 96, canevas
+    // 676 (grille 2 × 302 et bandeau de 72), rangée 140.
     expect(tester.getSize(find.byType(TopBar)).height, 128);
-    expect(rectOf(tester, 'agents-rail').height, lessThanOrEqualTo(200));
-    expect(rectOf(tester, 'canvas-board').height, 572);
+    expect(rectOf(tester, 'agents-rail').height, 96);
+    expect(rectOf(tester, 'canvas-board').height, 676);
+    for (final cell in cells) {
+      expect(cell.height, 302);
+    }
     expect(rectOf(tester, 'catalog-shelf').height, lessThanOrEqualTo(140));
     expect(rectOf(tester, 'protocol-panel').height, 140);
     expect(rectOf(tester, 'replay-bar').height, lessThanOrEqualTo(140));
