@@ -1,7 +1,7 @@
 # 015 — État
 
-- **Étape** : Clôture
-- **Tentatives** : 1/3
+- **Étape** : Terminée
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/015-j7-overlap-interrupt-delegation-link
@@ -19,6 +19,7 @@
 | 2026-10-31 | Revue | `architect-reviewer` (Opus, mode CODE) : **À REFACTORISER** (0 bloquante, 3 importantes R1, R2, R10 + R3 faite, 6 mineures), rapport collé ci-dessous | commit `docs(015): revue du code` |
 | 2026-10-31 | Refactorisation | **R1 à R10 appliquées en 3 lots** : G1 Go (R1 écho testé d'abord pour les nombres ; R4 dernier mot de réplique versé à l'écho ; R5 `VOICE_STOP_SETTLE` > 0 exigé avec le chevauchement ; R6 `Input`/`Settle` sans retour, `SpeakingAtOpen()` ; R7 texte évalué retenu) `.omc/state/loop/gates/20261031-105917-unit-go.log` ; F Flutter (R10 : `overlap` reçu en `Interrupted` requalifie la coupure au lieu de la terminer ; R8, R9) `…105619-unit-flutter.log` ; G2 Go (R2 : défauts du compose pour toute l'acceptation Go, suite complète verte sous `-race` en 125 s, `…110205-unit-go.log`). Test d'abord de R2 non vu rouge (écrit dans la même passe que le code). `TestNoGoroutineLeak` de `a2aclient` vu rouge une fois pendant G1 (6 goroutines avant, 9 après), sans rapport avec 015 : à surveiller | `31bf275`, `2f87c66`, commit G2 |
 | 2026-10-31 | Vérification | **`gate --full` VERT sur arbre propre** (67 contrôles, HEAD `7962b97`, colonne propre = yes) : `.omc/state/loop/gates/20261031-110232-full.log`. Capture `app-smoke act2-replay` 1920×1080 relue : `.omc/state/loop/snapshots/20261031-110804-act2-replay.png` — régie à quatre boutons lisibles (« Couper le micro », « Faire taire », « Acte 1/3 · Créer », « Remettre à vide »), rail « AGENTS A2A » de 96 px intact (vide en rejeu : le rejeu embarqué ne porte que le flux A2UI, sans activité d'agent), canevas, étagère, rejeu et flux sans débordement ni libellé tronqué ; **la liaison ne peut pas apparaître sur cette capture** : son tracé, son défilement et son arrêt sont prouvés par les tests d'image de l'acceptation (L-01 à L-04, polices réelles). Pas d'essai réel payant (voix et micro en répétition : Q-80, Q-87) | `7962b97` |
+| 2026-10-31 | Clôture | Documents `product/` (via `product-steward`, lint 0 erreur : nouvelle note `p-ar-voice-overlap`, `voice-interruption.md`, `app-channel-contract.md` (`cause` overlap), `screen.md` et `frontend-screen.md` (liaison), FR-03/13/14/18/19, RG-11/16/17, `chevauchement-liaison-015.feature`, `barge-in.feature` S-05 complet, pdr-0077 et pdr-0080 « livrée », Q-77 et Q-85 livrées, Q-80 enrichie, **Q-88 créée** (rail en rejeu), roadmap J7) ; fusion dans `loop` et `publish.sh` à suivre | commit `product/` |
 
 ## Revue d'architecte
 Revue du plan (P1 à P8) : voir le journal ci-dessus ; amendements appliqués. Conflits avec une décision : aucun.
@@ -44,4 +45,5 @@ Conflits avec une décision, pour le porteur (non bloquants, rien n'est refactor
 - **Écart docs/écran (non bloquant, signalé par T01)** : `product/` dit que le rail est vide pendant le rejeu ; en réel, après un direct, les tuiles terminées y restent affichées. Non tranché ; L-04 teste seulement l'absence de liaison en rejeu.
 - **Non bloquante (P5)** : un commentaire du speaker (« super », « ok ») par-dessus l'accusé de **sa propre** demande en vol déclenche le chevauchement et annule cette demande (pdr-0077 : « délégations en vol annulées ») ; sans nouvelle délégation (Q-87) le canevas reste interrompu. Atténué par la liste de mots ignorés du compose ; à juger en répétition.
 - **Non bloquante (revue du code)** : `VOICE_OVERLAP_SPEAKING_WINDOW` (2 s) classe en chevauchement un speaker qui reprend la parole jusqu'à ≈ 1 à 1,4 s après la fin de la voix de l'IA (le delta d'entrée arrive 0,6 à 1 s après le début de la parole) : sa demande en vol peut être annulée. À régler en répétition (Q-80) ; piste : comparer le `start_ms` d'entrée au dernier `end_ms` de sortie.
+- **Q-88 (non bloquante, au porteur, avant J7)** : le rail est-il vide pendant le rejeu ? La doc dit oui, l'écran garde les tuiles terminées d'un direct ; recommandation : documenter l'état réel.
 - Aucune autre. Q-80 (horloges, latence) reste à observer en répétition ; les seuils de `VOICE_OVERLAP_*` sont des valeurs de départ.

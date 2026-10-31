@@ -25,4 +25,4 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 ## Clôture
 - [x] T90 `tools/loop/gate.sh --full` vert
 - [x] T91 Revue architect-reviewer + refactorisations
-- [ ] T92 Documents `product/` (voice-interruption : détecteur de chevauchement, garde, écho, configuration ; app-channel-contract : `cause` ; screen : liaison ; frontend-screen ; requirements FR-03/FR-13/FR-18 ; barge-in.feature S-05 complet ; nouveau fichier de scénarios 015 ; Q-77 et Q-85 « livrées » ; Q-80 enrichie ; roadmap), `gate.sh --full` vert, état d'avancement, fusion et `publish.sh`
+- [x] T92 Documents `product/` (voice-interruption : détecteur de chevauchement, garde, écho, configuration ; app-channel-contract : `cause` ; screen : liaison ; frontend-screen ; requirements FR-03/FR-13/FR-18 ; barge-in.feature S-05 complet ; nouveau fichier de scénarios 015 ; Q-77 et Q-85 « livrées » ; Q-80 enrichie ; roadmap), `gate.sh --full` vert, état d'avancement, fusion et `publish.sh`
