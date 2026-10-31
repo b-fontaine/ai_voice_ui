@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notes orateur — Genesis Canvas</title>
+    <meta name="description" content="Notes orateur synchronisées avec la présentation (touche N)." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='5' width='20' height='22' fill='none' stroke='%23ffb300' stroke-width='3'/%3E%3Cpath d='M11 12h10M11 17h10M11 22h6' stroke='%23ffb300' stroke-width='2'/%3E%3C/svg%3E" />
+  </head>
+  <body class="notes-page">
+    <header class="np-header">
+      <div class="np-meta">
+        <span class="np-counter" id="np-counter">— / —</span>
+        <span class="np-eyebrow" id="np-eyebrow"></span>
+      </div>
+      <div class="np-clocks">
+        <button type="button" class="np-timer" id="np-timer" title="Chrono depuis l'ouverture (T ou clic : remettre à zéro)">00:00</button>
+        <span class="np-time" id="np-time">--:--</span>
+      </div>
+    </header>
+
+    <main class="np-main">
+      <h1 class="np-title" id="np-title">En attente de la présentation…</h1>
+      <div class="np-notes" id="np-notes">
+        <p class="np-hint">Ouvrez cette fenêtre depuis la présentation avec la touche <kbd>N</kbd>, puis placez-la sur le second écran.</p>
+      </div>
+    </main>
+
+    <footer class="np-footer">
+      <span class="np-next-label">Ensuite</span>
+      <span class="np-next" id="np-next">—</span>
+      <span class="np-keys"><kbd>←</kbd> <kbd>→</kbd> piloter · <kbd>+</kbd> <kbd>−</kbd> taille · <kbd>T</kbd> chrono</span>
+    </footer>
+
+    <script type="module" src="/src/notes.js"></script>
+  </body>
+</html>

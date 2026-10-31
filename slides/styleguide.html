@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guide de style — slides Jarvis</title>
+    <meta name="description" content="Planche de démonstration des composants du thème Jarvis (non incluse dans la présentation)." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%2300e5ff' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%2300e5ff'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <canvas id="hud-bg" aria-hidden="true"></canvas>
+    <div class="hud-chrome" aria-hidden="true">
+      <span class="hud-chrome__corner hud-chrome__corner--tl"></span>
+      <span class="hud-chrome__corner hud-chrome__corner--tr"></span>
+      <span class="hud-chrome__corner hud-chrome__corner--bl"></span>
+      <span class="hud-chrome__corner hud-chrome__corner--br"></span>
+      <span class="hud-chrome__label hud-chrome__label--tl">GUIDE DE STYLE <b>//</b> NON INCLUS DANS LA PRÉSENTATION</span>
+      <span class="hud-chrome__label hud-chrome__label--bl">1600 × 900 <b>//</b> STYLEGUIDE.md</span>
+    </div>
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- 0. Couverture -->
+        <section class="center" data-hud="high">
+          <p class="eyebrow">Thème Jarvis</p>
+          <h1>Guide de style</h1>
+          <p class="lead">Chaque slide montre un composant. Le code est dans <code>STYLEGUIDE.md</code>.</p>
+          <div class="row center mt-1">
+            <span class="badge badge--accepted">acceptée</span>
+            <span class="badge badge--proposed">proposée</span>
+            <span class="badge badge--open">ouverte</span>
+            <span class="badge badge--verified">vérifié</span>
+            <span class="badge badge--opinion">opinion</span>
+          </div>
+        </section>
+
+        <!-- 1. Titre de section -->
+        <section class="chapter" data-hud="high">
+          <p class="chapter-num">Chapitre <b>02</b></p>
+          <h2>Titre de section</h2>
+          <div class="chapter-rule"></div>
+          <p class="subtitle">Sous-titre du chapitre, sur une ou deux lignes</p>
+        </section>
+
+        <!-- 2. Panneaux HUD + typographie -->
+        <section>
+          <h2>Panneaux HUD &amp; typographie</h2>
+          <div class="grid-3">
+            <div class="hud-panel">
+              <p class="panel-title">Panneau cyan</p>
+              <p>Texte courant en <strong>gras</strong>, en <em>accent</em> et avec du <code>code inline</code>.</p>
+            </div>
+            <div class="hud-panel hud-panel--amber">
+              <p class="panel-title">Panneau ambre</p>
+              <p>Pour un point d'attention ou une mise en avant secondaire.</p>
+            </div>
+            <div class="hud-panel hud-panel--alert">
+              <p class="panel-title">Panneau alerte</p>
+              <p>Rare : un risque, un piège, un bug à ne pas reproduire.</p>
+            </div>
+          </div>
+          <p class="mt-1"><span class="accent">.accent</span> · <span class="amber">.amber</span> · <span class="alert">.alert</span> · <span class="ok">.ok</span> · <span class="muted">.muted</span> · <span class="dim">.dim</span> · <span class="mono">.mono</span> · <span class="title-font">.title-font</span></p>
+          <p class="refs">[note-id-exemple] · product/functional/requirements.md</p>
+        </section>
+
+        <!-- 3. Grille + cartes -->
+        <section>
+          <h2>Grille &amp; cartes</h2>
+          <div class="grid-3 stretch-items">
+            <div class="card">
+              <span class="card-icon">01</span>
+              <h3>Carte cyan</h3>
+              <p>Une idée par carte, trois lignes au plus.</p>
+            </div>
+            <div class="card card--amber">
+              <span class="card-icon">02</span>
+              <h3>Carte ambre</h3>
+              <p>Variante secondaire pour contraster.</p>
+            </div>
+            <div class="card card--alert">
+              <span class="card-icon">!</span>
+              <h3>Carte alerte</h3>
+              <p>À réserver aux risques.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Puces -->
+        <section>
+          <h2>Puces stylées</h2>
+          <div class="grid-2">
+            <div>
+              <ul>
+                <li class="fragment rise-in">Puce par défaut (losange cyan)</li>
+                <li class="fragment rise-in">Deuxième niveau :
+                  <ul>
+                    <li>sous-puce en tiret</li>
+                    <li>autre sous-puce</li>
+                  </ul>
+                </li>
+              </ul>
+              <ol>
+                <li>Liste numérotée</li>
+                <li>Numéros ambre sur deux chiffres</li>
+              </ol>
+            </div>
+            <div>
+              <ul class="amber-list"><li>Variante <code>.amber-list</code></li></ul>
+              <ul class="check-list"><li>Variante <code>.check-list</code></li></ul>
+              <ul class="cross-list"><li>Variante <code>.cross-list</code></li></ul>
+              <ul class="plain"><li>Variante <code>.plain</code>, sans puce</li></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Badges -->
+        <section>
+          <h2>Badges de statut</h2>
+          <table class="compare">
+            <thead><tr><th>Classe</th><th>Rendu</th><th>Quand l'utiliser</th></tr></thead>
+            <tbody>
+              <tr><td><code>.badge--accepted</code></td><td><span class="badge badge--accepted">acceptée</span></td><td>décision acceptée (PDR / ADR)</td></tr>
+              <tr><td><code>.badge--proposed</code></td><td><span class="badge badge--proposed">proposée</span></td><td>décision proposée, pas encore tranchée</td></tr>
+              <tr><td><code>.badge--open</code></td><td><span class="badge badge--open">Q-xx ouverte</span></td><td>question ouverte</td></tr>
+              <tr><td><code>.badge--verified</code></td><td><span class="badge badge--verified">vérifié</span></td><td>fait vérifié (note <code>status: verified</code>)</td></tr>
+              <tr><td><code>.badge--opinion</code></td><td><span class="badge badge--opinion">opinion</span></td><td>recommandation interne</td></tr>
+              <tr><td><code>.badge--neutral</code></td><td><span class="badge badge--neutral badge--plain">alpha</span></td><td>étiquette neutre (<code>.badge--plain</code> : sans point)</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- 6. KPI -->
+        <section class="center">
+          <h2>Indicateurs (KPI)</h2>
+          <div class="kpi-row">
+            <div class="kpi fragment glow-in"><span class="kpi-value">42<small>ms</small></span><span class="kpi-label">valeur cyan</span></div>
+            <div class="kpi kpi--amber fragment glow-in"><span class="kpi-value">7</span><span class="kpi-label">valeur ambre</span></div>
+            <div class="kpi kpi--alert fragment glow-in"><span class="kpi-value">3</span><span class="kpi-label">valeur alerte</span></div>
+          </div>
+          <p class="muted mt-1 small">Valeurs fictives de démonstration.</p>
+        </section>
+
+        <!-- 7. Timeline -->
+        <section>
+          <h2>Timeline horizontale</h2>
+          <div class="timeline">
+            <div class="tl-item fragment rise-in"><span class="tl-date">Étape 1</span><span class="tl-title">Origine</span><span class="tl-text">Texte court, deux lignes au plus.</span></div>
+            <div class="tl-item fragment rise-in"><span class="tl-date">Étape 2</span><span class="tl-title">Évolution</span><span class="tl-text">Un jalon par colonne.</span></div>
+            <div class="tl-item is-now fragment rise-in"><span class="tl-date">Aujourd'hui</span><span class="tl-title">.is-now</span><span class="tl-text">Point ambre : la situation actuelle.</span></div>
+            <div class="tl-item is-future fragment rise-in"><span class="tl-date">Ensuite</span><span class="tl-title">.is-future</span><span class="tl-text">Pointillés : à venir, non acquis.</span></div>
+          </div>
+        </section>
+
+        <!-- 8. Flow HTML/CSS -->
+        <section data-hud="low">
+          <h2>Boîtes &amp; flèches (HTML)</h2>
+          <div class="flow mt-2">
+            <div class="node node--round">Voix<small>micro</small></div>
+            <div class="arrow"><span class="arrow-label">audio</span></div>
+            <div class="node">Nœud A<small>.node</small></div>
+            <div class="arrow arrow--amber"><span class="arrow-label">.arrow--amber</span></div>
+            <div class="node node--amber">Nœud B<small>.node--amber</small></div>
+            <div class="arrow arrow--both arrow--static"><span class="arrow-label arrow-label--below">--both --static</span></div>
+            <div class="node node--ghost">Nœud C<small>.node--ghost</small></div>
+          </div>
+          <div class="grid-2 mt-2">
+            <div class="flow flow--vertical">
+              <div class="node">Haut</div>
+              <div class="arrow"><span class="arrow-label">vertical</span></div>
+              <div class="node node--amber">Bas</div>
+            </div>
+            <p class="muted small">Les flèches portent un flux de données animé (tirets qui défilent). <code>.arrow--static</code> le coupe, <code>.arrow--back</code> inverse le sens.</p>
+          </div>
+        </section>
+
+        <!-- 9. Diagramme SVG -->
+        <section data-hud="low">
+          <h2>Diagramme SVG inline</h2>
+          <svg class="diagram" viewBox="0 0 1400 520" width="1400" height="520" role="img" aria-label="Exemple de diagramme : client, serveur, agent">
+            <defs>
+              <marker id="sg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+              </marker>
+              <marker id="sg-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+              </marker>
+            </defs>
+            <rect class="d-zone" x="20" y="20" width="420" height="480" rx="6" />
+            <text class="d-zone-label" x="44" y="56">ZONE CLIENT</text>
+            <rect class="d-zone" x="560" y="20" width="820" height="480" rx="6" />
+            <text class="d-zone-label" x="584" y="56">ZONE SERVEUR</text>
+
+            <rect class="d-node" x="80" y="200" width="300" height="110" rx="4" />
+            <text class="d-label" x="230" y="245">Client</text>
+            <text class="d-sub" x="230" y="282">.d-node</text>
+
+            <rect class="d-node" x="640" y="200" width="300" height="110" rx="4" />
+            <text class="d-label" x="790" y="245">Service</text>
+            <text class="d-sub" x="790" y="282">.d-node</text>
+
+            <rect class="d-node d-node--amber" x="1040" y="90" width="300" height="110" rx="4" />
+            <text class="d-label" x="1190" y="135">Agent A</text>
+            <text class="d-sub" x="1190" y="172">.d-node--amber</text>
+
+            <rect class="d-node d-node--ghost" x="1040" y="320" width="300" height="110" rx="4" />
+            <text class="d-label" x="1190" y="365">Agent B</text>
+            <text class="d-sub" x="1190" y="402">.d-node--ghost</text>
+
+            <path id="sg-l1" class="d-link" d="M380,240 L640,240" marker-end="url(#sg-arrow)" />
+            <path class="d-link d-link--amber d-link--back" d="M640,275 L380,275" marker-end="url(#sg-arrow-amber)" />
+            <text class="d-link-label" x="510" y="225">requête</text>
+            <text class="d-link-label" x="510" y="305">réponse</text>
+            <path id="sg-l2" class="d-link" d="M940,230 C990,230 990,145 1040,145" marker-end="url(#sg-arrow)" />
+            <path class="d-link d-link--static" d="M940,280 C990,280 990,375 1040,375" marker-end="url(#sg-arrow)" />
+            <circle class="d-packet" r="6">
+              <animateMotion dur="1.6s" repeatCount="indefinite"><mpath href="#sg-l1" /></animateMotion>
+            </circle>
+            <circle class="d-packet" r="5">
+              <animateMotion dur="2s" repeatCount="indefinite"><mpath href="#sg-l2" /></animateMotion>
+            </circle>
+          </svg>
+        </section>
+
+        <!-- 10. Séquence -->
+        <section data-hud="low">
+          <h2>Diagramme de séquence</h2>
+          <div class="seq" style="--n: 4">
+            <div class="seq-actor">Acteur 1</div>
+            <div class="seq-actor">Acteur 2</div>
+            <div class="seq-actor seq-actor--amber">Acteur 3</div>
+            <div class="seq-actor">Acteur 4</div>
+            <div class="seq-body">
+              <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">message()</span></div>
+              <div class="seq-msg fragment" style="--from: 2; --to: 4"><span class="seq-label">appel sur deux colonnes</span></div>
+              <div class="seq-msg is-back is-reply fragment" style="--from: 4; --to: 3"><span class="seq-label">.is-back .is-reply</span></div>
+              <div class="seq-note fragment">.seq-note : une remarque</div>
+              <div class="seq-msg is-back is-reply fragment" style="--from: 3; --to: 1"><span class="seq-label">réponse</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11. Tableau comparatif -->
+        <section data-hud="low">
+          <h2>Tableau comparatif</h2>
+          <table class="compare">
+            <thead>
+              <tr><th>Critère</th><th>Option A</th><th class="hl">Option B (retenue)</th><th>Option C</th></tr>
+            </thead>
+            <tbody>
+              <tr><th>Critère 1</th><td class="yes">oui</td><td class="hl yes">oui</td><td class="no">non</td></tr>
+              <tr><th>Critère 2</th><td class="partial">partiel</td><td class="hl yes">oui</td><td class="yes">oui</td></tr>
+              <tr><th>Critère 3</th><td class="no">non</td><td class="hl partial">partiel</td><td class="yes">oui</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- 12. Code -->
+        <section data-hud="low">
+          <h2>Bloc de code</h2>
+          <pre data-title="exemple.dart"><code class="language-dart" data-trim data-line-numbers="1|3-5">
+// Commentaire
+final class Example {
+  const Example(this.name);
+  final String name;
+  String greet() => 'Bonjour $name';
+}
+          </code></pre>
+          <pre data-title="exemple.go"><code class="language-go" data-trim>
+func main() {
+	fmt.Println("hello", 42)
+}
+          </code></pre>
+        </section>
+
+        <!-- 13. Citation -->
+        <section class="center">
+          <h2>Citation</h2>
+          <blockquote>
+            <p>Une citation courte, lisible du fond de la salle.</p>
+            <cite>Auteur, source, date</cite>
+          </blockquote>
+        </section>
+
+        <!-- 14. Fragments -->
+        <section>
+          <h2>Fragments stylés</h2>
+          <div class="grid-2">
+            <ul>
+              <li class="fragment glow-in">.glow-in : flash lumineux</li>
+              <li class="fragment scan-in">.scan-in : balayage gauche → droite</li>
+              <li class="fragment rise-in">.rise-in : montée depuis le bas</li>
+            </ul>
+            <ul>
+              <li class="fragment hl-cyan">.hl-cyan : surlignage cyan</li>
+              <li class="fragment hl-amber">.hl-amber : surlignage ambre</li>
+              <li class="fragment hl-alert">.hl-alert : surlignage alerte</li>
+              <li class="fragment dim-after">.dim-after : s'atténue ensuite</li>
+              <li class="fragment dim-after">… comme ici</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 15. Intensité du fond -->
+        <section data-hud="off" class="center">
+          <h2>Intensité du fond</h2>
+          <p><code>data-hud="off"</code> sur cette slide : fond animé éteint.</p>
+          <p class="muted">Valeurs : <code>off</code> · <code>low</code> · <code>normal</code> (défaut) · <code>high</code></p>
+        </section>
+
+      </div>
+    </div>
+    <script type="module" src="/src/styleguide.js"></script>
+  </body>
+</html>

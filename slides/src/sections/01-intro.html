@@ -1,0 +1,171 @@
+<!-- ===================================================================
+     01 — Introduction : couverture, orateur, projet, cas d'usage,
+     ce qui est réutilisable.
+     =================================================================== -->
+
+<!-- a) Couverture -->
+<section class="center" data-hud="high">
+  <p class="eyebrow">Meetup Flutter Nantes · 12 novembre 2026</p>
+  <h1 class="glow">Genesis Canvas</h1>
+  <p class="lead">Des interfaces générées à la voix<br />GenUI, IA temps réel et agents A2A, avec Flutter</p>
+  <div class="row center mt-1">
+    <span class="badge badge--neutral badge--plain">GenUI</span>
+    <span class="badge badge--neutral badge--plain">A2UI</span>
+    <span class="badge badge--neutral badge--plain">voice-to-voice</span>
+    <span class="badge badge--neutral badge--plain">A2A</span>
+    <span class="badge badge--neutral badge--plain">multi-agents</span>
+  </div>
+  <p class="mt-2 title-font upper">Benoît FONTAINE</p>
+  <aside class="notes">
+    Bonsoir Nantes ! Ce soir, on va regarder une application Flutter construire ses écrans pendant qu'on lui parle.
+    Le sous-titre « Des interfaces générées à la voix » est une proposition : la documentation du projet ne fixe aucun titre officiel, à valider ou à remplacer.
+    Le cadre est fixé par [pdr-0027-talk-context-meetup-flutter-nantes] : 45 minutes, Meetup Flutter Nantes, 12 novembre 2026, talk enregistré.
+    Les cinq mots-clés en bas sont les cinq briques qu'on va démonter une par une.
+  </aside>
+</section>
+
+<!-- b) Orateur + projet, puis vue d'ensemble de l'architecture -->
+<section>
+  <h2>L'orateur, le projet</h2>
+  <div class="intro-split">
+    <div class="hud-panel speaker">
+      <div class="portrait">
+        <img src="portrait.png" alt="Portrait de Benoît FONTAINE" />
+      </div>
+      <h3 class="mt-0">Benoît FONTAINE</h3>
+      <ul class="plain compact">
+        <li><span class="mono amber small">FONCTION</span><br />Expert IA chez un grand éditeur de logiciels</li>
+        <li><span class="mono amber small">ENSEIGNEMENT</span><br />université de Nantes</li>
+        <li><span class="mono amber small">LIENS</span><br />
+          <a class="mono small" href="https://fr.linkedin.com/in/b-fontaine">fr.linkedin.com/in/b-fontaine</a><br />
+          <a class="mono small" href="https://medium.benoitfontaine.fr/">medium.benoitfontaine.fr</a>
+        </li>
+      </ul>
+    </div>
+    <div class="stack">
+      <p class="lead mt-0">Une app Flutter desktop qui construit ses écrans sous vos yeux, à la voix. Trois questions :</p>
+      <div class="card fragment rise-in">
+        <h3><span class="card-icon">01</span> GenUI</h3>
+        <p class="small">Comment un agent compose une UI Flutter en JSON A2UI, rendue avec <strong>votre</strong> catalogue de widgets.</p>
+      </div>
+      <div class="card fragment rise-in">
+        <h3><span class="card-icon">02</span> IA temps réel</h3>
+        <p class="small">Comment converser voice-to-voice avec l'app, et l'interrompre à tout moment.</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3><span class="card-icon">03</span> En sécurité</h3>
+        <p class="small">Comment voix, orchestrateur, agents A2A et UI générée se parlent, sans aucune clé dans l'app.</p>
+      </div>
+    </div>
+  </div>
+  <p class="refs">[p-fn-vision] · [pdr-0001-conference-demo-deliverable] · [p-ar-security] · [rt-ephemeral-keys]</p>
+  <aside class="notes">
+    Je suis Benoît FONTAINE, expert IA chez un grand éditeur de logiciels, et j'enseigne à l'université de Nantes.
+    J'écris sur Medium, à l'adresse medium.benoitfontaine.fr, et vous me trouvez sur LinkedIn : n'hésitez pas à me contacter après le talk.
+    Genesis Canvas est une application Flutter desktop, sous Linux, projetée pendant le talk : elle construit des écrans à partir de ma voix [p-fn-vision] [pdr-0028-linux-demo-machine].
+    Il s'agit d'une démo de conférence : ce cadre nous permet d'utiliser des briques expérimentales à versions figées, ce qu'on éviterait en production [pdr-0001-conference-demo-deliverable] [pdr-0010-pinned-experimental-versions].
+    Première question : GenUI. Le LLM compose une UI à partir d'un catalogue de widgets approuvés, en parlant le protocole A2UI v0.9 [genui-overview].
+    Deuxième : l'IA temps réel, une conversation voix vers voix qu'on peut interrompre ; le fournisseur retenu est OpenAI gpt-live-1 [pdr-0012-voice-provider-openai].
+    Troisième : faire dialoguer tout ce petit monde en sécurité. On a choisi de ne garder aucune clé longue durée dans l'app : c'est le backend qui relaie la création de la session voix [rt-ephemeral-keys] [p-ar-security].
+    En toute transparence : au moment où j'écris ces slides, le projet est en phase de cadrage et de spikes ; la démo montrera ce qui sera prêt le 12.
+  </aside>
+</section>
+
+<section data-hud="low">
+  <h2>Vue d'ensemble de l'architecture</h2>
+  <div class="flow mt-2">
+    <div class="node node--round fragment glow-in">Voix<small>speaker</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">WebRTC</span></div>
+    <div class="node fragment glow-in">Agent vocal<small>gpt-live-1</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">délégation</span></div>
+    <div class="node fragment glow-in">Orchestrateur<small>backend Go</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">A2A</span></div>
+    <div class="node node--amber fragment glow-in">Agents<small>serveurs A2A</small></div>
+    <div class="arrow arrow--amber fragment glow-in"><span class="arrow-label">A2UI</span><span class="arrow-label arrow-label--below" style="top: 62px">JSON validé et relayé par l'orchestrateur</span></div>
+    <div class="node fragment glow-in">GenUI<small>widgets Flutter</small></div>
+  </div>
+  <blockquote class="mt-2 fragment scan-in">
+    <p>L'agent produit une description d'interface en JSON ; le rendu s'appuie sur le catalogue de widgets défini par le développeur Flutter.</p>
+    <cite>D'après la fiche produit Genesis Canvas</cite>
+  </blockquote>
+  <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision]</p>
+  <aside class="notes">
+    Ce schéma résume le parcours qu'on va suivre ce soir. Ma voix parle à un agent vocal, qui reste l'unique interlocuteur et délègue en un seul point vers un orchestrateur côté backend [ma-target-architecture] [adr-0002-orchestrator-backend].
+    Le backend est écrit en Go [adr-0003-backend-go] ; l'orchestrateur planifie et délègue à de vrais serveurs A2A, et chaque agent produit l'A2UI de ses surfaces, que l'orchestrateur valide contre le catalogue puis relaie à l'app sans le recomposer [pdr-0036-real-a2a-agents-produce-a2ui].
+    Côté Flutter, GenUI rend ce JSON avec un catalogue fermé : l'agent ne peut demander que des composants déclarés, et ce qu'il envoie n'est jamais exécuté comme du code [genui-a2ui-security] [pdr-0007-closed-catalog-stage-theme].
+    C'est l'idée centrale de la fiche produit, et celle qu'on va développer ce soir [p-fn-vision].
+    Le canal exact entre l'app et le backend n'est pas encore tranché (Q-39 ouverte, pdr-0045 seulement proposée) : je ne le détaille pas ici.
+  </aside>
+</section>
+
+<!-- c bis) Cas d'usage Release Copilot -->
+<section>
+  <h2>Cas d'usage : Release Copilot</h2>
+  <div class="grid-2-1 center-items">
+    <div>
+      <p class="lead mt-0">Décider <span class="accent">go / no-go</span> pour la release mobile <span class="amber">3.4</span>, face à la 3.3.</p>
+      <ul class="compact">
+        <li class="fragment rise-in">Crashs, avis des stores, changelog, captures</li>
+        <li class="fragment rise-in">Une app mobile fictive : « Release Copilot »</li>
+        <li class="fragment rise-in">Données fictives, figées, déterministes</li>
+      </ul>
+      <div class="row mt-1">
+        <span class="badge badge--accepted">pdr-0003 acceptée</span>
+        <span class="badge badge--accepted">pdr-0005 acceptée</span>
+      </div>
+    </div>
+    <div class="stack">
+      <p class="eyebrow">Agents spécialisés</p>
+      <div class="node fragment glow-in">Qualité<small>crashs</small></div>
+      <div class="node fragment glow-in">Voix du client<small>avis des stores</small></div>
+      <div class="node fragment glow-in">Livraison<small>changelog, checklist</small></div>
+    </div>
+  </div>
+  <p class="refs">[pdr-0003-use-case-release-copilot] · [pdr-0005-frozen-fictional-dataset] · [pdr-0013-orchestrator-visible-agent-selection]</p>
+  <aside class="notes">
+    Pour illustrer, on a choisi un métier familier à la plupart des développeurs Flutter : préparer la décision go/no-go d'une release mobile [pdr-0003-use-case-release-copilot].
+    Les agents croisent les crashs, les avis des stores, le changelog et les captures ; ce cas d'usage se prête bien à des écrans variés.
+    L'app évaluée est fictive et s'appelle Release Copilot [pdr-0034-app-name-release-copilot] ; les données sont fictives et figées, seule la composition de l'UI varie d'une exécution à l'autre [pdr-0005-frozen-fictional-dataset].
+    Trois agents métier : Qualité, Voix du client, Livraison [p-fn-scope]. L'intérêt principal est de voir l'orchestrateur choisir quels agents il active ; leur nombre importe moins [pdr-0013-orchestrator-visible-agent-selection].
+  </aside>
+</section>
+
+<!-- d) Ce que vous pouvez réutiliser -->
+<section data-hud="low">
+  <h2>Ce que vous pouvez réutiliser</h2>
+  <div class="reuse-split">
+    <div class="grid-2 stretch-items">
+      <div class="card fragment rise-in">
+        <h3>knowledge/</h3>
+        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">261</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
+      </div>
+      <div class="card fragment rise-in">
+        <h3>product/</h3>
+        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">45</strong> décisions (PDR), <strong class="accent">66</strong> questions tracées.</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3>.claude/</h3>
+        <p class="small mb-0"><strong class="amber">6</strong> skills (<span class="mono">kb&#8209;lookup</span>, <span class="mono">kb&#8209;curate</span>, <span class="mono">product&#8209;*</span>, <span class="mono">dev&#8209;loop</span>) et <strong class="amber">4</strong> agents.</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3>tools/ &amp; specs/</h3>
+        <p class="small mb-0">Boucle autonome, porte <span class="mono">gate.sh</span>, linters <span class="mono">kb_lint</span> / <span class="mono">product_lint</span>, gabarit SDD.</p>
+      </div>
+    </div>
+    <div class="hud-panel repo-qr fragment glow-in">
+      <p class="panel-title">Dépôt GitHub</p>
+      <img src="github-qr.svg" alt="QR code vers github.com/b-fontaine/ai_voice_ui" />
+      <a class="mono small" href="https://github.com/b-fontaine/ai_voice_ui">github.com/<br />b&#8209;fontaine/ai_voice_ui</a>
+    </div>
+  </div>
+  <p class="refs">knowledge/index.yaml · product/README.md · .claude/ · tools/loop/README.md · [pdr-0043-light-spec-kit-sdd-template]</p>
+  <aside class="notes">
+    Au-delà de la démo, le dépôt contient des briques que vous pourrez reprendre si elles vous sont utiles.
+    knowledge/ est un zettelkasten : 261 notes atomiques avec frontmatter YAML, réparties en 12 domaines (voix temps réel, GenUI, protocoles d'agents, multi-agents, architecture Flutter, tests…). 212 sont vérifiées sur la doc officielle, 16 viennent d'une source secondaire, 33 sont marquées « opinion » ; le domaine décisions compte 8 ADR. On l'a constituée parce que ces API évoluent plus vite que les données d'entraînement des modèles.
+    product/ porte tout ce qui est propre à Genesis Canvas : 19 exigences fonctionnelles, 11 non fonctionnelles et 29 règles de gestion en vigueur (FR-10, NFR-07 et RG-20 ont été retirées par pdr-0032 quand le mode secours est devenu une vidéo), 45 PDR (42 acceptées, 1 proposée, 2 remplacées) et un registre de 66 questions, dont 22 encore ouvertes au 29 octobre.
+    .claude/ contient 6 skills (kb-lookup, kb-curate, product-lookup, product-curate, product-decide, dev-loop) et 4 agents (product-steward, feature-developer, architect-reviewer, refactorer) : les agents lisent la base avant d'agir.
+    tools/loop/ pilote une boucle de développement autonome dans un worktree séparé, avec une porte de qualité unique, gate.sh ; deux linters vérifient la cohérence des bases ; specs/ suit un gabarit SDD léger [pdr-0043-light-spec-kit-sdd-template].
+    Le dépôt est public, sur github.com/b-fontaine/ai_voice_ui ; le QR code y mène directement.
+    Chiffres mesurés dans le dépôt le 29 octobre 2026 : à remesurer avant le talk.
+  </aside>
+</section>
