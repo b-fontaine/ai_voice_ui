@@ -24,6 +24,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | décisions du porteur reçues (Q-77, Q-81, Q-82, Q-84, Q-85, Q-86) ; prochaine : 011b (interruption sur chevauchement + liaison animée de délégation ; pdr-0077 à pdr-0079) |
 | 2026-10-31 | 014 : publiée sur `origin/main` (`eff1d52`, `publish.sh`, `gate --full` vert après fusion, 67 contrôles : `.omc/state/loop/gates/20261031-062214-full.log`, push `bf49d51..eff1d52`). Prochaine : le reste de J7 se joue en répétition avec le porteur (voir ci-dessous) ; hors de ce périmètre, rien à développer sans décision du porteur sur Q-77, Q-81, Q-82, Q-84, Q-85, Q-86. |
 | 2026-10-31 | **014 terminée** (J7-A : bouton « Faire taire » et `Échap`, bouton « Couper le micro » et `M`, correction en vol par mots de correction `VOICE_CORRECTION_WORDS`, `Supersede` distinct d'`Interrupt`, champ `cause` de `voice.interrupted` ; S-07 et S-09 verts en BDD ; `gate --full` vert, 67 contrôles : `.omc/state/loop/gates/20261031-060732-full.log`). **Reste pour J7, avec le porteur** : SP-06 (AEC sur enceinte, barge-in 10/10, FR-18), SP-11 / Q-79, 60 i/s au profil `--profile`, projecteur, instructions vocales (pdr-0037), Q-77, Q-87 ; **à valider** : réplique de l'IA à une ligne avec un message d'état, voile « Micro coupé » sous l'orbe, « Faire taire » ne coupe que la voix. |
 | 2026-10-31 | 014 : **vérification terminée** (`gate --full` vert, 67 contrôles : `.omc/state/loop/gates/20261031-060732-full.log` ; capture 1920×1080 conforme). Prochaine étape : clôture (documents `product/`, fusion, `publish.sh`). |
