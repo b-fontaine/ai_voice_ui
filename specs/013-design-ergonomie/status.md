@@ -1,6 +1,6 @@
 # 013 — État
 
-- **Étape** : Gherkin
+- **Étape** : TDD
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -13,6 +13,7 @@
 |---|---|---|---|
 | 2026-10-31 | Définir | `spec.md` (3 lots A/B/C, D-01 à D-07), `plan.md`, `tasks.md` (T01-T34 + clôture), [pdr-0075](../../product/decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) acceptée (délégation pdr-0062) ; constats tirés des captures 1920×1080 `act1-replay` et `crashlist-replay` de 012 (`.omc/state/loop/snapshots/20261031-005526-act1-replay.png`, `…005647-crashlist-replay.png`) ; `product_lint.py` : 0 erreur | commit de l'étape |
 | 2026-10-31 | Revue du plan | `architect-reviewer` (Opus, mode PLAN) : **À AMENDER**, 8 amendements P1 à P8 tous intégrés dans `spec.md`, `plan.md`, `tasks.md`, pdr-0075 ; Q-85 créée (`open-questions.md`, `roadmap.md` J7) ; `product_lint.py` : 0 erreur | commit de l'étape |
+| 2026-10-31 | Gherkin | T03 (paquet `testing/real_fonts` : polices réelles, `paragraphsTruncated`, `PageRig` avec police ; `pubspec.yaml` racine : 1 ligne de membre du workspace) et T01/T02 (`acte_design_ergonomie.feature`, D-01 à D-07). **Rouges pour la bonne raison** (`flutter test test/acceptance/acte_design_ergonomie_test.dart` : 5 verts, 7 rouges) : D-01 `Expected within 0.5 of 676, Actual 572.0` (rail à 200 px) ; D-02 libellés de checklist tronqués (« Checklist go/no-go », « ≥ 99,50 % »…) ; D-04 ellipse « ReviewSentiment », « ReleaseChecklist » dans l'étagère ; D-05 `Expected ≥ 48, Actual 36.0` (indicateur d'acte sous Linux) ; D-06 trois temps et rejeu 2× `Expected < 0.3, Actual 1.0` (aucun fondu) ; D-07 premier `plan` : le rail vide est de largeur nulle et centré, puis pleine largeur (T10 doit lui donner largeur et hauteur fixes). Gardes déjà verts (non-régression pour T13 et T21) : D-03, D-06 `disableAnimations`, D-07 mutation de l'acte 2, bandeau d'actions, arrivée d'une surface. Contrat pour T12b : D-02 compte les `review-excerpt-<i>` (1 ou 2 en 3×2) et le texte « + N avis » (N = 3 − extraits affichés). `gate.sh --unit flutter` VERT (14 contrôles) : `.omc/state/loop/gates/20261031-014643-unit-flutter.log` | commit de l'étape |
 
 ## Revue d'architecte
 ### Revue du plan (2026-10-31) — verdict : À AMENDER (tous intégrés)

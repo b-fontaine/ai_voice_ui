@@ -1,11 +1,12 @@
-# Polices des tests de hauteur de cellule
+# Polices réelles des tests de lisibilité
 
 Fixtures de test uniquement : elles ne sont déclarées dans aucun `pubspec.yaml`
 (ni `flutter: fonts:` ni `assets:`) et ne sont donc pas embarquées dans
 l'application.
 
-Elles servent à `test/ui/cell_height_real_fonts_test.dart`, qui vérifie que le
-contenu de l'acte 2 tient dans une cellule de 936 × 250 px. Avec la police de
+Elles servent aux tests de lisibilité (`cell_height_real_fonts_test.dart`,
+acceptation 013), qui vérifient par exemple que le contenu de l'acte 2 tient
+dans une cellule de la grille. Avec la police de
 test par défaut (Ahem), toutes les lignes ont la même hauteur et un
 débordement dû au repli d'un glyphe (« ★ ») n'apparaît pas. Les deux polices
 reproduisent le rendu de la capture de la boucle sous Linux :

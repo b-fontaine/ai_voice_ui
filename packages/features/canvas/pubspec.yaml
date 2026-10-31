@@ -32,3 +32,5 @@ dev_dependencies:
     sdk: flutter
   testing_bloc_harness:
     path: ../../../testing/bloc_harness
+  testing_real_fonts:
+    path: ../../../testing/real_fonts

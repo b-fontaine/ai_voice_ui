@@ -10,9 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
-import 'cell_height_real_fonts_test.dart' show gridCell, loadRealFonts;
+import 'cell_height_real_fonts_test.dart' show gridCell;
 
 /// Faux client réseau : mémorise les actions reçues, répond 202.
 class _RecordingClient implements CanvasActionClient {

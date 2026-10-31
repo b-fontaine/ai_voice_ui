@@ -18,11 +18,12 @@
 | 010 | J6 : acte 4 « Rejouer » (journal client du flux A2UI, rejeu par le même gate de 0,25× à 2×, curseur, Direct) | EP-07, EP-05 | J6 | Terminée ✅ (rejeu identique au direct, sans réseau ; la voix n'est pas rejouée, pdr-0032), publiée (`04e8f47`) | 2026-10-30 |
 | 011 | Interaction vocale et corrections de l'essai au micro (« Stop » hybride, couper la parole, mémoire de focus, indicateur d'acte automatique, retour au clic) | EP-02, EP-03, EP-04, EP-06 | avant J7 | Terminée ⚠️ (essai réel au micro : voix, « Stop », coupure de piste à observer en répétition ; Q-77 à Q-80), publiée (`6209a18`) | 2026-10-30 |
 | 012 | Compositeur LLM (passerelle interne, plan structuré, repli, squelette anticipé) puis CrashList réel | EP-03, EP-04, EP-09 | avant J7 | Terminée ⚠️ (essai vocal avec micro à faire en répétition ; NFR-02 avec squelette à remesurer ; Q-81 à Q-84), publiée (`90b69fe`) | 2026-10-31 |
-| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : Gherkin | 2026-10-31 |
+| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : TDD | 2026-10-31 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : **Gherkin terminé** (D-01 à D-07 automatisés : 7 rouges pour la bonne raison, 5 gardes verts ; outillage de polices réelles `testing/real_fonts`, `gate --unit flutter` vert). Prochaine étape : TDD, lot A (T10, T11, …). |
 | 2026-10-31 | 013 : **revue du plan rendue** (À AMENDER, 8 amendements dont 2 bloquants, tous intégrés : Widgetbook en `apps/genesis_widgetbook` avec coupe C2 prévue, tests de lisibilité en polices réelles, apparition par `SceneMotionScope`, cellules sélectives pour NFR-04, tokens en constantes avec test de hash). **Q-85** ouverte pour le porteur (liaison animée de délégation, jamais livrée). Prochaine étape : Gherkin (T03, T01, T02). |
 | 2026-10-31 | 013 : **Définir terminé** (spec en trois lots A corrections visuelles, B apparition animée, C tokens et Widgetbook ; [pdr-0075](../product/decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) tranchée sous pdr-0062 : rail horizontal de 96 px plutôt que la colonne de la maquette, contestable). Prochaine étape : revue du plan par `architect-reviewer`. `loop` est en retard de 2 commits sur `origin/main` (`tools/loop/verify.sh`, Q-84) : à intégrer par `publish.sh`. |
 | 2026-10-31 | 012 : publiée sur `origin/main` (`90b69fe`, `publish.sh`, `gate --full` vert après fusion, 58 contrôles, push `6209a18..90b69fe`). Prochaine : 013 (design et ergonomie, pdr-0072), puis J7. |

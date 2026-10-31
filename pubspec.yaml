@@ -22,4 +22,5 @@ workspace:
   - packages/features/replay
   - testing/backend_fakes
   - testing/bloc_harness
+  - testing/real_fonts
   - testing/voice_fakes
