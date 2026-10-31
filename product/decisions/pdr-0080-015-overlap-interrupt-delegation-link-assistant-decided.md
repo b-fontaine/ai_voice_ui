@@ -45,7 +45,7 @@ Q-77 option B et Q-85 sont tranchées. La fiche et la PDR fixent les règles (mo
 
 ## Conséquences
 - Documents mis à jour à la clôture de 015 : [p-ar-voice-interruption](../architecture/voice-interruption.md), [p-ar-app-channel-contract](../architecture/app-channel-contract.md), [p-fn-screen](../functional/screen.md).
-- Nouvelles variables : `VOICE_OVERLAP_INTERRUPT`, `VOICE_OVERLAP_SPEAKING_WINDOW`, `VOICE_OVERLAP_ECHO_WINDOW`, `VOICE_OVERLAP_MIN_WORDS`, `VOICE_OVERLAP_MIN_WORD_LEN`, `VOICE_OVERLAP_IGNORE_WORDS`.
+- Nouvelles variables : `VOICE_OVERLAP_INTERRUPT`, `VOICE_OVERLAP_SPEAKING_LEVEL`, `VOICE_OVERLAP_SPEAKING_WINDOW`, `VOICE_OVERLAP_ECHO_WINDOW`, `VOICE_OVERLAP_MIN_WORDS`, `VOICE_OVERLAP_MIN_WORD_LEN`, `VOICE_OVERLAP_IGNORE_WORDS`.
 
 ## Réexaminer si
 - Un commentaire (« super ») par-dessus l'accusé de **sa propre** demande l'annule et laisse le canevas interrompu (pdr-0077 l'impose ; acquiescements dans la liste des mots ignorés) : à juger par le porteur.
@@ -56,5 +56,6 @@ Q-77 option B et Q-85 sont tranchées. La fiche et la PDR fixent les règles (mo
 |---|---|---|
 | 2026-10-31 | Acceptée (délégation pdr-0062), à l'étape « Définir » de 015 | Assistant (délégation du porteur, pdr-0062) |
 | 2026-10-31 | D5 amendé à la revue du code (R10) : la règle de l'orbe ne met plus fin à une interruption en cours ; D3 : la dispense des nombres ne porte pas sur l'écho (R1) | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-31 | Livrée par 015 (gate --full vert, 67 contrôles : .omc/state/loop/gates/20261031-110232-full.log) ; documents mis à jour : [p-ar-voice-overlap](../architecture/voice-overlap.md), [p-ar-voice-interruption](../architecture/voice-interruption.md), [p-ar-app-channel-contract](../architecture/app-channel-contract.md), [p-fn-screen](../functional/screen.md) | Assistant (product-steward, clôture de 015) |
 
 Pas d'archive brute.

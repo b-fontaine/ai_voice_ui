@@ -64,5 +64,6 @@ L'assistant a recommandé les deux options ; le porteur a décidé. Les détails
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-31 | Acceptée sur la parole du porteur citée ci-dessus (Q-77 le 2026-10-30, Q-85 le 2026-10-31, conversation) | Benoît FONTAINE (porteur) |
+| 2026-10-31 | Livrée par 015 (gate --full vert, 67 contrôles : .omc/state/loop/gates/20261031-110232-full.log) : Q-77 (couper la parole sans mot d'arrêt, [p-ar-voice-overlap](../architecture/voice-overlap.md)) et Q-85 (liaison animée de délégation, [p-fn-screen](../functional/screen.md)) livrées ; détails de réalisation : [pdr-0080](pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided.md) | Assistant (product-steward, clôture de 015) |
 
 Pas d'archive brute.
