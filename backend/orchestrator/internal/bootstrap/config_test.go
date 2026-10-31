@@ -475,3 +475,63 @@ func withEnv(name, value string) map[string]string {
 	env[name] = value
 	return env
 }
+
+// Mots de correction (spec 014, T20, plan P7) : VOICE_CORRECTION_WORDS.
+
+func TestConfigFromEnv_VoiceCorrectionWordsDefaultEmpty(t *testing.T) {
+	cfg, err := load(fullEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.VoiceCorrectionWords) != 0 {
+		t.Errorf("défaut = %q, attendu vide (détection coupée)", cfg.VoiceCorrectionWords)
+	}
+}
+
+func TestConfigFromEnv_VoiceCorrectionWordsValid(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_STOP_WORDS"] = "stop,tais-toi"
+	env["VOICE_CORRECTION_WORDS"] = " non, plutôt ,en fait "
+	cfg, err := load(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(cfg.VoiceCorrectionWords, []string{"non", "plutôt", "en fait"}) {
+		t.Errorf("mots = %q", cfg.VoiceCorrectionWords)
+	}
+}
+
+func TestConfigFromEnv_VoiceCorrectionWordsBounds(t *testing.T) {
+	sixteen := strings.TrimSuffix(strings.Repeat("mot,", 16), ",")
+	if _, err := load(withEnv("VOICE_CORRECTION_WORDS", sixteen)); err != nil {
+		t.Errorf("16 mots refusés : %v", err)
+	}
+	if _, err := load(withEnv("VOICE_CORRECTION_WORDS", strings.Repeat("é", 32))); err != nil {
+		t.Errorf("mot de 32 runes refusé : %v", err)
+	}
+	for name, value := range map[string]string{
+		"17 mots":         sixteen + ",de-trop",
+		"mot de 33 runes": strings.Repeat("é", 33),
+		"mot vide":        "non,,plutôt",
+		"mot espace":      "non, ,plutôt",
+		"virgule finale":  "non,",
+		"mot sans lettre": "non,...",
+	} {
+		if _, err := load(withEnv("VOICE_CORRECTION_WORDS", value)); err == nil || !strings.Contains(err.Error(), "VOICE_CORRECTION_WORDS") {
+			t.Errorf("%s : doit être refusé en nommant la variable : %v", name, err)
+		}
+	}
+}
+
+func TestConfigFromEnv_VoiceCorrectionWordsCommonWithStopWordsRefused(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_STOP_WORDS"] = "stop,Annule"
+	env["VOICE_CORRECTION_WORDS"] = "non,  ANNULE !"
+	_, err := load(env)
+	if err == nil || !strings.Contains(err.Error(), "VOICE_CORRECTION_WORDS") {
+		t.Fatalf("mot commun : doit être refusé en nommant la variable : %v", err)
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "annule") {
+		t.Errorf("l'erreur ne doit recopier aucun mot : %v", err)
+	}
+}

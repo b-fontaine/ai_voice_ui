@@ -208,3 +208,27 @@ func TestNewServiceRejectsInvalidStopConfig(t *testing.T) {
 		t.Fatal("NewService doit refuser un mot d'arrêt vide")
 	}
 }
+
+func withCorrections(o *Options) { o.Stop = correctionConfig() }
+
+func TestCorrectionWithStopWordIsStopPath(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Non, stop.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
+	if atMsOf(t, got[0]) != 3000 {
+		t.Fatalf("at_ms = %d, attendu 3000", atMsOf(t, got[0]))
+	}
+	waitFor(t, func() bool { return slices.Equal(e.fd.sess.interruptCalls(), []int64{3000}) })
+}
+
+// Le branchement de la correction (Supersede) est la tâche T22 : ici, aucun message ni
+// Interrupt n'est produit.
+func TestCorrectionPublishesNothingYet(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Non, plutôt iOS.", 3000)
+	e.clock.advance(10 * time.Second)
+	e.flush(t)
+	if n := len(e.sink.ofType(domain.TypeVoiceInterrupted)); n != 0 || len(e.fd.sess.interruptCalls()) != 0 {
+		t.Fatalf("une correction ne publie rien avant T22 : %d voice.interrupted, %v Interrupt", n, e.fd.sess.interruptCalls())
+	}
+}

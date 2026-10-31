@@ -230,7 +230,7 @@ func NewService(live port.LiveProvider, sink port.Sink, clock port.Clock, opts O
 	if _, err := level.NewMeter(opts.SampleRate, opts.WindowMs); err != nil {
 		return nil, err
 	}
-	if len(opts.Stop.Words) > 0 { // même validation que le détecteur créé par session
+	if len(opts.Stop.Words) > 0 || len(opts.Stop.CorrectionWords) > 0 { // même validation que le détecteur créé par session
 		if _, err := NewStopDetector(opts.Stop, clock); err != nil {
 			return nil, err
 		}
@@ -491,7 +491,7 @@ loop:
 		case <-stop.timer:
 			stop.timer = nil
 			if det, ok := stop.expired(); ok {
-				s.interrupt(sess, fw, det)
+				s.onDetection(sess, fw, det)
 			}
 			stop.rearm(s.opts.After)
 		case ev, ok := <-events:
@@ -509,7 +509,7 @@ loop:
 			case port.EventInputTranscriptDelta:
 				fw.transcript(ev)
 				if det, ok := stop.feed(ev); ok {
-					s.interrupt(sess, fw, det)
+					s.onDetection(sess, fw, det)
 				}
 				stop.rearm(s.opts.After)
 			case port.EventOutputTranscriptDelta:
@@ -546,6 +546,14 @@ func (s *Service) interrupt(sess *session, fw *forwarder, det Detection) {
 	fw.interrupt(det.AtMs)
 }
 
+// onDetection route le verdict du classifieur. Seul « Stop » est traité ici ; la
+// correction n'a pas encore d'effet (son branchement, Supersede, est la tâche T22).
+func (s *Service) onDetection(sess *session, fw *forwarder, det Detection) {
+	if det.Kind == KindStop {
+		s.interrupt(sess, fw, det)
+	}
+}
+
 // stopWatch porte le détecteur de la session et l'échéance de confirmation d'un mot
 // d'arrêt sans frontière. Réservé à la goroutine de supervise. Sans détecteur (aucun
 // mot configuré), toutes ses méthodes sont sans effet et timer reste nil.
@@ -556,7 +564,7 @@ type stopWatch struct {
 
 func (s *Service) newStopWatch() *stopWatch {
 	w := &stopWatch{}
-	if len(s.opts.Stop.Words) == 0 {
+	if len(s.opts.Stop.Words) == 0 && len(s.opts.Stop.CorrectionWords) == 0 {
 		return w
 	}
 	det, err := NewStopDetector(s.opts.Stop, s.clock)

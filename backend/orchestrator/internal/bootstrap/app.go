@@ -149,6 +149,7 @@ func New(cfg Config, deps Deps) (*App, error) {
 		Stop: voice.StopConfig{
 			Words: cfg.VoiceStopWords, UtteranceGap: cfg.VoiceStopUtteranceGap, MaxWords: cfg.VoiceStopMaxWords,
 			Settle: cfg.VoiceStopSettle, Debounce: cfg.VoiceStopDebounce,
+			CorrectionWords: cfg.VoiceCorrectionWords,
 		},
 		Logger: logger,
 	})
@@ -233,8 +234,12 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	// Même liste normalisée que le détecteur vocal : une demande faite uniquement de ces
 	// mots est un « Stop » seul, quel que soit l'ordre des événements.
 	stopMatcher := stopword.New(cfg.VoiceStopWords)
+	var correctionMatcher *stopword.Matcher // nil : détection de correction coupée
+	if len(cfg.VoiceCorrectionWords) > 0 {
+		correctionMatcher = stopword.New(cfg.VoiceCorrectionWords)
+	}
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
-		StopSpan: cfg.VoiceStopSpan, IsStopOnly: stopMatcher.OnlyStopWords,
+		StopSpan: cfg.VoiceStopSpan, IsStopOnly: func(request string) bool { return stopMatcher.OnlyStopWordsIgnoring(correctionMatcher, request) },
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
 		Clock: asWaitClock(clock), RequestWindowSettle: cfg.RequestWindowSettle, RequestWindowMargin: cfg.RequestWindowMargin,
