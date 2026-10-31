@@ -109,7 +109,12 @@ if want go; then
   done
 fi
 
-if [ "$MODE" = --full ] && [ -f docker-compose.yaml ]; then step "docker compose config" docker compose config -q; fi
+if [ "$MODE" = --full ] && [ -f docker-compose.yaml ]; then
+  step "docker compose config" docker compose config -q
+  # Contrôle de sécurité du compose et son auto-test (Q-84) : aucune clé ni port publié chez un agent, etc.
+  [ -x backend/check-compose.sh ] && step "contrôle du compose" backend/check-compose.sh
+  [ -x backend/check-compose-selftest.sh ] && step "auto-test du contrôle du compose" backend/check-compose-selftest.sh
+fi
 
 echo "== $MODE${ONLY:+ ($ONLY)} : $ran contrôles, $([ $fail -eq 0 ] && echo 'TOUT VERT' || echo 'ROUGE')"
 exit $fail
