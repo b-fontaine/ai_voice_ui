@@ -290,6 +290,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// images restent déterministes (et que `pumpAndSettle` converge).
   bool get _animationsOff => _scenarioMode || _snapshot.isActive;
 
+  // Réglage d'animation de la scène : durée nulle en scénario, en capture et
+  // sous « réduire les animations » ; vitesse du rejeu en cours sinon.
+  Widget _motionScope({required Widget child}) =>
+      BlocSelector<ReplayBloc, ReplayState, double>(
+        selector: (state) => state is ReplayActive ? state.snapshot.speed : 1,
+        builder: (context, speed) => SceneMotionScope(
+          disabled:
+              (MediaQuery.maybeDisableAnimationsOf(context) ?? false) ||
+              _animationsOff,
+          speed: speed,
+          child: child,
+        ),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -915,9 +929,14 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             ),
                           ),
                           const SizedBox(height: _gap),
-                          const SizedBox(
-                            height: _railHeight,
-                            child: AgentsRail(),
+                          // Même réglage d'animation que le canevas : la liaison
+                          // de délégation du rail reste fixe quand les
+                          // animations sont coupées.
+                          _motionScope(
+                            child: const SizedBox(
+                              height: _railHeight,
+                              child: AgentsRail(),
+                            ),
                           ),
                           const SizedBox(height: _gap),
                           Expanded(
@@ -926,45 +945,23 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             // animations » ; vitesse du rejeu en cours sinon. Pas de
                             // `TickerMode` ici : il figerait l'apparition à
                             // l'opacité 0.
-                            child:
-                                BlocSelector<ReplayBloc, ReplayState, double>(
-                                  selector: (state) => state is ReplayActive
-                                      ? state.snapshot.speed
-                                      : 1,
-                                  builder: (context, speed) => SceneMotionScope(
-                                    disabled:
-                                        (MediaQuery.maybeDisableAnimationsOf(
-                                              context,
-                                            ) ??
-                                            false) ||
-                                        _animationsOff,
-                                    speed: speed,
-                                    child:
-                                        BlocSelector<
-                                          ReplayBloc,
-                                          ReplayState,
-                                          bool
-                                        >(
-                                          selector: (state) =>
-                                              state is ReplayActive,
-                                          // Rejeu (scénario ou acte 4) : aucune requête ne
-                                          // part.
-                                          builder: (context, replaying) =>
-                                              CanvasActionScope(
-                                                enabled:
-                                                    !_scenarioMode &&
-                                                    !replaying,
-                                                child: CanvasBoard(
-                                                  key: const Key(
-                                                    'canvas-board',
-                                                  ),
-                                                  controller: _controller,
-                                                  highlight: _highlight,
-                                                ),
-                                              ),
+                            child: _motionScope(
+                              child:
+                                  BlocSelector<ReplayBloc, ReplayState, bool>(
+                                    selector: (state) => state is ReplayActive,
+                                    // Rejeu (scénario ou acte 4) : aucune requête ne
+                                    // part.
+                                    builder: (context, replaying) =>
+                                        CanvasActionScope(
+                                          enabled: !_scenarioMode && !replaying,
+                                          child: CanvasBoard(
+                                            key: const Key('canvas-board'),
+                                            controller: _controller,
+                                            highlight: _highlight,
+                                          ),
                                         ),
                                   ),
-                                ),
+                            ),
                           ),
                           const SizedBox(height: _gap),
                           SizedBox(

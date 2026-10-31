@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
+import 'delegation_links.dart';
+
 /// Rail des agents, en rangée horizontale de [height] px (A1 de 013, pdr-0075
 /// D1) : le repère « AGENTS A2A » en colonne de tête, puis une tuile par agent
 /// (`agent-<nom>`), l'orchestrateur d'abord.
@@ -13,7 +15,9 @@ import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 /// renfort) ; seule la tâche s'abrège avec une ellipse. Texte du thème de scène
 /// (>= 24 px, RG-09). La hauteur et la largeur sont celles du budget, vide ou
 /// rempli : l'arrivée du premier plan ne déplace rien. L'intervalle entre
-/// l'orchestrateur et les agents reste libre, pour un connecteur futur (Q-85).
+/// l'orchestrateur et les agents reste libre. Une liaison animée relie
+/// l'orchestrateur à chaque agent en attente ou en cours ([DelegationLinks],
+/// Q-85).
 class AgentsRail extends StatelessWidget {
   const AgentsRail({super.key = const Key('agents-rail')});
 
@@ -34,33 +38,42 @@ class AgentsRail extends StatelessWidget {
         child: BlocBuilder<AgentActivityBloc, AgentActivityState>(
           builder: (context, state) {
             final List<AgentStatus> agents = state.agents;
-            return Row(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(right: 24),
-                  child: Text(
-                    'AGENTS A2A',
-                    style: theme.label.copyWith(color: theme.textSecondary),
-                    maxLines: 1,
+            return DelegationLinks(
+              agents: agents,
+              rowBuilder: (context, tileKey) => Row(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 24),
+                    child: Text(
+                      'AGENTS A2A',
+                      style: theme.label.copyWith(color: theme.textSecondary),
+                      maxLines: 1,
+                    ),
                   ),
-                ),
-                for (int i = 0; i < agents.length; i++) ...<Widget>[
-                  if (i == 1) const SizedBox(width: delegationGap),
-                  if (i > 1) const SizedBox(width: 16),
-                  Expanded(child: _AgentTile(agent: agents[i])),
+                  for (int i = 0; i < agents.length; i++) ...<Widget>[
+                    if (i == 1) const SizedBox(width: delegationGap),
+                    if (i > 1) const SizedBox(width: 16),
+                    Expanded(
+                      child: KeyedSubtree(
+                        key: tileKey(agents[i].agent),
+                        child: _AgentTile(agent: agents[i]),
+                      ),
+                    ),
+                  ],
+                  if (state.noAgentSelected) ...<Widget>[
+                    const SizedBox(width: delegationGap),
+                    Text(
+                      'aucun agent retenu',
+                      key: const Key('agents-none'),
+                      style: theme.body,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (agents.length < 2 && !state.noAgentSelected)
+                    const Spacer(),
                 ],
-                if (state.noAgentSelected) ...<Widget>[
-                  const SizedBox(width: delegationGap),
-                  Text(
-                    'aucun agent retenu',
-                    key: const Key('agents-none'),
-                    style: theme.body,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (agents.length < 2 && !state.noAgentSelected) const Spacer(),
-              ],
+              ),
             );
           },
         ),
@@ -108,6 +121,10 @@ class _AgentTile extends StatelessWidget {
     final secondary = theme.body.copyWith(color: theme.textSecondary);
     return Column(
       key: Key('agent-${agent.agent}'),
+      // Hauteur du contenu, centrée par le rail : le rectangle de la tuile est
+      // celui des deux lignes de texte, la bande libre au-dessus accueille la
+      // liaison de délégation.
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[

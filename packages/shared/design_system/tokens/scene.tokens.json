@@ -202,6 +202,10 @@
       "translation": {
         "$type": "dimension",
         "$value": "{size.8}"
+      },
+      "link": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
       }
     }
   }

@@ -9,6 +9,7 @@ void main() {
       expect(SceneMotion.value, const Duration(milliseconds: 150));
       expect(SceneMotion.status, const Duration(milliseconds: 400));
       expect(SceneMotion.translation, 8);
+      expect(SceneMotion.link, const Duration(milliseconds: 1200));
       expect(SceneMotion.floor, const Duration(milliseconds: 60));
       expect(SceneMotion.curve, Curves.easeOutCubic);
     });
@@ -165,6 +166,84 @@ void main() {
       });
     });
 
+    group('loop', () {
+      Future<AnimationController> run(
+        WidgetTester tester, {
+        required bool disabled,
+        double speed = 1,
+      }) async {
+        late AnimationController controller;
+        await tester.pumpWidget(
+          SceneMotionScope(
+            disabled: disabled,
+            speed: speed,
+            child: _Looper(
+              base: SceneMotion.link,
+              onController: (c) => controller = c,
+            ),
+          ),
+        );
+        return controller;
+      }
+
+      testWidgets('animations actives : boucle sur la période du jeton', (
+        tester,
+      ) async {
+        final c = await run(tester, disabled: false);
+        expect(c.duration, SceneMotion.link);
+        expect(c.isAnimating, isTrue);
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(c.value, closeTo(0.5, 0.01));
+        // Une boucle repart de 0 au lieu de s'arrêter à 1.
+        await tester.pump(const Duration(milliseconds: 700));
+        expect(c.value, closeTo(0.0833, 0.01));
+        expect(c.isAnimating, isTrue);
+      });
+
+      testWidgets('vitesse 2 : période divisée', (tester) async {
+        final c = await run(tester, disabled: false, speed: 2);
+        expect(c.duration, const Duration(milliseconds: 600));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(c.value, closeTo(0.5, 0.01));
+      });
+
+      testWidgets('disabled : contrôleur arrêté, phase fixe', (tester) async {
+        final c = await run(tester, disabled: true);
+        expect(c.isAnimating, isFalse);
+        final double phase = c.value;
+        await tester.pump(const Duration(seconds: 5));
+        expect(c.value, phase);
+        expect(c.isAnimating, isFalse);
+        expect(tester.binding.hasScheduledFrame, isFalse);
+      });
+
+      testWidgets(
+        'bascule de disabled en cours de route : arrêt, puis reprise',
+        (tester) async {
+          late AnimationController c;
+          Widget host(bool disabled) => SceneMotionScope(
+            disabled: disabled,
+            child: _Looper(
+              base: SceneMotion.link,
+              onController: (controller) => c = controller,
+            ),
+          );
+          await tester.pumpWidget(host(false));
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(c.isAnimating, isTrue);
+          await tester.pumpWidget(host(true));
+          expect(c.isAnimating, isFalse);
+          final double frozen = c.value;
+          await tester.pump(const Duration(seconds: 2));
+          expect(c.value, frozen);
+          await tester.pumpWidget(host(false));
+          expect(c.isAnimating, isTrue);
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(c.value, isNot(frozen));
+        },
+      );
+    });
+
     testWidgets('notifie les dépendants quand speed change', (tester) async {
       int builds = 0;
       Widget host(double speed) => SceneMotionScope(
@@ -207,6 +286,43 @@ class _PlayerState extends State<_Player> with SingleTickerProviderStateMixin {
     _started = true;
     SceneMotionScope.play(context, _controller, widget.base);
     widget.onController(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox();
+}
+
+/// Boucle un contrôleur via [SceneMotionScope.loop] à chaque changement de
+/// dépendance.
+class _Looper extends StatefulWidget {
+  const _Looper({required this.base, required this.onController});
+
+  final Duration base;
+  final void Function(AnimationController) onController;
+
+  @override
+  State<_Looper> createState() => _LooperState();
+}
+
+class _LooperState extends State<_Looper> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onController(_controller);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.loop(context, _controller, widget.base);
   }
 
   @override

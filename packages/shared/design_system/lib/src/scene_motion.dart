@@ -22,6 +22,10 @@ abstract final class SceneMotion {
   /// Translation verticale d'apparition, en pixels logiques.
   static const double translation = SceneTokens.motionTranslation;
 
+  /// Période d'une boucle de la liaison de délégation du rail (défilement des
+  /// pointillés), avant adaptation à la vitesse de rejeu.
+  static const Duration link = SceneTokens.motionLink;
+
   /// Courbe commune à toutes les transitions de la scène.
   static const Curve curve = Curves.easeOutCubic;
 
@@ -88,6 +92,26 @@ class SceneMotionScope extends InheritedWidget {
       controller.value = 1;
     } else {
       controller.forward(from: 0);
+    }
+  }
+
+  /// Fait tourner [controller] en boucle sur [base] adaptée au réglage en
+  /// vigueur (animation sans fin, comme les pointillés de la liaison).
+  ///
+  /// Période nulle (animations coupées) : le contrôleur s'arrête et garde sa
+  /// phase, sans jamais boucler sur une durée nulle. À rappeler quand le
+  /// réglage change (`didChangeDependencies`).
+  static void loop(
+    BuildContext context,
+    AnimationController controller,
+    Duration base,
+  ) {
+    final Duration period = of(context).durationFor(base);
+    controller.duration = period;
+    if (period == Duration.zero) {
+      controller.stop();
+    } else {
+      controller.repeat(period: period);
     }
   }
 

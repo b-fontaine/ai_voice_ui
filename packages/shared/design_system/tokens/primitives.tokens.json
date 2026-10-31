@@ -360,6 +360,13 @@
         "value": 400,
         "unit": "ms"
       }
+    },
+    "1200": {
+      "$type": "duration",
+      "$value": {
+        "value": 1200,
+        "unit": "ms"
+      }
     }
   }
 }
