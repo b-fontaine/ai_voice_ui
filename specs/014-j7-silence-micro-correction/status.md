@@ -1,9 +1,9 @@
 # 014 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T13, T14 (Flutter)
+- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/lib/{widgets/stage_bar,widgets/top_bar,pages/genesis_canvas}, apps/genesis_canvas/test
 - **Branche** : feat/014-j7-silence-micro-correction
 - **Backlog** : EP-02, EP-06
 - **Mis à jour** : 2026-10-31
