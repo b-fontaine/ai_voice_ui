@@ -28,6 +28,14 @@ abstract final class AcceptanceKeys {
   /// Ligne d'un agent du rail (existe déjà : `agent-<nom>`).
   static Key agent(String name) => Key('agent-$name');
 
+  /// Liaison de délégation (spec 015, Q-85) entre l'orchestrateur et la tuile de
+  /// l'agent [name] : présente seulement tant que l'agent est « en attente »
+  /// ou « en cours ».
+  static Key delegationLink(String name) => Key('delegation-link-$name');
+
+  /// Préfixe commun des clés de liaison, pour affirmer qu'aucune n'existe.
+  static const String delegationLinkPrefix = 'delegation-link-';
+
   /// Rail des agents (existe déjà).
   static const Key agentsRail = Key('agents-rail');
 
