@@ -3,7 +3,7 @@ package voice
 import (
 	"errors"
 	"fmt"
-	"strings"
+	"slices"
 	"time"
 	"unicode/utf8"
 
@@ -134,24 +134,30 @@ func NewStopDetector(cfg StopConfig, clock port.Clock) (*StopDetector, error) {
 }
 
 // ValidateCorrectionWords vérifie la liste de mots de correction : mêmes bornes que
-// ValidateStopWords, et aucun mot commun (après normalisation) avec stopWords. L'erreur
+// ValidateStopWords, et aucun mot commun (après normalisation) avec stopWords, ni dont la
+// suite de jetons ouvre celle d'un mot d'arrêt (« non » avec « non merci »). L'erreur
 // ne recopie aucun mot.
 func ValidateCorrectionWords(words, stopWords []string) error {
 	if len(words) > MaxStopWords {
 		return fmt.Errorf("au plus %d mots de correction", MaxStopWords)
 	}
-	known := map[string]bool{}
+	var stops [][]string
 	for _, w := range stopWords {
 		toks, _ := stopword.Tokenize(w)
-		known[strings.Join(toks, " ")] = true
+		stops = append(stops, toks)
 	}
 	for _, w := range words {
 		toks, _ := stopword.Tokenize(w)
 		if len(toks) == 0 || utf8.RuneCountInString(w) > MaxStopWordRunes {
 			return fmt.Errorf("chaque mot de correction doit contenir une lettre ou un chiffre et au plus %d caractères", MaxStopWordRunes)
 		}
-		if known[strings.Join(toks, " ")] {
-			return errors.New("un mot de correction ne peut pas être aussi un mot d'arrêt")
+		for _, stop := range stops {
+			if slices.Equal(stop, toks) {
+				return errors.New("un mot de correction ne peut pas être aussi un mot d'arrêt")
+			}
+			if len(stop) > len(toks) && slices.Equal(stop[:len(toks)], toks) {
+				return errors.New("un mot de correction ne peut pas ouvrir un mot d'arrêt")
+			}
 		}
 	}
 	return nil

@@ -542,13 +542,13 @@ loop:
 // le son sans attendre), puis l'arrêt des délégations (file du forwarder, sans blocage).
 // La session reste ouverte.
 func (s *Service) interrupt(sess *session, fw *forwarder, det Detection) {
-	s.announceInterrupted(sess, det.AtMs, "")
+	s.announceInterrupted(sess, det.AtMs, domain.CauseStop)
 	fw.interrupt(det.AtMs)
 }
 
-// announceInterrupted publie voice.interrupted ; cause vide pour un « Stop » (charge
-// utile de la spec 011), domain.CauseCorrection pour une correction.
-func (s *Service) announceInterrupted(sess *session, atMs int64, cause string) {
+// announceInterrupted publie voice.interrupted ; domain.CauseStop pour un « Stop » (absente
+// de la charge utile, celle de la spec 011), domain.CauseCorrection pour une correction.
+func (s *Service) announceInterrupted(sess *session, atMs int64, cause domain.InterruptCause) {
 	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: atMs, Cause: cause})
 }
 

@@ -325,12 +325,23 @@ func TestC03_CorrectionWithStopWordIsStop(t *testing.T) {
 	}
 }
 
+// indexOfDelegation renvoie la position du message `delegation` d'identifiant id, ou -1.
+func indexOfDelegation(envs []sessionEnvelope, id string) int {
+	return slices.IndexFunc(envs, func(e sessionEnvelope) bool {
+		var d struct {
+			ID string `json:"id"`
+		}
+		return e.Type == "delegation" && json.Unmarshal(e.Data, &d) == nil && d.ID == id
+	})
+}
+
 // C-04 — Correction en file derrière l'exécution en vol (FR-15, pdr-0076).
 //
 // Étant donné une construction en cours, puis un texte antérieur non délégué (« et le
 // crash ») ;
-// quand le fournisseur crée la délégation de « Non, plutôt iOS » AVANT que le détecteur
-// confirme le mot de correction (elle attend en file derrière l'exécution en vol) ;
+// quand le speaker dit « Non, » puis que le fournisseur crée la délégation de la
+// correction (elle attend en file derrière l'exécution en vol), puis que « plutôt iOS »
+// (même énoncé) fait confirmer la correction par le détecteur ;
 // alors à la confirmation : voice.interrupted {cause:"correction"} avant toute
 // compensation, exécution annulée, surfaces inachevées retirées ; la délégation en file
 // est conservée, puis planifiée après l'annulation et exécutée ; sa demande ne contient
@@ -341,19 +352,27 @@ func TestC04_QueuedCorrectionIsKeptAndPlannedAfterCancel(t *testing.T) {
 	scene := startCorrectionScene(t, ctx, true)
 	sends := len(scene.live.VoiceSends())
 
-	// Texte antérieur (énoncé distinct), puis la correction ; la délégation arrive d'abord.
+	// Texte antérieur (énoncé distinct), puis le début de la correction (« Non, ») ; la
+	// délégation de la correction arrive ensuite et attend en file derrière l'exécution en vol.
 	scene.live.Emit(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "et le crash", StartMs: 3000, EndMs: 3800})
-	scene.live.Emit(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: utterNonIOS, StartMs: correctionStartMs, EndMs: correctionEndMs})
+	scene.live.Emit(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: "Non,", StartMs: correctionStartMs, EndMs: correctionStartMs + 200})
 	scene.live.Emit(port.LiveEvent{Type: port.EventDelegationCreated, DelegationID: correctionDelegationID, OffsetMs: correctionEndMs})
 	// La délégation est reçue (commentaire générique envoyé) avant la confirmation du détecteur.
 	if got := scene.live.WaitSends(sends+1, genesisWait); len(got) < sends+1 {
 		t.Fatalf("la délégation de correction n'a pas été reçue (envois vocaux : %d, attendu %d)", len(got), sends+1)
 	}
+	// La suite du même énoncé déclenche la correction alors que la délégation est déjà en file.
+	scene.live.Emit(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: " plutôt iOS", StartMs: correctionStartMs + 300, EndMs: correctionEndMs})
 	scene.live.clock.Advance(settleAdvance)
 
 	in, envs := awaitInterrupted(t, scene, "correction en file derrière l'exécution en vol")
 	if in.Cause != causeCorrection || *in.AtMs != correctionStartMs {
 		t.Fatalf("%s = %+v, attendu {at_ms:%d cause:%q}", eventVoiceInterrupted, in, correctionStartMs, causeCorrection)
+	}
+	// Ordre exact (entrée de R1 côté app) : la délégation conservée est publiée avant
+	// voice.interrupted.
+	if d, i := indexOfDelegation(envs, correctionDelegationID), indexOfType(envs, eventVoiceInterrupted); d < 0 || d > i {
+		t.Fatalf("correction en file : message delegation %q en position %d, voice.interrupted en %d, attendu delegation avant voice.interrupted", correctionDelegationID, d, i)
 	}
 	requireCompensation(t, scene, envs, "correction en file")
 	requireCorrectionPlanned(t, scene, "correction en file", "crash")

@@ -535,3 +535,16 @@ func TestConfigFromEnv_VoiceCorrectionWordsCommonWithStopWordsRefused(t *testing
 		t.Errorf("l'erreur ne doit recopier aucun mot : %v", err)
 	}
 }
+
+func TestConfigFromEnv_VoiceCorrectionWordPrefixOfStopWordRefused(t *testing.T) {
+	env := fullEnv()
+	env["VOICE_STOP_WORDS"] = "stop,Non merci"
+	env["VOICE_CORRECTION_WORDS"] = "non,plutôt"
+	_, err := load(env)
+	if err == nil || !strings.Contains(err.Error(), "VOICE_CORRECTION_WORDS") {
+		t.Fatalf("mot de correction préfixe d'un mot d'arrêt : doit être refusé en nommant la variable : %v", err)
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "merci") {
+		t.Errorf("l'erreur ne doit recopier aucun mot : %v", err)
+	}
+}

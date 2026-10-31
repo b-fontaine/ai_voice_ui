@@ -333,3 +333,24 @@ func TestWindowConsumeBefore(t *testing.T) {
 		t.Fatalf("Take = %q", req)
 	}
 }
+
+// R4 : la correction reprise par le worker ne voit jamais le texte antérieur, même si le
+// worker enchaîne dès l'annulation (ConsumeBefore part sous le verrou de session).
+func TestSupersedeNeverLeaksOldTextIntoCorrectionRequest(t *testing.T) {
+	for i := range 300 {
+		g := newSupersedeRig(t)
+		say(g.s, "Prépare la release", 0)
+		g.s.Delegate("old-1", 100)
+		g.r.nextStarted(t)
+		say(g.s, "et le crash", 500) // texte antérieur, jamais délégué
+		say(g.s, "Non, plutôt iOS", 2000)
+		g.s.Delegate("fix", 2100)
+
+		g.s.Supersede(2000, func() {})
+
+		started := g.r.nextStarted(t)
+		if started.ID != "fix" || started.Request != "Non, plutôt iOS" {
+			t.Fatalf("itération %d : démarré = %s %q, attendu fix avec la seule correction", i, started.ID, started.Request)
+		}
+	}
+}

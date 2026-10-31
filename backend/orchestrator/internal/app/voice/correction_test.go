@@ -152,15 +152,19 @@ func TestNewStopDetectorValidatesCorrectionWords(t *testing.T) {
 		many[i] = "mot"
 	}
 	cases := map[string][]string{
-		"vide dans la liste": {"non", ""},
-		"sans lettre":        {"..."},
-		"trop long":          {strings.Repeat("é", MaxStopWordRunes+1)},
-		"trop de mots":       many,
-		"commun avec stop":   {"non", " Stop. "},
+		"vide dans la liste":       {"non", ""},
+		"sans lettre":              {"..."},
+		"trop long":                {strings.Repeat("é", MaxStopWordRunes+1)},
+		"trop de mots":             many,
+		"commun avec stop":         {"non", " Stop. "},
+		"préfixe d'un mot d'arrêt": {"non"},
 	}
 	for name, words := range cases {
 		cfg := correctionConfig()
 		cfg.CorrectionWords = words
+		if name == "préfixe d'un mot d'arrêt" {
+			cfg.Words = []string{"stop", "Non merci"}
+		}
 		if _, err := NewStopDetector(cfg, newTestClock()); err == nil {
 			t.Errorf("%s : doit être refusé", name)
 		}
@@ -168,6 +172,14 @@ func TestNewStopDetectorValidatesCorrectionWords(t *testing.T) {
 	err := ValidateCorrectionWords([]string{"secretword", "stop"}, []string{"Stop"})
 	if err == nil || strings.Contains(err.Error(), "secretword") || strings.Contains(strings.ToLower(err.Error()), "stop,") {
 		t.Errorf("l'erreur ne doit recopier aucun mot : %v", err)
+	}
+	err = ValidateCorrectionWords([]string{"non"}, []string{"stop", "secretmot non merci"})
+	if err != nil || ValidateCorrectionWords([]string{"mot"}, []string{"stop", "un mot"}) != nil {
+		t.Errorf("un mot de correction qui n'ouvre pas un mot d'arrêt est accepté : %v", err)
+	}
+	err = ValidateCorrectionWords([]string{"non"}, []string{"non merci secretmot"})
+	if err == nil || strings.Contains(err.Error(), "secretmot") || strings.Contains(err.Error(), "merci") {
+		t.Errorf("préfixe d'un mot d'arrêt : refus attendu sans recopier le mot : %v", err)
 	}
 	if err := ValidateCorrectionWords([]string{"non"}, []string{"stop"}); err != nil {
 		t.Errorf("listes disjointes : %v", err)

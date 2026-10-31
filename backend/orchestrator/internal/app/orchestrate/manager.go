@@ -389,6 +389,8 @@ type session struct {
 
 	opened uint64 // numéro d'ouverture (Manager.openSeq), fixé à l'ouverture sous Manager.mu
 
+	// Ordre des verrous : Canvas.mu → m.mu → session.mu → window.mu (Supersede appelle
+	// window.ConsumeBefore sous session.mu ; RequestWindow ne prend jamais session.mu).
 	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add
 	closed  bool
 	pending int // délégations en file ou en cours d'exécution
@@ -575,6 +577,13 @@ func (s *session) run(d Delegation) {
 			if interrupted(ctx) {
 				s.stopped(d)
 			}
+			return
+		}
+		s.mu.Lock()
+		replaced := d.epoch != s.epoch
+		s.mu.Unlock()
+		if replaced { // remplacée (correction) pendant l'attente : la fenêtre est déjà vidée
+			s.stopped(d)
 			return
 		}
 		if s.stopOnlyRequest(d, request) {

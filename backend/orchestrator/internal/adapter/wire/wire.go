@@ -61,7 +61,7 @@ func WireData(d domain.Payload) any {
 		// et pour toute valeur inconnue.
 		cause := ""
 		if v.Cause == domain.CauseCorrection {
-			cause = v.Cause
+			cause = string(v.Cause)
 		}
 		return struct {
 			AtMs  int64  `json:"at_ms"`

@@ -254,12 +254,13 @@ func TestCorrectionNotRetainedPublishesNothing(t *testing.T) {
 	}
 }
 
+// Le Stop porte explicitement domain.CauseStop ; le fil l'omet (wire_test : {"at_ms":N}).
 func TestStopPayloadHasNoCause(t *testing.T) {
 	e := newStopEnv(t, withCorrections)
 	e.say("Stop.", 3000)
 	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
-	if v := got[0].Data.(domain.VoiceInterrupted); v.Cause != "" {
-		t.Fatalf("cause = %q, absente attendue pour un Stop", v.Cause)
+	if v := got[0].Data.(domain.VoiceInterrupted); v.Cause != domain.CauseStop {
+		t.Fatalf("cause = %q, attendu %q pour un Stop", v.Cause, domain.CauseStop)
 	}
 	if n := len(e.fd.sess.supersedeCalls()); n != 0 {
 		t.Fatalf("Supersede appelé %d fois pour un Stop", n)
