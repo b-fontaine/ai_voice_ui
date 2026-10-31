@@ -4,6 +4,7 @@ package acceptance
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -228,51 +229,57 @@ func requireNothingInterrupted(t *testing.T, scene *correctionScene, what string
 
 // --- T03 : rejeu des suites 011 et 014 avec les valeurs du compose --------------------------
 
-// ACCEPTANCE_OVERLAP=compose fait lire à tous les helpers d'assemblage (startApp,
-// startDelegatingAppWith) les valeurs VOICE_OVERLAP_* du docker-compose.yaml (à défaut,
-// celles du plan 015) : toute la suite d'acceptation est alors rejouée, chevauchement
-// actif. Les tests O-01 à O-08 fixent leurs variables explicitement et priment.
-const overlapReplayEnv = "ACCEPTANCE_OVERLAP"
+// Les helpers d'assemblage (startApp, startDelegatingAppWith) lisent par défaut les valeurs
+// VOICE_OVERLAP_* du docker-compose.yaml : toute la suite d'acceptation tourne chevauchement
+// actif, avec la configuration de la démo. Un test qui suppose le comportement de 014 pose
+// explicitement VOICE_OVERLAP_INTERRUPT=false (withEnv). Les options explicites des tests
+// O-01 à O-08 priment. Aucun repli : une valeur absente ou illisible fait échouer le test.
 
-// planOverlapDefaults : valeurs du plan 015, utilisées tant que le compose (T24) ne
-// définit pas les variables.
-var planOverlapDefaults = map[string]string{
-	"VOICE_OVERLAP_INTERRUPT":       "true",
-	"VOICE_OVERLAP_SPEAKING_LEVEL":  "0.02",
-	"VOICE_OVERLAP_SPEAKING_WINDOW": "2s",
-	"VOICE_OVERLAP_ECHO_WINDOW":     "8s",
-	"VOICE_OVERLAP_MIN_WORDS":       "1",
-	"VOICE_OVERLAP_MIN_WORD_LEN":    "3",
-	"VOICE_OVERLAP_IGNORE_WORDS":    overlapIgnoreWords,
+// overlapVars : les sept variables que le compose doit définir.
+var overlapVars = []string{
+	"VOICE_OVERLAP_INTERRUPT", "VOICE_OVERLAP_SPEAKING_LEVEL", "VOICE_OVERLAP_SPEAKING_WINDOW",
+	"VOICE_OVERLAP_ECHO_WINDOW", "VOICE_OVERLAP_MIN_WORDS", "VOICE_OVERLAP_MIN_WORD_LEN",
+	"VOICE_OVERLAP_IGNORE_WORDS",
 }
 
 var composeVarRe = regexp.MustCompile(`^\s+(VOICE_OVERLAP_[A-Z_]+):\s*\$\{[A-Z_]+:-(.*)\}\s*$`)
 
-// composeOverlapEnv renvoie les défauts VOICE_OVERLAP_* du compose, complétés par ceux du
-// plan pour les variables absentes.
-func composeOverlapEnv() map[string]string {
+// parseComposeOverlap extrait les sept défauts VOICE_OVERLAP_* d'un contenu de compose ;
+// une variable absente ou à valeur vide est une erreur.
+func parseComposeOverlap(content string) (map[string]string, error) {
 	env := map[string]string{}
-	for k, v := range planOverlapDefaults {
-		env[k] = v
-	}
-	data, err := os.ReadFile(filepath.Join("..", "..", "..", "docker-compose.yaml"))
-	if err != nil {
-		return env
-	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for _, line := range strings.Split(content, "\n") {
 		if m := composeVarRe.FindStringSubmatch(line); m != nil {
 			env[m[1]] = m[2]
 		}
 	}
+	for _, k := range overlapVars {
+		if env[k] == "" {
+			return nil, fmt.Errorf("%s absente ou non analysable dans le compose", k)
+		}
+	}
+	return env, nil
+}
+
+// composeOverlapEnv renvoie les défauts VOICE_OVERLAP_* de docker-compose.yaml ; il
+// échoue si le fichier est illisible ou si une variable manque.
+func composeOverlapEnv(t testing.TB) map[string]string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", "docker-compose.yaml"))
+	if err != nil {
+		t.Fatalf("docker-compose.yaml illisible : %v", err)
+	}
+	env, err := parseComposeOverlap(string(data))
+	if err != nil {
+		t.Fatalf("docker-compose.yaml : %v", err)
+	}
 	return env
 }
 
-// applyOverlapReplay ajoute les valeurs du compose à env quand le rejeu est demandé.
-func applyOverlapReplay(env map[string]string) {
-	if os.Getenv(overlapReplayEnv) != "compose" {
-		return
-	}
-	for k, v := range composeOverlapEnv() {
+// applyComposeOverlap ajoute à env les valeurs du compose (défaut des helpers d'assemblage).
+func applyComposeOverlap(t testing.TB, env map[string]string) {
+	t.Helper()
+	for k, v := range composeOverlapEnv(t) {
 		env[k] = v
 	}
 }
