@@ -23,6 +23,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : T33 et T34 faites (catalogue Widgetbook : 3 briques + 6 composants genesis en 3 états, build web vérifié). Toutes les tâches du TDD sont cochées sauf T22 (note NFR-04 de `quality.md`, à la clôture). Prochaine : `gate --full` puis revue du code. |
 | 2026-10-31 | 013 : T32a et T32 faites (`apps/genesis_widgetbook` dans le workspace, résolution pub sans conflit, stories des 3 briques ; coupe C2 inutile). Reste : T33 (6 composants genesis), T34 (scripts et README), T22 (note NFR-04), puis `gate --full`, revue du code, refactorisation, vérification, clôture. |
 | 2026-10-31 | 013 : lot C en cours — T30a, T30b faites (tokens DTCG, générateur Style Dictionary 5.7.1, `scene_tokens.g.dart` committé, test de hash et de parité). Reste : T32a (apps/genesis_widgetbook : résolution pub, porte, coupe C2 si échec), T32, T33, T34, T22 (note NFR-04), puis `gate --full`, revue du code, refactorisation, vérification, clôture. |
 | 2026-10-31 | 013 : lot B terminé côté code (T21c : transitions d'apparition ; D-01 à D-07 tous verts). Reste : T22 (note de mesure NFR-04 dans `quality.md`, à la clôture), lot C (T30a, T30b, T32a, T32, T33, T34). |

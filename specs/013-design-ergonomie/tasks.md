@@ -32,8 +32,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T30b Flutter — générateur `tool/build_tokens.mjs` (Style Dictionary ≥ 5.7.1 épinglé, `npm ci --ignore-scripts`, `dart format`, `log.warnings: 'error'`, `node_modules` ignoré), `scene_tokens.g.dart` committé (`SceneTokens` constantes), `SceneTheme.dark()` et `SceneMotion` migrés · test d'abord : les tests de T30a passent de rouge à vert ; `scene_theme_test.dart` inchangé et vert
 - [x] T32a Flutter — `apps/genesis_widgetbook/` squelette : membre du workspace, `flutter pub get` à la racine, `gate.sh --unit flutter` vert, `dart format` et `analyze` sur les fichiers générés ; échec → coupe C2 (retirer le membre) et signaler · test d'abord : `gate.sh --unit flutter` (rouge si la résolution échoue)
 - [x] T32 Flutter — stories des 3 briques (`DsStatusChip`, `DsSkeleton`, `DsNeutralState`) · test d'abord : `testWidgetbook` et test d'ensemble (briques de la config = les 3)
-- [ ] T33 Flutter — stories des 6 composants genesis : hôte à état avec `SurfaceController(catalogs: [genesisCatalog])`, exemples `contracts/a2ui/genesis/v1/examples/*.jsonl` en assets, états données / sans données / neutre, viewports 620×302 et 940×302 · test d'abord : test qui compare les composants de la config à `GenesisContract.components` plus les 3 briques
-- [ ] T34 Flutter — scripts manuels `tool/build_tokens.sh` et `tool/build_widgetbook.sh`, README ; vérifiés une fois à la main, sortie dans `status.md` · documentation (aucun test)
+- [x] T33 Flutter — stories des 6 composants genesis : hôte à état avec `SurfaceController(catalogs: [genesisCatalog])`, exemples `contracts/a2ui/genesis/v1/examples/*.jsonl` en assets, états données / sans données / neutre, viewports 620×302 et 940×302 · test d'abord : test qui compare les composants de la config à `GenesisContract.components` plus les 3 briques
+- [x] T34 Flutter — scripts manuels `tool/build_tokens.sh` et `tool/build_widgetbook.sh`, README ; vérifiés une fois à la main, sortie dans `status.md` · documentation (aucun test)
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
