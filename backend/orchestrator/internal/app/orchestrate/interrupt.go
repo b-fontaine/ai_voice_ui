@@ -121,3 +121,17 @@ func (s *session) beginRun(d Delegation) (ctx context.Context, end func(), ok bo
 		cancel(nil)
 	}, true
 }
+
+// NoteOverlap mémorise un chevauchement de la voix à atMs (spec 016) : seul le plus grand
+// atMs est retenu. Ne prend que session.mu, ne publie rien, sans effet sur une session
+// fermée.
+func (s *session) NoteOverlap(atMs int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
+	if !s.hasOverlap || atMs > s.overlapAt {
+		s.overlapAt, s.hasOverlap = atMs, true
+	}
+}

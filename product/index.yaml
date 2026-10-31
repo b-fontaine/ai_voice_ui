@@ -13,12 +13,12 @@ zones:
     prefix: p-fn-
     index: functional/index.yaml
     description: "Produit fonctionnel : vision, personas et parcours en 3 actes, périmètre, exigences FR/NFR, règles RG, écran en 6 zones, catalogue, jeu de données, maquettes et écarts E1-E22, risques et DoD, glossaire, scénarios Gherkin"
-    keywords: [fonctionnel, functional, acte 2, comparaison, vue iOS, vision, persona, parcours, acte, périmètre, scope, exigence, requirement, FR, NFR, MoSCoW, règle, RG, écran, zone, orbe, barge-in, interruption, raccourci, catalogue, composant, jeu de données, dataset, maquette, mockup, écart, risque, plan B, DoD, glossaire, gherkin, feature, scénario, BDD, lisibilité, 24 px, bande vide, régie, apparition animée, design et ergonomie, chevauchement de parole, liaison de délégation, rail, écho, S-05, O-01, L-01]
+    keywords: [fonctionnel, functional, acte 2, comparaison, vue iOS, vision, persona, parcours, acte, périmètre, scope, exigence, requirement, FR, NFR, MoSCoW, règle, RG, écran, zone, orbe, barge-in, interruption, raccourci, catalogue, composant, jeu de données, dataset, maquette, mockup, écart, risque, plan B, DoD, glossaire, gherkin, feature, scénario, BDD, lisibilité, 24 px, bande vide, régie, apparition animée, design et ergonomie, chevauchement de parole, liaison de délégation, rail, écho, S-05, O-01, L-01, consigne de silence, bruit parasite, reprise, répéter, no_request, VOICE_RECOVERY_WINDOW, NoteOverlap, 016]
   - name: architecture
     prefix: p-ar-
     index: architecture/index.yaml
     description: "Architecture du produit : vue d'ensemble C4, app Flutter desktop Linux (Clean + FSD, Bloc), backend Go hexagonal en docker compose local, agents A2A réels et protocoles, stack et versions, design system et Widgetbook (tokens, apparition animée), rejeu A2UI (acte 4), sécurité, qualité, environnement de scène"
-    keywords: [architecture, C4, design system, tokens, DTCG, Style Dictionary, SceneTokens, Widgetbook, apparition animée, animation, fondu, SceneMotion, périmètre de reconstruction, rail horizontal, polices réelles, composition par modèle, compositeur LLM, passerelle LLM, COMPOSER_MODEL, repli déterministe, plan structuré, squelette anticipé, view_unavailable, vue indisponible, CrashList, liste des crashs, gpt-6-luna, canevas partagé, POST /canvas/actions, action, clic, Barre d'actions, ActionBar, sous-chemin, writableSubPaths, path_not_allowed, voix hors délégation, Announce, bandeau, budget des zones, ParseIntent, updateDataModel, comparaison 3.3, plan, planificateur, rejected, catalogue genesis, contrat exécutable, remise à vide, canvas/reset, validation côté client, A2uiGate, BoundObject, squelette, état neutre, panneau protocole, étagère, rail, 1920×1080, agent A2A, tags, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition, 013, lisibilité, 24 px, chevauchement de parole, overlap, VOICE_OVERLAP, écho, garde l'IA parle, liaison de délégation, DelegationLinks, motionLink]
+    keywords: [architecture, C4, design system, tokens, DTCG, Style Dictionary, SceneTokens, Widgetbook, apparition animée, animation, fondu, SceneMotion, périmètre de reconstruction, rail horizontal, polices réelles, composition par modèle, compositeur LLM, passerelle LLM, COMPOSER_MODEL, repli déterministe, plan structuré, squelette anticipé, view_unavailable, vue indisponible, CrashList, liste des crashs, gpt-6-luna, canevas partagé, POST /canvas/actions, action, clic, Barre d'actions, ActionBar, sous-chemin, writableSubPaths, path_not_allowed, voix hors délégation, Announce, bandeau, budget des zones, ParseIntent, updateDataModel, comparaison 3.3, plan, planificateur, rejected, catalogue genesis, contrat exécutable, remise à vide, canvas/reset, validation côté client, A2uiGate, BoundObject, squelette, état neutre, panneau protocole, étagère, rail, 1920×1080, agent A2A, tags, conteneur, docker, compose, local, linux, frontend, flutter, desktop, FSD, clean, bloc, DI, backend, go, orchestrateur, hexagonal, port, A2A, A2UI, app-channel, contrat, validateur, GenUI, WebRTC, sideband, gpt-live, séquence, stack, version, rejeu, replay, mode secours, journal, sécurité, clé, jeton, qualité, TDD, CI, NFR, scène, sono, audio, réseau, répétition, 013, lisibilité, 24 px, chevauchement de parole, overlap, VOICE_OVERLAP, écho, garde l'IA parle, liaison de délégation, DelegationLinks, motionLink, consigne de silence, bruit parasite, reprise, répéter, no_request, VOICE_RECOVERY_WINDOW, NoteOverlap, 016]
   - name: roadmap
     prefix: p-rm-
     index: roadmap/index.yaml
@@ -42,7 +42,7 @@ entrypoints:
   - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
   - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
   - {id: p-rm-roadmap, why: "jalons J0-J9 datés, dépendances, ordre de coupe"}
-  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-89 ; Q-88 et Q-89 tranchées par pdr-0081)"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-90 ; Q-88 et Q-89 tranchées par pdr-0081 ; Q-90 ouverte, pdr-0082)"}
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
@@ -71,8 +71,8 @@ tasks:
   - task: "Ajouter ou modifier un composant du catalogue Genesis"
     docs: [p-fn-catalog, p-ar-llm-composer, p-ar-design-system, p-fn-feature-design-ergonomics-013, p-fn-feature-llm-composer-012, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-quality, pdr-0007-closed-catalog-stage-theme, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-test-catalog-items, ux-genui-catalog-as-ds, ds-component-api, ds-widgetbook-4-genui, test-golden-alchemist]
-  - task: "Implémenter le barge-in, « Stop », le bruit court, le faire-taire, le micro coupé et la correction en vol (« Stop » vocal livré par 011 ; faire taire, micro coupé et correction livrés par 014 ; couper la parole sans mot d'arrêt livré par 015)"
-    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-feature-chevauchement-liaison-015, p-fn-screen, p-fn-nfr, p-ar-voice-interruption, p-ar-voice-overlap, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-frontend, p-ar-frontend-screen, p-ar-stage-runtime, p-rm-spikes, pdr-0033-optional-shortcuts-mouse-first, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, p-rm-open-questions]
+  - task: "Implémenter le barge-in, « Stop », le bruit court, le faire-taire, le micro coupé et la correction en vol (« Stop » vocal livré par 011 ; faire taire, micro coupé et correction livrés par 014 ; couper la parole sans mot d'arrêt livré par 015 ; consigne de silence et reprise « pouvez-vous répéter ? » livrées par 016)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-feature-chevauchement-liaison-015, p-fn-feature-garde-fou-reprise-016, p-fn-screen, p-fn-nfr, p-ar-voice-interruption, p-ar-voice-overlap, p-ar-voice-recovery, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-frontend, p-ar-frontend-screen, p-ar-stage-runtime, p-rm-spikes, pdr-0033-optional-shortcuts-mouse-first, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0081-rail-in-replay-and-ignore-stray-speech, pdr-0082-016-voice-guard-and-repeat-request, p-rm-open-questions]
     knowledge: [rt-barge-in, rt-gpt-live-lifecycle, rt-transcription, rt-echo-cancellation, rt-gpt-live-output-level, rt-gpt-live-delegation-latency, ux-voice-multimodal, rt-graceful-close, proto-a2a-task-lifecycle, proj-avw-risks]
   - task: "Implémenter la session voix (gpt-live-1, session créée par relais SDP backend, aucune clé dans l'app, délégation)"
     docs: [pdr-0012-voice-provider-openai, p-ar-voice-interruption, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-nfr]
@@ -93,7 +93,7 @@ tasks:
     docs: [p-ar-frontend-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-backend, p-ar-stage-runtime, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-a2ui-security, genui-custom-catalog-item, genui-data-model]
   - task: "Écrire ou faire évoluer un scénario BDD"
-    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-feature-chevauchement-liaison-015, p-fn-feature-llm-composer-012, p-fn-feature-design-ergonomics-013, p-fn-requirements, p-ar-quality]
+    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-feature-chevauchement-liaison-015, p-fn-feature-garde-fou-reprise-016, p-fn-feature-llm-composer-012, p-fn-feature-design-ergonomics-013, p-fn-requirements, p-ar-quality]
     knowledge: [test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-app-running-fixture, test-tdd-red-green-refactor]
   - task: "Mesurer les NFR (latence, 60 i/s, lisibilité, coût)"
     docs: [p-fn-nfr, p-ar-quality, p-ar-design-system, p-ar-replay, p-fn-risks-acceptance, pdr-0038-latency-measured-on-app-clock, pdr-0030-llm-budget-20-eur]
@@ -123,10 +123,11 @@ requirement_index:
   "D-01..D-07 (scénarios BDD de 013, à ne pas confondre avec D1..D8 de la DoD)": p-fn-feature-design-ergonomics-013
   "M-01, M-02, S-07 bis, C-01..C-05 (scénarios BDD de 014 ; C-01..C-05 à ne pas confondre avec C-01..C-08 de 012)": p-fn-feature-silence-micro-correction-014
   "O-01..O-08, L-01..L-04 (scénarios BDD de 015 ; S-05 complet)": p-fn-feature-chevauchement-liaison-015
+  "G-01, G-02, R-01..R-11 (scénarios BDD de 016 ; R-xx distincts des R-01..R-09 de 010)": p-fn-feature-garde-fou-reprise-016
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-89 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-90 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-11 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0081": decisions/index.yaml
+  "pdr-0001..pdr-0082": decisions/index.yaml

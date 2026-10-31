@@ -81,10 +81,16 @@ type Delegations interface {
 // d'exécution publie. Les actions de l'interface ne sont pas annulées. Les
 // délégations créées après l'appel ne sont pas concernées. atMs est le temps du
 // fournisseur de l'arrêt (journal).
+//
+// NoteOverlap (spec 016) mémorise qu'un chevauchement de la voix a eu lieu à atMs (temps du
+// fournisseur) : la gestion des délégations s'en sert pour juger « mal comprise » une
+// demande vocale refusée qui suit de près. Elle ne bloque pas, ne publie rien, est sans
+// effet sur une session fermée, et ne retient que le plus grand atMs reçu.
 type SessionDelegations interface {
 	Transcript(ev LiveEvent)
 	Delegate(id string, offsetMs int64)
 	Interrupt(atMs int64)
 	Supersede(atMs int64, announce func())
+	NoteOverlap(atMs int64)
 	Close(ctx context.Context)
 }

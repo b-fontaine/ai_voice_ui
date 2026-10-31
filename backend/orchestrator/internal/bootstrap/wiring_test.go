@@ -77,3 +77,13 @@ func TestNew_RejectsAgentsWithoutA2UISettings(t *testing.T) {
 		t.Fatal("agents sans catalogue A2UI : New doit échouer")
 	}
 }
+
+// La fenêtre de reprise (spec 016) est transmise au gestionnaire : sa validation
+// (>= 0) par NewManager la fait échouer ici si elle est négative.
+func TestNew_RecoveryWindowReachesManager(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.VoiceRecoveryWindow = -time.Second
+	if _, err := New(cfg, Deps{Live: newStubLive(), JournalDir: t.TempDir()}); err == nil {
+		t.Fatal("fenêtre de reprise négative : New doit échouer (validation du gestionnaire)")
+	}
+}

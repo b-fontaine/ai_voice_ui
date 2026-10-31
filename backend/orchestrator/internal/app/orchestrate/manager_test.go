@@ -690,3 +690,17 @@ func TestPhrasesValidateRejectsTooLongTemplate(t *testing.T) {
 		t.Fatalf("gabarit à la borne refusé : %v", err)
 	}
 }
+
+func TestRecoveryWindowValidated(t *testing.T) {
+	o := testOptions()
+	o.RecoveryWindow = -1
+	if _, err := NewManager(factoryOf(newRunner(nil)), testPhrases, o); err == nil {
+		t.Error("RecoveryWindow négative : erreur attendue")
+	}
+	for _, w := range []time.Duration{0, 8 * time.Second} {
+		o.RecoveryWindow = w
+		if _, err := NewManager(factoryOf(newRunner(nil)), testPhrases, o); err != nil {
+			t.Errorf("RecoveryWindow %s : %v", w, err)
+		}
+	}
+}

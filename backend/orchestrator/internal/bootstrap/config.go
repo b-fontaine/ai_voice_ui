@@ -50,6 +50,7 @@ const (
 	maxVoiceStopDebounce         = 10 * time.Second
 	defaultVoiceStopSpan         = 3 * time.Second
 	maxVoiceStopSpan             = 10 * time.Second
+	maxVoiceRecoveryWindow       = 30 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -117,6 +118,10 @@ type Config struct {
 	// VoiceOverlap : chevauchement (spec 015, VOICE_OVERLAP_*, plan § Configuration). Valeur
 	// nulle : coupé, aucune variable requise.
 	VoiceOverlap voice.OverlapConfig
+	// VoiceRecoveryWindow (VOICE_RECOVERY_WINDOW, de 0 à 30 s, défaut 0 : reprise coupée,
+	// spec 016) : durée après un chevauchement pendant laquelle une demande refusée est
+	// jugée mal comprise.
+	VoiceRecoveryWindow time.Duration
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
@@ -475,6 +480,9 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 		return err
 	}
 	if err := parseVoiceOverlap(getenv, cfg); err != nil {
+		return err
+	}
+	if cfg.VoiceRecoveryWindow, err = parseBoundedDuration(getenv, "VOICE_RECOVERY_WINDOW", 0, maxVoiceRecoveryWindow); err != nil {
 		return err
 	}
 	if cfg.VoiceOverlap.Enabled && cfg.VoiceStopSettle == 0 {

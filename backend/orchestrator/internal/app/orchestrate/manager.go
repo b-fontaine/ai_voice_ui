@@ -55,6 +55,13 @@ type Delegation struct {
 	// queuedAt est l'instant de la délégation (horloge du Manager) : l'attente
 	// de la fenêtre de demande s'en déduit.
 	queuedAt time.Time
+
+	// recovery (non nil pour une délégation vocale seulement, jamais pour une action) dit si
+	// la demande refusée doit être jugée mal comprise (spec 016) : degraded est vrai quand un
+	// chevauchement de la voix à overlapAtMs précède la demande dans la fenêtre de reprise.
+	// À appeler au point de refus : elle lit l'état de la session à cet instant, et un constat
+	// « dégradé » consomme la marque et annonce la phrase de reprise (un seul passage).
+	recovery func() (degraded bool, overlapAtMs int64)
 }
 
 // agentContext borne le travail de l'agent : échéance Timeout (cause
@@ -223,6 +230,11 @@ type Options struct {
 	// seul. Nil : aucune demande n'est reconnue ainsi.
 	StopSpan   time.Duration
 	IsStopOnly func(request string) bool
+
+	// RecoveryWindow est la durée, après un chevauchement de la voix, pendant laquelle une
+	// demande vocale refusée est jugée mal comprise (spec 016, VOICE_RECOVERY_WINDOW) :
+	// 0 coupe la reprise.
+	RecoveryWindow time.Duration
 }
 
 // Manager implémente port.Delegations.
@@ -264,6 +276,8 @@ func NewManager(factory RunnerFactory, phrases Phrases, opts Options) (*Manager,
 		return nil, fmt.Errorf("orchestrate : RequestWindowMargin doit être >= 0 (%s)", opts.RequestWindowMargin)
 	case opts.StopSpan < 0:
 		return nil, fmt.Errorf("orchestrate : StopSpan doit être >= 0 (%s)", opts.StopSpan)
+	case opts.RecoveryWindow < 0:
+		return nil, fmt.Errorf("orchestrate : RecoveryWindow doit être >= 0 (%s)", opts.RecoveryWindow)
 	case opts.RequestWindowSettle > 0 && opts.Clock == nil:
 		return nil, errors.New("orchestrate : Clock requise quand RequestWindowSettle > 0")
 	}
@@ -391,7 +405,7 @@ type session struct {
 
 	// Ordre des verrous : Canvas.mu → m.mu → session.mu → window.mu (Supersede appelle
 	// window.ConsumeBefore sous session.mu ; RequestWindow ne prend jamais session.mu).
-	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add
+	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add, ainsi que les champs ci-dessous
 	closed  bool
 	pending int // délégations en file ou en cours d'exécution
 	// epoch compte les arrêts (Interrupt). cancelRun annule l'exécution vocale en
@@ -400,6 +414,18 @@ type session struct {
 	epoch   uint64
 	stopAt  int64 // at_ms du dernier arrêt, valable si hasStop
 	hasStop bool
+	// overlapAt est le plus grand at_ms de chevauchement noté (NoteOverlap), valable si
+	// hasOverlap (spec 016).
+	overlapAt  int64
+	hasOverlap bool
+	// repeatPending : la phrase de reprise vient d'être dite ; la délégation vocale suivante
+	// n'est jamais dégradée (run le lit puis le remet à faux).
+	repeatPending bool
+	// claimedUpTo est le plus grand offset d'une délégation vocale dont le run a commencé,
+	// valable si hasClaimed : une marque de chevauchement notée au plus à cet offset appartient
+	// à une délégation déjà passée et ne sert plus (spec 016).
+	claimedUpTo int64
+	hasClaimed  bool
 	// runOffset est l'offset de la délégation vocale en cours (posé par beginRun, valable si
 	// cancelRun != nil). supersededBefore est le at_ms de la dernière correction (Supersede) :
 	// une délégation vocale d'offset inférieur qui arrive ensuite est écartée.
@@ -571,6 +597,7 @@ func (s *session) run(d Delegation) {
 			return
 		}
 		defer end()
+		defer s.claimOverlap(d.OffsetMs)
 		ctx = runCtx
 		request, ok := s.settle(ctx, d)
 		if !ok {
@@ -610,6 +637,7 @@ func (s *session) run(d Delegation) {
 			return
 		}
 		d.Request = request
+		d.recovery = s.recoveryFor(d)
 	}
 	d.Timeout = s.m.opts.AgentTimeout
 	defer func() {
@@ -618,6 +646,38 @@ func (s *session) run(d Delegation) {
 		}
 	}()
 	s.runner.Run(ctx, d)
+}
+
+// recoveryFor construit la fonction de reprise d'une délégation vocale (spec 016). Elle
+// capture repeatPending et le remet à faux : la délégation qui suit une phrase de reprise
+// n'est jamais dégradée.
+func (s *session) recoveryFor(d Delegation) func() (bool, int64) {
+	s.mu.Lock()
+	afterRepeat := s.repeatPending
+	s.repeatPending = false
+	s.mu.Unlock()
+	window := s.m.opts.RecoveryWindow
+	return func() (bool, int64) {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		at := s.overlapAt
+		if window <= 0 || !s.hasOverlap || afterRepeat || (s.hasClaimed && at <= s.claimedUpTo) ||
+			at > d.OffsetMs || d.OffsetMs > at+window.Milliseconds() {
+			return false, at
+		}
+		s.hasOverlap, s.repeatPending = false, true
+		return true, at
+	}
+}
+
+// claimOverlap note qu'une délégation vocale d'offset offsetMs est passée : la marque de
+// chevauchement qui la précède lui appartenait (spec 016). Garde le maximum.
+func (s *session) claimOverlap(offsetMs int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.hasClaimed || offsetMs > s.claimedUpTo {
+		s.claimedUpTo, s.hasClaimed = offsetMs, true
+	}
 }
 
 // busy indique une délégation en file ou en cours (session fermée : jamais).

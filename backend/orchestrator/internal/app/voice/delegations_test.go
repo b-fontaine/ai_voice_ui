@@ -38,7 +38,8 @@ type fakeSessionDelegations struct {
 	supersedeFn  []bool   // announce était fourni (non nil) à l'appel
 	supersedeOut []bool   // voice.interrupted était déjà publié à l'appel
 	skipAnnounce bool     // Supersede ne retient pas la condition : announce n'est pas appelé
-	order        []string // "transcript", "delegate", "interrupt" ou "supersede", dans l'ordre d'arrivée
+	overlaps     []int64  // at_ms des NoteOverlap reçus (spec 016)
+	order        []string // "transcript", "delegate", "interrupt", "noteOverlap" ou "supersede", dans l'ordre d'arrivée
 }
 
 type delegateCall struct {
@@ -66,6 +67,20 @@ func (f *fakeSessionDelegations) Supersede(atMs int64, announce func()) {
 	if announce != nil && !f.skipAnnounce {
 		announce()
 	}
+}
+
+// NoteOverlap enregistre la marque de chevauchement et son rang par rapport à Supersede.
+func (f *fakeSessionDelegations) NoteOverlap(atMs int64) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.overlaps = append(f.overlaps, atMs)
+	f.order = append(f.order, "noteOverlap")
+}
+
+func (f *fakeSessionDelegations) overlapCalls() []int64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]int64(nil), f.overlaps...)
 }
 
 func (f *fakeSessionDelegations) supersedeCalls() []int64 {
@@ -398,6 +413,7 @@ func (o *orderDelegations) Transcript(port.LiveEvent) {}
 func (o *orderDelegations) Close(context.Context)     {}
 func (o *orderDelegations) Interrupt(int64)           {}
 func (o *orderDelegations) Supersede(int64, func())   {}
+func (o *orderDelegations) NoteOverlap(int64)         {}
 func (o *orderDelegations) Delegate(string, int64) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -468,6 +484,7 @@ func (g *gatedTranscripts) Delegate(id string, _ int64) {
 }
 func (g *gatedTranscripts) Interrupt(int64)         {}
 func (g *gatedTranscripts) Supersede(int64, func()) {}
+func (g *gatedTranscripts) NoteOverlap(int64)       {}
 func (g *gatedTranscripts) Close(context.Context)   {}
 
 // La file saturée de transcripts n'abandonne jamais une délégation : le plus
@@ -562,4 +579,34 @@ type gatedSupersede struct {
 func (g *gatedSupersede) Transcript(ev port.LiveEvent) {
 	g.once.Do(func() { <-g.gate })
 	g.fakeSessionDelegations.Transcript(ev)
+}
+
+// NoteOverlap est transmis dans l'ordre d'arrivée, juste avant le Supersede qui le suit, et
+// n'est jamais abandonné quand la file est saturée de transcripts (spec 016).
+func TestForwarderKeepsNoteOverlapBeforeSupersedeAndNeverDropsIt(t *testing.T) {
+	sink := &testSink{}
+	sess := &fakeSessionDelegations{sink: sink}
+	gate := make(chan struct{})
+	f := newForwarder(&gatedSupersede{fakeSessionDelegations: sess, gate: gate}, "s", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	for i := 0; i < forwardQueue+50; i++ {
+		f.transcript(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: strconv.Itoa(i)})
+	}
+	f.noteOverlap(2000)
+	f.supersede(2000, nil)
+	close(gate)
+	f.shutdown(5 * time.Second)
+	if got := sess.overlapCalls(); !slices.Equal(got, []int64{2000}) {
+		t.Fatalf("NoteOverlap reçus = %v, attendu [2000]", got)
+	}
+	sess.mu.Lock()
+	defer sess.mu.Unlock()
+	n := len(sess.order)
+	if n < 2 || !slices.Equal(sess.order[n-2:], []string{"noteOverlap", "supersede"}) {
+		t.Fatalf("ordre = %v, attendu noteOverlap puis supersede en dernier", sess.order[max(0, n-3):])
+	}
+}
+
+func TestNilForwarderNoteOverlapIsNoop(t *testing.T) {
+	var f *forwarder
+	f.noteOverlap(1) // ne doit pas paniquer
 }

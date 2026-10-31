@@ -87,6 +87,9 @@ services:
       VOICE_OVERLAP_MIN_WORDS: ${VOICE_OVERLAP_MIN_WORDS:-1}
       VOICE_OVERLAP_MIN_WORD_LEN: ${VOICE_OVERLAP_MIN_WORD_LEN:-3}
       VOICE_OVERLAP_IGNORE_WORDS: ${VOICE_OVERLAP_IGNORE_WORDS:-les,une,des,que,qui,est,pas,mais,donc,car,pour,dans,avec,sur,par,très,bien,alors,aussi,comme,ok,oui,super,merci,d'accord,parfait,voilà,vas-y,euh,hum,ben,bah,bon}
+      # Reprise d'une demande mal comprise (pdr-0082 D3) : une demande dite par-dessus l'IA, dans cette fenêtre après le chevauchement, puis refusée,
+      # reçoit « pouvez-vous répéter ? » une fois ; 0 = reprise coupée (comportement de 015). Inerte avec VOICE_OVERLAP_INTERRUPT=false.
+      VOICE_RECOVERY_WINDOW: ${VOICE_RECOVERY_WINDOW:-8s}
       # Écoute sur toutes les interfaces du conteneur seulement ; l'hôte reste en 127.0.0.1.
       LISTEN_HOST: 0.0.0.0
       LISTEN_ALLOW_NON_LOOPBACK: "1"

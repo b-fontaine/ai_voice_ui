@@ -172,6 +172,15 @@ func dial(ctx context.Context, base, path string) (*websocket.Conn, error) {
 	return conn, err
 }
 
+// packetsDuration est la durée de lecture d'un fichier Opus.
+func packetsDuration(pk []opusPacket) time.Duration {
+	var d time.Duration
+	for _, p := range pk {
+		d += p.Duration
+	}
+	return d
+}
+
 func main() {
 	base := flag.String("base", "http://127.0.0.1:8080", "URL de base du backend")
 	file1 := flag.String("file1", "", "Ogg/Opus de la question")
@@ -187,14 +196,14 @@ func main() {
 	commentaryWait := flag.Duration("commentary-wait", 8*time.Second, "act3 : attente maximale d'un commentaire vocal après la fin des agents (la voix peut se taire)")
 	maxSession := flag.Duration("max-session", 4*time.Minute, "act3 : plafond dur de la durée de la session")
 	flag.Parse()
-	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" && *scenario != "act3" {
-		log.Fatalf("-scenario inconnu %q (voice, surface, act1 ou act3)", *scenario)
+	if *scenario != "voice" && *scenario != "surface" && *scenario != "act1" && *scenario != "act3" && *scenario != "noise" {
+		log.Fatalf("-scenario inconnu %q (voice, surface, act1, act3 ou noise)", *scenario)
 	}
 	if *file1 == "" {
 		log.Fatal("-file1 requis")
 	}
-	if *scenario == "act3" && *file2 == "" {
-		log.Fatal("-file2 requis pour act3")
+	if (*scenario == "act3" || *scenario == "noise") && *file2 == "" {
+		log.Fatal("-file2 requis pour act3 et noise")
 	}
 	secret := os.Getenv("CHECK_SECRET") // jamais affiché
 	pk1, err := readOggOpus(*file1)
@@ -202,7 +211,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var pk2 []opusPacket
-	if *scenario == "act3" {
+	if *scenario == "act3" || *scenario == "noise" {
 		if pk2, err = readOggOpus(*file2); err != nil {
 			log.Fatal(err)
 		}
@@ -298,6 +307,7 @@ func main() {
 		"session": obs.SessionID})
 
 	var a3 act3Observations
+	var noiseSplit int64
 	finish := func(c1, c2 *collector) {
 		obs.Filtered, obs.Global = c1.snapshot(), c2.snapshot()
 		var failed []string
@@ -307,6 +317,10 @@ func main() {
 			fmt.Print(s.render())
 			fmt.Println("RAPPORT JSON:")
 			fmt.Println(s.JSON())
+			failed = s.Failed
+		} else if *scenario == "noise" {
+			s := summarizeNoise(noiseObservations{observations: obs, SplitUnixMs: noiseSplit})
+			fmt.Print(s.render())
 			failed = s.Failed
 		} else if *scenario == "act1" {
 			s := summarizeAct1(obs)
@@ -368,6 +382,21 @@ func main() {
 		a3 = runAct3(capCtx, act3Params{j: j, filtered: filtered, pl: pl, pk2: pk2, baseURL: baseURL,
 			actTimeout: *actTimeout, settle: *settle, commentaryWait: *commentaryWait, clickWindow: *clickWindow})
 		capCancel()
+	} else if *scenario == "noise" {
+		// Bruit (file1) : observation de duration après la fin de la parole, puis la vraie demande
+		// (file2) dans la même session, observée click-window.
+		wait := func(d time.Duration) {
+			select {
+			case <-time.After(d):
+			case <-filtered.closed:
+			case <-ctx.Done():
+			}
+		}
+		wait(packetsDuration(pk1) + *duration)
+		noiseSplit = time.Now().UnixMilli()
+		j.write(map[string]any{"type": "local.file2", "packets": len(pk2)})
+		pl.play(pk2)
+		wait(packetsDuration(pk2) + *clickWindow)
 	} else {
 		select {
 		case <-time.After(*duration):
