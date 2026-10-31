@@ -39,13 +39,13 @@ L'assistant a mis en forme et tranché le moyen technique sur la délégation de
 ## Décision
 - **D1 — consigne de silence.** `backend/orchestrator/config/voice-instructions.fr.md` reçoit, **après** la consigne de délégation d'affichage, une consigne : bruit, voix dans la pièce, bribe sans sens ni lien avec la release → ne rien dire, ne pas demander « tu es là ? », ne pas déléguer. La consigne « toute demande d'affichage est déléguée » est précisée pour ne viser que de vraies demandes et reste explicite et antérieure. Aucune nouvelle variable (`VOICE_INSTRUCTIONS_FILE` existe). Frontière provisoire : voir Q-90 ; la politesse isolée n'est pas tranchée (comportement actuel).
 - **D2 — filtre orchestrateur écarté.** Voir « Options écartées ».
-- **D3 — reprise.** Une demande **dégradée** est une délégation vocale dont l'offset est ≥ `at_ms` d'un chevauchement et au plus `VOICE_RECOVERY_WINDOW` après lui (défaut du code `0` = reprise coupée, compose `8s`, bornes 0 à 30 s, refusée si > 0 sans `VOICE_OVERLAP_INTERRUPT` actif). Si elle n'aboutit à aucun résultat parce que **tous les agents retenus la refusent** ou qu'**aucun agent n'est retenu**, la voix dit la phrase `repeat_request` (clé obligatoire de `phrases.fr.json`) à la place du refus habituel. Échecs d'agent, réussites, actions et corrections en vol (014) inchangés ; une correction dite pendant que l'IA parle compte comme chevauchement. Détail technique : `specs/016-voice-guard-resume/plan.md`.
+- **D3 — reprise.** Une demande **dégradée** est une délégation vocale dont l'offset est ≥ `at_ms` d'un chevauchement et au plus `VOICE_RECOVERY_WINDOW` après lui (défaut du code `0` = reprise coupée, compose `8s`, bornes 0 à 30 s ; sans chevauchement actif la reprise est inerte, avec un avertissement au démarrage et jamais de refus : le retour arrière `VOICE_OVERLAP_INTERRUPT=false` reste possible). Si elle n'aboutit à aucun résultat parce que **tous les agents retenus la refusent** ou qu'**aucun agent n'est retenu**, la voix dit la phrase existante `no_request` (« … pouvez-vous répéter ? », aucune clé nouvelle) à la place du refus habituel. **Un seul passage** : la délégation vocale qui suit une phrase de reprise n'est jamais dégradée, et une marque de chevauchement sert une seule fois ; le refus habituel avec alternative (RG-08) est donc **différé d'un tour, jamais supprimé**. Échecs d'agent, réussites, actions et corrections en vol (014) inchangés ; une correction dite pendant que l'IA parle compte comme chevauchement. Détail technique : `specs/016-voice-guard-resume/plan.md`.
 - **D4 — « Stop » non transcrit : hors périmètre.** Aucun signal observable côté backend ; le bouton « Faire taire » reste le recours (Q-80 e).
 
 ## Raisons
 - Le texte des instructions est le seul levier avant la parole du modèle ([rt-gpt-live-lifecycle]) et sa rédaction est déléguée à la boucle (pdr-0037).
 - La reprise réutilise le chevauchement déjà détecté (015) et ne touche ni au contrat de l'app-channel ni à Flutter.
-- Elle est bornée (fenêtre, un seul passage) : une demande réellement hors périmètre reçoit « répète » une fois, puis le refus habituel au calme.
+- Elle est bornée (fenêtre, un seul passage) : une demande réellement hors périmètre reçoit « répétez » une fois, puis le refus habituel au calme.
 
 ## Options écartées
 - **Filtre orchestrateur** (couper la voix si l'énoncé est sans rapport avec la release) : exige un juge de pertinence (mots-clés fragiles, ou LLM : latence, coût, faux rejets de demandes valides, NFR-02) et ne ferait que couper une réplique déjà commencée (réponse parasite ≈ 1,3 s après la parole, delta d'entrée 0,6 à 1 s après). À reprendre si l'essai réel montre que la consigne ne suffit pas.
@@ -59,7 +59,9 @@ L'assistant a mis en forme et tranché le moyen technique sur la délégation de
 
 ## Réexaminer si
 - L'essai réel ou la répétition montre que le modèle ne se tait pas : rouvrir le filtre orchestrateur (PDR de remplacement).
-- Des demandes valides sont ignorées (consigne de silence trop large) ou reçoivent « répète » à tort.
+- Des demandes valides sont ignorées (consigne de silence trop large) ou reçoivent « répétez » à tort.
+- ⚠️ Un bruit dit par-dessus l'IA et délégué malgré la consigne (« Papa Papa ») reçoit « pouvez-vous répéter ? » au lieu du silence : assumé (R-09), à reprendre par un filtre sur les mots significatifs si l'essai réel ou la répétition le montre.
+- ⚠️ Tant qu'aucun essai réel n'a eu lieu, l'effet de la consigne de silence sur le modèle n'est **pas démontré** (Q-89, pdr-0081 D2).
 - Le porteur précise la frontière bruit / demande (Q-90) dans un sens qui change D1.
 
 ## Historique
