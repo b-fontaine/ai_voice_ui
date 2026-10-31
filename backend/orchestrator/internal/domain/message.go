@@ -132,7 +132,8 @@ type Plan struct {
 // média du fournisseur) du transcript d'entrée qui a déclenché l'arrêt ; la
 // sérialisation le borne à 0 au minimum. Cause (facultative, énumération fermée) dit
 // pourquoi la voix est coupée : CauseStop (ou vide) pour un « Stop » (absente de la charge
-// utile, qui reste celle de la spec 011), CauseCorrection pour une correction (spec 014).
+// utile, qui reste celle de la spec 011), CauseCorrection pour une correction (spec 014),
+// CauseOverlap pour une phrase du speaker dite par-dessus l'IA (spec 015).
 type VoiceInterrupted struct {
 	AtMs  int64
 	Cause InterruptCause
@@ -145,6 +146,7 @@ type InterruptCause string
 const (
 	CauseStop       InterruptCause = "stop"
 	CauseCorrection InterruptCause = "correction"
+	CauseOverlap    InterruptCause = "overlap"
 )
 
 func (VoiceInterrupted) isPayload() {}

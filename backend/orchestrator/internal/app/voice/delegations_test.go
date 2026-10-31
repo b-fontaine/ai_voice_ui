@@ -35,6 +35,8 @@ type fakeSessionDelegations struct {
 	interruptGate  chan struct{} // si non nil : Interrupt bloque jusqu'à sa fermeture
 
 	supersedes   []int64  // at_ms des Supersede reçus
+	supersedeFn  []bool   // announce était fourni (non nil) à l'appel
+	supersedeOut []bool   // voice.interrupted était déjà publié à l'appel
 	skipAnnounce bool     // Supersede ne retient pas la condition : announce n'est pas appelé
 	order        []string // "transcript", "delegate", "interrupt" ou "supersede", dans l'ordre d'arrivée
 }
@@ -54,8 +56,11 @@ func (f *fakeSessionDelegations) Transcript(ev port.LiveEvent) {
 // Supersede enregistre la correction ; announce, s'il est fourni, est appelé comme le fait
 // la vraie implémentation (une fois, hors verrou).
 func (f *fakeSessionDelegations) Supersede(atMs int64, announce func()) {
+	published := len(f.sink.ofType(domain.TypeVoiceInterrupted)) > 0
 	f.mu.Lock()
 	f.supersedes = append(f.supersedes, atMs)
+	f.supersedeFn = append(f.supersedeFn, announce != nil)
+	f.supersedeOut = append(f.supersedeOut, published)
 	f.order = append(f.order, "supersede")
 	f.mu.Unlock()
 	if announce != nil && !f.skipAnnounce {
