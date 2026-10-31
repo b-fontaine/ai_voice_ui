@@ -55,6 +55,13 @@ type Delegation struct {
 	// queuedAt est l'instant de la délégation (horloge du Manager) : l'attente
 	// de la fenêtre de demande s'en déduit.
 	queuedAt time.Time
+
+	// recovery (non nil pour une délégation vocale seulement, jamais pour une action) dit si
+	// la demande refusée doit être jugée mal comprise (spec 016) : degraded est vrai quand un
+	// chevauchement de la voix à overlapAtMs précède la demande dans la fenêtre de reprise.
+	// À appeler au point de refus : elle lit l'état de la session à cet instant, et un constat
+	// « dégradé » consomme la marque et annonce la phrase de reprise (un seul passage).
+	recovery func() (degraded bool, overlapAtMs int64)
 }
 
 // agentContext borne le travail de l'agent : échéance Timeout (cause
@@ -411,6 +418,9 @@ type session struct {
 	// hasOverlap (spec 016).
 	overlapAt  int64
 	hasOverlap bool
+	// repeatPending : la phrase de reprise vient d'être dite ; la délégation vocale suivante
+	// n'est jamais dégradée (run le lit puis le remet à faux).
+	repeatPending bool
 	// runOffset est l'offset de la délégation vocale en cours (posé par beginRun, valable si
 	// cancelRun != nil). supersededBefore est le at_ms de la dernière correction (Supersede) :
 	// une délégation vocale d'offset inférieur qui arrive ensuite est écartée.
@@ -583,6 +593,7 @@ func (s *session) run(d Delegation) {
 		}
 		defer end()
 		ctx = runCtx
+		d.recovery = s.recoveryFor(d)
 		request, ok := s.settle(ctx, d)
 		if !ok {
 			if interrupted(ctx) {
@@ -629,6 +640,28 @@ func (s *session) run(d Delegation) {
 		}
 	}()
 	s.runner.Run(ctx, d)
+}
+
+// recoveryFor construit la fonction de reprise d'une délégation vocale (spec 016). Elle
+// capture repeatPending et le remet à faux : la délégation qui suit une phrase de reprise
+// n'est jamais dégradée.
+func (s *session) recoveryFor(d Delegation) func() (bool, int64) {
+	s.mu.Lock()
+	afterRepeat := s.repeatPending
+	s.repeatPending = false
+	s.mu.Unlock()
+	window := s.m.opts.RecoveryWindow
+	return func() (bool, int64) {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		at := s.overlapAt
+		if window <= 0 || !s.hasOverlap || afterRepeat ||
+			at > d.OffsetMs || d.OffsetMs > at+window.Milliseconds() {
+			return false, at
+		}
+		s.hasOverlap, s.repeatPending = false, true
+		return true, at
+	}
 }
 
 // busy indique une délégation en file ou en cours (session fermée : jamais).

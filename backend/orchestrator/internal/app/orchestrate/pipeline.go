@@ -208,7 +208,11 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 	p.publishPlan(d.ID, selected)
 	if len(selected) == 0 {
 		if p.waitGeneric(ctx, d) {
-			p.say(ctx, d.ID, p.deps.Phrases.OutOfCatalog)
+			if p.degraded(d) {
+				p.say(ctx, d.ID, p.deps.Phrases.NoRequest)
+			} else {
+				p.say(ctx, d.ID, p.deps.Phrases.OutOfCatalog)
+			}
 		}
 		return
 	}
@@ -241,6 +245,9 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		case allRejected:
 			failure = p.deps.Phrases.FailureRejected
 		}
+		if allRejected && p.degraded(d) { // refus de vue ou refus simple d'une demande mal comprise
+			failure = p.deps.Phrases.NoRequest
+		}
 		p.say(ctx, d.ID, failure)
 		return
 	}
@@ -251,6 +258,21 @@ func (p *Pipeline) Run(ctx context.Context, d Delegation) {
 		return
 	}
 	p.say(ctx, d.ID, text)
+}
+
+// degraded dit si une demande refusée doit être jugée mal comprise (spec 016) : elle
+// n'est lue qu'aux points de refus, et jamais pour une action (recovery nil). Le texte de
+// la demande n'est pas journalisé.
+func (p *Pipeline) degraded(d Delegation) bool {
+	if d.recovery == nil {
+		return false
+	}
+	degraded, overlapAt := d.recovery()
+	if degraded {
+		p.log.Info("demande dégradée refusée : reprise demandée",
+			"delegation", d.ID, "offset_ms", d.OffsetMs, "overlap_at_ms", overlapAt)
+	}
+	return degraded
 }
 
 // composeResult compose la phrase de résultat commune aux délégations et aux
