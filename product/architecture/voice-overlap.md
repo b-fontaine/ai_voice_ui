@@ -5,7 +5,7 @@ area: architecture
 status: draft
 updated: 2026-10-31
 sources: [specs/015-j7-overlap-interrupt-delegation-link/spec.md, specs/015-j7-overlap-interrupt-delegation-link/plan.md, specs/015-j7-overlap-interrupt-delegation-link/status.md, product/sources/product-description.pdf#p5, knowledge:rt-barge-in, knowledge:rt-transcription, knowledge:rt-gpt-live-output-level, knowledge:rt-gpt-live-delegation-latency, knowledge:rt-echo-cancellation, knowledge:ux-voice-multimodal]
-links: [p-ar-voice-interruption, p-ar-app-channel-contract, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-screen, p-fn-feature-barge-in, p-fn-feature-chevauchement-liaison-015, p-rm-open-questions, p-rm-spikes, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, rt-barge-in, rt-transcription, rt-gpt-live-output-level, rt-gpt-live-delegation-latency, rt-echo-cancellation, ux-voice-multimodal]
+links: [p-ar-voice-interruption, p-ar-voice-recovery, p-fn-feature-garde-fou-reprise-016, p-ar-app-channel-contract, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-screen, p-fn-feature-barge-in, p-fn-feature-chevauchement-liaison-015, p-rm-open-questions, p-rm-spikes, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, rt-barge-in, rt-transcription, rt-gpt-live-output-level, rt-gpt-live-delegation-latency, rt-echo-cancellation, ux-voice-multimodal]
 tags: [barge-in, chevauchement, voix, echo, interruption, orbe, 015, 011b]
 ---
 # Chevauchement de parole (015) : couper l'IA sans mot d'arrêt
@@ -91,5 +91,9 @@ Fin d'une interruption `overlap` : première délégation d'offset ≥ `at_ms`, 
 | Latence de la coupure ≈ 1 s ([rt-gpt-live-delegation-latency]) | coupure perçue tardive |
 | Fenêtre de parole de 2 s | un speaker qui reprend la parole jusqu'à ≈ 1 à 1,4 s après la fin de la voix de l'IA est classé en chevauchement, sa demande en vol peut être annulée ; piste : comparer le `start_ms` d'entrée au dernier `end_ms` de sortie |
 | `start_ms` d'entrée et de sortie sur la même horloge média | élagage de l'écho faussé |
+
+## Suite : 016 (reprise après un chevauchement)
+
+016 (livrée le 2026-10-31) s'appuie sur ce chevauchement : `NoteOverlap` mémorise `at_ms`, et une demande dite par-dessus l'IA, mal transcrite puis refusée, fait dire « pouvez-vous répéter ? » (`no_request`, un seul passage, `VOICE_RECOVERY_WINDOW`). Le chevauchement lui-même ne change pas (aucun message nouveau, contrat de l'app-channel inchangé). Détail et hypothèses : [p-ar-voice-recovery](voice-recovery.md) ; la transcription dégradée en chevauchement est le point (d) de Q-80.
 
 Tests : `backend/orchestrator/acceptance/overlap_*_test.go` (O-01 à O-08) ; scénarios : [p-fn-feature-chevauchement-liaison-015](../functional/features/chevauchement-liaison-015.feature).

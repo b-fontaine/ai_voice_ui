@@ -4,8 +4,8 @@ title: "PDR-0082 — 016 : garde-fou des instructions vocales et reprise d'une d
 area: decisions
 status: validated
 updated: 2026-10-31
-sources: [specs/016-voice-guard-resume/spec.md, specs/016-voice-guard-resume/plan.md, p-sources, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-delegation]
-links: [pdr-0081-rail-in-replay-and-ignore-stray-speech, pdr-0037-voice-brise-delegated-instructions, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, p-rm-open-questions, p-rm-backlog, p-rm-roadmap, p-ar-voice-overlap, p-ar-voice-interruption, rt-gpt-live-lifecycle, rt-gpt-live-delegation]
+sources: [specs/016-voice-guard-resume/spec.md, specs/016-voice-guard-resume/plan.md, specs/016-voice-guard-resume/status.md, p-sources, knowledge:rt-gpt-live-lifecycle, knowledge:rt-gpt-live-delegation]
+links: [pdr-0081-rail-in-replay-and-ignore-stray-speech, pdr-0037-voice-brise-delegated-instructions, pdr-0077-011b-overlap-interrupt-delegation-link, pdr-0080-015-overlap-interrupt-delegation-link-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, p-rm-open-questions, p-rm-backlog, p-rm-roadmap, p-ar-voice-overlap, p-ar-voice-interruption, p-ar-voice-recovery, p-fn-feature-garde-fou-reprise-016, rt-gpt-live-lifecycle, rt-gpt-live-delegation]
 tags: [pdr, decision, voix, bruit-parasite, reprise, chevauchement, 016]
 decision_status: acceptée
 decided_on: 2026-10-31
@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0082 — 016 : garde-fou des instructions vocales et reprise d'une demande mal comprise après un chevauchement
 
-> **En bref.** Le moyen de 016 est choisi par la boucle (pdr-0062, pdr-0081 D2 lui en laisse le choix). D1 : une consigne de silence dans `voice-instructions.fr.md` pour le bruit. D2 : filtre côté orchestrateur écarté. D3 : une demande « dégradée » (dite par-dessus l'IA) refusée par tous les agents, ou sans agent retenu, déclenche la phrase `repeat_request`. D4 : « Stop » non transcrit hors périmètre. La frontière bruit / demande n'est **pas** décidée ici : [Q-90](../roadmap/open-questions.md).
+> **En bref.** **Livrée par 016 le 2026-10-31** (`gate --full` vert, 67 contrôles). Le moyen de 016 est choisi par la boucle (pdr-0062, pdr-0081 D2 lui en laisse le choix). D1 : une consigne de silence dans `voice-instructions.fr.md` pour le bruit (critère de forme). D2 : filtre côté orchestrateur écarté. D3 : une demande « dégradée » (dite par-dessus l'IA) refusée par tous les agents, ou sans agent retenu, déclenche la phrase existante `no_request` (« … pouvez-vous répéter ? »). D4 : « Stop » non transcrit hors périmètre. La frontière bruit / demande n'est **pas** décidée ici : [Q-90](../roadmap/open-questions.md). **Le texte de la consigne est livré ; qu'elle fasse taire le modèle n'est pas démontré** (essai réel : un échantillon, Q-89).
 
 L'assistant a mis en forme et tranché le moyen technique sur la délégation de la règle permanente pdr-0062 (contestable par le porteur). Il ne décide pas la frontière entre bruit et demande hors sujet, qui reste au porteur (Q-90).
 
@@ -29,7 +29,8 @@ L'assistant a mis en forme et tranché le moyen technique sur la délégation de
 ## Hypothèses
 - ✅ L'IA ne doit pas traiter un bruit parasite (pdr-0081 D2, parole du porteur).
 - ⚠️ Hypothèse non confirmée : frontière entre bruit (silence) et demande hors sujet (politesse isolée, question hors release sans demande d'affichage) → [p-rm-open-questions](../roadmap/open-questions.md) (Q-90). Retenu provisoirement : bruit et bribes sans lien avec la release → silence ; demandes d'affichage et questions sur la release → inchangé ; politesse isolée → comportement actuel.
-- ⚠️ Hypothèse non confirmée : le modèle respecte la consigne de silence ; seul un essai réel le prouve (voir « Réexaminer si »).
+- ⚠️ Hypothèse non confirmée : le modèle respecte la consigne de silence. Un essai réel payant d'**un échantillon** a été fait à la vérification (voir Historique) : il ne démontre pas la tenue de la consigne ; à confirmer en répétition avec une voix réelle dans la pièce → Q-89 (voir « Réexaminer si »).
+- ⚠️ Hypothèse non confirmée : la fenêtre de reprise de 8 s (compose) est une valeur de départ non mesurée ; la reprise n'a pas d'essai réel → Q-80 d.
 
 ## Options
 1. **Consigne de silence dans les instructions vocales + reprise « répète » pour les demandes dégradées** (retenue).
@@ -37,9 +38,9 @@ L'assistant a mis en forme et tranché le moyen technique sur la délégation de
 3. Accepter le risque (déjà refusé par le porteur, pdr-0081 D2).
 
 ## Décision
-- **D1 — consigne de silence.** `backend/orchestrator/config/voice-instructions.fr.md` reçoit, **après** la consigne de délégation d'affichage, une consigne : bruit, voix dans la pièce, bribe sans sens ni lien avec la release → ne rien dire, ne pas demander « tu es là ? », ne pas déléguer. La consigne « toute demande d'affichage est déléguée » est précisée pour ne viser que de vraies demandes et reste explicite et antérieure. Aucune nouvelle variable (`VOICE_INSTRUCTIONS_FILE` existe). Frontière provisoire : voir Q-90 ; la politesse isolée n'est pas tranchée (comportement actuel).
+- **D1 — consigne de silence.** `backend/orchestrator/config/voice-instructions.fr.md` reçoit, **après** les consignes de délégation, **une seule ligne** fondée sur la **forme** de l'énoncé (et non sur son sujet) : ce qui n'est pas une parole intelligible adressée à l'assistant (bruit, voix lointaine ou dans la pièce, bribe ou mot isolé sans demande) → ne pas répondre, rester silencieux, ne pas demander « tu es là ? », ne pas déléguer ; exception explicite : une demande d'affichage, même hors sujet, ou une question sur la release reste déléguée. Les **lignes de délégation existantes restent intactes** (textes exacts de 012, « même hors sujet ou impossible », « ne la refuses jamais toi-même »). Aucune nouvelle variable (`VOICE_INSTRUCTIONS_FILE` existe). Frontière provisoire : voir Q-90 ; la politesse isolée n'est pas tranchée (comportement actuel).
 - **D2 — filtre orchestrateur écarté.** Voir « Options écartées ».
-- **D3 — reprise.** Une demande **dégradée** est une délégation vocale dont l'offset est ≥ `at_ms` d'un chevauchement et au plus `VOICE_RECOVERY_WINDOW` après lui (défaut du code `0` = reprise coupée, compose `8s`, bornes 0 à 30 s ; sans chevauchement actif la reprise est inerte, avec un avertissement au démarrage et jamais de refus : le retour arrière `VOICE_OVERLAP_INTERRUPT=false` reste possible). Si elle n'aboutit à aucun résultat parce que **tous les agents retenus la refusent** ou qu'**aucun agent n'est retenu**, la voix dit la phrase existante `no_request` (« … pouvez-vous répéter ? », aucune clé nouvelle) à la place du refus habituel. **Un seul passage** : la délégation vocale qui suit une phrase de reprise n'est jamais dégradée, et une marque de chevauchement sert une seule fois ; le refus habituel avec alternative (RG-08) est donc **différé d'un tour, jamais supprimé**. Échecs d'agent, réussites, actions et corrections en vol (014) inchangés ; une correction dite pendant que l'IA parle compte comme chevauchement. Détail technique : `specs/016-voice-guard-resume/plan.md`.
+- **D3 — reprise.** Une demande **dégradée** est une délégation vocale dont l'offset est ≥ `at_ms` d'un chevauchement et au plus `VOICE_RECOVERY_WINDOW` après lui (défaut du code `0` = reprise coupée, compose `8s`, bornes 0 à 30 s ; sans chevauchement actif la reprise est inerte, avec un avertissement au démarrage et jamais de refus : le retour arrière `VOICE_OVERLAP_INTERRUPT=false` reste possible). Si elle n'aboutit à aucun résultat parce que **tous les agents retenus la refusent** ou qu'**aucun agent n'est retenu**, la voix dit la phrase existante `no_request` (« … pouvez-vous répéter ? », aucune clé nouvelle) à la place du refus habituel. **Un seul passage** : la délégation vocale qui suit une phrase de reprise n'est jamais dégradée, et une marque de chevauchement (`NoteOverlap`, `claimOverlap`) est à usage unique : elle appartient à la première délégation vocale qui la suit ; le refus habituel avec alternative (RG-08) est donc **différé d'un tour, jamais supprimé**. Échecs d'agent, réussites, actions et corrections en vol (014) inchangés ; une correction dite pendant que l'IA parle compte comme chevauchement. Détail technique : `specs/016-voice-guard-resume/plan.md`.
 - **D4 — « Stop » non transcrit : hors périmètre.** Aucun signal observable côté backend ; le bouton « Faire taire » reste le recours (Q-80 e).
 
 ## Raisons
@@ -52,21 +53,25 @@ L'assistant a mis en forme et tranché le moyen technique sur la délégation de
 - **Accepter le risque** : refusé par le porteur (pdr-0081 D2).
 
 ## Conséquences
-- Fichiers touchés par 016 : `voice-instructions.fr.md`, `phrases.fr.json`, configuration `VOICE_RECOVERY_WINDOW`, port `SessionDelegations.NoteOverlap` (voir `plan.md`). Aucun changement Flutter.
-- Scénarios G-01, G-02, R-01 à R-07 à ajouter à `product/functional/features/` à la clôture de 016.
-- [p-rm-backlog](../roadmap/backlog.md) § 016 et [p-rm-roadmap](../roadmap/roadmap.md) : 016 en cours. Q-80 d et e traitées en partie (e hors périmètre) ; Q-90 ouverte, non bloquante.
-- Preuve de comportement : un essai réel payant au plus (voix de synthèse « Papa Papa »), `openai-budget.sh` consulté ; sinon « à observer en répétition ».
+- Fichiers touchés par 016 : `voice-instructions.fr.md`, configuration `VOICE_RECOVERY_WINDOW` (compose, `bootstrap/config.go`), port `SessionDelegations.NoteOverlap`, `orchestrate` (marque à usage unique, `repeatPending`, `claimRecovery` du pipeline). La phrase `no_request` est réutilisée : `phrases.fr.json` n'est pas modifié. Aucun changement Flutter. Détail : [p-ar-voice-recovery](../architecture/voice-recovery.md).
+- Scénarios G-01, G-02, R-01 à R-11 livrés : [p-fn-feature-garde-fou-reprise-016](../functional/features/garde-fou-reprise-016.feature) (Go, tag `acceptance`).
+- [p-rm-backlog](../roadmap/backlog.md) § 016 et [p-rm-roadmap](../roadmap/roadmap.md) : 016 livrée le 2026-10-31. Q-80 d : reprise livrée ; Q-80 e : non traité ; Q-89 : moyen livré, efficacité à confirmer en répétition ; Q-90 ouverte, non bloquante.
+- Preuve de comportement : essai réel payant d'**un échantillon** (voir Historique) ; la consigne n'est **pas** démontrée tenir.
 
 ## Réexaminer si
-- L'essai réel ou la répétition montre que le modèle ne se tait pas : rouvrir le filtre orchestrateur (PDR de remplacement).
+- La répétition (voix réelle dans la pièce) montre que le modèle ne se tait pas, malgré l'échantillon favorable de l'essai réel : rouvrir le filtre orchestrateur (PDR de remplacement).
 - Des demandes valides sont ignorées (consigne de silence trop large) ou reçoivent « répétez » à tort.
 - ⚠️ Un bruit dit par-dessus l'IA et délégué malgré la consigne (« Papa Papa ») reçoit « pouvez-vous répéter ? » au lieu du silence : assumé (R-09), à reprendre par un filtre sur les mots significatifs si l'essai réel ou la répétition le montre.
-- ⚠️ Tant qu'aucun essai réel n'a eu lieu, l'effet de la consigne de silence sur le modèle n'est **pas démontré** (Q-89, pdr-0081 D2).
+- ⚠️ L'effet de la consigne de silence sur le modèle n'est **pas démontré** : l'essai réel n'a qu'un échantillon, sans voix réelle dans la pièce (Q-89, pdr-0081 D2).
+- ⚠️ La fenêtre de reprise de 8 s n'est pas mesurée en réel (Q-80 d).
 - Le porteur précise la frontière bruit / demande (Q-90) dans un sens qui change D1.
 
 ## Historique
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-31 | Acceptée (moyen technique de 016, étape Définir), sur délégation de la règle permanente pdr-0062 ; exigence d'origine : pdr-0081 D2 ; frontière bruit / demande renvoyée à Q-90 | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-31 | Réalignée à la clôture sur le code livré (revue du code R1 à R9) : phrase `no_request` (et non `repeat_request`), D1 = critère de forme avec lignes de délégation existantes intactes, `phrases.fr.json` non touché, scénarios R-01 à R-11, marque à usage unique et `repeatPending` | Assistant (délégation du porteur, pdr-0062) |
+| 2026-10-31 | Livrée par 016 (`gate --full` vert, 67 contrôles : .omc/state/loop/gates/20261031-143026-full.log) ; documents créés ou mis à jour : [p-ar-voice-recovery](../architecture/voice-recovery.md), [p-fn-feature-garde-fou-reprise-016](../functional/features/garde-fou-reprise-016.feature), [p-ar-voice-overlap](../architecture/voice-overlap.md), [p-ar-voice-interruption](../architecture/voice-interruption.md) | Assistant (product-steward, clôture de 016) |
+| 2026-10-31 | Essai réel payant, **un échantillon** (client jetable `spikes/003-live-check -scenario noise`, orchestrateur reconstruit avec la consigne, 28 s de session, 0,04 € consignés dans `specs/openai-spend.tsv`) : « Papa. Papa. » transcrit « Papa, papa », aucune délégation, aucune sortie de l'IA ; « Explique-moi la checklist. » transcrite et déléguée. **Ne démontre pas que la consigne tient** (un échantillon, pas de voix réelle dans la pièce, reprise sans essai réel) : Q-89 reste à confirmer en répétition | Assistant (vérification de 016) |
 
 Pas d'archive brute.
