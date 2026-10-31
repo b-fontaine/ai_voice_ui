@@ -1,0 +1,513 @@
+<!-- ================================================================
+     Chapitre 04 — A2A et architectures multi-agents
+     Sources : knowledge/agent-protocols/, knowledge/multi-agent/,
+     knowledge/decisions/adr-0002, adr-0003, product/decisions/pdr-*
+     ================================================================ -->
+
+<!-- 04.0 — Titre de chapitre -->
+<section class="chapter" data-hud="high">
+  <p class="chapter-num">Chapitre <b>04</b></p>
+  <h2>A2A &amp; architectures multi-agents</h2>
+  <div class="chapter-rule"></div>
+  <p class="subtitle">Faire collaborer plusieurs agents en sécurité</p>
+  <aside class="notes">
+    On a vu comment l'UI est générée (GenUI, A2UI) et comment la voix circule en temps réel. Il reste à faire travailler ensemble plusieurs agents : qui parle à qui, avec quel protocole, et comment on garde la main sur la sécurité. Ce chapitre est générique : il présente A2A et les patterns multi-agents tels qu'ils sont documentés fin 2026. Le chapitre suivant montre comment Genesis Canvas les applique. Chaque fait vient de la base knowledge/, avec l'id de la note en bas de slide.
+  </aside>
+</section>
+
+<!-- 04.1 — Carte des protocoles -->
+<section data-hud="low">
+  <h2>Les protocoles et leurs rôles</h2>
+  <svg class="diagram" viewBox="0 0 1400 520" width="1400" height="520" role="img" aria-label="Carte des protocoles : WebRTC entre le client et le modèle voix, A2A entre l'orchestrateur et les agents, MCP vers les outils, A2UI vers le client">
+    <defs>
+      <marker id="s04-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s04-map-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+
+    <rect class="d-zone" x="20" y="170" width="340" height="230" rx="6" />
+    <text class="d-zone-label" x="40" y="202">APP UTILISATEUR</text>
+    <rect class="d-zone" x="500" y="300" width="400" height="200" rx="6" />
+    <text class="d-zone-label" x="520" y="332">BACKEND</text>
+
+    <!-- Nœuds -->
+    <rect class="d-node" x="50" y="230" width="280" height="120" rx="4" />
+    <text class="d-label" x="190" y="272">Client Flutter</text>
+    <text class="d-sub" x="190" y="310">micro · rendu genui</text>
+
+    <rect class="d-node d-node--amber" x="540" y="30" width="320" height="110" rx="4" />
+    <text class="d-label" x="700" y="72">Modèle voix</text>
+    <text class="d-sub" x="700" y="108">voice-to-voice temps réel</text>
+
+    <rect class="d-node" x="540" y="360" width="320" height="110" rx="4" />
+    <text class="d-label" x="700" y="402">Orchestrateur</text>
+    <text class="d-sub" x="700" y="438">secrets · routage</text>
+
+    <rect class="d-node d-node--amber" x="1080" y="160" width="290" height="110" rx="4" />
+    <text class="d-label" x="1225" y="202">Agents distants</text>
+    <text class="d-sub" x="1225" y="238">opaques, autonomes</text>
+
+    <rect class="d-node d-node--ghost" x="1080" y="380" width="290" height="110" rx="4" />
+    <text class="d-label" x="1225" y="422">Outils &amp; contexte</text>
+    <text class="d-sub" x="1225" y="458">serveurs métier</text>
+
+    <!-- WebRTC -->
+    <path id="s04-map-rtc" class="d-link d-link--amber" d="M330,250 C440,200 440,85 540,85" marker-start="url(#s04-map-arrow-amber)" marker-end="url(#s04-map-arrow-amber)" />
+    <text class="d-label" x="300" y="80">WebRTC</text>
+    <text class="d-sub" x="300" y="112">la voix circule</text>
+
+    <!-- Délégation voix → orchestrateur -->
+    <path id="s04-map-deleg" class="d-link" d="M700,140 L700,360" marker-end="url(#s04-map-arrow)" />
+    <text class="d-link-label" x="790" y="255">délégation</text>
+
+    <!-- A2UI vers le client -->
+    <path id="s04-map-a2ui" class="d-link d-link--back" d="M540,420 C440,420 420,340 330,320" marker-end="url(#s04-map-arrow)" />
+    <text class="d-label" x="400" y="455">A2UI</text>
+    <text class="d-sub" x="400" y="487">ce qu'il affiche</text>
+
+    <!-- A2A -->
+    <path id="s04-map-a2a" class="d-link d-link--amber" d="M860,390 C960,390 980,215 1080,215" marker-end="url(#s04-map-arrow-amber)" />
+    <text class="d-label" x="990" y="150">A2A</text>
+    <text class="d-sub" x="990" y="180">à qui déléguer</text>
+
+    <!-- MCP -->
+    <path id="s04-map-mcp" class="d-link" d="M860,435 L1080,435" marker-end="url(#s04-map-arrow)" />
+    <text class="d-label" x="970" y="480">MCP</text>
+    <text class="d-sub" x="970" y="510">ce qu'il peut faire</text>
+
+    <circle class="d-packet" r="6">
+      <animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#s04-map-deleg" /></animateMotion>
+    </circle>
+    <circle class="d-packet" r="5">
+      <animateMotion dur="2s" repeatCount="indefinite"><mpath href="#s04-map-a2a" /></animateMotion>
+    </circle>
+    <circle class="d-packet" r="5">
+      <animateMotion dur="2.2s" repeatCount="indefinite"><mpath href="#s04-map-a2ui" /></animateMotion>
+    </circle>
+  </svg>
+  <p class="refs">[proto-protocol-map] · [proto-agui-overview] · [proto-mcp-overview] · [proto-a2a-overview]</p>
+  <aside class="notes">
+    Ces protocoles se complètent : chacun couvre une frontière différente du système [proto-protocol-map]. MCP relie un agent à ses outils et à son contexte, c'est ce que l'agent peut faire ; sa spec courante, la 2026-07-28, est devenue sans état [proto-mcp-overview]. A2A relie des agents indépendants et opaques entre eux : à qui il peut déléguer [proto-a2a-overview]. AG-UI, absent du schéma, est le runtime entre un agent et l'app qui l'affiche : un flux d'événements typés, encore pré-1.0, qui peut transporter l'A2UI [proto-agui-overview]. A2UI a un statut à part : c'est un format, le contenu déclaratif de l'UI, qui peut voyager dans n'importe quel canal. Enfin, WebRTC transporte le média, la voix. Une confusion assez fréquente consiste à utiliser A2A pour appeler un simple outil, ou MCP pour coordonner des agents autonomes ; les deux protocoles portent des sémantiques de tâche différentes [proto-protocol-map].
+  </aside>
+</section>
+
+<!-- 04.2 — A2A et l'Agent Card -->
+<section data-hud="low">
+  <h2>A2A : l'Agent Card</h2>
+  <div class="row mt-0">
+    <span class="badge badge--verified">A2A v1.0.0</span>
+    <span class="badge badge--neutral badge--plain">Linux Foundation · a rejoint l'AAIF (2026)</span>
+    <span class="badge badge--neutral badge--plain">SDK : Python · JS · Java · .NET · Go · Rust</span>
+    <span class="badge badge--open badge--plain">pas de SDK Dart officiel</span>
+  </div>
+  <div class="grid-2 mt-1">
+    <pre data-title="/.well-known/agent-card.json · exemple abrégé"><code class="language-json" data-trim data-line-numbers="2-3|4-7|8-9|10-11">
+{
+  "name": "Agent Qualité",
+  "description": "Stabilité d'une release",
+  "supportedInterfaces": [{
+    "url": "https://…/qualite",
+    "protocolBinding": "JSONRPC",
+    "protocolVersion": "1.0" }],
+  "capabilities": {
+    "streaming": true, "pushNotifications": false },
+  "securitySchemes": { "…": "…" },
+  "skills": [ "…" ]
+}
+    </code></pre>
+    <ul class="compact">
+      <li class="fragment rise-in">Découverte : une URL <span class="mono accent">well-known</span></li>
+      <li class="fragment rise-in"><code>supportedInterfaces</code> : un binding par entrée, la 1<sup>re</sup> préférée</li>
+      <li class="fragment rise-in"><code>capabilities</code> : streaming, push, carte étendue</li>
+      <li class="fragment rise-in"><code>skills</code> : ce sur quoi l'orchestrateur route</li>
+      <li class="fragment rise-in">Signature optionnelle : JWS sur JSON canonique (JCS)</li>
+      <li class="fragment rise-in amber">Aucun secret dans la carte publique</li>
+    </ul>
+  </div>
+  <p class="refs">[proto-a2a-overview] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk]</p>
+  <aside class="notes">
+    A2A (Agent2Agent) a été créé par Google puis donné à la Linux Foundation ; il est piloté par un TSC où siègent notamment AWS, Cisco, Google, IBM Research, Microsoft, Salesforce, SAP et ServiceNow, et le site annonce qu'il rejoint l'Agentic AI Foundation [proto-a2a-overview]. Version courante : 1.0.0, avec des SDK officiels en Python, JS, Java, .NET, Go et Rust, mais pas en Dart [proto-a2a-dart-sdk]. Tout commence par l'Agent Card, publiée sur /.well-known/agent-card.json [proto-a2a-agent-card]. Le champ supportedInterfaces, nouveau en 1.0, liste les endpoints et leurs bindings, le premier étant le préféré. capabilities annonce le streaming SSE, les webhooks push et l'existence d'une carte étendue réservée aux clients authentifiés. Les skills sont ce que lit l'orchestrateur pour choisir à qui déléguer. L'exemple est abrégé et illustratif : « Agent Qualité » reprend un agent de notre démo. Dans notre cas, la carte publique ne contient aucun secret ; les informations sensibles vont dans la carte étendue.
+  </aside>
+</section>
+
+<!-- 04.3 — Cycle de vie d'une Task -->
+<section data-hud="low">
+  <h2>La Task : une machine à états</h2>
+  <svg class="diagram" viewBox="0 0 1400 480" width="1400" height="480" role="img" aria-label="États d'une Task A2A : actifs, interrompus, terminaux">
+    <defs>
+      <marker id="s04-task-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s04-task-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+
+    <!-- Actifs -->
+    <rect class="d-zone" x="20" y="20" width="400" height="290" rx="6" />
+    <text class="d-zone-label" x="40" y="52">ACTIFS</text>
+    <rect class="d-node" x="70" y="75" width="300" height="80" rx="4" />
+    <text class="d-label" x="220" y="115">SUBMITTED</text>
+    <rect class="d-node" x="70" y="205" width="300" height="80" rx="4" />
+    <text class="d-label" x="220" y="245">WORKING</text>
+
+    <!-- Interrompus -->
+    <rect class="d-zone" x="20" y="340" width="900" height="120" rx="6" />
+    <text class="d-zone-label" x="40" y="372">INTERROMPUS</text>
+    <rect class="d-node d-node--amber" x="380" y="365" width="250" height="75" rx="4" />
+    <text class="d-label" x="505" y="402">INPUT_REQUIRED</text>
+    <rect class="d-node d-node--amber" x="650" y="365" width="250" height="75" rx="4" />
+    <text class="d-label" x="775" y="402">AUTH_REQUIRED</text>
+    <!-- Flèches de zone à zone : la note ne donne que les familles, pas les transitions -->
+    <path class="d-link d-link--amber" d="M420,250 C520,250 560,290 560,340" marker-start="url(#s04-task-arrow-amber)" marker-end="url(#s04-task-arrow-amber)" />
+    <text class="d-link-label" x="640" y="300">le client répond</text>
+
+    <!-- Terminaux -->
+    <rect class="d-zone" x="980" y="20" width="400" height="440" rx="6" />
+    <text class="d-zone-label" x="1000" y="52">TERMINAUX · DÉFINITIFS</text>
+    <rect class="d-node" x="1030" y="75" width="300" height="70" rx="4" />
+    <text class="d-label" x="1180" y="110">COMPLETED</text>
+    <rect class="d-node d-node--ghost" x="1030" y="170" width="300" height="70" rx="4" />
+    <text class="d-label" x="1180" y="205">FAILED</text>
+    <rect class="d-node d-node--ghost" x="1030" y="265" width="300" height="70" rx="4" />
+    <text class="d-label" x="1180" y="300">CANCELED</text>
+    <rect class="d-node d-node--ghost" x="1030" y="360" width="300" height="70" rx="4" />
+    <text class="d-label" x="1180" y="395">REJECTED</text>
+    <path id="s04-task-l2" class="d-link" d="M420,110 L980,110" marker-end="url(#s04-task-arrow)" />
+    <path class="d-link" d="M860,340 C860,270 900,240 980,240" marker-end="url(#s04-task-arrow)" />
+    <text class="d-link-label" x="700" y="95">état terminal</text>
+    <text class="d-sub" x="700" y="160">pour continuer : nouvelle Task, même contextId</text>
+
+    <circle class="d-packet" r="5">
+      <animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#s04-task-l2" /></animateMotion>
+    </circle>
+  </svg>
+  <p class="refs">[proto-a2a-task-lifecycle] · noms complets : TASK_STATE_*</p>
+  <aside class="notes">
+    Toute interaction longue devient une Task, identifiée par son id et regroupée par contextId, qui joue le rôle de fil de conversation [proto-a2a-task-lifecycle]. L'enum TaskState de la spec 1.0 a trois familles. Actifs : SUBMITTED et WORKING. Interrompus : INPUT_REQUIRED et AUTH_REQUIRED, où c'est au client de répondre. Terminaux : COMPLETED, FAILED, CANCELED et REJECTED. Les noms complets portent le préfixe TASK_STATE_, et UNSPECIFIED n'est qu'une valeur par défaut à ne pas utiliser. Un état terminal est définitif : pour poursuivre, on crée une nouvelle Task dans le même contextId. Côté app, INPUT_REQUIRED peut devenir une question posée par la voix ou un formulaire généré, et AUTH_REQUIRED un flux OAuth : c'est une recommandation interne, qui ne vient pas de la spec.
+  </aside>
+</section>
+
+<!-- 04.4 — Message, Part, Artifact -->
+<section data-hud="low">
+  <h2>Message, Part &amp; Artifact</h2>
+  <div class="grid-2 center-items">
+    <div>
+      <div class="flow">
+        <div class="node">Message<small>un tour · ROLE_USER / ROLE_AGENT</small></div>
+        <div class="arrow arrow--static"><span class="arrow-label">parts[]</span></div>
+        <div class="node node--round">Part</div>
+      </div>
+      <div class="flow mt-1">
+        <div class="node node--amber">Artifact<small>le produit de la Task</small></div>
+        <div class="arrow arrow--amber arrow--static"><span class="arrow-label">parts[]</span></div>
+        <div class="node node--round">Part</div>
+      </div>
+      <p class="mt-1 mb-0">Une Part = <strong>exactement un</strong> champ :</p>
+      <div class="row">
+        <span class="badge badge--neutral badge--plain">text</span>
+        <span class="badge badge--neutral badge--plain">raw</span>
+        <span class="badge badge--neutral badge--plain">url</span>
+        <span class="badge badge--neutral badge--plain fragment hl-amber">data · A2UI</span>
+      </div>
+    </div>
+    <pre data-title="Message A2A v1.0"><code class="language-json" data-trim data-line-numbers="2-3|4-5|6-7">
+{
+  "role": "ROLE_USER",
+  "messageId": "m1",
+  "parts": [
+    {"text": "Analyse la release 3.4"},
+    {"data": {"release": "3.4"},
+     "mediaType": "application/json"}
+  ]
+}
+    </code></pre>
+  </div>
+  <p class="refs">[proto-a2a-message-parts-artifacts] · [proto-a2a-task-lifecycle] · [proto-a2a-go-v03-compat]</p>
+  <aside class="notes">
+    Un Message est un tour de conversation, avec le rôle ROLE_USER ou ROLE_AGENT ; un Artifact est un produit de la Task, un document ou une donnée structurée [proto-a2a-message-parts-artifacts]. Les deux transportent des Parts. En 1.0, la Part est un type unique qui contient exactement un champ parmi text, raw (des octets en base64), url et data (du JSON quelconque), plus mediaType, filename et metadata. Les résultats sont à placer dans les Artifacts, les Messages servant au dialogue [proto-a2a-task-lifecycle]. C'est la Part data qui nous intéresse : elle peut transporter du JSON A2UI. Nuance vécue lors de notre spike : le connecteur Flutter genui_a2a, qui parle encore A2A v0.3, lit l'A2UI dans les messages de statut et ignore les artifact-update [proto-a2a-go-v03-compat].
+  </aside>
+</section>
+
+<!-- 04.5 — Streaming SSE et push -->
+<section data-hud="low">
+  <h2>Suivre une Task : SSE ou webhook</h2>
+  <div class="grid-2-1">
+    <div class="seq" style="--n: 2">
+      <div class="seq-actor">Orchestrateur</div>
+      <div class="seq-actor seq-actor--amber">Agent A2A</div>
+      <div class="seq-body">
+        <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">SendStreamingMessage</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">task · SUBMITTED</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">statusUpdate · WORKING</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">artifactUpdate</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">statusUpdate · COMPLETED</span></div>
+        <div class="seq-note fragment">état terminal → le flux se ferme</div>
+      </div>
+    </div>
+    <div class="hud-panel hud-panel--amber">
+      <p class="panel-title">Push (webhook)</p>
+      <ul class="compact small">
+        <li><code>POST</code> en <span class="mono">application/a2a+json</span></li>
+        <li>Livraison <strong>at-least-once</strong> → dédupliquer</li>
+        <li>Client : 2xx, idempotent, vérifie l'id de Task</li>
+        <li>Mobile : le backend reçoit, puis relaie <span class="badge badge--opinion badge--plain">reco</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="refs">[proto-a2a-streaming-push] · [proto-a2a-task-lifecycle]</p>
+  <aside class="notes">
+    A2A propose deux façons de suivre une Task longue [proto-a2a-streaming-push]. Si le client reste connecté : un flux SSE ouvert par SendStreamingMessage ou SubscribeToTask, à condition que capabilities.streaming soit vrai dans l'Agent Card. Chaque événement contient exactement un objet parmi task, message, statusUpdate et artifactUpdate ; ils arrivent dans l'ordre, et le flux se ferme quand la Task atteint un état terminal. En 1.0, le flag final a disparu : c'est l'état terminal qui signale la fin. Si le client n'est pas connecté, par exemple une app mobile en arrière-plan : des webhooks push, livrés au moins une fois, donc avec des doublons à dédupliquer. Dans l'approche qu'on recommande en interne, ces webhooks arrivent au backend, qui les relaie ensuite à l'app par FCM ou WebSocket. La séquence affichée est un exemple de flux possible.
+  </aside>
+</section>
+
+<!-- 04.6 — Bindings et v0.3 / v1.0 -->
+<section data-hud="low">
+  <h2>Bindings et versions d'A2A</h2>
+  <table class="compare">
+    <thead>
+      <tr><th>Opération</th><th class="hl">JSON-RPC · v1.0</th><th>REST · v1.0</th><th>JSON-RPC · v0.3</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Envoyer</th><td class="hl mono">SendMessage</td><td class="mono">POST /message:send</td><td class="mono">message/send</td></tr>
+      <tr><th>Streamer</th><td class="hl mono">SendStreamingMessage</td><td class="mono">POST /message:stream</td><td class="mono">message/stream</td></tr>
+      <tr><th>Lire</th><td class="hl mono">GetTask</td><td class="mono">GET /tasks/{id}</td><td class="mono">tasks/get</td></tr>
+    </tbody>
+  </table>
+  <div class="grid-2 mt-1">
+    <div class="hud-panel">
+      <p class="panel-title">Incompatibilités v0.3 → v1.0</p>
+      <ul class="compact small">
+        <li>Méthodes en PascalCase, enums en SCREAMING_SNAKE_CASE</li>
+        <li>Part unique : fin de <code>kind</code>, TextPart, DataPart</li>
+        <li>gRPC aussi, mais pas pour Flutter web <span class="badge badge--opinion badge--plain">reco</span></li>
+      </ul>
+    </div>
+    <div class="hud-panel hud-panel--alert fragment rise-in">
+      <p class="panel-title">Vécu en spike (SP-03)</p>
+      <ul class="compact small">
+        <li><code>genui_a2a</code> parle v0.3</li>
+        <li>Handler natif <code>a2a-go</code> v2 → <span class="mono alert">-32601</span> / <span class="mono alert">-32009</span></li>
+        <li>Solution : monter <code>a2acompat/a2av0</code></li>
+      </ul>
+    </div>
+  </div>
+  <p class="refs">[proto-a2a-bindings] · [proto-a2a-overview] · [proto-a2a-go-v03-compat]</p>
+  <aside class="notes">
+    La spec 1.0 définit des opérations abstraites et trois liaisons : JSON-RPC 2.0, gRPC et HTTP+JSON, dite REST [proto-a2a-bindings]. Un serveur peut n'en exposer qu'une : le client lit donc supportedInterfaces pour savoir lesquelles sont disponibles. Côté Flutter, REST ou JSON-RPC suffisent avec http et SSE ; sur le web, on évite gRPC faute de HTTP/2 natif, mais il reste pertinent entre services backend. Le point qui demande le plus d'attention, c'est la version : la 1.0 est incompatible sur le fil avec la 0.3, et beaucoup de tutoriels et de SDK tiers suivent encore la 0.3 [proto-a2a-overview]. On l'a vérifié pendant le spike SP-03 : genui_a2a parle v0.3 et envoie message/stream. Le handler natif v1.0 de a2a-go v2 refuse les deux formes : message/stream y est inconnu (-32601, method not found), et même un nom v1.0 sans en-tête A2A-Version est rejeté en -32009 (« requested 0.3, served 1.0 »). La solution qu'on a retenue : monter le handler de compatibilité a2av0 [proto-a2a-go-v03-compat]. Les puces marquées « reco » sont des recommandations internes, elles ne viennent pas de la spec. Le choix du canal entre l'app et le backend de la démo reste une proposition (pdr-0045 proposée, Q-39 ouverte) : on y revient au chapitre suivant.
+  </aside>
+</section>
+
+<!-- 04.7 — Sécurité A2A -->
+<section data-hud="low">
+  <h2>L'authentification dans A2A</h2>
+  <div class="flow mt-2">
+    <div class="node node--round">App</div>
+    <div class="arrow"><span class="arrow-label">OAuth2 code + PKCE</span><span class="arrow-label arrow-label--below">identité utilisateur</span></div>
+    <div class="node">Orchestrateur</div>
+    <div class="arrow arrow--amber"><span class="arrow-label">client credentials · mTLS</span><span class="arrow-label arrow-label--below">identité de service</span></div>
+    <div class="node node--amber">Agents A2A</div>
+  </div>
+  <p class="center mt-1"><span class="badge badge--opinion badge--plain">recommandation interne</span> <span class="badge badge--accepted badge--plain">démo : 127.0.0.1, sans auth (pdr-0041)</span></p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Déclaré dans la carte</h3>
+      <ul class="compact">
+        <li>API key · HTTP · OAuth2 · OIDC · mTLS</li>
+        <li>A2A 1.0 : OAuth2 sans implicit ni password</li>
+        <li>Carte signée (JWS) : preuve d'origine</li>
+      </ul>
+    </div>
+    <div class="card card--amber">
+      <h3>Appliqué par le serveur</h3>
+      <ul class="compact">
+        <li>Identifiant absent ou invalide → rejet</li>
+        <li><code>AUTH_REQUIRED</code> en cours de Task</li>
+        <li>Carte étendue après authentification</li>
+      </ul>
+    </div>
+  </div>
+  <p class="refs">[proto-a2a-security] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk]</p>
+  <aside class="notes">
+    A2A s'appuie sur des mécanismes d'authentification existants : l'Agent Card déclare des securitySchemes dans le style d'OpenAPI, et le serveur doit rejeter les identifiants absents ou invalides [proto-a2a-security]. Cinq schémas : API key, HTTP (Bearer, Basic), OAuth2, OpenID Connect et mutual TLS. La 1.0 a retiré les flows OAuth implicit et password, et ajouté le Device Code. En cours de Task, l'état AUTH_REQUIRED permet de demander une authentification, et une carte signée en JWS prouve son origine [proto-a2a-agent-card]. Notre recommandation interne : OAuth2 Authorization Code avec PKCE entre l'app et l'orchestrateur, client credentials ou mTLS entre l'orchestrateur et les agents, et aucune clé d'agent tiers dans l'app. À noter : le SDK Dart communautaire a2a ne gère ni l'authentification de la spec (hormis HTTPS) ni la carte étendue [proto-a2a-dart-sdk]. Pour être transparent sur la démo : tout tourne en local sur 127.0.0.1, sans authentification utilisateur, et la clé OpenAI reste côté backend (pdr-0041, acceptée).
+  </aside>
+</section>
+
+<!-- 04.8 — Patterns multi-agents -->
+<section data-hud="low">
+  <h2>Patterns multi-agents et voix</h2>
+  <table class="compare">
+    <thead>
+      <tr><th>Pattern</th><th>Qui garde la main</th><th class="hl">En voix temps réel <span class="badge badge--opinion badge--plain">notre lecture</span></th></tr>
+    </thead>
+    <tbody>
+      <tr class="fragment rise-in"><th>Routing</th><td>on classe l'entrée, puis on aiguille</td><td class="hl yes">déterministe si possible, sans saut LLM</td></tr>
+      <tr class="fragment rise-in"><th>Agent-as-tool</th><td>le manager garde la conversation</td><td class="hl yes">la voix joue le rôle de manager</td></tr>
+      <tr class="fragment rise-in"><th>Orchestrator-workers</th><td>un LLM décompose et synthétise</td><td class="hl partial">si l'on accepte d'attendre</td></tr>
+      <tr class="fragment rise-in"><th>Handoff</th><td>le spécialiste devient l'agent actif</td><td class="hl partial">même session, même modèle</td></tr>
+      <tr class="fragment rise-in"><th>Evaluator-optimizer</th><td>boucle générer / évaluer</td><td class="hl no">plutôt hors ligne (latence)</td></tr>
+    </tbody>
+  </table>
+  <p class="mt-1 lead">Anthropic conseille de commencer simple ; on a donc privilégié un workflow codé à un superviseur LLM.</p>
+  <p class="refs">[ma-workflow-patterns] · [ma-handoff-vs-agent-as-tool] · [ma-simplicity-first] · [ma-adk-collaboration-modes]</p>
+  <aside class="notes">
+    Anthropic distingue les workflows, des chemins de code prédéfinis, des agents, où le LLM pilote lui-même ses étapes, et recommande la solution la plus simple possible [ma-simplicity-first]. Ses patterns composables : prompt chaining, routing, parallélisation, orchestrator-workers et evaluator-optimizer [ma-workflow-patterns]. Le SDK OpenAI Agents ajoute deux délégations : agent-as-tool, où le manager garde la conversation, et handoff, où le spécialiste devient l'agent actif [ma-handoff-vs-agent-as-tool] ; Google ADK a les mêmes idées avec transfer_to_agent et AgentTool [ma-adk-collaboration-modes]. La colonne de droite est notre lecture pour la voix, une opinion fondée sur ces notes : chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent très vite. Dans notre cas, on privilégie donc un routeur codé quand c'est possible, la voix comme manager qui appelle des outils, orchestrator-workers seulement si l'utilisateur accepte d'attendre (avec un accusé de réception parlé), et l'evaluator-optimizer plutôt hors ligne.
+  </aside>
+</section>
+
+<!-- 04.9 — La voix délègue une seule fois : où tourne quoi -->
+<section data-hud="low">
+  <h2>Où tourne chaque agent</h2>
+  <svg class="diagram" viewBox="0 0 1400 500" width="1400" height="500" role="img" aria-label="Architecture cible : le client porte l'audio et le rendu, l'agent vocal délègue à un orchestrateur backend qui appelle GenUI, MCP et A2A">
+    <defs>
+      <marker id="s04-arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s04-arch-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+
+    <!-- Client -->
+    <rect class="d-zone" x="20" y="20" width="360" height="460" rx="6" />
+    <text class="d-zone-label" x="40" y="52">CLIENT FLUTTER</text>
+    <rect class="d-node" x="50" y="80" width="300" height="90" rx="4" />
+    <text class="d-label" x="200" y="113">Audio · WebRTC</text>
+    <text class="d-sub" x="200" y="146">micro, haut-parleur</text>
+    <rect class="d-node" x="50" y="220" width="300" height="90" rx="4" />
+    <text class="d-label" x="200" y="253">Rendu A2UI</text>
+    <text class="d-sub" x="200" y="286">catalogue en liste blanche</text>
+    <rect class="d-node d-node--ghost" x="50" y="360" width="300" height="90" rx="4" />
+    <text class="d-label" x="200" y="393">Outils locaux</text>
+    <text class="d-sub" x="200" y="426">sans secret</text>
+
+    <!-- Fournisseur voix -->
+    <rect class="d-node d-node--amber" x="480" y="40" width="360" height="100" rx="4" />
+    <text class="d-label" x="660" y="78">Agent vocal</text>
+    <text class="d-sub" x="660" y="114">seul interlocuteur · temps réel</text>
+
+    <!-- Backend -->
+    <rect class="d-zone" x="440" y="190" width="940" height="290" rx="6" />
+    <text class="d-zone-label" x="460" y="462">BACKEND · SECRETS · PERMISSIONS</text>
+    <rect class="d-node" x="480" y="280" width="360" height="110" rx="4" />
+    <text class="d-label" x="660" y="320">Orchestrateur</text>
+    <text class="d-sub" x="660" y="356">router codé + LLM si besoin</text>
+
+    <rect class="d-node d-node--amber" x="1050" y="230" width="300" height="64" rx="4" />
+    <text class="d-label" x="1200" y="262">Agent(s) GenUI</text>
+    <rect class="d-node" x="1050" y="310" width="300" height="64" rx="4" />
+    <text class="d-label" x="1200" y="342">Clients MCP</text>
+    <rect class="d-node" x="1050" y="390" width="300" height="64" rx="4" />
+    <text class="d-label" x="1200" y="422">Clients A2A</text>
+
+    <!-- Liens -->
+    <path class="d-link d-link--amber" d="M350,110 L480,90" marker-start="url(#s04-arch-arrow-amber)" marker-end="url(#s04-arch-arrow-amber)" />
+    <text class="d-link-label" x="415" y="78">audio</text>
+
+    <path id="s04-arch-deleg" class="d-link" d="M610,140 L610,280" marker-end="url(#s04-arch-arrow)" />
+    <text class="d-link-label" x="540" y="225">délégation</text>
+    <path class="d-link d-link--amber" d="M710,280 L710,140" marker-end="url(#s04-arch-arrow-amber)" />
+    <text class="d-link-label" x="790" y="225">résumé</text>
+
+    <path id="s04-arch-a2ui" class="d-link d-link--back" d="M480,335 C420,335 420,265 350,265" marker-end="url(#s04-arch-arrow)" />
+    <text class="d-link-label" x="410" y="240">A2UI</text>
+
+    <path class="d-link" d="M840,315 C950,315 950,262 1050,262" marker-end="url(#s04-arch-arrow)" />
+    <path class="d-link" d="M840,340 L1050,342" marker-end="url(#s04-arch-arrow)" />
+    <path class="d-link" d="M840,365 C950,365 950,422 1050,422" marker-end="url(#s04-arch-arrow)" />
+
+    <circle class="d-packet" r="6">
+      <animateMotion dur="1.4s" repeatCount="indefinite"><mpath href="#s04-arch-deleg" /></animateMotion>
+    </circle>
+    <circle class="d-packet" r="5">
+      <animateMotion dur="2s" repeatCount="indefinite"><mpath href="#s04-arch-a2ui" /></animateMotion>
+    </circle>
+  </svg>
+  <div class="row mt-0">
+    <span class="badge badge--opinion badge--plain">patron recommandé</span>
+    <span class="badge badge--accepted">orchestrateur backend : ADR-0002 acceptée</span>
+    <span class="badge badge--accepted">backend Go hexagonal : ADR-0003 acceptée</span>
+  </div>
+  <p class="refs">[ma-target-architecture] · [ma-where-to-run-agents] · [ma-realtime-handoff-limits] · [adr-0002-orchestrator-backend] · [adr-0003-backend-go]</p>
+  <aside class="notes">
+    On a vu le mécanisme de délégation au chapitre 3 : l'agent vocal confie la demande au backend, qui exécute l'action, et l'A2UI ne repasse pas par le modèle vocal. Ici, la question est le placement : où tourne chaque agent [ma-where-to-run-agents]. Le client ne porte que l'audio et WebRTC, le rendu A2UI, avec le catalogue comme liste blanche de widgets, et des outils purement locaux sans secret. L'orchestrateur, l'agent GenUI qui produit l'A2UI, les clients MCP et A2A vivent côté backend : c'est là que sont les secrets, les permissions, les jetons tiers et le journal d'audit. Pourquoi pas plusieurs agents vocaux qui se passent la main ? En temps réel, un handoff ne change pas de modèle, et la voix ne peut changer qu'avant la première sortie audio ; pour un autre modèle ou un agent backend, la doc OpenAI recommande la délégation par outil [ma-realtime-handoff-limits]. C'est pour cette raison qu'on a gardé un seul agent vocal comme interlocuteur. Ce schéma est un patron recommandé, une opinion de la base [ma-target-architecture] ; deux points sont des décisions acceptées : orchestrateur côté backend dès le départ [adr-0002-orchestrator-backend], backend en Go hexagonal [adr-0003-backend-go]. Dans notre démo, chaque agent A2A produit l'A2UI de ses surfaces, et l'orchestrateur valide et relaie (pdr-0036, acceptée) : d'où « agent(s) GenUI ».
+  </aside>
+</section>
+
+<!-- 04.10 — Sécurité de bout en bout -->
+<section data-hud="low">
+  <h2>Sécurité de bout en bout</h2>
+  <div class="flow">
+    <div class="node node--round">Utilisateur</div>
+    <div class="arrow arrow--static"></div>
+    <div class="node node--amber">Voix</div>
+    <div class="arrow arrow--static"></div>
+    <div class="node">Orchestrateur</div>
+    <div class="arrow arrow--static"></div>
+    <div class="node node--alert">MCP · A2A</div>
+    <div class="arrow arrow--static"></div>
+    <div class="node">GenUI → app</div>
+  </div>
+  <p class="center small alert mt-1">Chaque saut expose à l'injection de prompt</p>
+  <div class="grid-4 stretch-items">
+    <div class="card fragment rise-in">
+      <span class="card-icon">01</span>
+      <h3>Secrets côté backend</h3>
+      <p>Clés LLM et jetons tiers restent au backend.</p>
+    </div>
+    <div class="card fragment rise-in">
+      <span class="card-icon">02</span>
+      <h3>Retours traités en données</h3>
+      <p>Lus comme des données, sans valeur de consigne ; la voix reçoit un résumé.</p>
+    </div>
+    <div class="card card--amber fragment rise-in">
+      <span class="card-icon">03</span>
+      <h3>Garde-fous dans le code</h3>
+      <p>Liste blanche, schéma, confirmation, catalogue.</p>
+    </div>
+    <div class="card card--amber fragment rise-in">
+      <span class="card-icon">04</span>
+      <h3>Résultats réels</h3>
+      <p>Le modèle reçoit le statut effectif de l'action.</p>
+    </div>
+  </div>
+  <p class="refs">[ma-prompt-injection-tools] · [ma-guardrails] · [ma-real-tool-results] · [ma-mcp-security] · [ma-where-to-run-agents]</p>
+  <aside class="notes">
+    L'OWASP distingue l'injection directe, par l'utilisateur, et l'injection indirecte, cachée dans un contenu externe comme un retour MCP ou une réponse A2A ; en multi-agent, chaque saut devient donc un point d'entrée possible [ma-prompt-injection-tools]. Voici les quatre mesures qu'on a retenues. Un : aucun secret côté client, ni clé LLM ni jeton tiers [ma-where-to-run-agents]. Deux : on traite tout retour d'outil ou d'agent comme une donnée, encadrée, et le modèle vocal reçoit un résumé produit par l'orchestrateur plutôt que le texte brut d'un tiers. Trois : des garde-fous en couches, dans le code : liste blanche d'outils par rôle, validation des arguments par schéma, confirmation codée pour l'irréversible, validation de l'A2UI contre le catalogue ; le guardrail sur la transcription arrive après coup et ne remplace pas un contrôle avant l'action [ma-guardrails]. Côté MCP : pas de token passthrough, attention au SSRF, serveurs en liste blanche [ma-mcp-security]. Quatre : le modèle ne parle que de résultats réels, avec un statut ok, error, cancelled ou pending ; un faux « ok » le pousse à confirmer une action dont il ignore l'issue, et interrompre la parole n'arrête pas le backend [ma-real-tool-results]. La mesure 1 vient des règles du projet ; les mesures 2 et 3 sont des recommandations internes fondées sur l'OWASP ; la mesure 4 vient de la doc GPT-Live, l'enum de statut est notre convention.
+  </aside>
+</section>
+
+<!-- 04.11 — Observabilité et évaluations -->
+<section data-hud="low">
+  <h2>Observabilité et évaluation</h2>
+  <div class="grid-2">
+    <div>
+      <pre data-title="une trace par session vocale"><code class="language-plaintext" data-trim>
+session  gen_ai.conversation.id
+└─ invoke_agent orchestrator
+   ├─ execute_tool &lt;outil MCP&gt;
+   ├─ execute_tool &lt;agent A2A&gt;
+   └─ invoke_agent genui
+      </code></pre>
+      <div class="row">
+        <span class="badge badge--neutral badge--plain">OTel GenAI : statut Development</span>
+        <span class="badge badge--opinion badge--plain">mapping : opinion</span>
+      </div>
+    </div>
+    <div class="flow flow--vertical">
+      <div class="node fragment rise-in">CRAWL<small>1 requête TTS · régression en CI</small></div>
+      <div class="arrow arrow--static"></div>
+      <div class="node fragment rise-in">WALK<small>vrais enregistrements dégradés</small></div>
+      <div class="arrow arrow--static"></div>
+      <div class="node node--amber fragment rise-in">RUN<small>appelant simulé, multi-tours</small></div>
+    </div>
+  </div>
+  <p class="mt-1 small">Ce qu'on évalue séparément : <span class="accent">délégation</span> · <span class="accent">action backend</span> · <span class="accent">restitution</span> ; runs répétés, P50 / P90.</p>
+  <p class="refs">[ma-otel-genai-spans] · [ma-voice-agent-evals]</p>
+  <aside class="notes">
+    Pour l'observabilité, les conventions sémantiques OpenTelemetry GenAI définissent des spans invoke_agent, invoke_workflow et execute_tool ; elles ont déménagé dans un dépôt dédié et sont toutes au statut Development, donc les noms peuvent encore changer [ma-otel-genai-spans]. Notre mapping, qui est une recommandation : une trace par session vocale, avec gen_ai.conversation.id égal à l'id de session ; une délégation devient invoke_agent orchestrator, qui contient un execute_tool par appel MCP ou A2A et un invoke_agent pour GenUI. Pas d'audio ni de transcription enregistrés par défaut : ce sont des données personnelles. Pour l'évaluation, le cookbook OpenAI rappelle qu'une confirmation convaincante à l'oral ne garantit pas que la bonne action a été faite ; d'où l'intérêt d'évaluer séparément la délégation, l'action backend et la restitution du résultat vérifié [ma-voice-agent-evals]. Trois paliers : CRAWL avec une requête générée par TTS, WALK avec de vrais enregistrements dégradés (bruit, écho, pertes de paquets), RUN avec un appelant simulé en full duplex sur plusieurs tours. Le modèle étant non déterministe, on répète les runs et on rapporte P50 et P90 avec la taille d'échantillon ; CRAWL en CI, WALK et RUN en nightly, c'est notre recommandation.
+  </aside>
+</section>

@@ -14,6 +14,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MODE="${1:-run}"
 PROJECT="${DEMO_PROJECT:-genesis-demo}"
 PORT="${DEMO_PORT:-8090}"
+NET="${DEMO_NET:-172.30.78}"
 CATALOG_ID="$(sed -n 's/^x-a2ui-catalog: &a2ui_catalog \${A2UI_CATALOG_ID:-\(.*\)}$/\1/p' "$ROOT/docker-compose.yaml")"
 CATALOG_ID="${A2UI_CATALOG_ID:-${CATALOG_ID:-https://genesis-canvas.example/a2ui/catalogs/genesis/v1}}"
 OVERRIDE="$(mktemp --suffix=.yaml)"
@@ -21,7 +22,7 @@ compose() { docker compose -p "$PROJECT" -f "$ROOT/docker-compose.yaml" -f "$OVE
 
 cleanup() {
   rc=$?
-  if [ "$MODE" != "--keep" ]; then
+  if [ "$MODE" != "--keep" ] || [ $rc -ne 0 ]; then
     echo "── arrêt de la pile Docker ($PROJECT)"
     compose down --remove-orphans >/dev/null 2>&1 || true
   else
@@ -39,6 +40,11 @@ if ss -ltn 2>/dev/null | grep -q "127.0.0.1:$PORT "; then
   echo "Le port $PORT est déjà pris : relance avec DEMO_PORT=8091 $0" >&2; exit 1
 fi
 
+# Le compose fixe le sous-réseau des agents (172.30.77.0/24) et leurs adresses (la passerelle LLM
+# filtre par adresse source) : la démo prend un autre /24 pour coexister avec la pile de la boucle.
+if docker network ls -q | xargs -r docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' | grep -qw "$NET.0/24"; then
+  echo "Le sous-réseau $NET.0/24 est déjà pris : relance avec DEMO_NET=172.30.79 $0" >&2; exit 1
+fi
 cat > "$OVERRIDE" <<YAML
 services:
   orchestrator:
@@ -46,6 +52,36 @@ services:
       - "127.0.0.1:$PORT:8080"
     environment:
       ALLOWED_HOSTS: "127.0.0.1:$PORT,localhost:$PORT"
+      LLM_GATEWAY_ADDR: "$NET.10:8081"
+      LLM_GATEWAY_ALLOWED_SOURCES: "$NET.21,$NET.30"
+    networks:
+      agents:
+        ipv4_address: $NET.10
+  agent-quality:
+    environment:
+      COMPOSER_LLM_URL: "http://$NET.10:8081/v1/complete"
+    networks:
+      agents:
+        ipv4_address: $NET.21
+  agent-voice:
+    networks:
+      agents:
+        ipv4_address: $NET.22
+  agent-delivery:
+    networks:
+      agents:
+        ipv4_address: $NET.23
+  composer-bench:
+    environment:
+      COMPOSER_LLM_URL: "http://$NET.10:8081/v1/complete"
+    networks:
+      agents:
+        ipv4_address: $NET.30
+networks:
+  agents:
+    ipam: !override
+      config:
+        - subnet: $NET.0/24
 YAML
 
 echo "── backend et agents (projet $PROJECT, port $PORT) : construction et démarrage…"

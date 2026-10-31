@@ -1,0 +1,499 @@
+<!-- ===================================================================
+     Chapitre 03 — Temps réel et modèles voice-to-voice
+     Sources : knowledge/realtime-voice/, proto-rtc-transport-choice,
+     perf-audio-latency, ma-filler-acknowledgements, proj-avw-risks ;
+     product/ (pdr-0012, pdr-0037, pdr-0038, pdr-0041, NFR-01, NFR-09,
+     FR-13, FR-19, Q-39, Q-40, Q-47, Q-53, pdr-0045 proposée).
+     =================================================================== -->
+
+<section class="chapter" data-hud="high">
+  <p class="chapter-num">Chapitre <b>03</b></p>
+  <h2>Temps réel &amp; <span style="white-space: nowrap">voice-to-voice</span></h2>
+  <div class="chapter-rule"></div>
+  <p class="subtitle">Converser à voix haute avec l'application</p>
+  <aside class="notes">
+    Deuxième brique du talk : la voix temps réel. On va voir ce qu'est un modèle voice-to-voice, quels modèles existent fin octobre 2026, comment on ouvre une session WebRTC sans exposer de clé côté client, comment se gère le tour de parole (VAD, barge-in, écho), ce qui coûte en latence, et comment l'agent vocal délègue les outils à un orchestrateur.
+    Les faits viennent de knowledge/ et de product/ ; la comparaison avec la cascade est un cadrage général. Les ids sont en bas de chaque slide.
+    Ces API bougent très vite (gpt-live-1, Gemini 3.8 Live) : ce que je montre est l'état relevé fin octobre 2026.
+  </aside>
+</section>
+
+<!-- 1. Cascade vs voice-to-voice -->
+<section data-hud="low">
+  <p class="eyebrow">Deux architectures pour la voix</p>
+  <h2>Cascade ou voice-to-voice natif</h2>
+  <div class="stack">
+    <div class="fragment rise-in">
+      <h4>Cascade</h4>
+      <div class="flow">
+        <div class="node node--ghost node--round">Micro</div>
+        <div class="arrow arrow--static"></div>
+        <div class="node node--ghost">STT<small>audio → texte</small></div>
+        <div class="arrow arrow--static"></div>
+        <div class="node node--ghost">LLM<small>texte → texte</small></div>
+        <div class="arrow arrow--static"></div>
+        <div class="node node--ghost">TTS<small>texte → audio</small></div>
+        <div class="arrow arrow--static"></div>
+        <div class="node node--ghost node--round">HP</div>
+      </div>
+    </div>
+    <div class="fragment rise-in">
+      <h4>Voice-to-voice natif</h4>
+      <div class="flow">
+        <div class="node node--round">Micro</div>
+        <div class="arrow"><span class="arrow-label">audio</span></div>
+        <div class="node node--amber">Modèle voix full-duplex<small>écoute et parle en même temps</small></div>
+        <div class="arrow"><span class="arrow-label">audio</span></div>
+        <div class="node node--round">HP</div>
+      </div>
+    </div>
+  </div>
+  <p class="fragment glow-in mt-2">Moins d'étapes enchaînées, et <span class="accent">le tour de parole est géré par le modèle</span> (GPT-Live).</p>
+  <p class="refs">[rt-gpt-live-overview] · [rt-gemini-audio-vad] · [rt-barge-in]</p>
+  <aside class="notes">
+    L'approche historique est la cascade : reconnaissance vocale, LLM texte, synthèse vocale. Chaque étape attend la précédente, et le passage par du texte perd l'intonation.
+    Attention : cette comparaison avec la cascade est un cadrage pédagogique général ; la base knowledge ne documente que le côté natif, et ne donne aucun chiffre sur la cascade.
+    Côté natif, gpt-live-1 est décrit par OpenAI comme un modèle full-duplex : il écoute et parle en même temps, et gère lui-même le tour de parole [rt-gpt-live-overview].
+    Gemini Live propose des modèles « native audio », qui choisissent même la langue de réponse eux-mêmes ; on la contraint par l'instruction système [rt-gemini-audio-vad].
+    Conséquence intéressante : le barge-in, c'est-à-dire couper la parole à l'IA, est pris en charge par le modèle, ce qui allège le travail côté app [rt-barge-in].
+  </aside>
+</section>
+
+<!-- 2. Panorama des modèles -->
+<section data-hud="low">
+  <p class="eyebrow">État relevé fin octobre 2026</p>
+  <h2>Panorama des modèles temps réel</h2>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th class="hl">OpenAI GPT-Live</th><th>OpenAI Realtime</th><th>Gemini Live</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Modèle</th><td class="hl mono">gpt-live-1</td><td class="mono">gpt-realtime-2.1</td><td class="mono">gemini-3.8-live</td></tr>
+      <tr><th>Endpoint</th><td class="hl mono">/v1/live/sessions</td><td class="mono">/v1/realtime/calls</td><td>Live API (WebSocket)</td></tr>
+      <tr><th>Outils</th><td class="hl">délégués à un backend</td><td class="mono">function_call</td><td>toolCall, NON_BLOCKING</td></tr>
+      <tr><th>Tour de parole</th><td class="hl">géré par le modèle</td><td class="mono">semantic_vad…</td><td>VAD auto ou manuel</td></tr>
+      <tr><th>Auth client</th><td class="hl">relais SDP backend</td><td>relais ou client_secrets</td><td>jeton éphémère</td></tr>
+    </tbody>
+  </table>
+  <p class="mt-1">Genesis Canvas : <span class="mono">gpt-live-1</span> <span class="badge badge--accepted">pdr-0012 acceptée</span> voix <span class="mono">brise</span> <span class="badge badge--accepted">pdr-0037 acceptée</span></p>
+  <p class="refs">[rt-openai-realtime-vs-live] · [rt-gpt-live-overview] · [rt-gemini-live-models] · [rt-gemini-function-calling] · pdr-0012 · pdr-0037</p>
+  <aside class="notes">
+    Un point qui prête facilement à confusion : chez OpenAI, Realtime et GPT-Live sont deux API distinctes. gpt-live-1 n'est pas un modèle Realtime ; l'URL /v1/realtime?model=gpt-live-1 ne fonctionne pas [rt-openai-realtime-vs-live].
+    gpt-live-1 : audio et texte en entrée comme en sortie, 0,05 dollar la minute facturé à la seconde, backend facturé à part ; en WebRTC, 15 secondes sont facturées dès l'initialisation puis créditées sur la durée réelle [rt-gpt-live-overview].
+    Côté Google, gemini-3.8-live est le modèle recommandé par défaut sur l'API Gemini directe, mais il n'est pas listé dans Firebase AI Logic au 20 octobre ; Firebase ne propose que du 3.1 preview et du 2.5 [rt-gemini-live-models].
+    Pour Genesis Canvas, le porteur a accepté gpt-live-1 en WebRTC derrière un port VoiceSession, Gemini restant l'alternative [pdr-0012-voice-provider-openai], avec la voix française « brise » [pdr-0037-voice-brise-delegated-instructions].
+    À noter : le spike SP-02, qui doit valider gpt-live-1 en français sur la machine de démo, n'a pas encore été mené.
+  </aside>
+</section>
+
+<!-- 3. Transports -->
+<section data-hud="low">
+  <p class="eyebrow">Transport</p>
+  <h2>WebRTC ou WebSocket pour l'audio</h2>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th class="hl">WebRTC</th><th>WebSocket</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Couche</th><td class="hl">UDP (SRTP) + ICE / STUN / TURN</td><td>TCP + TLS</td></tr>
+      <tr><th>Audio</th><td class="hl yes">pistes média, codec négocié par SDP, jitter buffer, AEC</td><td class="partial">trames PCM brutes à bufferiser soi-même</td></tr>
+      <tr><th>Perte de paquets</th><td class="hl yes">tolérée</td><td class="no">head-of-line blocking</td></tr>
+      <tr><th>Contrôle</th><td class="hl">DataChannel <span class="mono">oai-events</span></td><td>même socket</td></tr>
+      <tr><th>Intégration</th><td class="hl partial">coûteuse : SDP, NAT, micro</td><td class="yes">simple</td></tr>
+    </tbody>
+  </table>
+  <p class="fragment glow-in mt-1">OpenAI recommande WebRTC pour GPT-Live, <span class="amber">y compris entre serveurs</span>.</p>
+  <p class="refs">[proto-rtc-transport-choice] · [perf-audio-latency] · [rt-latency]</p>
+  <aside class="notes">
+    WebRTC, c'est de l'UDP chiffré avec négociation ICE. On obtient gratuitement un jitter buffer, un codec négocié et surtout l'annulation d'écho. Un paquet perdu est simplement sauté, ce qui convient bien à la voix [proto-rtc-transport-choice].
+    En WebSocket, on pousse du PCM brut sur TCP : un paquet perdu bloque tout ce qui suit, et c'est à l'app de gérer buffers et rééchantillonnage [perf-audio-latency].
+    OpenAI le recommande explicitement : « We recommend WebRTC for GPT-Live audio connections, including server-to-server integrations ». Le WebSocket est supporté, mais pas recommandé.
+    Gemini Live, lui, est une session WebSocket avec état, sortie en PCM 16 bits à 24 kHz : les deux transports coexistent donc selon le fournisseur.
+    Pour les échanges entre agents non vocaux, HTTP + SSE nous semble suffisant ; c'est une recommandation interne.
+    Contrepartie de WebRTC : il exige une vraie piste micro, et un serveur TURN sur les réseaux d'entreprise restrictifs.
+  </aside>
+</section>
+
+<!-- 4. Établissement de session -->
+<section data-hud="low">
+  <p class="eyebrow">Ouvrir une session GPT-Live</p>
+  <h2>Relais SDP par le backend</h2>
+  <div class="seq" style="--n: 3">
+    <div class="seq-actor">App Flutter</div>
+    <div class="seq-actor seq-actor--amber">Backend Go</div>
+    <div class="seq-actor">OpenAI Live</div>
+    <div class="seq-body">
+      <div class="seq-note fragment">piste micro + DataChannel oai-events → createOffer → collecte ICE</div>
+      <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">offre SDP</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">POST /v1/live/sessions + clé projet</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 3; --to: 2"><span class="seq-label">201 : session.id + answer SDP</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">answer SDP</span></div>
+      <div class="seq-msg fragment" style="--from: 1; --to: 3"><span class="seq-label">audio SRTP + DataChannel</span></div>
+      <div class="seq-msg is-back is-reply fragment" style="--from: 3; --to: 1"><span class="seq-label">session.started</span></div>
+      <div class="seq-msg fragment" style="--from: 2; --to: 3"><span class="seq-label">wss …/{session_id}/attach</span></div>
+    </div>
+  </div>
+  <p class="refs">[rt-gpt-live-webrtc-session] · [rt-gpt-live-lifecycle] · [rt-gpt-live-sideband]</p>
+  <aside class="notes">
+    C'est le backend qui crée la session auprès d'OpenAI ; pour GPT-Live, c'est le seul mécanisme documenté. Le client prépare son offre SDP : il ajoute la piste micro, crée le DataChannel oai-events avant createOffer, puis attend la fin de la collecte ICE, avec 10 secondes de timeout dans l'exemple officiel [rt-gpt-live-webrtc-session].
+    Il envoie l'offre à son propre backend, qui appelle POST /v1/live/sessions avec la clé projet, les instructions et le mode de délégation. La réponse 201 contient un session.id opaque et l'answer SDP, que le backend renvoie au client.
+    Deux points d'attention : on ne met pas audio.format, puisqu'il est négocié par SDP ; et on n'envoie pas session.start sur le DataChannel, la requête HTTP a déjà démarré la session. On attend session.started avant toute commande [rt-gpt-live-lifecycle].
+    Autre intérêt du relais : le backend garde session.id et peut s'attacher en sideband par WebSocket pour porter la logique côté serveur [rt-gpt-live-sideband]. On y revient plus loin.
+  </aside>
+</section>
+
+<!-- 5. Sécurité : clés longue durée côté serveur -->
+<section data-hud="low">
+  <p class="eyebrow">Sécurité</p>
+  <h2>Clés longue durée côté serveur</h2>
+  <table class="compare">
+    <thead>
+      <tr><th>Fournisseur</th><th>Mécanisme documenté</th></tr>
+    </thead>
+    <tbody>
+      <tr class="fragment rise-in"><th class="amber">OpenAI GPT-Live</th><td>relais SDP backend <span class="muted">(aucun client secret documenté)</span></td></tr>
+      <tr class="fragment rise-in"><th>OpenAI Realtime</th><td>relais SDP ou <span class="mono">POST /v1/realtime/client_secrets</span></td></tr>
+      <tr class="fragment rise-in"><th>Gemini API directe</th><td>jeton <span class="mono">auth_tokens</span> : <span class="mono">uses</span> 1 (ex.), 30 min / 1 min par défaut</td></tr>
+      <tr class="fragment rise-in"><th>Firebase AI Logic</th><td>pas de clé dans l'app, App Check</td></tr>
+    </tbody>
+  </table>
+  <ul class="compact mt-1 fragment rise-in">
+    <li>Instructions et outils restent <span class="accent">côté serveur</span></li>
+    <li>Un jeton par API</li>
+    <li>En production : quotas et journalisation par utilisateur <span class="badge badge--opinion">reco interne</span></li>
+    <li>Démo : backend local, sans auth <span class="badge badge--accepted">pdr-0041 acceptée</span></li>
+  </ul>
+  <p class="refs">[rt-ephemeral-keys] · [rt-gemini-ephemeral-tokens] · [proj-avw-risks] · NFR-09 · pdr-0012 · pdr-0041</p>
+  <aside class="notes">
+    Dans ce projet, on a choisi de ne garder aucune clé API longue durée côté client. Le mécanisme disponible dépend du fournisseur [rt-ephemeral-keys].
+    Pour GPT-Live, la doc ne décrit que le relais SDP par le backend, aucun jeton éphémère. C'est un écart de vocabulaire noté dans pdr-0012 : NFR-09 parle de « jeton éphémère » ; pour gpt-live-1 c'est un relais. L'exigence NFR-09 est respectée, avec un mécanisme différent.
+    Côté Gemini direct, le backend émet des jetons auth_tokens à usage unique : 30 minutes de validité, 1 minute pour ouvrir la session, et liveConnectConstraints verrouille modèle et instructions côté serveur [rt-gemini-ephemeral-tokens]. Tout dépend du bornage : un jeton éphémère mal borné expose autant qu'une clé longue durée.
+    Retour d'expérience d'un projet précédent : la clé passée au widget était réutilisée pour un autre appel LLM, d'où une fuite de clé [proj-avw-risks].
+    Pour la démo, le backend tourne en local sur 127.0.0.1, sans authentification utilisateur, la clé OpenAI restant dans un .env côté backend [pdr-0041-backend-in-this-repo-local-no-auth]. Les quotas par utilisateur relèvent d'un déploiement réel.
+  </aside>
+</section>
+
+<!-- 6. Cycle de vie -->
+<section data-hud="low">
+  <p class="eyebrow">GPT-Live</p>
+  <h2>Cycle de vie d'une session</h2>
+  <div class="timeline">
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">01</span>
+      <span class="tl-title">Création HTTP</span>
+      <span class="tl-text">relais SDP, config quasi immuable</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">02</span>
+      <span class="tl-title">session.started</span>
+      <span class="tl-text">aucune commande avant</span>
+    </div>
+    <div class="tl-item is-now fragment rise-in">
+      <span class="tl-date">03</span>
+      <span class="tl-title">Conversation</span>
+      <span class="tl-text">*.append, transcripts, usage</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">04</span>
+      <span class="tl-title">session.close</span>
+      <span class="tl-text">plus rien n'est soumis</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">05</span>
+      <span class="tl-title">session.closed</span>
+      <span class="tl-text">usage.seconds, reason</span>
+    </div>
+  </div>
+  <div class="grid-2 mt-2 fragment rise-in">
+    <div class="hud-panel">
+      <p class="panel-title">Client → serveur</p>
+      <p class="mono small">instructions · thinking · commentary .append<br>input_audio.mute · update · close</p>
+    </div>
+    <div class="hud-panel hud-panel--amber">
+      <p class="panel-title">Serveur → client</p>
+      <p class="mono small">input / output_transcript.delta<br>usage.updated · closed · error</p>
+    </div>
+  </div>
+  <p class="refs">[rt-gpt-live-lifecycle] · [rt-gpt-live-session-config] · [rt-graceful-close] · Q-53</p>
+  <aside class="notes">
+    La session suit une séquence stricte : création HTTP, session.started, conversation, session.close, puis session.closed avec la durée facturée et la raison de clôture [rt-gpt-live-lifecycle].
+    La configuration est fixée à la création : modèle, voix et mode de délégation sont immuables ; les instructions se complètent par instructions.append. Changer de voix en cours de route impose une nouvelle session [rt-gpt-live-session-config].
+    Pendant la conversation, l'app injecte du contexte avec trois événements : instructions (consignes de confiance), thinking (contexte silencieux) et commentary (à dire, éventuellement paraphrasé). Chacun est acquitté ; l'accusé confirme seulement l'injection, il ne garantit pas que la phrase a été prononcée.
+    Raisons de clôture documentées : close_requested, expired, content, remote_hangup, connection_lost. La durée maximale d'une session n'est pas chiffrée, d'où la question ouverte Q-53 : une session par acte, ou une seule pour toute la démo.
+    Pour la fermeture, on sépare stop et dispose, avec un timeout d'environ 3 secondes pour libérer le micro même si session.closed n'arrive jamais [rt-graceful-close].
+  </aside>
+</section>
+
+<!-- 7. Tour de parole et barge-in -->
+<section data-hud="low">
+  <p class="eyebrow">Tour de parole</p>
+  <h2>VAD et barge-in selon le fournisseur</h2>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th class="hl">GPT-Live</th><th>Realtime + WebRTC</th><th>Gemini Live</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Fin de tour</th><td class="hl">le modèle, full-duplex</td><td class="mono">semantic_vad</td><td><span class="mono">silenceDurationMs</span> 500–800 ms</td></tr>
+      <tr><th>Interruption</th><td class="hl no">aucun événement</td><td class="mono">speech_started, response.cancelled</td><td class="mono">interrupted</td></tr>
+      <tr><th>Audio non joué</th><td class="hl partial">non documenté (Q-40)</td><td class="yes">tronqué par le serveur</td><td class="partial">au client de vider son buffer</td></tr>
+    </tbody>
+  </table>
+  <div class="grid-2 mt-2">
+    <p class="fragment rise-in">Une interruption vocale <span class="alert">n'annule pas</span> le travail backend.</p>
+    <p class="fragment rise-in"><span class="badge badge--open">Q-40 ouverte</span> afficher l'interruption (FR-19)</p>
+  </div>
+  <p class="refs">[rt-barge-in] · [rt-gemini-audio-vad] · [rt-openai-realtime-vs-live] · FR-13 · FR-19 · Q-40</p>
+  <aside class="notes">
+    Le barge-in, c'est l'utilisateur qui coupe la parole à l'IA ; c'est l'exigence FR-13 du produit : l'IA se tait immédiatement et écoute.
+    Chez GPT-Live, le modèle full-duplex gère cela lui-même, mais la doc n'expose aucun événement d'interruption [rt-barge-in]. Or FR-19 veut que l'interruption soit visible à l'écran. Comment l'inférer côté app reste la question ouverte Q-40, à éclairer par le spike SP-02.
+    Realtime en WebRTC : le serveur tronque lui-même l'audio non joué, et émet input_audio_buffer.speech_started puis response.cancelled [rt-openai-realtime-vs-live].
+    Gemini : on reçoit interrupted, et c'est au client d'arrêter la lecture et de vider sa file PCM, sinon l'IA continue de parler depuis le tampon. Google recommande un silence de fin de tour de 500 à 800 ms ; entre 100 et 200 ms, les phrases sont fragmentées [rt-gemini-audio-vad].
+    La doc GPT-Live précise que couper la voix n'annule pas les outils en cours. La démarche décrite : annuler explicitement, confirmer l'annulation, puis seulement l'annoncer.
+  </aside>
+</section>
+
+<!-- 8. Annulation d'écho -->
+<section data-hud="low">
+  <p class="eyebrow">Acoustique</p>
+  <h2>Écho et auto-interruption</h2>
+  <svg class="diagram" viewBox="0 0 1400 400" width="1400" height="400" role="img" aria-label="Boucle d'écho entre haut-parleur et micro">
+    <defs>
+      <marker id="s03-aec-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s03-aec-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+    <rect class="d-node d-node--amber" x="560" y="40" width="280" height="100" rx="4" />
+    <text class="d-label" x="700" y="85">Modèle voix</text>
+    <text class="d-sub" x="700" y="118">VAD serveur</text>
+
+    <rect class="d-node" x="1060" y="250" width="280" height="100" rx="4" />
+    <text class="d-label" x="1200" y="295">Haut-parleur</text>
+    <text class="d-sub" x="1200" y="328">voix de l'IA</text>
+
+    <rect class="d-node" x="60" y="250" width="280" height="100" rx="4" />
+    <text class="d-label" x="200" y="295">Micro</text>
+    <text class="d-sub" x="200" y="328">capte aussi l'IA</text>
+
+    <path id="s03-aec-out" class="d-link" d="M840,90 C1000,90 1200,120 1200,250" marker-end="url(#s03-aec-arrow)" />
+    <text class="d-link-label" x="1090" y="80">audio sortant</text>
+
+    <path id="s03-aec-echo" class="d-link d-link--amber" d="M1060,300 L340,300" marker-end="url(#s03-aec-arrow-amber)" />
+    <text class="d-link-label" x="700" y="285">écho acoustique</text>
+
+    <path id="s03-aec-in" class="d-link" d="M200,250 C200,120 400,90 560,90" marker-end="url(#s03-aec-arrow)" />
+    <text class="d-link-label" x="300" y="80">« l'utilisateur parle ! »</text>
+
+    <circle class="d-packet" r="6">
+      <animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#s03-aec-echo" /></animateMotion>
+    </circle>
+  </svg>
+  <div class="grid-2">
+    <p class="fragment rise-in"><span class="ok">WebRTC</span> : APM de libwebrtc, référence d'écho disponible</p>
+    <p class="fragment rise-in"><span class="alert">PCM maison</span> : capture et lecture séparées, AEC non garanti</p>
+  </div>
+  <p class="refs">[rt-echo-cancellation] · [rt-barge-in] · [proj-avw-risks] · SP-06</p>
+  <aside class="notes">
+    Sans annulation d'écho, la voix de l'IA sort du haut-parleur, revient dans le micro, et le VAD serveur la prend pour l'utilisateur : l'IA s'auto-interrompt [rt-echo-cancellation].
+    Avec flutter_webrtc, getUserMedia applique par défaut echoCancellation, noiseSuppression… (APM logicielle de libwebrtc sur desktop) ; comme l'audio distant est joué par la même pile que celle qui capte, la référence d'écho est disponible.
+    Avec un pipeline PCM maison, typiquement Gemini via firebase_ai, capture et lecture sont deux piles séparées et l'AEC n'est pas garanti : casque, micro coupé pendant que l'IA parle (on perd le barge-in), ou VAD client à seuil d'énergie.
+    Ce qu'on a rencontré sur un projet précédent : une seconde capture micro en parallèle de getUserMedia, d'où double capture et conflits de session audio. Depuis, on s'en tient à une seule source micro [proj-avw-risks].
+    Pour la démo, le test « l'IA sur l'enceinte du PC s'auto-interrompt-elle ? » est prévu (SP-06, absorbé dans le jalon J7) : pas encore mesuré.
+  </aside>
+</section>
+
+<!-- 9. Latence -->
+<section data-hud="low">
+  <p class="eyebrow">Latence perçue</p>
+  <h2>Les leviers d'action</h2>
+  <div class="kpi-row">
+    <div class="kpi kpi--amber"><span class="kpi-value">&lt; 1<small>s</small></span><span class="kpi-label">NFR-01 : réponse perçue, p90</span></div>
+    <div class="kpi"><span class="kpi-value">500–800<small>ms</small></span><span class="kpi-label">silence de fin de tour (Gemini)</span></div>
+    <div class="kpi"><span class="kpi-value">20–40<small>ms</small></span><span class="kpi-label">chunks audio en entrée (reco interne, PCM/WebSocket)</span></div>
+    <div class="kpi"><span class="kpi-value">800<small>ms</small></span><span class="kpi-label">accusé vocal (exemple doc)</span></div>
+  </div>
+  <ul class="compact mt-2">
+    <li class="fragment rise-in">WebRTC ; permission micro et init <span class="accent">avant</span> le clic « parler »</li>
+    <li class="fragment rise-in">Outils lents : garder la voix réactive</li>
+    <li class="fragment rise-in">UI optimiste : squelette GenUI dès l'appel d'outil</li>
+    <li class="fragment rise-in">Mesurer de la fin de parole au premier son, sur l'horloge de l'app</li>
+  </ul>
+  <p class="refs">[rt-latency] · [perf-audio-latency] · [rt-gemini-audio-vad] · [ma-filler-acknowledgements] · NFR-01 · pdr-0038</p>
+  <aside class="notes">
+    L'objectif produit est NFR-01 : une réponse vocale perçue en moins d'une seconde après la fin de la phrase, chronométrée sur 10 répétitions au p90. Les chronos sont pris sur l'horloge monotone de l'app, sans aligner les horloges client et serveur [pdr-0038-latency-measured-on-app-clock].
+    Premier levier : la détection de fin de tour. Trop court, on fragmente ; trop long, l'IA semble lente. Chez Gemini, 500 à 800 ms recommandés [rt-gemini-audio-vad].
+    Côté audio, la recommandation interne est d'envoyer des chunks de 20 à 40 ms au rythme réel ; au-delà de 100 ms, la latence perçue augmente [perf-audio-latency].
+    Pour les outils lents, GPT-Live propose un accusé vocal automatique réglable par acknowledgement_delay_ms, 800 ms dans l'exemple de la doc [ma-filler-acknowledgements]. Et le pré-chauffage a un coût : chez OpenAI, créer la session WebRTC facture 15 s d'avance [rt-latency].
+    Ces chiffres ne sont pas encore mesurés sur Genesis Canvas : la base ne contient pas de budget étape par étape, le premier vrai chrono viendra du code.
+  </aside>
+</section>
+
+<!-- 10. Délégation et sideband -->
+<section data-hud="low">
+  <p class="eyebrow">Outils en voix</p>
+  <h2>Délégation des outils au backend</h2>
+  <svg class="diagram" viewBox="0 0 1400 440" width="1400" height="440" role="img" aria-label="App, modèle voix et orchestrateur reliés par le sideband">
+    <defs>
+      <marker id="s03-del-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+      <marker id="s03-del-arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path class="d-arrowhead d-arrowhead--amber" d="M0,0 L10,5 L0,10 z" />
+      </marker>
+    </defs>
+    <rect class="d-zone" x="20" y="20" width="360" height="300" rx="6" />
+    <text class="d-zone-label" x="40" y="50">Client</text>
+    <rect class="d-zone" x="1000" y="20" width="380" height="400" rx="6" />
+    <text class="d-zone-label" x="1020" y="50">Backend</text>
+
+    <rect class="d-node" x="60" y="160" width="280" height="110" rx="4" />
+    <text class="d-label" x="200" y="205">App Flutter</text>
+    <text class="d-sub" x="200" y="240">audio + rendu A2UI</text>
+
+    <rect class="d-node d-node--amber" x="560" y="40" width="280" height="110" rx="4" />
+    <text class="d-label" x="700" y="85">gpt-live-1</text>
+    <text class="d-sub" x="700" y="120">tour de parole</text>
+
+    <rect class="d-node" x="1040" y="160" width="300" height="110" rx="4" />
+    <text class="d-label" x="1190" y="205">Orchestrateur</text>
+    <text class="d-sub" x="1190" y="240">outils, règles, secrets</text>
+
+    <rect class="d-node d-node--ghost" x="1040" y="320" width="300" height="80" rx="4" />
+    <text class="d-label" x="1190" y="368">Agents · GenUI</text>
+
+    <path id="s03-del-audio" class="d-link" d="M340,190 C450,190 470,95 560,95" marker-end="url(#s03-del-arrow)" />
+    <text class="d-link-label" x="420" y="120">WebRTC</text>
+
+    <path id="s03-del-out" class="d-link d-link--amber" d="M840,95 C930,95 950,190 1040,190" marker-end="url(#s03-del-arrow-amber)" />
+    <text class="d-link-label" x="960" y="80">session.delegation.created</text>
+
+    <path id="s03-del-back" class="d-link" d="M1040,240 C900,240 800,200 760,150" marker-end="url(#s03-del-arrow)" />
+    <text class="d-link-label" x="820" y="270">commentary / thinking .append</text>
+
+    <path class="d-link d-link--static" d="M1190,270 L1190,320" marker-end="url(#s03-del-arrow)" />
+    <path id="s03-del-ui" class="d-link d-link--amber" d="M1040,255 C760,330 420,330 200,270" marker-end="url(#s03-del-arrow-amber)" />
+    <text class="d-link-label" x="620" y="350">surfaces A2UI (canal app ↔ backend, Q-39)</text>
+
+    <circle class="d-packet" r="6">
+      <animateMotion dur="2s" repeatCount="indefinite"><mpath href="#s03-del-out" /></animateMotion>
+    </circle>
+  </svg>
+  <p class="mt-1">Sideband <span class="mono">wss …/attach</span> : <span class="accent">un seul propriétaire</span> par appel. <span class="badge badge--open">Q-47 ouverte</span> mode de délégation</p>
+  <p class="refs">[rt-gpt-live-delegation] · [rt-gpt-live-sideband] · [rt-tool-calling-voice] · [p-ar-backend] · Q-39 · Q-47</p>
+  <aside class="notes">
+    gpt-live-1 délègue les appels d'outils. Le backend s'attache à la session par WebSocket sur /v1/live/sessions/{id}/attach, avec une clé du même projet [rt-gpt-live-sideband]. Il reçoit transcripts, événements de délégation et même une copie de l'audio.
+    Le schéma montre le mode « client » : chaque session.delegation.created devient une tâche de l'orchestrateur, et le résultat revient par commentary.append (à dire) ou thinking.append (contexte silencieux), 500 tokens au plus par append [rt-gpt-live-delegation].
+    Les surfaces A2UI ne repassent pas par le modèle vocal : l'orchestrateur valide l'A2UI des agents et le relaie à l'app sur un canal unique, dont la nature reste ouverte (Q-39, pdr-0045 proposée) ; au modèle, on ne renvoie qu'un résumé court [rt-tool-calling-voice]. C'est une recommandation interne.
+    Point d'attention : client et serveur peuvent tous deux répondre à un appel d'outil. On a intérêt à désigner un seul propriétaire par appel, pour éviter les doublons rejetés ou une action exécutée deux fois.
+    Pour Genesis Canvas, le choix du mode de délégation n'est pas tranché : c'est la question ouverte Q-47, qui attend le spike SP-02.
+  </aside>
+</section>
+
+<!-- 11. Délégation et accusés vocaux -->
+<section data-hud="low">
+  <p class="eyebrow">GPT-Live</p>
+  <h2>Délégation et accusés vocaux</h2>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th><span class="mono">responses</span></th><th><span class="mono">client</span></th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Backend</th><td>modèle Responses géré par OpenAI</td><td>votre orchestrateur</td></tr>
+      <tr><th>Reçoit</th><td><span class="mono">response.event</span> imbriqués</td><td>délégation <span class="amber">sans les mots de l'utilisateur</span></td></tr>
+      <tr><th>Retour</th><td class="mono">response.item.create + response.create</td><td class="mono">commentary / thinking .append</td></tr>
+    </tbody>
+  </table>
+  <ul class="compact mt-2">
+    <li class="fragment rise-in">Remplissage <span class="accent">générique</span> (« je regarde »), sans présumer du résultat</li>
+    <li class="fragment rise-in">Un <span class="mono">thinking</span> / <span class="mono">commentary .append</span> (même vide) annule <span class="amber">tous</span> les accusés en attente de la session</li>
+    <li class="fragment rise-in">Une réponse terminée n'a pas forcément été entendue</li>
+  </ul>
+  <p class="refs">[rt-gpt-live-delegation] · [ma-filler-acknowledgements] · [rt-transcription]</p>
+  <aside class="notes">
+    Le mode de délégation est fixé à la création, et vaut client par défaut s'il est omis ; on le fixe donc toujours explicitement [rt-gpt-live-delegation].
+    En mode responses, OpenAI fait tourner un modèle Responses avec ses outils hébergés ; les outils function restent exécutés par l'app, et sans response.create le backend ne reprend pas.
+    En mode client, c'est notre orchestrateur, mais la délégation arrive sans les mots de l'utilisateur : c'est à l'orchestrateur de reconstruire le contexte depuis les transcripts d'entrée et de sortie [rt-transcription].
+    Pendant l'attente, GPT-Live peut prononcer un accusé automatique. Notre règle interne : le remplissage reste générique, et le résultat parlé ne vient que du vrai retour d'outil [ma-filler-acknowledgements].
+    Un détail qui peut surprendre : un thinking.append ou commentary.append, même vide, annule tous les accusés en attente de la session, y compris ceux des autres délégations.
+  </aside>
+</section>
+
+<!-- 12. Leçons apprises -->
+<section data-hud="low">
+  <p class="eyebrow">Retour d'expérience</p>
+  <h2>Leçons d'un widget vocal antérieur</h2>
+  <div class="grid-3 stretch-items">
+    <div class="card card--alert fragment rise-in">
+      <span class="card-icon">01</span>
+      <h3>stop mêlé à dispose</h3>
+      <p>Session arrêtée, micro toujours actif ; runner impossible à relancer.</p>
+    </div>
+    <div class="card card--alert fragment rise-in">
+      <span class="card-icon">02</span>
+      <h3>Double capture</h3>
+      <p>Seconde capture en parallèle de WebRTC ; on garde une seule source micro.</p>
+    </div>
+    <div class="card card--alert fragment rise-in">
+      <span class="card-icon">03</span>
+      <h3>Clé côté client</h3>
+      <p>Réutilisée pour un autre appel LLM, d'où une fuite.</p>
+    </div>
+    <div class="card card--amber fragment rise-in">
+      <span class="card-icon">04</span>
+      <h3>Faux résultats</h3>
+      <p><span class="mono">{"status":"ok"}</span> immédiat : le vrai résultat n'arrive jamais.</p>
+    </div>
+    <div class="card card--amber fragment rise-in">
+      <span class="card-icon">05</span>
+      <h3>Tout en dur</h3>
+      <p>Modèle, voix, région, URL. À passer par la configuration.</p>
+    </div>
+    <div class="card card--amber fragment rise-in">
+      <span class="card-icon">06</span>
+      <h3>Timer de 3 s</h3>
+      <p>Pour deviner « l'IA parle ». Les signaux fournisseur sont plus fiables.</p>
+    </div>
+  </div>
+  <p class="refs">[proj-avw-risks] · [rt-graceful-close] · [rt-provider-abstraction] · [rt-barge-in]</p>
+  <aside class="notes">
+    Ces six pièges viennent de l'analyse du code d'un widget vocal antérieur ; ils sont devenus des règles du projet [proj-avw-risks].
+    Un : stop ne fermait pas le runner, la peer connection et le micro restaient actifs ; et comme dispose fermait les StreamControllers d'un singleton, impossible de relancer. Désormais stop et dispose sont distincts [rt-graceful-close].
+    Deux : une capture micro tournait en parallèle de getUserMedia. Trois : la clé passée au widget servait aussi à un autre appel LLM.
+    Quatre, le plus difficile à repérer : des résultats d'outils factices renvoyés immédiatement ; le modèle ne recevait jamais la vraie réponse. Depuis, on renvoie le vrai résultat, ou une erreur explicite.
+    Cinq : configuration codée en dur. Six : un timer de 3 secondes pour deviner si l'IA parle ; on préfère les signaux du fournisseur et le niveau audio de la piste distante [rt-barge-in].
+  </aside>
+</section>
+
+<!-- 13. Port VoiceSession -->
+<section data-hud="low">
+  <p class="eyebrow">Abstraction des fournisseurs</p>
+  <h2>Le port VoiceSession</h2>
+  <div class="grid-2-1 center-items">
+    <pre data-title="voice_session.dart"><code class="language-dart" data-trim data-line-numbers="2|3|4-6|7-8">
+abstract interface class VoiceSession {
+  Stream&lt;VoiceEvent&gt; get events;
+  Future&lt;void&gt; start(VoiceSessionConfig config);
+  Future&lt;void&gt; sendToolResult(String callId, Object? result);
+  Future&lt;void&gt; appendContext(String text, {bool speak = false});
+  Future&lt;void&gt; setMicMuted(bool muted);
+  Future&lt;void&gt; stop();    // graceful, réutilisable
+  Future&lt;void&gt; dispose(); // fin de vie
+}
+    </code></pre>
+    <ul class="compact">
+      <li><span class="mono">GptLiveWebRtcSession</span><br><span class="badge badge--accepted">pdr-0012</span></li>
+      <li class="muted"><span class="mono">GeminiLiveDirectSession</span></li>
+      <li class="muted"><span class="mono">GeminiLiveFirebaseSession</span></li>
+    </ul>
+  </div>
+  <p class="refs">[rt-provider-abstraction] · [rt-graceful-close] · pdr-0012</p>
+  <aside class="notes">
+    Pour éviter ces pièges, on a retenu un port VoiceSession unique côté domaine, avec des adaptateurs par fournisseur [rt-provider-abstraction]. C'est une recommandation interne, au statut opinion.
+    Le domaine ne voit qu'un seul flux d'événements normalisés : démarrage, transcript, l'IA parle, interruption, demande d'outil, usage, clôture, erreur.
+    La configuration (profil d'agent, voix, langue) est injectée au start ; stop est réutilisable, dispose marque la fin de vie.
+    Le port n'abstrait pas trop les outils : GPT-Live délègue, Gemini appelle des fonctions. Le port expose donc sendToolResult, et appendContext couvre commentary et thinking.
+    Pour Genesis Canvas, seul l'adaptateur GPT-Live en WebRTC est retenu [pdr-0012-voice-provider-openai] ; les adaptateurs Gemini restent l'alternative. Ce code est la cible ; il n'est pas encore écrit dans le dépôt.
+  </aside>
+</section>
