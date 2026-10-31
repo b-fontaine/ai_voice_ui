@@ -145,6 +145,13 @@ void main() {
         }),
         const VoiceInterrupted(atMs: 4200, cause: InterruptionCause.correction),
       ),
+      'voice.interrupted cause overlap': (
+        _env('voice.interrupted', <String, Object?>{
+          'at_ms': 4200,
+          'cause': 'overlap',
+        }),
+        const VoiceInterrupted(atMs: 4200, cause: InterruptionCause.overlap),
+      ),
       'voice.interrupted cause stop': (
         _env('voice.interrupted', <String, Object?>{
           'at_ms': 4200,

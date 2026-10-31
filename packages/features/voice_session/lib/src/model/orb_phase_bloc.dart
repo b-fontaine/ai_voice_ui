@@ -47,7 +47,7 @@ final class _InterruptionEnded extends OrbPhaseEvent {
 }
 
 // Nature de l'interruption en cours.
-enum _InterruptionKind { stop, silence, correction }
+enum _InterruptionKind { stop, silence, correction, overlap }
 
 /// Phase de l'orbe : `Listening | Speaking | Interrupted`.
 ///
@@ -58,8 +58,10 @@ enum _InterruptionKind { stop, silence, correction }
 /// [ChannelLost]). Une délégation datée au plus de [stopSpan] après la coupure
 /// est celle du « Stop » lui-même : elle n'y met pas fin. Après un silence
 /// local, aucune délégation n'est exemptée. Après une interruption de cause
-/// `correction`, la première délégation datée au plus tôt de `at_ms` (celle de
-/// la correction) met fin à l'interruption. Pendant l'interruption, le
+/// `correction` ou `overlap`, la première délégation datée au plus tôt de
+/// `at_ms` (celle de la correction) met fin à l'interruption. Un `overlap` reçu
+/// alors que la phase n'est pas [Speaking] (le fournisseur a déjà coupé sa
+/// voix) donne [Interrupted] puis [Listening] aussitôt (règle P6). Pendant l'interruption, le
 /// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée. Si la
 /// délégation de la correction est arrivée avant `voice.interrupted`, le Bloc
 /// émet [Interrupted] puis [Listening] aussitôt.
@@ -97,8 +99,8 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   int _generation = 0;
   int _interruptedAtMs = 0;
   // Nature de l'interruption en cours : `stop` exempte la délégation du « Stop »
-  // lui-même ; `correction` attend la délégation d'offset >= `at_ms` ;
-  // `silence` s'achève à la première délégation.
+  // lui-même ; `correction` et `overlap` attendent la délégation d'offset
+  // >= `at_ms` ; `silence` s'achève à la première délégation.
   _InterruptionKind _kind = _InterruptionKind.silence;
   // Plus grand offset de `DelegationStarted` reçu depuis le début de la session.
   int? _lastDelegationOffsetMs;
@@ -114,21 +116,29 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
     onData: (sessionEvent) {
       switch (sessionEvent) {
         case VoiceInterrupted(:final int atMs, :final InterruptionCause cause):
+          // Hors de la parole de l'IA, le fournisseur a déjà coupé sa voix
+          // avant le message (règle P6) : le chevauchement n'a plus rien à
+          // couper et la piste doit être rétablie aussitôt.
+          final bool overlapOutsideSpeech =
+              cause == InterruptionCause.overlap && state is! Speaking;
           _beginInterruption(
             emit,
             atMs: atMs,
             kind: switch (cause) {
               InterruptionCause.stop => _InterruptionKind.stop,
               InterruptionCause.correction => _InterruptionKind.correction,
+              InterruptionCause.overlap => _InterruptionKind.overlap,
             },
           );
-          // La délégation de la correction a pu arriver avant l'interruption :
-          // on passe par Interrupted (la page coupe la piste) puis on en sort
-          // aussitôt (la page la rétablit).
+          // La délégation de la correction (ou du chevauchement) a pu arriver
+          // avant l'interruption : on passe par Interrupted (la page coupe la
+          // piste) puis on en sort aussitôt (la page la rétablit).
           final int? lastOffset = _lastDelegationOffsetMs;
-          if (cause == InterruptionCause.correction &&
+          final bool delegatedAlready =
+              cause != InterruptionCause.stop &&
               lastOffset != null &&
-              lastOffset >= atMs) {
+              lastOffset >= atMs;
+          if (overlapOutsideSpeech || delegatedAlready) {
             _endInterruption(emit);
           }
         case VoiceSilenced():
@@ -151,7 +161,8 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
             final bool ends = switch (_kind) {
               _InterruptionKind.stop =>
                 offsetMs > _interruptedAtMs + stopSpan.inMilliseconds,
-              _InterruptionKind.correction => offsetMs >= _interruptedAtMs,
+              _InterruptionKind.correction ||
+              _InterruptionKind.overlap => offsetMs >= _interruptedAtMs,
               _InterruptionKind.silence => true,
             };
             if (ends) _endInterruption(emit);
