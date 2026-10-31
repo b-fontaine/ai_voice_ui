@@ -1,7 +1,7 @@
 # 014 — État
 
-- **Étape** : Vérification
-- **Tentatives** : 1/3
+- **Étape** : Clôture
+- **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/014-j7-silence-micro-correction
@@ -18,6 +18,7 @@
 | 2026-10-31 | TDD | **TDD terminé** : T13/T14 (barre à deux colonnes de 480 px, `mic-button`, `silence-button`, `Focus(autofocus)` + `M`/`Échap`, jamais `Espace` ; voile « Micro coupé » : disque 64 px + libellé à 24 px dessous ; réplique de l'IA limitée à 1 ligne quand un message d'état est affiché, pdr-0062) : `gate --unit flutter` `.omc/state/loop/gates/20261031-053512-unit-flutter.log`, acceptation Flutter 91 verts dont les 5 scénarios 014 ; T15 capture `.omc/state/loop/snapshots/20261031-053611-act1-replay.png` (1920×1080, quatre boutons lisibles, aucun débordement) ; **`gate --full` VERT sur arbre propre (67 contrôles)** : `.omc/state/loop/gates/20261031-053703-full.log` | `feafe29` |
 | 2026-10-31 | Revue | `architect-reviewer` (Opus, mode CODE) : **À REFACTORISER** (0 bloquante, 3 importantes R1-R3, 7 mineures R4-R10), rapport collé ci-dessous | `755ae50` |
 | 2026-10-31 | Refactorisation | **R1 à R8 et R10 appliquées en 3 lots** (R9, R5/R2 en clôture T92) : F-A Flutter (R1 fin d'interruption quand la délégation précède la correction + scénario S-07 bis ; R2 `setMicEnabled` rend un booléen, `Active(micMuted)` seulement sur succès : `.omc/state/loop/gates/20261031-055246-unit-flutter.log`), G Go (R3 C-04 par la file avec contrôle d'ordre ; R4 `ConsumeBefore` sous `s.mu` et garde d'époque dans `run()`, test de 300 itérations non vu rouge — course de quelques ns ; R5 limite documentée ; R6 refus du préfixe de mot d'arrêt ; R7 `InterruptCause` typé : `…055625-unit-go.log`), F-B Flutter (R8 `_InterruptionKind`, `canSilence` unique ; R10 test du focus après `deleteSurface` vert d'emblée : `…055913-unit-flutter.log`). **`gate --full` VERT sur arbre propre (67 contrôles)** : `.omc/state/loop/gates/20261031-060046-full.log` | `6e5a6f6`, `80f84c5`, `e5b606c` |
+| 2026-10-31 | Vérification | **`gate --full` VERT sur arbre propre** (67 contrôles, HEAD `cc62dac`, colonne propre = yes) : `.omc/state/loop/gates/20261031-060732-full.log` ; capture `app-smoke act2-replay` 1920×1080 relue : `.omc/state/loop/snapshots/20261031-061019-act2-replay.png` — surfaces Android, « Couper le micro » / « Faire taire » / « Acte 1/3 · Créer » / « Remettre à vide » lisibles à 24 px, sans ellipse ni débordement, barre du haut intacte (capture précédente `act1-replay` : `…20261031-053611-act1-replay.png`). Pas d'essai réel payant (voix hors délégation et micro réel : en répétition, Q-79, Q-87) | `cc62dac` |
 
 ## Revue d'architecte
 Revue du plan (P1 à P8) : voir le journal ci-dessus ; amendements appliqués. Conflits avec une décision : aucun (P1 précise pdr-0076 D3, P2 complète le contrat de pdr-0073).
