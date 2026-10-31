@@ -104,18 +104,20 @@
     <span class="badge badge--open badge--plain">pas de SDK Dart officiel</span>
   </div>
   <div class="grid-2 mt-1">
-    <pre data-title="/.well-known/agent-card.json · exemple abrégé"><code class="language-json" data-trim data-line-numbers="2-3|4-7|8-9|10-11">
+    <pre data-title="/.well-known/agent-card.json · agent Qualité, abrégé"><code class="language-json" data-trim data-line-numbers="2-3|4-7|8-10|11-13">
 {
-  "name": "Agent Qualité",
-  "description": "Stabilité d'une release",
+  "name": "Qualité",
+  "description": "Agent Qualité de Genesis Canvas : …",
   "supportedInterfaces": [{
-    "url": "https://…/qualite",
+    "url": "http://agent-quality:8090",
     "protocolBinding": "JSONRPC",
     "protocolVersion": "1.0" }],
   "capabilities": {
-    "streaming": true, "pushNotifications": false },
-  "securitySchemes": { "…": "…" },
-  "skills": [ "…" ]
+    "streaming": true,
+    "extensions": [{ "uri": "…/a2ui/v0.9" }] },
+  "skills": [{ "id": "quality-kpi",
+    "tags": ["release", "crash", "android", "…"],
+    "examples": ["Prépare la release 3.4", "…"] }]
 }
     </code></pre>
     <ul class="compact">
@@ -127,9 +129,9 @@
       <li class="fragment rise-in amber">Aucun secret dans la carte publique</li>
     </ul>
   </div>
-  <p class="refs">[proto-a2a-overview] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk]</p>
+  <p class="refs">[proto-a2a-overview] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk] · [p-ar-backend]</p>
   <aside class="notes">
-    A2A (Agent2Agent) a été créé par Google puis donné à la Linux Foundation ; il est piloté par un TSC où siègent notamment AWS, Cisco, Google, IBM Research, Microsoft, Salesforce, SAP et ServiceNow, et le site annonce qu'il rejoint l'Agentic AI Foundation [proto-a2a-overview]. Version courante : 1.0.0, avec des SDK officiels en Python, JS, Java, .NET, Go et Rust, mais pas en Dart [proto-a2a-dart-sdk]. Tout commence par l'Agent Card, publiée sur /.well-known/agent-card.json [proto-a2a-agent-card]. Le champ supportedInterfaces, nouveau en 1.0, liste les endpoints et leurs bindings, le premier étant le préféré. capabilities annonce le streaming SSE, les webhooks push et l'existence d'une carte étendue réservée aux clients authentifiés. Les skills sont ce que lit l'orchestrateur pour choisir à qui déléguer. L'exemple est abrégé et illustratif : « Agent Qualité » reprend un agent de notre démo. Dans notre cas, la carte publique ne contient aucun secret ; les informations sensibles vont dans la carte étendue.
+    A2A (Agent2Agent) a été créé par Google puis donné à la Linux Foundation ; il est piloté par un TSC où siègent notamment AWS, Cisco, Google, IBM Research, Microsoft, Salesforce, SAP et ServiceNow, et le site annonce qu'il rejoint l'Agentic AI Foundation [proto-a2a-overview]. Version courante : 1.0.0, avec des SDK officiels en Python, JS, Java, .NET, Go et Rust, mais pas en Dart [proto-a2a-dart-sdk]. Tout commence par l'Agent Card, publiée sur /.well-known/agent-card.json [proto-a2a-agent-card]. Le champ supportedInterfaces, nouveau en 1.0, liste les endpoints et leurs bindings, le premier étant le préféré. capabilities annonce le streaming SSE, les webhooks push et l'existence d'une carte étendue réservée aux clients authentifiés. Les skills sont ce que lit l'orchestrateur pour choisir à qui déléguer. L'exemple est la carte réelle de notre agent Qualité, en Go avec a2a-go v2, abrégée : un seul binding JSON-RPC, le streaming, une extension qui annonce le rendu A2UI v0.9 et le catalogue accepté, et un skill dont les tags et les exemples servent au routage par l'orchestrateur [p-ar-backend]. La carte ne déclare pas de securitySchemes, ni de carte étendue : la démo tourne en local sans authentification (pdr-0041, acceptée). Elle ne contient donc aucun secret ; dans un déploiement réel, ce qui est réservé aux clients authentifiés irait dans la carte étendue [proto-a2a-agent-card].
   </aside>
 </section>
 
@@ -228,7 +230,7 @@
   </div>
   <p class="refs">[proto-a2a-message-parts-artifacts] · [proto-a2a-task-lifecycle] · [proto-a2a-go-v03-compat]</p>
   <aside class="notes">
-    Un Message est un tour de conversation, avec le rôle ROLE_USER ou ROLE_AGENT ; un Artifact est un produit de la Task, un document ou une donnée structurée [proto-a2a-message-parts-artifacts]. Les deux transportent des Parts. En 1.0, la Part est un type unique qui contient exactement un champ parmi text, raw (des octets en base64), url et data (du JSON quelconque), plus mediaType, filename et metadata. Les résultats sont à placer dans les Artifacts, les Messages servant au dialogue [proto-a2a-task-lifecycle]. C'est la Part data qui nous intéresse : elle peut transporter du JSON A2UI. Nuance vécue lors de notre spike : le connecteur Flutter genui_a2a, qui parle encore A2A v0.3, lit l'A2UI dans les messages de statut et ignore les artifact-update [proto-a2a-go-v03-compat].
+    Un Message est un tour de conversation, avec le rôle ROLE_USER ou ROLE_AGENT ; un Artifact est un produit de la Task, un document ou une donnée structurée [proto-a2a-message-parts-artifacts]. Les deux transportent des Parts. En 1.0, la Part est un type unique qui contient exactement un champ parmi text, raw (des octets en base64), url et data (du JSON quelconque), plus mediaType, filename et metadata. Les résultats sont à placer dans les Artifacts, les Messages servant au dialogue [proto-a2a-task-lifecycle]. C'est la Part data qui nous intéresse : elle peut transporter du JSON A2UI. Nuance vécue lors de notre spike : le connecteur Flutter genui_a2a, qui parle encore A2A v0.3, lit l'A2UI dans les messages de statut et ignore les artifact-update [proto-a2a-go-v03-compat]. Nos agents Go ont gardé cette convention : chaque message A2UI part dans une Part data d'un statut WORKING, et le résumé factuel, celui que la voix restitue, part dans un Artifact texte.
   </aside>
 </section>
 
@@ -242,8 +244,8 @@
       <div class="seq-body">
         <div class="seq-msg fragment" style="--from: 1; --to: 2"><span class="seq-label">SendStreamingMessage</span></div>
         <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">task · SUBMITTED</span></div>
-        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">statusUpdate · WORKING</span></div>
-        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">artifactUpdate</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">statusUpdate · WORKING · A2UI</span></div>
+        <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">artifactUpdate · résumé</span></div>
         <div class="seq-msg is-back is-reply fragment" style="--from: 2; --to: 1"><span class="seq-label">statusUpdate · COMPLETED</span></div>
         <div class="seq-note fragment">état terminal → le flux se ferme</div>
       </div>
@@ -258,9 +260,9 @@
       </ul>
     </div>
   </div>
-  <p class="refs">[proto-a2a-streaming-push] · [proto-a2a-task-lifecycle]</p>
+  <p class="refs">[proto-a2a-streaming-push] · [proto-a2a-task-lifecycle] · [p-ar-backend]</p>
   <aside class="notes">
-    A2A propose deux façons de suivre une Task longue [proto-a2a-streaming-push]. Si le client reste connecté : un flux SSE ouvert par SendStreamingMessage ou SubscribeToTask, à condition que capabilities.streaming soit vrai dans l'Agent Card. Chaque événement contient exactement un objet parmi task, message, statusUpdate et artifactUpdate ; ils arrivent dans l'ordre, et le flux se ferme quand la Task atteint un état terminal. En 1.0, le flag final a disparu : c'est l'état terminal qui signale la fin. Si le client n'est pas connecté, par exemple une app mobile en arrière-plan : des webhooks push, livrés au moins une fois, donc avec des doublons à dédupliquer. Dans l'approche qu'on recommande en interne, ces webhooks arrivent au backend, qui les relaie ensuite à l'app par FCM ou WebSocket. La séquence affichée est un exemple de flux possible.
+    A2A propose deux façons de suivre une Task longue [proto-a2a-streaming-push]. Si le client reste connecté : un flux SSE ouvert par SendStreamingMessage ou SubscribeToTask, à condition que capabilities.streaming soit vrai dans l'Agent Card. Chaque événement contient exactement un objet parmi task, message, statusUpdate et artifactUpdate ; ils arrivent dans l'ordre, et le flux se ferme quand la Task atteint un état terminal. En 1.0, le flag final a disparu : c'est l'état terminal qui signale la fin. Si le client n'est pas connecté, par exemple une app mobile en arrière-plan : des webhooks push, livrés au moins une fois, donc avec des doublons à dédupliquer. Dans l'approche qu'on recommande en interne, ces webhooks arrivent au backend, qui les relaie ensuite à l'app par FCM ou WebSocket. La séquence affichée est celle de nos agents Go : la Task SUBMITTED, un statut WORKING par message A2UI, un Artifact pour le résumé, puis COMPLETED ; en cas de refus, un statut REJECTED, et sur « Stop », CANCELED. Nos agents n'annoncent que le streaming, pas de push : l'orchestrateur reste connecté pendant toute la Task [p-ar-backend].
   </aside>
 </section>
 
@@ -291,13 +293,14 @@
       <ul class="compact small">
         <li><code>genui_a2a</code> parle v0.3</li>
         <li>Handler natif <code>a2a-go</code> v2 → <span class="mono alert">-32601</span> / <span class="mono alert">-32009</span></li>
-        <li>Solution : monter <code>a2acompat/a2av0</code></li>
+        <li>Solution du spike : monter <code>a2acompat/a2av0</code></li>
+        <li>Produit : WSS maison vers l'app, A2A v1.0 entre Go (pdr-0045)</li>
       </ul>
     </div>
   </div>
-  <p class="refs">[proto-a2a-bindings] · [proto-a2a-overview] · [proto-a2a-go-v03-compat]</p>
+  <p class="refs">[proto-a2a-bindings] · [proto-a2a-overview] · [proto-a2a-go-v03-compat] · pdr-0045</p>
   <aside class="notes">
-    La spec 1.0 définit des opérations abstraites et trois liaisons : JSON-RPC 2.0, gRPC et HTTP+JSON, dite REST [proto-a2a-bindings]. Un serveur peut n'en exposer qu'une : le client lit donc supportedInterfaces pour savoir lesquelles sont disponibles. Côté Flutter, REST ou JSON-RPC suffisent avec http et SSE ; sur le web, on évite gRPC faute de HTTP/2 natif, mais il reste pertinent entre services backend. Le point qui demande le plus d'attention, c'est la version : la 1.0 est incompatible sur le fil avec la 0.3, et beaucoup de tutoriels et de SDK tiers suivent encore la 0.3 [proto-a2a-overview]. On l'a vérifié pendant le spike SP-03 : genui_a2a parle v0.3 et envoie message/stream. Le handler natif v1.0 de a2a-go v2 refuse les deux formes : message/stream y est inconnu (-32601, method not found), et même un nom v1.0 sans en-tête A2A-Version est rejeté en -32009 (« requested 0.3, served 1.0 »). La solution qu'on a retenue : monter le handler de compatibilité a2av0 [proto-a2a-go-v03-compat]. Les puces marquées « reco » sont des recommandations internes, elles ne viennent pas de la spec. Le choix du canal entre l'app et le backend de la démo reste une proposition (pdr-0045 proposée, Q-39 ouverte) : on y revient au chapitre suivant.
+    La spec 1.0 définit des opérations abstraites et trois liaisons : JSON-RPC 2.0, gRPC et HTTP+JSON, dite REST [proto-a2a-bindings]. Un serveur peut n'en exposer qu'une : le client lit donc supportedInterfaces pour savoir lesquelles sont disponibles. Côté Flutter, REST ou JSON-RPC suffisent avec http et SSE ; sur le web, on évite gRPC faute de HTTP/2 natif, mais il reste pertinent entre services backend. Le point qui demande le plus d'attention, c'est la version : la 1.0 est incompatible sur le fil avec la 0.3, et beaucoup de tutoriels et de SDK tiers suivent encore la 0.3 [proto-a2a-overview]. On l'a vérifié pendant le spike SP-03 : genui_a2a parle v0.3 et envoie message/stream. Le handler natif v1.0 de a2a-go v2 refuse les deux formes : message/stream y est inconnu (-32601, method not found), et même un nom v1.0 sans en-tête A2A-Version est rejeté en -32009 (« requested 0.3, served 1.0 »). La solution qui a fait passer le spike : monter le handler de compatibilité a2av0 [proto-a2a-go-v03-compat]. Les puces marquées « reco » sont des recommandations internes, elles ne viennent pas de la spec. Pour le produit, la question du canal est tranchée (Q-39, pdr-0045, acceptée) : l'app parle au backend par un WebSocket maison, genui_a2a sort de la stack de l'app, et A2A ne circule plus qu'entre l'orchestrateur et les agents, tous deux en Go avec a2a-go v2, donc en v1.0 natif, sans couche de compatibilité. On y revient au chapitre suivant.
   </aside>
 </section>
 
@@ -311,7 +314,7 @@
     <div class="arrow arrow--amber"><span class="arrow-label">client credentials · mTLS</span><span class="arrow-label arrow-label--below">identité de service</span></div>
     <div class="node node--amber">Agents A2A</div>
   </div>
-  <p class="center mt-1"><span class="badge badge--opinion badge--plain">recommandation interne</span> <span class="badge badge--accepted badge--plain">démo : 127.0.0.1, sans auth (pdr-0041)</span></p>
+  <p class="center mt-1"><span class="badge badge--opinion badge--plain">recommandation interne</span> <span class="badge badge--accepted badge--plain">démo : 127.0.0.1, sans auth, agents sur réseau interne (pdr-0041)</span></p>
   <div class="grid-2">
     <div class="card">
       <h3>Déclaré dans la carte</h3>
@@ -330,9 +333,9 @@
       </ul>
     </div>
   </div>
-  <p class="refs">[proto-a2a-security] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk]</p>
+  <p class="refs">[proto-a2a-security] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk] · [p-ar-security]</p>
   <aside class="notes">
-    A2A s'appuie sur des mécanismes d'authentification existants : l'Agent Card déclare des securitySchemes dans le style d'OpenAPI, et le serveur doit rejeter les identifiants absents ou invalides [proto-a2a-security]. Cinq schémas : API key, HTTP (Bearer, Basic), OAuth2, OpenID Connect et mutual TLS. La 1.0 a retiré les flows OAuth implicit et password, et ajouté le Device Code. En cours de Task, l'état AUTH_REQUIRED permet de demander une authentification, et une carte signée en JWS prouve son origine [proto-a2a-agent-card]. Notre recommandation interne : OAuth2 Authorization Code avec PKCE entre l'app et l'orchestrateur, client credentials ou mTLS entre l'orchestrateur et les agents, et aucune clé d'agent tiers dans l'app. À noter : le SDK Dart communautaire a2a ne gère ni l'authentification de la spec (hormis HTTPS) ni la carte étendue [proto-a2a-dart-sdk]. Pour être transparent sur la démo : tout tourne en local sur 127.0.0.1, sans authentification utilisateur, et la clé OpenAI reste côté backend (pdr-0041, acceptée).
+    A2A s'appuie sur des mécanismes d'authentification existants : l'Agent Card déclare des securitySchemes dans le style d'OpenAPI, et le serveur doit rejeter les identifiants absents ou invalides [proto-a2a-security]. Cinq schémas : API key, HTTP (Bearer, Basic), OAuth2, OpenID Connect et mutual TLS. La 1.0 a retiré les flows OAuth implicit et password, et ajouté le Device Code. En cours de Task, l'état AUTH_REQUIRED permet de demander une authentification, et une carte signée en JWS prouve son origine [proto-a2a-agent-card]. Notre recommandation interne : OAuth2 Authorization Code avec PKCE entre l'app et l'orchestrateur, client credentials ou mTLS entre l'orchestrateur et les agents, et aucune clé d'agent tiers dans l'app. À noter : le SDK Dart communautaire a2a ne gère ni l'authentification de la spec (hormis HTTPS) ni la carte étendue [proto-a2a-dart-sdk]. Pour être transparent sur la démo : tout tourne en local sur 127.0.0.1, sans authentification utilisateur, et la clé OpenAI reste côté backend (pdr-0041, acceptée). Ce qui remplace l'authentification entre services, c'est l'isolement réseau : les trois agents vivent sur un réseau Docker interne, sans port publié, sans sortie réseau (hormis la passerelle LLM interne, qu'on verra plus loin) et sans clé ; seul l'orchestrateur est aussi sur le réseau par défaut [p-ar-security].
   </aside>
 </section>
 
@@ -352,9 +355,9 @@
     </tbody>
   </table>
   <p class="mt-1 lead">Anthropic conseille de commencer simple ; on a donc privilégié un workflow codé à un superviseur LLM.</p>
-  <p class="refs">[ma-workflow-patterns] · [ma-handoff-vs-agent-as-tool] · [ma-simplicity-first] · [ma-adk-collaboration-modes]</p>
+  <p class="refs">[ma-workflow-patterns] · [ma-handoff-vs-agent-as-tool] · [ma-simplicity-first] · [ma-adk-collaboration-modes] · [p-ar-backend]</p>
   <aside class="notes">
-    Anthropic distingue les workflows, des chemins de code prédéfinis, des agents, où le LLM pilote lui-même ses étapes, et recommande la solution la plus simple possible [ma-simplicity-first]. Ses patterns composables : prompt chaining, routing, parallélisation, orchestrator-workers et evaluator-optimizer [ma-workflow-patterns]. Le SDK OpenAI Agents ajoute deux délégations : agent-as-tool, où le manager garde la conversation, et handoff, où le spécialiste devient l'agent actif [ma-handoff-vs-agent-as-tool] ; Google ADK a les mêmes idées avec transfer_to_agent et AgentTool [ma-adk-collaboration-modes]. La colonne de droite est notre lecture pour la voix, une opinion fondée sur ces notes : chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent très vite. Dans notre cas, on privilégie donc un routeur codé quand c'est possible, la voix comme manager qui appelle des outils, orchestrator-workers seulement si l'utilisateur accepte d'attendre (avec un accusé de réception parlé), et l'evaluator-optimizer plutôt hors ligne.
+    Anthropic distingue les workflows, des chemins de code prédéfinis, des agents, où le LLM pilote lui-même ses étapes, et recommande la solution la plus simple possible [ma-simplicity-first]. Ses patterns composables : prompt chaining, routing, parallélisation, orchestrator-workers et evaluator-optimizer [ma-workflow-patterns]. Le SDK OpenAI Agents ajoute deux délégations : agent-as-tool, où le manager garde la conversation, et handoff, où le spécialiste devient l'agent actif [ma-handoff-vs-agent-as-tool] ; Google ADK a les mêmes idées avec transfer_to_agent et AgentTool [ma-adk-collaboration-modes]. La colonne de droite est notre lecture pour la voix, une opinion fondée sur ces notes : chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent très vite. Dans notre cas, on privilégie donc un routeur codé quand c'est possible, la voix comme manager qui appelle des outils, orchestrator-workers seulement si l'utilisateur accepte d'attendre (avec un accusé de réception parlé), et l'evaluator-optimizer plutôt hors ligne. Dans la démo, le routage est codé : l'orchestrateur choisit les agents en comparant la demande aux tags de leurs cartes, sans appel LLM [p-ar-backend]. Le seul LLM ajouté est le composeur de l'agent Qualité. Le banc l'avait déjà mesuré trop lent pour notre objectif d'un premier squelette en moins de 1,5 s (p50 1,79 s, NFR-02) ; c'est pourquoi le squelette des surfaces part avant l'appel, une voie que le porteur doit encore confirmer (Q-82) [p-ar-llm-composer]. À la répétition au micro du 2026-10-31, l'appel a pris environ 3,7 s, sur une seule mesure.
   </aside>
 </section>
 
@@ -433,7 +436,7 @@
   </div>
   <p class="refs">[ma-target-architecture] · [ma-where-to-run-agents] · [ma-realtime-handoff-limits] · [adr-0002-orchestrator-backend] · [adr-0003-backend-go]</p>
   <aside class="notes">
-    On a vu le mécanisme de délégation au chapitre 3 : l'agent vocal confie la demande au backend, qui exécute l'action, et l'A2UI ne repasse pas par le modèle vocal. Ici, la question est le placement : où tourne chaque agent [ma-where-to-run-agents]. Le client ne porte que l'audio et WebRTC, le rendu A2UI, avec le catalogue comme liste blanche de widgets, et des outils purement locaux sans secret. L'orchestrateur, l'agent GenUI qui produit l'A2UI, les clients MCP et A2A vivent côté backend : c'est là que sont les secrets, les permissions, les jetons tiers et le journal d'audit. Pourquoi pas plusieurs agents vocaux qui se passent la main ? En temps réel, un handoff ne change pas de modèle, et la voix ne peut changer qu'avant la première sortie audio ; pour un autre modèle ou un agent backend, la doc OpenAI recommande la délégation par outil [ma-realtime-handoff-limits]. C'est pour cette raison qu'on a gardé un seul agent vocal comme interlocuteur. Ce schéma est un patron recommandé, une opinion de la base [ma-target-architecture] ; deux points sont des décisions acceptées : orchestrateur côté backend dès le départ [adr-0002-orchestrator-backend], backend en Go hexagonal [adr-0003-backend-go]. Dans notre démo, chaque agent A2A produit l'A2UI de ses surfaces, et l'orchestrateur valide et relaie (pdr-0036, acceptée) : d'où « agent(s) GenUI ».
+    On a vu le mécanisme de délégation au chapitre 3 : l'agent vocal confie la demande au backend, qui exécute l'action, et l'A2UI ne repasse pas par le modèle vocal. Ici, la question est le placement : où tourne chaque agent [ma-where-to-run-agents]. Le client ne porte que l'audio et WebRTC, le rendu A2UI, avec le catalogue comme liste blanche de widgets, et des outils purement locaux sans secret. L'orchestrateur, l'agent GenUI qui produit l'A2UI, les clients MCP et A2A vivent côté backend : c'est là que sont les secrets, les permissions, les jetons tiers et le journal d'audit. Pourquoi pas plusieurs agents vocaux qui se passent la main ? En temps réel, un handoff ne change pas de modèle, et la voix ne peut changer qu'avant la première sortie audio ; pour un autre modèle ou un agent backend, la doc OpenAI recommande la délégation par outil [ma-realtime-handoff-limits]. C'est pour cette raison qu'on a gardé un seul agent vocal comme interlocuteur. Ce schéma est un patron recommandé, une opinion de la base [ma-target-architecture] ; deux points sont des décisions acceptées : orchestrateur côté backend dès le départ [adr-0002-orchestrator-backend], backend en Go hexagonal [adr-0003-backend-go]. Dans notre démo, chaque agent A2A produit l'A2UI de ses surfaces, et l'orchestrateur valide et relaie (pdr-0036, acceptée) : d'où « agent(s) GenUI ». Il y en a trois, Qualité, Voix du client et Livraison, un conteneur chacun [p-ar-backend].
   </aside>
 </section>
 
@@ -474,9 +477,9 @@
       <p>Le modèle reçoit le statut effectif de l'action.</p>
     </div>
   </div>
-  <p class="refs">[ma-prompt-injection-tools] · [ma-guardrails] · [ma-real-tool-results] · [ma-mcp-security] · [ma-where-to-run-agents]</p>
+  <p class="refs">[ma-prompt-injection-tools] · [ma-guardrails] · [ma-real-tool-results] · [ma-mcp-security] · [ma-where-to-run-agents] · [p-ar-security]</p>
   <aside class="notes">
-    L'OWASP distingue l'injection directe, par l'utilisateur, et l'injection indirecte, cachée dans un contenu externe comme un retour MCP ou une réponse A2A ; en multi-agent, chaque saut devient donc un point d'entrée possible [ma-prompt-injection-tools]. Voici les quatre mesures qu'on a retenues. Un : aucun secret côté client, ni clé LLM ni jeton tiers [ma-where-to-run-agents]. Deux : on traite tout retour d'outil ou d'agent comme une donnée, encadrée, et le modèle vocal reçoit un résumé produit par l'orchestrateur plutôt que le texte brut d'un tiers. Trois : des garde-fous en couches, dans le code : liste blanche d'outils par rôle, validation des arguments par schéma, confirmation codée pour l'irréversible, validation de l'A2UI contre le catalogue ; le guardrail sur la transcription arrive après coup et ne remplace pas un contrôle avant l'action [ma-guardrails]. Côté MCP : pas de token passthrough, attention au SSRF, serveurs en liste blanche [ma-mcp-security]. Quatre : le modèle ne parle que de résultats réels, avec un statut ok, error, cancelled ou pending ; un faux « ok » le pousse à confirmer une action dont il ignore l'issue, et interrompre la parole n'arrête pas le backend [ma-real-tool-results]. La mesure 1 vient des règles du projet ; les mesures 2 et 3 sont des recommandations internes fondées sur l'OWASP ; la mesure 4 vient de la doc GPT-Live, l'enum de statut est notre convention.
+    L'OWASP distingue l'injection directe, par l'utilisateur, et l'injection indirecte, cachée dans un contenu externe comme un retour MCP ou une réponse A2A ; en multi-agent, chaque saut devient donc un point d'entrée possible [ma-prompt-injection-tools]. Voici les quatre mesures qu'on a retenues. Un : aucun secret côté client, ni clé LLM ni jeton tiers [ma-where-to-run-agents]. Deux : on traite tout retour d'outil ou d'agent comme une donnée, encadrée, et le modèle vocal reçoit un résumé produit par l'orchestrateur plutôt que le texte brut d'un tiers. Trois : des garde-fous en couches, dans le code : liste blanche d'outils par rôle, validation des arguments par schéma, confirmation codée pour l'irréversible, validation de l'A2UI contre le catalogue ; le guardrail sur la transcription arrive après coup et ne remplace pas un contrôle avant l'action [ma-guardrails]. Côté MCP : pas de token passthrough, attention au SSRF, serveurs en liste blanche [ma-mcp-security]. Quatre : le modèle ne parle que de résultats réels, avec un statut ok, error, cancelled ou pending ; un faux « ok » le pousse à confirmer une action dont il ignore l'issue, et interrompre la parole n'arrête pas le backend [ma-real-tool-results]. La mesure 1 vient des règles du projet ; les mesures 2 et 3 sont des recommandations internes fondées sur l'OWASP ; la mesure 4 vient de la doc GPT-Live, l'enum de statut est notre convention. Dans la démo, la mesure 1 va jusqu'aux agents : ils n'ont pas la clé OpenAI, et le composeur de Qualité passe par une passerelle LLM interne de l'orchestrateur, qui n'accepte que les adresses sources autorisées, celles de Qualité et du banc de mesure. Un agent qui reçoit une demande hors de son périmètre la refuse avec l'état REJECTED et un motif fermé, journalisé sans le texte de la demande. Un script, check-compose.sh, vérifie en CI que le compose garde ces règles [p-ar-security].
   </aside>
 </section>
 
@@ -495,6 +498,7 @@ session  gen_ai.conversation.id
       <div class="row">
         <span class="badge badge--neutral badge--plain">OTel GenAI : statut Development</span>
         <span class="badge badge--opinion badge--plain">mapping : opinion</span>
+        <span class="badge badge--accepted badge--plain">démo : journal de session, sans OTel (pdr-0048)</span>
       </div>
     </div>
     <div class="flow flow--vertical">
@@ -506,8 +510,8 @@ session  gen_ai.conversation.id
     </div>
   </div>
   <p class="mt-1 small">Ce qu'on évalue séparément : <span class="accent">délégation</span> · <span class="accent">action backend</span> · <span class="accent">restitution</span> ; runs répétés, P50 / P90.</p>
-  <p class="refs">[ma-otel-genai-spans] · [ma-voice-agent-evals]</p>
+  <p class="refs">[ma-otel-genai-spans] · [ma-voice-agent-evals] · [p-ar-quality] · [p-ar-llm-composer]</p>
   <aside class="notes">
-    Pour l'observabilité, les conventions sémantiques OpenTelemetry GenAI définissent des spans invoke_agent, invoke_workflow et execute_tool ; elles ont déménagé dans un dépôt dédié et sont toutes au statut Development, donc les noms peuvent encore changer [ma-otel-genai-spans]. Notre mapping, qui est une recommandation : une trace par session vocale, avec gen_ai.conversation.id égal à l'id de session ; une délégation devient invoke_agent orchestrator, qui contient un execute_tool par appel MCP ou A2A et un invoke_agent pour GenUI. Pas d'audio ni de transcription enregistrés par défaut : ce sont des données personnelles. Pour l'évaluation, le cookbook OpenAI rappelle qu'une confirmation convaincante à l'oral ne garantit pas que la bonne action a été faite ; d'où l'intérêt d'évaluer séparément la délégation, l'action backend et la restitution du résultat vérifié [ma-voice-agent-evals]. Trois paliers : CRAWL avec une requête générée par TTS, WALK avec de vrais enregistrements dégradés (bruit, écho, pertes de paquets), RUN avec un appelant simulé en full duplex sur plusieurs tours. Le modèle étant non déterministe, on répète les runs et on rapporte P50 et P90 avec la taille d'échantillon ; CRAWL en CI, WALK et RUN en nightly, c'est notre recommandation.
+    Pour l'observabilité, les conventions sémantiques OpenTelemetry GenAI définissent des spans invoke_agent, invoke_workflow et execute_tool ; elles ont déménagé dans un dépôt dédié et sont toutes au statut Development, donc les noms peuvent encore changer [ma-otel-genai-spans]. Notre mapping, qui est une recommandation : une trace par session vocale, avec gen_ai.conversation.id égal à l'id de session ; une délégation devient invoke_agent orchestrator, qui contient un execute_tool par appel MCP ou A2A et un invoke_agent pour GenUI. Pas d'audio ni de transcription enregistrés par défaut : ce sont des données personnelles. Pour l'évaluation, le cookbook OpenAI rappelle qu'une confirmation convaincante à l'oral ne garantit pas que la bonne action a été faite ; d'où l'intérêt d'évaluer séparément la délégation, l'action backend et la restitution du résultat vérifié [ma-voice-agent-evals]. Trois paliers : CRAWL avec une requête générée par TTS, WALK avec de vrais enregistrements dégradés (bruit, écho, pertes de paquets), RUN avec un appelant simulé en full duplex sur plusieurs tours. Le modèle étant non déterministe, on répète les runs et on rapporte P50 et P90 avec la taille d'échantillon ; CRAWL en CI, WALK et RUN en nightly, c'est notre recommandation. Pour être transparent sur la démo : ce mapping OTel n'est pas implémenté. On s'en tient à un journal de session horodaté, une trace par session et un enregistrement par appel A2A (pdr-0048, acceptée) ; c'est ce journal qui a fourni les mesures de la répétition. Côté évaluation, notre plan qualité prévoit CRAWL en CI et WALK et RUN en répétition [p-ar-quality] ; la campagne répétée dont on a les chiffres est le banc du composeur LLM : 25 plans valides sur 25, p50 1,79 s, p90 2,69 s [p-ar-llm-composer].
   </aside>
 </section>

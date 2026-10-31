@@ -67,7 +67,8 @@
     Première question : GenUI. Le LLM compose une UI à partir d'un catalogue de widgets approuvés, en parlant le protocole A2UI v0.9 [genui-overview].
     Deuxième : l'IA temps réel, une conversation voix vers voix qu'on peut interrompre ; le fournisseur retenu est OpenAI gpt-live-1 [pdr-0012-voice-provider-openai].
     Troisième : faire dialoguer tout ce petit monde en sécurité. On a choisi de ne garder aucune clé longue durée dans l'app : c'est le backend qui relaie la création de la session voix [rt-ephemeral-keys] [p-ar-security].
-    En toute transparence : au moment où j'écris ces slides, le projet est en phase de cadrage et de spikes ; la démo montrera ce qui sera prêt le 12.
+    Où en est le projet : au 31 octobre, les quatre actes de la démo sont livrés (créer, transformer, interagir, rejouer), ainsi que l'interruption à la voix, le compositeur LLM et le travail de design ; une répétition au micro sur enceinte a eu lieu le 31 (specs/progress.md, product/sources/2026-10-31-repetition-micro.md).
+    Restent à observer en répétition, donc non encore vérifiés : la coupure réelle des pistes audio (micro et voix de l'IA) sous Linux (Q-79), les horloges et les délais (Q-80), la correction en vol (Q-87) ; une fonctionnalité 016 est prévue (garde-fou des instructions vocales).
   </aside>
 </section>
 
@@ -80,7 +81,7 @@
     <div class="arrow fragment glow-in"><span class="arrow-label">délégation</span></div>
     <div class="node fragment glow-in">Orchestrateur<small>backend Go</small></div>
     <div class="arrow fragment glow-in"><span class="arrow-label">A2A</span></div>
-    <div class="node node--amber fragment glow-in">Agents<small>serveurs A2A</small></div>
+    <div class="node node--amber fragment glow-in">Agents<small>3 serveurs A2A</small></div>
     <div class="arrow arrow--amber fragment glow-in"><span class="arrow-label">A2UI</span><span class="arrow-label arrow-label--below" style="top: 62px">JSON validé et relayé par l'orchestrateur</span></div>
     <div class="node fragment glow-in">GenUI<small>widgets Flutter</small></div>
   </div>
@@ -88,13 +89,16 @@
     <p>L'agent produit une description d'interface en JSON ; le rendu s'appuie sur le catalogue de widgets défini par le développeur Flutter.</p>
     <cite>D'après la fiche produit Genesis Canvas</cite>
   </blockquote>
-  <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision]</p>
+  <p class="small muted fragment rise-in">En local, par <span class="mono">docker compose</span> : orchestrateur Go, un conteneur par agent A2A, passerelle LLM interne pour le compositeur. Seuls GPT-Live et le LLM texte sortent de la machine.</p>
+  <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision] · [p-ar-overview] · [pdr-0074-012-llm-composer-gateway-crashlist-details]</p>
   <aside class="notes">
     Ce schéma résume le parcours qu'on va suivre ce soir. Ma voix parle à un agent vocal, qui reste l'unique interlocuteur et délègue en un seul point vers un orchestrateur côté backend [ma-target-architecture] [adr-0002-orchestrator-backend].
     Le backend est écrit en Go [adr-0003-backend-go] ; l'orchestrateur planifie et délègue à de vrais serveurs A2A, et chaque agent produit l'A2UI de ses surfaces, que l'orchestrateur valide contre le catalogue puis relaie à l'app sans le recomposer [pdr-0036-real-a2a-agents-produce-a2ui].
     Côté Flutter, GenUI rend ce JSON avec un catalogue fermé : l'agent ne peut demander que des composants déclarés, et ce qu'il envoie n'est jamais exécuté comme du code [genui-a2ui-security] [pdr-0007-closed-catalog-stage-theme].
     C'est l'idée centrale de la fiche produit, et celle qu'on va développer ce soir [p-fn-vision].
-    Le canal exact entre l'app et le backend n'est pas encore tranché (Q-39 ouverte, pdr-0045 seulement proposée) : je ne le détaille pas ici.
+    Trois agents : Qualité, Voix du client, Livraison. Pour l'agent Qualité, la composition passe par un modèle texte, gpt-6-luna, qui choisit des composants dans un plan structuré ; les valeurs viennent toujours du jeu de données, et toute erreur retombe sur une composition déterministe. Les agents n'ont ni clé ni sortie réseau : l'appel passe par une passerelle interne de l'orchestrateur [p-ar-llm-composer] [pdr-0074-012-llm-composer-gateway-crashlist-details].
+    Tout tourne en local : orchestrateur et agents par docker compose, services sur 127.0.0.1, app Flutter lancée à côté [pdr-0029-local-docker-compose-hosting] [pdr-0041-backend-in-this-repo-local-no-auth].
+    Entre l'app et le backend, le canal est un WebSocket maison, l'app-channel, qui porte l'A2UI et les événements des agents ; les clics repartent en HTTP [pdr-0045-app-backend-channel-wss-recommended] [p-ar-overview].
   </aside>
 </section>
 
@@ -125,7 +129,7 @@
   <aside class="notes">
     Pour illustrer, on a choisi un métier familier à la plupart des développeurs Flutter : préparer la décision go/no-go d'une release mobile [pdr-0003-use-case-release-copilot].
     Les agents croisent les crashs, les avis des stores, le changelog et les captures ; ce cas d'usage se prête bien à des écrans variés.
-    L'app évaluée est fictive et s'appelle Release Copilot [pdr-0034-app-name-release-copilot] ; les données sont fictives et figées, seule la composition de l'UI varie d'une exécution à l'autre [pdr-0005-frozen-fictional-dataset].
+    L'app évaluée est fictive et s'appelle Release Copilot [pdr-0034-app-name-release-copilot] ; les données sont fictives et figées, seule la composition de l'UI varie d'une exécution à l'autre [pdr-0005-frozen-fictional-dataset] ; même quand un modèle compose l'écran, les chiffres affichés viennent du jeu de données [p-ar-llm-composer].
     Trois agents métier : Qualité, Voix du client, Livraison [p-fn-scope]. L'intérêt principal est de voir l'orchestrateur choisir quels agents il active ; leur nombre importe moins [pdr-0013-orchestrator-visible-agent-selection].
   </aside>
 </section>
@@ -137,11 +141,11 @@
     <div class="grid-2 stretch-items">
       <div class="card fragment rise-in">
         <h3>knowledge/</h3>
-        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">261</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
+        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">269</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
       </div>
       <div class="card fragment rise-in">
         <h3>product/</h3>
-        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">45</strong> décisions (PDR), <strong class="accent">66</strong> questions tracées.</p>
+        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">81</strong> décisions (PDR), <strong class="accent">89</strong> questions tracées.</p>
       </div>
       <div class="card card--amber fragment rise-in">
         <h3>.claude/</h3>
@@ -161,11 +165,11 @@
   <p class="refs">knowledge/index.yaml · product/README.md · .claude/ · tools/loop/README.md · [pdr-0043-light-spec-kit-sdd-template]</p>
   <aside class="notes">
     Au-delà de la démo, le dépôt contient des briques que vous pourrez reprendre si elles vous sont utiles.
-    knowledge/ est un zettelkasten : 261 notes atomiques avec frontmatter YAML, réparties en 12 domaines (voix temps réel, GenUI, protocoles d'agents, multi-agents, architecture Flutter, tests…). 212 sont vérifiées sur la doc officielle, 16 viennent d'une source secondaire, 33 sont marquées « opinion » ; le domaine décisions compte 8 ADR. On l'a constituée parce que ces API évoluent plus vite que les données d'entraînement des modèles.
-    product/ porte tout ce qui est propre à Genesis Canvas : 19 exigences fonctionnelles, 11 non fonctionnelles et 29 règles de gestion en vigueur (FR-10, NFR-07 et RG-20 ont été retirées par pdr-0032 quand le mode secours est devenu une vidéo), 45 PDR (42 acceptées, 1 proposée, 2 remplacées) et un registre de 66 questions, dont 22 encore ouvertes au 29 octobre.
+    knowledge/ est un zettelkasten : 269 notes atomiques avec frontmatter YAML, réparties en 12 domaines (voix temps réel, GenUI, protocoles d'agents, multi-agents, architecture Flutter, tests…). 219 sont vérifiées sur la doc officielle, 17 viennent d'une source secondaire, 33 sont marquées « opinion » ; le domaine décisions compte 8 ADR. On l'a constituée parce que ces API évoluent plus vite que les données d'entraînement des modèles.
+    product/ porte tout ce qui est propre à Genesis Canvas : 19 exigences fonctionnelles, 11 non fonctionnelles et 29 règles de gestion en vigueur (FR-10, NFR-07 et RG-20 ont été retirées par pdr-0032 quand le mode secours est devenu une vidéo), 81 PDR (79 acceptées, 2 remplacées) et un registre de 89 questions, dont 3 encore ouvertes au 31 octobre (Q-79, Q-80, Q-87 : des observations à faire en répétition).
     .claude/ contient 6 skills (kb-lookup, kb-curate, product-lookup, product-curate, product-decide, dev-loop) et 4 agents (product-steward, feature-developer, architect-reviewer, refactorer) : les agents lisent la base avant d'agir.
     tools/loop/ pilote une boucle de développement autonome dans un worktree séparé, avec une porte de qualité unique, gate.sh ; deux linters vérifient la cohérence des bases ; specs/ suit un gabarit SDD léger [pdr-0043-light-spec-kit-sdd-template].
     Le dépôt est public, sur github.com/b-fontaine/ai_voice_ui ; le QR code y mène directement.
-    Chiffres mesurés dans le dépôt le 29 octobre 2026 : à remesurer avant le talk.
+    Chiffres mesurés dans le dépôt le 31 octobre 2026 : à remesurer avant le talk.
   </aside>
 </section>

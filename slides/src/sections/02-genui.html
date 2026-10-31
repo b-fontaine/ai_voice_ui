@@ -185,6 +185,7 @@
     Chaque widget Surface affiche une surface identifiée par son surfaceId, à l'endroit choisi par l'app [genui-multiple-surfaces].
     Au clic suivant : la boucle retour. Une action utilisateur sort par controller.onSubmit ; Conversation appelle sendRequest sur le transport, qui appelle votre onSend, et le LLM répond [genui-user-actions] [genui-architecture].
     Deux points d'attention : la méthode s'appelle sendRequest (la doc mélange avec sendMessage), et depuis la 0.10 les messages sont des types a2ui_core [genui-migration-0-10].
+    Dans Genesis Canvas, l'A2UI arrive par le canal app-channel du backend : l'app n'utilise ni Conversation ni Transport ; elle valide chaque message puis le passe elle-même à SurfaceController.handleMessage [p-ar-frontend-screen].
   </aside>
 </section>
 
@@ -300,6 +301,7 @@
     Côté utilisateur, TextField, CheckBox, Slider ou ChoicePicker écrivent directement dans le modèle : aucun aller-retour avec le LLM pendant la saisie.
     Le modèle ne remonte à l'agent que dans le context d'une action, ou à chaque message si createSurface a sendDataModel à true [genui-a2ui-client-messages]. C'est pourquoi notre recommandation interne est de ne mettre aucun secret dans le data model [genui-a2ui-security].
     Des fonctions comme formatString, formatDate, required ou email s'évaluent côté client. Dans la v1.0 RC, le binding devient {"@path": …}, non supporté par genui 0.10.x [genui-a2ui-v1-rc].
+    Dans Genesis Canvas, on a fait un choix plus strict. Un updateDataModel remplace l'objet entier : un champ absent de la nouvelle valeur disparaît du rendu [genui-data-model]. Les agents écrivent donc le chemin entier de la surface, par exemple /kpi ; la seule exception est un sous-chemin déclaré dans le catalogue, /checklist/decisionStatus, et tout autre chemin est refusé par les deux validateurs [p-fn-catalog]. Le data model ne remonte jamais à l'agent : sendDataModel vaut false.
   </aside>
 </section>
 
@@ -330,6 +332,7 @@
     Sur le fil, c'est un message action : name, surfaceId, sourceComponentId, timestamp et context, tous requis [genui-a2ui-client-messages]. À noter : context ne contient que ce que l'agent a déclaré.
     Un functionCall comme openUrl s'exécute localement, sans aller-retour.
     Notre recommandation interne : traiter une action comme un événement typé renvoyé à l'orchestrateur, plutôt que de l'exécuter directement [genui-a2ui-security]. Sans Conversation, il faut écouter onSubmit soi-même, sinon les clics sont perdus.
+    Dans Genesis Canvas, c'est l'ActionDelegate qui prend le clic sur la Barre d'actions : l'app envoie au backend un POST /canvas/actions qui ne porte que le nom de l'action et la surface ; l'orchestrateur délègue à l'agent Livraison, qui répond par un updateDataModel de /checklist/decisionStatus [p-ar-frontend-screen] [p-ar-security]. À la répétition du 2026-10-31, la voix a confirmé « C'est fait. La release 3.4 est bloquée. » 0,65 s après le clic (product/sources/2026-10-31-repetition-micro.md).
   </aside>
 </section>
 
@@ -368,6 +371,7 @@ final catalog = BasicCatalogItems.asCatalog()
     Le catalogId est un contrat nommé entre agent et renderer, une URI par convention. Le client annonce ses catalogues via supportedCatalogIds ; l'agent en choisit un à createSurface, figé pour la vie de la surface. En v0.9, une surface n'utilise qu'un catalogue [genui-catalog-ids].
     Point d'attention : un catalogue étendu par copyWith garde l'id du catalogue basique si on ne passe pas de catalogId ; un agent distant ignorera alors vos items.
     En production, le catalogue reflète le design system : chaque item enveloppe un composant du DS et lit le thème ; on le versionne comme une API, avec une version majeure dans l'URI (recommandation interne) [ux-genui-catalog-as-ds]. Des widgets métier de haut niveau coûtent moins de tokens que des primitives (opinion) [genui-custom-catalog-item].
+    Dans Genesis Canvas, chaque surface est un seul composant métier, lié à un objet entier par data: {"path": "/kpi"} par exemple ; le builder le lit avec BoundObject, sans appeler dataContext.subscribe dans un widgetBuilder [genui-custom-catalog-item] [p-ar-frontend-screen].
   </aside>
 </section>
 
@@ -430,23 +434,24 @@ final catalog = BasicCatalogItems.asCatalog()
     <div class="hud-panel">
       <p class="panel-title">Notre approche dans ce projet</p>
       <ul class="compact small check-list">
-        <li class="fragment rise-in">catalogue fermé, A2UI validé par l'orchestrateur</li>
+        <li class="fragment rise-in">catalogue fermé, A2UI validé deux fois : orchestrateur puis app</li>
         <li class="fragment rise-in">retours d'agents traités comme données non fiables</li>
         <li class="fragment rise-in">aucune clé dans l'app : relais SDP par le backend</li>
-        <li class="fragment rise-in">agents isolés : réseau interne, sans clé</li>
+        <li class="fragment rise-in">agents isolés : réseau interne, sans clé ; modèle via une passerelle de l'orchestrateur</li>
       </ul>
     </div>
   </div>
   <blockquote class="mt-1 fragment scan-in">
     <p>Ces protections ont été prévues dès l'architecture, dans une démarche <strong class="accent">Secure by Design</strong>.</p>
   </blockquote>
-  <p class="refs">[ma-prompt-injection-tools] · [genui-a2ui-security] · [p-ar-security] · [rt-ephemeral-keys]</p>
+  <p class="refs">[ma-prompt-injection-tools] · [genui-a2ui-security] · [p-ar-security] · [rt-ephemeral-keys] · pdr-0053 · pdr-0074</p>
   <aside class="notes">
     L'injection de prompt reste possible. En multi-agent, chaque saut est une surface d'attaque, de l'utilisateur à l'agent vocal, à l'orchestrateur, aux agents A2A, jusqu'au client [ma-prompt-injection-tools].
     L'injection peut être directe, par ce que dit l'utilisateur, ou indirecte : une consigne cachée dans un contenu externe, par exemple un extrait d'avis client dans nos données. Un modèle qui génère de l'UI peut alors afficher un faux formulaire ou un lien piégé [ma-prompt-injection-tools] [genui-a2ui-security].
-    Dans ce projet, j'ai essayé de montrer un exemple de sécurisation, sans prétendre à une garantie : un catalogue fermé de composants, et un orchestrateur qui valide chaque message A2UI (composants, propriétés, liaisons) avant qu'il atteigne l'app ; la validation côté client reste à décider (Q-71) [p-ar-security].
+    Dans ce projet, j'ai essayé de montrer un exemple de sécurisation, sans prétendre à une garantie : un catalogue fermé de composants, et une validation de chaque message A2UI (composants, propriétés, liaisons, chemins du data model) deux fois : par l'orchestrateur, puis par l'app avant le moteur genui [p-ar-security] [pdr-0053-client-side-a2ui-validation-from-007]. Un message refusé n'affiche aucune surface, et le panneau du protocole le marque « refusé » [p-fn-catalog].
     Les retours des agents sont traités comme des données non fiables : la voix ne reçoit qu'un résumé produit par l'orchestrateur, sans le texte brut d'un tiers [p-ar-security].
-    Aucune clé dans l'app : c'est le backend qui relaie la création de la session voix [rt-ephemeral-keys]. Et les agents tournent sur un réseau Docker interne, sans port publié ni clé OpenAI [p-ar-security].
+    Un clic sur la Barre d'actions n'exécute rien côté app : c'est un événement typé, le nom de l'action et la surface, renvoyé à l'orchestrateur, qui le rapproche des actions déclarées par l'agent [p-ar-security].
+    Aucune clé dans l'app : c'est le backend qui relaie la création de la session voix [rt-ephemeral-keys]. Et les agents tournent sur un réseau Docker interne, sans port publié ni clé OpenAI ; quand l'agent Qualité appelle un modèle, il passe par une passerelle interne de l'orchestrateur [p-ar-security] [pdr-0074-012-llm-composer-gateway-crashlist-details].
     Ce qui nous a aidés, c'est de prévoir ces protections dès l'architecture, avant la première ligne de code, dans l'esprit Secure by Design ; elles auraient été plus difficiles à ajouter ensuite.
   </aside>
 </section>
@@ -495,6 +500,7 @@ final catalog = BasicCatalogItems.asCatalog()
     Mesuré le 2026-10-29 sur genui 0.10.4 : un composant hors catalogue ou un createSurface en double sont signalés ; un update sur une surface inexistante est silencieux, mis en tampon. Il vaut mieux plafonner les tours de correction : ai_voice_widget en autorisait 20, la recommandation interne est 2 ou 3 [genui-error-reporting].
     Côté utilisateur, notre recommandation interne est de ne pas afficher l'erreur de validation ; on montre un état de chargement, puis un message générique si le plafond est atteint [ux-genui-errors-validation].
     Chargement selon Cloudscape : deux étapes, traitement puis génération, toujours avec un texte visible ; rien sous une seconde [ux-genui-streaming-loading]. Erreurs en langage simple avec une étape suivante (Apple HIG), possibilité de reprendre la main (Google PAIR). Enfin, on demande une confirmation avant toute action importante [ux-ai-human-in-the-loop].
+    Dans Genesis Canvas, il n'y a pas de boucle de correction : un plan invalide du modèle bascule sur la composition déterministe, sans second appel [p-ar-llm-composer]. Côté app, un composant aux données incomplètes affiche un état neutre, sans message d'erreur, et la démo continue (RG-10) [p-fn-catalog]. Détail appris en route : SurfaceController.handleMessage ne lève jamais d'exception ; il pousse ses erreurs dans onSubmit, qu'il faut donc écouter (apps/genesis_canvas, engine_error_watcher.dart).
   </aside>
 </section>
 
@@ -528,20 +534,23 @@ final catalog = BasicCatalogItems.asCatalog()
 <section>
   <p class="eyebrow">Et dans Genesis Canvas ?</p>
   <h2>Les choix retenus pour la démo</h2>
-  <ul class="check-list">
+  <ul class="check-list compact">
     <li class="fragment rise-in">A2UI <span class="mono">"v0.9"</span>, genui 0.10.4 figé <span class="badge badge--accepted">pdr-0018</span></li>
-    <li class="fragment rise-in">catalogue fermé ; apparence gérée par le thème, hors IA <span class="badge badge--accepted">pdr-0007</span> <span class="badge badge--accepted">pdr-0014</span></li>
-    <li class="fragment rise-in">LLM guidé par des exemples d'écrans <span class="badge badge--accepted">pdr-0023</span></li>
+    <li class="fragment rise-in">catalogue fermé <span class="mono">genesis/v1</span> : 6 composants, dont <span class="mono">ActionBar</span> et <span class="mono">CrashList</span> ; apparence par le thème, hors IA <span class="badge badge--accepted">pdr-0007</span> <span class="badge badge--accepted">pdr-0014</span></li>
+    <li class="fragment rise-in">chaque message A2UI validé deux fois : orchestrateur, puis app <span class="badge badge--accepted">pdr-0053</span></li>
     <li class="fragment rise-in">chaque agent A2A produit son A2UI <span class="badge badge--accepted">pdr-0036</span></li>
+    <li class="fragment rise-in">agent Qualité : un petit modèle texte choisit composants et paramètres, guidé par des exemples ; valeurs tirées du jeu de données, repli déterministe <span class="badge badge--accepted">pdr-0060</span> <span class="badge badge--accepted">pdr-0074</span></li>
   </ul>
-  <p class="fragment rise-in mt-1">Canal app ↔ backend : WSS maison ou genui_a2a ? <span class="badge badge--proposed">pdr-0045 proposée</span> <span class="badge badge--open">Q-39 ouverte</span></p>
-  <p class="refs">product/decisions : pdr-0007 · pdr-0014 · pdr-0018 · pdr-0023 · pdr-0036 · pdr-0045 · product/roadmap/open-questions.md</p>
+  <p class="fragment rise-in mt-1">Canal app ↔ backend : WebSocket <span class="mono">app-channel</span> maison, genui_a2a hors de l'app <span class="badge badge--accepted">pdr-0045</span></p>
+  <p class="refs">product/decisions : pdr-0007 · pdr-0014 · pdr-0018 · pdr-0023 · pdr-0036 · pdr-0045 · pdr-0053 · pdr-0060 · pdr-0074 · [p-fn-catalog] · [p-ar-llm-composer]</p>
   <aside class="notes">
     Transition vers la partie projet. Ce que Genesis Canvas applique de ce chapitre, décisions acceptées à date :
     A2UI v0.9 avec « version » exactement « v0.9 », et genui 0.10.4 figé ; c'est une décision contrainte, qui découle directement des faits vérifiés [pdr-0018-a2ui-v09-genui-0-10-4].
-    Catalogue fermé : l'IA choisit les composants et leurs données, leur apparence vient du thème de scène, l'IA n'intervient pas sur le style. C'est pour moi le point central de ce talk [pdr-0007-closed-catalog-stage-theme]. Le catalogue compte 6 composants [pdr-0014-six-component-catalog].
-    La composition est faite par un LLM guidé par des exemples d'écrans attendus, une voie intermédiaire entre un LLM libre et des plans pré-écrits [pdr-0023-example-guided-composition].
+    Catalogue fermé : l'IA choisit les composants et leurs données, leur apparence vient du thème de scène, l'IA n'intervient pas sur le style. C'est pour moi le point central de ce talk [pdr-0007-closed-catalog-stage-theme]. Le catalogue genesis v1 compte 6 composants [pdr-0014-six-component-catalog] : Indicateur clé, Courbe de tendance, Sentiment des avis, Checklist go/no-go, la Barre d'actions, qui apparaît à la fin de l'acte 2, et la Liste des crashs, que l'IA affiche seulement quand on la demande. Son identifiant est une URI versionnée [pdr-0055-genesis-catalog-id-versioned-uri] ; le contrat est testé, avec des fixtures partagées par les validateurs Go et Dart [p-fn-catalog].
+    Chaque message A2UI est validé deux fois : par l'orchestrateur, puis par l'app avant le moteur genui [pdr-0053-client-side-a2ui-validation-from-007].
     Chaque agent A2A produit l'A2UI de ses surfaces ; l'orchestrateur valide contre le catalogue et relaie [pdr-0036-real-a2a-agents-produce-a2ui].
-    Pas encore tranché : le canal entre l'app et le backend. La recommandation est un WSS maison ; le spike SP-03 a montré que genui_a2a fonctionne avec a2a-go, mais la décision appartient au porteur (pdr-0045 proposée, Q-39 ouverte).
+    La composition suit des exemples d'écrans attendus [pdr-0023-example-guided-composition]. Depuis la fonctionnalité 012, l'agent Qualité appelle un petit modèle texte OpenAI [pdr-0060-small-openai-text-model-guided-a2ui]. Le modèle renvoie un plan structuré, quels composants et quels paramètres ; l'agent en tire l'A2UI et construit les données à partir du jeu de données. Au moindre problème, l'agent bascule sur la composition déterministe, sans second appel ; on le dirait au public. Les agents n'ont pas de clé : l'appel passe par une passerelle interne de l'orchestrateur [pdr-0074-012-llm-composer-gateway-crashlist-details] [p-ar-llm-composer]. Voix du client et Livraison restent déterministes.
+    À la répétition au micro du 2026-10-31, le squelette apparaît environ 0,1 s après l'accusé vocal, et les chiffres environ 3,7 s plus tard, le temps du composeur (product/sources/2026-10-31-repetition-micro.md). C'est une seule session : je ne le présente pas comme une mesure stable.
+    Canal entre l'app et le backend : décidé le 2026-10-29, une WebSocket app-channel maison ; le spike SP-03 a montré que genui_a2a fonctionne avec a2a-go, mais il reste hors de la stack de l'app [pdr-0045-app-backend-channel-wss-recommended].
   </aside>
 </section>
