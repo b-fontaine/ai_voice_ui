@@ -1,9 +1,9 @@
 # 015 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : Go T20 → T23 ; Flutter T10, T14, T11, T12a, T12b
+- **Fichiers touchés** (tâche en cours) : Go : `backend/orchestrator/internal/{domain,app/voice,bootstrap}` ; Flutter : `packages/entities/session`, `packages/features/voice_session`, `packages/shared/design_system`, `apps/genesis_canvas/lib/widgets/agents_rail` (listes détaillées au retour des agents)
 - **Branche** : feat/015-j7-overlap-interrupt-delegation-link
 - **Backlog** : EP-02, EP-06, EP-04, EP-01
 - **Mis à jour** : 2026-10-31
