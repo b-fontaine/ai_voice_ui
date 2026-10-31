@@ -221,14 +221,47 @@ func TestCorrectionWithStopWordIsStopPath(t *testing.T) {
 	waitFor(t, func() bool { return slices.Equal(e.fd.sess.interruptCalls(), []int64{3000}) })
 }
 
-// Le branchement de la correction (Supersede) est la tâche T22 : ici, aucun message ni
-// Interrupt n'est produit.
-func TestCorrectionPublishesNothingYet(t *testing.T) {
+// Une correction retenue par Supersede (le faux appelle announce) publie une fois
+// voice.interrupted {cause: correction}, sans Interrupt ; le payload Stop reste sans cause.
+func TestCorrectionPublishesInterruptedWithCauseOnce(t *testing.T) {
 	e := newStopEnv(t, withCorrections)
 	e.say("Non, plutôt iOS.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
 	e.clock.advance(10 * time.Second)
 	e.flush(t)
-	if n := len(e.sink.ofType(domain.TypeVoiceInterrupted)); n != 0 || len(e.fd.sess.interruptCalls()) != 0 {
-		t.Fatalf("une correction ne publie rien avant T22 : %d voice.interrupted, %v Interrupt", n, e.fd.sess.interruptCalls())
+	got = e.sink.ofType(domain.TypeVoiceInterrupted)
+	v, ok := got[0].Data.(domain.VoiceInterrupted)
+	if len(got) != 1 || !ok || v.AtMs != 3000 || v.Cause != domain.CauseCorrection {
+		t.Fatalf("voice.interrupted = %+v, attendu un seul {at_ms:3000 cause:correction}", got)
+	}
+	if calls := e.fd.sess.supersedeCalls(); !slices.Equal(calls, []int64{3000}) {
+		t.Fatalf("Supersede = %v, attendu [3000]", calls)
+	}
+	if calls := e.fd.sess.interruptCalls(); len(calls) != 0 {
+		t.Fatalf("Interrupt = %v, une correction n'interrompt pas", calls)
+	}
+}
+
+// Quand Supersede ne retient pas la condition, il n'appelle pas announce : rien n'est publié.
+func TestCorrectionNotRetainedPublishesNothing(t *testing.T) {
+	e := newStopEnv(t, func(o *Options) { withCorrections(o) })
+	e.fd.sess.skipAnnounce = true
+	e.say("Non, plutôt iOS.", 3000)
+	waitFor(t, func() bool { return len(e.fd.sess.supersedeCalls()) == 1 })
+	e.flush(t)
+	if n := len(e.sink.ofType(domain.TypeVoiceInterrupted)); n != 0 {
+		t.Fatalf("%d voice.interrupted publiés, attendu 0", n)
+	}
+}
+
+func TestStopPayloadHasNoCause(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Stop.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
+	if v := got[0].Data.(domain.VoiceInterrupted); v.Cause != "" {
+		t.Fatalf("cause = %q, absente attendue pour un Stop", v.Cause)
+	}
+	if n := len(e.fd.sess.supersedeCalls()); n != 0 {
+		t.Fatalf("Supersede appelé %d fois pour un Stop", n)
 	}
 }

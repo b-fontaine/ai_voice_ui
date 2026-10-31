@@ -130,8 +130,19 @@ type Plan struct {
 
 // VoiceInterrupted est l'arrêt demandé à la voix. AtMs est le start_ms (horloge
 // média du fournisseur) du transcript d'entrée qui a déclenché l'arrêt ; la
-// sérialisation le borne à 0 au minimum.
-type VoiceInterrupted struct{ AtMs int64 }
+// sérialisation le borne à 0 au minimum. Cause (facultative, énumération fermée) dit
+// pourquoi la voix est coupée : vide ou CauseStop pour un « Stop » (absente de la charge
+// utile, qui reste celle de la spec 011), CauseCorrection pour une correction (spec 014).
+type VoiceInterrupted struct {
+	AtMs  int64
+	Cause string
+}
+
+// Causes de VoiceInterrupted.
+const (
+	CauseStop       = "stop"
+	CauseCorrection = "correction"
+)
 
 func (VoiceInterrupted) isPayload() {}
 func (Plan) isPayload()             {}

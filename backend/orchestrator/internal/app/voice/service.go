@@ -542,15 +542,34 @@ loop:
 // le son sans attendre), puis l'arrêt des délégations (file du forwarder, sans blocage).
 // La session reste ouverte.
 func (s *Service) interrupt(sess *session, fw *forwarder, det Detection) {
-	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: det.AtMs})
+	s.announceInterrupted(sess, det.AtMs, "")
 	fw.interrupt(det.AtMs)
 }
 
-// onDetection route le verdict du classifieur. Seul « Stop » est traité ici ; la
-// correction n'a pas encore d'effet (son branchement, Supersede, est la tâche T22).
+// announceInterrupted publie voice.interrupted ; cause vide pour un « Stop » (charge
+// utile de la spec 011), domain.CauseCorrection pour une correction.
+func (s *Service) announceInterrupted(sess *session, atMs int64, cause string) {
+	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: atMs, Cause: cause})
+}
+
+// supersede transmet une correction : la gestion des délégations décide si une demande
+// antérieure est en vol ou en file et, alors seulement, appelle announce (publication de
+// voice.interrupted {cause: correction}) avant toute compensation. Ni Interrupt ni
+// consommation du mot de correction : il ouvre la demande suivante.
+func (s *Service) supersede(sess *session, fw *forwarder, det Detection) {
+	fw.supersede(det.AtMs, func() {
+		s.announceInterrupted(sess, det.AtMs, domain.CauseCorrection)
+	})
+}
+
+// onDetection route le verdict du classifieur : « Stop » interrompt, une correction
+// remplace la demande antérieure (Supersede).
 func (s *Service) onDetection(sess *session, fw *forwarder, det Detection) {
-	if det.Kind == KindStop {
+	switch det.Kind {
+	case KindStop:
 		s.interrupt(sess, fw, det)
+	case KindCorrection:
+		s.supersede(sess, fw, det)
 	}
 }
 

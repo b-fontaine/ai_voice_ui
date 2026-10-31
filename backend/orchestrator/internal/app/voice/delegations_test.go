@@ -34,8 +34,9 @@ type fakeSessionDelegations struct {
 	interruptFirst []bool        // voice.interrupted était déjà publié à l'appel
 	interruptGate  chan struct{} // si non nil : Interrupt bloque jusqu'à sa fermeture
 
-	supersedes []int64  // at_ms des Supersede reçus
-	order      []string // "transcript", "delegate", "interrupt" ou "supersede", dans l'ordre d'arrivée
+	supersedes   []int64  // at_ms des Supersede reçus
+	skipAnnounce bool     // Supersede ne retient pas la condition : announce n'est pas appelé
+	order        []string // "transcript", "delegate", "interrupt" ou "supersede", dans l'ordre d'arrivée
 }
 
 type delegateCall struct {
@@ -57,7 +58,7 @@ func (f *fakeSessionDelegations) Supersede(atMs int64, announce func()) {
 	f.supersedes = append(f.supersedes, atMs)
 	f.order = append(f.order, "supersede")
 	f.mu.Unlock()
-	if announce != nil {
+	if announce != nil && !f.skipAnnounce {
 		announce()
 	}
 }
