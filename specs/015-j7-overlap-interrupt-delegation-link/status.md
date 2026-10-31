@@ -1,9 +1,9 @@
 # 015 — État
 
 - **Étape** : Gherkin
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T01 (Flutter), T02, T03 (Go) — Gherkin
+- **Fichiers touchés** (tâche en cours) : Flutter : `apps/genesis_canvas/test/acceptance/acte_chevauchement_liaison*` et `step/` ; Go : `backend/orchestrator/acceptance/overlap_*`
 - **Branche** : feat/015-j7-overlap-interrupt-delegation-link
 - **Backlog** : EP-02, EP-06, EP-04, EP-01
 - **Mis à jour** : 2026-10-31
