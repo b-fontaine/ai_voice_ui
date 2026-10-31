@@ -23,6 +23,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : lot B terminé côté code (T21c : transitions d'apparition ; D-01 à D-07 tous verts). Reste : T22 (note de mesure NFR-04 dans `quality.md`, à la clôture), lot C (T30a, T30b, T32a, T32, T33, T34). |
 | 2026-10-31 | 013 : lot B en cours — T20, T21a, T21b faites (`SceneMotion`/`SceneMotionScope`, cellules sélectives du canevas, câblage de la page). Reste : T21c (transitions, D-06), T22, puis lot C. |
 | 2026-10-31 | 013 : lot A terminé (T10-T17, captures 1920×1080 conformes : pas de bande vide, aucun libellé tronqué). À juger par le porteur en répétition : en 3×2 (acte 2 + liste des crashs) la checklist masque « Changelog validé » (« + 1 autres critères ») et un seul avis tient, la sixième cellule reste vide ([Q-83](../product/roadmap/open-questions.md) option 2 si insuffisant). Prochaine étape : lot B (T20, T21a, T21b, T21c, T22). |
 | 2026-10-31 | 013 : TDD — T14, T15, T16 faites (étagère à noms entiers et icônes, régie à 48 px, panneau du protocole borné) ; D-01 à D-05 et D-07 verts. Reste : T17 (captures), lot B (T20-T22), lot C (T30a-T34). |

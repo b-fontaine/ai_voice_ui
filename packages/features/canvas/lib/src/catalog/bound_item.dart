@@ -45,18 +45,92 @@ CatalogItem boundCatalogItem<T extends Object>({
         value: data is Map ? data['data'] : null,
         builder: (BuildContext context, Object? object) {
           if (object == null) {
-            return NoDataCell(key: Key('nodata-${ctx.surfaceId}'));
+            return _ValueFade(
+              state: _BoundState.noData,
+              child: NoDataCell(key: Key('nodata-${ctx.surfaceId}')),
+            );
           }
           final T? value = _safeParse(parse, object);
           if (value == null) {
-            return SizedBox.expand(
-              child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
+            return _ValueFade(
+              state: _BoundState.neutral,
+              child: SizedBox.expand(
+                child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
+              ),
             );
           }
-          return build(context, value, ctx.surfaceId);
+          return _ValueFade(
+            state: _BoundState.data,
+            child: build(context, value, ctx.surfaceId),
+          );
         },
       );
     },
+  );
+}
+
+/// État d'une cellule liée : la clé de l'animation est l'état, jamais la
+/// valeur.
+enum _BoundState { noData, neutral, data }
+
+/// Fondu des valeurs (150 ms, [SceneMotion.value]) au seul passage « sans
+/// données » vers « données ».
+///
+/// Le même widget, à la même place, enveloppe les trois états : son `State`
+/// survit aux mises à jour du data model, donc un `updateDataModel` de l'acte 2
+/// ne rejoue rien et ne recrée pas le `State` du contenu (pdr-0064 D1, S-02).
+/// Une cellule montée directement avec ses données (restauration) est
+/// pleinement visible. La durée suit `SceneMotionScope` : nulle si les
+/// animations sont coupées, divisée par la vitesse du rejeu.
+class _ValueFade extends StatefulWidget {
+  const _ValueFade({required this.state, required this.child});
+
+  final _BoundState state;
+  final Widget child;
+
+  @override
+  State<_ValueFade> createState() => _ValueFadeState();
+}
+
+class _ValueFadeState extends State<_ValueFade>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animation = AnimationController(
+    vsync: this,
+    duration: SceneMotion.value,
+    value: 1,
+  );
+
+  @override
+  void didUpdateWidget(_ValueFade oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state != _BoundState.noData ||
+        widget.state != _BoundState.data) {
+      return;
+    }
+    final Duration duration = SceneMotionScope.of(context)
+        .durationFor(SceneMotion.value);
+    _animation.duration = duration;
+    if (duration == Duration.zero) {
+      _animation.value = 1;
+    } else {
+      _animation.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _animation,
+    child: widget.child,
+    builder: (BuildContext context, Widget? child) => Opacity(
+      opacity: SceneMotion.curve.transform(_animation.value),
+      child: child,
+    ),
   );
 }
 

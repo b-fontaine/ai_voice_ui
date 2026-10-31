@@ -87,27 +87,47 @@ class CatalogHarness {
       ((fixture[2]['updateDataModel'] as Map<String, dynamic>)['value']
           as Map<String, dynamic>);
 
-  Future<void> pump(WidgetTester tester) => tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        extensions: const <ThemeExtension<dynamic>>[SceneTheme.dark()],
-      ),
-      home: Scaffold(
-        body: BlocProvider<CanvasBloc>.value(
-          value: bloc,
-          child: SizedBox(
-            width: size.width,
-            // La cellule garde `size` : le bandeau réservé s'ajoute (A1).
-            height: size.height + CanvasBoard.actionsBandHeight,
-            child: CanvasBoard(controller: controller),
+  /// Monte le canevas. Sans [motion], aucun `SceneMotionScope` n'est posé :
+  /// animations actives, vitesse 1 (réglage par défaut). Avec [motion],
+  /// `disabled` coupe les durées et `speed` est la vitesse de rejeu.
+  Future<void> pump(
+    WidgetTester tester, {
+    ({bool disabled, double speed})? motion,
+  }) => tester.pumpWidget(
+    _withMotion(
+      motion,
+      MaterialApp(
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          extensions: const <ThemeExtension<dynamic>>[SceneTheme.dark()],
+        ),
+        home: Scaffold(
+          body: BlocProvider<CanvasBloc>.value(
+            value: bloc,
+            child: SizedBox(
+              width: size.width,
+              // La cellule garde `size` : le bandeau réservé s'ajoute (A1).
+              height: size.height + CanvasBoard.actionsBandHeight,
+              child: CanvasBoard(controller: controller),
+            ),
           ),
         ),
       ),
     ),
   );
+
+  static Widget _withMotion(
+    ({bool disabled, double speed})? motion,
+    Widget child,
+  ) => motion == null
+      ? child
+      : SceneMotionScope(
+          disabled: motion.disabled,
+          speed: motion.speed,
+          child: child,
+        );
 
   Future<void> send(WidgetTester tester, Map<String, dynamic> json) async {
     bloc.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(json)));

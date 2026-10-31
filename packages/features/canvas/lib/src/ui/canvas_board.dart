@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsSkeleton, SceneTheme;
+    show DsSkeleton, SceneMotion, SceneMotionScope, SceneTheme;
 
 import '../model/canvas_bloc.dart';
 import '../model/canvas_state.dart';
@@ -98,8 +98,13 @@ class _CanvasBoardState extends State<CanvasBoard> {
       id: id,
       controller: widget.controller,
       highlight: widget.highlight,
+      restored: _firstBuild,
     ),
   );
+
+  // Vrai jusqu'à la fin du premier rendu : les cellules créées alors sont des
+  // surfaces restaurées, qui n'apparaissent pas en fondu.
+  bool _firstBuild = true;
 
   @override
   void didUpdateWidget(CanvasBoard oldWidget) {
@@ -115,6 +120,8 @@ class _CanvasBoardState extends State<CanvasBoard> {
     buildWhen: (CanvasState previous, CanvasState next) =>
         !listEquals(previous.surfaceIds, next.surfaceIds),
     builder: (BuildContext context, CanvasState state) {
+      // Une surface supprimée perd sa cellule : si elle revient, elle arrive.
+      _cells.removeWhere((String id, _) => !state.surfaceIds.contains(id));
       final List<String> ids = CanvasBoard._inSlotOrder(state.surfaceIds);
       final int columns = CanvasBoard._columnsFor(ids.length);
       // Le bandeau est réservé dès la première surface : les cellules de la
@@ -128,7 +135,7 @@ class _CanvasBoardState extends State<CanvasBoard> {
       // géométrie (colonnes, rangées, bandeau) est calculée en un seul
       // endroit, le délégué, sans recalcul dans `build`.
       final bool hasBand = state.surfaceIds.isNotEmpty;
-      return CustomMultiChildLayout(
+      final Widget layout = CustomMultiChildLayout(
         delegate: _BoardLayoutDelegate(
           slots: ids,
           columns: columns,
@@ -151,6 +158,8 @@ class _CanvasBoardState extends State<CanvasBoard> {
             ),
         ],
       );
+      _firstBuild = false;
+      return layout;
     },
   );
 }
@@ -164,11 +173,16 @@ class _SurfaceCell extends StatelessWidget {
     required this.id,
     required this.controller,
     required this.highlight,
+    required this.restored,
   });
 
   final String id;
   final SurfaceController controller;
   final ValueListenable<String?> highlight;
+
+  /// Surface présente dès le premier rendu du canevas (voir
+  /// `_SurfaceAppearance`).
+  final bool restored;
 
   @override
   Widget build(BuildContext context) =>
@@ -176,20 +190,23 @@ class _SurfaceCell extends StatelessWidget {
         selector: (CanvasState state) => state.phaseOf(id),
         builder: (BuildContext context, SurfacePhase? phase) {
           if (phase == null) return const SizedBox.shrink();
-          final Widget content = phase == SurfacePhase.skeleton
-              ? DsSkeleton(key: ValueKey<String>('skeleton-$id'))
-              : Surface(surfaceContext: controller.contextFor(id));
           return KeyedSubtree(
             key: ValueKey<String>('surface-$id'),
             // Le `RepaintBoundary` est toujours là, à la même place : le
-            // contenu ne se remonte pas et ses peintures restent isolées.
+            // contenu ne se remonte pas et ses peintures restent isolées. La
+            // translation d'apparition se fait en dessous de lui.
             child: RepaintBoundary(
               // Le contenu reste le premier enfant de la pile : poser ou
               // retirer le contour ne remonte pas le moteur.
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  content,
+                  _SurfaceAppearance(
+                    id: id,
+                    controller: controller,
+                    phase: phase,
+                    restored: restored,
+                  ),
                   _HighlightOutline(id: id, highlight: highlight),
                 ],
               ),
@@ -197,6 +214,111 @@ class _SurfaceCell extends StatelessWidget {
           );
         },
       );
+}
+
+/// Passage du squelette aux composants d'une surface (D-06, pdr-0075 D3).
+///
+/// Un seul `AnimationController` par surface. Tant que la phase est
+/// `skeleton`, le squelette est seul à l'écran. Au passage aux composants, le
+/// squelette part aussitôt et la `Surface` est montée une fois pour toutes
+/// (son `State` n'est jamais recréé) : elle apparaît en fondu en se décalant de
+/// [SceneMotion.translation] vers sa place. La durée vient de
+/// [SceneMotionScope] : nulle si les animations sont coupées (jamais de
+/// `TickerMode`), divisée par la vitesse du rejeu sinon.
+///
+/// Une surface présente dès le premier rendu du canevas (`restored`,
+/// restauration) est directement pleinement visible. Une surface qui arrive
+/// ensuite apparaît en fondu, même si sa phase est déjà `components` ou `data`
+/// (le rejeu reconstruit une surface d'un seul coup).
+class _SurfaceAppearance extends StatefulWidget {
+  const _SurfaceAppearance({
+    required this.id,
+    required this.controller,
+    required this.phase,
+    required this.restored,
+  });
+
+  final String id;
+  final SurfaceController controller;
+  final SurfacePhase phase;
+
+  /// Surface déjà présente au premier rendu du canevas : pas d'apparition.
+  final bool restored;
+
+  @override
+  State<_SurfaceAppearance> createState() => _SurfaceAppearanceState();
+}
+
+class _SurfaceAppearanceState extends State<_SurfaceAppearance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animation = AnimationController(
+    vsync: this,
+    duration: SceneMotion.appear,
+    value: widget.restored && widget.phase != SurfacePhase.skeleton ? 1 : 0,
+  );
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Surface qui arrive déjà avec ses composants : le fondu part au montage.
+    if (_started) return;
+    _started = true;
+    if (!widget.restored && widget.phase != SurfacePhase.skeleton) _play();
+  }
+
+  @override
+  void didUpdateWidget(_SurfaceAppearance oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final bool wasSkeleton = oldWidget.phase == SurfacePhase.skeleton;
+    final bool isSkeleton = widget.phase == SurfacePhase.skeleton;
+    if (wasSkeleton == isSkeleton) return;
+    if (isSkeleton) {
+      _animation.value = 0;
+    } else {
+      _play();
+    }
+  }
+
+  void _play() {
+    final Duration duration = SceneMotionScope.of(context)
+        .durationFor(SceneMotion.appear);
+    _animation.duration = duration;
+    if (duration == Duration.zero) {
+      _animation.value = 1;
+    } else {
+      _animation.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.phase == SurfacePhase.skeleton) {
+      return DsSkeleton(key: ValueKey<String>('skeleton-${widget.id}'));
+    }
+    return AnimatedBuilder(
+      animation: _animation,
+      // La `Surface` est construite une fois : seul l'habillage suit l'image.
+      child: Surface(surfaceContext: widget.controller.contextFor(widget.id)),
+      builder: (BuildContext context, Widget? surface) {
+        final double t = SceneMotion.curve.transform(_animation.value);
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, SceneMotion.translation * (1 - t)),
+            child: surface,
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// Contour pointillé `highlight-<id>`, posé quand [highlight] vaut [id].

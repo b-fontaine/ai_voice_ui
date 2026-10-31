@@ -3,6 +3,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneMotionScope;
 import 'package:genui/genui.dart'
     show BasicCatalogItems, Catalog, SurfaceController;
 
@@ -54,12 +56,17 @@ void main() {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: BlocProvider<CanvasBloc>.value(
-          value: bloc,
-          child: CanvasBoard(
-            key: const Key('canvas-board'),
-            controller: controller,
-            highlight: highlight,
+        // Animations coupées : une cellule qui s'anime se reconstruit à chaque
+        // image (T21c), ce que ces tests de périmètre ne mesurent pas.
+        child: SceneMotionScope(
+          disabled: true,
+          child: BlocProvider<CanvasBloc>.value(
+            value: bloc,
+            child: CanvasBoard(
+              key: const Key('canvas-board'),
+              controller: controller,
+              highlight: highlight,
+            ),
           ),
         ),
       ),
