@@ -1,6 +1,6 @@
 # 016 — Garde-fou des instructions vocales et reprise d'une demande mal comprise
 
-> **En bref.** L'IA ne répond plus à un bruit parasite ni à une parole sans rapport avec la release (sujet a, [pdr-0081](../../product/decisions/pdr-0081-rail-in-replay-and-ignore-stray-speech.md) D2). Quand une demande dite par-dessus l'IA est mal transcrite et refusée, elle invite à répéter au lieu d'annoncer qu'une vue n'existe pas (sujet b).
+> **En bref.** L'IA ne répond plus à un bruit parasite ni à une parole sans rapport avec la release (sujet a, [pdr-0081](../../product/decisions/pdr-0081-rail-in-replay-and-ignore-stray-speech.md) D2). Quand une demande dite par-dessus l'IA est mal transcrite et refusée, elle invite à répéter (une fois) au lieu d'annoncer qu'une vue n'existe pas (sujet b).
 
 - **Jalon** : J7 (hors lots 014 et 015 ; issu de la répétition au micro du 2026-10-31)
 - **Epics** : EP-02, EP-06
@@ -19,19 +19,23 @@ Le porteur a dit : « Elle ne doit pas la traiter. C'est un bruit parasite » (c
 - ⚠️ **non tranché** : une formule de politesse isolée (« merci », « bonjour ») : le texte ne la couvre pas, le comportement actuel est conservé.
 
 ## Scénarios (Gherkin)
-Nouveaux, à ajouter à `product/functional/features/` à la clôture (fichier `garde-fou-reprise-016.feature`) :
-- **G-01** — Le texte des instructions vocales contient la consigne de silence pour un bruit, et la consigne « toute demande d'affichage est déléguée » reste présente et antérieure (test de contrat sur le fichier).
-- **G-02** — Une session démarre avec les instructions du fichier configuré, consigne de silence comprise (le faux fournisseur live reçoit le texte).
-- **R-01** — Demande dite par-dessus l'IA (délégation d'offset ≥ `at_ms` d'un chevauchement, dans `VOICE_RECOVERY_WINDOW`) et refusée par tous les agents : la voix dit la phrase de reprise (« répète »), pas le refus de vue.
-- **R-02** — Même demande au calme (aucun chevauchement) : le refus habituel (`failure_rejected_view` ou `failure_rejected`) est dit, inchangé.
-- **R-03** — Demande dite par-dessus l'IA et réussie : le résultat habituel est dit, aucune phrase de reprise.
-- **R-04** — Demande dite par-dessus l'IA, hors de la fenêtre de reprise (offset > `at_ms` + fenêtre) et refusée : refus habituel.
-- **R-05** — Demande dite par-dessus l'IA, aucun agent retenu (hors catalogue) : phrase de reprise.
-- **R-06** — Reprise désactivée (`VOICE_RECOVERY_WINDOW=0`, défaut du code) : comportement de 015, inchangé.
-- **R-07** — Après la phrase de reprise, la même demande répétée au calme est planifiée normalement (aucun état résiduel).
+Nouveaux, à ajouter à `product/functional/features/` à la clôture (fichier `garde-fou-reprise-016.feature`, intitulé « consigne de silence livrée » : les tests prouvent la livraison du texte, pas que le modèle se tait) :
+- **G-01** — Le fichier d'instructions contient la consigne de silence, fondée sur la **forme** (rien d'intelligible adressé à l'assistant : bruit, voix lointaine, bribe sans demande), avec l'exception explicite « une demande d'affichage, même hors sujet, reste déléguée », placée après les consignes de délégation, qui gardent leurs textes exacts (`voice_instructions_test.go`).
+- **G-02** — Le texte du vrai fichier arrive au fournisseur : test de `newOpenAI` avec un serveur `httptest` qui lit `session.instructions`.
+- **R-01** — Demande dite par-dessus l'IA (délégation d'offset ≥ `at_ms` d'un chevauchement, dans `VOICE_RECOVERY_WINDOW`) et refusée par tous les agents : la voix dit la phrase `no_request` (« … pouvez-vous répéter ? »), pas le refus de vue.
+- **R-02** — Même demande au calme : refus habituel (`failure_rejected_view` ou `failure_rejected`), inchangé.
+- **R-03** — Demande dite par-dessus l'IA et réussie : résultat habituel, aucune phrase de reprise.
+- **R-04** — Demande dite par-dessus l'IA : borne incluse (offset = `at_ms` + fenêtre → reprise) et hors fenêtre (offset > `at_ms` + fenêtre → refus habituel).
+- **R-05** — Demande dite par-dessus l'IA, aucun agent retenu : phrase `no_request`.
+- **R-06** — `VOICE_RECOVERY_WINDOW=0` (défaut du code) : comportement de 015, inchangé. Fenêtre > 0 avec chevauchement coupé : le démarrage réussit, comportement de 014.
+- **R-07** — Après la reprise, la même demande répétée au calme est planifiée normalement.
+- **R-08** — **Un seul passage** : demande refusée → reprise ; la répétition dite **par-dessus la phrase de reprise** (nouveau chevauchement) et refusée de nouveau reçoit le **refus habituel** (RG-08 différé d'un tour, jamais supprimé).
+- **R-09** — Bribe sans sens (« Papa Papa ») dite par-dessus l'IA et que le modèle délègue malgré la consigne : phrase `no_request` (comportement assumé, voir `plan.md` § Interaction (a)/(b)).
+- **R-10** — Correction dite pendant que l'IA parle, puis refusée : reprise.
+- **R-11** — Échec d'agent (`Failure`) ou mélange refus + échec après un chevauchement : phrase d'échec habituelle.
 
 ## Critères d'acceptation
-- [ ] Scénarios G-01, G-02, R-01 à R-07 automatisés (Go, build tag `acceptance`) et verts
+- [ ] Scénarios G-01, G-02, R-01 à R-11 automatisés (Go, build tag `acceptance`) et verts
 - [ ] Tests unitaires des unités nouvelles (marquage de délégation dégradée, choix de la phrase, configuration)
 - [ ] Aucune régression : acceptation 011, 014, 015 rejouée avec le compose
 - [ ] `tools/loop/gate.sh --full` vert

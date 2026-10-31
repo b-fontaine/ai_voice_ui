@@ -3,16 +3,17 @@
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`.
 
 ## Gherkin
-- [ ] T01 Go — acceptation R-01 à R-07 (faux live, agents scriptés, journal de la voix) · test d'abord : R-01 échoue (la voix dit `failure_rejected_view`) ; R-02 à R-04, R-06 gardes verts
-- [ ] T02 Go — G-01 (contrat du fichier d'instructions) et G-02 (texte reçu par le faux fournisseur) · test d'abord : G-01 échoue (consigne de silence absente)
+- [ ] T01 Go — acceptation R-01 à R-11 (faux live, agents scriptés, journal de la voix ; fenêtre lue dans le compose sans repli silencieux) · test d'abord : R-01, R-05, R-08, R-09, R-10 échouent (la voix dit le refus habituel) ; R-02 à R-04, R-06, R-07, R-11 gardes verts
+- [ ] T02 Go — G-01 (contrat du fichier d'instructions : forme, exception explicite, ordre, textes de 012 intacts) et G-02 (`newOpenAI` + `httptest` lisant `session.instructions`) · test d'abord : G-01 échoue (consigne de silence absente) ; G-02 vert en garde avant, rouge sur la consigne
 
 ## TDD
-- [ ] T10 Go — config : `VOICE_RECOVERY_WINDOW` (parseur, bornes, refus sans chevauchement actif) et clé `repeat_request` (phrases, validation, fichier par défaut, `check-compose.sh` via le compose) · test d'abord : tables de `config_test.go` et `phrases_*_test.go`
-- [ ] T11 Go — `Service.overlap` appelle `NoteOverlap` ; port `SessionDelegations.NoteOverlap` ; `session` mémorise le plus récent `atMs` · test d'abord : `service_overlap_test.go` et `delegations_test.go` (faux gestionnaire)
-- [ ] T12 Go — `session.run` marque `Degraded` après `settle` ; `Pipeline` dit `RepeatRequest` aux trois points de refus si `Degraded` · test d'abord : `pipeline_repeat_test.go` (table : refus de vue, refus simple, aucun agent, échec d'agent, réussite, action) et test de course `-race`
-- [ ] T13 Go — consigne de silence dans `voice-instructions.fr.md`, phrase `repeat_request` dans `phrases.fr.json`, compose (`VOICE_RECOVERY_WINDOW: 8s`), `config/README.md` · test d'abord : G-01, G-02, `check-compose.sh`
+- [ ] T10 Go — config : `VOICE_RECOVERY_WINDOW` (parseur, bornes 0 à 30 s, `Warn` sans chevauchement actif, jamais de refus), `orchestrate.Options.RecoveryWindow` validée par `NewManager`, câblage (`wiring_test.go`) · test d'abord : tables de `config_test.go`, `manager_test.go`, `wiring_test.go`
+- [ ] T11 Go — port `SessionDelegations.NoteOverlap` (commentaire du port), `forwarder.noteOverlap` (jamais abandonné, ordre avant `supersede`), `Service.overlap` l'appelle (y compris correction dite pendant que l'IA parle), `session.NoteOverlap` (`hasOverlap`, plus grand `atMs`, sans effet fermée) ; mise à jour des trois faux de `voice/delegations_test.go` qui enregistrent l'appel et son ordre · test d'abord : `service_overlap_test.go`, `forward_test`, `delegations_test.go`
+- [ ] T12a Go — Manager : `session.run` pose `Delegation.recovery` (lecture sous `session.mu`, fenêtre, consommation, `repeatPending`, jamais pour une action) · test d'abord : tests unitaires de `session.run` avec un faux `Runner` qui lit la dégradation (chevauchement avant `Delegate`, entre `Delegate` et fin de `settle`, après le refus ; borne incluse ; deuxième délégation non dégradée)
+- [ ] T12b Go — Pipeline : `Phrases.NoRequest` aux trois points de refus si `recovery()` dégrade · test d'abord : `pipeline_recovery_test.go`, table : refus de vue, refus simple, aucun agent retenu → reprise ; `Failure`, mélange refus + échec, réussite partielle, réussite, action → inchangés
+- [ ] T13 Go — consigne de silence dans `voice-instructions.fr.md`, compose (`VOICE_RECOVERY_WINDOW: 8s`), `config/README.md` · test d'abord : G-01, G-02, test de lecture du compose
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer + refactorisations
-- [ ] T92 `gate.sh --full` vert après refactorisation ; essai réel payant au plus (voix de synthèse « Papa Papa », budget consulté) ; `product/` (feature `garde-fou-reprise-016`, architecture, Q-89 et Q-80 d/e, PDR) ; `progress.md` ; fusion et `publish.sh`
+- [ ] T92 `gate.sh --full` vert après refactorisation ; essai réel payant au plus (voix de synthèse « Papa Papa », budget consulté ; sinon Q-89 « non démontré ») ; `product/` (feature `garde-fou-reprise-016` sans « l'IA ignore un bruit », architecture, Q-89 et Q-80 d/e, pdr-0082 avec RG-08 différé d'un tour et R-09) ; `progress.md` ; fusion et `publish.sh`
