@@ -71,8 +71,8 @@ tasks:
   - task: "Ajouter ou modifier un composant du catalogue Genesis"
     docs: [p-fn-catalog, p-ar-llm-composer, p-ar-design-system, p-fn-feature-design-ergonomics-013, p-fn-feature-llm-composer-012, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-quality, pdr-0007-closed-catalog-stage-theme, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-custom-catalog-item, genui-catalog-ids, genui-data-model, genui-test-catalog-items, ux-genui-catalog-as-ds, ds-component-api, ds-widgetbook-4-genui, test-golden-alchemist]
-  - task: "Implémenter le barge-in, « Stop », le bruit court et le faire-taire clavier (« Stop » vocal livré par 011 ; micro coupé et faire taire à J7)"
-    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-screen, p-ar-voice-interruption, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-frontend, p-ar-frontend-screen, p-ar-stage-runtime, p-rm-spikes, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, p-rm-open-questions]
+  - task: "Implémenter le barge-in, « Stop », le bruit court, le faire-taire, le micro coupé et la correction en vol (« Stop » vocal livré par 011 ; faire taire, micro coupé et correction livrés par 014)"
+    docs: [p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-screen, p-fn-nfr, p-ar-voice-interruption, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-frontend, p-ar-frontend-screen, p-ar-stage-runtime, p-rm-spikes, pdr-0033-optional-shortcuts-mouse-first, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0076-014-silence-mic-correction-assistant-decided, p-rm-open-questions]
     knowledge: [rt-barge-in, rt-gpt-live-lifecycle, rt-transcription, rt-echo-cancellation, rt-graceful-close, proto-a2a-task-lifecycle, proj-avw-risks]
   - task: "Implémenter la session voix (gpt-live-1, session créée par relais SDP backend, aucune clé dans l'app, délégation)"
     docs: [pdr-0012-voice-provider-openai, p-ar-voice-interruption, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-nfr]
@@ -93,7 +93,7 @@ tasks:
     docs: [p-ar-frontend-screen, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-security, p-ar-backend, p-ar-stage-runtime, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
     knowledge: [genui-a2ui-security, genui-custom-catalog-item, genui-data-model]
   - task: "Écrire ou faire évoluer un scénario BDD"
-    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-llm-composer-012, p-fn-feature-design-ergonomics-013, p-fn-requirements, p-ar-quality]
+    docs: [p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-fn-feature-voice-interaction-011, p-fn-feature-silence-micro-correction-014, p-fn-feature-llm-composer-012, p-fn-feature-design-ergonomics-013, p-fn-requirements, p-ar-quality]
     knowledge: [test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-app-running-fixture, test-tdd-red-green-refactor]
   - task: "Mesurer les NFR (latence, 60 i/s, lisibilité, coût)"
     docs: [p-fn-nfr, p-ar-quality, p-ar-design-system, p-ar-replay, p-fn-risks-acceptance, pdr-0038-latency-measured-on-app-clock, pdr-0030-llm-budget-20-eur]
@@ -121,10 +121,11 @@ requirement_index:
   "RG-01..RG-30": p-fn-business-rules
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "D-01..D-07 (scénarios BDD de 013, à ne pas confondre avec D1..D8 de la DoD)": p-fn-feature-design-ergonomics-013
+  "M-01, M-02, S-07 bis, C-01..C-05 (scénarios BDD de 014 ; C-01..C-05 à ne pas confondre avec C-01..C-08 de 012)": p-fn-feature-silence-micro-correction-014
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-86 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-87 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-11 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0075": decisions/index.yaml
+  "pdr-0001..pdr-0076": decisions/index.yaml

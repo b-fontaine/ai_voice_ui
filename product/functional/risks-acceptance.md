@@ -3,7 +3,7 @@ id: p-fn-risks-acceptance
 title: Risques, plan B, DoD et métriques
 area: functional
 status: validated
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12]
 links: [pdr-0065-009-act3-interact-details-assistant-decided, p-rm-roadmap, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-rm-open-questions, p-fn-nfr, p-fn-requirements, p-fn-business-rules, p-ar-stage-runtime, p-ar-replay, p-ar-quality, pdr-0006-replay-fallback-must, pdr-0010-pinned-experimental-versions, rt-echo-cancellation, rt-barge-in, proj-avw-risks, ds-a11y-wcag-contrast, pdr-0022-gherkin-steps-no-leading-digit, pdr-0023-example-guided-composition, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [risques, plan-b, dod, metriques, repetition]
@@ -37,8 +37,8 @@ Les ids R1..R8 et la colonne « Porteur technique · jalon » sont une lecture d
 
 | Niveau | Déclencheur | Action | Exigence |
 |---|---|---|---|
-| 1 | L'IA parle trop ou n'entend pas l'interruption | Commande « silence » (bouton ; raccourci s'il ne pose pas de problème) | FR-20 |
-| 2 | Micro qui capte mal | Commande « silence » (bouton ; raccourci s'il ne pose pas de problème) | FR-20 |
+| 1 | L'IA parle trop ou n'entend pas l'interruption | Commande « silence » (bouton « Faire taire » ; raccourci `Échap`, livrés par 014) | FR-20 |
+| 2 | Micro qui capte mal | Commande « silence » (bouton « Faire taire » ; raccourci `Échap`, livrés par 014) ; « Couper le micro » (bouton, `M`) | FR-20, FR-12 |
 | 3 | Écran incohérent | Rejeu si besoin (parade de la fiche § 8, R6) | FR-09 (FR-10 retirée, pdr-0032) |
 | 4 | Réseau perdu ou chaîne bloquée | Vidéo de secours OBS, lancée par le porteur (géré par le porteur, hors périmètre de l'assistant) | — (pdr-0032) |
 
