@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
 
@@ -189,6 +190,45 @@ void main() {
       find.descendant(of: label, matching: find.byType(RichText)).first,
     );
     expect(paragraph.didExceedMaxLines, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('titre très long : retour à la ligne sans ellipse, les libellés '
+      'de crash gardent leur ligne unique', (tester) async {
+    await loadRealFonts();
+    final h = CatalogHarness(
+      'crashes',
+      'global',
+      variant: 'crashlist',
+      size: const Size(624, 302),
+      fontFamily: realFontFamily,
+      fontFamilyFallback: realFontFallback,
+    );
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    const title =
+        'Principaux crashs de la version 3.4 sur Android cette semaine';
+    await h.sendData(tester, <String, Object>{
+      'title': title,
+      'items': <Object>[_item(1, 'très long ' * 30), _item(2, 'court')],
+    });
+
+    final Finder text = find.text(title);
+    expect(text, findsOneWidget);
+    expect(tester.widget<Text>(text).overflow, isNot(TextOverflow.ellipsis));
+    expect(
+      paragraphsTruncated(
+        tester,
+        root: find.byKey(const Key('surface-crashes')),
+      ),
+      isEmpty,
+      reason: 'seuls les libellés de crash (exclus) gardent leur ellipse',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('crash-label-1'))).overflow,
+      TextOverflow.ellipsis,
+    );
+    expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
     expect(tester.takeException(), isNull);
   });
 

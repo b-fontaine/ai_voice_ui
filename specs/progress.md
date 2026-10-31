@@ -23,6 +23,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : TDD — T12a, T12b, T13 faites (checklist, avis, courbe lisibles sans ellipse ; D-02 et D-03 verts). Reste : T14 (étagère), T15 (régie, panneau), T16, T17 (captures), lot B, lot C. Point à juger à la capture : en 3×2 (acte 2) un seul avis et deux critères de checklist tiennent. |
 | 2026-10-31 | 013 : TDD en cours — T10 (rail horizontal 96 px) et T11 (canevas 676 px) faites ; D-01 et D-07 « premier plan » verts. Restent : T12a à T17 (lisibilité, régie, captures), lot B, lot C. |
 | 2026-10-31 | 013 : **Gherkin terminé** (D-01 à D-07 automatisés : 7 rouges pour la bonne raison, 5 gardes verts ; outillage de polices réelles `testing/real_fonts`, `gate --unit flutter` vert). Prochaine étape : TDD, lot A (T10, T11, …). |
 | 2026-10-31 | 013 : **revue du plan rendue** (À AMENDER, 8 amendements dont 2 bloquants, tous intégrés : Widgetbook en `apps/genesis_widgetbook` avec coupe C2 prévue, tests de lisibilité en polices réelles, apparition par `SceneMotionScope`, cellules sélectives pour NFR-04, tokens en constantes avec test de hash). **Q-85** ouverte pour le porteur (liaison animée de délégation, jamais livrée). Prochaine étape : Gherkin (T03, T01, T02). |

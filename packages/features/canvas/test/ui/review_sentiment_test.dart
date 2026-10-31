@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
 
@@ -10,7 +11,39 @@ final Finder excerptRows = find.byWidgetPredicate(
       '${(w.key as ValueKey).value}'.startsWith('review-excerpt-'),
 );
 
+/// Cellule d'une grille 3 x 2 à 1920 x 1080 : 624 x 302.
+const Size gridCell3x2 = Size(624, 302);
+
+/// Cellule d'une grille 2 x 2 à 1920 x 1080 : 936 x 302.
+const Size gridCell2x2 = Size(936, 302);
+
+/// Harnais en polices réelles (Ahem, environ 24 px par glyphe, ne permet de
+/// juger ni la largeur d'une ligne ni son retour à la ligne).
+CatalogHarness _realFontsHarness({Size size = gridCell3x2}) => CatalogHarness(
+  'reviews',
+  'reviews',
+  size: size,
+  fontFamily: realFontFamily,
+  fontFamilyFallback: realFontFallback,
+);
+
+final Finder _cell = find.byKey(const Key('surface-reviews'));
+
+/// Nombre de `N` annoncé par « + N avis », ou `null` si l'indication manque.
+int? _hiddenCount(WidgetTester tester) {
+  for (final Text text in tester.widgetList<Text>(
+    find.descendant(of: _cell, matching: find.byType(Text)),
+  )) {
+    final RegExpMatch? match = RegExp(r'^\+ (\d+) avis$')
+        .firstMatch(text.data ?? '');
+    if (match != null) return int.parse(match.group(1)!);
+  }
+  return null;
+}
+
 void main() {
+  setUpAll(loadRealFonts);
+
   defineCommonStateTests(
     component: 'ReviewSentiment',
     surface: 'reviews',
@@ -64,7 +97,11 @@ void main() {
   );
 
   testWidgets('acte 1 : chiffres, répartition et 3 extraits', (tester) async {
-    final h = CatalogHarness('reviews', 'reviews');
+    // Cellule haute : les trois extraits tiennent en entier.
+    tester.view.physicalSize = const Size(936, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final h = _realFontsHarness(size: const Size(936, 500));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
@@ -94,25 +131,97 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('extrait trop long : ellipse sur une ligne bornée', (
-    tester,
-  ) async {
-    final h = CatalogHarness('reviews', 'reviews');
-    await h.pump(tester);
-    await h.sendFixtureTo(tester, 2);
-    final data = cloneJson(h.data);
-    (data['excerpts'] as List)[0]['text'] = 'très long ' * 80;
-    await h.sendData(tester, data);
+  group('extraits entiers puis « + N avis » (D2)', () {
+    testWidgets('3 x 2 (624 x 302), acte 2 : extraits entiers, nombre fixé, '
+        'aucun paragraphe tronqué', (tester) async {
+      final h = _realFontsHarness();
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      await h.sendVariant(tester, 'act2');
 
-    final texts = tester.widgetList<Text>(
-      h.inCell(find.descendant(of: excerptRows, matching: find.byType(Text))),
-    );
-    expect(texts, isNotEmpty);
-    for (final t in texts) {
-      expect(t.maxLines, isNotNull);
-      expect(t.overflow, TextOverflow.ellipsis);
-    }
-    expect(tester.takeException(), isNull);
+      expect(h.inCell(excerptRows), findsNWidgets(1));
+      expect(
+        h.inCell(find.textContaining("L'app se ferme dès que je valide")),
+        findsOneWidget,
+      );
+      expect(_hiddenCount(tester), 2);
+      expect(
+        h.inCell(find.text('+ 2 avis')),
+        findsOneWidget,
+        reason: 'texte exact « + N avis »',
+      );
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      h.expectTextAtLeast24(tester);
+      expect(tester.takeException(), isNull);
+      expect(h.engineErrors, isEmpty);
+    });
+
+    testWidgets('chaque extrait affiché est en entier, avec ses étoiles et sa '
+        'plateforme', (tester) async {
+      final h = _realFontsHarness();
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      await h.sendVariant(tester, 'act2');
+
+      expect(h.inCell(find.text('1★ Android')), findsOneWidget);
+      final Finder text = h.inCell(
+        find.text(
+          "L'app se ferme dès que je valide mon panier. "
+          'Impossible de payer depuis la mise à jour.',
+        ),
+      );
+      expect(text, findsOneWidget);
+      expect(tester.widget<Text>(text).overflow, isNot(TextOverflow.ellipsis));
+      expect(tester.widget<Text>(text).maxLines, isNull);
+    });
+
+    testWidgets('2 x 2 (936 x 302), acte 2 : même nombre d\'extraits '
+        'qu\'en 3 x 2, compte cohérent', (tester) async {
+      final h = _realFontsHarness(size: gridCell2x2);
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      await h.sendVariant(tester, 'act2');
+
+      // La hauteur (302 px) limite les extraits, pas la largeur : le nombre
+      // reste celui du 3 x 2.
+      final int shown = h.inCell(excerptRows).evaluate().length;
+      expect(shown, 1);
+      expect(_hiddenCount(tester), 3 - shown);
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      h.expectTextAtLeast24(tester);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('une cellule haute affiche les trois extraits, sans '
+        'indication « + N avis »', (tester) async {
+      tester.view.physicalSize = const Size(936, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final h = _realFontsHarness(size: const Size(936, 500));
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 3);
+
+      expect(h.inCell(excerptRows), findsNWidgets(3));
+      expect(_hiddenCount(tester), isNull);
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('un extrait trop long pour la cellule n\'est pas affiché : '
+        'jamais d\'ellipse', (tester) async {
+      final h = _realFontsHarness();
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      final data = cloneJson(h.data);
+      (data['excerpts'] as List)[0]['text'] = 'très long ' * 80;
+      await h.sendData(tester, data);
+
+      expect(h.inCell(find.textContaining('très long')), findsNothing);
+      final int shown = h.inCell(excerptRows).evaluate().length;
+      expect(_hiddenCount(tester), 3 - shown);
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   testWidgets('acte 2 : une seule ligne de comparaison neutre (D7)', (

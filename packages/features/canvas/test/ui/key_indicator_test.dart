@@ -1,10 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
 
+/// Cellule d'une grille 3 x 2 à 1920 x 1080 : 624 x 302.
+const Size _gridCell3x2 = Size(624, 302);
+
+final Finder _cell = find.byKey(const Key('surface-kpi'));
+
+CatalogHarness _realFontsHarness() => CatalogHarness(
+  'kpi',
+  'kpi',
+  size: _gridCell3x2,
+  fontFamily: realFontFamily,
+  fontFamilyFallback: realFontFallback,
+);
+
 void main() {
+  setUpAll(loadRealFonts);
+
+  testWidgets('3 x 2, polices réelles, acte 2 : aucun paragraphe tronqué', (
+    tester,
+  ) async {
+    final h = _realFontsHarness();
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    expect(
+      h.inCell(find.text('Sessions sans crash · Android')),
+      findsOneWidget,
+    );
+    expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+    h.expectTextAtLeast24(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('titre très long : retour à la ligne, jamais d\'ellipse', (
+    tester,
+  ) async {
+    final h = _realFontsHarness();
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 2);
+    final data = cloneJson(h.data);
+    const label =
+        'Sessions sans crash sur Android pendant les sept derniers jours';
+    data['label'] = label;
+    await h.sendData(tester, data);
+
+    final Finder text = h.inCell(find.text(label));
+    expect(text, findsOneWidget);
+    expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+    expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('acte 2 : une seule ligne de comparaison neutre (D7)', (
     tester,
   ) async {

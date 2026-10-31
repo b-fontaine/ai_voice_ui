@@ -3,6 +3,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import './step/les_polices_reelles_de_la_scene_sont_chargees.dart';
 import './step/un_faux_backend_local.dart';
 import './step/lapp_lancee_sur_ce_backend_avec_une_horloge_virtuelle.dart';
 import './step/lapp_est_fermee_le_faux_backend_arrete_et_la_semantique_liberee.dart';
@@ -43,6 +44,7 @@ import './step/le_bouton_est_actif.dart';
 void main() {
   group('''Interruption vocale, indicateur d'acte et retour au clic''', () {
     Future<void> bddSetUp(WidgetTester tester) async {
+      await lesPolicesReellesDeLaSceneSontChargees(tester);
       await unFauxBackendLocal(tester);
       await lappLanceeSurCeBackendAvecUneHorlogeVirtuelle(tester);
     }

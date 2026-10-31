@@ -107,12 +107,9 @@ class _DecisionStatus extends StatelessWidget {
   );
 }
 
-/// Espace entre le titre, le statut et la recommandation.
+/// Espace entre le titre, le statut et la recommandation, et entre deux
+/// lignes d'en-tête quand elles ne tiennent pas côte à côte.
 const double _headerGap = 16;
-
-/// Largeur de la puce en plus de son texte : remplissage horizontal des deux
-/// côtés, plus 1 px de marge d'arrondi.
-const double _chipExtraWidth = 2 * DsStatusChip.horizontalPadding + 1;
 
 class _ChecklistView extends StatelessWidget {
   const _ChecklistView({required this.checklist});
@@ -126,44 +123,23 @@ class _ChecklistView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              // Le titre cède la place au statut, qui n'est réduit que si la
-              // largeur ne suffit physiquement pas (jamais de débordement).
-              final double recommendation =
-                  measureTextWidth(
-                    context,
-                    checklist.recommendationLabel,
-                    theme.label,
-                  ).ceilToDouble() +
-                  _chipExtraWidth;
-              final double statusMax =
-                  constraints.maxWidth - recommendation - 2 * _headerGap;
-              return Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      checklist.title,
-                      style: theme.label.copyWith(color: theme.textPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: _headerGap),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: statusMax > 0 ? statusMax : 0,
-                    ),
-                    child: _DecisionStatus(status: checklist.decisionStatus),
-                  ),
-                  const SizedBox(width: _headerGap),
-                  DsStatusChip(
-                    status: checklist.recommendationLevel,
-                    label: checklist.recommendationLabel,
-                  ),
-                ],
-              );
-            },
+          // Le titre et les deux pastilles passent à la ligne suivante quand
+          // la largeur ne suffit pas : aucun n'est tronqué.
+          Wrap(
+            spacing: _headerGap,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                checklist.title,
+                style: theme.label.copyWith(color: theme.textPrimary),
+              ),
+              _DecisionStatus(status: checklist.decisionStatus),
+              DsStatusChip(
+                status: checklist.recommendationLevel,
+                label: checklist.recommendationLabel,
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Expanded(child: _ItemList(items: checklist.items)),
@@ -173,9 +149,32 @@ class _ChecklistView extends StatelessWidget {
   }
 }
 
-/// Liste des critères : jamais de troncature muette. Quand tous ne tiennent
-/// pas, les critères bloquants (puis à risque) sont gardés en priorité, dans
-/// leur ordre d'origine, et la dernière ligne annonce « + N autres critères ».
+/// Remplissage vertical d'une ligne (1 px au-dessus et au-dessous).
+const double _rowPadding = 2;
+
+/// Espace entre les blocs d'une ligne de critère.
+const double _gap = 8;
+
+/// Espace entre le seuil et la valeur d'un critère présenté sur deux lignes.
+const double _pairGap = 12;
+
+double _lineHeight(TextStyle style) =>
+    (style.fontSize ?? 24) * (style.height ?? 1);
+
+double _chipHeight(SceneTheme theme) => _lineHeight(theme.label) + 12;
+
+/// Liste des critères : jamais de troncature muette, les textes passent à la
+/// ligne. Deux présentations, choisies pour toute la liste :
+///
+/// - **tableau** (cellule large) : libellé, seuil, valeur et puce sur une
+///   seule ligne, colonnes alignées ;
+/// - **deux lignes** (cellule étroite) : le libellé, puis le seuil et la
+///   valeur dessous, la puce à droite ; la hauteur d'un critère est celle de
+///   son texte réel.
+///
+/// Quand tous les critères ne tiennent pas, les bloquants (puis les à risque)
+/// sont gardés en priorité, dans leur ordre d'origine, et la dernière ligne
+/// annonce « + N autres critères ».
 class _ItemList extends StatelessWidget {
   const _ItemList({required this.items});
 
@@ -187,64 +186,62 @@ class _ItemList extends StatelessWidget {
     _ => 2,
   };
 
-  /// Hauteur d'une ligne : la plus haute de la ligne de texte et de la puce,
-  /// plus le remplissage vertical de la ligne.
-  static double _rowHeight(SceneTheme theme) {
-    final double text = (theme.body.fontSize ?? 24) * (theme.body.height ?? 1);
-    final double chip =
-        (theme.label.fontSize ?? 24) * (theme.label.height ?? 1) + 12;
-    return (text > chip ? text : chip) + 4;
-  }
-
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final double rowH = _rowHeight(theme);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final int capacity = constraints.hasBoundedHeight
-            ? (constraints.maxHeight / rowH).floor()
-            : items.length;
-        final bool all = items.length <= capacity;
-        final int shown = all
-            ? items.length
-            : (capacity > 1 ? capacity - 1 : 0);
+        final _Layout layout = _Layout.measure(
+          context,
+          theme,
+          items,
+          constraints.maxWidth,
+        );
+        final double moreHeight = _lineHeight(theme.body) + _rowPadding;
+        final double budget = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : double.infinity;
+
+        final double total = layout.heights.fold(
+          0,
+          (double a, double b) => a + b,
+        );
         final List<int> kept = List<int>.generate(items.length, (int i) => i);
-        if (!all) {
-          // Tri par priorité de niveau (départage par rang d'origine), puis
-          // retour à l'ordre d'origine parmi les lignes gardées.
+        bool showMore = false;
+        if (total > budget) {
+          // Ordre de priorité (niveau, puis rang d'origine) : on garde les
+          // premiers critères qui tiennent avec la ligne « + N autres ».
           kept.sort((int a, int b) {
             final int byLevel = _priority(items[a])
                 .compareTo(_priority(items[b]));
             return byLevel != 0 ? byLevel : a.compareTo(b);
           });
+          double used = moreHeight;
+          int count = 0;
+          while (count < kept.length &&
+              used + layout.heights[kept[count]] <= budget) {
+            used += layout.heights[kept[count]];
+            count++;
+          }
           kept
-            ..removeRange(shown, kept.length)
+            ..removeRange(count, kept.length)
             ..sort();
+          // Si même la ligne d'annonce ne tient pas, rien à afficher.
+          showMore = moreHeight <= budget;
         }
-        final int hidden = items.length - shown;
-        final _Columns columns = _Columns.measure(context, theme, <_Item>[
-          for (final int i in kept) items[i],
-        ], constraints.maxWidth);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            for (final int i in kept)
+            for (final int i in kept) layout.row(items[i]),
+            if (showMore)
               SizedBox(
-                height: rowH,
-                child: _ItemRow(item: items[i], columns: columns),
-              ),
-            if (!all && capacity > 0)
-              SizedBox(
-                height: rowH,
+                height: moreHeight,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '+ $hidden autres critères',
+                    '+ ${items.length - kept.length} autres critères',
                     key: const Key('checklist-more'),
                     style: theme.body.copyWith(color: theme.textSecondary),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -255,24 +252,16 @@ class _ItemList extends StatelessWidget {
   }
 }
 
-/// Largeurs des colonnes seuil / valeur / puce, communes à toutes les lignes
-/// pour qu'elles restent alignées. La valeur passe en priorité (elle cite la
-/// 3.3 à l'acte 2 et ne doit jamais être coupée) ; le libellé prend le reste
-/// et porte l'ellipse.
-class _Columns {
-  const _Columns({
-    required this.threshold,
-    required this.value,
-    required this.chip,
-  });
+/// Présentation retenue pour la liste, avec la hauteur de chaque critère.
+abstract class _Layout {
+  const _Layout(this.heights);
 
-  static const double gap = 12;
+  /// Hauteur de chaque critère, dans l'ordre de la liste.
+  final List<double> heights;
 
-  final double threshold;
-  final double value;
-  final double chip;
+  Widget row(_Item item);
 
-  factory _Columns.measure(
+  static _Layout measure(
     BuildContext context,
     SceneTheme theme,
     List<_Item> items,
@@ -284,82 +273,189 @@ class _Columns {
         final double w = measureTextWidth(context, t, style);
         if (w > max) max = w;
       }
-      // Marge d'arrondi pour ne pas déclencher l'ellipse sur un demi-pixel.
+      // Marge d'arrondi pour ne pas déclencher un retour à la ligne sur un
+      // demi-pixel.
       return max == 0 ? 0 : max.ceilToDouble() + 1;
     }
 
-    // Puce : libellé en style `label` plus le remplissage horizontal.
     final double chip =
         widest(items.map((_Item i) => i.levelLabel), theme.label) +
         2 * DsStatusChip.horizontalPadding;
-    final double available =
-        (maxWidth.isFinite ? maxWidth : double.maxFinite) - chip - 3 * gap;
-    final double value = _clamp(
-      widest(items.map((_Item i) => i.value), theme.body),
-      available,
+    final double label = widest(items.map((_Item i) => i.label), theme.body);
+    final double threshold = widest(
+      items.map((_Item i) => i.threshold),
+      theme.body,
     );
-    final double threshold = _clamp(
-      widest(items.map((_Item i) => i.threshold), theme.body),
-      (available - value) / 2,
+    final double value = widest(items.map((_Item i) => i.value), theme.body);
+    final double tableWidth = label + threshold + value + chip + 3 * _gap;
+    if (tableWidth <= maxWidth) {
+      return _TableLayout(
+        theme: theme,
+        count: items.length,
+        label: maxWidth.isFinite ? maxWidth - tableWidth + label : label,
+        threshold: threshold,
+        value: value,
+        chip: chip,
+      );
+    }
+    return _StackedLayout(
+      context: context,
+      theme: theme,
+      items: items,
+      chip: chip,
+      textWidth: maxWidth - chip - _gap,
     );
-    return _Columns(threshold: threshold, value: value, chip: chip);
   }
-
-  static double _clamp(double wanted, double limit) =>
-      wanted < limit ? wanted : (limit > 0 ? limit : 0);
 }
 
-class _ItemRow extends StatelessWidget {
-  const _ItemRow({required this.item, required this.columns});
+/// Tableau : une ligne de texte par critère, colonnes communes.
+class _TableLayout extends _Layout {
+  _TableLayout({
+    required this.theme,
+    required int count,
+    required this.label,
+    required this.threshold,
+    required this.value,
+    required this.chip,
+  }) : super(<double>[
+         for (int i = 0; i < count; i++)
+           (_lineHeight(theme.body) > _chipHeight(theme)
+                   ? _lineHeight(theme.body)
+                   : _chipHeight(theme)) +
+               _rowPadding,
+       ]);
 
-  final _Item item;
-  final _Columns columns;
+  final SceneTheme theme;
+  final double label;
+  final double threshold;
+  final double value;
+  final double chip;
 
   @override
-  Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              item.label,
-              style: theme.body,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+  Widget row(_Item item) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: _rowPadding / 2),
+    child: Row(
+      children: <Widget>[
+        SizedBox(
+          width: label,
+          child: Text(item.label, style: theme.body),
+        ),
+        const SizedBox(width: _gap),
+        SizedBox(
+          width: threshold,
+          child: Text(
+            item.threshold,
+            style: theme.body.copyWith(color: theme.textSecondary),
           ),
-          const SizedBox(width: _Columns.gap),
-          SizedBox(
-            width: columns.threshold,
-            child: Text(
-              item.threshold,
-              style: theme.body.copyWith(color: theme.textSecondary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        ),
+        const SizedBox(width: _gap),
+        SizedBox(
+          width: value,
+          child: Text(item.value, style: theme.body),
+        ),
+        const SizedBox(width: _gap),
+        SizedBox(
+          width: chip,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: DsStatusChip(status: item.level, label: item.levelLabel),
           ),
-          const SizedBox(width: _Columns.gap),
-          SizedBox(
-            width: columns.value,
-            child: Text(
-              item.value,
-              style: theme.body,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: _Columns.gap),
-          SizedBox(
-            width: columns.chip,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: DsStatusChip(status: item.level, label: item.levelLabel),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Deux lignes : libellé, puis seuil et valeur dessous ; puce à droite.
+class _StackedLayout extends _Layout {
+  _StackedLayout({
+    required BuildContext context,
+    required this.theme,
+    required List<_Item> items,
+    required this.chip,
+    required this.textWidth,
+  }) : super(<double>[
+         for (final _Item item in items)
+           _height(context, theme, item, textWidth),
+       ]);
+
+  final SceneTheme theme;
+  final double chip;
+
+  /// Largeur du bloc de texte (celle de la ligne moins la puce).
+  final double textWidth;
+
+  static double _height(
+    BuildContext context,
+    SceneTheme theme,
+    _Item item,
+    double textWidth,
+  ) {
+    final double label = measureTextHeight(
+      context,
+      item.label,
+      theme.body,
+      textWidth,
     );
+    final double threshold = measureTextHeight(
+      context,
+      item.threshold,
+      theme.body,
+      textWidth,
+    );
+    final double value = measureTextHeight(
+      context,
+      item.value,
+      theme.body,
+      textWidth,
+    );
+    final double sideBySide =
+        measureTextWidth(context, item.threshold, theme.body).ceilToDouble() +
+        1 +
+        _pairGap +
+        measureTextWidth(context, item.value, theme.body).ceilToDouble() +
+        1;
+    final double pair = sideBySide <= textWidth
+        ? (threshold > value ? threshold : value)
+        : threshold + value;
+    final double text = label + pair;
+    final double chipH = _chipHeight(theme);
+    return (text > chipH ? text : chipH) + _rowPadding;
   }
+
+  @override
+  Widget row(_Item item) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: _rowPadding / 2),
+    child: Row(
+      children: <Widget>[
+        SizedBox(
+          width: textWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(item.label, style: theme.body),
+              Wrap(
+                spacing: _pairGap,
+                children: <Widget>[
+                  Text(
+                    item.threshold,
+                    style: theme.body.copyWith(color: theme.textSecondary),
+                  ),
+                  Text(item.value, style: theme.body),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: _gap),
+        SizedBox(
+          width: chip,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: DsStatusChip(status: item.level, label: item.levelLabel),
+          ),
+        ),
+      ],
+    ),
+  );
 }

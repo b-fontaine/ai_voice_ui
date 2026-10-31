@@ -2,6 +2,7 @@ import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/widgets.dart' show Key, State;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Surface;
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
 
@@ -9,9 +10,19 @@ import '../support/catalog_harness.dart';
 /// sous-chemin `/checklist/decisionStatus` doit reconstruire le composant lié
 /// à `/checklist`, sans recréer la surface ni son `State`.
 void main() {
+  // Polices réelles : les trois critères tiennent dans la cellule (avec Ahem,
+  // environ 24 px par glyphe, les lignes passent à la ligne et le dernier
+  // critère est annoncé par « + N autres critères »).
+  setUpAll(loadRealFonts);
+
   testWidgets('mise à jour du sous-chemin decisionStatus : Bloquée puis '
       'Validée, surface conservée', (tester) async {
-    final h = CatalogHarness('checklist', 'checklist');
+    final h = CatalogHarness(
+      'checklist',
+      'checklist',
+      fontFamily: realFontFamily,
+      fontFamilyFallback: realFontFallback,
+    );
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
