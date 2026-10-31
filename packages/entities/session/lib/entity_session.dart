@@ -7,6 +7,7 @@ export 'src/session_event.dart'
         AgentTaskState,
         ChannelLost,
         DelegationStarted,
+        InterruptionCause,
         OrbLevelChanged,
         PlanReceived,
         SessionEvent,

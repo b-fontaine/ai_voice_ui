@@ -83,7 +83,13 @@ class SessionEventConverter {
           detail: _optionalString(data, 'detail'),
         );
       case AppChannelTypes.voiceInterrupted:
-        return VoiceInterrupted(atMs: _int(data, 'at_ms'));
+        return VoiceInterrupted(
+          atMs: _int(data, 'at_ms'),
+          // Absente, inconnue ou mal typée : `stop` (comportement historique).
+          cause: data['cause'] == 'correction'
+              ? InterruptionCause.correction
+              : InterruptionCause.stop,
+        );
       case AppChannelTypes.plan:
         return PlanReceived(
           delegation: _string(data, 'delegation'),

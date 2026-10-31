@@ -14,7 +14,7 @@ import '../model/orb_smoother.dart';
 /// cible retombe à 0. La fin de session ([SessionStateChanged] `closed`,
 /// [ChannelLost]) remet tout à 0 immédiatement.
 ///
-/// Interruption (FR-19) : [VoiceInterrupted] ramène l'orbe à 0 aussitôt et
+/// Interruption (FR-19) : [VoiceInterrupted] et [VoiceSilenced] ramènent l'orbe à 0 aussitôt et
 /// les niveaux suivants sont ignorés jusqu'à [resume] (appelé par la page quand
 /// la phase de l'orbe quitte « interrompue ») ou une nouvelle session.
 class OrbLevelController {
@@ -47,7 +47,7 @@ class OrbLevelController {
   void _onEvent(SessionEvent event) {
     if (_disposed) return;
     switch (event) {
-      case VoiceInterrupted():
+      case VoiceInterrupted() || VoiceSilenced():
         _interrupted = true;
         _reset();
       case OrbLevelChanged(:final double level):

@@ -70,6 +70,7 @@ class TopBar extends StatelessWidget {
                         thinking: status is Active && agents.anyWorking,
                         interrupted: status is Active && phase is Interrupted,
                         listening: status is Active,
+                        micMuted: status is Active && status.micMuted,
                         speakingThreshold: speakingThreshold,
                       ),
                     ),

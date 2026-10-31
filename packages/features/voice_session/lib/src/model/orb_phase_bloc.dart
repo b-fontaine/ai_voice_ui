@@ -20,7 +20,7 @@ final class Speaking extends OrbPhase {
   const Speaking();
 }
 
-/// L'IA a été coupée (`voice.interrupted`).
+/// L'IA a été coupée (`voice.interrupted` ou silence local).
 final class Interrupted extends OrbPhase {
   const Interrupted();
 }
@@ -48,12 +48,15 @@ final class _InterruptionEnded extends OrbPhaseEvent {
 
 /// Phase de l'orbe : `Listening | Speaking | Interrupted`.
 ///
-/// `VoiceInterrupted` passe en [Interrupted]. On en sort quand `orb.level`
+/// `VoiceInterrupted` et `VoiceSilenced` passent en [Interrupted]. On en sort quand `orb.level`
 /// reste sous [speakingThreshold] pendant [resumeSilence] (un niveau au-dessus
 /// du seuil repousse l'échéance), au bout de [maxInterruption], à la
 /// délégation suivante ou à la fin de la session (`closed`, `connecting`,
 /// [ChannelLost]). Une délégation datée au plus de [stopSpan] après la coupure
-/// est celle du « Stop » lui-même : elle n'y met pas fin. Pendant l'interruption, le
+/// est celle du « Stop » lui-même : elle n'y met pas fin. Après un silence
+/// local, aucune délégation n'est exemptée. Après une interruption de cause
+/// `correction`, la première délégation datée au plus tôt de `at_ms` (celle de
+/// la correction) met fin à l'interruption. Pendant l'interruption, le
 /// niveau ne fait pas passer en [Speaking] : la voix de l'IA est coupée.
 ///
 /// Le Bloc ne rétablit pas lui-même le son : la page de composition relie le
@@ -88,6 +91,10 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   // Numéro de l'interruption en cours ; incrémenté à chaque fin ou début.
   int _generation = 0;
   int _interruptedAtMs = 0;
+  // Nature de l'interruption en cours : `stop` exempte la délégation du « Stop »
+  // lui-même ; `correction` attend la délégation d'offset >= `at_ms`.
+  bool _stopExemption = false;
+  bool _correction = false;
 
   Timer? _silenceTimer;
   Timer? _maxTimer;
@@ -99,14 +106,20 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
     event.events,
     onData: (sessionEvent) {
       switch (sessionEvent) {
-        case VoiceInterrupted(:final int atMs):
-          _maxTimer?.cancel();
-          _generation++;
-          _interruptedAtMs = atMs;
-          final int generation = _generation;
-          _maxTimer = Timer(maxInterruption, () => _signalEnd(generation));
-          _armSilence();
-          emit(const Interrupted());
+        case VoiceInterrupted(:final int atMs, :final InterruptionCause cause):
+          _beginInterruption(
+            emit,
+            atMs: atMs,
+            stopExemption: cause == InterruptionCause.stop,
+            correction: cause == InterruptionCause.correction,
+          );
+        case VoiceSilenced():
+          _beginInterruption(
+            emit,
+            atMs: 0,
+            stopExemption: false,
+            correction: false,
+          );
         case OrbLevelChanged(:final double level):
           final bool loud = level >= speakingThreshold;
           if (state is Interrupted) {
@@ -115,10 +128,15 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
             emit(loud ? const Speaking() : const Listening());
           }
         case DelegationStarted(:final int offsetMs):
-          final bool ofStop =
-              state is Interrupted &&
-              offsetMs <= _interruptedAtMs + stopSpan.inMilliseconds;
-          if (!ofStop) _endInterruption(emit);
+          if (state is! Interrupted) {
+            _endInterruption(emit);
+          } else if (_stopExemption) {
+            if (offsetMs > _interruptedAtMs + stopSpan.inMilliseconds) {
+              _endInterruption(emit);
+            }
+          } else if (!_correction || offsetMs >= _interruptedAtMs) {
+            _endInterruption(emit);
+          }
         case SessionStateChanged(state: SessionState.closed) ||
             SessionStateChanged(state: SessionState.connecting) ||
             ChannelLost():
@@ -128,6 +146,23 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
       }
     },
   );
+
+  void _beginInterruption(
+    Emitter<OrbPhase> emit, {
+    required int atMs,
+    required bool stopExemption,
+    required bool correction,
+  }) {
+    _maxTimer?.cancel();
+    _generation++;
+    _interruptedAtMs = atMs;
+    _stopExemption = stopExemption;
+    _correction = correction;
+    final int generation = _generation;
+    _maxTimer = Timer(maxInterruption, () => _signalEnd(generation));
+    _armSilence();
+    emit(const Interrupted());
+  }
 
   void _armSilence() {
     _silenceTimer?.cancel();

@@ -189,6 +189,35 @@ void main() {
       controller.dispose();
     });
 
+    testWidgets('VoiceSilenced ramène le niveau à 0 et ignore les suivants', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(controller.level.value, greaterThan(0.3));
+
+      await pumpEvent(tester, const VoiceSilenced());
+      expect(controller.level.value, 0.0);
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(controller.level.value, 0.0);
+      controller.dispose();
+    });
+
+    testWidgets('la reprise suit un silence local', (
+      WidgetTester tester,
+    ) async {
+      build(tester);
+      await pumpEvent(tester, const VoiceSilenced());
+      controller.resume();
+      await pumpEvent(tester, const OrbLevelChanged(0.9));
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(controller.level.value, greaterThan(0.3));
+      controller.dispose();
+    });
+
     testWidgets('les niveaux reçus pendant l\'interruption sont ignorés', (
       WidgetTester tester,
     ) async {
