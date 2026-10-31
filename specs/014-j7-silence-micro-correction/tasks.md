@@ -16,7 +16,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T12 Flutter — `cause` de `voice.interrupted` (converter, défaut `stop`, inconnu = `stop`) ; `OrbPhaseBloc` (silence + fin d'interruption sur correction), `TranscriptBloc` (troncature), `OrbLevelController` (niveau 0) ; voile « Micro coupé » · test d'abord : Bloc tests des quatre effets et de la reprise
 - [x] T13 Flutter — disposition de la barre du haut (deux colonnes, voir plan) puis boutons `silence-button` (actif si `Active` et phase ≠ `Interrupted`) et `mic-button` · test d'abord : widget test (cibles ≥ 48 px, libellés entiers à 24 px, états, absence de débordement)
 - [x] T14 Flutter — câblage de la page, `Focus(autofocus: true)`, `M` et `Échap` (jamais `Espace`) · test d'abord : widget test sans aucun focus, et après le clic sur un bouton qui se désactive
-- [ ] T15 Flutter — capture `app-smoke` 1920×1080 relue
+- [x] T15 Flutter — capture `app-smoke` 1920×1080 relue
 
 ## TDD — lot B (Go), ordre T20 → T21 → T23 → T22
 - [x] T20 Go — classifieur d'énoncé unique (Stop \| Correction), config `VOICE_CORRECTION_WORDS` validée (bornes, intersection avec les mots d'arrêt, liste vide) · test d'abord : table (« Non. » + « Plutôt iOS. » correction ; « Non, stop » Stop ; « Stop, non » Stop ; plus de 4 mots correction ; « En fait, iOS » correction ; « Non. » seul rien) + `config_test` pour chaque refus. **Possède** `stopword.go` et `config` ; ne touche ni le port ni le faux de délégations
