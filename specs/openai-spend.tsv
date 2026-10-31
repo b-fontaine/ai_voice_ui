@@ -12,3 +12,4 @@
 2026-10-30T23:52:21+01:00	0.05	012 mesure T51 : gpt-6-luna, 25 appels texte (23,4k jetons entrée, 1,7k sortie), estimé par excès
 2026-10-30T23:54:01+01:00	0.05	012 mesure T51 : gpt-6.1-terra, 25 appels texte, estimé par excès
 2026-10-30T23:56:35+01:00	0.03	012 mesure T51 : gpt-6-luna, essais d'effort de raisonnement (minimal refusé, low et none : 10 appels chacun), estimé par excès
+2026-10-31T14:30:04+01:00	0.04	016 essai réel silence/bruit (Papa Papa) : 28 s de session, 2 phrases TTS, estimé par excès
