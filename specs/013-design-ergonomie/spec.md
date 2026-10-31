@@ -20,24 +20,26 @@ Rendre l'écran lisible depuis le fond de la salle (NFR-05) et fluide à l'appar
 Trois lots, dans cet ordre ; un lot se livre entier avant le suivant (coupe possible après B, pdr-0072 « Réexaminer si »).
 
 **Lot A — corrections visuelles et lisibilité** (obligatoire)
-- A1 Canevas élastique : la zone du canevas prend toute la hauteur disponible (plus de hauteur fixe de 572 px), la bande vide disparaît ; le rail garde son cadre et son titre « AGENTS A2A » même sans agent (RG-01 : pas de nom codé en dur).
-- A2 Cellules lisibles (Q-83, option 1) : titres, libellés de checklist et avis passent à la ligne au lieu d'être tronqués (sauf le libellé d'un crash, une ligne avec ellipse, pdr-0074 D10) ; critère : sur la capture 1920×1080 aucun libellé de checklist ni d'avis n'est tronqué.
+- A1 Bande vide : le rail devient une rangée horizontale de 96 px (au lieu de 200 px), le canevas garde `Expanded` et passe à 676 px ; le rail garde son titre « AGENTS A2A » et une hauteur fixe même sans agent (RG-29 : pas de nom codé en dur ; la tâche de chaque agent reste affichée, FR-03).
+- A2 Cellules lisibles (Q-83, option 1) : titres et libellés de checklist passent à la ligne ; les avis n'affichent que des extraits entiers qui tiennent, puis « + N avis » (sauf le libellé d'un crash, une ligne avec ellipse, pdr-0074 D10) ; critère : sur la capture 1920×1080 aucun libellé de checklist ni d'avis n'est tronqué.
 - A3 Titre de courbe jamais tronqué : la légende passe sous le titre quand la place manque.
-- A4 Étagère : noms de composants entiers (deux colonnes ou retour à la ligne), jamais d'ellipse.
+- A4 Étagère : deux rangées de trois puces, noms entiers sans ellipse, état porté par une icône et `Semantics`.
 - A5 Régie : « Acte n/3 · … » et « Remettre à vide » alignés en un seul groupe de boutons homogènes, cibles ≥ 48 px, contraste mesuré ; panneau du protocole déplié sans débordement (la hauteur dépliée tient dans la zone).
-- A6 Mise en page inspirée de la maquette (pdr-0017) : repères de zone (« CANEVAS · release-3-4 », « AGENTS A2A », « CATALOGUE · n / 6 utilisés »), sans rien emprunter de technique à la maquette.
+- A6 Mise en page inspirée de la maquette (pdr-0017) : repères « AGENTS A2A » et « CATALOGUE · n / 6 utilisés » ; pas de libellé « CANEVAS » (aucun budget de hauteur ni donnée de release), rien d'emprunté de technique à la maquette. La liaison animée de délégation de la fiche n'a jamais été livrée : elle attend la décision du porteur ([Q-85](../../product/roadmap/open-questions.md)), le rail laisse la place d'un connecteur.
 
 **Lot B — apparition animée** (FR-04, NFR-04)
-- B1 Squelette → composants → données en trois temps visibles : fondu et glissement courts (durées et courbes M3, `ds-motion`), un seul `AnimationController` par surface, `RepaintBoundary`.
-- B2 `MediaQuery.disableAnimations` respecté ; le rejeu (0,25× à 2×) anime aussi, sans retarder le gate A2UI.
-- B3 Mesure NFR-04 : budget de frames pendant l'apparition (test de budget sur horloge simulée + profil `--profile` en répétition, J7).
+- B1 Squelette → composants → données en trois temps visibles : fondu et glissement courts (durées et courbes M3, `ds-motion`), un seul `AnimationController` par surface, `RepaintBoundary` ; l'arrivée d'une surface ne reconstruit ni ne repeint les cellules voisines (périmètre de reconstruction, NFR-04).
+- B2 `MediaQuery.disableAnimations` et le réglage `_animationsOff` de la page respectés (durée nulle, jamais de `TickerMode`) ; le rejeu (0,25× à 2×) anime aussi, sans retarder le gate A2UI.
+- B3 Mesure NFR-04 : test du périmètre de reconstruction et de peinture ; les 60 i/s eux-mêmes se mesurent au profil `--profile` en répétition (J7).
 
 **Lot C — design system et Widgetbook** (adr-0004 à adr-0008)
-- C1 Tokens DTCG dans Git (primitives, sémantiques, composants) pour le thème de scène, générés en Dart par Style Dictionary épinglé (format custom → `ThemeExtension`), code généré committé ; `SceneTheme` garde son API publique (RG-09) mais se nourrit des tokens ; un test de parité Dart (tokens ↔ valeurs) tient lieu de contrôle en porte, sans Node.
-- C2 Catalogue Widgetbook 4.0.0-beta.14 épinglé (spike `spikes/widgetbook4`) : une story par composant du catalogue genesis (6) et par brique (3), états squelette, données et neutre ; build web statique, sans Widgetbook Cloud (adr-0006).
-- C3 Contrôles d'accessibilité en test : contraste WCAG AA des paires du thème, texte ≥ 24 px des composants, cibles ≥ 48 px des boutons.
+- C1 Tokens DTCG dans Git (primitives, sémantiques, composants) pour le thème de scène, générés en Dart par Style Dictionary épinglé (format custom → constantes `SceneTokens`), code généré committé ; `SceneTheme` reste l'unique `ThemeExtension` (RG-09) et se nourrit des constantes ; un test de hash (sha256 en en-tête du fichier généré) et de parité tient lieu de contrôle en porte, sans Node.
+- C2 Catalogue Widgetbook 4.0.0-beta.14 épinglé (spike `spikes/widgetbook4`), application `apps/genesis_widgetbook/` (couche app) membre du workspace : une story par composant du catalogue genesis (6, états données, sans données, neutre, alimentés par les exemples du contrat) et par brique (3, dont le squelette) ; build web statique, sans Widgetbook Cloud (adr-0006) ; première tâche : prouver que la résolution pub et la porte restent vertes, sinon coupe C2.
+- C3 Contrôles d'accessibilité en test pour ce que 013 ajoute (paires de la régie, repères, icônes d'étagère ; cibles ≥ 48 px sous Linux) ; le contraste du thème et le texte ≥ 24 px existent déjà (`scene_theme_test.dart`).
 
 ## Hors périmètre
+- La liaison animée de délégation du rail (fiche, jamais livrée) : Q-85, porteur.
+- Le 1366×768 (limite assumée de `screen.md`).
 - Tout ce qui change le contrat A2UI, le catalogue (6 composants), les agents ou le backend : aucune modification Go.
 - Nouvelle mise en scène des actes, nouveau composant, nouveau mode d'interaction (porteur).
 - Projecteur réel et fond de salle (géré par le porteur) ; mesure DevTools `--profile` sur la machine de démo (J7).
@@ -46,21 +48,21 @@ Trois lots, dans cet ordre ; un lot se livre entier avant le suivant (coupe poss
 
 ## Scénarios d'acceptation (à automatiser)
 Nouveaux (ajoutés à `product/functional/features/` à la clôture, pdr-0062 pour l'écart) :
-- **D-01** (Flutter, 1920×1080) acte 1 en direct et en rejeu : le canevas occupe la hauteur laissée par la barre du haut, le rail et la rangée du bas ; aucun espace vide plus haut que l'intervalle de grille entre la barre du haut et la première surface.
-- **D-02** (Flutter) la capture de la cinquième surface (CrashList) montre la checklist et les avis sans libellé tronqué (texte rendu complet, plusieurs lignes) ; texte ≥ 24 px.
+- **D-01** (Flutter, 1920×1080) acte 1 en direct et en rejeu : `canvas-board.top == agents-rail.bottom + 8`, hauteur du canevas 676 px, première surface au ras du haut du canevas (aucune bande vide).
+- **D-02** (Flutter, polices réelles) en 3×2 avec les données de l'acte 2, la checklist et les avis n'ont aucun libellé tronqué ; les avis affichent des extraits entiers puis « + N avis » (nombre fixé par le test) ; texte ≥ 24 px.
 - **D-03** (Flutter) titre de courbe entier et légende sous le titre quand la cellule fait ≈ 620 px de large.
-- **D-04** (Flutter) étagère : six noms entiers, 6/6 sans ellipse.
-- **D-05** (Flutter) régie : indicateur d'acte et remise à vide au même groupe, chaque cible ≥ 48 px ; panneau déplié contenu dans l'écran.
+- **D-04** (Flutter, polices réelles) étagère : six noms entiers sans ellipse, état par icône et `Semantics`.
+- **D-05** (Flutter, sous Linux) régie : indicateur d'acte et remise à vide empilés, chaque cible ≥ 48 px ; panneau déplié contenu dans la zone du canevas avec 4 entrées dont une refusée et `actions`.
 - **D-06** (Flutter) apparition en trois temps : à t=0 le squelette, après la durée du fondu les composants, puis les données ; avec `disableAnimations` le résultat est immédiat ; en rejeu à 2× la durée est proportionnelle.
-- **D-07** (Flutter) les surfaces existantes ne bougent pas quand une surface arrive (S-02) malgré la nouvelle mise en page.
+- **D-07** (Flutter) aucun rectangle ne bouge à l'arrivée du premier `plan`, pendant une mutation de l'acte 2 ni à l'arrivée du bandeau `actions` ; à l'arrivée d'une surface de la grille aucun `State` existant n'est recréé ; pendant une transition le rectangle de `surface-<id>` reste constant (S-02 ; les changements de colonnes 1 → 2 et 2×2 → 3×2 sont acceptés, pdr-0074).
 
 ## Critères d'acceptation
 - [ ] Scénarios D-01 à D-07 automatisés et verts
 - [ ] Tests unitaires des unités nouvelles ; test de parité tokens ↔ `SceneTheme`
 - [ ] `tools/loop/gate.sh --full` vert
 - [ ] Revue d'architecte : CONFORME (ou refactorisations appliquées)
-- [ ] Captures 1920×1080 (`app-smoke`, `act1-replay`, `crashlist-replay`) relues : pas de bande vide, aucun libellé tronqué hors liste de crashs, texte ≥ 24 px
-- [ ] Catalogue Widgetbook : build web réussi et `testWidgetbook` vert (ou coupe C déclarée)
+- [ ] Captures 1920×1080 (`app-smoke`, `act1-replay`, `crashlist-replay`) relues : pas de bande vide, aucun libellé de checklist ni d'avis tronqué, texte ≥ 24 px
+- [ ] Catalogue Widgetbook : build web réussi et `testWidgetbook` vert, porte verte avec le membre du workspace (ou coupe C2 déclarée)
 
 ## Questions ouvertes
-Q-83 (cellules lisibles) : traitée ici par l'option 1, à clore à la clôture. Aucune question bloquante.
+Q-83 (cellules lisibles) : traitée ici par l'option 1, à clore à la clôture. [Q-85](../../product/roadmap/open-questions.md) (liaison animée de délégation, au porteur) : non bloquante, hors périmètre tant que non tranchée.
