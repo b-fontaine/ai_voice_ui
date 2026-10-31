@@ -23,10 +23,6 @@ import (
 // pdr-0082). Le comportement se pilote uniquement par la configuration d'environnement
 // (VOICE_RECOVERY_WINDOW, comme les autres VOICE_*) et par le faux fournisseur : aucun
 // symbole de production (NoteOverlap, RecoveryWindow…) n'est référencé.
-//
-// Tant que la reprise n'est pas livrée, l'orchestrateur ignore la variable : les scénarios
-// R-01, R-04 (borne incluse), R-05, R-08 (premier refus), R-09 et R-10 échouent parce que la
-// voix dit le refus habituel au lieu de la phrase `no_request`.
 
 const (
 	// recoveryWindow est la valeur de VOICE_RECOVERY_WINDOW des scénarios : celle du compose
@@ -175,8 +171,9 @@ func delegate(scene *correctionScene, id string, offsetMs int64) {
 }
 
 // finalSay renvoie le dernier commentaire de fond dit pour la délégation id : l'attente
-// « Je regarde ça » (phrase generic) est ignorée ; un éventuel second commentaire a 300 ms
-// pour arriver. Sans commentaire de fond en genesisWait, le test échoue avec ce qui a été dit.
+// « Je regarde ça » (phrase generic) est ignorée. Le commentaire de fond est le signal de fin
+// de la délégation : l'orchestrateur dit le générique, puis le final, et rien ensuite pour cet id
+// (pas d'attente fixe). Sans commentaire de fond en genesisWait, le test échoue avec ce qui a été dit.
 func finalSay(t *testing.T, live *fakeDelegatingLive, id string) string {
 	t.Helper()
 	generic := phraseFromConfig(t, "generic")
@@ -196,7 +193,6 @@ func finalSay(t *testing.T, live *fakeDelegatingLive, id string) string {
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	time.Sleep(300 * time.Millisecond)
 	got := substantive()
 	return got[len(got)-1]
 }

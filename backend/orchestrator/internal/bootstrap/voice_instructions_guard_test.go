@@ -19,11 +19,14 @@ import (
 // LIVRÉ au fournisseur ; ils ne prouvent pas que le modèle se tait (seul un essai réel
 // le montre, plan 016 § Honnêteté de la preuve).
 
+// silenceGuardMarker repère la consigne de silence : fragment stable de sa directive.
+const silenceGuardMarker = "ne réponds pas : reste silencieux"
+
 // silenceGuardLine renvoie l'indice (en lignes) et le texte de la consigne de silence : la
-// ligne qui parle de « bruit ». -1 si elle manque.
+// ligne qui contient le marqueur. -1 si elle manque.
 func silenceGuardLine(text string) (int, string) {
 	for i, l := range strings.Split(text, "\n") {
-		if strings.Contains(strings.ToLower(l), "bruit") {
+		if strings.Contains(strings.ToLower(l), silenceGuardMarker) {
 			return i, l
 		}
 	}
@@ -35,19 +38,45 @@ func requireSilenceGuard(t *testing.T, text string) {
 	t.Helper()
 	at, line := silenceGuardLine(text)
 	if at < 0 {
-		t.Fatalf("instructions vocales : aucune consigne de silence (aucune ligne ne parle de « bruit »)")
+		t.Fatalf("instructions vocales : aucune consigne de silence (aucune ligne ne contient %q)", silenceGuardMarker)
 	}
 	low := strings.ToLower(line)
-	// Fondée sur la forme : rien d'intelligible adressé à l'assistant.
-	for _, want := range []string{"bribe", "lointaine", "intelligible"} {
+	// Directive : se taire, ne pas déléguer, ne pas demander « tu es là ? ».
+	for _, want := range []string{"ne réponds pas", "reste silencieux", "ne délègue pas", "tu es là"} {
 		if !strings.Contains(low, want) {
-			t.Errorf("consigne de silence : %q absent (critère de forme) : %q", want, line)
+			t.Errorf("consigne de silence : directive %q absente : %q", want, line)
 		}
 	}
-	// Exception explicite : une demande d'affichage reste déléguée, même hors sujet.
-	for _, want := range []string{"demande d'affichage", "hors sujet", "délégu"} {
-		if !strings.Contains(low, want) {
-			t.Errorf("consigne de silence : %q absent (exception d'affichage) : %q", want, line)
+	directive := strings.Index(low, "ne délègue pas")
+	// Fondée sur la forme : rien d'intelligible adressé à l'assistant ; le critère est la
+	// partie qui précède « mais », qui ne parle ni de la release ni du sujet.
+	before, after, hasBut := strings.Cut(low, " mais ")
+	if !hasBut {
+		t.Errorf("consigne de silence : « mais » absent (exception après la directive) : %q", line)
+	}
+	for _, want := range []string{"bribe", "lointaine", "intelligible"} {
+		if !strings.Contains(before, want) {
+			t.Errorf("consigne de silence : %q absent du critère de forme : %q", want, line)
+		}
+	}
+	for _, banned := range []string{"release", "sujet"} {
+		if strings.Contains(before, banned) {
+			t.Errorf("consigne de silence : le critère doit être la forme, pas le fond (%q avant « mais ») : %q", banned, line)
+		}
+	}
+	// Exceptions explicites : elles suivent la directive et restent déléguées.
+	for _, want := range []string{"demande d'affichage", "question sur la release"} {
+		i := strings.Index(low, want)
+		switch {
+		case i < 0:
+			t.Errorf("consigne de silence : exception %q absente : %q", want, line)
+		case i < directive:
+			t.Errorf("consigne de silence : l'exception %q doit suivre la directive : %q", want, line)
+		}
+	}
+	for _, want := range []string{"hors sujet", "délégu"} {
+		if !strings.Contains(after, want) {
+			t.Errorf("consigne de silence : %q absent de l'exception : %q", want, line)
 		}
 	}
 	// Placée après les consignes de délégation, qui gardent leurs textes exacts.
