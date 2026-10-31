@@ -30,6 +30,7 @@ class CanvasActionBloc extends Bloc<CanvasActionEvent, CanvasActionState> {
     on<ActionActivityChanged>(_onActivity, transformer: sequential());
     on<ActionSessionClosed>(_onSessionClosed, transformer: sequential());
     on<ActionStageReset>(_onReset, transformer: sequential());
+    on<DecisionStatusObserved>(_onStatus, transformer: sequential());
   }
 
   final CanvasActionClient _client;
@@ -49,13 +50,26 @@ class CanvasActionBloc extends Bloc<CanvasActionEvent, CanvasActionState> {
   Completer<void>? _wake;
   Timer? _timer;
 
+  /// Dernier statut de décision vu dans la checklist.
+  String? _status;
+
+  /// Action cliquée dont la décision n'est pas encore arrivée, et statut au
+  /// moment du clic.
+  String? _clicked;
+  String? _statusAtClick;
+
+  /// Statut qui porte la décision en place (`state.doneAction`).
+  String? _decidedStatus;
+
   Future<void> _onRequested(
     ActionRequested event,
     Emitter<CanvasActionState> emit,
   ) async {
     if (!GenesisContract.actionIds.contains(event.name)) return;
     final int generation = _generation;
-    emit(ActionSending(event.name));
+    _clicked = event.name;
+    _statusAtClick = _status;
+    emit(ActionSending(event.name, doneAction: state.doneAction));
 
     CanvasActionFailure? failure;
     var retriesLeft = _settings.retries;
@@ -94,21 +108,47 @@ class CanvasActionBloc extends Bloc<CanvasActionEvent, CanvasActionState> {
     }
 
     if (failure != null) {
-      emit(ActionFailed(failure));
-      emit(const ActionIdle());
+      // Le clic n'a pas abouti : il n'attend plus de changement de statut.
+      _clicked = null;
+      emit(ActionFailed(failure, doneAction: state.doneAction));
+      emit(ActionIdle(doneAction: state.doneAction));
       return;
     }
-    emit(ActionRunning(event.name));
+    emit(ActionRunning(event.name, doneAction: state.doneAction));
     if (!_finished) await _sleep(_settings.maxDuration);
     if (generation != _generation) return;
-    emit(const ActionIdle());
+    emit(ActionIdle(doneAction: state.doneAction));
+  }
+
+  void _onStatus(
+    DecisionStatusObserved event,
+    Emitter<CanvasActionState> emit,
+  ) {
+    final String status = event.status;
+    if (status == _status) return;
+    _status = status;
+    final String? clicked = _clicked;
+    if (clicked != null && status != _statusAtClick) {
+      _clicked = null;
+      _decidedStatus = status;
+      emit(state.withDoneAction(clicked));
+    } else if (state.doneAction != null && status != _decidedStatus) {
+      _decidedStatus = null;
+      emit(state.withDoneAction(null));
+    }
   }
 
   void _onActivity(
     ActionActivityChanged event,
     Emitter<CanvasActionState> emit,
   ) {
-    if (state is ActionIdle || state is ActionFailed) return;
+    if (state is ActionIdle) {
+      // Une nouvelle activité (demande vocale) commence : le statut qui
+      // suivra n'est plus la décision du clic précédent.
+      if (event.busy) _clicked = null;
+      return;
+    }
+    if (state is ActionFailed) return;
     if (event.busy) {
       _sawBusy = true;
     } else if (_sawBusy) {
@@ -129,7 +169,12 @@ class CanvasActionBloc extends Bloc<CanvasActionEvent, CanvasActionState> {
 
   void _onReset(ActionStageReset event, Emitter<CanvasActionState> emit) {
     _abandon();
-    if (state is! ActionIdle) emit(const ActionIdle());
+    _clicked = null;
+    _status = null;
+    _decidedStatus = null;
+    if (state is! ActionIdle || state.doneAction != null) {
+      emit(const ActionIdle());
+    }
   }
 
   /// Attend [duration] ; [_wakeUp] ou [_abandon] interrompent l'attente.

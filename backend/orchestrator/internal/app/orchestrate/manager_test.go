@@ -20,8 +20,8 @@ const wait = 3 * time.Second
 
 var testPhrases = Phrases{
 	Generic: "G", QueueFull: "Q", NoRequest: "N",
-	Failure: "F", FailureRejected: "FR", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
-	ActionResultTemplate: "AR:%s", ActionFailure: "AF",
+	Failure: "F", FailureRejected: "FR", FailureRejectedView: "FRV", NoSummary: "NS", NoAgent: "A", OutOfCatalog: "OC", PartialFailure: "PF:%s", ResultTemplate: "R:%s",
+	ActionResultTemplate: "AR:%s", ActionFailure: "AF", Stopped: "S",
 }
 
 // factoryOf renvoie une fabrique qui produit toujours le même Runner.
@@ -172,6 +172,7 @@ func testOptions() Options {
 		AgentTimeout: 5 * time.Second,
 		GuardTimeout: 500 * time.Millisecond,
 		SeenCap:      16,
+		StopSpan:     3 * time.Second,
 		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 }
@@ -239,6 +240,7 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.NoRequest = "" }),
 		blank(func(p *Phrases) { p.Failure = "" }),
 		blank(func(p *Phrases) { p.FailureRejected = "" }),
+		blank(func(p *Phrases) { p.FailureRejectedView = "" }),
 		blank(func(p *Phrases) { p.NoSummary = " " }),
 		blank(func(p *Phrases) { p.NoAgent = "\n" }),
 		blank(func(p *Phrases) { p.OutOfCatalog = "" }),
@@ -255,6 +257,8 @@ func TestNewManagerValidatesOptions(t *testing.T) {
 		blank(func(p *Phrases) { p.ActionResultTemplate = "100 % de %s" }),
 		blank(func(p *Phrases) { p.ActionResultTemplate = strings.Repeat("é", MaxCommentaryRunes) + "%s" }),
 		blank(func(p *Phrases) { p.ActionFailure = " " }),
+		blank(func(p *Phrases) { p.Stopped = "" }),
+		blank(func(p *Phrases) { p.Stopped = strings.Repeat("é", MaxCommentaryRunes+1) }),
 		blank(func(p *Phrases) { p.ActionFailure = strings.Repeat("é", MaxCommentaryRunes+1) }),
 	} {
 		if _, err := NewManager(factoryOf(r), p, testOptions()); err == nil {
@@ -382,6 +386,11 @@ func TestEmptyRequestNoRunner(t *testing.T) {
 	reply := newFakeReply()
 	s := open(t, r, testOptions(), reply)
 	s.Delegate("d1", 100)
+	// A3 : le commentaire générique part tout de suite, la demande vide est
+	// constatée ensuite dans session.run.
+	if c := reply.next(t); c.ID != "d1" || c.Text != "G" {
+		t.Fatalf("commentaire = %+v, attendu le générique", c)
+	}
 	if c := reply.next(t); c.ID != "d1" || c.Text != "N" {
 		t.Fatalf("commentaire = %+v, attendu NoRequest", c)
 	}

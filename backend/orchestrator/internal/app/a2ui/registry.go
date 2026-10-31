@@ -17,6 +17,7 @@ type surface struct {
 	owner    string
 	taskID   string
 	children map[string][]string // identifiant de composant -> enfants référencés
+	hasData  bool                // le data model entier a été écrit (path absent, « / » ou « /<surface> »)
 }
 
 type task struct {
@@ -89,6 +90,11 @@ func (r *Registry) Apply(owner, taskID string, op Operation) error {
 	switch op.Kind {
 	case DeleteSurface:
 		delete(r.surfaces, op.SurfaceID)
+	case UpdateDataModel:
+		// Un path absent ou « / » écrit le modèle entier ; « /<surface> » aussi.
+		if op.DataPath == "" || op.DataPath == "/" || op.DataPath == "/"+op.SurfaceID {
+			s.hasData = true
+		}
 	case UpdateComponents:
 		total := len(s.children)
 		for _, id := range op.ComponentIDs {
@@ -108,7 +114,9 @@ func (r *Registry) Apply(owner, taskID string, op Operation) error {
 
 // Complete vérifie, en fin de tâche, que chaque surface créée par la tâche et
 // toujours active a un composant root et que toutes ses références d'enfants
-// sont résolues.
+// sont résolues. Elle n'exige PAS l'écriture du data model (hasData), contrairement
+// à surface.complete (arrêt, RG-14) : une surface sans données finit la tâche sans
+// erreur, mais serait retirée à l'arrêt.
 func (r *Registry) Complete(taskID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -124,15 +132,30 @@ func (r *Registry) Complete(taskID string) error {
 		if _, hasRoot := s.children["root"]; !hasRoot {
 			return fail(CodeIncompleteSurface, "surface sans composant root")
 		}
-		for _, refs := range s.children {
-			for _, ref := range refs {
-				if _, resolved := s.children[ref]; !resolved {
-					return fail(CodeIncompleteSurface, "référence d'enfant non résolue")
-				}
-			}
+		if !s.referencesResolved() {
+			return fail(CodeIncompleteSurface, "référence d'enfant non résolue")
 		}
 	}
 	return nil
+}
+
+// referencesResolved dit si chaque enfant référencé a été défini.
+func (s *surface) referencesResolved() bool {
+	for _, refs := range s.children {
+		for _, ref := range refs {
+			if _, resolved := s.children[ref]; !resolved {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// complete dit si la surface est affichable en entier : composant root présent,
+// références résolues et objet « /<surface> » du data model reçu (spec 011, A2).
+func (s *surface) complete() bool {
+	_, hasRoot := s.children["root"]
+	return hasRoot && s.referencesResolved() && s.hasData
 }
 
 // Compensation renvoie les messages deleteSurface des surfaces créées par la
@@ -149,6 +172,35 @@ func (r *Registry) Compensation(taskID string) []map[string]any {
 		sid := t.created[i]
 		s, ok := r.surfaces[sid]
 		if !ok || s.taskID != taskID {
+			continue
+		}
+		delete(r.surfaces, sid)
+		out = append(out, map[string]any{
+			"version":       "v0.9",
+			"deleteSurface": map[string]any{"surfaceId": sid},
+		})
+	}
+	t.created = nil
+	return out
+}
+
+// CancelCompensation est la compensation d'un arrêt demandé par l'utilisateur
+// (RG-14) : elle ne renvoie que les deleteSurface des surfaces de la tâche
+// encore actives et INACHEVÉES (voir surface.complete), dans l'ordre inverse de
+// création, et les retire du registre. Les surfaces complètes restent actives et
+// gardent leur propriétaire ; l'appelant libère ensuite le suivi par Forget.
+func (r *Registry) CancelCompensation(taskID string) []map[string]any {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	t := r.tasks[taskID]
+	if t == nil {
+		return nil
+	}
+	var out []map[string]any
+	for i := len(t.created) - 1; i >= 0; i-- {
+		sid := t.created[i]
+		s, ok := r.surfaces[sid]
+		if !ok || s.taskID != taskID || s.complete() {
 			continue
 		}
 		delete(r.surfaces, sid)

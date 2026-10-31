@@ -1,0 +1,5 @@
+# attendu: doit viser la passerelle de l orchestrateur
+services:
+  agent-quality:
+    environment:
+      COMPOSER_LLM_URL: http://example.com/v1/complete

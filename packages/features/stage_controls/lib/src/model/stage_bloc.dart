@@ -18,6 +18,10 @@ class StageBloc extends Bloc<StageEvent, StageState> {
       switch (event) {
         case StageActAdvanced():
           emit(StageState(act: state.act % StageState.actCount + 1));
+        case StageActReached(:final act):
+          if (act >= 1 && act <= StageState.actCount && act > state.act) {
+            emit(StageState(act: act));
+          }
         case StageResetRequested():
           emit(const StageState(act: 1));
       }

@@ -3,5 +3,5 @@ library;
 
 export 'src/model/stage_bloc.dart' show StageBloc;
 export 'src/model/stage_event.dart'
-    show StageActAdvanced, StageEvent, StageResetRequested;
+    show StageActAdvanced, StageActReached, StageEvent, StageResetRequested;
 export 'src/model/stage_state.dart' show StageState;

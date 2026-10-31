@@ -36,6 +36,10 @@ jobs:
         if: matrix.module == 'backend/orchestrator'
         working-directory: .
         run: bash backend/check-compose.sh
+      - name: Auto-test du contrôle du compose (surcharges qui doivent échouer)
+        if: matrix.module == 'backend/orchestrator'
+        working-directory: .
+        run: bash backend/check-compose-selftest.sh
   app:
     runs-on: ubuntu-latest
     steps:

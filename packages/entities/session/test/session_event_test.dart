@@ -109,6 +109,11 @@ void main() {
             idle: <String>[],
           ),
         ),
+        'VoiceInterrupted': (
+          const VoiceInterrupted(atMs: 1200),
+          const VoiceInterrupted(atMs: 1200),
+          const VoiceInterrupted(atMs: 1300),
+        ),
         'ChannelLost': (
           const ChannelLost('r'),
           const ChannelLost('r'),
@@ -137,6 +142,7 @@ void main() {
       A2uiEnvelopeReceived() => 'A2uiEnvelopeReceived',
       PlanReceived() => 'PlanReceived',
       UsageUpdated() => 'UsageUpdated',
+      VoiceInterrupted() => 'VoiceInterrupted',
       ChannelLost() => 'ChannelLost',
     };
     final Set<String> names = cases.values

@@ -272,6 +272,106 @@ void main() {
     },
   );
 
+  group('cinquième surface : crashes (A7, 012)', () {
+    const List<String> act1 = <String>['kpi', 'trend', 'reviews', 'checklist'];
+
+    Future<void> pumpAct1(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(
+        1920,
+        520 + CanvasBoard.actionsBandHeight,
+      );
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      createEngine();
+      await pumpBoard(tester);
+      for (final String id in act1) {
+        bloc
+          ..add(A2uiMessageReceived(createSurface(id)))
+          ..add(A2uiMessageReceived(updateComponents(id, 'Texte $id')));
+      }
+      await settle(tester);
+    }
+
+    Finder engineOf(String id) => find.descendant(
+      of: find.byKey(Key('surface-$id')),
+      matching: find.byType(Surface),
+    );
+
+    testWidgets('à l\'arrivée de crashes, les quatre Surface gardent leur '
+        'State et la grille passe à 3 × 2', (tester) async {
+      await pumpAct1(tester);
+      final Map<String, State> states = <String, State>{
+        for (final String id in act1) id: tester.state(engineOf(id)),
+      };
+
+      bloc
+        ..add(A2uiMessageReceived(createSurface('crashes')))
+        ..add(A2uiMessageReceived(updateComponents('crashes', 'Liste')));
+      await settle(tester);
+
+      for (final String id in act1) {
+        expect(
+          tester.state(engineOf(id)),
+          same(states[id]),
+          reason: 'le State de Surface $id a été recréé',
+        );
+      }
+      Rect cell(String id) => tester.getRect(find.byKey(Key('surface-$id')));
+      expect(cell('kpi').size, const Size(640, 260));
+      expect(cell('trend').topLeft, cell('kpi').topRight);
+      expect(cell('reviews').topLeft, cell('trend').topRight);
+      expect(cell('checklist').topLeft, cell('kpi').bottomLeft);
+      expect(cell('crashes').topLeft, cell('checklist').topRight);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('le bandeau actions reste sous la grille à 3 × 2, State '
+        'conservés', (tester) async {
+      await pumpAct1(tester);
+      for (final String id in <String>['crashes', 'actions']) {
+        bloc
+          ..add(A2uiMessageReceived(createSurface(id)))
+          ..add(A2uiMessageReceived(updateComponents(id, 'Texte $id')));
+      }
+      await settle(tester);
+
+      final Rect bar = tester.getRect(find.byKey(const Key('surface-actions')));
+      final Rect board = tester.getRect(find.byKey(const Key('canvas-board')));
+      final Rect checklist = tester.getRect(
+        find.byKey(const Key('surface-checklist')),
+      );
+      final Rect crashes = tester.getRect(
+        find.byKey(const Key('surface-crashes')),
+      );
+      expect(bar.top, greaterThanOrEqualTo(crashes.bottom));
+      expect(bar.top, greaterThanOrEqualTo(checklist.bottom));
+      expect(bar.left, board.left);
+      expect(bar.right, board.right);
+      expect(bar.height, CanvasBoard.actionsBandHeight);
+      expect(bar.bottom, board.bottom);
+    });
+
+    testWidgets('le retrait de crashes revient à 2 × 2 sans recréer les '
+        'quatre autres', (tester) async {
+      await pumpAct1(tester);
+      bloc
+        ..add(A2uiMessageReceived(createSurface('crashes')))
+        ..add(A2uiMessageReceived(updateComponents('crashes', 'Liste')));
+      await settle(tester);
+      final Map<String, State> states = <String, State>{
+        for (final String id in act1) id: tester.state(engineOf(id)),
+      };
+
+      bloc.add(A2uiMessageReceived(deleteSurface('crashes')));
+      await settle(tester);
+
+      expect(tester.getSize(find.byKey(const Key('surface-kpi'))).width, 960);
+      for (final String id in act1) {
+        expect(tester.state(engineOf(id)), same(states[id]));
+      }
+    });
+  });
+
   group('bandeau de la Barre d\'actions (A1, pdr-0065 D7)', () {
     const List<String> act1 = <String>['kpi', 'trend', 'reviews', 'checklist'];
 

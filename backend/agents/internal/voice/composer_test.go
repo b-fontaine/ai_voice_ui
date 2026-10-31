@@ -53,7 +53,7 @@ func fixtureMessages(t *testing.T, surface string) []map[string]any {
 func compose(t *testing.T, text string, active ...string) kit.Composition {
 	t.Helper()
 	got, err := voice.NewComposer(testCatalog).Compose(context.Background(),
-		kit.Request{Text: text, ContextID: "c1", ActiveSurfaces: active}, load(t))
+		kit.Request{Text: text, ContextID: "c1", ActiveSurfaces: active}, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose : %v", err)
 	}
@@ -195,7 +195,7 @@ func TestVoiceScopeKeepsDefensiveRefusals(t *testing.T) {
 	}
 	ds := load(t)
 	for _, tc := range cases {
-		_, err := voice.NewComposer(testCatalog).Compose(context.Background(), kit.Request{Text: tc.text, ContextID: "c"}, ds)
+		_, err := voice.NewComposer(testCatalog).Compose(context.Background(), kit.Request{Text: tc.text, ContextID: "c"}, ds, nil)
 		if tc.ok && err != nil {
 			t.Errorf("%q devrait être accepté : %v", tc.text, err)
 		}
@@ -235,7 +235,7 @@ func TestVoiceCreatesOnlySurfacesNotActive(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := kit.Request{Text: "avis", ContextID: "ctx", ActiveSurfaces: kit.ActiveSurfacesFrom(tc.meta)}
-			got, err := voice.NewComposer(testCatalog).Compose(context.Background(), req, ds)
+			got, err := voice.NewComposer(testCatalog).Compose(context.Background(), req, ds, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

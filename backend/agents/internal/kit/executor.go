@@ -25,6 +25,18 @@ const (
 	// l'interface : {"name": <nom>}.
 	ActionKey = "genesis/action"
 
+	// FocusKey est la clé de metadata du message A2A par laquelle l'orchestrateur
+	// transmet le focus du canevas : {"platform", "compareTo"}.
+	FocusKey = "genesis/focus"
+
+	// IntentKey est la clé de metadata du message de l'état completed par laquelle
+	// l'agent renvoie l'intention résolue : {"platform", "compareTo"}.
+	IntentKey = "genesis/intent"
+
+	// ScopeReasonKey est la clé de metadata du message de l'état rejected par laquelle
+	// l'agent renvoie le motif du refus (ensemble fermé de ScopeError, jamais de texte libre).
+	ScopeReasonKey = "genesis/scopeReason"
+
 	// actionTagPrefix préfixe, dans les tags du profil, les actions qu'un agent accepte.
 	actionTagPrefix = "action:"
 
@@ -33,6 +45,9 @@ const (
 )
 
 var actionName = regexp.MustCompile(`^[a-z][a-z_]{0,39}$`)
+
+// errConsumerGone : le consommateur du flux est parti pendant une émission progressive.
+var errConsumerGone = errors.New("consommateur du flux parti")
 
 // executor traduit la composition de l'agent en événements A2A.
 type executor struct {
@@ -72,7 +87,7 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			}
 		}
 		meta := messageMetadata(ec.Message)
-		req := Request{ContextID: ec.ContextID, ActiveSurfaces: ActiveSurfacesFrom(meta), Action: ActionFrom(meta)}
+		req := Request{ContextID: ec.ContextID, ActiveSurfaces: ActiveSurfacesFrom(meta), Focus: FocusFrom(meta), Action: ActionFrom(meta)}
 		if req.Action.IsZero() {
 			req.Text = messageText(ec.Message)
 		} else if !e.profile.acceptsAction(req.Action.Name) {
@@ -81,15 +96,33 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
 			return
 		}
-		comp, err := e.composer.Compose(ctx, req, e.ds)
+		consumerGone := false
+		emit := func(m map[string]any) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if consumerGone {
+				return errConsumerGone
+			}
+			msg := a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewDataPart(m))
+			if !yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateWorking, msg), nil) {
+				consumerGone = true
+				return errConsumerGone
+			}
+			return nil
+		}
+		comp, err := e.composer.Compose(ctx, req, e.ds, emit)
 		switch {
+		case consumerGone:
+			return
 		case ctx.Err() != nil:
 			// Annulée : l'événement terminal vient de Cancel ou le consommateur est parti.
 			return
 		case errors.Is(err, ErrOutOfScope):
 			// Seuls le motif (ensemble fermé) et la tâche sont journalisés : jamais la demande.
-			e.log.Info("demande refusée", "task", string(ec.TaskID), "reason", scopeReason(err))
-			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, agentText(e.profile.Texts.Rejected)), nil)
+			reason := scopeReason(err)
+			e.log.Info("demande refusée", "task", string(ec.TaskID), "reason", reason)
+			yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateRejected, rejectedMessage(e.profile.Texts.Rejected, err)), nil)
 			return
 		case err != nil:
 			e.log.Error("composition en échec", "task", string(ec.TaskID), "error", err)
@@ -97,10 +130,10 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 			return
 		}
 
-		// Un message A2UI par status-update : le client ne lit les parts A2UI que là.
+		// Un message A2UI par status-update : le client ne lit les parts A2UI que là. Les
+		// messages déjà émis par emit ne sont pas rejoués : Messages ne porte que la suite.
 		for _, m := range comp.Messages {
-			msg := a2a.NewMessage(a2a.MessageRoleAgent, a2a.NewDataPart(m))
-			if ctx.Err() != nil || !yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateWorking, msg), nil) {
+			if emit(m) != nil {
 				return
 			}
 		}
@@ -110,8 +143,30 @@ func (e *executor) Execute(ctx context.Context, ec *a2asrv.ExecutorContext) iter
 		if ctx.Err() != nil {
 			return
 		}
-		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCompleted, nil), nil)
+		yield(a2a.NewStatusUpdateEvent(ec, a2a.TaskStateCompleted, completedMessage(comp.Intent)), nil)
 	}
+}
+
+// completedMessage porte l'intention résolue dans les metadata de l'état completed ;
+// nil sans intention, et nil pour une vue nommée (elle ne déplace jamais le focus). Les valeurs sont des chaînes d'ensembles fermés du jeu de données.
+func completedMessage(in *Intent) *a2a.Message {
+	if in == nil || in.View != "" {
+		return nil
+	}
+	m := a2a.NewMessage(a2a.MessageRoleAgent)
+	m.Metadata = map[string]any{IntentKey: map[string]any{"platform": in.Platform, "compareTo": in.CompareTo}}
+	return m
+}
+
+// rejectedMessage est le message de l'état rejected : le texte du profil et, si l'erreur
+// est une ScopeError, son motif en metadata.
+func rejectedMessage(text string, err error) *a2a.Message {
+	msg := agentText(text)
+	var se *ScopeError
+	if msg != nil && errors.As(err, &se) && se.Reason != "" {
+		msg.Metadata = map[string]any{ScopeReasonKey: se.Reason}
+	}
+	return msg
 }
 
 // scopeReason donne le motif d'un refus hors périmètre, ou "unspecified" sans ScopeError.
@@ -164,6 +219,25 @@ func ActiveSurfacesFrom(meta map[string]any) []string {
 		out = append(out, s)
 	}
 	return out
+}
+
+// FocusFrom lit le focus dans les metadata d'un message A2A (clé FocusKey, valeur
+// {"platform", "compareTo"}). Une valeur absente ou mal typée donne un focus vide ; un
+// champ qui n'est pas une chaîne de 1 à 64 caractères est écarté, comme pour
+// ActiveSurfacesFrom. ParseIntent valide ensuite la plateforme contre le jeu.
+func FocusFrom(meta map[string]any) Focus {
+	raw, ok := meta[FocusKey].(map[string]any)
+	if !ok {
+		return Focus{}
+	}
+	bounded := func(k string) string {
+		s, ok := raw[k].(string)
+		if !ok || utf8.RuneCountInString(s) > maxSurfaceNameLength {
+			return ""
+		}
+		return s
+	}
+	return Focus{Platform: bounded("platform"), CompareTo: bounded("compareTo")}
 }
 
 // ActionFrom lit l'action dans les metadata d'un message A2A (clé ActionKey, valeur

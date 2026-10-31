@@ -77,6 +77,14 @@ abstract final class AcceptanceKeys {
   /// `validate_release`), descendant de [surface]`('actions')` (spec 009).
   static Key actionButton(String id) => Key('action-$id');
 
+  /// Ligne de rang [rank] (1 à 5) de la `CrashList` (spec 012), descendante de
+  /// [surface]`('crashes')`. Absente tant qu'il n'y a pas de données valides.
+  static Key crashRow(int rank) => Key('crash-row-$rank');
+
+  /// `Text` du libellé de la ligne de rang [rank] de la `CrashList` : deux
+  /// lignes au plus puis ellipse, texte d'au moins 24 px (pdr-0074 D9, A7).
+  static Key crashLabel(int rank) => Key('crash-label-$rank');
+
   /// Canevas (existe déjà).
   static const Key canvasBoard = Key('canvas-board');
 

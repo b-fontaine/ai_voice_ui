@@ -3,9 +3,9 @@ id: p-fn-nfr
 title: Exigences non fonctionnelles NFR-01 à NFR-12
 area: functional
 status: validated
-updated: 2026-10-29
+updated: 2026-10-31
 sources: [product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
-links: [ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
+links: [p-ar-llm-composer, p-ar-voice-interruption, ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
 tags: [nfr, latence, lisibilite, resilience, securite]
 ---
 # Exigences non fonctionnelles (NFR-01 à NFR-12)
@@ -17,7 +17,7 @@ tags: [nfr, latence, lisibilite, resilience, securite]
 | ID | Catégorie | Exigence (fiche) | Mesure (fiche) | Repères knowledge |
 |---|---|---|---|---|
 | NFR-01 | Latence voix | Réponse vocale perçue en moins de 1 s après la fin de la phrase | Chronométré sur 10 répétitions, p90 | [rt-latency] |
-| NFR-02 | Latence UI | Premier squelette affiché en moins de 1,5 s après la fin de la phrase | Horodatage du journal A2UI | [ux-genui-streaming-loading] |
+| NFR-02 | Latence UI | Premier squelette affiché en moins de 1,5 s après la fin de la phrase | Horodatage du journal A2UI ; ⚠️ depuis 011, la prise de la demande attend jusqu'à `REQUEST_WINDOW_SETTLE` (300 ms) : à remesurer (Q-80) ; **012** : le modèle de composition (p50 1,79 s) ne tient pas ce seuil seul, le squelette part avant l'appel (Q-82, [p-ar-llm-composer](../architecture/llm-composer.md)) | [ux-genui-streaming-loading] |
 | NFR-03 | Latence UI | Acte 1 complet en moins de 8 s | Horodatage du journal A2UI | — |
 | NFR-04 | Fluidité | 60 images/s pendant les animations d'apparition | Flutter DevTools, onglet Performance | [perf-profile-mode-devtools] |
 | NFR-05 | Lisibilité | Texte d'au moins 24 px, contraste WCAG AA, lisible depuis le fond de salle | Test sur vidéoprojecteur réel | [ds-a11y-wcag-contrast] |

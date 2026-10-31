@@ -14,6 +14,12 @@ final class TranscriptSourceSubscribed extends TranscriptEvent {
   final Stream<SessionEvent> events;
 }
 
+/// La voix de l'IA est rétablie après une interruption : ses deltas
+/// s'affichent de nouveau.
+final class TranscriptResumed extends TranscriptEvent {
+  const TranscriptResumed();
+}
+
 /// Les deux dernières répliques : une par rôle.
 class TranscriptState {
   const TranscriptState({this.userLine = '', this.aiLine = ''});
@@ -43,7 +49,15 @@ class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
   TranscriptBloc() : super(const TranscriptState()) {
     // Une nouvelle source remplace la précédente.
     on<TranscriptSourceSubscribed>(_onSubscribed, transformer: restartable());
+    on<TranscriptResumed>(
+      (event, emit) => _truncateFromMs = null,
+      transformer: sequential(),
+    );
   }
+
+  // Début (horloge média) à partir duquel les fragments de l'IA sont écartés ;
+  // `null` : aucune interruption en cours.
+  int? _truncateFromMs;
 
   // Rôle du dernier fragment reçu ; `null` en début de session.
   TranscriptRole? _lastRole;
@@ -56,9 +70,22 @@ class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
     onData: (sessionEvent) {
       switch (sessionEvent) {
         case TranscriptDelta():
+          final int? from = _truncateFromMs;
+          if (from != null &&
+              sessionEvent.role == TranscriptRole.ai &&
+              sessionEvent.startMs >= from) {
+            return;
+          }
           _onDelta(sessionEvent, emit);
+        case VoiceInterrupted(:final int atMs):
+          _truncateFromMs = atMs;
+        case SessionStateChanged(state: SessionState.closed) || ChannelLost():
+          // Fin de session ou perte du canal : plus d'interruption en cours
+          // (les lignes restent affichées).
+          _truncateFromMs = null;
         case SessionStateChanged(state: SessionState.connecting):
           _lastRole = null;
+          _truncateFromMs = null;
           emit(const TranscriptState());
         default:
           break;

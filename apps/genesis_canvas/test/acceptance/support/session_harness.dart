@@ -77,7 +77,9 @@ class SessionHarness {
     );
     await settleReal(tester);
     // Timers armés dans la zone FakeAsync (délais, ticker) : on les écoule.
-    await tester.pump(const Duration(seconds: 20));
+    // Au-delà de la durée maximale d'une action (60 s) : un clic accepté sans
+    // activité d'agent (K-06) laisse son attente armée jusque-là.
+    await tester.pump(const Duration(seconds: 70));
     await tester.runAsync(backend.close);
   }
 

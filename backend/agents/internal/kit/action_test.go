@@ -130,7 +130,7 @@ func TestActionOutsideProfileTagsIsRejectedBeforeComposer(t *testing.T) {
 		composer := ag.composer
 		base := serve(t, p, fakeComposer{fn: func(ctx context.Context, req kit.Request) (kit.Composition, error) {
 			rec.record(req)
-			return composer.Compose(ctx, req, testDataset(t))
+			return composer.Compose(ctx, req, testDataset(t), nil)
 		}})
 		for _, name := range []string{"inconnue", "block_release_et_plus"} {
 			last := sendAction(t, base, actionMeta(name))
@@ -161,5 +161,40 @@ func TestQualityAndVoiceRejectEvenTheDeliveryActions(t *testing.T) {
 				t.Errorf("%s, %s : état %q, attendu rejected", name, action, st)
 			}
 		}
+	}
+}
+
+// Motif de refus (spec 011, T12, plan A4) : l'état rejected porte le motif de la
+// ScopeError dans les metadata `genesis/scopeReason` ; le texte reste celui du profil.
+func TestRejectedStateCarriesScopeReasonInMetadata(t *testing.T) {
+	p := profileWithTags(t)
+	for _, reason := range []string{kit.ReasonVersion, kit.ReasonTwoPlatforms, kit.ReasonCompareWithoutPlatform, kit.ReasonCompareUnavailable} {
+		base := serve(t, p, fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+			return kit.Composition{}, &kit.ScopeError{Reason: reason}
+		}})
+		last := sendAction(t, base, nil)
+		if st := stateOf(last); st != a2a.TaskStateRejected {
+			t.Fatalf("motif %q : état %q, attendu rejected", reason, st)
+		}
+		msg := last.(*a2a.TaskStatusUpdateEvent).Status.Message
+		if msg == nil || msg.Parts[0].Text() != p.Texts.Rejected {
+			t.Errorf("motif %q : message %+v, attendu le texte du profil", reason, msg)
+			continue
+		}
+		if got := msg.Metadata[kit.ScopeReasonKey]; got != reason {
+			t.Errorf("motif %q : metadata %#v", reason, msg.Metadata)
+		}
+	}
+}
+
+// Une erreur hors périmètre sans motif ne publie aucune metadata (jamais de texte libre).
+func TestRejectedStateWithoutScopeErrorHasNoReason(t *testing.T) {
+	p := profileWithTags(t)
+	base := serve(t, p, fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
+		return kit.Composition{}, kit.ErrOutOfScope
+	}})
+	msg := sendAction(t, base, nil).(*a2a.TaskStatusUpdateEvent).Status.Message
+	if msg == nil || msg.Metadata[kit.ScopeReasonKey] != nil {
+		t.Errorf("message %+v : aucune metadata de motif attendue", msg)
 	}
 }

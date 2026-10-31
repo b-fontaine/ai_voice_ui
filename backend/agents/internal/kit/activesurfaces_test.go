@@ -33,7 +33,7 @@ type surfaceComposer struct {
 	composed chan struct{} // si non nil : fermé après la composition, puis attend l'annulation
 }
 
-func (m *surfaceComposer) Compose(ctx context.Context, req kit.Request, _ dataset.Dataset) (kit.Composition, error) {
+func (m *surfaceComposer) Compose(ctx context.Context, req kit.Request, _ dataset.Dataset, _ func(map[string]any) error) (kit.Composition, error) {
 	if m.failText != "" && req.Text == m.failText {
 		return kit.Composition{}, errors.New("échec de composition")
 	}

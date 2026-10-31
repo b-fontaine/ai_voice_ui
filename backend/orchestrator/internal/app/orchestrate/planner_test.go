@@ -51,6 +51,10 @@ func TestPlannerSelectsByCardTags(t *testing.T) {
 		{"3.2 seule : hors catalogue", "la 3.2", realCards(), []int{}},
 		{"release 3.4 : les trois", "Prépare la release 3.4", realCards(), []int{0, 1, 2}},
 		{"avis seuls", "Montre-moi les avis", realCards(), []int{1}},
+		// Spec 012, D7 amendée : aucun tag ajouté ; « crashs » (Qualité) et « avis » (Voix du client) suffisent.
+		{"liste des crashs : Qualité seule", "Affiche la liste des crashs", realCards(), []int{0}},
+		{"liste des avis : Voix du client seule", "Affiche la liste des avis", realCards(), []int{1}},
+		{"liste des crashs Android : Qualité seule", "Affiche la liste des crashs Android", realCards(), []int{0}},
 		{"checklist seule", "checklist", realCards(), []int{2}},
 		{"hors catalogue", "Fais-moi un camembert des ventes", realCards(), []int{}},
 		{"demande vide", "", realCards(), []int{}},

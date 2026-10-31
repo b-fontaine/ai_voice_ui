@@ -38,13 +38,15 @@ final class CanvasState {
     this._phases, [
     this.sourceStatus = CanvasSourceStatus.none,
     this.sourceError,
+    this.decisionStatus,
   ]);
 
   /// Canevas sans surface ni source.
   const CanvasState.empty()
     : _phases = const <String, SurfacePhase>{},
       sourceStatus = CanvasSourceStatus.none,
-      sourceError = null;
+      sourceError = null,
+      decisionStatus = null;
 
   /// Avancement de la source de messages.
   final CanvasSourceStatus sourceStatus;
@@ -52,9 +54,18 @@ final class CanvasState {
   /// Message d'erreur de la source si [sourceStatus] vaut `failed`.
   final String? sourceError;
 
+  /// Statut de décision de la checklist (`/checklist/decisionStatus` du data
+  /// model), ou `null` tant qu'il n'est pas connu.
+  final String? decisionStatus;
+
   /// Même surfaces, nouveau statut de source.
   CanvasState withSource(CanvasSourceStatus status, {String? error}) =>
-      CanvasState._(_phases, status, error);
+      CanvasState._(_phases, status, error, decisionStatus);
+
+  /// Même état, avec le statut de décision [status] (`null` : inconnu).
+  CanvasState withDecisionStatus(String? status) => status == decisionStatus
+      ? this
+      : CanvasState._(_phases, sourceStatus, sourceError, status);
 
   // Map à ordre d'insertion préservé (LinkedHashMap par défaut en Dart).
   final Map<String, SurfacePhase> _phases;
@@ -72,6 +83,7 @@ final class CanvasState {
       <String, SurfacePhase>{..._phases, surfaceId: SurfacePhase.skeleton},
       sourceStatus,
       sourceError,
+      decisionStatus,
     );
   }
 
@@ -83,6 +95,7 @@ final class CanvasState {
       <String, SurfacePhase>{..._phases, surfaceId: phase},
       sourceStatus,
       sourceError,
+      decisionStatus,
     );
   }
 
@@ -93,6 +106,7 @@ final class CanvasState {
       <String, SurfacePhase>{..._phases}..remove(surfaceId),
       sourceStatus,
       sourceError,
+      decisionStatus,
     );
   }
 
@@ -101,6 +115,7 @@ final class CanvasState {
       other is CanvasState &&
       sourceStatus == other.sourceStatus &&
       sourceError == other.sourceError &&
+      decisionStatus == other.decisionStatus &&
       listEquals(surfaceIds, other.surfaceIds) &&
       surfaceIds.every((String id) => _phases[id] == other._phases[id]);
 
@@ -108,6 +123,7 @@ final class CanvasState {
   int get hashCode => Object.hashAll(<Object?>[
     sourceStatus,
     sourceError,
+    decisionStatus,
     for (final MapEntry<String, SurfacePhase> e in _phases.entries) ...<Object>[
       e.key,
       e.value,

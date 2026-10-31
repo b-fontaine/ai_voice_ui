@@ -15,11 +15,23 @@ import (
 type Settings struct {
 	Config
 	ListenAddr string
+	// ComposerLLMURL est l'URL de la passerelle LLM de l'orchestrateur ; vide : composeur
+	// déterministe seul. ComposerTimeout (> 0, au plus MaxComposerTimeout) est alors requis.
+	ComposerLLMURL  string
+	ComposerTimeout time.Duration
 }
+
+// MaxComposerTimeout borne COMPOSER_TIMEOUT.
+const MaxComposerTimeout = time.Minute
+
+// ComposerLLMPath est le chemin fixe de la passerelle LLM.
+const ComposerLLMPath = "/v1/complete"
 
 // SettingsFromEnv lit AGENT_LISTEN_ADDR (défaut 127.0.0.1:<listenPort du profil>), AGENT_PUBLIC_URL et
 // A2UI_CATALOG_ID (obligatoires) ; écouter hors boucle locale exige
 // AGENT_LISTEN_ALLOW_NON_LOOPBACK=1. Les erreurs citent la variable, jamais sa valeur.
+// COMPOSER_LLM_URL (optionnelle : http, sans identifiants, chemin /v1/complete) exige
+// COMPOSER_TIMEOUT, une durée de 0 exclu à 1 min.
 // Le profil est conservé dans Settings.Config ; le composeur reste à renseigner.
 func SettingsFromEnv(getenv func(string) string, p Profile) (Settings, error) {
 	s := Settings{ListenAddr: getenv("AGENT_LISTEN_ADDR")}
@@ -45,7 +57,31 @@ func SettingsFromEnv(getenv func(string) string, p Profile) (Settings, error) {
 	if !isLoopback(host) && getenv("AGENT_LISTEN_ALLOW_NON_LOOPBACK") != "1" {
 		return Settings{}, errors.New("AGENT_LISTEN_ADDR hors boucle locale : positionner AGENT_LISTEN_ALLOW_NON_LOOPBACK=1 pour l'autoriser")
 	}
+	if raw := getenv("COMPOSER_LLM_URL"); raw != "" {
+		if err := validateComposerURL(raw); err != nil {
+			return Settings{}, err
+		}
+		d, err := time.ParseDuration(getenv("COMPOSER_TIMEOUT"))
+		if err != nil || d <= 0 || d > MaxComposerTimeout {
+			return Settings{}, errors.New("COMPOSER_TIMEOUT invalide : une durée de 0 exclu à 1m est requise avec COMPOSER_LLM_URL")
+		}
+		s.ComposerLLMURL, s.ComposerTimeout = raw, d
+	}
 	return s, nil
+}
+
+// validateComposerURL contrôle COMPOSER_LLM_URL ; l'erreur ne recopie jamais la valeur.
+func validateComposerURL(raw string) error {
+	u, err := url.Parse(raw)
+	switch {
+	case err != nil || u.Scheme != "http" || u.Hostname() == "" || u.Opaque != "":
+		return errors.New("COMPOSER_LLM_URL invalide : http://hôte:port" + ComposerLLMPath + " attendu")
+	case u.User != nil:
+		return errors.New("COMPOSER_LLM_URL invalide : identifiants interdits")
+	case u.Path != ComposerLLMPath || u.RawQuery != "" || u.Fragment != "":
+		return errors.New("COMPOSER_LLM_URL invalide : chemin " + ComposerLLMPath + " exact attendu, sans requête ni fragment")
+	}
+	return nil
 }
 
 func isLoopback(host string) bool {

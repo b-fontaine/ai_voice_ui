@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
+import 'remote_audio_switch.dart';
 import 'web_rtc_platform.dart';
 
 /// Seul fichier de la slice qui touche `flutter_webrtc`. Il n'a pas de test
@@ -51,9 +52,17 @@ class _Mic implements RtcMic {
 }
 
 class _Peer implements RtcPeer {
-  _Peer(this._connection);
+  _Peer(this._connection) {
+    // Piste distante : captée à son arrivée pour pouvoir la couper.
+    _connection.onTrack = (event) {
+      final track = event.track;
+      if (track.kind != 'audio') return;
+      _remoteAudio.attach((enabled) => track.enabled = enabled);
+    };
+  }
 
   final RTCPeerConnection _connection;
+  final RemoteAudioSwitch _remoteAudio = RemoteAudioSwitch();
   RTCDataChannel? _channel;
 
   @override
@@ -92,6 +101,10 @@ class _Peer implements RtcPeer {
   @override
   Future<void> setRemoteAnswer(String sdp) =>
       _connection.setRemoteDescription(RTCSessionDescription(sdp, 'answer'));
+
+  @override
+  Future<void> setRemoteAudioEnabled(bool enabled) async =>
+      _remoteAudio.setEnabled(enabled);
 
   @override
   Future<void> close() async {

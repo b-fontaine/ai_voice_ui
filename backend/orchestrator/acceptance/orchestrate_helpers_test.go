@@ -73,6 +73,7 @@ func startDelegatingAppWith(t *testing.T, agentCardURLs []string, opts ...appOpt
 		"A2UI_CATALOG_ID":       testCatalogID,
 		"A2UI_COMPONENTS":       "Column,Text", // liste blanche des composants A2UI relayés
 		"AGENT_TIMEOUT":         "5s",
+		"VOICE_STOP_WORDS":      "stop,tais-toi,annule", // mots d'arrêt (spec 011, K-03 et K-04)
 	}
 	for _, opt := range opts {
 		opt(env)

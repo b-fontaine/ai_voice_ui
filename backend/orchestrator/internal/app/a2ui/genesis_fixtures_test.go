@@ -52,6 +52,16 @@ var genesisExamples = []struct {
 	{"act1-checklist.jsonl", "checklist", "ReleaseChecklist"},
 }
 
+// crashListExamples sont les fixtures de la liste des crashs (spec 012) : trois
+// temps comme l'acte 1, mais hors de ses quatre surfaces (`genesisExamples`).
+var crashListExamples = []struct {
+	file, title string
+	rows        int
+}{
+	{"crashlist-global.jsonl", "Principaux crashs · 3.4", 5},
+	{"crashlist-android.jsonl", "Principaux crashs · Android", 3},
+}
+
 // genesisContractDir renvoie le dossier des fixtures, relatif à ce fichier de test.
 func genesisContractDir(t *testing.T) string {
 	t.Helper()
@@ -90,7 +100,7 @@ func genesisMessages(t *testing.T, file string) []map[string]any {
 	return out
 }
 
-func TestGenesisFixtures_CatalogListsExactlyTheFiveComponents(t *testing.T) {
+func TestGenesisFixtures_CatalogListsExactlyTheSixComponents(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join(genesisContractDir(t), "catalog.json"))
 	if err != nil {
 		t.Fatalf("catalog.json illisible : %v", err)
@@ -106,7 +116,7 @@ func TestGenesisFixtures_CatalogListsExactlyTheFiveComponents(t *testing.T) {
 		t.Errorf("catalogId = %q, placeholder attendu", cat.CatalogID)
 	}
 	// L'ordre compte : backend/check-compose.sh le compare à A2UI_COMPONENTS.
-	want := []string{"KeyIndicator", "TrendChart", "ReviewSentiment", "ReleaseChecklist", "ActionBar"}
+	want := []string{"KeyIndicator", "TrendChart", "ReviewSentiment", "ReleaseChecklist", "ActionBar", "CrashList"}
 	if !reflect.DeepEqual(cat.Components, want) {
 		t.Fatalf("components = %v, attendu %v", cat.Components, want)
 	}
@@ -378,8 +388,8 @@ func TestGenesisFixtures_CatalogComponentsAreThePdr0014Six(t *testing.T) {
 			t.Errorf("components contient %q absent de catalogComponents", c)
 		}
 	}
-	if len(cat.Components) != 5 {
-		t.Errorf("components = %v, 5 attendus (liste blanche J5)", cat.Components)
+	if len(cat.Components) != 6 {
+		t.Errorf("components = %v, 6 attendus (liste blanche, spec 012)", cat.Components)
 	}
 }
 
@@ -625,6 +635,72 @@ func TestGenesisFixtures_Act3AloneIsUnknownSurface(t *testing.T) {
 				var ve *a2ui.ValidationError
 				if !errors.As(err, &ve) || ve.Code != a2ui.CodeUnknownSurface {
 					t.Fatalf("code unknown_surface attendu, obtenu %v", err)
+				}
+			}
+		})
+	}
+}
+
+// Liste des crashs (spec 012, A8) : surface `crashes`, trois temps, schéma de
+// catalog.json, rangs 1..n consécutifs.
+
+func TestGenesisFixtures_CrashListExamples(t *testing.T) {
+	defs := loadCatalogDefinitions(t)
+	def, ok := defs["CrashList"]
+	if !ok {
+		t.Fatal("definitions.CrashList absent de catalog.json")
+	}
+	if def.Surface != "crashes" || def.DataModel.Path != "/crashes" {
+		t.Fatalf("CrashList : surface %q, chemin %q, attendu crashes et /crashes", def.Surface, def.DataModel.Path)
+	}
+	v, err := a2ui.NewValidator(a2ui.Options{
+		CatalogID:              genesisTestCatalogID,
+		Components:             genesisComponents,
+		MaxMessageBytes:        64 * 1024,
+		MaxDepth:               16,
+		MaxComponentsPerUpdate: 50,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ex := range crashListExamples {
+		t.Run(ex.file, func(t *testing.T) {
+			reg, err := a2ui.NewRegistry(a2ui.Limits{MaxSurfaces: 6, MaxComponentsPerSurface: 200, MaxMessagesPerTask: 64})
+			if err != nil {
+				t.Fatal(err)
+			}
+			msgs := genesisMessages(t, ex.file)
+			wantKinds := []a2ui.Kind{a2ui.CreateSurface, a2ui.UpdateComponents, a2ui.UpdateDataModel}
+			if len(msgs) != len(wantKinds) {
+				t.Fatalf("%d messages, %d attendus (trois temps)", len(msgs), len(wantKinds))
+			}
+			for i, msg := range msgs {
+				op, err := v.Validate(msg)
+				if err != nil {
+					t.Fatalf("message %d refusé par le validateur : %v", i+1, err)
+				}
+				if op.Kind != wantKinds[i] || op.SurfaceID != "crashes" {
+					t.Fatalf("message %d : %s/%s, attendu %s/crashes", i+1, op.Kind, op.SurfaceID, wantKinds[i])
+				}
+				if err := reg.Apply("agent", "task-1", op); err != nil {
+					t.Fatalf("message %d refusé par le registre : %v", i+1, err)
+				}
+			}
+			if err := reg.Complete("task-1"); err != nil {
+				t.Fatalf("fin de tâche incomplète : %v", err)
+			}
+			value := msgs[2]["updateDataModel"].(map[string]any)["value"].(map[string]any)
+			checkObject(t, ex.file, value, def.DataModel.Fields)
+			if value["title"] != ex.title {
+				t.Errorf("titre = %v, attendu %q", value["title"], ex.title)
+			}
+			items, _ := value["items"].([]any)
+			if len(items) != ex.rows {
+				t.Fatalf("%d lignes, %d attendues", len(items), ex.rows)
+			}
+			for i, it := range items {
+				if rank := it.(map[string]any)["rank"]; rank != float64(i+1) {
+					t.Errorf("ligne %d : rang %v, attendu %d", i+1, rank, i+1)
 				}
 			}
 		})

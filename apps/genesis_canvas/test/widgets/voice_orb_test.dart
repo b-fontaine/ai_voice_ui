@@ -5,13 +5,22 @@ import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 
 const Key _orbKey = Key('voice-orb');
 
-Widget _host(ValueNotifier<double> level, {bool thinking = false}) =>
-    Directionality(
-      textDirection: TextDirection.ltr,
-      child: Center(
-        child: VoiceOrb(level: level, thinking: thinking),
-      ),
-    );
+Widget _host(
+  ValueNotifier<double> level, {
+  bool thinking = false,
+  bool interrupted = false,
+  bool listening = false,
+}) => Directionality(
+  textDirection: TextDirection.ltr,
+  child: Center(
+    child: VoiceOrb(
+      level: level,
+      thinking: thinking,
+      interrupted: interrupted,
+      listening: listening,
+    ),
+  ),
+);
 
 /// Appels de dessin du painter de l'orbe à l'instant courant.
 List<RecordedInvocation> _draw(WidgetTester tester) {
@@ -215,5 +224,81 @@ void main() {
     // Aucun écouteur résiduel : ne doit rien lever.
     level.value = 0.9;
     await tester.pump();
+  });
+
+  group('interruption (FR-19, RG-17)', () {
+    Color bodyColor(List<RecordedInvocation> calls) =>
+        (_named(calls, #drawCircle).first.invocation.positionalArguments[2]
+                as Paint)
+            .color;
+
+    testWidgets('interrompue : état lu, arrêt net sans pulsation ni arc', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(_host(level, interrupted: true));
+
+      final radii = <double>[];
+      for (var i = 0; i < 6; i++) {
+        radii.add(_bodyRadius(_draw(tester)));
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+
+      expect(_state(tester), 'Interrompue');
+      expect(
+        radii.toSet(),
+        hasLength(1),
+        reason: 'arrêt net, pas de pulsation',
+      );
+      expect(_named(_draw(tester), #drawArc), isEmpty);
+      semantics.dispose();
+    });
+
+    testWidgets('interrompue : flash, couleur distincte du repos', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(level));
+      final rest = bodyColor(_draw(tester));
+      await tester.pumpWidget(_host(level, interrupted: true));
+
+      expect(bodyColor(_draw(tester)), isNot(rest));
+    });
+
+    testWidgets('interrompue prime sur la parole et la réflexion', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(_host(level, interrupted: true, thinking: true));
+      level.value = 0.8;
+      await tester.pump(const Duration(milliseconds: 16));
+
+      expect(_state(tester), 'Interrompue');
+      semantics.dispose();
+    });
+
+    testWidgets('écoute : lue au repos quand la session écoute', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(_host(level, listening: true));
+
+      expect(_state(tester), 'Écoute');
+
+      level.value = 0.5;
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(_state(tester), 'parole');
+      semantics.dispose();
+    });
+
+    testWidgets('l\'état change quand interrupted change', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(_host(level, interrupted: true));
+      expect(_state(tester), 'Interrompue');
+
+      await tester.pumpWidget(_host(level, listening: true));
+      await tester.pump();
+      expect(_state(tester), 'Écoute');
+      semantics.dispose();
+    });
   });
 }

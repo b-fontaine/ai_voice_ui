@@ -505,6 +505,26 @@ void main() {
     });
   });
 
+  group('fixtures positives de la liste des crashs (spec 012)', () {
+    test('trois temps acceptés, surface crashes, sur un validateur neuf', () {
+      for (final f in ['crashlist-global.jsonl', 'crashlist-android.jsonl']) {
+        final fresh = GenesisMessageValidator(catalogId: _cid);
+        final text = File('${_contractsDir().path}/examples/$f')
+            .readAsStringSync()
+            .replaceAll(r'${CATALOG_ID}', _cid);
+        final kinds = <String>[];
+        for (final l in const LineSplitter().convert(text)) {
+          if (l.trim().isEmpty) continue;
+          final m = Map<String, Object?>.from(jsonDecode(l) as Map);
+          kinds.add(m.keys.firstWhere((k) => k != 'version'));
+          expect(fresh.check(m).verdict, const ValidationAccepted(), reason: f);
+        }
+        expect(kinds, ['createSurface', 'updateComponents', 'updateDataModel']);
+        expect(fresh.activeSurfaces, {'crashes'});
+      }
+    });
+  });
+
   group('acte 2 et correction iOS (spec 008)', () {
     const act1 = <String>[
       'act1-kpi',

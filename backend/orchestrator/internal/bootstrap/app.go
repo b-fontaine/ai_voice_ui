@@ -18,6 +18,7 @@ import (
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/a2ui"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/fanout"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/orchestrate"
+	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/stopword"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/app/voice"
 	"github.com/b-fontaine/ai_voice_ui/backend/orchestrator/internal/port"
 )
@@ -66,6 +67,22 @@ type Deps struct {
 type systemClock struct{}
 
 func (systemClock) Now() time.Time { return time.Now() }
+
+// After est le minuteur de production de la fenêtre de demande.
+func (systemClock) After(d time.Duration) <-chan time.Time { return time.After(d) }
+
+// waitClock complète une horloge injectée qui ne sait pas attendre : l'heure
+// vient de l'horloge injectée, le minuteur du système.
+type waitClock struct{ port.Clock }
+
+func (waitClock) After(d time.Duration) <-chan time.Time { return time.After(d) }
+
+func asWaitClock(c port.Clock) orchestrate.WaitClock {
+	if w, ok := c.(orchestrate.WaitClock); ok {
+		return w
+	}
+	return waitClock{c}
+}
 
 // App est l'orchestrateur assemblé.
 type App struct {
@@ -129,7 +146,11 @@ func New(cfg Config, deps Deps) (*App, error) {
 		Delegations:            delegations,
 		Phrases:                cfg.VoicePhrases,
 		AnnounceObserveTimeout: cfg.AnnounceObserveTimeout,
-		Logger:                 logger,
+		Stop: voice.StopConfig{
+			Words: cfg.VoiceStopWords, UtteranceGap: cfg.VoiceStopUtteranceGap, MaxWords: cfg.VoiceStopMaxWords,
+			Settle: cfg.VoiceStopSettle, Debounce: cfg.VoiceStopDebounce,
+		},
+		Logger: logger,
 	})
 	if err != nil {
 		_ = journal.Close()
@@ -209,9 +230,14 @@ func newDelegations(cfg Config, sink port.Sink, clock port.Clock, logger *slog.L
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap: pipeline d'orchestration : %w", err)
 	}
+	// Même liste normalisée que le détecteur vocal : une demande faite uniquement de ces
+	// mots est un « Stop » seul, quel que soit l'ordre des événements.
+	stopMatcher := stopword.New(cfg.VoiceStopWords)
 	return orchestrate.NewManager(factory, cfg.Phrases, orchestrate.Options{
+		StopSpan: cfg.VoiceStopSpan, IsStopOnly: stopMatcher.OnlyStopWords,
 		QueueDepth: delegationQueueDepth, AgentTimeout: agentTimeout, GuardTimeout: cfg.CloseGuard,
 		SeenCap: delegationSeenCap, Logger: logger, Canvas: canvas,
+		Clock: asWaitClock(clock), RequestWindowSettle: cfg.RequestWindowSettle, RequestWindowMargin: cfg.RequestWindowMargin,
 	})
 }
 

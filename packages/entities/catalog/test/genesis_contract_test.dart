@@ -21,10 +21,10 @@ Map<String, dynamic> _catalogJson() {
 void main() {
   final catalog = _catalogJson();
 
-  test('les 5 composants validés (dans l ordre) et les 6 du catalogue suivent catalog.json', () {
+  test('les 6 composants validés (dans l ordre) et les 6 du catalogue suivent catalog.json', () {
     expect(GenesisContract.components, catalog['components']);
-    expect(GenesisContract.components, hasLength(5));
-    expect(GenesisContract.components.last, 'ActionBar');
+    expect(GenesisContract.components, hasLength(6));
+    expect(GenesisContract.components.last, 'CrashList');
     expect(GenesisContract.catalogComponents, catalog['catalogComponents']);
   });
 
@@ -85,7 +85,25 @@ void main() {
 
   test('un composant inconnu n a ni surface ni chemin lié', () {
     expect(GenesisContract.surfaceOf('Text'), isNull);
-    expect(GenesisContract.boundPathOf('CrashList'), isNull);
+    expect(GenesisContract.boundPathOf('Text'), isNull);
+  });
+
+  test('CrashList : surface crashes, chemin /crashes, 5 champs par ligne', () {
+    final definition =
+        (catalog['definitions'] as Map<String, dynamic>)['CrashList']
+            as Map<String, dynamic>;
+    final fields =
+        (definition['dataModel'] as Map<String, dynamic>)['fields']
+            as Map<String, dynamic>;
+    expect(GenesisContract.surfaceOf('CrashList'), 'crashes');
+    expect(GenesisContract.boundPathOf('CrashList'), '/crashes');
+    expect(fields.keys, <String>['title', 'items']);
+    expect(
+      ((fields['items'] as Map<String, dynamic>)['items']
+              as Map<String, dynamic>)
+          .keys,
+      <String>['rank', 'label', 'platform', 'volume', 'sessions'],
+    );
   });
 
   test('ActionBar : surface actions, chemin /actions, enums fermés', () {

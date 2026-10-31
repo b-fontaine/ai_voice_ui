@@ -10,8 +10,9 @@ enum TranscriptRole { user, ai }
 enum SessionState { connecting, active, closed }
 
 /// État d'une tâche A2A d'agent. `rejected` : l'agent retenu refuse la
-/// demande (hors périmètre), ce qui n'est pas un échec.
-enum AgentTaskState { working, completed, failed, rejected }
+/// demande (hors périmètre), ce qui n'est pas un échec. `canceled` : la
+/// tâche a été annulée (interruption vocale), ce qui n'est pas un échec non plus.
+enum AgentTaskState { working, completed, failed, rejected, canceled }
 
 /// Événement de session, produit par le canal applicatif et consommé par les
 /// Blocs. Hiérarchie fermée : un `switch` sans `default` doit être exhaustif.
@@ -192,6 +193,21 @@ final class UsageUpdated extends SessionEvent {
 
   @override
   int get hashCode => Object.hash(seconds, contextRatio);
+}
+
+/// L'utilisateur a interrompu l'IA (`voice.interrupted`). [atMs] est l'horloge
+/// média des transcripts (`start_ms` du delta déclencheur).
+final class VoiceInterrupted extends SessionEvent {
+  const VoiceInterrupted({required this.atMs});
+
+  final int atMs;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VoiceInterrupted && other.atMs == atMs;
+
+  @override
+  int get hashCode => atMs.hashCode;
 }
 
 /// Perte du canal applicatif.

@@ -56,6 +56,10 @@ func WireData(d domain.Payload) any {
 			Selected   []string `json:"selected"`
 			Idle       []string `json:"idle"`
 		}{v.Delegation, nonNil(v.Selected), nonNil(v.Idle)}
+	case domain.VoiceInterrupted:
+		return struct {
+			AtMs int64 `json:"at_ms"`
+		}{max(0, v.AtMs)}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil

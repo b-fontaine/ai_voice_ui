@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
-/// niveau) et réflexion (un arc tourne).
+/// niveau), réflexion (un arc tourne) et, après une coupure de parole
+/// (FR-19, RG-17), « Interrompue » (arrêt net, flash) puis « Écoute ».
 ///
 /// Le niveau audio arrive par [level] (`ValueListenable`, hors Bloc) : le
 /// `CustomPainter` se repeint par `repaint:` sans `build` ni `layout`
@@ -16,6 +17,8 @@ class VoiceOrb extends StatefulWidget {
     super.key = const Key('voice-orb'),
     required this.level,
     this.thinking = false,
+    this.interrupted = false,
+    this.listening = false,
     this.speakingThreshold = 0.03,
   });
 
@@ -26,6 +29,14 @@ class VoiceOrb extends StatefulWidget {
 
   /// Vrai quand les agents travaillent pendant une session active.
   final bool thinking;
+
+  /// Vrai quand le speaker vient de couper l'IA : prime sur tous les autres
+  /// états (le niveau est alors maintenu à 0 par la page).
+  final bool interrupted;
+
+  /// Vrai quand la session est active et que l'IA se tait : l'orbe se lit
+  /// « Écoute » au lieu de « repos ».
+  final bool listening;
 
   /// Niveau au-dessus duquel l'orbe est en parole.
   final double speakingThreshold;
@@ -46,6 +57,7 @@ class _VoiceOrbState extends State<VoiceOrb>
 
   // Alloués une fois : `paint()` ne crée aucun objet de style.
   final Paint _bodyPaint = Paint()..color = const Color(0xFF7C4DFF);
+  final Paint _flashPaint = Paint()..color = const Color(0xFFFFFFFF);
   final Paint _arcPaint = Paint()
     ..color = const Color(0xFFB39DFF)
     ..style = PaintingStyle.stroke
@@ -87,10 +99,14 @@ class _VoiceOrbState extends State<VoiceOrb>
     valueListenable: _speaking,
     builder: (context, speaking, child) => Semantics(
       label: 'Orbe vocal',
-      value: speaking
+      value: widget.interrupted
+          ? 'Interrompue'
+          : speaking
           ? 'parole'
           : widget.thinking
           ? 'réflexion'
+          : widget.listening
+          ? 'Écoute'
           : 'repos',
       child: child,
     ),
@@ -102,8 +118,10 @@ class _VoiceOrbState extends State<VoiceOrb>
             level: widget.level,
             animation: _animation,
             thinking: widget.thinking,
+            interrupted: widget.interrupted,
             speakingThreshold: widget.speakingThreshold,
             bodyPaint: _bodyPaint,
+            flashPaint: _flashPaint,
             arcPaint: _arcPaint,
           ),
         ),
@@ -117,16 +135,20 @@ class _OrbPainter extends CustomPainter {
     required this.level,
     required this.animation,
     required this.thinking,
+    required this.interrupted,
     required this.speakingThreshold,
     required this.bodyPaint,
+    required this.flashPaint,
     required this.arcPaint,
   }) : super(repaint: Listenable.merge(<Listenable>[level, animation]));
 
   final ValueListenable<double> level;
   final Animation<double> animation;
   final bool thinking;
+  final bool interrupted;
   final double speakingThreshold;
   final Paint bodyPaint;
+  final Paint flashPaint;
   final Paint arcPaint;
 
   static const double _restRadius = 0.62;
@@ -140,7 +162,10 @@ class _OrbPainter extends CustomPainter {
     final half = size.shortestSide / 2;
     final value = level.value;
 
-    if (value > speakingThreshold) {
+    if (interrupted) {
+      // Interrompue : arrêt net, flash au rayon de repos, sans pulsation.
+      canvas.drawCircle(center, half * _restRadius, flashPaint);
+    } else if (value > speakingThreshold) {
       // Parole : le rayon suit le niveau.
       final radius =
           half * (_restRadius + (1 - _restRadius) * value.clamp(0, 1));
@@ -171,5 +196,6 @@ class _OrbPainter extends CustomPainter {
       old.level != level ||
       old.animation != animation ||
       old.thinking != thinking ||
+      old.interrupted != interrupted ||
       old.speakingThreshold != speakingThreshold;
 }

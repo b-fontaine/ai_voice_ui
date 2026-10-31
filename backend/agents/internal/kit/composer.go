@@ -19,6 +19,8 @@ type Request struct {
 	// le registre de l'orchestrateur. Un composeur n'émet `createSurface` que pour une
 	// surface qu'il produit et qui manque à cette liste.
 	ActiveSurfaces []string
+	// Focus est la vue courante du canevas selon l'orchestrateur (zéro : aucun focus).
+	Focus Focus
 	// Action est l'action de l'interface (Barre d'actions) portée par la requête, ou
 	// vide pour une demande vocale. Quand elle est présente, Text est vide : le texte du
 	// message A2A (le nom de l'action) n'est jamais interprété comme une demande.
@@ -38,12 +40,24 @@ func (a ActionCall) IsZero() bool { return a == ActionCall{} }
 type Composition struct {
 	Messages []map[string]any
 	Summary  string
+	// Intent est l'intention résolue d'une demande vocale, renvoyée à l'orchestrateur
+	// dans les metadata de l'état completed. nil : aucune (action de l'interface).
+	Intent *Intent
 }
 
 // Composer compose la réponse d'un agent. Le noyau ne connaît aucun composeur
 // particulier ; il ne lit aucun fichier, le jeu de données lui est fourni. Une
 // implémentation est sans état entre deux appels (la mémoire des surfaces est
 // côté orchestrateur) et sûre pour un usage concurrent.
+//
+// Émission progressive (spec 012, A1). emit envoie sur-le-champ un message A2UI au client
+// (un status-update « working » par message). Règle : ce qui a été émis par emit n'est PAS
+// rejoué depuis Composition.Messages, qui ne porte que les messages restant à envoyer, après
+// ceux déjà émis. Un composeur qui n'émet pas progressivement renvoie tous ses messages dans
+// Composition.Messages et n'appelle jamais emit. emit se rappelle depuis la goroutine de
+// Compose uniquement ; son erreur (contexte annulé, client parti) doit être renvoyée telle
+// quelle. L'exécuteur passe toujours un emit non nil ; les tests qui n'émettent pas peuvent
+// passer nil.
 type Composer interface {
-	Compose(ctx context.Context, req Request, ds dataset.Dataset) (Composition, error)
+	Compose(ctx context.Context, req Request, ds dataset.Dataset, emit func(map[string]any) error) (Composition, error)
 }

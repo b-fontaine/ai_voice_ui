@@ -35,6 +35,21 @@ const (
 	defaultAppendAckTimeout = 2 * time.Second
 	// Observation d'une parole après une annonce acquittée (VOICE_ANNOUNCE_TIMEOUT).
 	defaultAnnounceObserveTimeout = 4 * time.Second
+	// Fenêtre de demande (REQUEST_WINDOW_SETTLE, REQUEST_WINDOW_MARGIN).
+	defaultRequestWindowSettle = 300 * time.Millisecond
+	defaultRequestWindowMargin = 400 * time.Millisecond
+	maxRequestWindowDuration   = 2 * time.Second
+	// Mots d'arrêt (VOICE_STOP_*, plan 011 A5). La liste par défaut est vide : les mots
+	// viennent de l'environnement (docker-compose.yaml), jamais du code.
+	defaultVoiceStopUtteranceGap = 1500 * time.Millisecond
+	maxVoiceStopUtteranceGap     = 10 * time.Second
+	defaultVoiceStopMaxWords     = 4
+	defaultVoiceStopSettle       = 400 * time.Millisecond
+	maxVoiceStopSettle           = 2 * time.Second
+	defaultVoiceStopDebounce     = 2 * time.Second
+	maxVoiceStopDebounce         = 10 * time.Second
+	defaultVoiceStopSpan         = 3 * time.Second
+	maxVoiceStopSpan             = 10 * time.Second
 )
 
 // AgentSpec est une entrée de AGENTS : l'URL de la carte d'un agent A2A et, en
@@ -74,10 +89,41 @@ type Config struct {
 	// SessionRateWindow : intervalle de recharge d'un jeton de création
 	// (SESSION_RATE_WINDOW) ; défaut 10 s.
 	SessionRateWindow time.Duration
+	// RequestWindowSettle (REQUEST_WINDOW_SETTLE, défaut 300 ms, de 0 à 2 s) :
+	// attente, après une délégation, des deltas de transcript encore en route.
+	// RequestWindowMargin (REQUEST_WINDOW_MARGIN, défaut 400 ms, de 0 à 2 s) :
+	// durée après l'offset de la délégation dont les deltas font partie de la
+	// demande (spec 011, A3).
+	RequestWindowSettle time.Duration
+	RequestWindowMargin time.Duration
+
+	// Détecteur de mots d'arrêt (plan 011, A5). VoiceStopWords (VOICE_STOP_WORDS, liste
+	// séparée par des virgules, au plus 16 mots de 32 caractères, aucun vide) est vide
+	// par défaut : aucun arrêt vocal. VoiceStopUtteranceGap (VOICE_STOP_UTTERANCE_GAP,
+	// défaut 1,5 s, de 1 ms à 10 s), VoiceStopMaxWords (VOICE_STOP_MAX_WORDS, défaut 4,
+	// de 1 à 32), VoiceStopSettle (VOICE_STOP_SETTLE, défaut 400 ms, de 0 à 2 s) et
+	// VoiceStopDebounce (VOICE_STOP_DEBOUNCE, défaut 2 s, de 0 à 10 s). VoiceStopSpan
+	// (VOICE_STOP_SPAN, défaut 3 s, de 0 à 10 s) borne l'écart entre l'arrêt et la
+	// délégation vide d'un « Stop » seul (orchestrateur).
+	VoiceStopWords        []string
+	VoiceStopUtteranceGap time.Duration
+	VoiceStopMaxWords     int
+	VoiceStopSettle       time.Duration
+	VoiceStopDebounce     time.Duration
+	VoiceStopSpan         time.Duration
 	// AllowedHosts : valeurs acceptées de l'en-tête Host. Par défaut
 	// 127.0.0.1:<port>, localhost:<port> et [::1]:<port> ; ALLOWED_HOSTS
 	// (liste séparée par des virgules) en ajoute.
 	AllowedHosts []string
+
+	// Composer et passerelle LLM interne (spec 012, config_gateway.go). LLMGatewayAddr
+	// (LLM_GATEWAY_ADDR, `IP:port`) vide : second écouteur non démarré.
+	// LLMGatewayAllowedSources (LLM_GATEWAY_ALLOWED_SOURCES, IP ou CIDR) est obligatoire
+	// quand l'écouteur est actif ; LLMGatewayAllowedHosts en est déduit.
+	Composer                 ComposerConfig
+	LLMGatewayAddr           string
+	LLMGatewayAllowedSources []string
+	LLMGatewayAllowedHosts   []string
 
 	// Agents : cartes d'agent A2A (AGENTS, séparées par des virgules ; chaque
 	// entrée est `URL` ou `Nom=URL`, URL en http ou https). Vide : l'orchestrateur
@@ -239,6 +285,10 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 
+	if err := parseGateway(getenv, &cfg); err != nil {
+		return Config{}, err
+	}
+
 	cfg.JournalDir = strings.TrimSpace(getenv("JOURNAL_DIR"))
 	cfg.InstructionsFile = strings.TrimSpace(getenv("VOICE_INSTRUCTIONS_FILE"))
 	return cfg, nil
@@ -329,6 +379,18 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 		}
 	}
 
+	var werr error
+	if cfg.RequestWindowSettle, werr = parseBoundedDuration(getenv, "REQUEST_WINDOW_SETTLE", defaultRequestWindowSettle, maxRequestWindowDuration); werr != nil {
+		return werr
+	}
+	if cfg.RequestWindowMargin, werr = parseBoundedDuration(getenv, "REQUEST_WINDOW_MARGIN", defaultRequestWindowMargin, maxRequestWindowDuration); werr != nil {
+		return werr
+	}
+
+	if err := parseVoiceStop(getenv, cfg); err != nil {
+		return err
+	}
+
 	cfg.AppendAckTimeout = defaultAppendAckTimeout
 	if raw := strings.TrimSpace(getenv("VOICE_APPEND_ACK_TIMEOUT")); raw != "" {
 		d, err := time.ParseDuration(raw)
@@ -360,6 +422,55 @@ func parseOrchestration(getenv func(string) string, cfg *Config) error {
 	cfg.Phrases = phrases
 	cfg.VoicePhrases = voicePhrases
 	return nil
+}
+
+// parseVoiceStop lit les variables VOICE_STOP_*. Les erreurs nomment la variable sans
+// afficher de valeur.
+func parseVoiceStop(getenv func(string) string, cfg *Config) error {
+	if raw := strings.TrimSpace(getenv("VOICE_STOP_WORDS")); raw != "" {
+		for _, w := range strings.Split(raw, ",") {
+			cfg.VoiceStopWords = append(cfg.VoiceStopWords, strings.TrimSpace(w))
+		}
+		if err := voice.ValidateStopWords(cfg.VoiceStopWords); err != nil {
+			return fmt.Errorf("VOICE_STOP_WORDS : %w (liste séparée par des virgules, sans élément vide)", err)
+		}
+	}
+	var err error
+	if cfg.VoiceStopUtteranceGap, err = parseBoundedDuration(getenv, "VOICE_STOP_UTTERANCE_GAP", defaultVoiceStopUtteranceGap, maxVoiceStopUtteranceGap); err != nil {
+		return err
+	}
+	if cfg.VoiceStopUtteranceGap == 0 {
+		return errors.New("VOICE_STOP_UTTERANCE_GAP doit être une durée strictement positive (par exemple 1500ms)")
+	}
+	cfg.VoiceStopMaxWords = defaultVoiceStopMaxWords
+	if raw := strings.TrimSpace(getenv("VOICE_STOP_MAX_WORDS")); raw != "" {
+		n, perr := strconv.Atoi(raw)
+		if perr != nil || n < 1 || n > voice.MaxStopUtteranceWords {
+			return fmt.Errorf("VOICE_STOP_MAX_WORDS doit être un entier compris entre 1 et %d", voice.MaxStopUtteranceWords)
+		}
+		cfg.VoiceStopMaxWords = n
+	}
+	if cfg.VoiceStopSettle, err = parseBoundedDuration(getenv, "VOICE_STOP_SETTLE", defaultVoiceStopSettle, maxVoiceStopSettle); err != nil {
+		return err
+	}
+	if cfg.VoiceStopDebounce, err = parseBoundedDuration(getenv, "VOICE_STOP_DEBOUNCE", defaultVoiceStopDebounce, maxVoiceStopDebounce); err != nil {
+		return err
+	}
+	cfg.VoiceStopSpan, err = parseBoundedDuration(getenv, "VOICE_STOP_SPAN", defaultVoiceStopSpan, maxVoiceStopSpan)
+	return err
+}
+
+// parseBoundedDuration lit une durée facultative comprise entre 0 et max.
+func parseBoundedDuration(getenv func(string) string, name string, def, max time.Duration) (time.Duration, error) {
+	raw := strings.TrimSpace(getenv(name))
+	if raw == "" {
+		return def, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil || d < 0 || d > max {
+		return 0, fmt.Errorf("%s doit être une durée comprise entre 0 et %s (par exemple %s)", name, max, def)
+	}
+	return d, nil
 }
 
 const maxAgentNameRunes = 40

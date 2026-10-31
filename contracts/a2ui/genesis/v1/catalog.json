@@ -7,7 +7,8 @@
     "TrendChart",
     "ReviewSentiment",
     "ReleaseChecklist",
-    "ActionBar"
+    "ActionBar",
+    "CrashList"
   ],
   "catalogComponents": [
     "KeyIndicator",
@@ -353,6 +354,60 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    "CrashList": {
+      "surface": "crashes",
+      "description": "Liste des crashs (top 5 de la version, hors scénario principal)",
+      "properties": [
+        "id",
+        "component",
+        "data"
+      ],
+      "binding": {
+        "data": {
+          "path": "/crashes"
+        }
+      },
+      "dataModel": {
+        "path": "/crashes",
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "items": {
+            "type": "array",
+            "required": true,
+            "items": {
+              "rank": {
+                "type": "integer",
+                "required": true,
+                "min": 1,
+                "max": 5
+              },
+              "label": {
+                "type": "string",
+                "required": true
+              },
+              "platform": {
+                "type": "string",
+                "required": true
+              },
+              "volume": {
+                "type": "integer",
+                "required": true,
+                "min": 0
+              },
+              "sessions": {
+                "type": "integer",
+                "required": true,
+                "min": 0
+              }
+            },
+            "maxLength": 5
           }
         }
       }

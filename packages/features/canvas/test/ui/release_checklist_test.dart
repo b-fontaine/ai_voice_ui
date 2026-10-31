@@ -70,8 +70,8 @@ void main() {
     expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
     expect(h.inCell(find.text('Validé')), findsOneWidget);
     expect(h.inCell(find.text('À risque')), findsNWidgets(2));
-    // 3 puces d'item + 1 puce de recommandation.
-    expect(h.inCell(find.byType(DsStatusChip)), findsNWidgets(4));
+    // 3 puces d item + recommandation + statut de décision.
+    expect(h.inCell(find.byType(DsStatusChip)), findsNWidgets(5));
     expect(h.engineErrors, isEmpty);
     expect(tester.takeException(), isNull);
   });

@@ -83,6 +83,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('cellule 3 × 2 (618 px) : la ligne des pourcentages ne déborde '
+      'pas, même avec la police de test large', (tester) async {
+    final h = CatalogHarness('reviews', 'reviews', size: const Size(618, 250));
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+
+    expect(h.inCell(find.textContaining('positifs')), findsOneWidget);
+    expect(h.inCell(find.textContaining('négatifs')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('extrait trop long : ellipse sur une ligne bornée', (
     tester,
   ) async {

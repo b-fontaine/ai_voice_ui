@@ -34,14 +34,18 @@ var pipePhrases = Phrases{
 	NoRequest:       "Je n'ai pas compris la demande.",
 	Failure:         "L'agent n'a pas pu répondre, je n'ai aucun résultat à donner.",
 	FailureRejected: "Cette demande n'est pas prise en charge pour l'instant.",
-	NoSummary:       "Le résultat est affiché.",
-	NoAgent:         "Aucun agent n'est disponible pour le moment.",
-	OutOfCatalog:    "Je ne peux pas afficher cela : je compose avec des indicateurs, des courbes, des avis et une checklist.",
-	PartialFailure:  "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
-	ResultTemplate:  "Voici ce que l'agent rapporte : %s",
+	// Vue demandée indisponible (spec 012, T25) : distincte de FailureRejected.
+	FailureRejectedView: "Cette vue n'est pas disponible, je peux afficher les indicateurs ou la liste des crashs.",
+	NoSummary:           "Le résultat est affiché.",
+	NoAgent:             "Aucun agent n'est disponible pour le moment.",
+	OutOfCatalog:        "Je ne peux pas afficher cela : je compose avec des indicateurs, des courbes, des avis et une checklist.",
+	PartialFailure:      "Attention : %s n'a pas pu répondre, je n'affiche donc pas cette partie.",
+	ResultTemplate:      "Voici ce que l'agent rapporte : %s",
 	// Confirmation et échec d'une action de l'interface.
 	ActionResultTemplate: "C'est fait. %s",
 	ActionFailure:        "Je n'ai pas pu enregistrer cette décision, la checklist reste inchangée.",
+	// Arrêt demandé par l'utilisateur (spec 011).
+	Stopped: "D'accord.",
 }
 
 type fixedClock struct{ t time.Time }

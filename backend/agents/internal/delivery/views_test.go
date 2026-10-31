@@ -139,7 +139,7 @@ func TestDeliveryStillRefusesWhatItCannotServe(t *testing.T) {
 		"Android en version 3.5",
 		"Android avec la 3.2",
 	} {
-		_, err := delivery.NewComposer(testCatalog).Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t))
+		_, err := delivery.NewComposer(testCatalog).Compose(context.Background(), kit.Request{Text: text, ContextID: "c"}, load(t), nil)
 		if !errors.Is(err, kit.ErrOutOfScope) {
 			t.Errorf("%q devrait donner ErrOutOfScope, obtenu %v", text, err)
 		}

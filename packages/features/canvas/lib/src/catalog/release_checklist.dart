@@ -88,6 +88,32 @@ class _Checklist {
   }
 }
 
+/// Statut de décision en pastille, jamais tronqué ; un changement de valeur
+/// est mis en avant par une brève transition.
+class _DecisionStatus extends StatelessWidget {
+  const _DecisionStatus({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    key: const Key('decision-status'),
+    duration: const Duration(milliseconds: 400),
+    child: DsStatusChip(
+      key: ValueKey<String>(status),
+      status: null,
+      label: status,
+    ),
+  );
+}
+
+/// Espace entre le titre, le statut et la recommandation.
+const double _headerGap = 16;
+
+/// Largeur de la puce en plus de son texte : remplissage horizontal des deux
+/// côtés, plus 1 px de marge d'arrondi.
+const double _chipExtraWidth = 2 * DsStatusChip.horizontalPadding + 1;
+
 class _ChecklistView extends StatelessWidget {
   const _ChecklistView({required this.checklist});
 
@@ -100,30 +126,44 @@ class _ChecklistView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  checklist.title,
-                  style: theme.label.copyWith(color: theme.textPrimary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  checklist.decisionStatus,
-                  style: theme.body.copyWith(color: theme.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 16),
-              DsStatusChip(
-                status: checklist.recommendationLevel,
-                label: checklist.recommendationLabel,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              // Le titre cède la place au statut, qui n'est réduit que si la
+              // largeur ne suffit physiquement pas (jamais de débordement).
+              final double recommendation =
+                  measureTextWidth(
+                    context,
+                    checklist.recommendationLabel,
+                    theme.label,
+                  ).ceilToDouble() +
+                  _chipExtraWidth;
+              final double statusMax =
+                  constraints.maxWidth - recommendation - 2 * _headerGap;
+              return Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      checklist.title,
+                      style: theme.label.copyWith(color: theme.textPrimary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: _headerGap),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: statusMax > 0 ? statusMax : 0,
+                    ),
+                    child: _DecisionStatus(status: checklist.decisionStatus),
+                  ),
+                  const SizedBox(width: _headerGap),
+                  DsStatusChip(
+                    status: checklist.recommendationLevel,
+                    label: checklist.recommendationLabel,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 4),
           Expanded(child: _ItemList(items: checklist.items)),
@@ -248,9 +288,10 @@ class _Columns {
       return max == 0 ? 0 : max.ceilToDouble() + 1;
     }
 
-    // Puce : libellé en style `label` plus le remplissage horizontal (2 x 16).
+    // Puce : libellé en style `label` plus le remplissage horizontal.
     final double chip =
-        widest(items.map((_Item i) => i.levelLabel), theme.label) + 32;
+        widest(items.map((_Item i) => i.levelLabel), theme.label) +
+        2 * DsStatusChip.horizontalPadding;
     final double available =
         (maxWidth.isFinite ? maxWidth : double.maxFinite) - chip - 3 * gap;
     final double value = _clamp(

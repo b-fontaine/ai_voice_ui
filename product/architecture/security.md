@@ -3,9 +3,9 @@ id: p-ar-security
 title: Sécurité de la démo
 area: architecture
 status: draft
-updated: 2026-10-30
-sources: [specs/009-j5-act3-interact/status.md, specs/009-j5-act3-interact/plan.md, specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, specs/005-j2-app-voice-orb/status.md, specs/005-j2-app-voice-orb/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, knowledge:rt-ephemeral-keys, knowledge:adr-0002-orchestrator-backend, knowledge:genui-a2ui-security, knowledge:proto-a2a-security, knowledge:ma-prompt-injection-tools, knowledge:proj-sk-backend]
-links: [pdr-0065-009-act3-interact-details-assistant-decided, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-agents-protocols, p-ar-app-channel-contract, pdr-0041-backend-in-this-repo-local-no-auth, p-ar-overview, p-ar-backend, p-ar-frontend, p-ar-replay, p-ar-stage-runtime, p-fn-nfr, p-fn-scope, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0007-closed-catalog-stage-theme, pdr-0011-adopt-knowledge-adrs, rt-ephemeral-keys, rt-gpt-live-webrtc-session, adr-0002-orchestrator-backend, adr-0003-backend-go, genui-a2ui-security, genui-user-actions, proto-a2a-security, ma-prompt-injection-tools, ma-guardrails, ma-backend-stack-recommendation, proj-sk-backend, proj-avw-risks, rt-gpt-live-overview, ux-genui-catalog-as-ds, pdr-0029-local-docker-compose-hosting, pdr-0030-llm-budget-20-eur, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
+updated: 2026-10-31
+sources: [specs/012-llm-composer-crashlist/plan.md, specs/012-llm-composer-crashlist/status.md, specs/009-j5-act3-interact/status.md, specs/009-j5-act3-interact/plan.md, specs/007-j3-act1-frontend/plan.md, specs/007-j3-act1-frontend/status.md, specs/006-j3-act1-backend/plan.md, specs/006-j3-act1-backend/status.md, specs/005-j2-app-voice-orb/status.md, specs/005-j2-app-voice-orb/plan.md, specs/004-j2-orchestrator-quality-agent/plan.md, specs/004-j2-orchestrator-quality-agent/status.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p7, knowledge:rt-ephemeral-keys, knowledge:adr-0002-orchestrator-backend, knowledge:genui-a2ui-security, knowledge:proto-a2a-security, knowledge:ma-prompt-injection-tools, knowledge:proj-sk-backend]
+links: [p-ar-llm-composer, pdr-0074-012-llm-composer-gateway-crashlist-details, pdr-0060-small-openai-text-model-guided-a2ui, pdr-0065-009-act3-interact-details-assistant-decided, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-agents-protocols, p-ar-app-channel-contract, pdr-0041-backend-in-this-repo-local-no-auth, p-ar-overview, p-ar-backend, p-ar-frontend, p-ar-replay, p-ar-stage-runtime, p-fn-nfr, p-fn-scope, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0007-closed-catalog-stage-theme, pdr-0011-adopt-knowledge-adrs, rt-ephemeral-keys, rt-gpt-live-webrtc-session, adr-0002-orchestrator-backend, adr-0003-backend-go, genui-a2ui-security, genui-user-actions, proto-a2a-security, ma-prompt-injection-tools, ma-guardrails, ma-backend-stack-recommendation, proj-sk-backend, proj-avw-risks, rt-gpt-live-overview, ux-genui-catalog-as-ds, pdr-0029-local-docker-compose-hosting, pdr-0030-llm-budget-20-eur, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0035-no-third-party-agent]
 tags: [securite, cles, jeton-ephemere, a2ui, a2a, prompt-injection, cout]
 ---
 # Sécurité de la démo
@@ -82,13 +82,30 @@ Vérifié par les tests d'acceptation et l'essai réel du jour (clé absente des
 
 | Point | Implémenté |
 |---|---|
-| Réseau | agent sur le réseau compose `agents` (`internal: true`) : aucun port publié, aucune sortie réseau ; seul l'orchestrateur est aussi sur `default` ; l'agent n'a ni `env_file` ni clé OpenAI |
+| Réseau | agent sur le réseau compose `agents` (`internal: true`) : aucun port publié, aucune sortie réseau (depuis 012, il joint seulement la passerelle LLM interne de l'orchestrateur, § ci-dessous) ; seul l'orchestrateur est aussi sur `default` ; l'agent n'a ni `env_file` ni clé OpenAI |
 | Agent durci | corps de requête ≤ 64 Kio (413), contrôle de `Host` = hôte de `AGENT_PUBLIC_URL` (421 opaque, `/healthz` exempté), délais HTTP (`ReadHeaderTimeout`), écoute `127.0.0.1` par défaut (`0.0.0.0` seulement avec `AGENT_LISTEN_ALLOW_NON_LOOPBACK=1`), demande coupée à 1 000 runes ; conteneur `read_only`, `cap_drop: ALL`, `no-new-privileges`, image non-root |
 | Client A2A (orchestrateur) | `AGENTS` n'accepte que des URL `http(s)` ; l'URL d'interface de la carte doit avoir les mêmes schéma, hôte et port que l'URL configurée (origine de la carte) ; **aucune redirection suivie** ; client HTTP à délai ; erreurs sans URL ni contenu brut |
 | Entrées bornées (006) | tags de carte lus par l'orchestrateur : ≤ 32, de 1 à 40 runes, sans caractère de contrôle ; noms d'agent nettoyés (40 runes, contrôles et bidi retirés) avant d'entrer dans `plan` ou la voix ; doublons de `AGENTS` refusés (« entrée en double », sans valeur) ; surfaces actives transmises à l'agent (`genesis/activeSurfaces`) : ≤ 16 éléments, ≤ 64 runes chacun, lues comme données côté agent |
 | Trois agents (006) | `agent-voice` et `agent-delivery` sur le même modèle que Qualité (réseau `agents` interne, aucun port publié, ni `env_file` ni clé OpenAI) ; `check-compose.sh` boucle sur tous les `agent-*` |
 | Erreurs vers l'app et la voix | `detail` d'`agent.activity` dans un ensemble fermé, jamais d'erreur brute ([p-ar-app-channel-contract](app-channel-contract.md)) |
 | Conteneur de l'orchestrateur | même durcissement que § « Contrat de la route de relais » ; `backend/check-compose.sh` vérifie en CI l'absence de `ports` sur l'agent, `internal: true` et `read_only` |
+
+## Passerelle LLM interne (012, 2026-10-31)
+
+Les agents n'ayant ni clé ni sortie réseau, l'appel au modèle de composition passe par une **route interne de l'orchestrateur**, `POST /v1/complete` ([pdr-0074](../decisions/pdr-0074-012-llm-composer-gateway-crashlist-details.md) D1, D9 ; contrat et configuration : [p-ar-llm-composer](llm-composer.md)). Nouvelle surface : une route qui dépense du budget ([pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md)) ; la clé reste dans le seul conteneur de l'orchestrateur ([rt-ephemeral-keys]).
+
+| Garde | Raison |
+|---|---|
+| Second écouteur HTTP sur une **IP fixe du réseau `agents`** (`172.30.77.10:8081`, sous-réseau `172.30.77.0/24`), jamais `0.0.0.0` ni `::`, port non publié | joignable des seuls conteneurs de ce réseau interne |
+| Sources autorisées par liste (`LLM_GATEWAY_ALLOWED_SOURCES` : IP de Qualité et du banc), autre `RemoteAddr` → 403 | un conteneur du réseau non branché ne peut pas dépenser le budget |
+| Gardes de `/canvas/*` : `Host` = hôte de la passerelle (421), `Origin` présent → 403, `application/json` exigé (415), aucun en-tête CORS, champs inconnus refusés | même parade contre une page web locale |
+| Bornes : requête 64 Kio (413), instructions, entrée, schéma (taille et profondeur 12), jetons de sortie, délai, débit (429) ; `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout` | abus mémoire et budget ; seule la demande du speaker est non fiable, placée dans `input` |
+| Appel amont sous le **contexte de la requête** (`r.Context()`) ; `store: false`, aucun outil | l'annulation (« Stop », délai) coupe l'appel ; rien n'est conservé chez le fournisseur |
+| Journaux fermés : méthode, statut, motif fermé, durée, jetons ; ni clé ni contenu | NFR-09 ; vérifié par C-07 |
+| Client OpenAI **sans proxy d'environnement** ; `https` obligatoire hors boucle locale | une variable `HTTP_PROXY` ne détourne pas la clé |
+| Modèle vide : 503 `disabled` (repli déterministe côté agent) | filet : la démo tient sans modèle |
+
+`backend/check-compose.sh` vérifie en plus : ni `OPENAI_*` ni `COMPOSER_MODEL` chez un agent ou le banc, aucun `ports` ni `env_file`, adresse précise de la passerelle, URL des agents visant la passerelle, délais cohérents, débit couvrant les agents branchés. `check-compose-selftest.sh` rejoue dix surcharges qui doivent échouer. Les deux sont lancés par la CI GitHub, **pas par `gate.sh` ni `verify.sh`** ([Q-84](../roadmap/open-questions.md)).
 
 ## Authentification : option A décidée (Q-48, pdr-0041)
 
