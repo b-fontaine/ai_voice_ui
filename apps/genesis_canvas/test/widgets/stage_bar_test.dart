@@ -4,6 +4,8 @@ import 'package:entity_session/entity_session.dart';
 import 'package:feature_agent_activity/feature_agent_activity.dart';
 import 'package:feature_replay/feature_replay.dart';
 import 'package:feature_stage_controls/feature_stage_controls.dart';
+import 'package:flutter/foundation.dart'
+    show debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +16,9 @@ import 'package:flutter_test/flutter_test.dart'
 import 'package:genesis_canvas/widgets/stage_bar/stage_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
+import 'package:testing_real_fonts/testing_real_fonts.dart';
+
+import '../support/contrast.dart';
 import '../support/replay_rig.dart';
 
 void main() {
@@ -41,7 +46,7 @@ void main() {
     await tester.pump();
   });
 
-  Future<void> pumpBar(WidgetTester tester) async {
+  Future<void> pumpBar(WidgetTester tester, {bool realFont = false}) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -54,9 +59,19 @@ void main() {
             BlocProvider<AgentActivityBloc>.value(value: agents),
             BlocProvider<ReplayBloc>.value(value: replay.bloc),
           ],
-          child: Align(
-            alignment: Alignment.topRight,
-            child: StageBar(onResetPressed: () => resets++),
+          // Sans `MaterialApp`, rien ne fournit la police au texte des
+          // boutons : le test la pose, comme le fait le thème de l'app.
+          child: DefaultTextStyle(
+            style: realFont
+                ? const TextStyle(
+                    fontFamily: realFontFamily,
+                    fontFamilyFallback: realFontFallback,
+                  )
+                : const TextStyle(),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: StageBar(onResetPressed: () => resets++),
+            ),
           ),
         ),
       ),
@@ -74,6 +89,57 @@ void main() {
   Finder indicator() => find.byKey(const Key('act-indicator'));
   FilledButton resetButton(WidgetTester tester) =>
       tester.widget<FilledButton>(find.byKey(const Key('reset-button')));
+
+  group('couleurs de la régie (thème de scène)', () {
+    const theme = SceneTheme.dark();
+
+    ButtonStyle styleOf(WidgetTester tester, String key) =>
+        tester.widget<ButtonStyleButton>(find.byKey(Key(key))).style!;
+
+    Color? resolve(WidgetStateProperty<Color?>? p, Set<WidgetState> states) =>
+        p?.resolve(states);
+
+    void expectGroup(WidgetTester tester, Set<WidgetState> resetStates) {
+      for (final entry in <String, Set<WidgetState>>{
+        'act-indicator': <WidgetState>{},
+        'reset-button': resetStates,
+      }.entries) {
+        final style = styleOf(tester, entry.key);
+        final fg = resolve(style.foregroundColor, entry.value)!;
+        final bg =
+            resolve(style.backgroundColor, entry.value) ?? theme.background;
+        final border = style.side!.resolve(entry.value)!.color;
+        expect(
+          contrast(fg, bg),
+          greaterThanOrEqualTo(4.5),
+          reason: '${entry.key} texte/fond',
+        );
+        expect(
+          contrast(border, theme.background),
+          greaterThanOrEqualTo(3),
+          reason: '${entry.key} bordure/fond de page',
+        );
+      }
+    }
+
+    testWidgets('actifs : texte 4,5:1 et bordure 3:1', (tester) async {
+      await pumpBar(tester);
+      expectGroup(tester, <WidgetState>{});
+    });
+
+    testWidgets('inactifs : texte 4,5:1 et bordure 3:1', (tester) async {
+      await pumpBar(tester);
+      await emit(
+        tester,
+        const AgentActivityReceived(
+          agent: 'Qualité',
+          task: 't1',
+          state: AgentTaskState.working,
+        ),
+      );
+      expectGroup(tester, <WidgetState>{WidgetState.disabled});
+    });
+  });
 
   testWidgets('acte 1 par défaut : « Acte 1/3 · Créer »', (tester) async {
     await pumpBar(tester);
@@ -301,5 +367,82 @@ void main() {
       isTrue,
       reason: 'le sous-arbre n\'est pas reconstruit à chaque pas',
     );
+  });
+
+  group('cibles de pointage sous Linux (NFR-05, pdr-0033)', () {
+    // La démo tourne sous Linux : `flutter_test` simule Android par défaut, ce
+    // qui donnerait une cible `padded` et fausserait la mesure.
+    void linuxTest(
+      String description,
+      Future<void> Function(WidgetTester tester) body,
+    ) => testWidgets(description, (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await body(tester);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    linuxTest('les deux contrôles font au moins 48 points, de largeur '
+        'égale, empilés dans 104 points', (tester) async {
+      await pumpBar(tester);
+
+      final act = tester.getRect(indicator());
+      final reset = tester.getRect(find.byKey(const Key('reset-button')));
+      expect(tester.getSize(indicator()).height, greaterThanOrEqualTo(48));
+      expect(
+        tester.getSize(find.byKey(const Key('reset-button'))).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(act.width, reset.width);
+      expect(act.bottom, lessThanOrEqualTo(reset.top));
+      expect(reset.bottom - act.top, lessThanOrEqualTo(104));
+    });
+
+    linuxTest('les libellés les plus longs tiennent sans troncature, '
+        'en polices réelles', (tester) async {
+      await loadRealFonts();
+      await pumpBar(tester, realFont: true);
+      await tester.tap(indicator());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Acte 2/3 · Transformer'), findsOneWidget);
+      expect(paragraphsTruncated(tester), isEmpty);
+      expect(tester.takeException(), isNull);
+
+      replay.bloc.add(const ReplayPlayPressed());
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+      expect(paragraphsTruncated(tester), isEmpty);
+    });
+
+    linuxTest('chaque contrôle est annoncé par la sémantique', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpBar(tester);
+
+      expect(
+        tester.getSemantics(indicator()).label,
+        contains('Acte 1/3 · Créer'),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('reset-button'))).label,
+        contains('Remettre à vide'),
+      );
+      semantics.dispose();
+    });
+
+    linuxTest('le contrôle d\'acte a une bordure et un contraste de scène', (
+      tester,
+    ) async {
+      await pumpBar(tester);
+
+      final button = tester.widget<TextButton>(indicator());
+      final side = button.style?.side?.resolve(<WidgetState>{});
+      expect(side, isNotNull, reason: 'bordure explicite');
+      expect(side!.color, const SceneTheme.dark().accent);
+    });
   });
 }

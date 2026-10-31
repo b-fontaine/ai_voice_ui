@@ -9,13 +9,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
-import 'package:genesis_canvas/app/theme/genesis_theme.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas_page_settings.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
-import 'package:flutter/material.dart' show Material, MaterialApp, MaterialType;
+import 'package:flutter/material.dart'
+    show Material, MaterialApp, MaterialType, ThemeData;
 import 'package:genui/genui.dart' show Catalog;
+import 'package:shared_design_system/shared_design_system.dart'
+    show sceneMaterialTheme;
 import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
@@ -151,11 +153,17 @@ class PageRig {
 
   /// Monte la page à la taille de l'écran de la démo. [themed] : sous le
   /// `MaterialApp` et le thème de l'app (SceneTheme installé), comme en prod.
+  /// [fontFamily] et [fontFamilyFallback] (polices chargées par
+  /// `loadRealFonts`, par exemple [realFontFamily] et [realFontFallback]) :
+  /// police du texte du thème, pour les tests de lisibilité en polices
+  /// réelles ; ils imposent [themed].
   Future<void> mount(
     WidgetTester tester, {
     Stream<ReplayedMessage>? replay,
     Size size = const Size(1920, 1080),
     bool themed = false,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
     String? snapshotPath,
     void Function(int code)? onExit,
   }) async {
@@ -176,11 +184,14 @@ class PageRig {
       errorSink: errors,
       settings: settings,
     );
+    final ThemeData theme = fontFamily == null
+        ? sceneMaterialTheme()
+        : _withFont(sceneMaterialTheme(), fontFamily, fontFamilyFallback);
     await tester.pumpWidget(
-      themed
+      themed || fontFamily != null
           ? MaterialApp(
               debugShowCheckedModeBanner: false,
-              theme: genesisThemeData(),
+              theme: theme,
               home: Material(type: MaterialType.transparency, child: page),
             )
           : Directionality(
@@ -194,6 +205,16 @@ class PageRig {
 
   BuildContext get context => find.byType(TopBar).evaluate().first;
 }
+
+/// Le thème de l'app avec la police [family] (et son repli) sur tous les
+/// styles de texte de Material.
+ThemeData _withFont(ThemeData base, String family, List<String>? fallback) =>
+    base.copyWith(
+      textTheme: base.textTheme.apply(
+        fontFamily: family,
+        fontFamilyFallback: fallback,
+      ),
+    );
 
 /// Laisse la chaîne de fermeture avancer : la fermeture d'un Bloc dont un
 /// `emit.forEach` est en cours demande un tour de la boucle d'événements

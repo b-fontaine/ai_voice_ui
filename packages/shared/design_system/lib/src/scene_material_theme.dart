@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+
+import 'scene_theme.dart';
 
 /// Taille minimale de texte de la scène (px logiques, RG-09).
 const double _minFontSize = 24;
 
-/// Thème de l'app : sombre, avec le [SceneTheme] installé comme extension
+/// Thème Material de la scène (app et Widgetbook, un seul thème) : sombre, avec le [SceneTheme] installé comme extension
 /// (RG-09, D6) et un plancher de 24 px sur tous les styles de texte de Material
 /// (NFR-05 : lisible à distance), pour que même un `Text` sans style explicite
 /// respecte la taille minimale. Les styles de Material sans taille propre
 /// (avant localisation) prennent ce plancher.
-ThemeData genesisThemeData() {
+ThemeData sceneMaterialTheme() {
   const scene = SceneTheme.dark();
   final base = ThemeData(
     brightness: Brightness.dark,

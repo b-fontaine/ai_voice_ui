@@ -3,6 +3,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import './step/les_polices_reelles_de_la_scene_sont_chargees.dart';
 import './step/un_faux_backend_local.dart';
 import './step/lapp_lancee_sur_ce_backend_en_relevant_ses_erreurs.dart';
 import './step/lapp_est_fermee_et_le_faux_backend_arrete.dart';
@@ -28,6 +29,7 @@ import './step/aucune_erreur_nest_signalee.dart';
 void main() {
   group('''Acte 2 - transformer sans recréer''', () {
     Future<void> bddSetUp(WidgetTester tester) async {
+      await lesPolicesReellesDeLaSceneSontChargees(tester);
       await unFauxBackendLocal(tester);
       await lappLanceeSurCeBackendEnRelevantSesErreurs(tester);
     }

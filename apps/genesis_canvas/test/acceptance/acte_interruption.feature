@@ -9,7 +9,8 @@ Fonctionnalité: Interruption vocale, indicateur d'acte et retour au clic
   K-07 : le statut « Bloquée » est lisible en entier, le bouton passe à « fait ».
 
   Contexte:
-    Étant donné un faux backend local
+    Étant donné les polices réelles de la scène sont chargées
+    Et un faux backend local
     Et l'app lancée sur ce backend avec une horloge virtuelle
 
   After:

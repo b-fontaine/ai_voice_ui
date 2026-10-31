@@ -5,10 +5,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
 
+/// Harnais en polices réelles : Ahem ne permet de juger ni les largeurs ni le
+/// retour à la ligne.
+CatalogHarness _realFontsHarness({required Size size}) => CatalogHarness(
+  'trend',
+  'trend',
+  size: size,
+  fontFamily: realFontFamily,
+  fontFamilyFallback: realFontFallback,
+);
+
+final Finder _cell = find.byKey(const Key('surface-trend'));
+
 void main() {
+  setUpAll(loadRealFonts);
+
+  testWidgets('les étiquettes de l\'axe X prennent la police du thème', (
+    tester,
+  ) async {
+    final h = _realFontsHarness(size: const Size(624, 302));
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+
+    final paint = tester.widget<CustomPaint>(
+      find.byKey(const Key('trend-chart-paint')),
+    );
+    final painter = paint.painter! as TrendChartPainter;
+    expect(painter.labelStyle.fontFamily, realFontFamily);
+    expect(painter.labelStyle.fontFamilyFallback, realFontFallback);
+  });
+
   defineCommonStateTests(
     component: 'TrendChart',
     surface: 'trend',
@@ -128,6 +158,107 @@ void main() {
       findsOneWidget,
     );
     h.expectTextAtLeast24(tester);
+  });
+
+  group('en-tête : titre sur sa ligne, légende dessous (D2)', () {
+    for (final (String name, Size cell) in <(String, Size)>[
+      ('3 x 2 (624 x 302)', Size(624, 302)),
+      ('2 x 2 (936 x 302)', Size(936, 302)),
+      (
+        'cellule très large (1800 x 302) : jamais sur la même ligne',
+        Size(1800, 302),
+      ),
+    ]) {
+      testWidgets('$name : titre entier, légende sous le titre, tracé sous '
+          'la légende', (tester) async {
+        tester.view.physicalSize = Size(cell.width, cell.height + 200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final h = _realFontsHarness(size: cell);
+        await h.pump(tester);
+        await h.sendFixtureTo(tester, 2);
+        await h.sendVariant(tester, 'act2');
+
+        final Finder title = h.inCell(find.text('Taux de crash du jour'));
+        expect(title, findsOneWidget);
+        expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+        final Rect titleRect = tester.getRect(title);
+        final Finder entries = h.inCell(
+          find.byWidgetPredicate(
+            (w) =>
+                w.key is ValueKey &&
+                '${(w.key as ValueKey).value}'.startsWith('trend-series-'),
+          ),
+        );
+        expect(entries, findsNWidgets(2));
+        for (final Element e in entries.evaluate()) {
+          final Rect entry = tester.getRect(find.byWidget(e.widget));
+          expect(entry.top, greaterThanOrEqualTo(titleRect.bottom - 0.5));
+        }
+        expect(
+          tester.getRect(h.inCell(find.textContaining('Seuil'))).top,
+          greaterThanOrEqualTo(titleRect.bottom - 0.5),
+        );
+        final Rect paint = tester.getRect(
+          h.inCell(find.byKey(const Key('trend-chart-paint'))),
+        );
+        for (final Element e in entries.evaluate()) {
+          expect(
+            paint.top,
+            greaterThanOrEqualTo(
+              tester.getRect(find.byWidget(e.widget)).bottom,
+            ),
+          );
+        }
+        expect(paint.height, greaterThan(100));
+        h.expectTextAtLeast24(tester);
+        expect(tester.takeException(), isNull);
+        expect(h.engineErrors, isEmpty);
+      });
+    }
+
+    testWidgets('titre très long : retour à la ligne, jamais tronqué, tracé '
+        'conservé', (tester) async {
+      final h = _realFontsHarness(size: const Size(624, 302));
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      final data = cloneJson(h.data);
+      const title =
+          'Taux de crash du jour sur Android pour la version 3.4 de la release';
+      data['title'] = title;
+      await h.sendData(tester, data);
+
+      final Finder text = h.inCell(find.text(title));
+      expect(text, findsOneWidget);
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+      expect(
+        tester
+            .getSize(h.inCell(find.byKey(const Key('trend-chart-paint'))))
+            .height,
+        greaterThan(0),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('quatre séries aux noms moyens : les entrées passent à la '
+        'ligne du Wrap, rien n\'est tronqué', (tester) async {
+      final h = _realFontsHarness(size: const Size(624, 302));
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 2);
+      final data = cloneJson(h.data);
+      data['series'] = <Map<String, dynamic>>[
+        for (var i = 1; i <= 4; i++)
+          <String, dynamic>{
+            'name': 'Android 3.$i production',
+            'points': <double>[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+          },
+      ];
+      await h.sendData(tester, data);
+
+      expect(paragraphsTruncated(tester, root: _cell), isEmpty);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('TrendChartPainter', () {

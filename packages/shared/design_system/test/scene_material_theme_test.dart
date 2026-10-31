@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genesis_canvas/app/theme/genesis_theme.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
 void main() {
-  final theme = genesisThemeData();
+  final theme = sceneMaterialTheme();
 
   test('le thème de scène est installé comme extension du ThemeData', () {
     expect(theme.extension<SceneTheme>(), const SceneTheme.dark());

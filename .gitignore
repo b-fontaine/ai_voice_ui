@@ -21,3 +21,7 @@ coverage/
 # Système
 .DS_Store
 .env
+
+# Générateur de tokens du design system (développement uniquement)
+packages/shared/design_system/tool/node_modules/
+

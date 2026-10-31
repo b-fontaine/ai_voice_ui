@@ -3,7 +3,6 @@ import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
-import 'text_metrics.dart';
 import 'trend_chart_painter.dart';
 
 /// `TrendChart` : courbes par série (3.3 / 3.4), seuil, jours, légende.
@@ -148,7 +147,11 @@ class _TrendView extends StatelessWidget {
                   yMaxPct: trend.yMaxPct,
                   thresholdColor: theme.blockingForeground,
                   axisColor: theme.textSecondary,
-                  labelStyle: theme.body.copyWith(color: theme.textSecondary),
+                  labelStyle: sceneTextStyle(
+                    context,
+                    theme.body.copyWith(color: theme.textSecondary),
+                  ),
+                  textScaler: MediaQuery.textScalerOf(context),
                 ),
               ),
             ),
@@ -177,6 +180,9 @@ class _LegendEntry extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
+        // Une entrée passe à la ligne du `Wrap` plutôt que d'être coupée ; seul
+        // un nom plus large que la cellule entière prend l'ellipse (garde
+        // contre un débordement du tracé).
         Flexible(
           child: Text(
             text,
@@ -190,8 +196,8 @@ class _LegendEntry extends StatelessWidget {
   }
 }
 
-/// En-tête : le titre d'abord, jamais coupé. La légende le suit sur la même
-/// ligne quand tout tient, sinon elle passe à la ligne suivante.
+/// En-tête : le titre sur sa propre ligne (il passe à la ligne s'il est long,
+/// jamais tronqué), la légende dessous dans un `Wrap`, le tracé sur le reste.
 class _TrendHeader extends StatelessWidget {
   const _TrendHeader({required this.title, required this.legend});
 
@@ -203,39 +209,12 @@ class _TrendHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final TextStyle titleStyle = theme.label.copyWith(color: theme.textPrimary);
-    final Text titleText = Text(
-      title,
-      style: titleStyle,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        // Largeur d'une entrée : pastille 16 + espace 8 + texte.
-        double needed = measureTextWidth(context, title, titleStyle).ceil() + 1;
-        for (final _LegendEntry e in legend) {
-          needed += _gap + 24 + measureTextWidth(context, e.text, theme.body);
-        }
-        if (needed.ceil() + 1 <= constraints.maxWidth) {
-          return Row(
-            children: <Widget>[
-              Expanded(child: titleText),
-              for (final _LegendEntry e in legend) ...<Widget>[
-                const SizedBox(width: _gap),
-                e,
-              ],
-            ],
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            titleText,
-            Wrap(spacing: _gap, children: legend),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, style: theme.label.copyWith(color: theme.textPrimary)),
+        Wrap(spacing: _gap, children: legend),
+      ],
     );
   }
 }

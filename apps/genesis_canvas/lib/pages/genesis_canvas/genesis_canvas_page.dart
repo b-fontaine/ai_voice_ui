@@ -80,7 +80,8 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasActionClient, CanvasResetClient, CanvasResetResult;
 import 'package:shared_core/shared_core.dart'
     show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneMotionScope, SceneTheme;
 
 import '../../widgets/agents_rail/agents_rail.dart';
 import '../../widgets/catalog_shelf/catalog_shelf.dart';
@@ -96,9 +97,9 @@ import 'genesis_canvas_page_settings.dart';
 /// finale (code ajusté par les erreurs du moteur).
 typedef SnapshotFactory = CaptureService Function(ExitHandler exitHandler);
 
-/// Page unique à six zones (écran de 1920 × 1080, budget de `plan.md` de la
-/// spec 007) : barre du haut (orbe, transcription, acte, remise à vide,
-/// bouton), rail des agents, canevas, puis une rangée du bas (étagère du
+/// Page unique à six zones (écran de 1920 × 1080, budget des hauteurs :
+/// pdr-0075 D1, spec 013) : barre du haut (orbe, transcription, acte, remise
+/// à vide, bouton), rail des agents, canevas, puis une rangée du bas (étagère du
 /// catalogue, zone Rejeu et panneau du protocole). Le panneau déplié recouvre
 /// le canevas à droite sans le redimensionner.
 ///
@@ -190,6 +191,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   late final ProtocolFeedBloc _protocolBloc = ProtocolFeedBloc(
     clock: widget.getIt<AppClock>(),
   );
+  // Surface en évidence du panneau du protocole : le canevas la lit par
+  // cellule, sans que le board ni les voisines se reconstruisent (013, P6).
+  final ValueNotifier<String?> _highlight = ValueNotifier<String?>(null);
   late final CatalogShelfBloc _shelfBloc = CatalogShelfBloc();
   late final StageBloc _stageBloc = StageBloc();
   // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
@@ -669,6 +673,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
     _lifecycle.dispose();
+    _highlight.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
     // avant la source qu'elle écoute.
@@ -755,9 +760,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _gap = 8;
 
   /// Hauteurs fixes du budget des zones à 1920 × 1080 ; le canevas prend le
-  /// reste (572 px : grille 2 × 250 et bandeau de 72). La barre supérieure cède
-  /// 32 px (160 → 128), le rail garde ses 200 px (cinq lignes possibles).
-  static const double _railHeight = 200;
+  /// reste (676 px : grille 2 × 302 et bandeau de 72, soit 1080 moins 128, 96 et
+  /// 140 px de zones et 40 px d'écarts : 3 écarts de 8 et 2 marges verticales de
+  /// 8). La barre supérieure fait
+  /// 128 px et le rail, horizontal et de hauteur fixe même vide, 96 px (A1 de
+  /// 013, pdr-0075 D1).
+  static const double _railHeight = AgentsRail.height;
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 
@@ -790,6 +798,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
               current.decisionStatus != null,
           listener: (context, state) =>
               _actionBloc.add(DecisionStatusObserved(state.decisionStatus!)),
+        ),
+        // La surbrillance du panneau du protocole alimente le canevas.
+        BlocListener<ProtocolFeedBloc, ProtocolFeedState>(
+          listenWhen: (previous, current) =>
+              previous.highlightedSurfaceId != current.highlightedSurfaceId,
+          listener: (context, state) =>
+              _highlight.value = state.highlightedSurfaceId,
         ),
         // Avance automatique de l'indicateur d'acte (011, T24) : la surface
         // `actions` apparaît à la fin de l'acte 2 (pdr-0061).
@@ -846,29 +861,35 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     const SizedBox(height: _railHeight, child: AgentsRail()),
                     const SizedBox(height: _gap),
                     Expanded(
-                      child:
-                          BlocSelector<
-                            ProtocolFeedBloc,
-                            ProtocolFeedState,
-                            String?
-                          >(
-                            selector: (state) => state.highlightedSurfaceId,
-                            builder: (context, highlighted) =>
-                                BlocSelector<ReplayBloc, ReplayState, bool>(
-                                  selector: (state) => state is ReplayActive,
-                                  // Rejeu (scénario ou acte 4) : aucune
-                                  // requête ne part.
-                                  builder: (context, replaying) =>
-                                      CanvasActionScope(
-                                        enabled: !_scenarioMode && !replaying,
-                                        child: CanvasBoard(
-                                          key: const Key('canvas-board'),
-                                          controller: _controller,
-                                          highlightedSurfaceId: highlighted,
-                                        ),
-                                      ),
-                                ),
+                      // Réglage d'animation du canevas : durée nulle en
+                      // scénario, en capture et sous « réduire les
+                      // animations » ; vitesse du rejeu en cours sinon. Pas de
+                      // `TickerMode` ici : il figerait l'apparition à
+                      // l'opacité 0.
+                      child: BlocSelector<ReplayBloc, ReplayState, double>(
+                        selector: (state) =>
+                            state is ReplayActive ? state.snapshot.speed : 1,
+                        builder: (context, speed) => SceneMotionScope(
+                          disabled:
+                              (MediaQuery.maybeDisableAnimationsOf(context) ??
+                                  false) ||
+                              _animationsOff,
+                          speed: speed,
+                          child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                            selector: (state) => state is ReplayActive,
+                            // Rejeu (scénario ou acte 4) : aucune requête ne
+                            // part.
+                            builder: (context, replaying) => CanvasActionScope(
+                              enabled: !_scenarioMode && !replaying,
+                              child: CanvasBoard(
+                                key: const Key('canvas-board'),
+                                controller: _controller,
+                                highlight: _highlight,
+                              ),
+                            ),
                           ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: _gap),
                     SizedBox(

@@ -1,0 +1,6 @@
+# Télémétrie anonyme de Widgetbook coupée (ds-widgetbook-4-setup).
+targets:
+  $default:
+    builders:
+      widgetbook:telemetry:
+        enabled: false

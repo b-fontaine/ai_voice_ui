@@ -90,4 +90,17 @@ void main() {
       const SceneTheme.dark().neutralBackground,
     );
   });
+
+  testWidgets('DsStatusChip.verticalPadding est le remplissage vertical réel', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(const DsStatusChip(key: Key('chip'), status: null, label: 'Go')),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('chip'))).height -
+          tester.getSize(find.text('Go')).height,
+      2 * DsStatusChip.verticalPadding,
+    );
+  });
 }

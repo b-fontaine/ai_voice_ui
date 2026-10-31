@@ -16,7 +16,11 @@ import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 /// `protocol-toggle` sont visibles. Déplié, il montre les dernières entrées
 /// (`protocol-entry-<n>`, `n` = rang du Bloc) ; la page le pose à droite, en
 /// recouvrement du canevas, sans redimensionner celui-ci : le panneau se
-/// dimensionne lui-même ([collapsedSize], [expandedSize]).
+/// dimensionne lui-même ([collapsedSize], [expandedSize]), sans dépasser la
+/// hauteur que la page lui laisse (la zone du canevas). Le nombre d'entrées
+/// montrées se calcule sur la hauteur disponible, dans la limite de
+/// [visibleEntries] : les plus anciennes cèdent la place, jamais de
+/// débordement.
 ///
 /// Le JSON vient d'un modèle de langage : il est affiché en `Text` brut, borné
 /// (`maxLines` et ellipse), jamais interprété en Markdown. Un message refusé
@@ -30,7 +34,7 @@ class ProtocolPanel extends StatelessWidget {
   /// Taille dépliée : recouvre le canevas à droite.
   static const Size expandedSize = Size(780, 620);
 
-  /// Nombre d'entrées montrées (les plus récentes).
+  /// Nombre maximal d'entrées montrées (les plus récentes).
   static const int visibleEntries = 4;
 
   @override
@@ -40,34 +44,48 @@ class ProtocolPanel extends StatelessWidget {
       type: MaterialType.transparency,
       child: BlocBuilder<ProtocolFeedBloc, ProtocolFeedState>(
         builder: (BuildContext context, ProtocolFeedState state) {
-          final Size size = state.expanded ? expandedSize : collapsedSize;
-          return SizedBox.fromSize(
-            size: size,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.neutralBackground, width: 2),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _Header(state: state),
-                    if (state.expanded)
-                      Expanded(child: _Entries(state: state))
-                    else
-                      Text(
-                        _countText(state.totalCount),
-                        style: theme.body.copyWith(color: theme.textSecondary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints zone) {
+              final Size size = state.expanded
+                  ? Size(
+                      expandedSize.width,
+                      expandedSize.height.clamp(0, zone.maxHeight),
+                    )
+                  : collapsedSize;
+              return SizedBox.fromSize(
+                size: size,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.neutralBackground,
+                      width: 2,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        _Header(state: state),
+                        if (state.expanded)
+                          Expanded(child: _Entries(state: state))
+                        else
+                          Text(
+                            _countText(state.totalCount),
+                            style: theme.body.copyWith(
+                              color: theme.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
@@ -112,6 +130,16 @@ class _Header extends StatelessWidget {
   }
 }
 
+// Cotes des entrées, partagées par le calcul de capacité et le dessin.
+const double _tileTopGap = 8;
+const double _tilePaddingY = 6;
+const double _currentBorder = 3;
+const double _jsonLineHeight = 1.2;
+
+/// Surcroît de hauteur de la marque « refusé » (ses 2 px de marge verticale
+/// de chaque côté) sur une ligne d'en-tête.
+const double _refusedExtra = 4;
+
 class _Entries extends StatelessWidget {
   const _Entries({required this.state});
 
@@ -131,24 +159,38 @@ class _Entries extends StatelessWidget {
         ),
       );
     }
-    final List<ProtocolEntry> shown =
-        state.entries.length > ProtocolPanel.visibleEntries
-        ? state.entries.sublist(
-            state.entries.length - ProtocolPanel.visibleEntries,
-          )
-        : state.entries;
-    return ClipRect(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          for (final ProtocolEntry entry in shown)
-            _EntryTile(
-              entry: entry,
-              current: entry.index == state.highlightedIndex,
-            ),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints available) {
+        final int capacity = _capacity(theme, available.maxHeight);
+        final List<ProtocolEntry> shown = state.entries.length > capacity
+            ? state.entries.sublist(state.entries.length - capacity)
+            : state.entries;
+        return ClipRect(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final ProtocolEntry entry in shown)
+                _EntryTile(
+                  entry: entry,
+                  current: entry.index == state.highlightedIndex,
+                ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  /// Nombre d'entrées qui tiennent dans [height], au pire cas : une marque
+  /// « refusé » dans l'en-tête, un JSON sur deux lignes, le contour épais de
+  /// l'entrée en cours. Les hauteurs de ligne viennent du thème de scène.
+  static int _capacity(SceneTheme theme, double height) {
+    final double header =
+        theme.label.fontSize! * theme.label.height! + _refusedExtra;
+    final double json = 2 * theme.body.fontSize! * _jsonLineHeight;
+    final double worstEntry =
+        _tileTopGap + 2 * _tilePaddingY + 2 * _currentBorder + header + json;
+    return (height / worstEntry).floor().clamp(0, ProtocolPanel.visibleEntries);
   }
 }
 
@@ -182,7 +224,7 @@ class _EntryTile extends StatelessWidget {
     final TextStyle body = theme.body.copyWith(color: theme.textSecondary);
     return Padding(
       key: Key('protocol-entry-${entry.index}'),
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: _tileTopGap),
       child: DecoratedBox(
         // Le message en cours : fond de scène et contour d'accent.
         key: current ? const Key('protocol-current') : null,
@@ -191,11 +233,14 @@ class _EntryTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: current ? theme.accent : theme.neutralBackground,
-            width: current ? 3 : 1,
+            width: current ? _currentBorder : 1,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: _tilePaddingY,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -236,7 +281,10 @@ class _EntryTile extends StatelessWidget {
               Text(
                 entry.json,
                 key: Key('protocol-json-${entry.index}'),
-                style: body.copyWith(fontFamily: 'monospace', height: 1.2),
+                style: body.copyWith(
+                  fontFamily: 'monospace',
+                  height: _jsonLineHeight,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

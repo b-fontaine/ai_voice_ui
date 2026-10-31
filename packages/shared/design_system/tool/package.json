@@ -1,0 +1,13 @@
+{
+  "name": "genesis-canvas-design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Génération de SceneTokens depuis les tokens DTCG (développement uniquement).",
+  "type": "module",
+  "scripts": {
+    "build": "node build_tokens.mjs"
+  },
+  "dependencies": {
+    "style-dictionary": "5.7.1"
+  }
+}

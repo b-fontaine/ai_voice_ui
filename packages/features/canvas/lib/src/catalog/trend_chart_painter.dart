@@ -60,6 +60,7 @@ class TrendChartPainter extends CustomPainter {
     required this.thresholdColor,
     required this.axisColor,
     required this.labelStyle,
+    this.textScaler = TextScaler.noScaling,
   });
 
   final List<String> days;
@@ -69,6 +70,9 @@ class TrendChartPainter extends CustomPainter {
   final Color thresholdColor;
   final Color axisColor;
   final TextStyle labelStyle;
+
+  /// Échelle de texte de l'environnement (comme celle d'un `Text`).
+  final TextScaler textScaler;
 
   /// Ordonnée (0 = haut) d'une [value] dans une zone de [height] pixels,
   /// bornée entre 0 et `yMaxPct`.
@@ -92,6 +96,7 @@ class TrendChartPainter extends CustomPainter {
           textDirection: TextDirection.ltr,
           maxLines: 1,
           ellipsis: '…',
+          textScaler: textScaler,
         )..layout(),
     ];
     final double labelHeight = labels.fold<double>(
@@ -156,6 +161,9 @@ class TrendChartPainter extends CustomPainter {
       final double cx = plotLeft + xFor(i, labels.length, plotWidth);
       labels[i].paint(canvas, Offset(cx - labels[i].width / 2, plotHeight + 8));
     }
+    for (final TextPainter label in labels) {
+      label.dispose();
+    }
   }
 
   @override
@@ -165,6 +173,7 @@ class TrendChartPainter extends CustomPainter {
       old.thresholdColor != thresholdColor ||
       old.axisColor != axisColor ||
       old.labelStyle != labelStyle ||
+      old.textScaler != textScaler ||
       !_sameList(old.days, days) ||
       !_sameList(old.series, series);
 }

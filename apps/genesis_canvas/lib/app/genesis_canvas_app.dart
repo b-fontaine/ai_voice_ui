@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:genui/genui.dart' show Catalog;
 import 'package:get_it/get_it.dart';
+import 'package:shared_design_system/shared_design_system.dart'
+    show sceneMaterialTheme;
 import 'package:shared_core/shared_core.dart'
     show AppClock, ExitHandler, ReplayDelay, ReplayedMessage;
 
@@ -17,7 +19,6 @@ import 'bootstrap/snapshot_service.dart';
 import 'config/genesis_config.dart';
 import 'di/injection.dart';
 import 'scenario/scenario_player.dart';
-import 'theme/genesis_theme.dart';
 
 /// Racine de l'application : couche `app`, qui assemble la configuration, les
 /// assets et la plateforme, puis les passe à la page par constructeur.
@@ -100,7 +101,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
     final config = widget.config;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: genesisThemeData(),
+      theme: sceneMaterialTheme(),
       // `Material` transparent : fournit le style de texte du thème (sinon
       // repli rouge souligné) sans changer le fond de la page.
       home: Material(

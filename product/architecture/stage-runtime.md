@@ -3,9 +3,9 @@ id: p-ar-stage-runtime
 title: Environnement de scène et répétitions
 area: architecture
 status: draft
-updated: 2026-10-30
-sources: [specs/011-voice-interaction/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
-links: [p-ar-voice-interruption, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-frontend-screen, p-ar-app-channel-contract, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended, pdr-0067-gpt-live-session-cap-30-min, pdr-0068-act3-decision-not-kept-after-new-request]
+updated: 2026-10-31
+sources: [specs/013-design-ergonomie/status.md, specs/011-voice-interaction/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p11, product/sources/product-description.pdf#p12, knowledge:rt-echo-cancellation, knowledge:rt-flutter-webrtc-overview, knowledge:rt-flutter-webrtc-permissions, knowledge:rt-flutter-webrtc-audio-routing, knowledge:genui-overview, knowledge:rt-latency]
+links: [p-ar-design-system, pdr-0075-013-design-ergonomics-details-assistant-decided, p-ar-voice-interruption, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-frontend-screen, p-ar-app-channel-contract, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0063-007-stage-ui-details-assistant-decided, p-rm-spikes, p-ar-overview, p-ar-replay, p-ar-quality, p-ar-security, p-ar-backend, p-ar-frontend, p-fn-risks-acceptance, p-fn-nfr, p-fn-screen, p-rm-open-questions, p-rm-roadmap, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0027-talk-context-meetup-flutter-nantes, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, rt-echo-cancellation, rt-barge-in, rt-flutter-webrtc-overview, rt-flutter-webrtc-permissions, rt-flutter-webrtc-audio-routing, rt-latency, rt-gpt-live-overview, rt-gpt-live-lifecycle, perf-desktop-specifics, ux-desktop-shortcuts, ux-desktop-focus, genui-overview, pdr-0052-one-gpt-live-session-per-act-recommended, pdr-0067-gpt-live-session-cap-30-min, pdr-0068-act3-decision-not-kept-after-new-request]
 tags: [scene, demo, machine, reseau, audio, linux, repetition]
 ---
 # Environnement de scène et répétitions
@@ -110,3 +110,14 @@ Aucune de ces vérifications n'a été faite en réel ; chacune est une ⚠️ h
 | Couper la parole sans dire « Stop » : l'IA se tait-elle d'elle-même (consigne) ? | Q-77 (S-05 en partie) |
 | Horloges de `start_ms` et de `at_ms` alignées ? deltas d'entrée jamais révisés ? « Stop » transcrit de façon fiable ? NFR-02 avec la fenêtre de +300 ms (à remesurer) ? | Q-80 |
 | « Compare avec la 3.3 » dit en second tour hérite-t-il bien d'Android ? | Q-74 tranchée, à confirmer en réel |
+
+## À observer en répétition (design et ergonomie, 013)
+
+Tests et captures 1920×1080 sont verts ; ce qui suit ne se vérifie qu'en salle ou sur la machine de démo ([p-ar-quality](quality.md) § 013, [p-ar-design-system](design-system.md)) :
+
+| À observer | Renvoi |
+|---|---|
+| Les 60 i/s pendant l'acte 1, la liste des crashs et un rejeu à 2× (DevTools Performance, profil `--profile` sur la machine de démo) | NFR-04 |
+| Lisibilité depuis le fond de salle sur le vidéoprojecteur réel (texte ≥ 24 px, contraste) ; logistique de la salle : gérée par le porteur | NFR-05 |
+| En 3×2 avec l'acte 2 : « Changelog validé » masqué derrière « + 1 autres critères », un seul avis, sixième cellule vide : acceptable en salle ? | Q-83 (tranchée → pdr-0075 D2, contestable) |
+| Le rail de 96 px (au lieu de la colonne de la maquette) et son intervalle libre de 48 px : faut-il dessiner la liaison animée de délégation ? | Q-85 |

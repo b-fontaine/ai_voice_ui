@@ -1,0 +1,5 @@
+# Le hash des tokens (tokens_hash_test.dart) porte sur les octets bruts : une
+# extraction avec core.autocrlf=true le ferait échouer.
+packages/shared/design_system/tokens/*.tokens.json text eol=lf
+packages/shared/design_system/tool/build_tokens.mjs text eol=lf
+packages/shared/design_system/lib/src/generated/scene_tokens.g.dart text eol=lf

@@ -77,12 +77,7 @@ class _Complete extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text(
-            kpi.label,
-            style: theme.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(kpi.label, style: theme.label),
           Row(
             children: <Widget>[
               Flexible(
@@ -99,21 +94,12 @@ class _Complete extends StatelessWidget {
           ),
           Row(
             children: <Widget>[
-              Flexible(
-                child: Text(
-                  kpi.trend,
-                  style: theme.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              Flexible(child: Text(kpi.trend, style: theme.body)),
               const SizedBox(width: 24),
               Flexible(
                 child: Text(
                   kpi.threshold,
                   style: theme.body.copyWith(color: theme.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

@@ -1,0 +1,37 @@
+name: genesis_widgetbook
+description: Catalogue Widgetbook du design system et des composants de Genesis Canvas (outil de développement).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  a2ui_core: 0.1.1
+  entity_catalog:
+    path: ../../packages/entities/catalog
+  feature_canvas:
+    path: ../../packages/features/canvas
+  flutter:
+    sdk: flutter
+  genui: 0.10.4
+  shared_design_system:
+    path: ../../packages/shared/design_system
+  widgetbook: 4.0.0-beta.14
+
+dev_dependencies:
+  build_runner: 2.16.1
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  # Copies des exemples A2UI du contrat (contracts/a2ui/genesis/v1/examples/).
+  # Flutter ne sait pas empaqueter un asset hors du paquet (les chemins en
+  # `../..` sont écrits hors de build/) ; un test compare ces copies aux
+  # originaux (test/examples_assets_test.dart).
+  assets:
+    - assets/examples/

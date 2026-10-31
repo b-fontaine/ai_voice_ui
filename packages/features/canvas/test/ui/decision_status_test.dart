@@ -10,9 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
-import 'cell_height_real_fonts_test.dart' show gridCell, loadRealFonts;
+import 'cell_height_real_fonts_test.dart' show gridCell;
 
 /// Faux client réseau : mémorise les actions reçues, répond 202.
 class _RecordingClient implements CanvasActionClient {
@@ -34,7 +35,7 @@ void main() {
   setUpAll(loadRealFonts);
 
   /// Cellule d'une colonne à 1366 px de large (1366 − 2 × 24 − 8, divisé par 2).
-  const Size narrowCell = Size(655, 250);
+  const Size narrowCell = Size(655, 302);
 
   for (final (String name, Size cell) in <(String, Size)>[
     ('1366 x 768', narrowCell),
@@ -128,6 +129,53 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('En attente de décision'), findsNothing);
     expect(find.text('Bloquée'), findsOneWidget);
+  });
+
+  group('transition du statut sous SceneMotionScope (R3)', () {
+    Future<CatalogHarness> blockedWith(
+      WidgetTester tester,
+      ({bool disabled, double speed}) motion,
+    ) async {
+      final h = CatalogHarness(
+        'checklist',
+        'checklist',
+        size: narrowCell,
+        fontFamily: 'Noto Sans',
+        fontFamilyFallback: const <String>['DejaVu Sans'],
+      );
+      await h.pump(tester, motion: motion);
+      await h.sendFixtureTo(tester, 3);
+      await h.send(
+        tester,
+        contractFixture(
+          'block',
+          GenesisContract.defaultCatalogId,
+          variant: 'act3',
+        ).single,
+      );
+      return h;
+    }
+
+    Finder chips() => find.descendant(
+      of: find.byKey(const Key('decision-status')),
+      matching: find.byType(DsStatusChip),
+    );
+
+    testWidgets('animations coupées : pas de fondu croisé', (tester) async {
+      await blockedWith(tester, (disabled: true, speed: 1));
+      await tester.pump();
+      expect(chips(), findsOneWidget);
+      expect(find.text('Bloquée'), findsOneWidget);
+      expect(find.text('En attente de décision'), findsNothing);
+    });
+
+    testWidgets('vitesse 2 : la transition dure 200 ms', (tester) async {
+      await blockedWith(tester, (disabled: false, speed: 2));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(chips(), findsNWidgets(2));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(chips(), findsOneWidget);
+    });
   });
 
   group('Barre d\'actions : en cours, fait, réactivé', () {

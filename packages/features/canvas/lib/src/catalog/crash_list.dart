@@ -89,8 +89,6 @@ class _CrashListView extends StatelessWidget {
           Text(
             crashes.title,
             style: theme.label.copyWith(color: theme.textPrimary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           // Les lignes se partagent la hauteur restante : la cellule est
           // bornée, la liste ne défile pas.

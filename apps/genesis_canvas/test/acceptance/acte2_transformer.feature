@@ -10,7 +10,8 @@ Fonctionnalité: Acte 2 - transformer sans recréer
   canevas seul : le panneau du protocole et le rail peuvent citer iOS.
 
   Contexte:
-    Étant donné un faux backend local
+    Étant donné les polices réelles de la scène sont chargées
+    Et un faux backend local
     Et l'app lancée sur ce backend en relevant ses erreurs
 
   After:
