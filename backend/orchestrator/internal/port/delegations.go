@@ -85,5 +85,6 @@ type SessionDelegations interface {
 	Transcript(ev LiveEvent)
 	Delegate(id string, offsetMs int64)
 	Interrupt(atMs int64)
+	Supersede(atMs int64, announce func())
 	Close(ctx context.Context)
 }

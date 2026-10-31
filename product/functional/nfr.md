@@ -4,8 +4,8 @@ title: Exigences non fonctionnelles NFR-01 à NFR-12
 area: functional
 status: validated
 updated: 2026-10-31
-sources: [specs/013-design-ergonomie/status.md, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
-links: [pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, p-fn-feature-design-ergonomics-013, p-ar-llm-composer, p-ar-voice-interruption, ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
+sources: [specs/014-j7-silence-micro-correction/status.md, specs/013-design-ergonomie/status.md, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7]
+links: [pdr-0076-014-silence-mic-correction-assistant-decided, p-fn-feature-silence-micro-correction-014, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, p-fn-feature-design-ergonomics-013, p-ar-llm-composer, p-ar-voice-interruption, ux-genui-streaming-loading, ux-desktop-shortcuts, genui-overview, p-fn-requirements, p-fn-business-rules, p-fn-risks-acceptance, p-ar-quality, p-ar-security, pdr-0005-frozen-fictional-dataset, pdr-0010-pinned-experimental-versions, pdr-0012-voice-provider-openai, rt-latency, ma-filler-acknowledgements, ds-a11y-wcag-contrast, perf-profile-mode-devtools, rt-ephemeral-keys, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0029-local-docker-compose-hosting]
 tags: [nfr, latence, lisibilite, resilience, securite]
 ---
 # Exigences non fonctionnelles (NFR-01 à NFR-12)
@@ -50,6 +50,14 @@ Détails d'interface tranchés par la boucle sous pdr-0062 ([pdr-0075](../decisi
 | NFR-04 | périmètre de reconstruction et de peinture prouvé par test (l'arrivée d'une surface ne reconstruit ni ne repeint ses voisines ; fondus de 200 ms et de 150 ms, durée nulle sous `disableAnimations`) ; scénarios D-06 et D-07 ([p-fn-feature-design-ergonomics-013](features/design-ergonomie-013.feature)) | les **60 i/s eux-mêmes** : DevTools au profil `--profile` sur la machine de démo, en répétition (J7) |
 | NFR-05 | texte ≥ 24 px et contraste AA vérifiés par tests et par les captures 1920×1080 ; cibles ≥ 48 px sous Linux ; aucun libellé de checklist ni d'avis tronqué (Q-83 → pdr-0075 D2) | mesure sur **vidéoprojecteur réel** et fond de salle : J7, porteur |
 
+## NFR-12 après 014 (2026-10-31)
+
+Détails tranchés par la boucle sous pdr-0062 ([pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D2, D5, contestables) ; scénarios S-09, M-01 ([p-fn-feature-silence-micro-correction-014](features/silence-micro-correction-014.feature)).
+
+| Acquis | Reste |
+|---|---|
+| Actions critiques de la régie à la souris : « Couper le micro » / « Rétablir le micro », « Faire taire », indicateur d'acte, « Remettre à vide » (cibles ≥ 48 px, libellés à 24 px) ; raccourcis facultatifs `M` et `Échap` (`Focus(autofocus)` + `Shortcuts`), sans effet hors session, jamais `Espace` (il activerait le bouton focalisé, [ux-desktop-shortcuts]) | checklist de répétition : `M` et `Échap` répondent-ils sans clic préalable et après un clic sur un bouton ? (conflit de focus non observé sur la machine de démo) |
+
 ## Décisions liées
 
 | NFR | Décision produit |
@@ -58,7 +66,7 @@ Détails d'interface tranchés par la boucle sous pdr-0062 ([pdr-0075](../decisi
 | NFR-07 | [pdr-0006-replay-fallback-must](../decisions/pdr-0006-replay-fallback-must.md), remplacée par [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) (NFR-07 retirée) |
 | NFR-10 | [pdr-0010-pinned-experimental-versions](../decisions/pdr-0010-pinned-experimental-versions.md), [pdr-0031](../decisions/pdr-0031-github-actions-ci-linux.md) |
 | NFR-09, NFR-11 | [pdr-0012-voice-provider-openai](../decisions/pdr-0012-voice-provider-openai.md) (acceptée) ; NFR-11 : [pdr-0030](../decisions/pdr-0030-llm-budget-20-eur.md) ; NFR-09 : [pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md) |
-| NFR-12 | [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) |
+| NFR-12 | [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md) ; 014 : [pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D2 |
 | NFR-01..NFR-03 | [pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md) |
 | NFR-05 | [pdr-0007-closed-catalog-stage-theme](../decisions/pdr-0007-closed-catalog-stage-theme.md) (thème de scène) ; 013 : [pdr-0072](../decisions/pdr-0072-design-ergonomics-013.md), [pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) |
 | NFR-04 | 013 : [pdr-0072](../decisions/pdr-0072-design-ergonomics-013.md), [pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) D3 |

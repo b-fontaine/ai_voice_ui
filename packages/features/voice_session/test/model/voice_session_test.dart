@@ -576,6 +576,213 @@ void main() {
       expect(lines.single, contains('"unix_ms":1000'));
     });
 
+    group('micro coupé (setMicMuted)', () {
+      test(
+        'couper puis rétablir : Active(micMuted), capture intacte',
+        () async {
+          final h = VoiceHarness();
+          await h.session.start();
+          final statuses = <VoiceSessionStatus>[];
+          final sub = h.session.status.listen(statuses.add);
+
+          await h.session.setMicMuted(true);
+          expect(h.session.current, const Active(micMuted: true));
+          expect(h.transports.single.micEnabled, isFalse);
+
+          await h.session.setMicMuted(false);
+          expect(h.session.current, const Active());
+          expect(h.transports.single.micEnabled, isTrue);
+
+          await pumpEventQueue();
+          expect(statuses, const <VoiceSessionStatus>[
+            Active(),
+            Active(micMuted: true),
+            Active(),
+          ]);
+          expect(
+            h.transports.single.calls,
+            isNot(anyOf(contains('stop'), contains('dispose'))),
+          );
+          await sub.cancel();
+          await h.session.dispose();
+        },
+      );
+
+      test('Active(micMuted) : égalité et hashCode par valeur', () {
+        expect(const Active(micMuted: true), const Active(micMuted: true));
+        expect(
+          const Active(micMuted: true).hashCode,
+          const Active(micMuted: true).hashCode,
+        );
+        expect(const Active(micMuted: true), isNot(const Active()));
+      });
+
+      test('couper, stop, start : micMuted faux et micro neuf actif', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        await h.session.setMicMuted(true);
+        await h.session.stop();
+        expect(h.session.current, const Idle());
+        await h.session.start();
+
+        expect(h.session.current, const Active());
+        expect(h.transports, hasLength(2));
+        expect(h.transports.last.micEnabled, isTrue);
+        expect(
+          h.transports.last.calls,
+          isNot(contains('setMicEnabled(false)')),
+        );
+        await h.session.dispose();
+      });
+
+      test('hors Active : aucun effet sur le transport', () async {
+        final h = VoiceHarness();
+        await h.session.setMicMuted(true);
+        expect(h.session.current, const Idle());
+
+        final offer = Completer<String>();
+        h.onNewTransport = (t) => t.offerHook = () => offer.future;
+        final started = h.session.start();
+        await pumpEventQueue();
+        await h.session.setMicMuted(true);
+        expect(h.session.current, const Connecting());
+        expect(
+          h.transports.single.calls,
+          isNot(contains('setMicEnabled(true)')),
+        );
+        expect(
+          h.transports.single.calls,
+          isNot(contains('setMicEnabled(false)')),
+        );
+
+        final stopped = h.session.stop();
+        await h.session.setMicMuted(true);
+        expect(h.session.current, const Stopping());
+        offer.complete('offer-1');
+        await Future.wait(<Future<void>>[started, stopped]);
+        expect(
+          h.transports.single.calls.where((c) => c.startsWith('setMic')),
+          isEmpty,
+        );
+      });
+
+      test('échec de la plateforme : micMuted reste faux', () async {
+        final h = VoiceHarness();
+        h.onNewTransport = (t) => t.micResult = false;
+        await h.session.start();
+
+        await h.session.setMicMuted(true);
+
+        expect(h.session.current, const Active());
+        await h.session.dispose();
+      });
+
+      test(
+        'arrêt pendant la coupure : pas de résurrection d\'Active',
+        () async {
+          final h = VoiceHarness();
+          final gate = Completer<void>();
+          h.onNewTransport = (t) => t.micHook = (_) => gate.future;
+          await h.session.start();
+
+          final muting = h.session.setMicMuted(true);
+          await pumpEventQueue();
+          final stopped = h.session.stop();
+          gate.complete();
+          await Future.wait(<Future<void>>[muting, stopped]);
+
+          expect(h.session.current, const Idle());
+        },
+      );
+    });
+
+    group('faire taire l\'IA (silenceRemote)', () {
+      test(
+        'coupe la piste distante, émet, reste Active, rien au journal',
+        () async {
+          final h = VoiceHarness();
+          await h.session.start();
+          final silenced = <void>[];
+          final sub = h.session.silenced.listen(silenced.add);
+          final envelopes = <AppChannelEnvelope>[];
+          final envSub = h.session.envelopes.listen(envelopes.add);
+
+          await h.session.silenceRemote();
+          await pumpEventQueue();
+
+          expect(silenced, hasLength(1));
+          expect(h.transports.single.remoteAudioEnabled, isFalse);
+          expect(h.session.current, const Active());
+          expect(envelopes, isEmpty);
+          expect(h.events, isNot(contains('relay.delete(s1)')));
+
+          await h.session.resumeRemoteAudio();
+          expect(h.transports.single.remoteAudioEnabled, isTrue);
+          await sub.cancel();
+          await envSub.cancel();
+          await h.session.dispose();
+        },
+      );
+
+      test('journal d\'enveloppes : rien d\'écrit', () async {
+        final dir = Directory.systemTemp.createTempSync('silence');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        final path = '${dir.path}/log.jsonl';
+        final h = VoiceHarness(logPath: path);
+        await h.session.start();
+
+        await h.session.silenceRemote();
+        await h.session.dispose();
+
+        final file = File(path);
+        expect(!file.existsSync() || file.readAsStringSync().isEmpty, isTrue);
+      });
+
+      test('sans effet hors Active', () async {
+        final h = VoiceHarness();
+        final silenced = <void>[];
+        h.session.silenced.listen(silenced.add);
+
+        await h.session.silenceRemote();
+        expect(silenced, isEmpty);
+
+        final offer = Completer<String>();
+        h.onNewTransport = (t) => t.offerHook = () => offer.future;
+        final started = h.session.start();
+        await pumpEventQueue();
+        await h.session.silenceRemote();
+        final stopped = h.session.stop();
+        await h.session.silenceRemote();
+        offer.complete('offer-1');
+        await Future.wait(<Future<void>>[started, stopped]);
+        await pumpEventQueue();
+
+        expect(silenced, isEmpty);
+        expect(
+          h.transports.single.calls.where((c) => c.startsWith('setRemote')),
+          isEmpty,
+        );
+      });
+
+      test('pendant micro coupé : fonctionne, micro inchangé', () async {
+        final h = VoiceHarness();
+        await h.session.start();
+        await h.session.setMicMuted(true);
+        final silenced = <void>[];
+        final sub = h.session.silenced.listen(silenced.add);
+
+        await h.session.silenceRemote();
+        await pumpEventQueue();
+
+        expect(silenced, hasLength(1));
+        expect(h.transports.single.remoteAudioEnabled, isFalse);
+        expect(h.session.current, const Active(micMuted: true));
+        expect(h.transports.single.micEnabled, isFalse);
+        await sub.cancel();
+        await h.session.dispose();
+      });
+    });
+
     group('coupure de la voix de l\'IA (voice.interrupted)', () {
       test('coupe la piste distante, puis la rétablit à la reprise', () async {
         final h = VoiceHarness();

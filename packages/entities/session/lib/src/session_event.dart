@@ -195,19 +195,42 @@ final class UsageUpdated extends SessionEvent {
   int get hashCode => Object.hash(seconds, contextRatio);
 }
 
+/// Cause d'une interruption de l'IA (`voice.interrupted`) : un mot d'arrêt
+/// (`stop`) ou une correction de la demande (`correction`, pdr-0076).
+enum InterruptionCause { stop, correction }
+
 /// L'utilisateur a interrompu l'IA (`voice.interrupted`). [atMs] est l'horloge
-/// média des transcripts (`start_ms` du delta déclencheur).
+/// média des transcripts (`start_ms` du delta déclencheur). [cause] vaut
+/// `stop` quand le message ne la précise pas.
 final class VoiceInterrupted extends SessionEvent {
-  const VoiceInterrupted({required this.atMs});
+  const VoiceInterrupted({
+    required this.atMs,
+    this.cause = InterruptionCause.stop,
+  });
 
   final int atMs;
+  final InterruptionCause cause;
 
   @override
   bool operator ==(Object other) =>
-      other is VoiceInterrupted && other.atMs == atMs;
+      other is VoiceInterrupted && other.atMs == atMs && other.cause == cause;
 
   @override
-  int get hashCode => atMs.hashCode;
+  int get hashCode => Object.hash(atMs, cause);
+}
+
+/// L'utilisateur a fait taire l'IA localement (bouton ou `Échap`). Événement
+/// purement local : il n'a pas d'horloge média, n'est jamais écrit dans le
+/// journal des enveloppes ni dans celui d'A2UI, et n'est jamais envoyé au
+/// backend.
+final class VoiceSilenced extends SessionEvent {
+  const VoiceSilenced();
+
+  @override
+  bool operator ==(Object other) => other is VoiceSilenced;
+
+  @override
+  int get hashCode => (VoiceSilenced).hashCode;
 }
 
 /// Perte du canal applicatif.

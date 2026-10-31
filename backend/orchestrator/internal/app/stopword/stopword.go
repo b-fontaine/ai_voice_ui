@@ -77,6 +77,80 @@ func (m *Matcher) OnlyStopWords(text string) bool {
 	return true
 }
 
+// OnlyStopWordsIgnoring est OnlyStopWords après avoir retiré les mots de tête reconnus
+// par lead (les mots de correction, spec 014) : « Non, stop » est un « Stop » seul, et
+// un texte réduit à ces mots de tête l'est aussi (il n'y a rien à planifier). lead nil
+// ou sans correspondance en tête : comportement de OnlyStopWords.
+func (m *Matcher) OnlyStopWordsIgnoring(lead *Matcher, text string) bool {
+	if lead == nil {
+		return m.OnlyStopWords(text)
+	}
+	skipped, rest := lead.SkipLead(text)
+	if skipped == 0 {
+		return m.OnlyStopWords(text)
+	}
+	if toks, _ := Tokenize(rest); len(toks) == 0 {
+		return true
+	}
+	return m.OnlyStopWords(rest)
+}
+
+// SkipLead retire du début du texte les mots du Matcher, répétés (« Non, en fait, … »).
+// Il rend le nombre de mots du Matcher retirés et le reste du texte, à partir de la fin
+// du dernier mot retiré (le reste commence donc par son séparateur éventuel).
+func (m *Matcher) SkipLead(text string) (int, string) {
+	toks := tokens(text)
+	texts := make([]string, len(toks))
+	for i, t := range toks {
+		texts[i] = t.text
+	}
+	skipped, consumed := 0, 0
+	for consumed < len(texts) {
+		n := m.matchLen(texts[consumed:])
+		if n == 0 {
+			break
+		}
+		consumed += n
+		skipped++
+	}
+	if consumed == 0 {
+		return 0, text
+	}
+	return skipped, text[toks[consumed-1].end:]
+}
+
+// CouldStart indique si le texte est le début strict d'un mot d'arrêt encore en cours de
+// prononciation : « sto » (dernier mot non terminé) ou « ça » (mot d'arrêt de plusieurs
+// mots) pour « stop » et « ça suffit ». Un mot d'arrêt complet n'est pas un début.
+func (m *Matcher) CouldStart(text string) bool {
+	toks := tokens(text)
+	if len(toks) == 0 {
+		return false
+	}
+	open := toks[len(toks)-1].end == len(text) // dernier mot peut-être inachevé
+	for _, w := range m.words {
+		if len(toks) > len(w) {
+			continue
+		}
+		ok := true
+		for i, t := range toks {
+			last := i == len(toks)-1
+			if last && open {
+				ok = strings.HasPrefix(w[i], t.text) && (len(toks) < len(w) || len(t.text) < len(w[i]))
+			} else {
+				ok = w[i] == t.text
+			}
+			if !ok {
+				break
+			}
+		}
+		if ok && (len(toks) < len(w) || open) {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *Matcher) matchLen(toks []string) int {
 	for _, w := range m.words {
 		if len(toks) >= len(w) && equal(toks[:len(w)], w) {

@@ -151,6 +151,25 @@ func (w *RequestWindow) ConsumeUntil(atMs int64) {
 	w.consumed = max(w.consumed, atMs+1)
 }
 
+// ConsumeBefore retire du tampon les deltas qui commencent avant atMs et écarte désormais
+// ceux qui arrivent avec un start_ms < atMs (correction de l'utilisateur, spec 014) : le texte
+// de la demande remplacée ne se colle pas à la correction. Contrairement à ConsumeUntil, le
+// delta qui commence à atMs (le mot de correction) est conservé. La borne ne recule jamais.
+func (w *RequestWindow) ConsumeBefore(atMs int64) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	kept := w.frags[:0:0]
+	w.runes = 0
+	for _, f := range w.frags {
+		if f.start >= atMs {
+			kept = append(kept, f)
+			w.runes += utf8.RuneCountInString(f.text)
+		}
+	}
+	w.frags = kept
+	w.consumed = max(w.consumed, atMs)
+}
+
 // Len renvoie le nombre de runes conservées dans le tampon.
 func (w *RequestWindow) Len() int {
 	w.mu.Lock()

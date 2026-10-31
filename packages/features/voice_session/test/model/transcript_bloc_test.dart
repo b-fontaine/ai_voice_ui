@@ -136,6 +136,72 @@ void main() {
       expect(states, <TranscriptState>[_line('', ' fin de mot')]);
     });
 
+    test('silence local : tronque là où la réplique a été coupée', () async {
+      final List<TranscriptState> states = await _play(<SessionEvent>[
+        at(ai, 'Le tableau ', 2000),
+        at(ai, 'est prêt', 2400),
+        const VoiceSilenced(),
+        at(ai, ' et la décision', 2800),
+        at(ai, ' attend', 2400 + 1),
+      ]);
+
+      expect(states, <TranscriptState>[
+        _line('', 'Le tableau '),
+        _line('', 'Le tableau est prêt'),
+      ]);
+    });
+
+    test(
+      'silence local : garde un delta de même début que le dernier',
+      () async {
+        final List<TranscriptState> states = await _play(<SessionEvent>[
+          at(ai, 'Bonjour', 2000),
+          const VoiceSilenced(),
+          at(ai, ' à tous', 2000),
+        ]);
+
+        expect(states.last, _line('', 'Bonjour à tous'));
+      },
+    );
+
+    test('silence local : la reprise rétablit les deltas IA', () async {
+      final StreamController<SessionEvent> source =
+          StreamController<SessionEvent>();
+      final List<TranscriptState> states = await statesAfter(TranscriptBloc(), (
+        bloc,
+      ) async {
+        bloc.add(TranscriptSourceSubscribed(source.stream));
+        source
+          ..add(at(ai, 'Début', 1000))
+          ..add(const VoiceSilenced())
+          ..add(at(ai, 'écartée', 3000));
+        await pumpEventQueue();
+        bloc.add(const TranscriptResumed());
+        await pumpEventQueue();
+        source.add(at(ai, 'Reprise', 9000));
+        await pumpEventQueue();
+      });
+
+      expect(states, <TranscriptState>[
+        _line('', 'Début'),
+        _line('', 'DébutReprise'),
+      ]);
+      await source.close();
+    });
+
+    test(
+      'silence local : ne touche pas aux deltas de l\'utilisateur',
+      () async {
+        final List<TranscriptState> states = await _play(<SessionEvent>[
+          at(ai, 'Début', 1000),
+          const VoiceSilenced(),
+          at(user, 'Plutôt iOS', 5000),
+        ]);
+
+        expect(states.last, _line('Plutôt iOS', 'Début'));
+      },
+    );
+
     test('ne touche pas aux deltas de l\'utilisateur', () async {
       final List<TranscriptState> states = await _play(<SessionEvent>[
         const VoiceInterrupted(atMs: 2500),

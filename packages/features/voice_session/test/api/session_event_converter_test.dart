@@ -138,6 +138,38 @@ void main() {
         _env('voice.interrupted', <String, Object?>{'at_ms': 4200}),
         const VoiceInterrupted(atMs: 4200),
       ),
+      'voice.interrupted cause correction': (
+        _env('voice.interrupted', <String, Object?>{
+          'at_ms': 4200,
+          'cause': 'correction',
+        }),
+        const VoiceInterrupted(atMs: 4200, cause: InterruptionCause.correction),
+      ),
+      'voice.interrupted cause stop': (
+        _env('voice.interrupted', <String, Object?>{
+          'at_ms': 4200,
+          'cause': 'stop',
+        }),
+        const VoiceInterrupted(atMs: 4200),
+      ),
+      'voice.interrupted cause inconnue : stop': (
+        _env('voice.interrupted', <String, Object?>{
+          'at_ms': 4200,
+          'cause': 'autre',
+        }),
+        const VoiceInterrupted(atMs: 4200),
+      ),
+      'voice.interrupted cause mal typée : stop': (
+        _env('voice.interrupted', <String, Object?>{'at_ms': 4200, 'cause': 7}),
+        const VoiceInterrupted(atMs: 4200),
+      ),
+      'voice.interrupted cause null : stop': (
+        _env('voice.interrupted', <String, Object?>{
+          'at_ms': 4200,
+          'cause': null,
+        }),
+        const VoiceInterrupted(atMs: 4200),
+      ),
       'plan': (
         _env('plan', <String, Object?>{
           'delegation': 'd1',

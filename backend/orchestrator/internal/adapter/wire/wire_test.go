@@ -27,6 +27,9 @@ func TestWireDataCoversAllPayloads(t *testing.T) {
 		{"Delegation", domain.Delegation{ID: "d1", OffsetMs: 1234}, `{"id":"d1","offset_ms":1234}`},
 		{"Plan", domain.Plan{Delegation: "d1", Selected: []string{"Qualité"}, Idle: []string{"Livraison"}}, `{"delegation":"d1","selected":["Qualité"],"idle":["Livraison"]}`},
 		{"VoiceInterrupted", domain.VoiceInterrupted{AtMs: 5400}, `{"at_ms":5400}`},
+		{"VoiceInterruptedStopCauseAbsent", domain.VoiceInterrupted{AtMs: 5400, Cause: domain.CauseStop}, `{"at_ms":5400}`},
+		{"VoiceInterruptedCorrection", domain.VoiceInterrupted{AtMs: 5400, Cause: domain.CauseCorrection}, `{"at_ms":5400,"cause":"correction"}`},
+		{"VoiceInterruptedUnknownCauseAbsent", domain.VoiceInterrupted{AtMs: 5400, Cause: "autre"}, `{"at_ms":5400}`},
 		{"VoiceInterruptedNegativeClamped", domain.VoiceInterrupted{AtMs: -3}, `{"at_ms":0}`},
 		{"AgentActivityLabel", domain.AgentActivity{Agent: "Qualité", Task: "t1", State: domain.ActivityWorking, Label: "KPI"}, `{"agent":"Qualité","task":"t1","state":"working","label":"KPI"}`},
 	}

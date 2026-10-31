@@ -26,10 +26,18 @@ class FakeTransport implements VoiceTransport {
   /// par [setRemoteAudioEnabled] à `voice.interrupted` (spec 011).
   bool remoteAudioEnabled = true;
 
+  /// État de la piste du micro local (spec 014 : `track.enabled`). Couper le
+  /// micro ne touche pas à la capture : ni `stop` ni `dispose` ne sont émis.
+  bool micEnabled = true;
+
   /// Remplacent le comportement par défaut (retard, échec, attente).
   Future<String> Function()? offerHook;
   Future<void> Function(String sdp)? answerHook;
   Future<void> Function()? stopHook;
+  Future<void> Function(bool enabled)? micHook;
+
+  /// Valeur rendue par [setMicEnabled] (vrai : commande appliquée).
+  bool micResult = true;
 
   /// `true` une fois `stop` puis `dispose` appelés, dans cet ordre, une fois.
   bool get isReleased =>
@@ -60,6 +68,16 @@ class FakeTransport implements VoiceTransport {
   Future<void> setRemoteAudioEnabled(bool enabled) async {
     _record('setRemoteAudioEnabled($enabled)');
     remoteAudioEnabled = enabled;
+  }
+
+  /// Désactive ou réactive la piste du micro local (frontière WebRTC, spec
+  /// 014).
+  @override
+  Future<bool> setMicEnabled(bool enabled) async {
+    _record('setMicEnabled($enabled)');
+    await micHook?.call(enabled);
+    if (micResult) micEnabled = enabled;
+    return micResult;
   }
 
   @override

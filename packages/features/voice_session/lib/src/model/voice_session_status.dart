@@ -33,18 +33,22 @@ final class Connecting extends VoiceSessionStatus {
   String toString() => 'Connecting';
 }
 
-/// Session établie.
+/// Session établie. [micMuted] : le micro est coupé (piste désactivée, la
+/// capture continue).
 final class Active extends VoiceSessionStatus {
-  const Active();
+  const Active({this.micMuted = false});
+
+  final bool micMuted;
 
   @override
-  bool operator ==(Object other) => other is Active;
+  bool operator ==(Object other) =>
+      other is Active && other.micMuted == micMuted;
 
   @override
-  int get hashCode => (Active).hashCode;
+  int get hashCode => Object.hash(Active, micMuted);
 
   @override
-  String toString() => 'Active';
+  String toString() => micMuted ? 'Active(micMuted)' : 'Active';
 }
 
 /// Libération en cours.

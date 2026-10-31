@@ -119,6 +119,11 @@ void main() {
           const ChannelLost('r'),
           const ChannelLost('s'),
         ),
+        'VoiceSilenced': (
+          const VoiceSilenced(),
+          const VoiceSilenced(),
+          const ChannelLost('s'),
+        ),
       };
 
   for (final MapEntry<String, (SessionEvent, SessionEvent, SessionEvent)> c
@@ -143,6 +148,7 @@ void main() {
       PlanReceived() => 'PlanReceived',
       UsageUpdated() => 'UsageUpdated',
       VoiceInterrupted() => 'VoiceInterrupted',
+      VoiceSilenced() => 'VoiceSilenced',
       ChannelLost() => 'ChannelLost',
     };
     final Set<String> names = cases.values

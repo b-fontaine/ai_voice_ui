@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../model/voice_transport.dart';
 import 'web_rtc_platform.dart';
 
@@ -97,6 +99,22 @@ class FlutterWebRtcTransport implements VoiceTransport {
       await peer.setRemoteAudioEnabled(enabled);
     } catch (_) {
       // Coupure au mieux : ne doit pas faire échouer la session.
+    }
+  }
+
+  @override
+  Future<bool> setMicEnabled(bool enabled) async {
+    final mic = _mic;
+    if (_stopped || mic == null) return false;
+    try {
+      await mic.setEnabled(enabled);
+      return true;
+    } catch (error) {
+      // Ni SDP ni détail de plateforme : seul le type de l'erreur est consigné.
+      debugPrint(
+        'Transport voix : micro non (dé)sactivé (${error.runtimeType}).',
+      );
+      return false;
     }
   }
 

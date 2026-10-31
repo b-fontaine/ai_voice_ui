@@ -219,4 +219,127 @@ void main() {
     expect(rig.bloc.state, listening);
     await rig.close(tester);
   });
+
+  group('silence local (VoiceSilenced)', () {
+    testWidgets('passe en interrompue sans at_ms', (tester) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, const VoiceSilenced());
+      expect(rig.phases, <OrbPhase>[speaking, interrupted]);
+      await rig.close(tester);
+    });
+
+    testWidgets('le niveau ne fait pas parler, le silence reprend l\'écoute', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const VoiceSilenced());
+      await rig.send(tester, const OrbLevelChanged(0));
+      await tester.pump(_resume);
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets('pas d\'exemption stopSpan : toute délégation y met fin', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const VoiceSilenced());
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 0));
+      expect(rig.phases, <OrbPhase>[interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets(
+      'une interruption stop après un silence retrouve son exemption',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(tester, const VoiceSilenced());
+        await rig.send(tester, interrupt);
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd', offsetMs: 3000),
+        );
+        expect(rig.bloc.state, interrupted);
+        await rig.close(tester);
+      },
+    );
+  });
+
+  group('cause correction', () {
+    const SessionEvent correction = VoiceInterrupted(
+      atMs: 2500,
+      cause: InterruptionCause.correction,
+    );
+
+    testWidgets('interrompue, puis la délégation à at + 1500 rend l\'écoute', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, const OrbLevelChanged(0.4));
+      await rig.send(tester, correction);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 4000));
+      expect(rig.phases, <OrbPhase>[speaking, interrupted, listening]);
+      await rig.close(tester);
+    });
+
+    testWidgets(
+      'une délégation datée avant at_ms ne termine pas l\'interruption',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(tester, correction);
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd0', offsetMs: 2499),
+        );
+        expect(rig.bloc.state, interrupted);
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd1', offsetMs: 2500),
+        );
+        expect(rig.bloc.state, listening);
+        await rig.close(tester);
+      },
+    );
+
+    testWidgets(
+      'ordre inversé : délégation déjà reçue, puis interruption correction',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd', offsetMs: 4000),
+        );
+        await rig.send(tester, correction);
+        expect(rig.phases, <OrbPhase>[interrupted, listening]);
+        await rig.close(tester);
+      },
+    );
+
+    testWidgets(
+      'ordre inversé : une délégation antérieure à at_ms laisse interrompue',
+      (tester) async {
+        final _Rig rig = _Rig();
+        await rig.send(
+          tester,
+          const DelegationStarted(id: 'd', offsetMs: 2000),
+        );
+        await rig.send(tester, correction);
+        expect(rig.bloc.state, interrupted);
+        await rig.close(tester);
+      },
+    );
+
+    testWidgets('cause stop explicite : exemption stopSpan inchangée', (
+      tester,
+    ) async {
+      final _Rig rig = _Rig();
+      await rig.send(tester, interrupt);
+      await rig.send(tester, const DelegationStarted(id: 'd', offsetMs: 5500));
+      expect(rig.bloc.state, interrupted);
+      await rig.send(tester, const DelegationStarted(id: 'e', offsetMs: 5501));
+      expect(rig.bloc.state, listening);
+      await rig.close(tester);
+    });
+  });
 }

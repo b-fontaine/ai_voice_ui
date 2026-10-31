@@ -208,3 +208,61 @@ func TestNewServiceRejectsInvalidStopConfig(t *testing.T) {
 		t.Fatal("NewService doit refuser un mot d'arrêt vide")
 	}
 }
+
+func withCorrections(o *Options) { o.Stop = correctionConfig() }
+
+func TestCorrectionWithStopWordIsStopPath(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Non, stop.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
+	if atMsOf(t, got[0]) != 3000 {
+		t.Fatalf("at_ms = %d, attendu 3000", atMsOf(t, got[0]))
+	}
+	waitFor(t, func() bool { return slices.Equal(e.fd.sess.interruptCalls(), []int64{3000}) })
+}
+
+// Une correction retenue par Supersede (le faux appelle announce) publie une fois
+// voice.interrupted {cause: correction}, sans Interrupt ; le payload Stop reste sans cause.
+func TestCorrectionPublishesInterruptedWithCauseOnce(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Non, plutôt iOS.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
+	e.clock.advance(10 * time.Second)
+	e.flush(t)
+	got = e.sink.ofType(domain.TypeVoiceInterrupted)
+	v, ok := got[0].Data.(domain.VoiceInterrupted)
+	if len(got) != 1 || !ok || v.AtMs != 3000 || v.Cause != domain.CauseCorrection {
+		t.Fatalf("voice.interrupted = %+v, attendu un seul {at_ms:3000 cause:correction}", got)
+	}
+	if calls := e.fd.sess.supersedeCalls(); !slices.Equal(calls, []int64{3000}) {
+		t.Fatalf("Supersede = %v, attendu [3000]", calls)
+	}
+	if calls := e.fd.sess.interruptCalls(); len(calls) != 0 {
+		t.Fatalf("Interrupt = %v, une correction n'interrompt pas", calls)
+	}
+}
+
+// Quand Supersede ne retient pas la condition, il n'appelle pas announce : rien n'est publié.
+func TestCorrectionNotRetainedPublishesNothing(t *testing.T) {
+	e := newStopEnv(t, func(o *Options) { withCorrections(o) })
+	e.fd.sess.skipAnnounce = true
+	e.say("Non, plutôt iOS.", 3000)
+	waitFor(t, func() bool { return len(e.fd.sess.supersedeCalls()) == 1 })
+	e.flush(t)
+	if n := len(e.sink.ofType(domain.TypeVoiceInterrupted)); n != 0 {
+		t.Fatalf("%d voice.interrupted publiés, attendu 0", n)
+	}
+}
+
+// Le Stop porte explicitement domain.CauseStop ; le fil l'omet (wire_test : {"at_ms":N}).
+func TestStopPayloadHasNoCause(t *testing.T) {
+	e := newStopEnv(t, withCorrections)
+	e.say("Stop.", 3000)
+	got := e.sink.waitCount(t, domain.TypeVoiceInterrupted, 1)
+	if v := got[0].Data.(domain.VoiceInterrupted); v.Cause != domain.CauseStop {
+		t.Fatalf("cause = %q, attendu %q pour un Stop", v.Cause, domain.CauseStop)
+	}
+	if n := len(e.fd.sess.supersedeCalls()); n != 0 {
+		t.Fatalf("Supersede appelé %d fois pour un Stop", n)
+	}
+}

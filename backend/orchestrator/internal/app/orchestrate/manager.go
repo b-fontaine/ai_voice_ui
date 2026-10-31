@@ -389,21 +389,28 @@ type session struct {
 
 	opened uint64 // numéro d'ouverture (Manager.openSeq), fixé à l'ouverture sous Manager.mu
 
+	// Ordre des verrous : Canvas.mu → m.mu → session.mu → window.mu (Supersede appelle
+	// window.ConsumeBefore sous session.mu ; RequestWindow ne prend jamais session.mu).
 	mu      sync.Mutex // protège closed, pending, epoch, cancelRun, seen, order et wg.Add
 	closed  bool
 	pending int // délégations en file ou en cours d'exécution
 	// epoch compte les arrêts (Interrupt). cancelRun annule l'exécution vocale en
 	// cours (cause ErrInterrupted) ; nil hors exécution et pendant une action, qui
 	// est atomique et jamais annulée.
-	epoch     uint64
-	stopAt    int64 // at_ms du dernier arrêt, valable si hasStop
-	hasStop   bool
-	cancelRun context.CancelCauseFunc
-	seen      map[string]struct{}
-	order     []string // ordre d'arrivée des identifiants, pour l'éviction
-	wg        sync.WaitGroup
-	drain     sync.Once
-	drained   chan struct{}
+	epoch   uint64
+	stopAt  int64 // at_ms du dernier arrêt, valable si hasStop
+	hasStop bool
+	// runOffset est l'offset de la délégation vocale en cours (posé par beginRun, valable si
+	// cancelRun != nil). supersededBefore est le at_ms de la dernière correction (Supersede) :
+	// une délégation vocale d'offset inférieur qui arrive ensuite est écartée.
+	runOffset        int64
+	supersededBefore int64
+	cancelRun        context.CancelCauseFunc
+	seen             map[string]struct{}
+	order            []string // ordre d'arrivée des identifiants, pour l'éviction
+	wg               sync.WaitGroup
+	drain            sync.Once
+	drained          chan struct{}
 }
 
 func (s *session) Transcript(ev port.LiveEvent) {
@@ -449,6 +456,16 @@ func (s *session) Delegate(id string, offsetMs int64) {
 		return
 	}
 	d.epoch = s.epoch
+	if offsetMs < s.supersededBefore {
+		// Délégation de la demande remplacée par une correction, arrivée après coup
+		// (le fournisseur la crée environ une seconde après la fin de la parole) :
+		// jamais planifiée, la voix dit seulement « stopped » après son générique.
+		s.mu.Unlock()
+		s.log.Info("délégation antérieure à une correction écartée", "delegation", id, "offset_ms", offsetMs)
+		s.commentThen(id, s.m.phrases.Generic, func() { close(genericDone) })
+		s.stopped(d)
+		return
+	}
 	queued := false
 	select {
 	case s.queue <- d:
@@ -560,6 +577,13 @@ func (s *session) run(d Delegation) {
 			if interrupted(ctx) {
 				s.stopped(d)
 			}
+			return
+		}
+		s.mu.Lock()
+		replaced := d.epoch != s.epoch
+		s.mu.Unlock()
+		if replaced { // remplacée (correction) pendant l'attente : la fenêtre est déjà vidée
+			s.stopped(d)
 			return
 		}
 		if s.stopOnlyRequest(d, request) {

@@ -105,7 +105,10 @@ type Config struct {
 	// VoiceStopDebounce (VOICE_STOP_DEBOUNCE, défaut 2 s, de 0 à 10 s). VoiceStopSpan
 	// (VOICE_STOP_SPAN, défaut 3 s, de 0 à 10 s) borne l'écart entre l'arrêt et la
 	// délégation vide d'un « Stop » seul (orchestrateur).
-	VoiceStopWords        []string
+	VoiceStopWords []string
+	// VoiceCorrectionWords (VOICE_CORRECTION_WORDS, mêmes bornes que VoiceStopWords, aucun
+	// mot commun avec elle, spec 014) : vide par défaut, détection de correction coupée.
+	VoiceCorrectionWords  []string
 	VoiceStopUtteranceGap time.Duration
 	VoiceStopMaxWords     int
 	VoiceStopSettle       time.Duration
@@ -433,6 +436,14 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 		}
 		if err := voice.ValidateStopWords(cfg.VoiceStopWords); err != nil {
 			return fmt.Errorf("VOICE_STOP_WORDS : %w (liste séparée par des virgules, sans élément vide)", err)
+		}
+	}
+	if raw := strings.TrimSpace(getenv("VOICE_CORRECTION_WORDS")); raw != "" {
+		for _, w := range strings.Split(raw, ",") {
+			cfg.VoiceCorrectionWords = append(cfg.VoiceCorrectionWords, strings.TrimSpace(w))
+		}
+		if err := voice.ValidateCorrectionWords(cfg.VoiceCorrectionWords, cfg.VoiceStopWords); err != nil {
+			return fmt.Errorf("VOICE_CORRECTION_WORDS : %w (liste séparée par des virgules, sans élément vide)", err)
 		}
 	}
 	var err error

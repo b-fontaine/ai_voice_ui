@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
@@ -10,7 +11,8 @@ import 'package:flutter/widgets.dart';
 /// Le niveau audio arrive par [level] (`ValueListenable`, hors Bloc) : le
 /// `CustomPainter` se repeint par `repaint:` sans `build` ni `layout`
 /// ([perf-audio-visualizer-60hz]), isolé par un `RepaintBoundary`
-/// ([perf-repaint-boundary]). Seul le franchissement de [speakingThreshold]
+/// ([perf-repaint-boundary]). Le micro coupé n'est pas une phase : [micMuted]
+/// ajoute un voile par-dessus. Seul le franchissement de [speakingThreshold]
 /// met à jour le libellé d'accessibilité.
 class VoiceOrb extends StatefulWidget {
   const VoiceOrb({
@@ -19,6 +21,7 @@ class VoiceOrb extends StatefulWidget {
     this.thinking = false,
     this.interrupted = false,
     this.listening = false,
+    this.micMuted = false,
     this.speakingThreshold = 0.03,
   });
 
@@ -37,6 +40,10 @@ class VoiceOrb extends StatefulWidget {
   /// Vrai quand la session est active et que l'IA se tait : l'orbe se lit
   /// « Écoute » au lieu de « repos ».
   final bool listening;
+
+  /// Vrai quand le micro est coupé : un voile « Micro coupé » (grisé, barré)
+  /// se pose par-dessus la phase réelle, qui reste lisible dessous.
+  final bool micMuted;
 
   /// Niveau au-dessus duquel l'orbe est en parole.
   final double speakingThreshold;
@@ -110,22 +117,36 @@ class _VoiceOrbState extends State<VoiceOrb>
           : 'repos',
       child: child,
     ),
-    child: SizedBox.square(
-      dimension: VoiceOrb.diameter,
-      child: RepaintBoundary(
-        child: CustomPaint(
-          painter: _OrbPainter(
-            level: widget.level,
-            animation: _animation,
-            thinking: widget.thinking,
-            interrupted: widget.interrupted,
-            speakingThreshold: widget.speakingThreshold,
-            bodyPaint: _bodyPaint,
-            flashPaint: _flashPaint,
-            arcPaint: _arcPaint,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SizedBox.square(
+          dimension: VoiceOrb.diameter,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: _OrbPainter(
+                    level: widget.level,
+                    animation: _animation,
+                    thinking: widget.thinking,
+                    interrupted: widget.interrupted,
+                    speakingThreshold: widget.speakingThreshold,
+                    bodyPaint: _bodyPaint,
+                    flashPaint: _flashPaint,
+                    arcPaint: _arcPaint,
+                  ),
+                ),
+              ),
+              if (widget.micMuted) const _MicMutedVeil(),
+            ],
           ),
         ),
-      ),
+        // Le libellé (24 px au moins, RG-09) ne tient pas dans les 64 points
+        // du disque : il se pose dessous, et la colonne s'élargit d'autant.
+        if (widget.micMuted) const _MicMutedLabel(),
+      ],
     ),
   );
 }
@@ -198,4 +219,57 @@ class _OrbPainter extends CustomPainter {
       old.thinking != thinking ||
       old.interrupted != interrupted ||
       old.speakingThreshold != speakingThreshold;
+}
+
+/// Voile « Micro coupé » : disque grisé et barre oblique, sur toute la
+/// surface de l'orbe ; le libellé est [_MicMutedLabel].
+class _MicMutedVeil extends StatelessWidget {
+  const _MicMutedVeil();
+
+  @override
+  Widget build(BuildContext context) => const DecoratedBox(
+    key: Key('mic-muted-veil'),
+    decoration: BoxDecoration(shape: BoxShape.circle, color: Color(0xB3424242)),
+    child: CustomPaint(painter: _StrikePainter(), child: SizedBox.expand()),
+  );
+}
+
+/// Libellé « Micro coupé » au format de la scène (24 px au moins, RG-09), en
+/// une ligne.
+class _MicMutedLabel extends StatelessWidget {
+  const _MicMutedLabel();
+
+  static const String label = 'Micro coupé';
+
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    maxLines: 1,
+    softWrap: false,
+    textAlign: TextAlign.center,
+    style: SceneTheme.of(context).label,
+  );
+}
+
+/// Barre oblique du voile, du coin haut gauche au coin bas droit du disque.
+class _StrikePainter extends CustomPainter {
+  const _StrikePainter();
+
+  static final Paint _paint = Paint()
+    ..color = const Color(0xFFFFFFFF)
+    ..strokeWidth = 3
+    ..strokeCap = StrokeCap.round;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double inset = size.shortestSide * 0.15;
+    canvas.drawLine(
+      Offset(inset, inset),
+      Offset(size.width - inset, size.height - inset),
+      _paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_StrikePainter old) => false;
 }

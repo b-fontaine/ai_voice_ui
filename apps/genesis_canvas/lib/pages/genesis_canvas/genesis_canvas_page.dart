@@ -54,11 +54,13 @@ import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageActReached, StageBloc, StageResetRequested;
 import 'package:feature_voice_session/feature_voice_session.dart'
     show
+        Active,
         Connecting,
         Failed,
         Idle,
         LiveSessionEventSource,
         Interrupted,
+        canSilence,
         OrbLevelController,
         OrbPhase,
         OrbPhaseBloc,
@@ -68,10 +70,12 @@ import 'package:feature_voice_session/feature_voice_session.dart'
         TranscriptBloc,
         TranscriptResumed,
         TranscriptSourceSubscribed,
+        VoiceMicMuteRequested,
         VoiceSession,
         VoiceSessionBloc,
         VoiceSessionStatus,
         VoiceSessionSubscribed;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Catalog, SurfaceController;
@@ -185,6 +189,11 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   );
   StreamSubscription<OrbPhase>? _phaseSubscription;
   bool _wasInterrupted = false;
+  // Raccourcis facultatifs `M` (micro) et `Échap` (faire taire), jamais
+  // `Espace` (014, pdr-0033). Le nœud de focus de la racine reçoit les
+  // touches même sans clic préalable ; quand un bouton focalisé se désactive,
+  // Flutter rend le focus au dernier nœud de la portée (testé).
+  final FocusNode _shortcutFocus = FocusNode(debugLabel: 'genesis-shortcuts');
   late final AgentActivityBloc _agentsBloc = widget.getIt<AgentActivityBloc>();
   // Écran de fabrication : panneau du protocole (horloge de l'app, pdr-0038),
   // étagère du catalogue et régie des actes.
@@ -664,6 +673,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   @override
   void dispose() {
+    _shortcutFocus.dispose();
     // Plus de réessai de remise à vide une fois la page fermée.
     _resetGeneration++;
     _cancelRetryWait();
@@ -702,6 +712,20 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_session.resumeRemoteAudio());
     _orb.resume();
     _transcriptBloc.add(const TranscriptResumed());
+  }
+
+  // Faire taire l'IA (S-09) : coupe la piste distante sans fermer la session.
+  // La reprise passe par `_onOrbPhase`, comme après `voice.interrupted`.
+  void _silenceRemote() {
+    unawaited(_session.silenceRemote());
+  }
+
+  // Micro : la valeur cible se calcule depuis l'état courant du Bloc ; sans
+  // effet hors session `Active`.
+  void _toggleMic() {
+    final status = _voiceBloc.state;
+    if (status is! Active) return;
+    _voiceBloc.add(VoiceMicMuteRequested(!status.micMuted));
   }
 
   /// Fermeture ordonnée, jamais d'exception non gérée : un objet n'est libéré
@@ -830,92 +854,152 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
           ),
         ),
       ],
-      child: RepaintBoundary(
-        key: _boundaryKey,
-        child: ColoredBox(
-          color: SceneTheme.of(context).background,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: _marginX,
-              vertical: _marginY,
+      child: Shortcuts(
+        shortcuts: <ShortcutActivator, Intent>{
+          const SingleActivator(LogicalKeyboardKey.keyM): const _MicIntent(),
+          const SingleActivator(LogicalKeyboardKey.escape):
+              const _SilenceIntent(),
+        },
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            _MicIntent: CallbackAction<_MicIntent>(
+              onInvoke: (_) {
+                _toggleMic();
+                return null;
+              },
             ),
-            child: Stack(
-              children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    TickerMode(
-                      enabled: !_animationsOff,
-                      // « Démarrer » est inactif en mode scénario et pendant un
-                      // rejeu ; la session voix en cours n'est pas touchée.
-                      child: BlocSelector<ReplayBloc, ReplayState, bool>(
-                        selector: (state) => state is ReplayActive,
-                        builder: (context, replaying) => TopBar(
-                          orbLevel: _orb.level,
-                          speakingThreshold: _settings.orbSpeakingThreshold,
-                          startEnabled: !_scenarioMode && !replaying,
-                          stage: StageBar(onResetPressed: _resetStage),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: _gap),
-                    const SizedBox(height: _railHeight, child: AgentsRail()),
-                    const SizedBox(height: _gap),
-                    Expanded(
-                      // Réglage d'animation du canevas : durée nulle en
-                      // scénario, en capture et sous « réduire les
-                      // animations » ; vitesse du rejeu en cours sinon. Pas de
-                      // `TickerMode` ici : il figerait l'apparition à
-                      // l'opacité 0.
-                      child: BlocSelector<ReplayBloc, ReplayState, double>(
-                        selector: (state) =>
-                            state is ReplayActive ? state.snapshot.speed : 1,
-                        builder: (context, speed) => SceneMotionScope(
-                          disabled:
-                              (MediaQuery.maybeDisableAnimationsOf(context) ??
-                                  false) ||
-                              _animationsOff,
-                          speed: speed,
-                          child: BlocSelector<ReplayBloc, ReplayState, bool>(
-                            selector: (state) => state is ReplayActive,
-                            // Rejeu (scénario ou acte 4) : aucune requête ne
-                            // part.
-                            builder: (context, replaying) => CanvasActionScope(
-                              enabled: !_scenarioMode && !replaying,
-                              child: CanvasBoard(
-                                key: const Key('canvas-board'),
-                                controller: _controller,
-                                highlight: _highlight,
+            _SilenceIntent: CallbackAction<_SilenceIntent>(
+              onInvoke: (_) {
+                // Idempotent : sans effet hors `Active` (`silenceRemote`) et
+                // tant que l'orbe est déjà interrompue.
+                if (canSilence(_voiceBloc.state, _phaseBloc.state)) {
+                  _silenceRemote();
+                }
+                return null;
+              },
+            ),
+          },
+          child: Focus(
+            autofocus: true,
+            focusNode: _shortcutFocus,
+            child: RepaintBoundary(
+              key: _boundaryKey,
+              child: ColoredBox(
+                color: SceneTheme.of(context).background,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _marginX,
+                    vertical: _marginY,
+                  ),
+                  child: Stack(
+                    children: <Widget>[
+                      Column(
+                        children: <Widget>[
+                          TickerMode(
+                            enabled: !_animationsOff,
+                            // « Démarrer » est inactif en mode scénario et pendant un
+                            // rejeu ; la session voix en cours n'est pas touchée.
+                            child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                              selector: (state) => state is ReplayActive,
+                              builder: (context, replaying) => TopBar(
+                                orbLevel: _orb.level,
+                                speakingThreshold:
+                                    _settings.orbSpeakingThreshold,
+                                startEnabled: !_scenarioMode && !replaying,
+                                stage: StageBar(
+                                  onResetPressed: _resetStage,
+                                  onSilencePressed: _silenceRemote,
+                                  onMicPressed: _toggleMic,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: _gap),
-                    SizedBox(
-                      height: _bottomRowHeight,
-                      child: Row(
-                        children: <Widget>[
-                          const Expanded(child: CatalogShelf()),
-                          const SizedBox(width: 16),
+                          const SizedBox(height: _gap),
                           const SizedBox(
-                            width: _replayWidth,
-                            child: ReplayBar(),
+                            height: _railHeight,
+                            child: AgentsRail(),
                           ),
-                          const SizedBox(width: 16),
-                          // Emplacement du panneau replié : le panneau lui-même
-                          // est posé par-dessus (voir ci-dessous).
-                          SizedBox(width: ProtocolPanel.collapsedSize.width),
+                          const SizedBox(height: _gap),
+                          Expanded(
+                            // Réglage d'animation du canevas : durée nulle en
+                            // scénario, en capture et sous « réduire les
+                            // animations » ; vitesse du rejeu en cours sinon. Pas de
+                            // `TickerMode` ici : il figerait l'apparition à
+                            // l'opacité 0.
+                            child:
+                                BlocSelector<ReplayBloc, ReplayState, double>(
+                                  selector: (state) => state is ReplayActive
+                                      ? state.snapshot.speed
+                                      : 1,
+                                  builder: (context, speed) => SceneMotionScope(
+                                    disabled:
+                                        (MediaQuery.maybeDisableAnimationsOf(
+                                              context,
+                                            ) ??
+                                            false) ||
+                                        _animationsOff,
+                                    speed: speed,
+                                    child:
+                                        BlocSelector<
+                                          ReplayBloc,
+                                          ReplayState,
+                                          bool
+                                        >(
+                                          selector: (state) =>
+                                              state is ReplayActive,
+                                          // Rejeu (scénario ou acte 4) : aucune requête ne
+                                          // part.
+                                          builder: (context, replaying) =>
+                                              CanvasActionScope(
+                                                enabled:
+                                                    !_scenarioMode &&
+                                                    !replaying,
+                                                child: CanvasBoard(
+                                                  key: const Key(
+                                                    'canvas-board',
+                                                  ),
+                                                  controller: _controller,
+                                                  highlight: _highlight,
+                                                ),
+                                              ),
+                                        ),
+                                  ),
+                                ),
+                          ),
+                          const SizedBox(height: _gap),
+                          SizedBox(
+                            height: _bottomRowHeight,
+                            child: Row(
+                              children: <Widget>[
+                                const Expanded(child: CatalogShelf()),
+                                const SizedBox(width: 16),
+                                const SizedBox(
+                                  width: _replayWidth,
+                                  child: ReplayBar(),
+                                ),
+                                const SizedBox(width: 16),
+                                // Emplacement du panneau replié : le panneau lui-même
+                                // est posé par-dessus (voir ci-dessous).
+                                SizedBox(
+                                  width: ProtocolPanel.collapsedSize.width,
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
+                      // Replié, le panneau occupe son emplacement ; déplié, il
+                      // grandit vers le haut et recouvre le canevas à droite sans le
+                      // redimensionner.
+                      const Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: ProtocolPanel(),
+                      ),
+                    ],
+                  ),
                 ),
-                // Replié, le panneau occupe son emplacement ; déplié, il
-                // grandit vers le haut et recouvre le canevas à droite sans le
-                // redimensionner.
-                const Positioned(right: 0, bottom: 0, child: ProtocolPanel()),
-              ],
+              ),
             ),
           ),
         ),
@@ -936,4 +1020,13 @@ class _PageReplayStage implements ReplayStage {
 
   @override
   void exit() => _exit();
+}
+
+/// Intentions des raccourcis de la page (014).
+class _MicIntent extends Intent {
+  const _MicIntent();
+}
+
+class _SilenceIntent extends Intent {
+  const _SilenceIntent();
 }

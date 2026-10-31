@@ -3,6 +3,7 @@ package voice
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 	"unicode/utf8"
 
@@ -42,16 +43,40 @@ type StopConfig struct {
 	// Settle : délai, sans nouveau delta, après lequel un mot d'arrêt sans ponctuation
 	// terminale est confirmé. Zéro : confirmé aussitôt.
 	Settle time.Duration
-	// Debounce : écart minimal entre les start_ms de deux déclencheurs.
+	// Debounce : écart minimal entre les start_ms de deux déclencheurs (arrêt et
+	// correction confondus).
 	Debounce time.Duration
+	// CorrectionWords : mots de correction (spec 014, B1), mêmes bornes que Words et
+	// aucun mot commun avec Words. Liste vide : aucune correction n'est détectée.
+	CorrectionWords []string
 }
 
-// Detection est un arrêt demandé par la voix. AtMs est le start_ms (horloge média du
-// fournisseur) du delta qui a fait apparaître le mot d'arrêt.
+// DetectionKind est le genre fermé d'une Detection : KindStop ou KindCorrection.
+type DetectionKind uint8
+
+const (
+	// KindStop : un mot d'arrêt (valeur zéro, genre historique).
+	KindStop DetectionKind = iota
+	// KindCorrection : un mot significatif suit les mots de correction de tête.
+	KindCorrection
+)
+
+// Detection est le verdict du classifieur pour un énoncé. AtMs est le start_ms (horloge
+// média du fournisseur) du delta qui a fait apparaître le mot d'arrêt, ou le premier
+// mot de correction.
 type Detection struct {
 	AtMs int64
+	Kind DetectionKind
 }
 
+// StopDetector est le classifieur d'énoncé unique (spec 014, B1) : il rend une Detection
+// Stop (règle A5 ci-dessous) ou Correction. Une correction se déclenche dès qu'un mot
+// significatif, ni de correction ni d'arrêt (ni début d'un mot d'arrêt), suit le ou les
+// mots de correction de tête, sans plafond de mots ; « Non. » seul ne déclenche rien. Un
+// mot d'arrêt après les mots de correction de tête (« Non, stop ») est un Stop, dont le
+// plafond MaxWords compte les mots qui suivent les mots de correction. Le minuteur
+// (Settle), l'énoncé et l'anti-rebond sont partagés.
+//
 // StopDetector applique la règle A5 : un énoncé est une suite de deltas dont les
 // start_ms consécutifs sont espacés de moins de UtteranceGap ; il déclenche si le
 // premier mot significatif de l'énoncé est un mot d'arrêt et si l'énoncé compte au
@@ -65,6 +90,7 @@ type Detection struct {
 type StopDetector struct {
 	cfg   StopConfig
 	match *stopword.Matcher
+	corr  *stopword.Matcher // nil : aucune correction
 	clock port.Clock
 
 	// Énoncé courant.
@@ -74,7 +100,8 @@ type StopDetector struct {
 	lastAt    time.Time // instant (horloge injectée) du dernier delta
 	fired     bool      // l'énoncé a déjà été tranché (déclenché ou écarté)
 	cand      *int64    // start_ms du delta qui a fait apparaître le mot d'arrêt, en attente
-	nWords    int       // mots de l'énoncé à la dernière évaluation
+	nWords    int       // mots de l'énoncé (hors mots de correction de tête) à la dernière évaluation
+	corrAt    *int64    // start_ms du delta qui a porté le premier mot de correction de tête
 
 	ready       *Detection // détection confirmée, à rendre au prochain SettleNow
 	hasTrigger  bool
@@ -96,7 +123,44 @@ func NewStopDetector(cfg StopConfig, clock port.Clock) (*StopDetector, error) {
 	if err := ValidateStopWords(cfg.Words); err != nil {
 		return nil, err
 	}
-	return &StopDetector{cfg: cfg, clock: clock, match: stopword.New(cfg.Words)}, nil
+	if err := ValidateCorrectionWords(cfg.CorrectionWords, cfg.Words); err != nil {
+		return nil, err
+	}
+	d := &StopDetector{cfg: cfg, clock: clock, match: stopword.New(cfg.Words)}
+	if len(cfg.CorrectionWords) > 0 {
+		d.corr = stopword.New(cfg.CorrectionWords)
+	}
+	return d, nil
+}
+
+// ValidateCorrectionWords vérifie la liste de mots de correction : mêmes bornes que
+// ValidateStopWords, et aucun mot commun (après normalisation) avec stopWords, ni dont la
+// suite de jetons ouvre celle d'un mot d'arrêt (« non » avec « non merci »). L'erreur
+// ne recopie aucun mot.
+func ValidateCorrectionWords(words, stopWords []string) error {
+	if len(words) > MaxStopWords {
+		return fmt.Errorf("au plus %d mots de correction", MaxStopWords)
+	}
+	var stops [][]string
+	for _, w := range stopWords {
+		toks, _ := stopword.Tokenize(w)
+		stops = append(stops, toks)
+	}
+	for _, w := range words {
+		toks, _ := stopword.Tokenize(w)
+		if len(toks) == 0 || utf8.RuneCountInString(w) > MaxStopWordRunes {
+			return fmt.Errorf("chaque mot de correction doit contenir une lettre ou un chiffre et au plus %d caractères", MaxStopWordRunes)
+		}
+		for _, stop := range stops {
+			if slices.Equal(stop, toks) {
+				return errors.New("un mot de correction ne peut pas être aussi un mot d'arrêt")
+			}
+			if len(stop) > len(toks) && slices.Equal(stop[:len(toks)], toks) {
+				return errors.New("un mot de correction ne peut pas ouvrir un mot d'arrêt")
+			}
+		}
+	}
+	return nil
 }
 
 // ValidateStopWords vérifie la liste de mots d'arrêt : au plus MaxStopWords mots, de
@@ -174,7 +238,7 @@ func (d *StopDetector) PendingFor() (time.Duration, bool) {
 }
 
 func (d *StopDetector) reset() {
-	d.text, d.fired, d.cand, d.nWords = "", false, nil, 0
+	d.text, d.fired, d.cand, d.nWords, d.corrAt = "", false, nil, 0, nil
 }
 
 // evaluate cherche le mot d'arrêt en tête de l'énoncé courant. start est le start_ms du
@@ -183,8 +247,22 @@ func (d *StopDetector) evaluate(start int64) *Detection {
 	if d.fired {
 		return nil
 	}
-	lead := d.match.Lead(d.text)
+	text, corrected := d.text, false
+	if d.corr != nil {
+		if n, rest := d.corr.SkipLead(text); n > 0 {
+			text, corrected = rest, true
+			if d.corrAt == nil {
+				d.corrAt = &start
+			}
+		} else {
+			d.corrAt = nil // « non » devenu « nonobstant »
+		}
+	}
+	lead := d.match.Lead(text)
 	d.nWords = lead.Words
+	if corrected && lead.Match == 0 {
+		return d.evaluateCorrection(text)
+	}
 	if lead.Match == 0 {
 		d.cand = nil // « stop » devenu « stoppé », ou pas de mot d'arrêt en tête
 		return nil
@@ -202,6 +280,31 @@ func (d *StopDetector) evaluate(start int64) *Detection {
 	return nil
 }
 
+// evaluateCorrection tranche un énoncé qui commence par des mots de correction : il
+// déclenche dès qu'un mot significatif suit, sauf s'il pourrait être le début d'un mot
+// d'arrêt (« Non, sto… »), qui reste en attente.
+func (d *StopDetector) evaluateCorrection(rest string) *Detection {
+	d.cand = nil
+	if toks, _ := stopword.Tokenize(rest); len(toks) == 0 || d.match.CouldStart(rest) {
+		return nil
+	}
+	at := *d.corrAt
+	d.fired = true
+	if !d.accept(at) {
+		return nil
+	}
+	return &Detection{AtMs: at, Kind: KindCorrection}
+}
+
+// accept applique l'anti-rebond partagé et retient le déclencheur s'il est accepté.
+func (d *StopDetector) accept(at int64) bool {
+	if d.hasTrigger && absInt64(at-d.lastTrigger) < d.cfg.Debounce.Milliseconds() {
+		return false
+	}
+	d.hasTrigger, d.lastTrigger = true, at
+	return true
+}
+
 // confirm tranche l'énoncé : détection si l'énoncé est assez court et hors anti-rebond.
 func (d *StopDetector) confirm() *Detection {
 	at := *d.cand
@@ -209,11 +312,10 @@ func (d *StopDetector) confirm() *Detection {
 	if d.nWords > d.cfg.MaxWords {
 		return nil
 	}
-	if d.hasTrigger && absInt64(at-d.lastTrigger) < d.cfg.Debounce.Milliseconds() {
+	if !d.accept(at) {
 		return nil
 	}
-	d.hasTrigger, d.lastTrigger = true, at
-	return &Detection{AtMs: at}
+	return &Detection{AtMs: at, Kind: KindStop}
 }
 
 func truncateRunes(s string, maxBytes int) string {

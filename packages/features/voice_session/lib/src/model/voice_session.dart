@@ -34,6 +34,8 @@ class VoiceSession {
 
   final StreamController<VoiceSessionStatus> _statusController =
       StreamController<VoiceSessionStatus>.broadcast();
+  final StreamController<void> _silencedController =
+      StreamController<void>.broadcast();
   final StreamController<AppChannelEnvelope> _envelopeController =
       StreamController<AppChannelEnvelope>.broadcast();
 
@@ -71,6 +73,10 @@ class VoiceSession {
 
   /// Enveloppes de la session courante seulement, en diffusion, sans erreur.
   Stream<AppChannelEnvelope> get envelopes => _envelopeController.stream;
+
+  /// Une émission à chaque [silenceRemote] effectif. Local : ne passe ni par
+  /// le canal, ni par le journal, ni par le backend.
+  Stream<void> get silenced => _silencedController.stream;
 
   /// Démarre une session. Sans effet hors `Idle`/`Failed`. Se termine quand
   /// la session est `Active`, ou en échec / annulée, ressources libérées.
@@ -112,6 +118,33 @@ class VoiceSession {
     await _transport?.setRemoteAudioEnabled(true);
   }
 
+  /// Coupe ([muted] vrai) ou rétablit le micro en désactivant sa piste, sans
+  /// jamais arrêter la capture. Sans effet hors `Active`. Si la plateforme
+  /// échoue, l'état reste inchangé. Ne lève pas.
+  Future<void> setMicMuted(bool muted) async {
+    final generation = _generation;
+    final transport = _transport;
+    final status = _current;
+    if (transport == null || status is! Active) return;
+    if (status.micMuted == muted) return;
+    // Le micro reste dans son état précédent si la commande n'est pas appliquée.
+    if (!await transport.setMicEnabled(!muted)) return;
+    // La session a pu se terminer ou changer pendant l'attente.
+    if (_isStale(generation) || _current is! Active) return;
+    _set(Active(micMuted: muted));
+  }
+
+  /// Fait taire l'IA : coupe sa piste (comme `voice.interrupted`) et émet un
+  /// événement local sur [silenced]. Sans effet hors `Active`. Ne ferme
+  /// jamais la session ; fonctionne micro coupé.
+  Future<void> silenceRemote() async {
+    if (_current is! Active || _stopRequested || _releasing) return;
+    final transport = _transport;
+    _remoteMuted = true;
+    if (!_silencedController.isClosed) _silencedController.add(null);
+    await transport?.setRemoteAudioEnabled(false);
+  }
+
   /// [stop] (borné), puis ferme les flux. Plus aucun état ensuite.
   Future<void> dispose() async {
     _disposed = true;
@@ -119,6 +152,7 @@ class VoiceSession {
     await _running;
     await _statusController.close();
     await _envelopeController.close();
+    await _silencedController.close();
   }
 
   bool _isStale(int generation) =>

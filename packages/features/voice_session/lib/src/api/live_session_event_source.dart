@@ -28,6 +28,9 @@ class LiveSessionEventSource implements SessionEventSource {
        _previous = session.current {
     _envelopeSubscription = session.envelopes.listen(_onEnvelope);
     _statusSubscription = session.status.listen(_onStatus);
+    _silencedSubscription = session.silenced.listen(
+      (_) => _emit(const VoiceSilenced()),
+    );
   }
 
   final SessionEventConverter _converter;
@@ -36,6 +39,7 @@ class LiveSessionEventSource implements SessionEventSource {
 
   late final StreamSubscription<AppChannelEnvelope> _envelopeSubscription;
   late final StreamSubscription<VoiceSessionStatus> _statusSubscription;
+  late final StreamSubscription<void> _silencedSubscription;
 
   VoiceSessionStatus _previous;
   // La session a été `Active` et n'a pas encore émis son `closed`.
@@ -115,6 +119,7 @@ class LiveSessionEventSource implements SessionEventSource {
     final Future<void> closing = _controller.close();
     await _envelopeSubscription.cancel();
     await _statusSubscription.cancel();
+    await _silencedSubscription.cancel();
     await closing;
   }
 }

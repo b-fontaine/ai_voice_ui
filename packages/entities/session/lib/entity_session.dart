@@ -7,6 +7,7 @@ export 'src/session_event.dart'
         AgentTaskState,
         ChannelLost,
         DelegationStarted,
+        InterruptionCause,
         OrbLevelChanged,
         PlanReceived,
         SessionEvent,
@@ -15,5 +16,6 @@ export 'src/session_event.dart'
         TranscriptDelta,
         TranscriptRole,
         UsageUpdated,
-        VoiceInterrupted;
+        VoiceInterrupted,
+        VoiceSilenced;
 export 'src/session_event_source.dart' show SessionEventSource;

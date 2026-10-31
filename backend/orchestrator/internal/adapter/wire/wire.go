@@ -57,9 +57,16 @@ func WireData(d domain.Payload) any {
 			Idle       []string `json:"idle"`
 		}{v.Delegation, nonNil(v.Selected), nonNil(v.Idle)}
 	case domain.VoiceInterrupted:
+		// cause : énumération fermée, absente pour un « Stop » (charge utile de la spec 011)
+		// et pour toute valeur inconnue.
+		cause := ""
+		if v.Cause == domain.CauseCorrection {
+			cause = string(v.Cause)
+		}
 		return struct {
-			AtMs int64 `json:"at_ms"`
-		}{max(0, v.AtMs)}
+			AtMs  int64  `json:"at_ms"`
+			Cause string `json:"cause,omitempty"`
+		}{max(0, v.AtMs), cause}
 	default:
 		// Inatteignable : domain.Payload est fermée ; wire_test énumère ses types.
 		return nil

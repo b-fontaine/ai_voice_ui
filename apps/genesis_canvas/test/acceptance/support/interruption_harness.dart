@@ -12,7 +12,13 @@ class InterruptionHarness {
   /// Nombre de requêtes `POST /canvas/actions` relevé par le scénario.
   static int? notedActionRequests;
 
-  static void reset() => notedActionRequests = null;
+  /// État de l'orbe relevé par « je note l'état de l'orbe » (M-01).
+  static String? notedOrbState;
+
+  static void reset() {
+    notedActionRequests = null;
+    notedOrbState = null;
+  }
 
   /// Valeur sémantique de l'orbe (`repos`, `parole`, `Écoute`, `Interrompue`…).
   /// Exige l'arbre sémantique actif (contexte « horloge virtuelle »).

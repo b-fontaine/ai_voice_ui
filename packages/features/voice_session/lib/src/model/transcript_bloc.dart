@@ -43,8 +43,9 @@ class TranscriptState {
 /// Construit les deux lignes de transcription à partir des fragments reçus.
 ///
 /// Les fragments d'un même rôle sont concaténés tels quels ; une réplique
-/// repart du fragment reçu quand le rôle alterne. Pas de troncature (FR-19
-/// est en J7).
+/// repart du fragment reçu quand le rôle alterne. Après une interruption ou un
+/// silence local, les fragments de l'IA postérieurs à la coupure sont écartés
+/// jusqu'à la reprise.
 class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
   TranscriptBloc() : super(const TranscriptState()) {
     // Une nouvelle source remplace la précédente.
@@ -58,6 +59,9 @@ class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
   // Début (horloge média) à partir duquel les fragments de l'IA sont écartés ;
   // `null` : aucune interruption en cours.
   int? _truncateFromMs;
+
+  // `startMs` du dernier fragment de l'IA affiché ; `null` : aucun.
+  int? _lastAiStartMs;
 
   // Rôle du dernier fragment reçu ; `null` en début de session.
   TranscriptRole? _lastRole;
@@ -76,15 +80,23 @@ class TranscriptBloc extends Bloc<TranscriptEvent, TranscriptState> {
               sessionEvent.startMs >= from) {
             return;
           }
+          if (sessionEvent.role == TranscriptRole.ai) {
+            _lastAiStartMs = sessionEvent.startMs;
+          }
           _onDelta(sessionEvent, emit);
         case VoiceInterrupted(:final int atMs):
           _truncateFromMs = atMs;
+        case VoiceSilenced():
+          // Pas d'horloge média : la réplique reste telle qu'elle a été
+          // entendue, coupée après le dernier fragment de l'IA reçu.
+          _truncateFromMs = (_lastAiStartMs ?? -1) + 1;
         case SessionStateChanged(state: SessionState.closed) || ChannelLost():
           // Fin de session ou perte du canal : plus d'interruption en cours
           // (les lignes restent affichées).
           _truncateFromMs = null;
         case SessionStateChanged(state: SessionState.connecting):
           _lastRole = null;
+          _lastAiStartMs = null;
           _truncateFromMs = null;
           emit(const TranscriptState());
         default:

@@ -230,7 +230,7 @@ func NewService(live port.LiveProvider, sink port.Sink, clock port.Clock, opts O
 	if _, err := level.NewMeter(opts.SampleRate, opts.WindowMs); err != nil {
 		return nil, err
 	}
-	if len(opts.Stop.Words) > 0 { // même validation que le détecteur créé par session
+	if len(opts.Stop.Words) > 0 || len(opts.Stop.CorrectionWords) > 0 { // même validation que le détecteur créé par session
 		if _, err := NewStopDetector(opts.Stop, clock); err != nil {
 			return nil, err
 		}
@@ -491,7 +491,7 @@ loop:
 		case <-stop.timer:
 			stop.timer = nil
 			if det, ok := stop.expired(); ok {
-				s.interrupt(sess, fw, det)
+				s.onDetection(sess, fw, det)
 			}
 			stop.rearm(s.opts.After)
 		case ev, ok := <-events:
@@ -509,7 +509,7 @@ loop:
 			case port.EventInputTranscriptDelta:
 				fw.transcript(ev)
 				if det, ok := stop.feed(ev); ok {
-					s.interrupt(sess, fw, det)
+					s.onDetection(sess, fw, det)
 				}
 				stop.rearm(s.opts.After)
 			case port.EventOutputTranscriptDelta:
@@ -542,8 +542,35 @@ loop:
 // le son sans attendre), puis l'arrêt des délégations (file du forwarder, sans blocage).
 // La session reste ouverte.
 func (s *Service) interrupt(sess *session, fw *forwarder, det Detection) {
-	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: det.AtMs})
+	s.announceInterrupted(sess, det.AtMs, domain.CauseStop)
 	fw.interrupt(det.AtMs)
+}
+
+// announceInterrupted publie voice.interrupted ; domain.CauseStop pour un « Stop » (absente
+// de la charge utile, celle de la spec 011), domain.CauseCorrection pour une correction.
+func (s *Service) announceInterrupted(sess *session, atMs int64, cause domain.InterruptCause) {
+	s.publish(sess, domain.TypeVoiceInterrupted, domain.VoiceInterrupted{AtMs: atMs, Cause: cause})
+}
+
+// supersede transmet une correction : la gestion des délégations décide si une demande
+// antérieure est en vol ou en file et, alors seulement, appelle announce (publication de
+// voice.interrupted {cause: correction}) avant toute compensation. Ni Interrupt ni
+// consommation du mot de correction : il ouvre la demande suivante.
+func (s *Service) supersede(sess *session, fw *forwarder, det Detection) {
+	fw.supersede(det.AtMs, func() {
+		s.announceInterrupted(sess, det.AtMs, domain.CauseCorrection)
+	})
+}
+
+// onDetection route le verdict du classifieur : « Stop » interrompt, une correction
+// remplace la demande antérieure (Supersede).
+func (s *Service) onDetection(sess *session, fw *forwarder, det Detection) {
+	switch det.Kind {
+	case KindStop:
+		s.interrupt(sess, fw, det)
+	case KindCorrection:
+		s.supersede(sess, fw, det)
+	}
 }
 
 // stopWatch porte le détecteur de la session et l'échéance de confirmation d'un mot
@@ -556,7 +583,7 @@ type stopWatch struct {
 
 func (s *Service) newStopWatch() *stopWatch {
 	w := &stopWatch{}
-	if len(s.opts.Stop.Words) == 0 {
+	if len(s.opts.Stop.Words) == 0 && len(s.opts.Stop.CorrectionWords) == 0 {
 		return w
 	}
 	det, err := NewStopDetector(s.opts.Stop, s.clock)

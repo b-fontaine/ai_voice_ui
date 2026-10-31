@@ -10,6 +10,7 @@ Widget _host(
   bool thinking = false,
   bool interrupted = false,
   bool listening = false,
+  bool micMuted = false,
 }) => Directionality(
   textDirection: TextDirection.ltr,
   child: Center(
@@ -18,6 +19,7 @@ Widget _host(
       thinking: thinking,
       interrupted: interrupted,
       listening: listening,
+      micMuted: micMuted,
     ),
   ),
 );
@@ -25,10 +27,9 @@ Widget _host(
 /// Appels de dessin du painter de l'orbe à l'instant courant.
 List<RecordedInvocation> _draw(WidgetTester tester) {
   final render = tester.renderObject<RenderCustomPaint>(
-    find.descendant(
-      of: find.byKey(_orbKey),
-      matching: find.byType(CustomPaint),
-    ),
+    find
+        .descendant(of: find.byKey(_orbKey), matching: find.byType(CustomPaint))
+        .first, // le painter de l'orbe précède celui du voile
   );
   final canvas = TestRecordingCanvas();
   render.painter!.paint(canvas, const Size.square(VoiceOrb.diameter));
@@ -299,6 +300,65 @@ void main() {
       await tester.pump();
       expect(_state(tester), 'Écoute');
       semantics.dispose();
+    });
+  });
+
+  group('voile « Micro coupé »', () {
+    testWidgets('absent quand le micro est ouvert', (tester) async {
+      await tester.pumpWidget(_host(level));
+      expect(find.text('Micro coupé'), findsNothing);
+    });
+
+    testWidgets('posé par-dessus la phase réelle, sans la remplacer', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(_host(level, listening: true, micMuted: true));
+
+      expect(find.text('Micro coupé'), findsOneWidget);
+      expect(find.byKey(const Key('mic-muted-veil')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('mic-muted-veil'))),
+        const Size.square(64),
+        reason: 'le disque voilé recouvre l\'orbe, sans le grandir',
+      );
+      // La phase reste lisible sous le voile.
+      expect(_state(tester), 'Écoute');
+      expect(_named(_draw(tester), #drawCircle), isNotEmpty);
+
+      level.value = 0.8;
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(_state(tester), 'parole');
+      expect(find.text('Micro coupé'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('disparaît quand le micro est rétabli', (tester) async {
+      await tester.pumpWidget(_host(level, micMuted: true));
+      expect(find.text('Micro coupé'), findsOneWidget);
+      await tester.pumpWidget(_host(level));
+      expect(find.text('Micro coupé'), findsNothing);
+    });
+
+    testWidgets('le libellé fait 24 px au moins (RG-09) et ne déborde pas', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(level, micMuted: true));
+
+      final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+        find.text('Micro coupé'),
+      );
+      expect(paragraph.text.style?.fontSize, greaterThanOrEqualTo(24));
+      expect(paragraph.didExceedMaxLines, isFalse);
+      expect(tester.takeException(), isNull);
+      // Sous le disque, dans les 104 points utiles de la barre du haut.
+      final Rect veil = tester.getRect(find.byKey(const Key('mic-muted-veil')));
+      final Rect label = tester.getRect(find.text('Micro coupé'));
+      expect(label.top, greaterThanOrEqualTo(veil.bottom));
+      expect(
+        tester.getSize(find.byKey(_orbKey)).height,
+        lessThanOrEqualTo(104),
+      );
     });
   });
 }

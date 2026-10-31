@@ -4,8 +4,8 @@ title: Écran unique, orbe vocal et raccourcis
 area: functional
 status: validated
 updated: 2026-10-31
-sources: [specs/013-design-ergonomie/status.md, specs/012-llm-composer-crashlist/status.md, specs/011-voice-interaction/spec.md, specs/011-voice-interaction/status.md, specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-feature-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, p-fn-feature-llm-composer-012, pdr-0074-012-llm-composer-gateway-crashlist-details, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, p-ar-voice-interruption, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0072-design-ergonomics-013, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
+sources: [specs/014-j7-silence-micro-correction/spec.md, specs/014-j7-silence-micro-correction/status.md, specs/013-design-ergonomie/status.md, specs/012-llm-composer-crashlist/status.md, specs/011-voice-interaction/spec.md, specs/011-voice-interaction/status.md, specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/status.md, specs/009-j5-act3-interact/status.md, specs/007-j3-act1-frontend/spec.md, specs/007-j3-act1-frontend/status.md, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p8, product/sources/product-description.pdf#p9, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [pdr-0076-014-silence-mic-correction-assistant-decided, p-fn-feature-silence-micro-correction-014, p-fn-feature-barge-in, p-fn-feature-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, p-fn-feature-llm-composer-012, pdr-0074-012-llm-composer-gateway-crashlist-details, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, p-ar-voice-interruption, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0072-design-ergonomics-013, p-ar-replay, pdr-0065-009-act3-interact-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0054-stage-screen-orb-acts-checklist, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0053-client-side-a2ui-validation-from-007, p-fn-requirements, p-fn-business-rules, p-fn-catalog, p-fn-mockups, p-ar-frontend, pdr-0008-single-screen-show-the-making, pdr-0002-desktop-platform, ux-voice-multimodal, ux-desktop-shortcuts, ux-desktop-focus, rt-barge-in, rt-transcription, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first]
 tags: [ecran, zones, orbe, raccourcis, interaction]
 ---
 # Écran unique « Genesis Canvas »
@@ -33,7 +33,7 @@ Fiche muette sur les détails d'interface : tranchés par la boucle sous [pdr-00
 
 | Zone | Telle que livrée |
 |---|---|
-| **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée (**deux contrôles de 48 px et de 520 px de large depuis 013**, aux couleurs du thème de scène) ; l'indicateur vaut 1 par défaut et **avance tout seul depuis 011** ([pdr-0071](../decisions/pdr-0071-act2-focus-memory-act-indicator-click-feedback.md)) : acte 2 quand la Barre d'actions apparaît, acte 3 au clic accepté, jamais en arrière, sans effet en rejeu ; un clic manuel passe à l'acte suivant pour corriger (souris d'abord) ; retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
+| **Barre supérieure** (+ régie) | orbe, transcription, bouton Démarrer ; **indicateur d'acte** « Acte n/3 · Créer / Transformer / Interagir » (D1) et bouton **« Remettre à vide »** (D4) empilés dans la barre, sans zone « régie » séparée (**deux contrôles de 48 px et de 520 px de large depuis 013**, aux couleurs du thème de scène ; **régie à deux colonnes de 480 px depuis 014**, voir § Régie 014) ; l'indicateur vaut 1 par défaut et **avance tout seul depuis 011** ([pdr-0071](../decisions/pdr-0071-act2-focus-memory-act-indicator-click-feedback.md)) : acte 2 quand la Barre d'actions apparaît, acte 3 au clic accepté, jamais en arrière, sans effet en rejeu ; un clic manuel passe à l'acte suivant pour corriger (souris d'abord) ; retour à 1 à la remise à vide ; le bouton est inactif tant qu'un agent travaille ou attend |
 | **Rail des agents** | **rangée horizontale de 96 px depuis 013**, de hauteur fixe même vide ; piloté par le message `plan` (D5, RG-29) : l'orchestrateur, puis les agents du plan, sans nom codé en dur ; états en toutes lettres (« en attente », « en cours », « terminé », « échec », « hors périmètre ») ; un agent non retenu est **« en veille »** ; plan vide : **« aucun agent retenu »** (RG-08) ; rail vide (titre « AGENTS A2A » seul) tant qu'aucun `plan` n'est arrivé (RG-01) |
 | **Canevas** | surfaces au rang du contrat (indicateur clé, courbe, avis, checklist), grille **2×2 jusqu'à 4 surfaces, 3×2 dès la cinquième** (6 surfaces au plus ; la liste des crashs, 012, est la cinquième cellule, [p-fn-catalog](catalog.md)) ; **bandeau de 72 px sous la grille** pour la Barre d'actions (009, pdr-0065 D7), réservé dès la première surface ; **contour pointillé** autour de la surface du message en cours (D2) ; cellules **624×302** (3×2) ou **936×302** (2×2) depuis 013, sans libellé tronqué |
 | **Flux du protocole** | **replié en bas à droite** ; déplié (clic), il recouvre le canevas à droite **sans le redimensionner** (hauteur min(620 px, place disponible), nombre d'entrées calculé sur la hauteur, depuis 013) ; message en cours mis en évidence, messages refusés marqués « refusé » ; JSON affiché brut |
@@ -55,10 +55,22 @@ Périmètre du porteur ([pdr-0072](../decisions/pdr-0072-design-ergonomics-013.m
 | Rail | rangée de **96 px** à hauteur fixe même vide : « AGENTS A2A » en colonne de tête, tuiles « nom » puis « état · tâche » (texte ≥ 24 px) ; intervalle libre de **48 px** entre l'orchestrateur et les agents, réservé à la liaison animée de délégation de la fiche (jamais livrée : [Q-85](../roadmap/open-questions.md), au porteur) |
 | Lisibilité ([Q-83](../roadmap/open-questions.md) → pdr-0075 D2) | libellés de checklist et titres à la ligne (capacité calculée sur la hauteur réelle du texte, tableau ou deux lignes, « + N autres critères ») ; avis = extraits entiers puis « + N avis » ; titre de courbe sur sa ligne, légende dessous ; étagère à noms entiers (le mot « utilisé / inutilisé » n'est plus écrit, il est annoncé par `Semantics`) ; seule la ligne d'un crash garde l'ellipse ([pdr-0074](../decisions/pdr-0074-012-llm-composer-gateway-crashlist-details.md) D10) |
 | Apparition (FR-04, NFR-04, D3) | fondu squelette → composants de **200 ms** avec translation de **8 px**, fondu des valeurs de **150 ms** (seul passage « sans données » → « données », jamais rejoué par une mutation) ; durée nulle si les animations du système sont désactivées, en mode scénario ou en capture ; divisée par la vitesse en rejeu (plancher 60 ms) ; le squelette part aussitôt (pas de fondu croisé) ; une surface présente au premier rendu s'affiche sans fondu ; aucune surface ne change de taille ni de place (S-02) |
-| Régie | indicateur d'acte et « Remettre à vide » **empilés**, 520 px × 48 px chacun, bordure et couleurs du thème de scène (détail tranché sous pdr-0062) |
+| Régie | indicateur d'acte et « Remettre à vide » **empilés**, 520 px × 48 px chacun, bordure et couleurs du thème de scène (détail tranché sous pdr-0062) ; **refaite par 014** (§ Régie 014) |
 | Contrastes | texte ≥ 24 px et contraste AA vérifiés par tests et captures 1920×1080 (NFR-05) ; **mesure sur projecteur à J7**, gérée par le porteur |
 
 ⚠️ **À juger par le porteur sur la capture** (détail contestable, pdr-0075 « Réexaminer si » ; observation rattachée à [Q-83](../roadmap/open-questions.md)) : en 3×2 avec les données de l'acte 2, la checklist n'affiche que 2 critères puis « + 1 autres critères » (« Changelog validé » masqué), un seul avis tient (« + 2 avis ») et la sixième cellule reste vide. La maquette (rail en colonne) n'est pas suivie ([pdr-0017](../decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)).
+
+## Régie : micro coupé et faire taire (014, 2026-10-31)
+
+FR-12 et FR-20 livrées ; la fiche est muette sur la disposition : détails tranchés par la boucle sous pdr-0062 ([pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D1 à D6, **contestables**). Scénarios : S-09, M-01, M-02 ([p-fn-feature-silence-micro-correction-014](features/silence-micro-correction-014.feature)). Implémentation : [p-ar-frontend-screen](../architecture/frontend-screen.md) § 014.
+
+| Élément | Livré |
+|---|---|
+| Disposition | **deux colonnes de 480 px** (968 px au total ; la colonne unique de 013 occupait déjà 100 des 104 px de hauteur de la barre du haut, d'où une seconde colonne plutôt qu'une troisième ligne) ; gauche : « Couper le micro » / « Rétablir le micro » (`mic-button`) puis « Faire taire » (`silence-button`) ; droite : indicateur d'acte puis « Remettre à vide » ; cibles ≥ 48 px, libellés à 24 px sans ellipse (capture 1920×1080 relue) ; réplique de l'IA limitée à **une ligne** quand un message d'état est affiché (deux lignes sinon) ; raccourcis `M` et `Échap` : § Raccourcis |
+| Faire taire | actif quand la session est ouverte et que l'orbe n'est pas déjà « Interrompue » (idempotent) ; coupe la piste distante, orbe « Interrompue » puis « Écoute », réplique de l'IA tronquée ; **ne ferme pas la session, n'annule aucune génération** (« Stop » vocal le fait), n'écrit rien au backend |
+| Micro coupé | actif tant qu'une session est ouverte ; désactive la piste locale (la capture continue) ; micro réarmé à chaque démarrage |
+
+⚠️ **À valider en répétition** : (1) si l'IA marque une pause d'au moins `GENESIS_INTERRUPT_RESUME_SILENCE_MS` après « Faire taire », sa voix revient au milieu de la réplique (la génération n'est pas annulée) ; (2) coupure audible de la piste, distante ou locale, sous `flutter_webrtc` Linux (Q-79) ; (3) lisibilité de la réplique à une ligne.
 
 ## Zone Rejeu et acte 4 (010, 2026-10-30)
 
@@ -83,8 +95,8 @@ FR-09 livrée ; la fiche ne détaille pas les commandes : détails tranchés par
 | Écoute | Le speaker parle | L'orbe suit le volume de la voix |
 | Réflexion | Les agents travaillent | Rotation, agents allumés dans le rail |
 | Parole | L'IA parle | L'orbe suit la voix de l'IA |
-| Interrompue | Le speaker vient de couper l'IA | Arrêt net, bref flash, retour à « Écoute » ; **livré par 011** sur « Stop » (orbe à niveau 0, son distant coupé, réplique tronquée) |
-| Micro coupé | Le speaker a coupé son micro | Orbe grisé barré |
+| Interrompue | Le speaker vient de couper l'IA | Arrêt net, bref flash, retour à « Écoute » ; **livré par 011** sur « Stop » (orbe à niveau 0, son distant coupé, réplique tronquée) ; **014** : aussi par « Faire taire » (bouton, `Échap`) et sur une correction en vol |
+| Micro coupé | Le speaker a coupé son micro | Orbe grisé barré ; **livré par 014** comme un **voile** (disque grisé barré de 64 px, libellé « Micro coupé » à 24 px sous l'orbe) posé **par-dessus** la phase réelle de l'IA : ce n'est pas une phase de l'orbe, donc « Faire taire » reste possible micro coupé |
 | Secours | Rejeu d'une session enregistrée | Indicateur discret dans un coin — **retiré (pdr-0032)** |
 
 Transitions déduites de la fiche (synthèse de l'assistant, à relire) :
@@ -95,14 +107,14 @@ stateDiagram-v2
     Repos --> Ecoute : le speaker parle
     Ecoute --> Reflexion : fin de phrase, agents sollicités
     Reflexion --> Parole : l'IA commente (RG-04)
-    Parole --> Interrompue : le speaker parle (FR-13) ou raccourci silence (FR-20)
-    Interrompue --> Ecoute : silence de 3 s ou 15 s au plus (011)
+    Parole --> Interrompue : mot d'arrêt (FR-13), « Faire taire » ou Échap (FR-20), correction en vol (FR-17)
+    Interrompue --> Ecoute : silence de 3 s ou 15 s au plus (011) ; correction : première délégation d'offset ≥ at_ms (014)
     Parole --> Repos : fin de réplique
-    Repos --> MicroCoupe : touche M (FR-12)
-    MicroCoupe --> Repos : touche M
 ```
 
-⚠️ **À voir avec le porteur en répétition** (détail tranché par la boucle sous pdr-0062, la fiche ne chiffre pas la durée) : « Interrompue » est tenue jusqu'à 3 s de silence (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`) ou 15 s au plus, pas seulement un flash ; la transition « immédiat » du schéma est une déduction de l'assistant. Couper la parole **sans** dire « Stop » ne passe pas par « Interrompue » (S-05 en partie, Q-77).
+Le micro coupé est **orthogonal** à ces phases (voile par-dessus, pas d'état de l'orbe) : bouton « Couper le micro » ou touche M (FR-12) pour le couper, bouton « Rétablir le micro » ou M pour le rétablir ; un nouveau démarrage ou une fermeture de session repartent micro actif.
+
+⚠️ **À voir avec le porteur en répétition** (détail tranché par la boucle sous pdr-0062, la fiche ne chiffre pas la durée) : « Interrompue » est tenue jusqu'à 3 s de silence (`GENESIS_INTERRUPT_RESUME_SILENCE_MS`) ou 15 s au plus, pas seulement un flash ; la transition « immédiat » du schéma est une déduction de l'assistant. Couper la parole **sans** dire « Stop » ni mot de correction ne passe pas par « Interrompue » (S-05 en partie, Q-77).
 
 L'état Secours et la transition « touche B » (FR-10) sont retirés par [pdr-0032](../decisions/pdr-0032-obs-video-fallback-a2ui-replay-act.md) : le secours est une vidéo gérée par le porteur.
 
@@ -122,16 +134,16 @@ Tranché (E5 · Q-05, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-
 
 | Touche | Action | Exigence |
 |---|---|---|
-| Espace | Faire taire l'IA | FR-20 |
-| M | Couper ou rétablir le micro | FR-12 |
+| ~~Espace~~ → **Échap** | Faire taire l'IA | FR-20 ; **livré par 014** : `Échap` à la place d'`Espace` (écart à la fiche, [pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D2 : sur desktop `Espace` active le bouton focalisé) ; bouton « Faire taire » d'abord (pdr-0033) |
+| M | Couper ou rétablir le micro | FR-12 ; **livré par 014** (facultatif, bouton « Couper le micro » d'abord, pdr-0033) |
 | P | Déplier ou replier le flux du protocole | FR-05 (zone flux) |
 | R | Remettre le canevas à vide | FR-11 ; **non fourni** : bouton « Remettre à vide » (007, [pdr-0033](../decisions/pdr-0033-optional-shortcuts-mouse-first.md)) |
 | ~~B~~ | ~~Basculer en mode secours~~ | ~~FR-10~~ retirée (pdr-0032) |
 | ← / → | Reculer ou avancer dans le rejeu | FR-09 ; **non fourni** (010) : pas de pas-à-pas : lecture, pause et vitesse suffisent (Q-52 → [pdr-0059](../decisions/pdr-0059-acts-2-3-and-replay-simplifications.md)) |
 
 Points d'attention (assistant) :
-- Sur desktop, Espace active aussi le bouton qui a le focus (par exemple « Bloquer la release ») ; un raccourci Flutter ne se déclenche que dans le sous-arbre focalisé ([ux-desktop-shortcuts], [ux-desktop-focus]).
-- NFR-12 est assoupli (pdr-0033) : une action critique sans raccourci fiable reste faisable à la souris.
+- Sur desktop, Espace active aussi le bouton qui a le focus (par exemple « Bloquer la release ») : c'est pourquoi 014 retient `Échap` ; un raccourci Flutter ne se déclenche que dans le sous-arbre focalisé ([ux-desktop-shortcuts], [ux-desktop-focus]).
+- NFR-12 est assoupli (pdr-0033) : une action critique sans raccourci fiable reste faisable à la souris. Depuis 014, la page porte `Focus(autofocus)` + `Shortcuts`/`Actions` : `M` et `Échap` répondent sans clic préalable et après un clic sur un bouton qui se désactive ; sans effet hors session ([pdr-0076](../decisions/pdr-0076-014-silence-mic-correction-assistant-decided.md) D5).
 
 ## Barre supérieure : transcription
 

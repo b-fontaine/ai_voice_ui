@@ -306,6 +306,10 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
     await tester.pumpWidget(const SizedBox());
+    // Le démontage du nœud de focus de la page (raccourcis, 014) programme une
+    // frame de plus : la boucle d'attente de la capture en consomme une par
+    // `pump` dans ce banc, sans quoi elle attendrait la suivante.
+    await tester.pump();
     await tester.runAsync(() async {
       final deadline = DateTime.now().add(const Duration(seconds: 5));
       while (exitCodes.isEmpty && DateTime.now().isBefore(deadline)) {

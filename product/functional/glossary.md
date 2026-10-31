@@ -3,9 +3,9 @@ id: p-fn-glossary
 title: Glossaire
 area: functional
 status: draft
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf, knowledge:genui-a2ui-overview, knowledge:rt-barge-in]
-links: [p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0032-obs-video-fallback-a2ui-replay-act]
+links: [pdr-0076-014-silence-mic-correction-assistant-decided, p-ar-voice-interruption, p-fn-screen, p-fn-catalog, p-fn-business-rules, p-fn-mockups, genui-a2ui-overview, genui-overview, genui-multiple-surfaces, genui-data-model, genui-catalog-ids, genui-a2a-connector, rt-barge-in, rt-echo-cancellation, rt-ephemeral-keys, ma-target-architecture, pdr-0013-orchestrator-visible-agent-selection, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0032-obs-video-fallback-a2ui-replay-act]
 tags: [glossaire, vocabulaire]
 ---
 # Glossaire
@@ -47,8 +47,9 @@ tags: [glossaire, vocabulaire]
 | **Barge-in** | Le speaker coupe la parole à l'IA en parlant ; l'IA se tait et écoute. | FR-13 ; [rt-barge-in] |
 | **Interruption** | Résultat d'un barge-in ou du raccourci « silence » ; ne détruit pas les surfaces. | FR-15, FR-19, FR-20 |
 | **Annulation** | « Stop » / « annule » : arrête la voix et la génération ; retire les surfaces inachevées. | FR-16 |
-| **Correction** | Nouvelle consigne en cours de génération (« non, plutôt iOS ») qui réoriente sans repartir de zéro. | FR-17 |
-| **Silence (raccourci)** | Touche qui fait taire l'IA sans fermer la session. | FR-20 |
+| **Correction** | Nouvelle consigne en cours de génération (« non, plutôt iOS ») qui réoriente sans repartir de zéro. Depuis 014, repérée par un **mot de correction** de tête (`VOICE_CORRECTION_WORDS`) ; elle annule la génération en vol et remplace la demande antérieure. | FR-17 ; [p-ar-voice-interruption](../architecture/voice-interruption.md) |
+| **Silence / Faire taire** | Bouton « Faire taire » (ou touche `Échap`, facultative) qui coupe la voix de l'IA sans fermer la session ni annuler la génération (livré par 014). | FR-20 |
+| **Micro coupé** | Voile « Micro coupé » sur l'orbe : la piste micro locale est désactivée, la capture continue, la session reste ouverte (bouton ou touche `M`, 014). Ce n'est pas une phase de l'orbe. | FR-12 |
 | **AEC** | Annulation d'écho acoustique ; empêche l'IA de s'entendre dans la sono et de se couper. | [rt-echo-cancellation] |
 | **Jeton éphémère** | Identifiant de session de courte durée fourni par le backend ; jamais de clé longue durée dans l'app. | NFR-09 ; [rt-ephemeral-keys] |
 

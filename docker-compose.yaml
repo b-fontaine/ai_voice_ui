@@ -71,6 +71,8 @@ services:
       REQUEST_WINDOW_MARGIN: ${REQUEST_WINDOW_MARGIN:-400ms}
       # « Stop » vocal (pdr-0069) : mots d'arrêt (liste vide = détecteur coupé), énoncé, confirmation, anti-rebond.
       VOICE_STOP_WORDS: ${VOICE_STOP_WORDS:-stop,tais-toi,annule,arrête}
+      # Correction en vol (pdr-0076 D3) : mots de correction de tête (liste vide = détection coupée) ; mêmes délais que les mots d'arrêt.
+      VOICE_CORRECTION_WORDS: ${VOICE_CORRECTION_WORDS:-non,plutôt,en fait}
       VOICE_STOP_UTTERANCE_GAP: ${VOICE_STOP_UTTERANCE_GAP:-1500ms}
       VOICE_STOP_MAX_WORDS: ${VOICE_STOP_MAX_WORDS:-4}
       VOICE_STOP_SETTLE: ${VOICE_STOP_SETTLE:-400ms}

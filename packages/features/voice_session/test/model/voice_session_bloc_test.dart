@@ -108,6 +108,51 @@ void main() {
     expect(states, const <VoiceSessionStatus>[Idle(), Connecting(), Active()]);
   });
 
+  test('VoiceMicMuteRequested : valeur cible, jamais une bascule', () async {
+    final VoiceSessionBloc bloc = VoiceSessionBloc(h.session);
+    bloc.add(const VoiceSessionSubscribed());
+    bloc.add(const VoiceSessionStarted());
+    await pumpEventQueue();
+
+    bloc
+      ..add(const VoiceMicMuteRequested(true))
+      ..add(const VoiceMicMuteRequested(true));
+    await pumpEventQueue();
+    expect(bloc.state, const Active(micMuted: true));
+    expect(h.transports.single.micEnabled, isFalse);
+
+    bloc.add(const VoiceMicMuteRequested(false));
+    await pumpEventQueue();
+    expect(bloc.state, const Active());
+    expect(h.transports.single.micEnabled, isTrue);
+    await bloc.close();
+  });
+
+  test('VoiceMicMuteRequested en Idle et Connecting : sans effet', () async {
+    final VoiceSessionBloc bloc = VoiceSessionBloc(h.session);
+    final Completer<String> offer = Completer<String>();
+    h.onNewTransport = (t) => t.offerHook = () => offer.future;
+    bloc.add(const VoiceSessionSubscribed());
+    bloc.add(const VoiceMicMuteRequested(true));
+    await pumpEventQueue();
+    expect(bloc.state, const Idle());
+
+    bloc.add(const VoiceSessionStarted());
+    await pumpEventQueue();
+    bloc.add(const VoiceMicMuteRequested(true));
+    await pumpEventQueue();
+    expect(bloc.state, const Connecting());
+    expect(
+      h.transports.single.calls.where((c) => c.startsWith('setMic')),
+      isEmpty,
+    );
+
+    offer.complete('offer-1');
+    await pumpEventQueue();
+    expect(bloc.state, const Active());
+    await bloc.close();
+  });
+
   test('close() ne dispose pas la session', () async {
     final VoiceSessionBloc bloc = VoiceSessionBloc(h.session);
     bloc.add(const VoiceSessionSubscribed());

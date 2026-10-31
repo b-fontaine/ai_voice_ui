@@ -18,7 +18,7 @@ import (
 const forwardQueue = 256
 
 type fwItem struct {
-	what string // "transcript", "delegation" ou "interrupt"
+	what string // "transcript", "delegation", "interrupt" ou "supersede"
 	fn   func()
 }
 
@@ -74,7 +74,7 @@ func (f *forwarder) submit(what string, fn func()) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if len(f.items) >= forwardQueue {
-		if what != "delegation" && what != "interrupt" { // jamais abandonnés
+		if what != "delegation" && what != "interrupt" && what != "supersede" { // jamais abandonnés
 			f.log.Warn("file de délégations pleine : événement abandonné", "session", f.session, "event", what)
 			return
 		}
@@ -119,6 +119,17 @@ func (f *forwarder) interrupt(atMs int64) {
 		return
 	}
 	f.submit("interrupt", func() { f.dg.Interrupt(atMs) })
+}
+
+// supersede transmet une correction de l'utilisateur (spec 014), dans l'ordre comme un
+// arrêt : après les transcripts déjà reçus, dont celui du mot de correction. announce
+// publie voice.interrupted ; il est appelé par la gestion des délégations, depuis la
+// goroutine du forwarder, avant toute compensation. Jamais abandonné.
+func (f *forwarder) supersede(atMs int64, announce func()) {
+	if f == nil {
+		return
+	}
+	f.submit("supersede", func() { f.dg.Supersede(atMs, announce) })
 }
 
 // shutdown vide la file (borné par guard), puis appelle SessionDelegations.Close

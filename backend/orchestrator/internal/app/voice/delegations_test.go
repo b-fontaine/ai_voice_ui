@@ -33,6 +33,10 @@ type fakeSessionDelegations struct {
 	interrupts     []int64       // at_ms des Interrupt reçus
 	interruptFirst []bool        // voice.interrupted était déjà publié à l'appel
 	interruptGate  chan struct{} // si non nil : Interrupt bloque jusqu'à sa fermeture
+
+	supersedes   []int64  // at_ms des Supersede reçus
+	skipAnnounce bool     // Supersede ne retient pas la condition : announce n'est pas appelé
+	order        []string // "transcript", "delegate", "interrupt" ou "supersede", dans l'ordre d'arrivée
 }
 
 type delegateCall struct {
@@ -44,6 +48,25 @@ func (f *fakeSessionDelegations) Transcript(ev port.LiveEvent) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.transcripts = append(f.transcripts, ev)
+	f.order = append(f.order, "transcript")
+}
+
+// Supersede enregistre la correction ; announce, s'il est fourni, est appelé comme le fait
+// la vraie implémentation (une fois, hors verrou).
+func (f *fakeSessionDelegations) Supersede(atMs int64, announce func()) {
+	f.mu.Lock()
+	f.supersedes = append(f.supersedes, atMs)
+	f.order = append(f.order, "supersede")
+	f.mu.Unlock()
+	if announce != nil && !f.skipAnnounce {
+		announce()
+	}
+}
+
+func (f *fakeSessionDelegations) supersedeCalls() []int64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]int64(nil), f.supersedes...)
 }
 
 // Interrupt enregistre l'arrêt et si voice.interrupted le précédait (spec 011, T15).
@@ -51,6 +74,7 @@ func (f *fakeSessionDelegations) Interrupt(atMs int64) {
 	published := len(f.sink.ofType(domain.TypeVoiceInterrupted)) > 0
 	f.mu.Lock()
 	f.interrupts = append(f.interrupts, atMs)
+	f.order = append(f.order, "interrupt")
 	f.interruptFirst = append(f.interruptFirst, published)
 	gate := f.interruptGate
 	f.mu.Unlock()
@@ -78,6 +102,7 @@ func (f *fakeSessionDelegations) Delegate(id string, offsetMs int64) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.delegated = append(f.delegated, delegateCall{id, offsetMs})
+	f.order = append(f.order, "delegate")
 }
 
 func (f *fakeSessionDelegations) Close(ctx context.Context) {
@@ -367,6 +392,7 @@ func (o *orderDelegations) Open(string, time.Time, port.VoiceReply) port.Session
 func (o *orderDelegations) Transcript(port.LiveEvent) {}
 func (o *orderDelegations) Close(context.Context)     {}
 func (o *orderDelegations) Interrupt(int64)           {}
+func (o *orderDelegations) Supersede(int64, func())   {}
 func (o *orderDelegations) Delegate(string, int64) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -435,8 +461,9 @@ func (g *gatedTranscripts) Delegate(id string, _ int64) {
 	g.dlgIDs = append(g.dlgIDs, id)
 	g.mu.Unlock()
 }
-func (g *gatedTranscripts) Interrupt(int64)       {}
-func (g *gatedTranscripts) Close(context.Context) {}
+func (g *gatedTranscripts) Interrupt(int64)         {}
+func (g *gatedTranscripts) Supersede(int64, func()) {}
+func (g *gatedTranscripts) Close(context.Context)   {}
 
 // La file saturée de transcripts n'abandonne jamais une délégation : le plus
 // ancien transcript en attente est abandonné à sa place.
@@ -486,4 +513,48 @@ func TestDeleteWithSlowAgentCancelReturns204(t *testing.T) {
 	if got := live.hangupCalls(); len(got) != 0 {
 		t.Fatalf("raccrochage inattendu après une fermeture confirmée : %v", got)
 	}
+}
+
+// Un Supersede est transmis dans l'ordre d'arrivée, après les transcripts déjà reçus, et
+// n'est jamais abandonné quand la file est saturée de transcripts.
+func TestForwarderKeepsSupersedeInOrderAndNeverDropsIt(t *testing.T) {
+	sink := &testSink{}
+	sess := &fakeSessionDelegations{sink: sink}
+	gate := make(chan struct{})
+	f := newForwarder(&gatedSupersede{fakeSessionDelegations: sess, gate: gate}, "s", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	for i := 0; i < forwardQueue+50; i++ {
+		f.transcript(port.LiveEvent{Type: port.EventInputTranscriptDelta, Text: strconv.Itoa(i)})
+	}
+	f.delegate("d1", 10)
+	called := make(chan struct{}, 1)
+	f.supersede(2000, func() { called <- struct{}{} })
+	f.interrupt(3000)
+	close(gate)
+	f.shutdown(5 * time.Second)
+	if got := sess.supersedeCalls(); !slices.Equal(got, []int64{2000}) {
+		t.Fatalf("Supersede reçus = %v, attendu [2000]", got)
+	}
+	select {
+	case <-called:
+	default:
+		t.Fatal("announce n'a pas été transmis")
+	}
+	sess.mu.Lock()
+	defer sess.mu.Unlock()
+	n := len(sess.order)
+	if n < 3 || !slices.Equal(sess.order[n-3:], []string{"delegate", "supersede", "interrupt"}) {
+		t.Fatalf("ordre = %v, attendu delegate, supersede, interrupt en dernier", sess.order[max(0, n-4):])
+	}
+}
+
+// gatedSupersede retient le premier Transcript jusqu'à l'ouverture de gate.
+type gatedSupersede struct {
+	*fakeSessionDelegations
+	gate chan struct{}
+	once sync.Once
+}
+
+func (g *gatedSupersede) Transcript(ev port.LiveEvent) {
+	g.once.Do(func() { <-g.gate })
+	g.fakeSessionDelegations.Transcript(ev)
 }
