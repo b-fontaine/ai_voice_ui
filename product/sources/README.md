@@ -3,7 +3,7 @@ id: p-sources
 title: Sources primaires du produit
 area: meta
 status: draft
-updated: 2026-10-29
+updated: 2026-10-31
 sources: [product/sources/product-description.pdf, product/sources/design-example.pdf]
 links: [p-readme, p-conventions, p-fn-vision, p-fn-mockups, p-rm-open-questions, pdr-0017-source-hierarchy-sheet-over-mockups]
 tags: [sources, fiche-produit, maquettes, meta]
@@ -18,6 +18,7 @@ tags: [sources, fiche-produit, maquettes, meta]
 |---|---|---|---|---|
 | [product-description.pdf](product-description.pdf) | Fiche produit « Genesis Canvas », 12 pages, 8 sections (voir ci-dessous) | Benoît FONTAINE (porteur), 2026-10-28 | **Source validée** : fait foi pour le fonctionnel | Toute la zone [functional/](../functional/), [roadmap](../roadmap/roadmap.md), PDR 0001 à 0012 |
 | [design-example.pdf](design-example.pdf) | 3 maquettes haute fidélité « Genesis Canvas — Release Copilot » : canevas vide, construction de l'acte 1, transformation de l'acte 2 | Porteur, reçu le 2026-10-28 | **Illustration de la vision** ([pdr-0017](../decisions/pdr-0017-source-hierarchy-sheet-over-mockups.md)) : jamais suivie à la lettre, sans portée technique ; la fiche l'emporte | [mockups.md](../functional/mockups.md), [dataset.md](../functional/dataset.md), [catalog.md](../functional/catalog.md) |
+| [2026-10-31-repetition-micro.md](2026-10-31-repetition-micro.md) | Chronologie de la répétition au micro sur enceinte (session `live_u1_Ef1QQp3oN96GfiTZR7ZnprkjEOFxfWzm`), tirée du journal de session | Assistant (mesures) et porteur (ressenti), 2026-10-31 | **Observation datée** : ne fonde aucune exigence ; alimente Q-67, Q-75, Q-78 à Q-80, Q-89 et la fonctionnalité 016 | [open-questions.md](../roadmap/open-questions.md), [backlog.md](../roadmap/backlog.md) |
 
 ## Plan de la fiche produit
 

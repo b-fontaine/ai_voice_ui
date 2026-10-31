@@ -3,7 +3,7 @@ id: pdr-0066-010-act4-replay-details-assistant-decided
 title: "PDR-0066 — Acte 4 (J6) : journal client en mémoire, rejeu par le même gate, vitesses discrètes, gaps plafonnés"
 area: decisions
 status: validated
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/plan.md, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4]
 links: [p-rm-open-questions, p-fn-screen, p-fn-business-rules, p-fn-requirements, p-ar-replay, p-ar-frontend-screen, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0053-client-side-a2ui-validation-from-007, pdr-0054-stage-screen-orb-acts-checklist, pdr-0059-acts-2-3-and-replay-simplifications, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0065-009-act3-interact-details-assistant-decided, genui-a2ui-messages, genui-multiple-surfaces]
 tags: [pdr, decision, acte-4, rejeu, fr-09]
@@ -65,5 +65,6 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 |---|---|---|
 | 2026-10-30 | Texte de D1 aligné sur la revue du plan (A7, pas de sérialisation) et sur la revue du code (R1, redécodage à chaque injection). | Assistant (boucle) |
 | 2026-10-30 | Acceptée sur délégation (pdr-0062) : la fiche et pdr-0032 sont muettes sur le mécanisme du rejeu et sur ses commandes ; signalée au porteur dans `specs/progress.md`. | Assistant (boucle) |
+| 2026-10-31 | **Reconfirmation de D8 par le porteur** après la répétition au micro (conversation Claude Code, 2026-10-31) : « Juste un truc sur le retour au direct, ça a complètement vidé l'écran. Si c'est le comportement normal, ça me va. » C'est le comportement documenté ([screen.md](../functional/screen.md) § Sortie : « Direct » ou « Remettre à vide » = remise à vide complète, journal vidé). | Benoît FONTAINE (porteur) ; propagé par l'assistant |
 
 Pas d'archive brute.
