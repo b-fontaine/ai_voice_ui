@@ -23,7 +23,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T21 Go — port `Supersede` + `session.Supersede`, `Window.ConsumeBefore`, garde de `Delegate`, item `"supersede"` du forwarder, faux de `delegations_test.go` · test d'abord sous `-race` : (a) correction déjà en cours non annulée ; (b) correction en file conservée puis exécutée (époque re-tamponnée) ; (c) seule une action en vol : rien publié, action non annulée ; (d) aucune fusion de l'ancien texte ; (e) délégation tardive d'offset `< at` écartée ; (f) `voice.interrupted` avant le premier `deleteSurface` et le premier `agent.activity canceled` ; K-01 à K-07 inchangés
 - [x] T23 Go — non-régression Q-74 / RD-10, **écrite avant T22** (verte avant et après) : « Concentre-toi sur Android » en vol, « et compare avec la 3.3 » en file → aucun `voice.interrupted`, ni annulation, deux exécutions dans l'ordre, focus hérité ; « Concentre-toi plutôt sur iOS » (mot non en tête) → pas de correction ; correction coupée en deux délégations (« Non, » puis « plutôt iOS ») → un seul plan
 - [x] T22 Go — branchement dans `supervise`/`stopWatch` (classifieur toujours alimenté, `Detection` porteuse du genre, `cause` publié) ; `IsStopOnly`/`OnlyStopWords` ignorent les mots de correction de tête ; demande réduite à des mots de correction non planifiée · test d'abord : transcripts scriptés → `voice.interrupted {cause: correction}` publié une fois
-- [ ] T24 Compose (session principale) — `VOICE_CORRECTION_WORDS=non,plutôt,en fait` · test d'abord : test de configuration du compose
+- [x] T24 Compose (session principale) — `VOICE_CORRECTION_WORDS=non,plutôt,en fait` · test d'abord : test de configuration du compose
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
