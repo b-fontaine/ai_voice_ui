@@ -629,7 +629,7 @@ func (w *stopWatch) noteOutput(levels []float64) {
 // feedOutput transmet au détecteur un delta de transcription de sortie.
 func (w *stopWatch) feedOutput(ev port.LiveEvent) {
 	if w.det != nil {
-		w.det.FeedOutput(ev.EndMs, ev.Text)
+		w.det.FeedOutput(ev.StartMs, ev.EndMs, ev.Text)
 	}
 }
 

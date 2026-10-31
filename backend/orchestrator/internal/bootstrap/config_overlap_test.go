@@ -161,3 +161,19 @@ func TestConfigFromEnv_VoiceOverlapRequiresSettingsWhenEnabled(t *testing.T) {
 		}
 	}
 }
+
+func TestConfigFromEnv_VoiceOverlapRefusesZeroSettle(t *testing.T) {
+	_, err := load(overlapEnv("VOICE_STOP_SETTLE", "0s"))
+	if err == nil {
+		t.Fatal("chevauchement actif et VOICE_STOP_SETTLE=0 : refus attendu")
+	}
+	for _, name := range []string{"VOICE_OVERLAP_INTERRUPT", "VOICE_STOP_SETTLE"} {
+		if !strings.Contains(err.Error(), name) {
+			t.Errorf("message %q : doit nommer %s", err, name)
+		}
+	}
+	// Chevauchement coupé : un délai nul reste accepté.
+	if _, err := load(overlapEnv("VOICE_STOP_SETTLE", "0s", "VOICE_OVERLAP_INTERRUPT", "false")); err != nil {
+		t.Errorf("chevauchement coupé et VOICE_STOP_SETTLE=0 : %v", err)
+	}
+}

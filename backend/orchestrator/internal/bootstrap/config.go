@@ -474,7 +474,13 @@ func parseVoiceStop(getenv func(string) string, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	return parseVoiceOverlap(getenv, cfg)
+	if err := parseVoiceOverlap(getenv, cfg); err != nil {
+		return err
+	}
+	if cfg.VoiceOverlap.Enabled && cfg.VoiceStopSettle == 0 {
+		return errors.New("VOICE_OVERLAP_INTERRUPT actif exige VOICE_STOP_SETTLE strictement positif (sinon le jeton ouvert est jugé aussitôt)")
+	}
+	return nil
 }
 
 // parseVoiceOverlap lit les variables VOICE_OVERLAP_* (spec 015). Valeur nulle : chevauchement

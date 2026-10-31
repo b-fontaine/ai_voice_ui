@@ -56,3 +56,23 @@ func TestO03_StopWordsShortWordsAndNoisesIgnoredNumberCounts(t *testing.T) {
 	speakerSays(scene.live, "3.3 ", 7500, 8000)
 	requireInterruptedOnce(t, scene, "« 3.3 » par-dessus l'IA", []string{causeOverlap}, 7500)
 }
+
+// O-02 (variante nombre) — Un nombre repris de l'écho de l'IA ne déclenche rien.
+//
+// Étant donné une IA qui dit « la 3.3 » ;
+// quand le speaker reprend « 3.3 » ;
+// alors rien n'est publié ;
+// témoin positif : un nombre hors écho (« 4.1 ») publie un seul voice.interrupted
+// {cause:"overlap"} à l'at_ms de cet énoncé.
+func TestO02_NumberEchoedFromAIIsIgnoredWitnessOutsideEchoTriggers(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	scene := startOverlapScene(t, ctx, false, withOverlap(overlapIgnoreWords))
+
+	aiSpeaks(scene.live, 3000, 4800, "Voici la 3.3 ", "pour Android ")
+	speakerSays(scene.live, "3.3 ", 5000, 5400)
+	requireNothingInterrupted(t, scene, "nombre « 3.3 » repris de l'écho")
+
+	speakerSays(scene.live, "4.1 ", 7000, 7400)
+	requireInterruptedOnce(t, scene, "nombre hors écho", []string{causeOverlap}, 7000)
+}

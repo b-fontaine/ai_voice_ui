@@ -105,7 +105,7 @@ func TestOverlapClassifierGuardLockedAtOpenAcrossDeltas(t *testing.T) {
 		t.Fatal(got)
 	}
 	// L'IA se tait puis reparle en cours d'énoncé : la garde reste celle de l'ouverture.
-	d.FeedOutput(5200, "Voici ")
+	d.FeedOutput(5200, 5200, "Voici ")
 	got := feedAll(d, delta{"sécurité ", 5100})
 	if len(got) != 1 || got[0].Kind != KindOverlap || got[0].AtMs != 5000 {
 		t.Fatalf("garde vraie à l'ouverture : %+v", got)
@@ -114,7 +114,7 @@ func TestOverlapClassifierGuardLockedAtOpenAcrossDeltas(t *testing.T) {
 
 func TestOverlapClassifierEchoFromOutputDeltas(t *testing.T) {
 	d, _ := newOverlapDetector(t, nil)
-	d.FeedOutput(4800, "Je vérifie Android ")
+	d.FeedOutput(4800, 4800, "Je vérifie Android ")
 	if got := feedAll(d, delta{"Android ", 5000}); len(got) != 0 {
 		t.Fatalf("écho : %+v", got)
 	}
@@ -288,5 +288,17 @@ func TestNewStopDetectorValidatesOverlap(t *testing.T) {
 	cfg.Words, cfg.CorrectionWords = nil, nil
 	if _, err := NewStopDetector(cfg, newTestClock()); err != nil {
 		t.Fatalf("chevauchement seul (sans mot d'arrêt ni de correction) : %v", err)
+	}
+}
+
+func TestNewStopDetectorRefusesOverlapWithZeroSettle(t *testing.T) {
+	cfg := overlapClassifierConfig()
+	cfg.Settle = 0
+	if _, err := NewStopDetector(cfg, newTestClock()); err == nil {
+		t.Fatal("chevauchement actif et Settle nul : refus attendu")
+	}
+	cfg.Overlap.Enabled = false
+	if _, err := NewStopDetector(cfg, newTestClock()); err != nil {
+		t.Fatalf("chevauchement coupé et Settle nul : %v", err)
 	}
 }

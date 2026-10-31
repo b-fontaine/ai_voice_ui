@@ -100,8 +100,9 @@ type echoEntry struct {
 //
 //   - Seuls les jetons fermés sont jugés (« Andr|oid », « iO|S ») : le dernier jeton ouvert
 //     l'est au delta suivant ou à Settle.
-//   - Un mot est significatif s'il est un nombre (quelle que soit sa longueur), ou s'il atteint
-//     MinWordLen runes, n'est pas ignoré et n'est pas l'écho d'un mot récemment dit par l'IA.
+//   - Un mot est significatif s'il n'est pas l'écho d'un mot récemment dit par l'IA (testé en
+//     premier, nombres compris) et s'il est un nombre (quelle que soit sa longueur, même ignoré)
+//     ou atteint MinWordLen runes sans être ignoré.
 //   - L'écho vient du texte concaténé des deltas de sortie (jetons fermés) : file (mot, end_ms)
 //     et compteur par mot, élagués sur [maxEnd − EchoWindow, maxEnd] (horloge média), plafonnés
 //     à maxOverlapEcho.
@@ -110,9 +111,10 @@ type echoEntry struct {
 //
 // Non sûr pour l'accès concurrent : à appeler depuis une seule goroutine (celle de supervise).
 type OverlapFilter struct {
-	cfg    OverlapConfig
-	clock  port.Clock
-	ignore map[string]struct{}
+	cfg          OverlapConfig
+	clock        port.Clock
+	utteranceGap time.Duration // écart de start_ms qui sépare deux répliques de l'IA
+	ignore       map[string]struct{}
 
 	// Sortie de l'IA.
 	lastSpeech time.Time
@@ -127,20 +129,22 @@ type OverlapFilter struct {
 	speaking bool // garde verrouillée à l'ouverture
 	inOpen   string
 	sig      map[string]struct{} // mots significatifs distincts
-	reported bool
 }
 
 // NewOverlapFilter valide cfg (comme s'il était actif) et construit le filtre.
-func NewOverlapFilter(cfg OverlapConfig, clock port.Clock) (*OverlapFilter, error) {
+func NewOverlapFilter(cfg OverlapConfig, clock port.Clock, utteranceGap time.Duration) (*OverlapFilter, error) {
 	if clock == nil {
 		return nil, errors.New("voice : horloge requise pour le filtre de chevauchement")
+	}
+	if utteranceGap <= 0 {
+		return nil, errors.New("voice : écart d'énoncé strictement positif requis pour le filtre de chevauchement")
 	}
 	cfg.Enabled = true
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 	f := &OverlapFilter{
-		cfg: cfg, clock: clock, ignore: map[string]struct{}{},
+		cfg: cfg, clock: clock, utteranceGap: utteranceGap, ignore: map[string]struct{}{},
 		echoCount: map[string]int{}, sig: map[string]struct{}{},
 	}
 	for _, w := range cfg.IgnoreWords {
@@ -165,19 +169,30 @@ func (f *OverlapFilter) markSpeech() {
 }
 
 // FeedOutput ingère un delta de transcription de sortie (qui fait aussi parler l'IA) ; endMs
-// est son end_ms (horloge média). Les jetons qu'il ferme entrent dans le mémo d'écho.
-func (f *OverlapFilter) FeedOutput(endMs int64, text string) {
+// est son end_ms et startMs son start_ms (horloge média). Les jetons qu'il ferme entrent dans le
+// mémo d'écho ; si startMs dépasse le dernier end_ms d'au moins UtteranceGap, le jeton resté ouvert
+// (dernier mot d'une réplique sans ponctuation) y entre aussi, au lieu de se coller au suivant.
+func (f *OverlapFilter) FeedOutput(startMs, endMs int64, text string) {
 	f.markSpeech()
+	if f.outOpen != "" && f.hasEnd && startMs-f.maxEnd >= f.utteranceGap.Milliseconds() {
+		// Nouvelle réplique : le dernier mot de la précédente (sans ponctuation finale) est complet.
+		f.addEcho(f.outOpen, f.maxEnd)
+		f.outOpen = ""
+	}
 	if !f.hasEnd || endMs > f.maxEnd {
 		f.maxEnd, f.hasEnd = endMs, true
 	}
 	var done []string
 	done, f.outOpen = splitClosed(f.outOpen, text)
 	for _, w := range done {
-		f.echo = append(f.echo, echoEntry{w, endMs})
-		f.echoCount[w]++
+		f.addEcho(w, endMs)
 	}
 	f.pruneEcho()
+}
+
+func (f *OverlapFilter) addEcho(word string, endMs int64) {
+	f.echo = append(f.echo, echoEntry{word, endMs})
+	f.echoCount[word]++
 }
 
 // pruneEcho retire les mots hors de [maxEnd − EchoWindow, maxEnd], puis les plus anciens
@@ -209,30 +224,27 @@ func (f *OverlapFilter) forgetEcho(word string) {
 // l'énoncé précédent est remis à zéro.
 func (f *OverlapFilter) Open() {
 	f.speaking = f.hasSpeech && f.clock.Now().Sub(f.lastSpeech) <= f.cfg.SpeakingWindow
-	f.inOpen, f.reported = "", false
+	f.inOpen = ""
 	clear(f.sig)
 }
 
-// Input ingère un delta d'entrée de l'énoncé courant. Il rend true une seule fois par
-// énoncé, quand les mots significatifs fermés atteignent MinWords alors que l'IA parlait à
-// l'ouverture.
-func (f *OverlapFilter) Input(text string) bool {
+// Input ingère un delta d'entrée de l'énoncé courant. Le verdict se lit par Triggered ; l'appelant
+// (StopDetector) ne tranche qu'une fois par énoncé.
+func (f *OverlapFilter) Input(text string) {
 	var done []string
 	done, f.inOpen = splitClosed(f.inOpen, text)
 	for _, w := range done {
 		f.judge(w)
 	}
-	return f.latch()
 }
 
 // Settle juge le jeton ouvert comme s'il était fermé (aucun nouveau delta n'est venu).
-func (f *OverlapFilter) Settle() bool {
+func (f *OverlapFilter) Settle() {
 	if f.inOpen != "" {
 		w := f.inOpen
 		f.inOpen = ""
 		f.judge(w)
 	}
-	return f.latch()
 }
 
 // Pending indique qu'un jeton ouvert attend Settle ou le delta suivant : l'IA parlait à
@@ -241,19 +253,14 @@ func (f *OverlapFilter) Pending() bool {
 	return f.speaking && f.inOpen != "" && !f.Triggered()
 }
 
-// Triggered indique que l'énoncé courant remplit la condition (état, sans consommer le
-// verrou « une seule fois » de Input et Settle).
+// Triggered indique que l'énoncé courant remplit la condition : l'IA parlait à l'ouverture et
+// les mots significatifs fermés atteignent MinWords.
 func (f *OverlapFilter) Triggered() bool {
 	return f.speaking && len(f.sig) >= f.cfg.MinWords
 }
 
-func (f *OverlapFilter) latch() bool {
-	if f.reported || !f.Triggered() {
-		return false
-	}
-	f.reported = true
-	return true
-}
+// SpeakingAtOpen indique que l'IA parlait à l'ouverture de l'énoncé courant (garde verrouillée).
+func (f *OverlapFilter) SpeakingAtOpen() bool { return f.speaking }
 
 func (f *OverlapFilter) judge(word string) {
 	if !f.speaking {
@@ -265,16 +272,17 @@ func (f *OverlapFilter) judge(word string) {
 }
 
 func (f *OverlapFilter) significant(word string) bool {
+	if f.echoCount[word] > 0 || word == f.outOpen {
+		return false // l'écho est testé en premier, nombres compris
+	}
 	if isNumber(word) {
-		return true
+		return true // dispensé de la longueur minimale et de la liste ignorée
 	}
 	if utf8.RuneCountInString(word) < f.cfg.MinWordLen {
 		return false
 	}
-	if _, ok := f.ignore[word]; ok {
-		return false
-	}
-	return f.echoCount[word] == 0
+	_, ignored := f.ignore[word]
+	return !ignored
 }
 
 // splitClosed concatène text au jeton ouvert, rend les jetons désormais fermés et le nouveau

@@ -106,16 +106,17 @@ type StopDetector struct {
 	overlap *OverlapFilter
 
 	// Énoncé courant.
-	started   bool
-	text      string
-	lastStart int64     // start_ms du dernier delta
-	lastAt    time.Time // instant (horloge injectée) du dernier delta
-	fired     bool      // l'énoncé a déjà été tranché (déclenché ou écarté)
-	cand      *int64    // start_ms du delta qui a fait apparaître le mot d'arrêt, en attente
-	nWords    int       // mots de l'énoncé (hors mots de correction de tête) à la dernière évaluation
-	corrAt    *int64    // start_ms du delta qui a porté le premier mot de correction de tête
-	openAt    int64     // start_ms du premier delta de l'énoncé (at_ms d'un chevauchement)
-	overlapOK bool      // la dernière évaluation a classé l'énoncé en candidat au chevauchement
+	started     bool
+	text        string
+	lastStart   int64     // start_ms du dernier delta
+	lastAt      time.Time // instant (horloge injectée) du dernier delta
+	fired       bool      // l'énoncé a déjà été tranché (déclenché ou écarté)
+	cand        *int64    // start_ms du delta qui a fait apparaître le mot d'arrêt, en attente
+	nWords      int       // mots de l'énoncé (hors mots de correction de tête) à la dernière évaluation
+	corrAt      *int64    // start_ms du delta qui a porté le premier mot de correction de tête
+	openAt      int64     // start_ms du premier delta de l'énoncé (at_ms d'un chevauchement)
+	overlapOK   bool      // la dernière évaluation a classé l'énoncé en candidat au chevauchement
+	overlapText string    // texte évalué par evaluateOverlap (hors mots de correction de tête), pour settle
 
 	ready       *Detection // détection confirmée, à rendre au prochain SettleNow
 	hasTrigger  bool
@@ -135,6 +136,8 @@ func NewStopDetector(cfg StopConfig, clock port.Clock) (*StopDetector, error) {
 		return nil, fmt.Errorf("voice : MaxWords doit être compris entre 1 et %d", MaxStopUtteranceWords)
 	case cfg.Settle < 0 || cfg.Debounce < 0:
 		return nil, errors.New("voice : délais du détecteur négatifs")
+	case cfg.Overlap.Enabled && cfg.Settle == 0:
+		return nil, errors.New("voice : le chevauchement exige un délai de confirmation strictement positif (Settle), sans quoi le jeton ouvert est jugé aussitôt")
 	}
 	if err := ValidateStopWords(cfg.Words); err != nil {
 		return nil, err
@@ -147,7 +150,7 @@ func NewStopDetector(cfg StopConfig, clock port.Clock) (*StopDetector, error) {
 		d.corr = stopword.New(cfg.CorrectionWords)
 	}
 	if cfg.Overlap.Enabled {
-		f, err := NewOverlapFilter(cfg.Overlap, clock)
+		f, err := NewOverlapFilter(cfg.Overlap, clock, cfg.UtteranceGap)
 		if err != nil {
 			return nil, err
 		}
@@ -246,7 +249,7 @@ func (d *StopDetector) settle() *Detection {
 	}
 	if d.overlapOK && !d.fired && d.overlap.Pending() {
 		d.overlap.Settle()
-		return d.evaluateOverlap(d.text)
+		return d.evaluateOverlap(d.overlapText)
 	}
 	return nil
 }
@@ -279,7 +282,7 @@ func (d *StopDetector) PendingFor() (time.Duration, bool) {
 }
 
 func (d *StopDetector) reset() {
-	d.text, d.fired, d.cand, d.nWords, d.corrAt, d.overlapOK = "", false, nil, 0, nil, false
+	d.text, d.fired, d.cand, d.nWords, d.corrAt, d.overlapOK, d.overlapText = "", false, nil, 0, nil, false, ""
 }
 
 // evaluate cherche le mot d'arrêt en tête de l'énoncé courant. start est le start_ms du
@@ -341,7 +344,7 @@ func (d *StopDetector) evaluateCorrection(rest string) *Detection {
 	if !d.accept(at) {
 		return nil
 	}
-	return &Detection{AtMs: at, Kind: KindCorrection, Speaking: d.overlap != nil && d.overlap.speaking}
+	return &Detection{AtMs: at, Kind: KindCorrection, Speaking: d.overlap != nil && d.overlap.SpeakingAtOpen()}
 }
 
 // evaluateOverlap tranche un énoncé qui n'est ni une correction ni un arrêt (spec 015, B3) :
@@ -354,7 +357,7 @@ func (d *StopDetector) evaluateOverlap(text string) *Detection {
 	if d.match.CouldStart(text) || (d.corr != nil && d.corr.CouldStart(text)) {
 		return nil
 	}
-	d.overlapOK = true
+	d.overlapOK, d.overlapText = true, text
 	if !d.overlap.Triggered() {
 		return nil
 	}
@@ -431,9 +434,9 @@ func (d *StopDetector) NoteOutput(level float64) {
 }
 
 // FeedOutput informe le détecteur d'un delta de transcription de sortie : garde « l'IA
-// parle » et mémo d'écho. endMs est son end_ms. Sans effet quand le chevauchement est coupé.
-func (d *StopDetector) FeedOutput(endMs int64, text string) {
+// parle » et mémo d'écho. startMs et endMs sont ses start_ms et end_ms. Sans effet quand le chevauchement est coupé.
+func (d *StopDetector) FeedOutput(startMs, endMs int64, text string) {
 	if d.overlap != nil {
-		d.overlap.FeedOutput(endMs, text)
+		d.overlap.FeedOutput(startMs, endMs, text)
 	}
 }
