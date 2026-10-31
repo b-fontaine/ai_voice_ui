@@ -113,6 +113,7 @@ func (s *session) beginRun(d Delegation) (ctx context.Context, end func(), ok bo
 	}
 	runCtx, cancel := context.WithCancelCause(s.ctx)
 	s.cancelRun = cancel
+	s.runOffset = d.OffsetMs
 	return withSessionContext(runCtx, s.ctx), func() {
 		s.mu.Lock()
 		s.cancelRun = nil
