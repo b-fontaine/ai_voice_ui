@@ -25,20 +25,25 @@ void main() {
     });
   }
 
-  Future<void> pumpBoard(WidgetTester tester, {String? highlightedSurfaceId}) =>
-      tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: BlocProvider<CanvasBloc>.value(
-            value: bloc,
-            child: CanvasBoard(
-              key: const Key('canvas-board'),
-              controller: controller,
-              highlightedSurfaceId: highlightedSurfaceId,
-            ),
+  late ValueNotifier<String?> highlight;
+
+  Future<void> pumpBoard(WidgetTester tester, {String? highlightedSurfaceId}) {
+    highlight = ValueNotifier<String?>(highlightedSurfaceId);
+    addTearDown(highlight.dispose);
+    return tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: BlocProvider<CanvasBloc>.value(
+          value: bloc,
+          child: CanvasBoard(
+            key: const Key('canvas-board'),
+            controller: controller,
+            highlight: highlight,
           ),
         ),
-      );
+      ),
+    );
+  }
 
   /// Les events du Bloc sont traités en différé : on laisse passer quelques
   /// cadres pour que chaque état émis soit rendu.
@@ -546,7 +551,7 @@ void main() {
       await createTwo(tester, highlighted: 'kpi');
       final Element before = tester.element(find.byType(Surface));
 
-      await pumpBoard(tester, highlightedSurfaceId: 'trend');
+      highlight.value = 'trend';
       await tester.pump();
 
       expect(find.byKey(const Key('highlight-kpi')), findsNothing);

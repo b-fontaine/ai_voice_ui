@@ -98,7 +98,7 @@ class _DecisionStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
     key: const Key('decision-status'),
-    duration: const Duration(milliseconds: 400),
+    duration: SceneMotion.status,
     child: DsStatusChip(
       key: ValueKey<String>(status),
       status: null,
