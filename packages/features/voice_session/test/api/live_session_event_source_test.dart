@@ -33,6 +33,17 @@ void main() {
 
   Map<String, Object?> level(num value) => <String, Object?>{'level': value};
 
+  test('faire taire : VoiceSilenced local, session toujours Active', () async {
+    final List<SessionEvent> events = collect();
+    await h.session.start();
+
+    await h.session.silenceRemote();
+    await pumpEventQueue();
+
+    expect(events, <SessionEvent>[_connecting, const VoiceSilenced()]);
+    expect(h.session.current, const Active());
+  });
+
   test(
     'un abonné branché avant le démarrage reçoit toute la séquence',
     () async {

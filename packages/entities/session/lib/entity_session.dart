@@ -15,5 +15,6 @@ export 'src/session_event.dart'
         TranscriptDelta,
         TranscriptRole,
         UsageUpdated,
-        VoiceInterrupted;
+        VoiceInterrupted,
+        VoiceSilenced;
 export 'src/session_event_source.dart' show SessionEventSource;

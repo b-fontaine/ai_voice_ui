@@ -210,6 +210,20 @@ final class VoiceInterrupted extends SessionEvent {
   int get hashCode => atMs.hashCode;
 }
 
+/// L'utilisateur a fait taire l'IA localement (bouton ou `Échap`). Événement
+/// purement local : il n'a pas d'horloge média, n'est jamais écrit dans le
+/// journal des enveloppes ni dans celui d'A2UI, et n'est jamais envoyé au
+/// backend.
+final class VoiceSilenced extends SessionEvent {
+  const VoiceSilenced();
+
+  @override
+  bool operator ==(Object other) => other is VoiceSilenced;
+
+  @override
+  int get hashCode => (VoiceSilenced).hashCode;
+}
+
 /// Perte du canal applicatif.
 final class ChannelLost extends SessionEvent {
   const ChannelLost(this.reason);

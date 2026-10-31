@@ -34,6 +34,7 @@ class FakeTransport implements VoiceTransport {
   Future<String> Function()? offerHook;
   Future<void> Function(String sdp)? answerHook;
   Future<void> Function()? stopHook;
+  Future<void> Function(bool enabled)? micHook;
 
   /// `true` une fois `stop` puis `dispose` appelés, dans cet ordre, une fois.
   bool get isReleased =>
@@ -71,6 +72,7 @@ class FakeTransport implements VoiceTransport {
   @override
   Future<void> setMicEnabled(bool enabled) async {
     _record('setMicEnabled($enabled)');
+    await micHook?.call(enabled);
     micEnabled = enabled;
   }
 

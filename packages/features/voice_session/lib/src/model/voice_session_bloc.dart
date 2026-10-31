@@ -24,6 +24,14 @@ final class VoiceSessionStopped extends VoiceSessionEvent {
   const VoiceSessionStopped();
 }
 
+/// Demande de couper ([muted] vrai) ou de rétablir le micro. Valeur cible,
+/// jamais une bascule. Sans effet hors `Active`.
+final class VoiceMicMuteRequested extends VoiceSessionEvent {
+  const VoiceMicMuteRequested(this.muted);
+
+  final bool muted;
+}
+
 /// Bloc mince : son état EST le [VoiceSessionStatus] de la [VoiceSession],
 /// qui reste l'unique machine à états. Il ne la possède pas : [close] ne
 /// l'élimine pas (propriété de la page).
@@ -39,6 +47,11 @@ class VoiceSessionBloc extends Bloc<VoiceSessionEvent, VoiceSessionStatus> {
     on<VoiceSessionStopped>(
       (_, _) => _session.stop(),
       transformer: droppable(),
+    );
+    // Les commandes s'appliquent dans l'ordre reçu.
+    on<VoiceMicMuteRequested>(
+      (event, _) => _session.setMicMuted(event.muted),
+      transformer: sequential(),
     );
   }
 

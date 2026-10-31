@@ -36,6 +36,7 @@ export 'src/model/voice_session.dart' show VoiceSession;
 export 'src/model/voice_session_bloc.dart'
     show
         VoiceSessionBloc,
+        VoiceMicMuteRequested,
         VoiceSessionEvent,
         VoiceSessionStarted,
         VoiceSessionStopped,
