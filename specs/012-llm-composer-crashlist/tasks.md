@@ -43,4 +43,4 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T52 conditionnel — si p90 de la base 011 + p90 de la passerelle > 1,5 s : squelette du plan déterministe émis avant l'appel (via `emit`) ; plan du modèle à surfaces différentes = `invalid_plan` ; jamais de `deleteSurface` · tests d'ordre des messages et d'absence de `deleteSurface`
 
 ## Clôture
-- [ ] T90 product — scénarios `features/llm-composer-012.feature`, corrections de pdr-0014, `catalog.md`, `dataset.md`, `backend.md`, `security.md`, `agents-protocols.md`, `quality.md`, roadmap/backlog, `open-questions.md`
+- [x] T90 product — scénarios `features/llm-composer-012.feature`, corrections de pdr-0014, `catalog.md`, `dataset.md`, `backend.md`, `security.md`, `agents-protocols.md`, `quality.md`, roadmap/backlog, `open-questions.md`

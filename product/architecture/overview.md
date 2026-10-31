@@ -3,9 +3,9 @@ id: p-ar-overview
 title: Vue d'ensemble de l'architecture
 area: architecture
 status: draft
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/009-j5-act3-interact/status.md, product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, product/sources/design-example.pdf, knowledge:ma-target-architecture, knowledge:ma-where-to-run-agents, knowledge:adr-0002-orchestrator-backend, knowledge:adr-0003-backend-go, knowledge:proto-protocol-map]
-links: [pdr-0065-009-act3-interact-details-assistant-decided, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-ar-stack, p-ar-replay, p-ar-security, p-ar-quality, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-screen, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-target-architecture, ma-where-to-run-agents, proto-protocol-map, genui-a2ui-security, genui-architecture, ma-filler-acknowledgements, ma-real-tool-results, rt-echo-cancellation, rt-ephemeral-keys, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-webrtc-session, rt-latency, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ux-genui-streaming-loading, pdr-0005-frozen-fictional-dataset, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0010-pinned-experimental-versions, adr-0001-initial-constraints, proj-avw-genui-bridge, proj-avw-risks, pdr-0013-orchestrator-visible-agent-selection, pdr-0026-desktop-only-target, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0050-gpt-live-client-delegation-recommended]
+links: [p-ar-llm-composer, pdr-0065-009-act3-interact-details-assistant-decided, p-ar-frontend, p-ar-backend, p-ar-agents-protocols, p-ar-stack, p-ar-replay, p-ar-security, p-ar-quality, p-ar-stage-runtime, p-fn-requirements, p-fn-nfr, p-fn-screen, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0002-desktop-platform, pdr-0006-replay-fallback-must, pdr-0011-adopt-knowledge-adrs, pdr-0012-voice-provider-openai, adr-0002-orchestrator-backend, adr-0003-backend-go, ma-target-architecture, ma-where-to-run-agents, proto-protocol-map, genui-a2ui-security, genui-architecture, ma-filler-acknowledgements, ma-real-tool-results, rt-echo-cancellation, rt-ephemeral-keys, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-webrtc-session, rt-latency, ux-desktop-shortcuts, ux-genui-catalog-as-ds, ux-genui-streaming-loading, pdr-0005-frozen-fictional-dataset, pdr-0007-closed-catalog-stage-theme, pdr-0008-single-screen-show-the-making, pdr-0010-pinned-experimental-versions, adr-0001-initial-constraints, proj-avw-genui-bridge, proj-avw-risks, pdr-0013-orchestrator-visible-agent-selection, pdr-0026-desktop-only-target, pdr-0028-linux-demo-machine, pdr-0029-local-docker-compose-hosting, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0050-gpt-live-client-delegation-recommended]
 tags: [architecture, c4, contexte, conteneurs, orchestrateur, a2a, a2ui, genui, voix]
 ---
 # Vue d'ensemble de l'architecture
@@ -45,7 +45,7 @@ flowchart LR
   be -- API --> llm
 ```
 
-Le fournisseur voix OpenAI `gpt-live-1` est **accepté** ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md)). Le LLM texte qui compose l'A2UI n'est pas choisi (voir Points ouverts).
+Le fournisseur voix OpenAI `gpt-live-1` est **accepté** ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md)). Le LLM texte qui compose l'A2UI est choisi et livré par 012 : OpenAI Responses, `gpt-6-luna`, derrière une passerelle interne de l'orchestrateur ([p-ar-llm-composer](llm-composer.md)).
 
 ## Conteneurs (C4 niveau 2)
 
@@ -139,5 +139,5 @@ Tension NFR-01 / NFR-02 (fiche §5, « point délicat ») : la voix comble l'att
 
 - ~~Où tourne le backend~~ : tranché, en local ([pdr-0029](../decisions/pdr-0029-local-docker-compose-hosting.md), Q-15).
 - ~~Topologie A2UI~~ : tranchée, chaque agent produit son A2UI ([pdr-0036](../decisions/pdr-0036-real-a2a-agents-produce-a2ui.md), Q-37).
-- **LLM texte** qui compose l'A2UI (modèle, fournisseur) : petit modèle OpenAI, choisi par mesure en J3 (Q-17 → pdr-0060).
+- **LLM texte** qui compose l'A2UI (modèle, fournisseur) : ~~petit modèle OpenAI, choisi par mesure en J3~~ : `gpt-6-luna`, livré par 012 (Q-17 → pdr-0060, [p-ar-llm-composer](llm-composer.md)).
 - ~~Fournisseur voix~~ : `gpt-live-1` accepté ([pdr-0012](../decisions/pdr-0012-voice-provider-openai.md), Q-11).

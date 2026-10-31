@@ -3,9 +3,9 @@ id: p-ar-quality
 title: Qualité, tests et mesure des NFR
 area: architecture
 status: draft
-updated: 2026-10-30
-sources: [specs/011-voice-interaction/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, specs/007-j3-act1-frontend/plan.md, specs/006-j3-act1-backend/status.md, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:test-tdd-red-green-refactor, knowledge:test-bdd-widget-test, knowledge:test-realtime-fake-runner, knowledge:ma-voice-agent-evals, knowledge:ma-otel-genai-spans]
-links: [p-ar-voice-interruption, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0048-session-log-only-no-otel-signoz, pdr-0049-sheet-gherkin-scenarios-only]
+updated: 2026-10-31
+sources: [specs/012-llm-composer-crashlist/status.md, specs/012-llm-composer-crashlist/spec.md, specs/011-voice-interaction/status.md, specs/009-j5-act3-interact/status.md, specs/008-j4-act2-transform/status.md, specs/007-j3-act1-frontend/status.md, specs/007-j3-act1-frontend/plan.md, specs/006-j3-act1-backend/status.md, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p6, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:test-tdd-red-green-refactor, knowledge:test-bdd-widget-test, knowledge:test-realtime-fake-runner, knowledge:ma-voice-agent-evals, knowledge:ma-otel-genai-spans]
+links: [p-ar-llm-composer, p-fn-feature-llm-composer-012, pdr-0074-012-llm-composer-gateway-crashlist-details, ma-openai-small-model-structured-latency, p-ar-voice-interruption, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0064-008-act2-transform-details-assistant-decided, p-fn-dataset-acts, p-ar-frontend-screen, pdr-0053-client-side-a2ui-validation-from-007, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-overview, p-ar-frontend, p-ar-backend, p-ar-replay, p-ar-stage-runtime, p-ar-stack, p-fn-requirements, p-fn-nfr, p-fn-risks-acceptance, p-fn-feature-voice-screen-generation, p-fn-feature-barge-in, p-rm-open-questions, pdr-0010-pinned-experimental-versions, test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-app-running-fixture, test-realtime-fake-runner, test-mock-boundaries-only, test-bloc-test, test-golden-alchemist, test-very-good-analysis, test-coverage-ci, bloc-no-cubit, bloc-observer, ma-voice-agent-evals, ma-otel-genai-spans, p-rm-backend-production-plan, ds-widgetbook-4-testing, ds-a11y-wcag-contrast, perf-audio-visualizer-60hz, perf-repaint-boundary, genui-test-surface-controller, genui-a2ui-security, proj-avw-risks, test-bdd-gherkin-practices, pdr-0018-a2ui-v09-genui-0-10-4, pdr-0019-six-limit-applies-to-surfaces, pdr-0030-llm-budget-20-eur, pdr-0031-github-actions-ci-linux, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0048-session-log-only-no-otel-signoz, pdr-0049-sheet-gherkin-scenarios-only]
 tags: [qualite, tdd, bdd, gherkin, ci, nfr, mesure, observabilite]
 ---
 # Qualité, tests et mesure des NFR
@@ -81,6 +81,20 @@ A1 à A5 sont propres à 007, hors les scénarios de la fiche, qui restent incha
 - **Porte** : `tools/loop/gate.sh --full` vert, **58 contrôles** ; capture `app-smoke` conforme. Goldens « Acte n/3 » inexistants : assertions de texte (écart acté). Les vrais agents finissent en 0 à 3 ms, donc S-06 n'est pas observable en direct (K-03 le simule).
 - **Non couvert** : spike T03 (`track.enabled = false` sous `flutter_webrtc` Linux, Q-79), essai réel avec micro, S-05 sans mot d'arrêt (Q-77).
 
+## Acceptation et mesure livrées par 012 (2026-10-31)
+
+| Pile | Fichier | Vérifie |
+|---|---|---|
+| Go (`-tags acceptance -race`) | `backend/agents/acceptance/composer_llm_test.go` (le vrai binaire `agent-quality`, passerelle simulée par `httptest`) | C-01 à C-06 : plan valide = composition déterministe (NFR-08), repli à un seul appel, délai/erreur/débit, liste des crashs filtrée, sans modèle, vue indisponible |
+| Go | `backend/orchestrator/acceptance/llm_gateway_test.go`, `crashlist_e2e_test.go` | C-07 (passerelle : rejets, source, débit, désactivée, journaux sans clé ni contenu), C-08 (voix → plan `[Qualité]` → `crashes` relayé, phrase `failure_rejected_view`) |
+| Flutter | `acte_crashlist.feature` | F-01 (cinquième cellule, `State` conservés, étagère), F-02 (trois états, 24 px, ellipse, deux états neutres) |
+| Contrat | `crashlist-global.jsonl`, `crashlist-android.jsonl` | forme, parité Go/Dart (`components` à 6) ; états neutres par tests de rendu et de builders (A8) |
+| Mesure | `cmd/composer-bench` (service `composer-bench`, profil `bench`) | p50/p90 par demande, plans valides, **taux d'accord** avec le plan attendu, motifs de repli, coût estimé |
+
+- **Résultats** : `gpt-6-luna` 25/25 plans valides, accord 100 %, p50 1,79 s, p90 2,69 s ; `gpt-6.1-terra` 24/25, p90 3,06 s ([p-ar-llm-composer](llm-composer.md), [ma-openai-small-model-structured-latency]).
+- **Porte** : `tools/loop/gate.sh --full` vert, 58 contrôles, arbre propre ; captures `app-smoke` `act1-replay` (acte 1 inchangé) et `crashlist-replay` conformes à 1920×1080. Mutations vérifiées (fixture du contrat, compensation après squelette).
+- **Non couvert** : essai vocal avec micro ; `check-compose.sh` et son auto-test hors de `gate.sh`/`verify.sh` (Q-84) ; lisibilité de la grille 3×2 pour la checklist et les avis (Q-83).
+
 ## Traçabilité scénario → exigence
 
 Chaque scénario est étiqueté avec ses exigences (`@FR-01 @NFR-02`…) dans les fichiers `.feature` ([p-fn-requirements](../functional/requirements.md)). Un rapport CI liste les FR/NFR Must sans scénario vert.
@@ -90,8 +104,8 @@ Chaque scénario est étiqueté avec ses exigences (`@FR-01 @NFR-02`…) dans le
 | NFR | Mesure (fiche §5) | Instrumentation proposée |
 |---|---|---|
 | NFR-01 voix < 1 s | chronométré, 10 répétitions, p90 | fin de phrase reçue par l'app → 1er delta de transcript IA reçu, sur l'horloge de l'app (pdr-0038) |
-| NFR-02 squelette < 1,5 s | horodatage du journal A2UI | `marker` fin de phrase → premier message de création de surface rendu (`createSurface`, A2UI v0.9) |
-| NFR-03 acte 1 < 8 s | horodatage du journal A2UI | `marker` fin de phrase → dernière mise à jour de données de la 4e surface (`updateDataModel`, A2UI v0.9) |
+| NFR-02 squelette < 1,5 s | horodatage du journal A2UI | `marker` fin de phrase → premier message de création de surface rendu (`createSurface`, A2UI v0.9). **012** : le modèle (p50 1,79 s) ne tient pas ce seuil seul ; le squelette part avant l'appel ([p-ar-llm-composer](llm-composer.md)), à remesurer sur l'horloge de l'app |
+| NFR-03 acte 1 < 8 s | horodatage du journal A2UI | `marker` fin de phrase → dernière mise à jour de données de la 4e surface (`updateDataModel`, A2UI v0.9). **012** : tenu (p90 du modèle 2,69 s) |
 | NFR-04 60 i/s | DevTools Performance | profil `--profile` pendant l'acte 1 ; orbe isolé sous `RepaintBoundary` ([perf-audio-visualizer-60hz], [perf-repaint-boundary]) |
 | NFR-05 lisibilité | vidéoprojecteur réel | tokens scène ≥ 24 px ; contraste AA vérifié par Widgetbook ([ds-a11y-wcag-contrast]) |
 | NFR-06 ≤ 6 surfaces | revue visuelle | assertion dans `CanvasBloc` ; aucun scénario de la fiche ne la couvre et aucun n'est ajouté ([pdr-0049](../decisions/pdr-0049-sheet-gherkin-scenarios-only.md), Q-63) : l'assertion unitaire suffit (la limite porte sur les surfaces : [pdr-0019](../decisions/pdr-0019-six-limit-applies-to-surfaces.md)) |

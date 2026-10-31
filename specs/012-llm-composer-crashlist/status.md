@@ -1,6 +1,6 @@
 # 012 — État
 
-- **Étape** : Clôture
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -11,6 +11,7 @@
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
 |---|---|---|---|
+| 2026-10-31 | Clôture | Documents `product/` propagés par `product-steward` (T90) : `llm-composer-012.feature`, `p-ar-llm-composer`, backend, security, agents-protocols, quality, app-channel-contract, frontend-screen, catalog, dataset, screen, roadmap, backlog, spikes, nfr, index ; pdr-0014 et pdr-0060 : ligne d'Historique seulement ; **Q-81 à Q-84** créées (non bloquantes, avant J7) ; `product_lint` 113 documents, 0 erreur ; `kb_lint` 0 erreur. | `product_lint.py`, `kb_lint.py` |
 | 2026-10-31 | Vérification | **`gate --full` VERT sur arbre propre** (58 contrôles, HEAD `fcb10e0`, colonne propre = yes). Captures `app-smoke` (code 0, 1920×1080) relues : `act1-replay` (acte 1 inchangé : grille 2×2, étagère « 4 / 6 utilisés », CrashList « inutilisé ») et `crashlist-replay` (grille 3×2, `Principaux crashs · 3.4` en cinquième cellule, cinq libellés sur une ligne avec ellipse, plateforme et volume à droite, étagère « 5 / 6 utilisés ») conformes à la spec. **À signaler pour 013** : en 3 colonnes, la checklist et les avis passent dans des cellules plus étroites (~620 px) et leurs libellés sont tronqués (« Checklist… », « Sessions sans cra… ») ; grand vide au-dessus de la grille (antérieur). Essai réel : la campagne `composer-bench` (25 appels) a joué « Affiche la liste des crashs » (global et Android) contre le vrai modèle : CrashList choisi 10 fois sur 10 (100 % d'accord) ; un essai vocal de bout en bout avec micro reste à faire en répétition. | `gates/20261031-005307-full.log`, `snapshots/20261031-005526-act1-replay.png`, `snapshots/20261031-005647-crashlist-replay.png` |
 | 2026-10-31 | Refactorisation | R1 à R10 appliquées en 6 lots (`6954249` R1 R3 ; `381376b` R4 R6 R10 agents ; `5e990e9` R5 R7 R10 orchestrateur ; `cc016aa` R9 R10 Flutter ; `cc1aa60` R2 R8 compose ; `23ccd77` documents : D10 et D11 dans pdr-0074, README du contrat, spec). Mutations vérifiées : fixture du contrat (F-02 « données » échoue), compensation après squelette (R5). Observation : une exécution des acceptations de l'orchestrateur a échoué une fois (panique et délai dépassé dans `testing`, ~88 s) pendant qu'une autre porte chargeait la machine ; trois réexécutions vertes, non reproduite. **`gate --full` VERT, 58 contrôles** après le dernier lot. Les conflits (a) D10 enregistrée, (b) liste des vues refusées, (c) A3/A2, (d) D8 sont **signalés au porteur** (progress.md). | `gates/20261031-004731-full.log` |
 | 2026-10-31 | Revue | architect-reviewer (Opus) : À REFACTORISER (0 bloquante, 5 importantes, 5 mineures, 4 conflits) ; rapport collé plus bas ; 6 lots. | § Revue d'architecte |

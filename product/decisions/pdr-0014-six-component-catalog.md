@@ -3,9 +3,9 @@ id: pdr-0014-six-component-catalog
 title: "PDR-0014 — Catalogue de 6 composants, noms de la fiche, comportement des maquettes"
 area: decisions
 status: validated
-updated: 2026-10-29
+updated: 2026-10-31
 sources: [product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-rm-open-questions, p-fn-catalog, p-fn-scope, p-fn-mockups, p-fn-glossary, p-fn-screen, p-fn-dataset, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, pdr-0007-closed-catalog-stage-theme, pdr-0013-orchestrator-visible-agent-selection, pdr-0008-single-screen-show-the-making, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces]
+links: [pdr-0070-llm-composer-and-crashlist-012, pdr-0074-012-llm-composer-gateway-crashlist-details, p-fn-feature-llm-composer-012, p-rm-open-questions, p-fn-catalog, p-fn-scope, p-fn-mockups, p-fn-glossary, p-fn-screen, p-fn-dataset, p-fn-business-rules, p-ar-frontend, p-ar-agents-protocols, p-rm-roadmap, p-rm-backlog, pdr-0007-closed-catalog-stage-theme, pdr-0013-orchestrator-visible-agent-selection, pdr-0008-single-screen-show-the-making, pdr-0019-six-limit-applies-to-surfaces, pdr-0020-act1-four-surfaces]
 tags: [pdr, decision, catalog, genui, sentiment]
 decision_status: acceptée
 decided_on: 2026-10-29
@@ -79,5 +79,6 @@ Cohérent avec [pdr-0013](pdr-0013-orchestrator-visible-agent-selection.md) ; me
 | 2026-10-29 | Acceptée, sur la parole « oui, enregistre tes recommandations comme décision. Je les valide. » (conversation) | Benoît FONTAINE (porteur) |
 | 2026-10-29 | Q-04 tranchée par [pdr-0019](pdr-0019-six-limit-applies-to-surfaces.md) (décision contrainte : la limite « 6 » porte sur les surfaces visibles) ; décision maintenue, hypothèse ⚠️ Q-04 levée | Assistant (décision contrainte) |
 | 2026-10-29 | Composition de l'acte 1 (Q-28) tranchée par [pdr-0020](pdr-0020-act1-four-surfaces.md) à partir de la colonne « Actes » ; décision maintenue | Assistant (décision contrainte) |
+| 2026-10-31 | Mise à jour documentaire à la clôture de 012 ([pdr-0070](pdr-0070-llm-composer-and-crashlist-012.md), [pdr-0074](pdr-0074-012-llm-composer-gateway-crashlist-details.md) D5) ; **décision maintenue, texte ci-dessus non réécrit**. (1) L'hypothèse « les données de la Liste des crashs restent à écrire » est **périmée** : elles sont livrées (`dataset.json` clé `crashes`, top 5 de [p-fn-dataset](../functional/dataset.md)). (2) La mention « jamais utilisé » est **devenue fausse** : la Liste des crashs reste hors des trois actes (« non utilisée dans le scénario principal » reste exact) mais elle est rendue de bout en bout et choisie quand le speaker la demande (surface `crashes`, `components` du contrat passé de 5 à 6, cinquième cellule d'une grille 3×2, étagère « utilisée »). Détail : [p-fn-catalog](../functional/catalog.md) § « Liste des crashs » | Assistant (mise à jour documentaire) |
 
 Pas d'archive brute.

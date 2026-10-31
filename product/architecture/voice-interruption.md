@@ -3,9 +3,9 @@ id: p-ar-voice-interruption
 title: Interruption vocale, « Stop », focus et fenêtre de demande (livrés par 011)
 area: architecture
 status: draft
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/011-voice-interaction/spec.md, specs/011-voice-interaction/plan.md, specs/011-voice-interaction/tasks.md, specs/011-voice-interaction/status.md, product/decisions/_archive/2026-10-30-essai-micro-diagnostic.md, knowledge:rt-barge-in, knowledge:rt-gpt-live-delegation, knowledge:rt-gpt-live-sideband, knowledge:rt-transcription, knowledge:proto-a2a-task-lifecycle]
-links: [pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-backend, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-rm-open-questions, p-rm-spikes, rt-barge-in, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-lifecycle, rt-transcription, proto-a2a-task-lifecycle]
+links: [p-ar-llm-composer, pdr-0069-voice-interruption-hybrid-stop-011, pdr-0071-act2-focus-memory-act-indicator-click-feedback, pdr-0073-011-voice-interaction-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0058-backend-canvas-registry-survives-voice-sessions, pdr-0056-failed-agent-partial-surfaces-removed, p-ar-app-channel-contract, p-ar-agents-protocols, p-ar-backend, p-ar-frontend-screen, p-ar-stage-runtime, p-fn-requirements, p-fn-business-rules, p-fn-feature-barge-in, p-rm-open-questions, p-rm-spikes, rt-barge-in, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-gpt-live-lifecycle, rt-transcription, proto-a2a-task-lifecycle]
 tags: [barge-in, stop, voix, focus, annulation, app-channel, 011]
 ---
 # Interruption vocale, « Stop », focus et fenêtre de demande (011)
@@ -48,7 +48,7 @@ La session reste ouverte ; les surfaces complètes restent (RG-14, FR-15). Un ar
 | `agent.activity canceled` | **émis** depuis 011 (réservé depuis 004), sans `detail` ; terminal pour chaque agent de `plan.selected` ; le rail affiche « interrompu » |
 | `genesis/intent` | métadonnée de l'état A2A `completed`, posée par l'agent : `{platform, compareTo}` ; validée par `a2aclient` **sur la forme seulement** (2 clés, 0 à 16 caractères `[A-Za-z0-9.]`) → `AgentUpdate.Intent` |
 | `genesis/focus` | métadonnée de la requête A2A, posée par l'orchestrateur : `{platform, compareTo}` (`AgentRequest.Focus`) ; absente sans focus ; les agents restent sans état |
-| `genesis/scopeReason` | métadonnée de l'état `rejected` : motif de `ScopeError` (ensemble fermé) ; journalisé en slog seulement, **jamais** dans `detail`, le JSONL ni l'app-channel |
+| `genesis/scopeReason` | métadonnée de l'état `rejected` : motif de `ScopeError` (ensemble fermé) ; journalisé en slog seulement, **jamais** dans `detail`, le JSONL ni l'app-channel ; depuis 012, le motif `view_unavailable` choisit en plus la phrase vocale de l'orchestrateur ([p-ar-llm-composer](llm-composer.md)) |
 
 ## Focus de l'acte 2 (Q-74, pdr-0071)
 
