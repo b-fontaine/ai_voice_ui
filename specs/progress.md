@@ -18,11 +18,12 @@
 | 010 | J6 : acte 4 « Rejouer » (journal client du flux A2UI, rejeu par le même gate de 0,25× à 2×, curseur, Direct) | EP-07, EP-05 | J6 | Terminée ✅ (rejeu identique au direct, sans réseau ; la voix n'est pas rejouée, pdr-0032), publiée (`04e8f47`) | 2026-10-30 |
 | 011 | Interaction vocale et corrections de l'essai au micro (« Stop » hybride, couper la parole, mémoire de focus, indicateur d'acte automatique, retour au clic) | EP-02, EP-03, EP-04, EP-06 | avant J7 | Terminée ⚠️ (essai réel au micro : voix, « Stop », coupure de piste à observer en répétition ; Q-77 à Q-80), publiée (`6209a18`) | 2026-10-30 |
 | 012 | Compositeur LLM (passerelle interne, plan structuré, repli, squelette anticipé) puis CrashList réel | EP-03, EP-04, EP-09 | avant J7 | Terminée ⚠️ (essai vocal avec micro à faire en répétition ; NFR-02 avec squelette à remesurer ; Q-81 à Q-84), publiée (`90b69fe`) | 2026-10-31 |
-| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : TDD | 2026-10-31 |
+| 013 | Design et ergonomie (rail horizontal, canevas élastique, cellules lisibles Q-83, apparition animée, tokens DTCG, Widgetbook 4) | EP-04, EP-01 | avant J7 | En cours : Revue | 2026-10-31 |
 
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : **TDD terminé**, `gate --full` vert sur arbre propre (65 contrôles, `d874a79`). La première passe `--full` avait échoué (pubspec d'exemple de `node_modules` pris pour un paquet) : corrigé dans `build_tokens.sh`. Prochaine étape : revue d'architecte (mode CODE). |
 | 2026-10-31 | 013 : T33 et T34 faites (catalogue Widgetbook : 3 briques + 6 composants genesis en 3 états, build web vérifié). Toutes les tâches du TDD sont cochées sauf T22 (note NFR-04 de `quality.md`, à la clôture). Prochaine : `gate --full` puis revue du code. |
 | 2026-10-31 | 013 : T32a et T32 faites (`apps/genesis_widgetbook` dans le workspace, résolution pub sans conflit, stories des 3 briques ; coupe C2 inutile). Reste : T33 (6 composants genesis), T34 (scripts et README), T22 (note NFR-04), puis `gate --full`, revue du code, refactorisation, vérification, clôture. |
 | 2026-10-31 | 013 : lot C en cours — T30a, T30b faites (tokens DTCG, générateur Style Dictionary 5.7.1, `scene_tokens.g.dart` committé, test de hash et de parité). Reste : T32a (apps/genesis_widgetbook : résolution pub, porte, coupe C2 si échec), T32, T33, T34, T22 (note NFR-04), puis `gate --full`, revue du code, refactorisation, vérification, clôture. |
