@@ -7,7 +7,8 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-docker compose config --no-env-resolution --format json | python3 -I -c '
+# Le profil bench (composer-bench) est contrôlé comme le reste.
+COMPOSE_PROFILES=bench docker compose config --no-env-resolution --format json | python3 -I -c '
 import json, sys
 
 cfg = json.load(sys.stdin)
@@ -124,6 +125,84 @@ check(default_of("A2UI_WRITABLE_SUBPATHS") == catalog_writable,
 for name in agent_names:
     check("A2UI_WRITABLE_SUBPATHS" not in (services[name].get("environment") or {}),
           name + " : A2UI_WRITABLE_SUBPATHS ne concerne que l orchestrateur")
+
+# pdr-0074 (012) : passerelle LLM interne. Seul l orchestrateur porte la cle et sort ;
+# les agents l appellent par son IP fixe sur le reseau agents.
+import re
+
+
+def default_value(raw):
+    raw = str(raw)
+    m = re.fullmatch(r"\$\{[A-Za-z0-9_]+:?-(.*)\}", raw, re.S)
+    return m.group(1) if m else raw
+
+
+def seconds(raw, label):
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(ms|s|m)", default_value(raw).strip())
+    if not m:
+        errors.append(label + " : duree invalide")
+        return None
+    return float(m.group(1)) * {"ms": 0.001, "s": 1, "m": 60}[m.group(2)]
+
+
+gw_addr = default_value(env.get("LLM_GATEWAY_ADDR", ""))
+check(bool(gw_addr), "orchestrator : LLM_GATEWAY_ADDR requis")
+gw_host, _, gw_port = gw_addr.rpartition(":")
+check(gw_host not in ("", "0.0.0.0", "::"), "orchestrator : LLM_GATEWAY_ADDR doit etre l IP fixe sur agents, jamais 0.0.0.0")
+orch_agents_ip = ((orch.get("networks") or {}).get("agents") or {}).get("ipv4_address")
+check(orch_agents_ip == gw_host, "orchestrator : LLM_GATEWAY_ADDR doit etre son ipv4_address sur le reseau agents")
+subnets = [c.get("subnet") for c in (((networks.get("agents") or {}).get("ipam") or {}).get("config") or [])]
+check(bool(subnets), "le reseau agents doit declarer un sous-reseau (ipam) fixe")
+for port in orch.get("ports") or []:
+    check(str(port.get("target")) != gw_port and str(port.get("published")) != gw_port,
+          "orchestrator : le port de la passerelle LLM ne doit jamais etre publie")
+for name in agent_names:
+    for port in services[name].get("ports") or []:
+        check(str(port.get("target")) != gw_port, name + " : port de la passerelle LLM publie")
+
+allowed = {x.strip() for x in default_value(env.get("LLM_GATEWAY_ALLOWED_SOURCES", "")).split(",") if x.strip()}
+gw_timeout = seconds(env.get("COMPOSER_TIMEOUT", ""), "orchestrator : COMPOSER_TIMEOUT") if env.get("COMPOSER_TIMEOUT") else None
+check(gw_timeout is not None, "orchestrator : COMPOSER_TIMEOUT requis")
+agent_timeout_cap = seconds(env.get("AGENT_TIMEOUT", ""), "orchestrator : AGENT_TIMEOUT")
+wired = []
+for name in agent_names:
+    agent_env = services[name].get("environment") or {}
+    for key in agent_env:
+        check(not key.startswith("OPENAI_") and key != "COMPOSER_MODEL",
+              name + " : " + key + " ne doit pas etre fourni a un agent")
+    url = default_value(agent_env.get("COMPOSER_LLM_URL", ""))
+    if not url:
+        continue
+    wired.append(name)
+    ip = ((services[name].get("networks") or {}).get("agents") or {}).get("ipv4_address")
+    check(bool(ip), name + " : ipv4_address fixe requis sur agents (sources autorisees de la passerelle)")
+    check(ip in allowed, name + " : son IP doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES")
+    check(url.startswith("http://" + gw_host + ":" + gw_port + "/"),
+          name + " : COMPOSER_LLM_URL doit viser la passerelle de l orchestrateur sur agents")
+    t = seconds(agent_env.get("COMPOSER_TIMEOUT", ""), name + " : COMPOSER_TIMEOUT") if agent_env.get("COMPOSER_TIMEOUT") else None
+    check(t is not None, name + " : COMPOSER_TIMEOUT requis avec COMPOSER_LLM_URL")
+    if t is not None and gw_timeout is not None:
+        check(t >= gw_timeout + 0.5, name + " : COMPOSER_TIMEOUT doit depasser celui de la passerelle d au moins 500 ms")
+    if t is not None and agent_timeout_cap is not None:
+        check(t < agent_timeout_cap, name + " : COMPOSER_TIMEOUT doit rester sous AGENT_TIMEOUT (le repli doit tenir)")
+source_names = agent_names + (["composer-bench"] if "composer-bench" in services else [])
+for ip in allowed:
+    check(any(((services[n].get("networks") or {}).get("agents") or {}).get("ipv4_address") == ip for n in source_names),
+          "LLM_GATEWAY_ALLOWED_SOURCES : " + ip + " n est l IP d aucun agent ni du banc")
+bench = services.get("composer-bench")
+if bench is not None:
+    check(not bench.get("ports"), "composer-bench ne doit publier aucun port")
+    check("env_file" not in bench, "composer-bench ne doit pas recevoir env_file")
+    check(set((bench.get("networks") or {}).keys()) == {"agents"}, "composer-bench doit etre uniquement sur le reseau agents")
+    bench_env = bench.get("environment") or {}
+    for key in bench_env:
+        check(not key.startswith("OPENAI_") and key != "COMPOSER_MODEL", "composer-bench : " + key + " ne doit pas lui etre fourni")
+    check(default_value(bench_env.get("COMPOSER_LLM_URL", "")).startswith("http://" + gw_host + ":" + gw_port + "/"),
+          "composer-bench : COMPOSER_LLM_URL doit viser la passerelle de l orchestrateur sur agents")
+    check(((bench.get("networks") or {}).get("agents") or {}).get("ipv4_address") in allowed,
+          "composer-bench : son IP doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES")
+burst = default_value(env.get("COMPOSER_RATE_BURST", "0"))
+check(burst.isdigit() and int(burst) >= max(1, len(wired)), "orchestrator : COMPOSER_RATE_BURST doit couvrir les agents branches")
 
 check("sk-" not in json.dumps(cfg), "une valeur contient sk- (secret possible)")
 

@@ -1,0 +1,5 @@
+# attendu: doit depasser celui de la passerelle
+services:
+  agent-quality:
+    environment:
+      COMPOSER_TIMEOUT: 3s

@@ -89,7 +89,7 @@ type fakeComposer struct {
 	fn func(ctx context.Context, req kit.Request) (kit.Composition, error)
 }
 
-func (f fakeComposer) Compose(ctx context.Context, req kit.Request, _ dataset.Dataset) (kit.Composition, error) {
+func (f fakeComposer) Compose(ctx context.Context, req kit.Request, _ dataset.Dataset, _ func(map[string]any) error) (kit.Composition, error) {
 	if f.fn == nil {
 		return kit.Composition{Messages: []map[string]any{}, Summary: "ok"}, nil
 	}

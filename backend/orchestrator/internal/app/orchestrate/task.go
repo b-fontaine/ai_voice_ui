@@ -26,6 +26,8 @@ type taskState struct {
 	summary  string
 	intent   *port.Focus // intention résolue renvoyée par l'agent à `completed` (nil : aucune)
 	rejected bool        // l'agent a refusé la demande (hors délai et fermeture)
+	// scopeReason : motif fermé du refus (ensemble de l'adaptateur), "" s'il est absent.
+	scopeReason string
 }
 
 // track enregistre la tâche en vol ; faux si le pipeline est déjà fermé ou si
@@ -129,6 +131,9 @@ func (p *Pipeline) failWithReason(ctx context.Context, ts *taskState, err error,
 	out := detailFor(ctx, err)
 	if !ts.done {
 		ts.rejected = isRejected(ctx, err)
+		if ts.rejected {
+			ts.scopeReason = scopeReason
+		}
 	}
 	p.failLocked(ts, out)
 	p.mu.Unlock()

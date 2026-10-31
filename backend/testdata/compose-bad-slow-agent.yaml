@@ -1,0 +1,5 @@
+# attendu: doit rester sous AGENT_TIMEOUT
+services:
+  agent-quality:
+    environment:
+      COMPOSER_TIMEOUT: 9s

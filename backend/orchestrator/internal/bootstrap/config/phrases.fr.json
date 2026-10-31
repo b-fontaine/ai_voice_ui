@@ -2,6 +2,7 @@
   "generic": "Je regarde ça, un instant.",
   "failure": "Je n'ai pas pu obtenir cette information.",
   "failure_rejected": "Cette demande n'est pas encore prise en charge : je peux afficher une plateforme à la fois, Android ou iOS, et la comparaison avec la version précédente seulement avec Android. Voulez-vous l'une de ces vues ?",
+  "failure_rejected_view": "Cette vue n'est pas disponible. Je peux afficher les indicateurs de stabilité, la courbe des crashs, les avis clients, la checklist de release ou la liste des crashs. Voulez-vous l'une d'elles ?",
   "no_summary": "Le résultat est affiché.",
   "queue_full": "Je termine d'abord la demande en cours.",
   "no_request": "Je n'ai pas bien saisi la demande, pouvez-vous répéter ?",

@@ -68,24 +68,45 @@ func run(logger *slog.Logger) error {
 		ReadTimeout:       30 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 	}
+	servers := []*http.Server{srv}
+	gateway, err := bootstrap.NewLLMGateway(cfg, bootstrap.Deps{Logger: logger})
+	if err != nil {
+		closeCtx, closeCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer closeCancel()
+		return errors.Join(err, app.Close(closeCtx))
+	}
+	if gateway != nil {
+		servers = append(servers, gateway)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	logger.Info("orchestrateur démarré", "config", cfg.String(), "llm_gateway", gateway != nil)
+	return serve(ctx, logger, servers, app.Close, shutdownTimeout)
+}
 
-	serveErr := make(chan error, 1)
-	go func() { serveErr <- srv.ListenAndServe() }()
-	logger.Info("orchestrateur démarré", "config", cfg.String())
-
+// serve démarre tous les serveurs et attend un signal (ctx) ou la chute de l'un d'eux ;
+// dans les deux cas il arrête chacun proprement, puis ferme l'application. Les erreurs
+// (écoute, arrêt, fermeture) sont réunies.
+func serve(ctx context.Context, logger *slog.Logger, servers []*http.Server, closeApp func(context.Context) error, timeout time.Duration) error {
+	serveErr := make(chan error, len(servers))
+	for _, s := range servers {
+		go func() { serveErr <- s.ListenAndServe() }()
+	}
+	var failure error
 	select {
-	case err = <-serveErr:
+	case err := <-serveErr:
 		if !errors.Is(err, http.ErrServerClosed) {
-			failCtx, failCancel := context.WithTimeout(context.Background(), shutdownTimeout)
-			defer failCancel()
-			_ = app.Close(failCtx)
-			return err
+			failure = err
+			logger.Error("un serveur s'arrête : arrêt des autres", "error", err)
 		}
 	case <-ctx.Done():
 	}
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	return errors.Join(srv.Shutdown(shutdownCtx), app.Close(shutdownCtx))
+	errs := []error{failure}
+	for _, s := range servers {
+		errs = append(errs, s.Shutdown(shutdownCtx))
+	}
+	errs = append(errs, closeApp(shutdownCtx))
+	return errors.Join(errs...)
 }

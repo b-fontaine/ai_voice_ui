@@ -52,7 +52,7 @@ const IntentKey = "genesis/intent"
 const ScopeReasonKey = "genesis/scopeReason"
 
 // scopeReasons est la liste blanche des motifs de refus d'un agent.
-var scopeReasons = []string{"version", "two_platforms", "compare_without_platform", "compare_unavailable"}
+var scopeReasons = []string{"version", "two_platforms", "compare_without_platform", "compare_unavailable", "view_unavailable"}
 
 // Forme admise des valeurs de l'intention renvoyée par un agent (pdr-0071) : l'adaptateur
 // ne valide que la forme (longueur et jeu de caractères fermés) ; les agents restent

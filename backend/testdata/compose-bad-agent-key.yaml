@@ -1,0 +1,5 @@
+# attendu: OPENAI_API_KEY ne doit pas etre fourni
+services:
+  agent-quality:
+    environment:
+      OPENAI_API_KEY: refus

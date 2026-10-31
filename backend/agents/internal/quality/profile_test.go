@@ -60,3 +60,23 @@ func TestQualityProfile(t *testing.T) {
 		t.Errorf("le refus ne doit contenir aucun chiffre : %q", p.Texts.Rejected)
 	}
 }
+
+// 012 : le profil annonce la liste des crashs ; aucun tag n'est ajouté (D7 amendée :
+// « crash » suffit, « liste » retiendrait Qualité pour « la liste des avis »).
+func TestQualityProfileAnnouncesCrashList(t *testing.T) {
+	p, err := quality.Profile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(p.Skill.Examples, "Affiche la liste des crashs") {
+		t.Errorf("l'exemple « Affiche la liste des crashs » manque : %v", p.Skill.Examples)
+	}
+	if !strings.Contains(p.Description, "liste des principaux crashs") {
+		t.Errorf("la description doit annoncer la liste des principaux crashs : %q", p.Description)
+	}
+	for _, tag := range []string{"liste", "list", "top"} {
+		if slices.Contains(p.Skill.Tags, tag) {
+			t.Errorf("le tag %q est exclu (D7 amendée)", tag)
+		}
+	}
+}

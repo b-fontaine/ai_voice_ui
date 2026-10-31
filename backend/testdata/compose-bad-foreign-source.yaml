@@ -1,0 +1,5 @@
+# attendu: doit figurer dans LLM_GATEWAY_ALLOWED_SOURCES
+services:
+  orchestrator:
+    environment:
+      LLM_GATEWAY_ALLOWED_SOURCES: 172.30.77.99

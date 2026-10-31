@@ -16,9 +16,12 @@ Directory _examplesDir() {
   return Directory('${d.path}/contracts/a2ui/genesis/v1/examples');
 }
 
-List<Map<String, Object?>> fixture(String name) => <Map<String, Object?>>[
+List<Map<String, Object?>> fixture(
+  String name, {
+  String prefix = 'act1',
+}) => <Map<String, Object?>>[
   for (final String l in const LineSplitter().convert(
-    File('${_examplesDir().path}/act1-$name.jsonl')
+    File('${_examplesDir().path}/$prefix-$name.jsonl')
         .readAsStringSync()
         .replaceAll(r'${CATALOG_ID}', GenesisContract.defaultCatalogId),
   ))
@@ -82,6 +85,36 @@ void main() {
     expect(s.usedCount, 4);
     expect(s.total, 6);
     expect(s.components.map((c) => c.name), GenesisContract.catalogComponents);
+  });
+
+  test(
+    'crashes : CrashList passe à utilisé, les quatre autres inchangés',
+    () async {
+      final states = await run([
+        for (final f in ['kpi', 'trend', 'reviews', 'checklist'])
+          for (final m in fixture(f)) accepted(m),
+        for (final m in fixture('global', prefix: 'crashlist')) accepted(m),
+      ]);
+      final CatalogShelfState s = states.last;
+      expect(usedOf(s), {
+        'KeyIndicator',
+        'TrendChart',
+        'ReviewSentiment',
+        'ReleaseChecklist',
+        'CrashList',
+      });
+      expect(s.usedCount, 5);
+      expect(s.total, 6);
+    },
+  );
+
+  test('deleteSurface de crashes éteint CrashList', () async {
+    final states = await run([
+      for (final m in fixture('global', prefix: 'crashlist')) accepted(m),
+      delete('crashes'),
+    ]);
+    expect(usedOf(states[states.length - 2]), {'CrashList'});
+    expect(states.last.usedCount, 0);
   });
 
   test('un message refusé ou ignoré n allume rien', () async {

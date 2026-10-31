@@ -255,7 +255,7 @@ void main() {
     expect(
       catalog.items.map((i) => i.name),
       GenesisContract.components,
-      reason: 'les 5 composants validés, dans l ordre ; CrashList est hors catalogue',
+      reason: 'les 6 composants du contrat, dans l ordre',
     );
   });
 }

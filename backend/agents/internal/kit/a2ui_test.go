@@ -38,3 +38,17 @@ func TestSurfaceMessages(t *testing.T) {
 		t.Errorf("la surface d'un autre agent ne doit pas masquer createSurface : %d messages", len(got))
 	}
 }
+
+// SurfaceSkeleton est le squelette de SurfaceMessages (createSurface puis updateComponents) :
+// les deux premiers messages d'une surface absente, rien pour une surface active (spec 012,
+// T52 : le squelette part avant les données).
+func TestSurfaceSkeletonIsTheFirstTwoMessagesOfASurface(t *testing.T) {
+	full := kit.SurfaceMessages("cat", nil, "kpi", "KeyIndicator", "/kpi", map[string]any{"label": "x"})
+	got := kit.SurfaceSkeleton("cat", nil, "kpi", "KeyIndicator", "/kpi")
+	if !reflect.DeepEqual(got, full[:2]) {
+		t.Errorf("squelette %v, attendu %v", got, full[:2])
+	}
+	if got := kit.SurfaceSkeleton("cat", []string{"kpi"}, "kpi", "KeyIndicator", "/kpi"); len(got) != 0 {
+		t.Errorf("surface active : %v, aucun message attendu", got)
+	}
+}

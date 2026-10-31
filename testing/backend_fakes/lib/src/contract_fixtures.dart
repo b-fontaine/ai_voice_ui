@@ -169,6 +169,12 @@ abstract final class ContractFixtures {
 
   /// Message du résultat d'une action (`examples/act3-block.jsonl` ou
   /// `act3-validate.jsonl`) : un `updateDataModel` de sous-chemin (A7).
+  /// Les trois messages de `examples/crashlist-global.jsonl` (surface
+  /// `crashes`, spec 012), [catalogId] substitué.
+  static Future<List<Map<String, Object?>>> crashlistMessages({
+    String catalogId = defaultCatalogId,
+  }) => _exampleMessages('crashlist-global.jsonl', catalogId);
+
   static Future<List<Map<String, Object?>>> actionResultMessages(
     String action, {
     String catalogId = defaultCatalogId,
@@ -289,6 +295,27 @@ abstract final class ContractFixtures {
         jsonEncode(<String, Object?>{
           't_ms': start + m * 50,
           'message': block[m],
+        }),
+      );
+    }
+    return buffer.toString();
+  }
+
+  /// Contenu de `assets/replays/crashlist-replay.jsonl` dérivé du contrat
+  /// (spec 012, T43) : l'acte 1 à l'identique ([act1ReplayJsonl]), puis les
+  /// trois messages de `examples/crashlist-global.jsonl` (surface `crashes`),
+  /// 500 ms après la dernière surface de l'acte 1, espacés de 50 ms.
+  static Future<String> crashlistReplayJsonl({
+    String catalogId = defaultCatalogId,
+  }) async {
+    final buffer = StringBuffer(await act1ReplayJsonl(catalogId: catalogId));
+    final crashes = await crashlistMessages(catalogId: catalogId);
+    final start = act1Files.length * 500;
+    for (var m = 0; m < crashes.length; m++) {
+      buffer.writeln(
+        jsonEncode(<String, Object?>{
+          't_ms': start + m * 50,
+          'message': crashes[m],
         }),
       );
     }

@@ -3,9 +3,9 @@ id: p-fn-dataset
 title: Jeu de données fictif et figé
 area: functional
 status: draft
-updated: 2026-10-30
-sources: [specs/008-j4-act2-transform/status.md, specs/006-j3-act1-backend/status.md, specs/006-j3-act1-backend/plan.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
-links: [p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-backend, p-ar-app-channel-contract, p-rm-roadmap, p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
+updated: 2026-10-31
+sources: [specs/012-llm-composer-crashlist/status.md, specs/012-llm-composer-crashlist/spec.md, specs/008-j4-act2-transform/status.md, specs/006-j3-act1-backend/status.md, specs/006-j3-act1-backend/plan.md, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p10, product/sources/design-example.pdf]
+links: [p-fn-feature-llm-composer-012, pdr-0074-012-llm-composer-gateway-crashlist-details, p-ar-llm-composer, p-fn-dataset-acts, pdr-0064-008-act2-transform-details-assistant-decided, p-ar-backend, p-ar-app-channel-contract, p-rm-roadmap, p-fn-scope, p-fn-mockups, p-fn-catalog, p-fn-business-rules, p-ar-replay, pdr-0005-frozen-fictional-dataset, p-rm-open-questions, pdr-0014-six-component-catalog, pdr-0016-validate-release-action, pdr-0020-act1-four-surfaces, pdr-0021-mockup-data-not-corrected, pdr-0024-act2-android-only, pdr-0034-app-name-release-copilot, pdr-0040-reference-dataset-adjusted-by-assistant, p-fn-feature-voice-screen-generation]
 tags: [donnees, dataset, determinisme, release]
 ---
 # Jeu de données fictif — jeu de référence
@@ -88,9 +88,9 @@ Trois extraits affichés (acte 1) :
 
 Valeurs de l'acte 2 (Android seul, comparaison 3.3), de la correction de plateforme (vue iOS) et de l'acte 3 : [p-fn-dataset-acts](dataset-acts.md). Elles se lisent dans les mêmes séries quotidiennes ci-dessus, et le code du backend les recalcule (008).
 
-## Liste des crashs (hors scénario principal, [pdr-0014](../decisions/pdr-0014-six-component-catalog.md))
+## Liste des crashs (hors scénario principal, [pdr-0014](../decisions/pdr-0014-six-component-catalog.md) ; livrée par 012)
 
-Top 5 des crashs de la 3.4 sur 7 j, deux plateformes, par volume. Volume = occurrences ; sessions touchées = sessions distinctes avec au moins une occurrence.
+Top 5 des crashs de la 3.4 sur 7 j, deux plateformes, par volume. Volume = occurrences ; sessions touchées = sessions distinctes avec au moins une occurrence. **Jeu embarqué (012, 2026-10-31)** : ces cinq lignes sont recopiées dans `backend/agents/internal/dataset/dataset.json` (clé `crashes`, sans rang : le rang est calculé à l'affichage) et lues par `Dataset.TopCrashes(version, plateforme, n)` (version cible seule, 1 à 5 lignes, filtre de plateforme sans renumérotation ; le builder de l'agent Qualité renumérote 1 à n). Au chargement, le code contrôle aussi : 1 à 5 lignes, libellé non vide, plateforme connue, volume > 0, sessions touchées ≤ volume, volumes décroissants. Surface `crashes`, titres et affichage : [p-fn-catalog](catalog.md) § « Liste des crashs » ; scénarios C-04, C-05 : [p-fn-feature-llm-composer-012](features/llm-composer-012.feature).
 
 | # | Libellé | Plateforme | Volume | Sessions touchées |
 |---|---|---|---|---|

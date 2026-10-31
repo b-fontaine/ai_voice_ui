@@ -10,7 +10,8 @@ import (
 
 // Composer répond par les deux surfaces de l'acte 1 : l'indicateur « Sessions sans
 // crash » (`kpi`, KeyIndicator) et la courbe du taux de crash (`trend`, TrendChart),
-// pour la version 3.4. Il est sans état, donc sûr pour un usage concurrent : la
+// pour la version 3.4 ; pour « la liste des crashs », par la seule surface `crashes`
+// (CrashList). Les valeurs viennent des builders (builders.go), source unique. Il est sans état, donc sûr pour un usage concurrent : la
 // mémoire des surfaces ouvertes est côté orchestrateur (kit.Request.ActiveSurfaces).
 type Composer struct {
 	catalogID string
@@ -29,7 +30,7 @@ var platforms = []string{"iOS", "Android"}
 
 // Compose implémente kit.Composer. Ordre des messages : surface par surface (kpi puis
 // trend), createSurface → updateComponents → updateDataModel (G4).
-func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset) (kit.Composition, error) {
+func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Dataset, _ func(map[string]any) error) (kit.Composition, error) {
 	if err := ctx.Err(); err != nil {
 		return kit.Composition{}, err
 	}
@@ -37,121 +38,41 @@ func (c *Composer) Compose(ctx context.Context, req kit.Request, ds dataset.Data
 	if err != nil {
 		return kit.Composition{}, err
 	}
-	var (
-		kpiValue, trendValue map[string]any
-		summary              string
-	)
-	if intent.IsZero() {
-		kpiValue, trendValue, summary, err = globalView(ds)
-	} else {
-		kpiValue, trendValue, summary, err = platformView(ds, intent)
+	if intent.View == kit.ViewCrashList {
+		// La liste ne déplace pas le focus : aucune intention n'est renvoyée.
+		value, summary, err := CrashList(Params{Platform: intent.Platform, Count: dataset.MaxTopCrashes}, ds)
+		if err != nil {
+			return kit.Composition{}, err
+		}
+		return kit.Composition{
+			Messages: kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "crashes", "CrashList", "/crashes", value),
+			Summary:  summary + ".",
+		}, nil
 	}
+
+	p := Params{Platform: intent.Platform, CompareTo: intent.CompareTo}
+	kpiValue, kpiSummary, err := KeyIndicator(p, ds)
 	if err != nil {
 		return kit.Composition{}, err
+	}
+	trendValue, trendSummary, err := TrendChart(p, ds)
+	if err != nil {
+		return kit.Composition{}, err
+	}
+	summary := kpiSummary
+	if trendSummary != "" {
+		summary += " ; " + trendSummary
 	}
 
 	var msgs []map[string]any
 	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "kpi", "KeyIndicator", "/kpi", kpiValue)...)
 	msgs = append(msgs, kit.SurfaceMessages(c.catalogID, req.ActiveSurfaces, "trend", "TrendChart", "/trend", trendValue)...)
 
-	return kit.Composition{Messages: msgs, Summary: summary, Intent: &intent}, nil
+	return kit.Composition{Messages: msgs, Summary: summary + ".", Intent: &intent}, nil
 }
 
 // statusLabel met la première lettre du libellé en capitale : « À risque ».
 func statusLabel(l dataset.Level) string { return kit.CapitalizeFirst(l.Label()) }
-
-// globalView compose les data models de l'acte 1 (vue globale, version 3.4).
-func globalView(ds dataset.Dataset) (kpiValue, trendValue map[string]any, summary string, err error) {
-	kpi, err := ds.CrashFree(ds.TargetVersion)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	trendPt, err := ds.Trend(ds.TargetVersion, "")
-	if err != nil {
-		return nil, nil, "", err
-	}
-	kpiValue = map[string]any{
-		"label":       "Sessions sans crash",
-		"value":       dataset.FormatPct(kpi.CrashFreePct, 2),
-		"trend":       dataset.FormatPt(trendPt),
-		"threshold":   "≥ " + dataset.FormatPct(kpi.ThresholdPct, 2),
-		"status":      string(kpi.Level),
-		"statusLabel": statusLabel(kpi.Level),
-	}
-
-	crashThreshold := 100 - kpi.ThresholdPct
-	series := make([]any, 0, len(platforms))
-	crossing := ""
-	for _, p := range platforms {
-		rates, err := ds.DailyCrashRates(ds.TargetVersion, p)
-		if err != nil {
-			return nil, nil, "", err
-		}
-		points := make([]any, len(rates))
-		for i, r := range rates {
-			points[i] = r
-			if crossing == "" && r > crashThreshold {
-				crossing = fmt.Sprintf("%s franchit le seuil de crash à J%d", p, i+1)
-			}
-		}
-		series = append(series, map[string]any{"name": p, "points": points})
-	}
-	trendValue = trendData(crashThreshold, series)
-
-	summary = fmt.Sprintf("%s de sessions sans crash sur 7 jours (seuil ≥ %s, %s, marge %s)",
-		dataset.FormatPct(kpi.CrashFreePct, 2), dataset.FormatPct(kpi.ThresholdPct, 2), kpi.Status, dataset.FormatMargin(kpi.MarginPt))
-	if crossing != "" {
-		summary += " ; " + crossing
-	}
-	return kpiValue, trendValue, summary + ".", nil
-}
-
-// platformView compose les data models d'une plateforme (vue plateforme, ou vue
-// comparaison si intent.CompareTo est renseigné). Le résumé ne reprend que des
-// valeurs déjà affichées.
-func platformView(ds dataset.Dataset, intent kit.Intent) (kpiValue, trendValue map[string]any, summary string, err error) {
-	platform := intent.Platform
-	kpi, err := ds.CrashFreeByPlatform(ds.TargetVersion, platform)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	trendPt, err := ds.Trend(ds.TargetVersion, platform)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	kpiValue = map[string]any{
-		"label":       "Sessions sans crash · " + platform,
-		"value":       dataset.FormatPct(kpi.CrashFreePct, 2),
-		"trend":       dataset.FormatPt(trendPt),
-		"threshold":   "≥ " + dataset.FormatPct(kpi.ThresholdPct, 2),
-		"status":      string(kpi.Level),
-		"statusLabel": statusLabel(kpi.Level),
-	}
-	rates, err := ds.DailyCrashRates(ds.TargetVersion, platform)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	series := []any{map[string]any{"name": platform + " " + ds.TargetVersion, "points": points(rates)}}
-	summary = fmt.Sprintf("%s de sessions sans crash sur %s en 7 jours (seuil ≥ %s, %s)",
-		dataset.FormatPct(kpi.CrashFreePct, 2), platform, dataset.FormatPct(kpi.ThresholdPct, 2), kpi.Status)
-
-	if intent.CompareTo != "" {
-		cmp, err := ds.Comparison(ds.TargetVersion, platform)
-		if err != nil {
-			return nil, nil, "", fmt.Errorf("comparaison acceptée par ParseIntent mais impossible : %w", err)
-		}
-		prevRates, err := ds.DailyCrashRates(cmp.CompareVersion, platform)
-		if err != nil {
-			return nil, nil, "", err
-		}
-		delta := dataset.FormatPt(cmp.CrashFreeDeltaPt)
-		prev := dataset.FormatPct(cmp.Previous.CrashFreePct, 2)
-		kpiValue["comparison"] = map[string]any{"label": cmp.CompareVersion, "value": prev, "delta": delta}
-		series = append(series, map[string]any{"name": platform + " " + cmp.CompareVersion, "points": points(prevRates)})
-		summary += fmt.Sprintf(" ; %s : %s, écart %s", cmp.CompareVersion, prev, delta)
-	}
-	return kpiValue, trendData(100-kpi.ThresholdPct, series), summary + ".", nil
-}
 
 // trendData assemble le data model de la courbe : sept jours, seuil de crash, séries.
 func trendData(crashThreshold float64, series []any) map[string]any {

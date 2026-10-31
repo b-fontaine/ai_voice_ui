@@ -15,7 +15,7 @@ import (
 func composeAction(t *testing.T, name string, active ...string) (kit.Composition, error) {
 	t.Helper()
 	req := kit.Request{ContextID: "c1", ActiveSurfaces: active, Action: kit.ActionCall{Name: name}}
-	return delivery.NewComposer(testCatalog).Compose(context.Background(), req, load(t))
+	return delivery.NewComposer(testCatalog).Compose(context.Background(), req, load(t), nil)
 }
 
 func TestDeliveryActionsMatchFixtures(t *testing.T) {
@@ -87,7 +87,7 @@ func TestDeliveryActionIgnoresResidualText(t *testing.T) {
 	// Le noyau ne transmet pas le texte d'une action ; s'il restait, il ne serait pas lu
 	// comme une demande (ParseIntent refuserait ici deux plateformes).
 	req := kit.Request{Text: "Android et iOS", ContextID: "c1", ActiveSurfaces: []string{"checklist"}, Action: kit.ActionCall{Name: "block_release"}}
-	got, err := delivery.NewComposer(testCatalog).Compose(context.Background(), req, load(t))
+	got, err := delivery.NewComposer(testCatalog).Compose(context.Background(), req, load(t), nil)
 	if err != nil {
 		t.Fatalf("Compose : %v", err)
 	}

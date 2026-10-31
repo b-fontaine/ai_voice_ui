@@ -1,0 +1,5 @@
+# attendu: le port de la passerelle LLM ne doit jamais etre publie
+services:
+  orchestrator:
+    ports:
+      - "127.0.0.1:8081:8081"

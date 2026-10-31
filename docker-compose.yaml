@@ -10,6 +10,13 @@
 # une question ouverte du porteur (Q-44).
 x-a2ui-catalog: &a2ui_catalog ${A2UI_CATALOG_ID:-https://genesis-canvas.example/a2ui/catalogs/genesis/v1}
 
+# Compositeur LLM (pdr-0074). La passerelle interne de l'orchestrateur est le seul point de sortie vers
+# le modèle ; les agents l'appellent par l'adresse FIXE de l'orchestrateur sur le réseau `agents`
+# (sous-réseau déclaré plus bas). Délai de l'appel amont (passerelle) et délai d'attente de l'agent
+# (strictement plus long, puis repli déterministe) : deux ancres, vérifiées par check-compose.sh.
+x-composer-gateway-timeout: &composer_gateway_timeout ${COMPOSER_TIMEOUT:-4s}
+x-composer-agent-timeout: &composer_agent_timeout ${COMPOSER_AGENT_TIMEOUT:-5s}
+
 # Durcissement et santé communs aux agents A2A (R7) : réseau interne seul, aucun port publié,
 # aucun secret, système de fichiers en lecture seule. `build` et `environment` restent par service.
 x-agent: &agent
@@ -35,9 +42,9 @@ services:
     environment:
       # Agents A2A joignables (réseau interne `agents`) : `Nom=URL de la carte`, séparés par des virgules.
       AGENTS: Qualité=http://agent-quality:8090/.well-known/agent-card.json,Voix du client=http://agent-voice:8091/.well-known/agent-card.json,Livraison=http://agent-delivery:8092/.well-known/agent-card.json
-      # Catalogue A2UI partagé avec les agents : les 5 composants à schéma du catalogue Genesis (sans Column ni Text).
+      # Catalogue A2UI partagé avec les agents : les 6 composants à schéma du catalogue Genesis (sans Column ni Text).
       A2UI_CATALOG_ID: *a2ui_catalog
-      A2UI_COMPONENTS: ${A2UI_COMPONENTS:-KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist,ActionBar}
+      A2UI_COMPONENTS: ${A2UI_COMPONENTS:-KeyIndicator,TrendChart,ReviewSentiment,ReleaseChecklist,ActionBar,CrashList}
       A2UI_ALLOWED_PROPS: ${A2UI_ALLOWED_PROPS:-id,component,data}
       A2UI_BINDING_PROPS: ${A2UI_BINDING_PROPS:-data}
       A2UI_WRITABLE_SUBPATHS: ${A2UI_WRITABLE_SUBPATHS:-/checklist/decisionStatus:string}
@@ -75,9 +82,29 @@ services:
       LISTEN_PORT: "8080"
       JOURNAL_DIR: /var/lib/genesis/journal
       VOICE_INSTRUCTIONS_FILE: /etc/genesis/voice-instructions.fr.md
+      # Passerelle LLM interne (pdr-0074 D1) : écouteur sur l'IP fixe de l'orchestrateur dans `agents`
+      # (jamais 0.0.0.0), non publié, sources limitées aux agents branchés. `COMPOSER_MODEL` vide
+      # = passerelle désactivée (503) et composition déterministe. Modèle fixé par la mesure du
+      # 2026-10-30 (T51 : 25/25 plans valides, p50 1,8 s, p90 2,7 s) ; le squelette part avant l'appel (T52).
+      # Syntaxe `${VAR-défaut}` (sans deux-points) : `COMPOSER_MODEL= docker compose up` (valeur VIDE) désactive
+      # le modèle (filet de pdr-0060), une variable absente prend `gpt-6-luna`. Une commande `docker compose`
+      # lancée sans ce modèle dans l'environnement recrée l'orchestrateur avec la valeur par défaut.
+      LLM_GATEWAY_ADDR: ${LLM_GATEWAY_ADDR:-172.30.77.10:8081}
+      LLM_GATEWAY_ALLOWED_SOURCES: ${LLM_GATEWAY_ALLOWED_SOURCES:-172.30.77.21,172.30.77.30}
+      COMPOSER_MODEL: ${COMPOSER_MODEL-gpt-6-luna}
+      COMPOSER_TIMEOUT: *composer_gateway_timeout
+      COMPOSER_MAX_OUTPUT_TOKENS: ${COMPOSER_MAX_OUTPUT_TOKENS:-1024}
+      COMPOSER_REASONING_EFFORT: ${COMPOSER_REASONING_EFFORT:-}
+      COMPOSER_RATE_BURST: ${COMPOSER_RATE_BURST:-10}
+      # Débit : `COMPOSER_RATE_BURST` appels d'un coup, puis UN jeton rendu toutes les `COMPOSER_RATE_WINDOW`
+      # (2 s = 30 appels par minute au plus : plafond de coût, très au-delà du rythme d'un orateur).
+      COMPOSER_RATE_WINDOW: ${COMPOSER_RATE_WINDOW:-2s}
     ports:
       - "127.0.0.1:8080:8080"
-    networks: [default, agents]
+    networks:
+      default: {}
+      agents:
+        ipv4_address: 172.30.77.10
     depends_on:
       agent-quality:
         condition: service_healthy
@@ -110,7 +137,14 @@ services:
       AGENT_LISTEN_ALLOW_NON_LOOPBACK: "1"
       AGENT_PUBLIC_URL: http://agent-quality:8090
       A2UI_CATALOG_ID: *a2ui_catalog
+      # Compositeur LLM : seul Qualité a un choix non trivial (KeyIndicator, TrendChart, CrashList) ;
+      # Voix et Livraison restent déterministes tant que la mesure par agent (T51) ne justifie pas le contraire.
+      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY-http://172.30.77.10:8081/v1/complete}
+      COMPOSER_TIMEOUT: *composer_agent_timeout
     <<: *agent
+    networks:
+      agents:
+        ipv4_address: 172.30.77.21
 
   agent-voice:
     build:
@@ -124,6 +158,9 @@ services:
       AGENT_PUBLIC_URL: http://agent-voice:8091
       A2UI_CATALOG_ID: *a2ui_catalog
     <<: *agent
+    networks:
+      agents:
+        ipv4_address: 172.30.77.22
 
   agent-delivery:
     build:
@@ -137,10 +174,46 @@ services:
       AGENT_PUBLIC_URL: http://agent-delivery:8092
       A2UI_CATALOG_ID: *a2ui_catalog
     <<: *agent
+    networks:
+      agents:
+        ipv4_address: 172.30.77.23
+
+  # Banc de mesure du compositeur (T50, pdr-0074 D4) : lancé à la main, une fois, sous `openai-budget.sh`.
+  #   BENCH_DRY_RUN=1 docker compose --profile bench run --rm composer-bench    (estime les appels)
+  #   docker compose --profile bench run --rm composer-bench                    (campagne réelle)
+  # Même réseau interne que les agents : la passerelle n'est joignable de nulle part ailleurs. Aucune clé,
+  # aucun port, aucun `env_file` ; le modèle est celui que la passerelle impose (`COMPOSER_MODEL`).
+  composer-bench:
+    profiles: [bench]
+    build:
+      context: backend/agents
+      args:
+        CMD: composer-bench
+    environment:
+      COMPOSER_LLM_URL: ${COMPOSER_LLM_URL_QUALITY-http://172.30.77.10:8081/v1/complete}
+      COMPOSER_TIMEOUT: *composer_agent_timeout
+      BENCH_REPEATS: ${BENCH_REPEATS:-5}
+      BENCH_PAUSE: ${BENCH_PAUSE:-1s}
+      BENCH_DRY_RUN: ${BENCH_DRY_RUN:-}
+      BENCH_JSON: ${BENCH_JSON:-}
+      BENCH_PRICE_IN_PER_MTOK: ${BENCH_PRICE_IN_PER_MTOK:-}
+      BENCH_PRICE_OUT_PER_MTOK: ${BENCH_PRICE_OUT_PER_MTOK:-}
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    <<: *agent
+    networks:
+      agents:
+        ipv4_address: 172.30.77.30
+    healthcheck:
+      disable: true
 
 networks:
   agents:
     internal: true
+    ipam:
+      config:
+        - subnet: 172.30.77.0/24
 
 volumes:
   journal:

@@ -225,7 +225,7 @@ func writePhrases(t *testing.T, content string) string {
 	return path
 }
 
-const customPhrases = `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
+const customPhrases = `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"r %s"}`
 
 func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	env := fullEnv()
@@ -238,7 +238,7 @@ func TestConfig_PhrasesFileOverrides(t *testing.T) {
 	if cfg.VoicePhrases != (voice.Phrases{AnnounceDone: "ai", AnnounceFailed: "aif"}) {
 		t.Fatalf("phrases de la voix = %+v", cfg.VoicePhrases)
 	}
-	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" || p.ActionResultTemplate != "ar %s" || p.ActionFailure != "af" || p.Stopped != "st" {
+	if p.Generic != "g" || p.Failure != "f" || p.FailureRejected != "fr" || p.FailureRejectedView != "frv" || p.NoSummary != "ns" || p.QueueFull != "q" || p.NoRequest != "n" || p.NoAgent != "a" || p.OutOfCatalog != "oc" || p.PartialFailure != "pf %s" || p.ResultTemplate != "r %s" || p.ActionResultTemplate != "ar %s" || p.ActionFailure != "af" || p.Stopped != "st" {
 		t.Fatalf("phrases = %+v", p)
 	}
 }
@@ -247,11 +247,11 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 	const secret = "SECRET-CONTENU"
 	cases := map[string]string{
 		"json cassé":       `{"partial_failure":"pf %s","generic": "` + secret,
-		"champ inconnu":    `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
-		"phrase vide":      `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
-		"phrase manquante": `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
-		"deux %s":          `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
-		"sans %s":          `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
+		"champ inconnu":    `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s","` + secret + `":"x"}`,
+		"phrase vide":      `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s"}`,
+		"phrase manquante": `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","result_template":"%s"}`,
+		"deux %s":          `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"%s %s ` + secret + `"}`,
+		"sans %s":          `{"announce_instruction_done":"ai","announce_instruction_failed":"aif","action_result_template":"ar %s","action_failure":"af","stopped":"st","partial_failure":"pf %s","generic":"g","failure":"f","failure_rejected":"fr","failure_rejected_view":"frv","no_summary":"ns","queue_full":"q","no_request":"n","out_of_catalog":"oc","no_agent":"a","result_template":"` + secret + `"}`,
 	}
 	for name, content := range cases {
 		env := fullEnv()
@@ -273,7 +273,7 @@ func TestConfig_PhrasesFileInvalidHidesContent(t *testing.T) {
 
 func TestConfig_PhrasesNewKeysRequired(t *testing.T) {
 	for key, absent := range map[string]string{
-		"failure_rejected":            `"failure_rejected":"fr",`,
+		"failure_rejected":            `"failure_rejected":"fr","failure_rejected_view":"frv",`,
 		"no_summary":                  `"no_summary":"ns",`,
 		"out_of_catalog":              `"out_of_catalog":"oc",`,
 		"partial_failure":             `"partial_failure":"pf %s",`,

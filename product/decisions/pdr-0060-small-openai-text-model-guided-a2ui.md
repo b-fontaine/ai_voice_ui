@@ -3,9 +3,9 @@ id: pdr-0060-small-openai-text-model-guided-a2ui
 title: "PDR-0060 — Petit modèle texte OpenAI guidé par les écrans d'exemple, avec repli déterministe"
 area: decisions
 status: validated
-updated: 2026-10-30
+updated: 2026-10-31
 sources: [specs/006-j3-act1-backend/status.md]
-links: [p-rm-open-questions, p-ar-backend, p-ar-agents-protocols, p-ar-quality, p-ar-stack, p-rm-spikes, p-fn-nfr, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0030-llm-budget-20-eur, pdr-0012-voice-provider-openai]
+links: [p-ar-llm-composer, pdr-0074-012-llm-composer-gateway-crashlist-details, pdr-0070-llm-composer-and-crashlist-012, p-rm-open-questions, p-ar-backend, p-ar-agents-protocols, p-ar-quality, p-ar-stack, p-rm-spikes, p-fn-nfr, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0030-llm-budget-20-eur, pdr-0012-voice-provider-openai]
 tags: [pdr, decision, llm, a2ui, latence]
 decision_status: acceptée
 decided_on: 2026-10-30
@@ -53,5 +53,6 @@ Q-17 : NFR-02/03 imposent une latence courte. 006 : les trois agents composent d
 | 2026-10-30 | Acceptée. Parole du porteur : Question « Q-17 : comment les agents génèrent-ils l'A2UI ? (aujourd'hui : écrans fixes, ce qui contredit pdr-0023) » → option « Petit LLM OpenAI + repli (Recommandé) » : « Un petit modèle texte OpenAI guidé par les écrans d'exemple, choisi par une mesure courte en J3 ; si la latence dépasse NFR-02/03, retour aux écrans fixes, assumé devant le public. ». Tranche Q-17. | Benoît FONTAINE (porteur) |
 | 2026-10-30 | pdr-0023 reste valable (c'en est la mise en œuvre) ; ligne d'historique ajoutée à pdr-0023. | Assistant |
 | 2026-10-30 | Mise en œuvre planifiée en 012 (pdr-0070), parole du porteur citée dans cette PDR | Benoît FONTAINE (porteur), conversation |
+| 2026-10-31 | Mise à jour documentaire à la clôture de 012 ([pdr-0070](pdr-0070-llm-composer-and-crashlist-012.md), [pdr-0074](pdr-0074-012-llm-composer-gateway-crashlist-details.md)) ; **décision maintenue, texte non réécrit**. Mise en œuvre livrée : composition par modèle derrière le port `Composer` (agent Qualité), repli déterministe. L'hypothèse « un petit modèle texte tient NFR-02 et NFR-03 » est **mesurée** (2026-10-30, `gpt-6-luna`, p50 1,79 s, p90 2,69 s) : NFR-03 tenu, NFR-02 non tenu par l'appel seul, d'où le squelette anticipé (pdr-0074 D8), à confirmer par le porteur (Q-82). Détail : [p-ar-llm-composer](../architecture/llm-composer.md) | Assistant (mise à jour documentaire) |
 
 Pas d'archive brute.

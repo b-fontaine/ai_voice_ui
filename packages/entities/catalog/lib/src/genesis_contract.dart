@@ -7,7 +7,7 @@ abstract final class GenesisContract {
   static const String defaultCatalogId =
       'https://genesis-canvas.example/a2ui/catalogs/genesis/v1';
 
-  /// Les 5 composants que le client accepte dans `updateComponents` (dans
+  /// Les 6 composants que le client accepte dans `updateComponents` (dans
   /// l'ordre de `catalog.json`, qui est celui de `A2UI_COMPONENTS`).
   static const List<String> components = <String>[
     'KeyIndicator',
@@ -15,6 +15,7 @@ abstract final class GenesisContract {
     'ReviewSentiment',
     'ReleaseChecklist',
     'ActionBar',
+    'CrashList',
   ];
 
   /// Les 6 composants du catalogue de pdr-0014 (base de l'étagère).
@@ -69,6 +70,7 @@ abstract final class GenesisContract {
           'decisionStatus',
         ],
         'ActionBar': <String>['title', 'actions'],
+        'CrashList': <String>['title', 'items'],
       };
 
   /// Champs obligatoires des éléments ou sous-objets, par composant puis par
@@ -99,6 +101,9 @@ abstract final class GenesisContract {
         'ActionBar': <String, List<String>>{
           'actions': <String>['id', 'label', 'tone'],
         },
+        'CrashList': <String, List<String>>{
+          'items': <String>['rank', 'label', 'platform', 'volume', 'sessions'],
+        },
       };
 
   /// Sous-chemins qu'un `updateDataModel` peut écrire en plus de l'objet entier
@@ -124,6 +129,7 @@ abstract final class GenesisContract {
     'ReviewSentiment': 'reviews',
     'ReleaseChecklist': 'checklist',
     'ActionBar': 'actions',
+    'CrashList': 'crashes',
   };
 
   /// Surface propre à [component], ou `null` s'il n'est pas dans [components].

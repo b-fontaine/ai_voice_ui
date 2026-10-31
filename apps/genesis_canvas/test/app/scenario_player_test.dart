@@ -112,6 +112,11 @@ void main() {
         'vingt messages : l\'acte 2 puis le résultat du clic sur « Bloquer la '
             'release »',
       ),
+      (
+        'crashlist-replay',
+        15,
+        'quinze messages : l\'acte 1 puis la création de la liste des crashs',
+      ),
     ]) {
       test(
         'lit l\'asset $name versionné : $detail, que le gate accepte tous',

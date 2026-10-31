@@ -62,6 +62,7 @@ type Dataset struct {
 	ActionBar ActionBar `json:"actionBar"`
 
 	Rows       []Row            `json:"rows"`
+	CrashRows  []Crash          `json:"crashes"`
 	ReviewRows []ReviewRow      `json:"reviews"`
 	Excerpts   []Excerpt        `json:"excerpts"`
 	Changelog  []ChangelogEntry `json:"changelog"`
@@ -86,6 +87,9 @@ func LoadFrom(data []byte) (Dataset, error) {
 		return Dataset{}, err
 	}
 	if err := d.validateActionBar(); err != nil {
+		return Dataset{}, err
+	}
+	if err := d.validateCrashes(); err != nil {
 		return Dataset{}, err
 	}
 	if strings.TrimSpace(d.TargetVersion) == "" || strings.TrimSpace(d.CompareVersion) == "" {

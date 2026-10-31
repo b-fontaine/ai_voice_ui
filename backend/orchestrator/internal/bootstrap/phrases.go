@@ -22,13 +22,15 @@ type phrasesFile struct {
 	Generic         string `json:"generic"`
 	Failure         string `json:"failure"`
 	FailureRejected string `json:"failure_rejected"`
-	NoSummary       string `json:"no_summary"`
-	QueueFull       string `json:"queue_full"`
-	NoRequest       string `json:"no_request"`
-	NoAgent         string `json:"no_agent"`
-	OutOfCatalog    string `json:"out_of_catalog"`
-	PartialFailure  string `json:"partial_failure"`
-	ResultTemplate  string `json:"result_template"`
+	// Vue demandée indisponible (spec 012) : ne parle pas des plateformes.
+	FailureRejectedView string `json:"failure_rejected_view"`
+	NoSummary           string `json:"no_summary"`
+	QueueFull           string `json:"queue_full"`
+	NoRequest           string `json:"no_request"`
+	NoAgent             string `json:"no_agent"`
+	OutOfCatalog        string `json:"out_of_catalog"`
+	PartialFailure      string `json:"partial_failure"`
+	ResultTemplate      string `json:"result_template"`
 	// Action de l'interface (009) : confirmation et échec.
 	ActionResultTemplate string `json:"action_result_template"`
 	ActionFailure        string `json:"action_failure"`
@@ -54,16 +56,16 @@ func loadPhrases(path string) (orchestrate.Phrases, voice.Phrases, error) {
 	dec.DisallowUnknownFields()
 	var f phrasesFile
 	if err := dec.Decode(&f); err != nil {
-		return orchestrate.Phrases{}, voice.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, failure_rejected, no_summary, queue_full, no_request, no_agent, out_of_catalog, partial_failure, result_template, action_result_template, action_failure, stopped, announce_instruction_done, announce_instruction_failed attendu)")
+		return orchestrate.Phrases{}, voice.Phrases{}, errors.New("VOICE_PHRASES_FILE : JSON invalide (objet avec generic, failure, failure_rejected, failure_rejected_view, no_summary, queue_full, no_request, no_agent, out_of_catalog, partial_failure, result_template, action_result_template, action_failure, stopped, announce_instruction_done, announce_instruction_failed attendu)")
 	}
 	p := orchestrate.Phrases{
-		Generic: f.Generic, Failure: f.Failure, FailureRejected: f.FailureRejected, NoSummary: f.NoSummary, QueueFull: f.QueueFull,
+		Generic: f.Generic, Failure: f.Failure, FailureRejected: f.FailureRejected, FailureRejectedView: f.FailureRejectedView, NoSummary: f.NoSummary, QueueFull: f.QueueFull,
 		NoRequest: f.NoRequest, NoAgent: f.NoAgent, OutOfCatalog: f.OutOfCatalog, PartialFailure: f.PartialFailure, ResultTemplate: f.ResultTemplate,
 		ActionResultTemplate: f.ActionResultTemplate, ActionFailure: f.ActionFailure, Stopped: f.Stopped,
 	}
 	vp := voice.Phrases{AnnounceDone: f.AnnounceInstructionDone, AnnounceFailed: f.AnnounceInstructionFailed}
 	// Ordre fixe : l'erreur nomme toujours la première clé absente.
-	for _, kv := range [][2]string{{"failure_rejected", f.FailureRejected}, {"no_summary", f.NoSummary}, {"out_of_catalog", f.OutOfCatalog}, {"partial_failure", f.PartialFailure},
+	for _, kv := range [][2]string{{"failure_rejected", f.FailureRejected}, {"failure_rejected_view", f.FailureRejectedView}, {"no_summary", f.NoSummary}, {"out_of_catalog", f.OutOfCatalog}, {"partial_failure", f.PartialFailure},
 		{"action_result_template", f.ActionResultTemplate}, {"action_failure", f.ActionFailure}, {"stopped", f.Stopped},
 		{"announce_instruction_done", f.AnnounceInstructionDone}, {"announce_instruction_failed", f.AnnounceInstructionFailed}} {
 		key, v := kv[0], kv[1]

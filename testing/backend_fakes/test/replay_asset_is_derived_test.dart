@@ -211,4 +211,78 @@ void main() {
       expect(text, isNot(contains(r'${CATALOG_ID}')));
     });
   });
+
+  group('rejeu de la liste des crashs (012)', () {
+    test('l\'asset versionné est identique à la sortie du script', () async {
+      final genesis = await ContractFixtures.genesisDirectory();
+      final root = genesis.parent.parent.parent.parent;
+      final asset = File.fromUri(
+        root.uri.resolve(
+          'apps/genesis_canvas/assets/replays/crashlist-replay.jsonl',
+        ),
+      );
+      expect(asset.existsSync(), isTrue, reason: 'asset de rejeu introuvable');
+
+      final result = await Process.run('dart', <String>[
+        'run',
+        'tool/gen_replay.dart',
+        '--scenario',
+        'crashlist',
+      ], workingDirectory: Directory.current.path);
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+
+      expect(
+        asset.readAsStringSync(),
+        result.stdout,
+        reason: 'asset périmé : régénérer avec tool/gen_replay.dart',
+      );
+    });
+
+    test('acte 1 à l\'identique, puis les trois messages de '
+        '`crashlist-global.jsonl` : quinze lignes, horodatage strictement '
+        'croissant', () async {
+      final act1 = const LineSplitter().convert(
+        await ContractFixtures.act1ReplayJsonl(),
+      );
+      final lines = const LineSplitter().convert(
+        await ContractFixtures.crashlistReplayJsonl(),
+      );
+      expect(lines, hasLength(15));
+      expect(lines.take(12).toList(), act1);
+
+      final entries = lines
+          .map((l) => jsonDecode(l) as Map<String, Object?>)
+          .toList();
+      final times = entries.map((e) => e['t_ms']! as int).toList();
+      for (var i = 1; i < times.length; i++) {
+        expect(times[i], greaterThan(times[i - 1]));
+      }
+      // La liste arrive 500 ms après la dernière surface de l'acte 1, les
+      // messages espacés de 50 ms.
+      expect(times.skip(12).toList(), <int>[2000, 2050, 2100]);
+
+      final genesis = await ContractFixtures.genesisDirectory();
+      final fixture = File.fromUri(
+        genesis.uri.resolve('examples/crashlist-global.jsonl'),
+      ).readAsLinesSync().where((l) => l.trim().isNotEmpty).toList();
+      final expected = fixture
+          .map(
+            (l) => jsonDecode(
+              l.replaceAll(
+                ContractFixtures.catalogPlaceholder,
+                ContractFixtures.defaultCatalogId,
+              ),
+            ),
+          )
+          .toList();
+      expect(entries.skip(12).map((e) => e['message']).toList(), expected);
+    });
+
+    test('catalogId substitué dans tout le rejeu', () async {
+      final text = await ContractFixtures.crashlistReplayJsonl(
+        catalogId: 'https://exemple.test/c/v1',
+      );
+      expect(text, isNot(contains(r'${CATALOG_ID}')));
+    });
+  });
 }
