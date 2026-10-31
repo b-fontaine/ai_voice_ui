@@ -1,6 +1,6 @@
 # 014 — État
 
-- **Étape** : Clôture
+- **Étape** : Terminée
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -19,6 +19,7 @@
 | 2026-10-31 | Revue | `architect-reviewer` (Opus, mode CODE) : **À REFACTORISER** (0 bloquante, 3 importantes R1-R3, 7 mineures R4-R10), rapport collé ci-dessous | `755ae50` |
 | 2026-10-31 | Refactorisation | **R1 à R8 et R10 appliquées en 3 lots** (R9, R5/R2 en clôture T92) : F-A Flutter (R1 fin d'interruption quand la délégation précède la correction + scénario S-07 bis ; R2 `setMicEnabled` rend un booléen, `Active(micMuted)` seulement sur succès : `.omc/state/loop/gates/20261031-055246-unit-flutter.log`), G Go (R3 C-04 par la file avec contrôle d'ordre ; R4 `ConsumeBefore` sous `s.mu` et garde d'époque dans `run()`, test de 300 itérations non vu rouge — course de quelques ns ; R5 limite documentée ; R6 refus du préfixe de mot d'arrêt ; R7 `InterruptCause` typé : `…055625-unit-go.log`), F-B Flutter (R8 `_InterruptionKind`, `canSilence` unique ; R10 test du focus après `deleteSurface` vert d'emblée : `…055913-unit-flutter.log`). **`gate --full` VERT sur arbre propre (67 contrôles)** : `.omc/state/loop/gates/20261031-060046-full.log` | `6e5a6f6`, `80f84c5`, `e5b606c` |
 | 2026-10-31 | Vérification | **`gate --full` VERT sur arbre propre** (67 contrôles, HEAD `cc62dac`, colonne propre = yes) : `.omc/state/loop/gates/20261031-060732-full.log` ; capture `app-smoke act2-replay` 1920×1080 relue : `.omc/state/loop/snapshots/20261031-061019-act2-replay.png` — surfaces Android, « Couper le micro » / « Faire taire » / « Acte 1/3 · Créer » / « Remettre à vide » lisibles à 24 px, sans ellipse ni débordement, barre du haut intacte (capture précédente `act1-replay` : `…20261031-053611-act1-replay.png`). Pas d'essai réel payant (voix hors délégation et micro réel : en répétition, Q-79, Q-87) | `cc62dac` |
+| 2026-10-31 | Clôture | Documents `product/` (via `product-steward`, lint 0 erreur : pdr-0076 D3/D5/D6, FR-12/14/17/20, RG-12/15/21/22, NFR-12, `screen.md` « Espace » → « Échap », `voice-interruption.md` § Correction en vol et Limite connue, `app-channel-contract.md` `cause`, `p-fn-feature-silence-micro-correction-014`, Q-79 et Q-87 précisées, roadmap J7 : reste pour la répétition) ; R9 faite ; fusion dans `loop` et `publish.sh` à suivre | commit `product/` |
 
 ## Revue d'architecte
 Revue du plan (P1 à P8) : voir le journal ci-dessus ; amendements appliqués. Conflits avec une décision : aucun (P1 précise pdr-0076 D3, P2 complète le contrat de pdr-0073).
