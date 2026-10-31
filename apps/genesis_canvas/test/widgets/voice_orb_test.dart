@@ -317,7 +317,11 @@ void main() {
 
       expect(find.text('Micro coupé'), findsOneWidget);
       expect(find.byKey(const Key('mic-muted-veil')), findsOneWidget);
-      expect(tester.getSize(find.byKey(_orbKey)), const Size.square(64));
+      expect(
+        tester.getSize(find.byKey(const Key('mic-muted-veil'))),
+        const Size.square(64),
+        reason: 'le disque voilé recouvre l\'orbe, sans le grandir',
+      );
       // La phase reste lisible sous le voile.
       expect(_state(tester), 'Écoute');
       expect(_named(_draw(tester), #drawCircle), isNotEmpty);
@@ -336,14 +340,25 @@ void main() {
       expect(find.text('Micro coupé'), findsNothing);
     });
 
-    testWidgets('le libellé tient dans l\'orbe, sans débordement', (
+    testWidgets('le libellé fait 24 px au moins (RG-09) et ne déborde pas', (
       tester,
     ) async {
       await tester.pumpWidget(_host(level, micMuted: true));
+
+      final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+        find.text('Micro coupé'),
+      );
+      expect(paragraph.text.style?.fontSize, greaterThanOrEqualTo(24));
+      expect(paragraph.didExceedMaxLines, isFalse);
+      expect(tester.takeException(), isNull);
+      // Sous le disque, dans les 104 points utiles de la barre du haut.
+      final Rect veil = tester.getRect(find.byKey(const Key('mic-muted-veil')));
       final Rect label = tester.getRect(find.text('Micro coupé'));
-      final Rect orb = tester.getRect(find.byKey(_orbKey));
-      expect(orb.inflate(0.5).contains(label.topLeft), isTrue);
-      expect(orb.inflate(0.5).contains(label.bottomRight), isTrue);
+      expect(label.top, greaterThanOrEqualTo(veil.bottom));
+      expect(
+        tester.getSize(find.byKey(_orbKey)).height,
+        lessThanOrEqualTo(104),
+      );
     });
   });
 }

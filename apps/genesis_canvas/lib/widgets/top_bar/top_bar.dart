@@ -124,7 +124,10 @@ class _Details extends StatelessWidget {
                 key: const Key('transcript-ai'),
                 role: 'IA',
                 text: transcript.aiLine,
-                maxLines: 2,
+                // Avec un message d'état, la zone (104 points utiles) ne
+                // loge que trois lignes : la régie à quatre boutons laisse
+                // peu de largeur au texte, la réplique de l'IA s'abrège.
+                maxLines: message == null ? 2 : 1,
               ),
             ],
           ),

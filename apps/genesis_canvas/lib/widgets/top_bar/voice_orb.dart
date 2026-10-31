@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
@@ -116,28 +117,36 @@ class _VoiceOrbState extends State<VoiceOrb>
           : 'repos',
       child: child,
     ),
-    child: SizedBox.square(
-      dimension: VoiceOrb.diameter,
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          RepaintBoundary(
-            child: CustomPaint(
-              painter: _OrbPainter(
-                level: widget.level,
-                animation: _animation,
-                thinking: widget.thinking,
-                interrupted: widget.interrupted,
-                speakingThreshold: widget.speakingThreshold,
-                bodyPaint: _bodyPaint,
-                flashPaint: _flashPaint,
-                arcPaint: _arcPaint,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SizedBox.square(
+          dimension: VoiceOrb.diameter,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: _OrbPainter(
+                    level: widget.level,
+                    animation: _animation,
+                    thinking: widget.thinking,
+                    interrupted: widget.interrupted,
+                    speakingThreshold: widget.speakingThreshold,
+                    bodyPaint: _bodyPaint,
+                    flashPaint: _flashPaint,
+                    arcPaint: _arcPaint,
+                  ),
+                ),
               ),
-            ),
+              if (widget.micMuted) const _MicMutedVeil(),
+            ],
           ),
-          if (widget.micMuted) const _MicMutedVeil(),
-        ],
-      ),
+        ),
+        // Le libellé (24 px au moins, RG-09) ne tient pas dans les 64 points
+        // du disque : il se pose dessous, et la colonne s'élargit d'autant.
+        if (widget.micMuted) const _MicMutedLabel(),
+      ],
     ),
   );
 }
@@ -212,37 +221,33 @@ class _OrbPainter extends CustomPainter {
       old.speakingThreshold != speakingThreshold;
 }
 
-/// Voile « Micro coupé » : disque grisé, barre oblique et libellé, sur toute
-/// la surface de l'orbe (le libellé tient sur deux lignes).
+/// Voile « Micro coupé » : disque grisé et barre oblique, sur toute la
+/// surface de l'orbe ; le libellé est [_MicMutedLabel].
 class _MicMutedVeil extends StatelessWidget {
   const _MicMutedVeil();
-
-  static const String label = 'Micro coupé';
 
   @override
   Widget build(BuildContext context) => const DecoratedBox(
     key: Key('mic-muted-veil'),
     decoration: BoxDecoration(shape: BoxShape.circle, color: Color(0xB3424242)),
-    child: CustomPaint(
-      painter: _StrikePainter(),
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 6),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.ltr,
-            style: TextStyle(
-              color: Color(0xFFFFFFFF),
-              fontSize: 12,
-              height: 1.1,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.none,
-            ),
-          ),
-        ),
-      ),
-    ),
+    child: CustomPaint(painter: _StrikePainter(), child: SizedBox.expand()),
+  );
+}
+
+/// Libellé « Micro coupé » au format de la scène (24 px au moins, RG-09), en
+/// une ligne.
+class _MicMutedLabel extends StatelessWidget {
+  const _MicMutedLabel();
+
+  static const String label = 'Micro coupé';
+
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    maxLines: 1,
+    softWrap: false,
+    textAlign: TextAlign.center,
+    style: SceneTheme.of(context).label,
   );
 }
 

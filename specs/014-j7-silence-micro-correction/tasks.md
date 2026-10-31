@@ -14,8 +14,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T10 [P] Flutter — `RtcMic.setEnabled`, `VoiceTransport.setMicEnabled`, `FlutterWebRtcTransport` (jamais d'arrêt de capture ; échec plateforme → non coupé) · test d'abord : faux pair, piste `enabled=false`
 - [x] T11 [P] Flutter — `VoiceMicMuteRequested` (`sequential()`, valeur cible), `Active(micMuted)` avec égalité, remise à faux dans `start()`/`_release()`, `silenceRemote()` + variante `VoiceSilenced` · test d'abord : couper, `stop`, `start` → `micMuted: false` et micro neuf actif ; commande en `Connecting`/`Stopping` sans effet ; faire taire pendant micro coupé
 - [x] T12 Flutter — `cause` de `voice.interrupted` (converter, défaut `stop`, inconnu = `stop`) ; `OrbPhaseBloc` (silence + fin d'interruption sur correction), `TranscriptBloc` (troncature), `OrbLevelController` (niveau 0) ; voile « Micro coupé » · test d'abord : Bloc tests des quatre effets et de la reprise
-- [ ] T13 Flutter — disposition de la barre du haut (deux colonnes, voir plan) puis boutons `silence-button` (actif si `Active` et phase ≠ `Interrupted`) et `mic-button` · test d'abord : widget test (cibles ≥ 48 px, libellés entiers à 24 px, états, absence de débordement)
-- [ ] T14 Flutter — câblage de la page, `Focus(autofocus: true)`, `M` et `Échap` (jamais `Espace`) · test d'abord : widget test sans aucun focus, et après le clic sur un bouton qui se désactive
+- [x] T13 Flutter — disposition de la barre du haut (deux colonnes, voir plan) puis boutons `silence-button` (actif si `Active` et phase ≠ `Interrupted`) et `mic-button` · test d'abord : widget test (cibles ≥ 48 px, libellés entiers à 24 px, états, absence de débordement)
+- [x] T14 Flutter — câblage de la page, `Focus(autofocus: true)`, `M` et `Échap` (jamais `Espace`) · test d'abord : widget test sans aucun focus, et après le clic sur un bouton qui se désactive
 - [ ] T15 Flutter — capture `app-smoke` 1920×1080 relue
 
 ## TDD — lot B (Go), ordre T20 → T21 → T23 → T22
