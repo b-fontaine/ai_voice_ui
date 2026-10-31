@@ -2,7 +2,7 @@
 
 - **Étape** : TDD
 - **Tentatives** : 0/3
-- **Tâche en cours** : —
+- **Tâche en cours** : T10, T11
 - **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/016-voice-guard-resume
 - **Backlog** : EP-02, EP-06
