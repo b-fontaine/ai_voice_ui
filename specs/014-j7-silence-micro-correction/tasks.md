@@ -1,28 +1,31 @@
-# 014 — Tâches
+# 014 — Tâches (amendées par la revue du plan : P1 à P8)
 
 Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. `[P]` = indépendante des autres tâches ouvertes. Les piles Flutter (lot A) et Go (lot B) sont indépendantes ; `docker-compose.yaml` et `product/` sont modifiés par la session principale seulement.
 
+## Préalable (session principale)
+- [ ] T00 `product-curate` — `barge-in.feature` : libellé de S-09 « raccourci » → « bouton ou raccourci » (le scénario est automatisé pour le bouton et pour `Échap`) · lint produit vert
+
 ## Gherkin
-- [ ] T01 Flutter — automatiser S-09 (bouton « Faire taire »), M-01 et M-02 (micro) dans `apps/genesis_canvas/test/acceptance/` · test d'abord : steps non implémentés, puis rouges (pas de bouton)
-- [ ] T02 Flutter — automatiser le côté app de S-07 (`voice.interrupted` de correction : piste coupée, orbe « Interrompue », surfaces conservées) · test d'abord : rouge pour la bonne raison ou déjà couvert par K-05 (le dire)
-- [ ] T03 Go — C-01 à C-04 (tag `acceptance`, agents scriptés bloquants `startTestAgent`) · test d'abord : pas de `CorrectionDetector`
+- [ ] T01 Flutter — S-09 (bouton « Faire taire » **et** `Échap`), M-01, M-02 (faux micro : piste désactivée, capture non arrêtée, session `Active`) dans `apps/genesis_canvas/test/acceptance/` · test d'abord : steps non implémentés, puis rouges (pas de bouton)
+- [ ] T02 Flutter — S-07 côté app : `VoiceInterrupted(at, correction)` puis `DelegationStarted(at + 1500)` → orbe `Listening` et piste distante rétablie ; le cas `stop` reste celui de K-05 · test d'abord : **rouge** (exemption `stopSpan` actuelle)
+- [ ] T03 Go — C-01 à C-05 (tag `acceptance`, agents scriptés bloquants `startTestAgent`), pilotés par le faux fournisseur et `VOICE_CORRECTION_WORDS`, sans référencer le classifieur · test d'abord : rouge parce qu'aucun `voice.interrupted` n'est publié (pas une erreur de compilation du paquet)
 
 ## TDD — lot A (Flutter)
-- [ ] T10 [P] Flutter — `VoiceTransport.setMicEnabled` + `RtcPeer.setLocalAudioEnabled` + `FlutterWebRtcTransport` (état mémorisé avant l'ouverture, réarmé au redémarrage) · test d'abord : faux pair, la piste locale passe à `enabled=false`, jamais arrêtée
-- [ ] T11 [P] Flutter — `VoiceSession.setMicMuted` / `silenceRemote` (sans effet hors `Active`, jamais de fermeture) · test d'abord : session `Active` reste `Active`
-- [ ] T12 [P] Flutter — `OrbPhaseBloc` : phase `MicMuted` (grisé barré), event de silence demandé → `Interrupted` puis `Listening` par le chemin existant (`resumeRemoteAudio`) · test d'abord : Bloc test `Speaking` + silence → `Interrupted`
-- [ ] T13 Flutter — boutons `silence-button` (actif en `Speaking`) et `mic-button` dans la régie ; budget de la barre du haut ; ≥ 48 px, `Semantics` · test d'abord : widget test (cibles, états, libellés entiers à 24 px)
-- [ ] T14 Flutter — câblage de la page + raccourcis `M` et `Échap` (sans effet hors session ; jamais `Espace`) · test d'abord : widget test avec focus sur un bouton
-- [ ] T15 Flutter — capture `app-smoke` 1920×1080 relue (boutons lisibles, barre sans débordement)
+- [ ] T10 [P] Flutter — `RtcMic.setEnabled`, `VoiceTransport.setMicEnabled`, `FlutterWebRtcTransport` (jamais d'arrêt de capture ; échec plateforme → non coupé) · test d'abord : faux pair, piste `enabled=false`
+- [ ] T11 [P] Flutter — `VoiceMicMuteRequested` (`sequential()`, valeur cible), `Active(micMuted)` avec égalité, remise à faux dans `start()`/`_release()`, `silenceRemote()` + variante `VoiceSilenced` · test d'abord : couper, `stop`, `start` → `micMuted: false` et micro neuf actif ; commande en `Connecting`/`Stopping` sans effet ; faire taire pendant micro coupé
+- [ ] T12 Flutter — `cause` de `voice.interrupted` (converter, défaut `stop`, inconnu = `stop`) ; `OrbPhaseBloc` (silence + fin d'interruption sur correction), `TranscriptBloc` (troncature), `OrbLevelController` (niveau 0) ; voile « Micro coupé » · test d'abord : Bloc tests des quatre effets et de la reprise
+- [ ] T13 Flutter — disposition de la barre du haut (deux colonnes, voir plan) puis boutons `silence-button` (actif si `Active` et phase ≠ `Interrupted`) et `mic-button` · test d'abord : widget test (cibles ≥ 48 px, libellés entiers à 24 px, états, absence de débordement)
+- [ ] T14 Flutter — câblage de la page, `Focus(autofocus: true)`, `M` et `Échap` (jamais `Espace`) · test d'abord : widget test sans aucun focus, et après le clic sur un bouton qui se désactive
+- [ ] T15 Flutter — capture `app-smoke` 1920×1080 relue
 
-## TDD — lot B (Go)
-- [ ] T20 [P] Go — `CorrectionDetector` : premier mot significatif, reste de l'énoncé conservé, correction nue ignorée, mot d'arrêt prioritaire, liste vide = coupé · test d'abord : table de cas (« Non, plutôt iOS » oui ; « Non. » non ; « non seulement… » en vol oui, hors vol non)
-- [ ] T21 [P] Go — `session.Interrupt` avec `keepFrom` (délégations `≥ at_ms` conservées, `< at_ms` retirées avec leur phrase `stopped`, actions conservées, pas de `ConsumeUntil`, pas de `hasStop`) · test d'abord : ordre FIFO et `-race`
-- [ ] T22 Go — branchement dans `supervise` (détecteur lu seulement si une exécution est en vol ou en file) et configuration `VOICE_CORRECTION_WORDS` validée au démarrage · test d'abord : transcripts scriptés → `voice.interrupted` publié une fois
-- [ ] T23 Go — non-régression Q-74 / RD-10 (deux délégations « Concentre-toi sur Android » / « et compare avec la 3.3 » : aucune annulation) · test d'abord : scénario vert avant et après
+## TDD — lot B (Go), ordre T20 → T21 → T23 → T22
+- [ ] T20 Go — classifieur d'énoncé unique (Stop \| Correction), config `VOICE_CORRECTION_WORDS` validée (bornes, intersection avec les mots d'arrêt, liste vide) · test d'abord : table (« Non. » + « Plutôt iOS. » correction ; « Non, stop » Stop ; « Stop, non » Stop ; plus de 4 mots correction ; « En fait, iOS » correction ; « Non. » seul rien) + `config_test` pour chaque refus. **Possède** `stopword.go` et `config` ; ne touche ni le port ni le faux de délégations
+- [ ] T21 Go — port `Supersede` + `session.Supersede`, `Window.ConsumeBefore`, garde de `Delegate`, item `"supersede"` du forwarder, faux de `delegations_test.go` · test d'abord sous `-race` : (a) correction déjà en cours non annulée ; (b) correction en file conservée puis exécutée (époque re-tamponnée) ; (c) seule une action en vol : rien publié, action non annulée ; (d) aucune fusion de l'ancien texte ; (e) délégation tardive d'offset `< at` écartée ; (f) `voice.interrupted` avant le premier `deleteSurface` et le premier `agent.activity canceled` ; K-01 à K-07 inchangés
+- [ ] T23 Go — non-régression Q-74 / RD-10, **écrite avant T22** (verte avant et après) : « Concentre-toi sur Android » en vol, « et compare avec la 3.3 » en file → aucun `voice.interrupted`, ni annulation, deux exécutions dans l'ordre, focus hérité ; « Concentre-toi plutôt sur iOS » (mot non en tête) → pas de correction ; correction coupée en deux délégations (« Non, » puis « plutôt iOS ») → un seul plan
+- [ ] T22 Go — branchement dans `supervise`/`stopWatch` (classifieur toujours alimenté, `Detection` porteuse du genre, `cause` publié) ; `IsStopOnly`/`OnlyStopWords` ignorent les mots de correction de tête ; demande réduite à des mots de correction non planifiée · test d'abord : transcripts scriptés → `voice.interrupted {cause: correction}` publié une fois
 - [ ] T24 Compose (session principale) — `VOICE_CORRECTION_WORDS=non,plutôt,en fait` · test d'abord : test de configuration du compose
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer + refactorisations
-- [ ] T92 Documents `product/` (voice-interruption, screen, requirements FR-12/FR-17/FR-20, barge-in.feature, Q-87), `gate.sh --full` vert, état d'avancement, fusion et `publish.sh`
+- [ ] T92 Documents `product/` (voice-interruption : `Supersede`, `cause`, configuration réutilisée ; app-channel-contract ; screen ; requirements FR-12/FR-17/FR-20 ; barge-in.feature ; Q-79 et Q-87), `gate.sh --full` vert, état d'avancement, fusion et `publish.sh`

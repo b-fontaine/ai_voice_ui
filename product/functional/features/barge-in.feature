@@ -44,9 +44,10 @@ Fonctionnalité: Couper la parole à l'IA
     Quand la salle applaudit pendant une seconde
     Alors l'IA continue de parler
 
+  # Libellé amendé par 014 (pdr-0076, pdr-0033) : bouton « Faire taire » d'abord, raccourci Échap facultatif.
   @S-09 @FR-20 @NFR-12
   Scénario: Faire taire l'IA au clavier
     Soit l'IA est en train de parler
-    Quand j'appuie sur le raccourci "silence"
+    Quand je fais taire l'IA par le bouton ou le raccourci "silence"
     Alors l'IA se tait immédiatement
     Et la session reste ouverte
