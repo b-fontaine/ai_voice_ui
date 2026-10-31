@@ -1,0 +1,28 @@
+# 015 — Tâches (amendées par la revue du plan : P1 à P8)
+
+Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit échouer>`. `[P]` = indépendante des autres tâches ouvertes. Les piles Flutter (lot A) et Go (lot B) sont indépendantes ; `docker-compose.yaml`, `product/` et `specs/` sont modifiés par la session principale seulement.
+
+## Gherkin
+- [x] T01 Flutter — S-05 (sans mot d'arrêt), O-01 côté app (`voice.interrupted {overlap}` reçu pendant `Speaking` → `Interrupted` ; reçu pendant `Listening` → `Interrupted` puis `Listening` aussitôt, piste rétablie ; fin à la délégation d'offset ≥ `at_ms`) et L-01 à L-04 dans `apps/genesis_canvas/test/acceptance/` (`acte_chevauchement_liaison.feature`) · test d'abord : steps non implémentés, puis rouges (cause inconnue traitée comme `stop`, aucune liaison)
+- [x] T02 Go — O-01 à O-08 (tag `acceptance`, agents scriptés bloquants, faux fournisseur qui envoie de l'audio de sortie **continu, à niveau nul quand l'IA se tait**), sans référencer `OverlapFilter` ; chaque scénario négatif (O-02, O-03, O-04, O-07) porte un **témoin positif** (un mot significatif hors écho déclenche exactement un `voice.interrupted {overlap}` avec le `at_ms` attendu ; O-04 : même script, rien avec `false`, un déclenchement avec `true`) · test d'abord : rouge parce qu'aucun `voice.interrupted {overlap}` n'est publié
+- [x] T03 Go — non-régression : rejouer toute la suite d'acceptation Go de 011 et 014 avec les valeurs du compose, chevauchement actif (verte avant et après, écrite avant T23)
+
+## TDD — lot A (Flutter)
+- [x] T10 [P] Flutter — `InterruptionCause.overlap`, convertisseur (inconnu = `stop`), `OrbPhaseBloc` (règle P6 : hors `Speaking`, `Interrupted` puis `Listening` aussitôt ; sinon fin à la délégation d'offset ≥ `at_ms`, y compris arrivée avant l'interruption, ou au silence de reprise) · test d'abord : Bloc tests de la table des causes et des phases
+- [x] T14 [P] Flutter — jeton `motionLink` (période de défilement, génération des tokens DTCG) et `SceneMotionScope.loop` · test d'abord : valeur du jeton ; `disabled` → contrôleur arrêté, phase fixe, pas d'assertion de période nulle
+- [x] T11 Flutter — `DelegationLinkGeometry` et `DelegationLinkPainter` (pointillés, phase, arc au-dessus des pastilles, épaisseur ≥ 3 px, préfixe commun, cache de chemin) · test d'abord : tests sur rectangles de tuiles donnés (départ, arrivée, arc sans intersection avec un `RenderParagraph`)
+- [x] T12a Flutter — `DelegationLinks` et `AgentsRail` : `KeyedSubtree` + `GlobalKey` (la `Column` garde `Key('agent-…')`), mesure aussi au changement de contraintes, filtre par état dans `DelegationLinks`, clés `delegation-link-<agent>` · test d'abord : widget tests L-01, L-02, L-04, redimensionnement, tuile la plus éloignée, plan vide
+- [x] T12b Flutter — animation : `State` à ticker, `repeat`/`stop` selon `SceneMotionScope`, `CustomPainter(repaint:)`, `RepaintBoundary` · test d'abord : L-03, bascule de `disabled` en cours de route, aucun frame planifié sans lien, aucune reconstruction des tuiles sur 10 images
+- [ ] T13 Flutter — capture `app-smoke` 1920×1080 relue (liaison visible, aucun libellé couvert, contraste)
+
+## TDD — lot B (Go), ordre T20 → T21 → T22 → T23
+- [x] T20 Go — `CauseOverlap`, `VOICE_OVERLAP_*` : lecture, bornes (tableau du plan), validation sans recopier de mot, valeur nulle = coupé · test d'abord : `config_test` pour **chaque défaut, chaque borne et chaque refus**
+- [x] T21 Go — `OverlapFilter` pur : jetons fermés, mots significatifs (nombre toujours significatif), liste ignorée, écho de sortie (mémo borné, élagage média), garde par niveau, verrouillage à l'ouverture de l'énoncé · test d'abord : table (écho exact ; « Andr|oid » en écho ne déclenche pas ; « iO|S » hors écho déclenche une seule fois au jeton fermé ; « 3.3 » compte ; mot court ; interjection ; silence de sortie continu à niveau nul ; IA silencieuse depuis 0,8 s au delta mais parlante à l'ouverture → déclenche)
+- [x] T22 Go — `KindOverlap` dans le classifieur : priorité (correction/début de correction, arrêt/début d'arrêt, chevauchement), Stop écarté pour longueur évalué en Overlap, anti-rebond asymétrique, énoncé tranché une fois, `StopConfig.Active()` · test d'abord : une ligne par cas (« Stop » mot à mot ne déclenche jamais `Overlap` ; « Stop, montre plutôt Android pour la 3.3 » → Overlap ; « Non, plutôt iOS » reste correction ; « en » puis « fait » n'est pas un chevauchement ; Stop 1 s après Overlap non filtré ; Overlap 1 s après Stop filtré ; « Et pour la 3.3 » → Overlap)
+- [x] T23 Go — branchement dans `supervise`/`stopWatch` (`NoteOutput(level)`, `FeedOutput`, `onDetection`), `at_ms` = premier delta de l'énoncé, annonce puis `fw.supersede(atMs, nil)`, correction pendant que l'IA parle sans exécution en vol · test d'abord sous `-race` : un seul `voice.interrupted` par énoncé dans tous les cas ; exécution antérieure annulée et demande du speaker planifiée **avec son mot de tête en écho** ; rien d'autre que l'annonce sans exécution en vol ; aucune annonce si l'IA se tait à l'ouverture
+- [x] T24 Compose (session principale) — `VOICE_OVERLAP_*` avec mots ignorés (mots vides et acquiescements) · test d'abord : `check-compose.sh`
+
+## Clôture
+- [x] T90 `tools/loop/gate.sh --full` vert
+- [ ] T91 Revue architect-reviewer + refactorisations
+- [ ] T92 Documents `product/` (voice-interruption : détecteur de chevauchement, garde, écho, configuration ; app-channel-contract : `cause` ; screen : liaison ; frontend-screen ; requirements FR-03/FR-13/FR-18 ; barge-in.feature S-05 complet ; nouveau fichier de scénarios 015 ; Q-77 et Q-85 « livrées » ; Q-80 enrichie ; roadmap), `gate.sh --full` vert, état d'avancement, fusion et `publish.sh`
