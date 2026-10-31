@@ -46,6 +46,9 @@ final class _InterruptionEnded extends OrbPhaseEvent {
   final int generation;
 }
 
+// Nature de l'interruption en cours.
+enum _InterruptionKind { stop, silence, correction }
+
 /// Phase de l'orbe : `Listening | Speaking | Interrupted`.
 ///
 /// `VoiceInterrupted` et `VoiceSilenced` passent en [Interrupted]. On en sort quand `orb.level`
@@ -94,9 +97,9 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   int _generation = 0;
   int _interruptedAtMs = 0;
   // Nature de l'interruption en cours : `stop` exempte la délégation du « Stop »
-  // lui-même ; `correction` attend la délégation d'offset >= `at_ms`.
-  bool _stopExemption = false;
-  bool _correction = false;
+  // lui-même ; `correction` attend la délégation d'offset >= `at_ms` ;
+  // `silence` s'achève à la première délégation.
+  _InterruptionKind _kind = _InterruptionKind.silence;
   // Plus grand offset de `DelegationStarted` reçu depuis le début de la session.
   int? _lastDelegationOffsetMs;
 
@@ -114,8 +117,10 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
           _beginInterruption(
             emit,
             atMs: atMs,
-            stopExemption: cause == InterruptionCause.stop,
-            correction: cause == InterruptionCause.correction,
+            kind: switch (cause) {
+              InterruptionCause.stop => _InterruptionKind.stop,
+              InterruptionCause.correction => _InterruptionKind.correction,
+            },
           );
           // La délégation de la correction a pu arriver avant l'interruption :
           // on passe par Interrupted (la page coupe la piste) puis on en sort
@@ -127,12 +132,7 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
             _endInterruption(emit);
           }
         case VoiceSilenced():
-          _beginInterruption(
-            emit,
-            atMs: 0,
-            stopExemption: false,
-            correction: false,
-          );
+          _beginInterruption(emit, atMs: 0, kind: _InterruptionKind.silence);
         case OrbLevelChanged(:final double level):
           final bool loud = level >= speakingThreshold;
           if (state is Interrupted) {
@@ -147,12 +147,14 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
           }
           if (state is! Interrupted) {
             _endInterruption(emit);
-          } else if (_stopExemption) {
-            if (offsetMs > _interruptedAtMs + stopSpan.inMilliseconds) {
-              _endInterruption(emit);
-            }
-          } else if (!_correction || offsetMs >= _interruptedAtMs) {
-            _endInterruption(emit);
+          } else {
+            final bool ends = switch (_kind) {
+              _InterruptionKind.stop =>
+                offsetMs > _interruptedAtMs + stopSpan.inMilliseconds,
+              _InterruptionKind.correction => offsetMs >= _interruptedAtMs,
+              _InterruptionKind.silence => true,
+            };
+            if (ends) _endInterruption(emit);
           }
         case SessionStateChanged(state: SessionState.closed) ||
             SessionStateChanged(state: SessionState.connecting) ||
@@ -168,14 +170,12 @@ class OrbPhaseBloc extends Bloc<OrbPhaseEvent, OrbPhase> {
   void _beginInterruption(
     Emitter<OrbPhase> emit, {
     required int atMs,
-    required bool stopExemption,
-    required bool correction,
+    required _InterruptionKind kind,
   }) {
     _maxTimer?.cancel();
     _generation++;
     _interruptedAtMs = atMs;
-    _stopExemption = stopExemption;
-    _correction = correction;
+    _kind = kind;
     final int generation = _generation;
     _maxTimer = Timer(maxInterruption, () => _signalEnd(generation));
     _armSilence();

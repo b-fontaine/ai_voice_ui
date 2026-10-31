@@ -60,6 +60,7 @@ import 'package:feature_voice_session/feature_voice_session.dart'
         Idle,
         LiveSessionEventSource,
         Interrupted,
+        canSilence,
         OrbLevelController,
         OrbPhase,
         OrbPhaseBloc,
@@ -871,8 +872,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
               onInvoke: (_) {
                 // Idempotent : sans effet hors `Active` (`silenceRemote`) et
                 // tant que l'orbe est déjà interrompue.
-                if (_voiceBloc.state is Active &&
-                    _phaseBloc.state is! Interrupted) {
+                if (canSilence(_voiceBloc.state, _phaseBloc.state)) {
                   _silenceRemote();
                 }
                 return null;

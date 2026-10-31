@@ -138,7 +138,7 @@ class VoiceSession {
   /// événement local sur [silenced]. Sans effet hors `Active`. Ne ferme
   /// jamais la session ; fonctionne micro coupé.
   Future<void> silenceRemote() async {
-    if (_current is! Active || _isStale(_generation)) return;
+    if (_current is! Active || _stopRequested || _releasing) return;
     final transport = _transport;
     _remoteMuted = true;
     if (!_silencedController.isClosed) _silencedController.add(null);

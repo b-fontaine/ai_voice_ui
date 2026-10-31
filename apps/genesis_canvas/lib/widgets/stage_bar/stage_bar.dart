@@ -8,6 +8,7 @@ import 'package:feature_voice_session/feature_voice_session.dart'
     show
         Active,
         Interrupted,
+        canSilence,
         OrbPhase,
         OrbPhaseBloc,
         VoiceSessionBloc,
@@ -259,13 +260,17 @@ class _VoiceControls extends StatelessWidget {
           },
         ),
         const SizedBox(height: 4),
-        BlocSelector<VoiceSessionBloc, VoiceSessionStatus, bool>(
-          selector: (VoiceSessionStatus status) => status is Active,
-          builder: (BuildContext context, bool active) {
-            return BlocSelector<OrbPhaseBloc, OrbPhase, bool>(
-              selector: (OrbPhase phase) => phase is Interrupted,
-              builder: (BuildContext context, bool interrupted) {
-                final bool enabled = active && !interrupted;
+        BlocBuilder<VoiceSessionBloc, VoiceSessionStatus>(
+          buildWhen: (
+            VoiceSessionStatus previous,
+            VoiceSessionStatus current,
+          ) => (previous is Active) != (current is Active),
+          builder: (BuildContext context, VoiceSessionStatus status) {
+            return BlocBuilder<OrbPhaseBloc, OrbPhase>(
+              buildWhen: (OrbPhase previous, OrbPhase current) =>
+                  (previous is Interrupted) != (current is Interrupted),
+              builder: (BuildContext context, OrbPhase phase) {
+                final bool enabled = canSilence(status, phase);
                 return Semantics(
                   button: true,
                   enabled: enabled,

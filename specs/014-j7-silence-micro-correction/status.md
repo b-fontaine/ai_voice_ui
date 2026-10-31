@@ -30,9 +30,9 @@ Conforme : couches et barrels, `getIt` seulement dans la page racine, Bloc sans 
 - [x] **R5** [mineure, Go] fenêtre sortie de file / `beginRun` : acceptable ; la documenter (« Limite connue » dans `Supersede`, une ligne dans `voice-interruption.md` en T92).
 - [x] **R6** [mineure, Go] `ValidateCorrectionWords` : refuser aussi un mot d'arrêt dont les jetons commencent par ceux d'un mot de correction (« non merci »).
 - [x] **R7** [mineure, Go] `type InterruptCause string` et `CauseStop` explicite dans `interrupt()` (payload sans `cause` inchangé).
-- [ ] **R8** [mineure, Flutter] énumération privée `_InterruptionKind { stop, silence, correction }` au lieu de deux booléens ; une seule `canSilence(status, phase)` pour bouton et `Échap` ; `_isStale` dans `silenceRemote`.
+- [x] **R8** [mineure, Flutter] énumération privée `_InterruptionKind { stop, silence, correction }` au lieu de deux booléens ; une seule `canSilence(status, phase)` pour bouton et `Échap` ; `_isStale` dans `silenceRemote`.
 - [ ] **R9** [mineure, docs, T92] pdr-0076 D5 (régie à deux colonnes de 480 px, libellé sous l'orbe, réplique à 1 ligne avec un message d'état, `Focus(autofocus)` + `Shortcuts`) ; `screen.md` « Espace » → « Échap ».
-- [ ] **R10** [mineure, Flutter] test du focus perdu quand une surface retirée portait le focus ; si rouge, redemander `_shortcutFocus`.
+- [x] **R10** [mineure, Flutter] test du focus perdu quand une surface retirée portait le focus ; si rouge, redemander `_shortcutFocus`.
 Conflits avec une décision : aucun. À valider en répétition : « Faire taire » n'annule aucune génération (pdr-0076 D1) ; si l'IA marque une pause ≥ `resumeSilence`, sa voix revient en milieu de réplique.
 
 Lots : **F-A** (Flutter) R1 puis R2 ; **G** (Go) R3, R4, R5, R6, R7 ; **F-B** (Flutter) R8, R10 ; R9 et les mentions de R2/R5 en T92.

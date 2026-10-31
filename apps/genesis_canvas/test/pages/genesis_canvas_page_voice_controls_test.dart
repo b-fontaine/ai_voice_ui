@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart' hide testWidgets;
 import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
+import 'package:testing_backend_fakes/testing_backend_fakes.dart'
+    show ContractFixtures;
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 import '../support/page_rig.dart';
@@ -124,6 +126,43 @@ void main() {
 
     expect(transport().remoteAudioEnabled, isTrue);
     expect(transport().micEnabled, isTrue);
+  });
+
+  testWidgets('un contrôle focalisé dans une surface A2UI ensuite retirée : '
+      'M et Échap répondent encore', (tester) async {
+    await activeSession(tester);
+    final messages = (await tester.runAsync(
+      () => ContractFixtures.actionsMessages(catalogId: rigCatalog),
+    ))!;
+    messages.forEach(rig.receive);
+    await tester.pump();
+    await tester.pump();
+    final Finder inSurface = find.byKey(const Key('action-block_release'));
+    expect(inSurface, findsOneWidget);
+    Focus.of(
+      tester.element(
+        find.descendant(of: inSurface, matching: find.byType(Text)).first,
+      ),
+    ).requestFocus();
+    await tester.pump();
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      isNot('genesis-shortcuts'),
+    );
+
+    rig.receive(<String, Object?>{
+      'version': 'v0.9',
+      'deleteSurface': <String, Object?>{'surfaceId': 'actions'},
+    });
+    for (var i = 0; i < 4; i++) {
+      await tester.pump();
+    }
+    expect(inSurface, findsNothing);
+
+    await press(tester, LogicalKeyboardKey.keyM);
+    expect(transport().micEnabled, isFalse);
+    await press(tester, LogicalKeyboardKey.escape);
+    expect(transport().remoteAudioEnabled, isFalse);
   });
 
   testWidgets('hors session : M et Échap sont sans effet', (tester) async {
