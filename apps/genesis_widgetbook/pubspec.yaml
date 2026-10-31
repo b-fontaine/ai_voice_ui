@@ -1,0 +1,29 @@
+name: genesis_widgetbook
+description: Catalogue Widgetbook du design system et des composants de Genesis Canvas (outil de développement).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: 3.13.7
+  flutter: 3.47.8
+resolution: workspace
+
+dependencies:
+  entity_catalog:
+    path: ../../packages/entities/catalog
+  feature_canvas:
+    path: ../../packages/features/canvas
+  flutter:
+    sdk: flutter
+  shared_design_system:
+    path: ../../packages/shared/design_system
+  widgetbook: 4.0.0-beta.14
+
+dev_dependencies:
+  build_runner: 2.16.1
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

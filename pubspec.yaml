@@ -8,6 +8,7 @@ environment:
 
 workspace:
   - apps/genesis_canvas
+  - apps/genesis_widgetbook
   - packages/features/canvas
   - packages/shared/core
   - packages/entities/session
