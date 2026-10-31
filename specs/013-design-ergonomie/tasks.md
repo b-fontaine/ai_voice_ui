@@ -18,7 +18,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T14 Flutter — `CatalogShelf` : deux rangées de trois puces, noms entiers, état par icône et `Semantics` ; disposition confirmée par la capture (T17) · test d'abord : `catalog_shelf_test.dart` (polices réelles, aucune ellipse, 6/6, paires de contraste de l'icône)
 - [x] T15 Flutter — régie : `StageBar` empile deux contrôles de largeur égale, 48 px, `VisualDensity.standard`, `minimumSize` 48, `Semantics`, bordure et contraste ; panneau du protocole : nombre d'entrées affichées calculé sur la hauteur disponible, hauteur dépliée ≤ zone du canevas · test d'abord : `stage_bar_test.dart` (sous Linux : `getSize(...).height >= 48`, libellé le plus long), `protocol_panel_test.dart` (4 entrées dont une refusée plus `actions`, aucune exception)
 - [x] T16 Flutter — repère « AGENTS A2A » (rail) et étagère « CATALOGUE · n / 6 utilisés » conservés, aucun libellé « CANEVAS » · test d'abord : `genesis_canvas_page_test.dart`
-- [ ] T17 Flutter — captures : `app-smoke` sur `act1-replay` et `crashlist-replay`, lecture des PNG, ajustements de marges ou repli (rail sur deux rangées, étagère) · preuve : capture relue (aucun nouveau test)
+- [x] T17 Flutter — captures : `app-smoke` sur `act1-replay` et `crashlist-replay`, lecture des PNG, ajustements de marges ou repli (rail sur deux rangées, étagère) · preuve : capture relue (aucun nouveau test)
 
 ## Lot B — apparition animée
 - [ ] T20 Flutter — `SceneMotion` (200 et 150 ms, `easeOutCubic`, facteur de vitesse, plancher 60 ms) et `SceneMotionScope` dans `shared_design_system`, exportés par le barrel ; les 400 ms de `_DecisionStatus` passent par `SceneMotion` · test d'abord : `scene_motion_test.dart`
