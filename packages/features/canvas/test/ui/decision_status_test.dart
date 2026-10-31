@@ -131,6 +131,53 @@ void main() {
     expect(find.text('Bloquée'), findsOneWidget);
   });
 
+  group('transition du statut sous SceneMotionScope (R3)', () {
+    Future<CatalogHarness> blockedWith(
+      WidgetTester tester,
+      ({bool disabled, double speed}) motion,
+    ) async {
+      final h = CatalogHarness(
+        'checklist',
+        'checklist',
+        size: narrowCell,
+        fontFamily: 'Noto Sans',
+        fontFamilyFallback: const <String>['DejaVu Sans'],
+      );
+      await h.pump(tester, motion: motion);
+      await h.sendFixtureTo(tester, 3);
+      await h.send(
+        tester,
+        contractFixture(
+          'block',
+          GenesisContract.defaultCatalogId,
+          variant: 'act3',
+        ).single,
+      );
+      return h;
+    }
+
+    Finder chips() => find.descendant(
+      of: find.byKey(const Key('decision-status')),
+      matching: find.byType(DsStatusChip),
+    );
+
+    testWidgets('animations coupées : pas de fondu croisé', (tester) async {
+      await blockedWith(tester, (disabled: true, speed: 1));
+      await tester.pump();
+      expect(chips(), findsOneWidget);
+      expect(find.text('Bloquée'), findsOneWidget);
+      expect(find.text('En attente de décision'), findsNothing);
+    });
+
+    testWidgets('vitesse 2 : la transition dure 200 ms', (tester) async {
+      await blockedWith(tester, (disabled: false, speed: 2));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(chips(), findsNWidgets(2));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(chips(), findsOneWidget);
+    });
+  });
+
   group('Barre d\'actions : en cours, fait, réactivé', () {
     late SurfaceController controller;
     late CanvasBloc canvas;

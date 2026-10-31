@@ -20,7 +20,7 @@ abstract final class SceneMotion {
   static const Duration floor = SceneTokens.motionFloor;
 
   /// Translation verticale d'apparition, en pixels logiques.
-  static const double translation = 8;
+  static const double translation = SceneTokens.motionTranslation;
 
   /// Courbe commune à toutes les transitions de la scène.
   static const Curve curve = Curves.easeOutCubic;
@@ -72,6 +72,24 @@ class SceneMotionScope extends InheritedWidget {
   /// Durée effective d'une animation de base [base].
   Duration durationFor(Duration base) =>
       disabled ? Duration.zero : SceneMotion.scaled(base, speed: speed);
+
+  /// Joue [controller] depuis le début sur [base] adaptée au réglage en vigueur.
+  ///
+  /// Durée nulle (animations coupées) : le contrôleur passe aussitôt à 1, sans
+  /// animation. Sinon, il repart de 0 sur la durée mise à l'échelle.
+  static void play(
+    BuildContext context,
+    AnimationController controller,
+    Duration base,
+  ) {
+    final Duration duration = of(context).durationFor(base);
+    controller.duration = duration;
+    if (duration == Duration.zero) {
+      controller.value = 1;
+    } else {
+      controller.forward(from: 0);
+    }
+  }
 
   @override
   bool updateShouldNotify(SceneMotionScope oldWidget) =>

@@ -272,6 +272,13 @@
     }
   },
   "size": {
+    "8": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
     "24": {
       "$type": "dimension",
       "$value": {

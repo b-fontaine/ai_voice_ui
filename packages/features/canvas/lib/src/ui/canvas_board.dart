@@ -192,24 +192,25 @@ class _SurfaceCell extends StatelessWidget {
           if (phase == null) return const SizedBox.shrink();
           return KeyedSubtree(
             key: ValueKey<String>('surface-$id'),
-            // Le `RepaintBoundary` est toujours là, à la même place : le
-            // contenu ne se remonte pas et ses peintures restent isolées. La
-            // translation d'apparition se fait en dessous de lui.
-            child: RepaintBoundary(
-              // Le contenu reste le premier enfant de la pile : poser ou
-              // retirer le contour ne remonte pas le moteur.
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  _SurfaceAppearance(
-                    id: id,
-                    controller: controller,
-                    phase: phase,
-                    restored: restored,
+            // Le contenu (`RepaintBoundary` à place fixe, premier enfant) ne se
+            // remonte pas et ses peintures restent isolées : le `ClipRect`
+            // contient la translation d'apparition, et le contour pointillé
+            // est posé au-dessus du `RepaintBoundary`, sans le repeindre.
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                RepaintBoundary(
+                  child: ClipRect(
+                    child: _SurfaceAppearance(
+                      id: id,
+                      controller: controller,
+                      phase: phase,
+                      restored: restored,
+                    ),
                   ),
-                  _HighlightOutline(id: id, highlight: highlight),
-                ],
-              ),
+                ),
+                _HighlightOutline(id: id, highlight: highlight),
+              ],
             ),
           );
         },
@@ -282,14 +283,7 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance>
   }
 
   void _play() {
-    final Duration duration = SceneMotionScope.of(context)
-        .durationFor(SceneMotion.appear);
-    _animation.duration = duration;
-    if (duration == Duration.zero) {
-      _animation.value = 1;
-    } else {
-      _animation.forward(from: 0);
-    }
+    SceneMotionScope.play(context, _animation, SceneMotion.appear);
   }
 
   @override

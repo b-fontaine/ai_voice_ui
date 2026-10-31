@@ -198,6 +198,10 @@
       "floor": {
         "$type": "duration",
         "$value": "{duration.60}"
+      },
+      "translation": {
+        "$type": "dimension",
+        "$value": "{size.8}"
       }
     }
   }

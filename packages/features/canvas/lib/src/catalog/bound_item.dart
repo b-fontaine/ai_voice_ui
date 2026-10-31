@@ -107,14 +107,7 @@ class _ValueFadeState extends State<_ValueFade>
         widget.state != _BoundState.data) {
       return;
     }
-    final Duration duration = SceneMotionScope.of(context)
-        .durationFor(SceneMotion.value);
-    _animation.duration = duration;
-    if (duration == Duration.zero) {
-      _animation.value = 1;
-    } else {
-      _animation.forward(from: 0);
-    }
+    SceneMotionScope.play(context, _animation, SceneMotion.value);
   }
 
   @override

@@ -106,6 +106,65 @@ void main() {
       );
     });
 
+    group('play', () {
+      Future<AnimationController> run(
+        WidgetTester tester, {
+        required bool disabled,
+        required double speed,
+        required Duration base,
+      }) async {
+        late AnimationController controller;
+        await tester.pumpWidget(
+          SceneMotionScope(
+            disabled: disabled,
+            speed: speed,
+            child: _Player(base: base, onController: (c) => controller = c),
+          ),
+        );
+        return controller;
+      }
+
+      testWidgets('durée nulle : valeur 1 sans animation', (tester) async {
+        final c = await run(
+          tester,
+          disabled: true,
+          speed: 1,
+          base: SceneMotion.appear,
+        );
+        expect(c.value, 1);
+        expect(c.isAnimating, isFalse);
+        expect(c.duration, Duration.zero);
+      });
+
+      testWidgets('vitesse 2 : durée divisée, animation depuis 0', (
+        tester,
+      ) async {
+        final c = await run(
+          tester,
+          disabled: false,
+          speed: 2,
+          base: SceneMotion.appear,
+        );
+        expect(c.duration, const Duration(milliseconds: 100));
+        expect(c.value, 0);
+        expect(c.isAnimating, isTrue);
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(c.value, 1);
+      });
+
+      testWidgets('plancher de 60 ms', (tester) async {
+        final c = await run(
+          tester,
+          disabled: false,
+          speed: 8,
+          base: SceneMotion.value,
+        );
+        expect(c.duration, SceneMotion.floor);
+        await tester.pumpAndSettle();
+      });
+    });
+
     testWidgets('notifie les dépendants quand speed change', (tester) async {
       int builds = 0;
       Widget host(double speed) => SceneMotionScope(
@@ -124,4 +183,38 @@ void main() {
       expect(builds, 2);
     });
   });
+}
+
+/// Joue un contrôleur via [SceneMotionScope.play] au premier rendu.
+class _Player extends StatefulWidget {
+  const _Player({required this.base, required this.onController});
+
+  final Duration base;
+  final void Function(AnimationController) onController;
+
+  @override
+  State<_Player> createState() => _PlayerState();
+}
+
+class _PlayerState extends State<_Player> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    SceneMotionScope.play(context, _controller, widget.base);
+    widget.onController(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox();
 }

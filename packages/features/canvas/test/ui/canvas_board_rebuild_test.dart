@@ -98,6 +98,43 @@ void main() {
     ) as RenderRepaintBoundary).debugSymmetricPaintCount;
   }
 
+  /// Peintures effectives (hors réutilisation de couche) des objets de rendu
+  /// sous le `RepaintBoundary` de la cellule, mesurées pendant [action].
+  Future<int> contentPaintsDuring(
+    WidgetTester tester,
+    String id,
+    Future<void> Function() action,
+  ) async {
+    final RenderObject boundary = tester.renderObject(
+      find
+          .descendant(
+            of: find.byKey(ValueKey<String>('slot-$id')),
+            matching: find.byType(RepaintBoundary),
+          )
+          .first,
+    );
+    final Set<RenderObject> content = <RenderObject>{};
+    void collect(RenderObject object) {
+      content.add(object);
+      object.visitChildren(collect);
+    }
+
+    boundary.visitChildren(collect);
+    int paints = 0;
+    debugProfilePaintsEnabled = true;
+    debugOnProfilePaint = (RenderObject object) {
+      if (content.contains(object)) paints++;
+    };
+    addTearDown(() {
+      debugProfilePaintsEnabled = false;
+      debugOnProfilePaint = null;
+    });
+    await action();
+    debugProfilePaintsEnabled = false;
+    debugOnProfilePaint = null;
+    return paints;
+  }
+
   Future<void> threeSurfaces(WidgetTester tester) async {
     await pumpBoard(tester);
     await send(tester, <Object>[
@@ -159,6 +196,30 @@ void main() {
     expect(paintsOf(tester, 'reviews'), reviewsPaints);
     expect(find.byKey(const Key('highlight-kpi')), findsNothing);
     expect(find.byKey(const Key('highlight-trend')), findsOneWidget);
+  });
+
+  testWidgets('la surbrillance ne repeint pas le contenu de la cellule', (
+    tester,
+  ) async {
+    await threeSurfaces(tester);
+    await tester.pump();
+    final int before = paintsOf(tester, 'kpi');
+
+    final int posed = await contentPaintsDuring(tester, 'kpi', () async {
+      highlight.value = 'kpi';
+      await tester.pump();
+    });
+    expect(find.byKey(const Key('highlight-kpi')), findsOneWidget);
+    expect(paintsOf(tester, 'kpi'), before);
+    expect(posed, 0, reason: 'poser le contour repeint le contenu');
+
+    final int removed = await contentPaintsDuring(tester, 'kpi', () async {
+      highlight.value = null;
+      await tester.pump();
+    });
+    expect(find.byKey(const Key('highlight-kpi')), findsNothing);
+    expect(paintsOf(tester, 'kpi'), before);
+    expect(removed, 0, reason: 'retirer le contour repeint le contenu');
   });
 
   testWidgets('un message A2UI sans nouvelle surface ne reconstruit pas le '

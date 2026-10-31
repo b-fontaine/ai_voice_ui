@@ -135,11 +135,12 @@ void main() {
     });
   });
 
-  test('mouvement : durées et plancher de SceneMotion', () {
+  test('mouvement : durées, plancher et translation de SceneMotion', () {
     expectToken('scene.motion.appear', SceneMotion.appear, _ms);
     expectToken('scene.motion.value', SceneMotion.value, _ms);
     expectToken('scene.motion.status', SceneMotion.status, _ms);
     expectToken('scene.motion.floor', SceneMotion.floor, _ms);
+    expectToken('scene.motion.translation', SceneMotion.translation, _px);
   });
 
   test('aucun token de scène sans contrepartie dans le code', () {
