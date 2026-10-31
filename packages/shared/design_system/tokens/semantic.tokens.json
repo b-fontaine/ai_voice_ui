@@ -1,0 +1,116 @@
+{
+  "color": {
+    "background": {
+      "$type": "color",
+      "$value": "{color.ink.950}"
+    },
+    "surface": {
+      "$type": "color",
+      "$value": "{color.ink.900}"
+    },
+    "text": {
+      "primary": {
+        "$type": "color",
+        "$value": "{color.mist.100}"
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{color.mist.300}"
+      }
+    },
+    "accent": {
+      "$type": "color",
+      "$value": "{color.violet.300}"
+    },
+    "outline": {
+      "highlight": {
+        "$type": "color",
+        "$value": "{color.violet.300}"
+      }
+    },
+    "status": {
+      "ok": {
+        "background": {
+          "$type": "color",
+          "$value": "{color.green.900}"
+        },
+        "foreground": {
+          "$type": "color",
+          "$value": "{color.green.200}"
+        }
+      },
+      "risk": {
+        "background": {
+          "$type": "color",
+          "$value": "{color.amber.900}"
+        },
+        "foreground": {
+          "$type": "color",
+          "$value": "{color.amber.200}"
+        }
+      },
+      "blocking": {
+        "background": {
+          "$type": "color",
+          "$value": "{color.red.900}"
+        },
+        "foreground": {
+          "$type": "color",
+          "$value": "{color.red.200}"
+        }
+      },
+      "neutral": {
+        "background": {
+          "$type": "color",
+          "$value": "{color.ink.800}"
+        },
+        "foreground": {
+          "$type": "color",
+          "$value": "{color.mist.200}"
+        }
+      }
+    },
+    "action": {
+      "neutralBorder": {
+        "$type": "color",
+        "$value": "{color.ink.400}"
+      },
+      "dangerBorder": {
+        "$type": "color",
+        "$value": "{color.red.400}"
+      }
+    },
+    "agent": {
+      "working": {
+        "$type": "color",
+        "$value": "{color.amber.500}"
+      },
+      "idle": {
+        "$type": "color",
+        "$value": "{color.slate.300}"
+      },
+      "rejected": {
+        "$type": "color",
+        "$value": "{color.amber.400}"
+      },
+      "interrupted": {
+        "$type": "color",
+        "$value": "{color.mist.400}"
+      }
+    },
+    "chart": {
+      "ios": {
+        "$type": "color",
+        "$value": "{color.violet.300}"
+      },
+      "android": {
+        "$type": "color",
+        "$value": "{color.blue.300}"
+      },
+      "other": {
+        "$type": "color",
+        "$value": "{color.teal.300}"
+      }
+    }
+  }
+}

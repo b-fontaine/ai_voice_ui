@@ -1,0 +1,204 @@
+{
+  "scene": {
+    "color": {
+      "background": {
+        "$type": "color",
+        "$value": "{color.background}"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "{color.surface}"
+      },
+      "textPrimary": {
+        "$type": "color",
+        "$value": "{color.text.primary}"
+      },
+      "textSecondary": {
+        "$type": "color",
+        "$value": "{color.text.secondary}"
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "{color.accent}"
+      },
+      "okBackground": {
+        "$type": "color",
+        "$value": "{color.status.ok.background}"
+      },
+      "okForeground": {
+        "$type": "color",
+        "$value": "{color.status.ok.foreground}"
+      },
+      "riskBackground": {
+        "$type": "color",
+        "$value": "{color.status.risk.background}"
+      },
+      "riskForeground": {
+        "$type": "color",
+        "$value": "{color.status.risk.foreground}"
+      },
+      "blockingBackground": {
+        "$type": "color",
+        "$value": "{color.status.blocking.background}"
+      },
+      "blockingForeground": {
+        "$type": "color",
+        "$value": "{color.status.blocking.foreground}"
+      },
+      "neutralBackground": {
+        "$type": "color",
+        "$value": "{color.status.neutral.background}"
+      },
+      "neutralForeground": {
+        "$type": "color",
+        "$value": "{color.status.neutral.foreground}"
+      },
+      "highlightOutline": {
+        "$type": "color",
+        "$value": "{color.outline.highlight}"
+      },
+      "actionNeutralBorder": {
+        "$type": "color",
+        "$value": "{color.action.neutralBorder}"
+      },
+      "actionDangerBorder": {
+        "$type": "color",
+        "$value": "{color.action.dangerBorder}"
+      },
+      "agentWorking": {
+        "$type": "color",
+        "$value": "{color.agent.working}"
+      },
+      "agentIdle": {
+        "$type": "color",
+        "$value": "{color.agent.idle}"
+      },
+      "agentRejected": {
+        "$type": "color",
+        "$value": "{color.agent.rejected}"
+      },
+      "agentInterrupted": {
+        "$type": "color",
+        "$value": "{color.agent.interrupted}"
+      },
+      "chartIos": {
+        "$type": "color",
+        "$value": "{color.chart.ios}"
+      },
+      "chartAndroid": {
+        "$type": "color",
+        "$value": "{color.chart.android}"
+      },
+      "chartOther": {
+        "$type": "color",
+        "$value": "{color.chart.other}"
+      }
+    },
+    "text": {
+      "body": {
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "label": {
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.600}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.secondary}"
+        }
+      },
+      "value": {
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.56}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.110}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.700}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "title": {
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.32}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.120}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.700}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "actIndicator": {
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.28}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.120}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.700}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      }
+    },
+    "motion": {
+      "appear": {
+        "$type": "duration",
+        "$value": "{duration.200}"
+      },
+      "value": {
+        "$type": "duration",
+        "$value": "{duration.150}"
+      },
+      "status": {
+        "$type": "duration",
+        "$value": "{duration.400}"
+      },
+      "floor": {
+        "$type": "duration",
+        "$value": "{duration.60}"
+      }
+    }
+  }
+}

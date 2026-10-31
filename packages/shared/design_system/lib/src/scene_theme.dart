@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'generated/scene_tokens.g.dart';
 import 'scene_status.dart';
 
 /// Thème de la scène Genesis Canvas (fond sombre, texte lisible à distance).
@@ -39,59 +40,60 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.actIndicator,
   });
 
-  /// Thème sombre de la démo (fond aligné sur la page : 0xFF0B0B14).
+  /// Thème sombre de la démo, construit depuis les constantes `SceneTokens`
+  /// générées (tokens DTCG : `tokens/*.tokens.json`, fond 0xFF0B0B14).
   const SceneTheme.dark()
-    : background = const Color(0xFF0B0B14),
-      surface = const Color(0xFF181830),
-      textPrimary = const Color(0xFFF2F2F8),
-      textSecondary = const Color(0xFFB9B9CC),
-      accent = const Color(0xFFB39DFF),
-      okBackground = const Color(0xFF0F3D26),
-      okForeground = const Color(0xFF8FF0B5),
-      riskBackground = const Color(0xFF4A3300),
-      riskForeground = const Color(0xFFFFD27A),
-      blockingBackground = const Color(0xFF4D1117),
-      blockingForeground = const Color(0xFFFFB3B8),
-      neutralBackground = const Color(0xFF2A2A40),
-      neutralForeground = const Color(0xFFD8D8E6),
-      highlightOutline = const Color(0xFFB39DFF),
-      actionNeutralBorder = const Color(0xFF9A9AB8),
-      actionDangerBorder = const Color(0xFFFF6B75),
-      agentWorking = const Color(0xFFFFC107),
-      agentIdle = const Color(0xFF90A4AE),
-      agentRejected = const Color(0xFFFFAB40),
-      agentInterrupted = const Color(0xFFB0B0BC),
-      chartIos = const Color(0xFFB39DFF),
-      chartAndroid = const Color(0xFF6CB6FF),
-      chartOther = const Color(0xFF5EEAD4),
+    : background = SceneTokens.colorBackground,
+      surface = SceneTokens.colorSurface,
+      textPrimary = SceneTokens.colorTextPrimary,
+      textSecondary = SceneTokens.colorTextSecondary,
+      accent = SceneTokens.colorAccent,
+      okBackground = SceneTokens.colorOkBackground,
+      okForeground = SceneTokens.colorOkForeground,
+      riskBackground = SceneTokens.colorRiskBackground,
+      riskForeground = SceneTokens.colorRiskForeground,
+      blockingBackground = SceneTokens.colorBlockingBackground,
+      blockingForeground = SceneTokens.colorBlockingForeground,
+      neutralBackground = SceneTokens.colorNeutralBackground,
+      neutralForeground = SceneTokens.colorNeutralForeground,
+      highlightOutline = SceneTokens.colorHighlightOutline,
+      actionNeutralBorder = SceneTokens.colorActionNeutralBorder,
+      actionDangerBorder = SceneTokens.colorActionDangerBorder,
+      agentWorking = SceneTokens.colorAgentWorking,
+      agentIdle = SceneTokens.colorAgentIdle,
+      agentRejected = SceneTokens.colorAgentRejected,
+      agentInterrupted = SceneTokens.colorAgentInterrupted,
+      chartIos = SceneTokens.colorChartIos,
+      chartAndroid = SceneTokens.colorChartAndroid,
+      chartOther = SceneTokens.colorChartOther,
       body = const TextStyle(
-        fontSize: 24,
-        height: 1.3,
-        color: Color(0xFFF2F2F8),
+        fontSize: SceneTokens.textBodyFontSize,
+        height: SceneTokens.textBodyHeight,
+        color: SceneTokens.textBodyColor,
       ),
       label = const TextStyle(
-        fontSize: 24,
-        height: 1.3,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFFB9B9CC),
+        fontSize: SceneTokens.textLabelFontSize,
+        height: SceneTokens.textLabelHeight,
+        fontWeight: SceneTokens.textLabelFontWeight,
+        color: SceneTokens.textLabelColor,
       ),
       value = const TextStyle(
-        fontSize: 56,
-        height: 1.1,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFF2F2F8),
+        fontSize: SceneTokens.textValueFontSize,
+        height: SceneTokens.textValueHeight,
+        fontWeight: SceneTokens.textValueFontWeight,
+        color: SceneTokens.textValueColor,
       ),
       title = const TextStyle(
-        fontSize: 32,
-        height: 1.2,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFF2F2F8),
+        fontSize: SceneTokens.textTitleFontSize,
+        height: SceneTokens.textTitleHeight,
+        fontWeight: SceneTokens.textTitleFontWeight,
+        color: SceneTokens.textTitleColor,
       ),
       actIndicator = const TextStyle(
-        fontSize: 28,
-        height: 1.2,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFF2F2F8),
+        fontSize: SceneTokens.textActIndicatorFontSize,
+        height: SceneTokens.textActIndicatorHeight,
+        fontWeight: SceneTokens.textActIndicatorFontWeight,
+        color: SceneTokens.textActIndicatorColor,
       );
 
   final Color background;

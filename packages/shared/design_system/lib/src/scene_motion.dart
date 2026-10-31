@@ -1,21 +1,23 @@
 import 'package:flutter/widgets.dart';
 
+import 'generated/scene_tokens.g.dart';
+
 /// Durées et courbe des animations de la scène (pdr-0075 D3).
 ///
 /// Pas d'`Easing.emphasized` : il n'existe pas en Flutter ; la courbe retenue
 /// est `Curves.easeOutCubic`.
 abstract final class SceneMotion {
   /// Fondu squelette vers composants d'une surface.
-  static const Duration appear = Duration(milliseconds: 200);
+  static const Duration appear = SceneTokens.motionAppear;
 
   /// Fondu d'une valeur qui passe de « sans données » à « données ».
-  static const Duration value = Duration(milliseconds: 150);
+  static const Duration value = SceneTokens.motionValue;
 
   /// Changement de la pastille de statut de décision.
-  static const Duration status = Duration(milliseconds: 400);
+  static const Duration status = SceneTokens.motionStatus;
 
   /// Plancher d'une durée non nulle, quelle que soit la vitesse de rejeu.
-  static const Duration floor = Duration(milliseconds: 60);
+  static const Duration floor = SceneTokens.motionFloor;
 
   /// Translation verticale d'apparition, en pixels logiques.
   static const double translation = 8;
