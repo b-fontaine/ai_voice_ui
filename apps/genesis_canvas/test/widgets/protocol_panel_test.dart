@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart'
     show testWidgets;
 import 'package:genesis_canvas/widgets/protocol_panel/protocol_panel.dart';
 import 'package:shared_core/shared_core.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 class _Clock implements AppClock {
   int now = 1761800000000;
@@ -50,7 +51,7 @@ void main() {
     await tester.pump();
   });
 
-  Future<void> pumpPanel(WidgetTester tester) async {
+  Future<void> pumpPanel(WidgetTester tester, {double? zoneHeight}) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -59,9 +60,15 @@ void main() {
         textDirection: TextDirection.ltr,
         child: Align(
           alignment: Alignment.bottomRight,
-          child: BlocProvider<ProtocolFeedBloc>.value(
-            value: bloc,
-            child: const ProtocolPanel(),
+          child: SizedBox(
+            height: zoneHeight,
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: BlocProvider<ProtocolFeedBloc>.value(
+                value: bloc,
+                child: const ProtocolPanel(),
+              ),
+            ),
           ),
         ),
       ),
@@ -299,5 +306,103 @@ void main() {
     // État initial : replié.
     expect(bloc.state.expanded, isFalse);
     expect(find.text('0 messages'), findsOneWidget);
+  });
+
+  testWidgets('déplié avec 4 entrées dont une refusée et le JSON de actions : '
+      'contenu dans la zone, aucune exception de mise en page', (tester) async {
+    await pumpPanel(tester);
+    await toggle(tester);
+    await receive(tester, _accepted('createSurface', 'kpi'));
+    await receive(
+      tester,
+      ValidatedEnvelope(
+        raw: _message('updateComponents', 'trend'),
+        verdict: const ValidationRejected(ValidationCodes.componentNotAllowed),
+        agent: 'Voix du client',
+      ),
+    );
+    await receive(tester, _accepted('updateDataModel', 'crashes'));
+    await receive(
+      tester,
+      ValidatedEnvelope(
+        raw: <String, Object?>{
+          'version': 'v0.9',
+          'updateComponents': <String, Object?>{
+            'surfaceId': 'actions',
+            'components': <Object?>[
+              <String, Object?>{
+                'id': 'root',
+                'component': 'ActionBar',
+                'actions': <Object?>[
+                  <String, Object?>{'label': 'Publier la release 3.4'},
+                  <String, Object?>{'label': 'Geler la release 3.4'},
+                ],
+              },
+            ],
+          },
+        },
+        verdict: const ValidationAccepted(),
+        agent: 'Livraison',
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final Rect panel = tester.getRect(find.byKey(const Key('protocol-panel')));
+    expect(panel.height, lessThanOrEqualTo(ProtocolPanel.expandedSize.height));
+    expect(panel.height, lessThanOrEqualTo(676), reason: 'zone du canevas');
+    // Chaque entrée montrée tient entière dans le panneau.
+    var shown = 0;
+    for (var n = 0; n < 4; n++) {
+      if (entry(n).evaluate().isEmpty) continue;
+      shown++;
+      final Rect r = tester.getRect(entry(n));
+      expect(
+        r.bottom,
+        lessThanOrEqualTo(panel.bottom - 12 + 0.5),
+        reason: '$n',
+      );
+    }
+    expect(shown, greaterThanOrEqualTo(1));
+    expect(entry(3), findsOneWidget, reason: 'la plus récente est montrée');
+  });
+
+  testWidgets('dans une zone plus basse que le panneau : la hauteur dépliée '
+      'suit la zone, moins d\'entrées sont montrées, la plus récente reste, '
+      'aucune exception', (tester) async {
+    await loadRealFonts(alsoAs: const <String>['Roboto']);
+    await pumpPanel(tester, zoneHeight: 400);
+    await toggle(tester);
+    for (var i = 0; i < 4; i++) {
+      await receive(
+        tester,
+        ValidatedEnvelope(
+          raw: <String, Object?>{
+            'version': 'v0.9',
+            'updateComponents': <String, Object?>{
+              'surfaceId': 'actions',
+              'components': <Object?>[
+                <String, Object?>{
+                  'id': 'root$i',
+                  'component': 'ActionBar',
+                  'actions': <Object?>['Publier', 'Geler', 'Annuler'],
+                },
+              ],
+            },
+          },
+          verdict: const ValidationAccepted(),
+          agent: 'Livraison',
+        ),
+      );
+    }
+
+    expect(tester.takeException(), isNull);
+    final Rect panel = tester.getRect(find.byKey(const Key('protocol-panel')));
+    expect(panel.height, lessThanOrEqualTo(400));
+    expect(entry(3), findsOneWidget, reason: 'la plus récente est montrée');
+    expect(entry(0), findsNothing, reason: 'les plus anciennes cèdent');
+    for (var n = 0; n < 4; n++) {
+      if (entry(n).evaluate().isEmpty) continue;
+      expect(tester.getRect(entry(n)).bottom, lessThanOrEqualTo(panel.bottom));
+    }
   });
 }

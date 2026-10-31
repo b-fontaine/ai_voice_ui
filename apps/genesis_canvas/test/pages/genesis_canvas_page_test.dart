@@ -192,6 +192,18 @@ void main() {
     expect(errors.toString(), isNot(contains('Inconnu')));
   });
 
+  testWidgets('repères de zone : « AGENTS A2A » et « CATALOGUE · n / 6 '
+      'utilisés » seuls, ni « CANEVAS » ni « release-3-4 »', (tester) async {
+    await launch(tester, _valid);
+
+    expect(find.text('AGENTS A2A'), findsOneWidget);
+    expect(find.text('CATALOGUE ·'), findsOneWidget);
+    expect(find.text('1 / 6 utilisés'), findsOneWidget);
+    expect(find.text('CANEVAS'), findsNothing);
+    expect(find.textContaining('CANEVAS'), findsNothing);
+    expect(find.textContaining('release-3-4'), findsNothing);
+  });
+
   testWidgets('rejeu conforme : PNG écrit et sortie 0', (tester) async {
     await launch(tester, _valid);
 

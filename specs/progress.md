@@ -23,6 +23,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-10-31 | 013 : TDD — T14, T15, T16 faites (étagère à noms entiers et icônes, régie à 48 px, panneau du protocole borné) ; D-01 à D-05 et D-07 verts. Reste : T17 (captures), lot B (T20-T22), lot C (T30a-T34). |
 | 2026-10-31 | 013 : TDD — T12a, T12b, T13 faites (checklist, avis, courbe lisibles sans ellipse ; D-02 et D-03 verts). Reste : T14 (étagère), T15 (régie, panneau), T16, T17 (captures), lot B, lot C. Point à juger à la capture : en 3×2 (acte 2) un seul avis et deux critères de checklist tiennent. |
 | 2026-10-31 | 013 : TDD en cours — T10 (rail horizontal 96 px) et T11 (canevas 676 px) faites ; D-01 et D-07 « premier plan » verts. Restent : T12a à T17 (lisibilité, régie, captures), lot B, lot C. |
 | 2026-10-31 | 013 : **Gherkin terminé** (D-01 à D-07 automatisés : 7 rouges pour la bonne raison, 5 gardes verts ; outillage de polices réelles `testing/real_fonts`, `gate --unit flutter` vert). Prochaine étape : TDD, lot A (T10, T11, …). |
