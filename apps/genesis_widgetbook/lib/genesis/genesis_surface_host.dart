@@ -99,6 +99,7 @@ class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
     catalogs: [genesisCatalog()],
   );
   String? _surfaceId;
+  String? _error;
 
   @override
   void initState() {
@@ -118,23 +119,47 @@ class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
   Future<void> _load() async {
     final example = widget.example;
     final state = widget.state;
-    // `load` plutôt que `loadString` : ce dernier met le résultat en cache, et
-    // un futur déjà résolu ne s'achève plus dans l'horloge simulée d'un test.
-    final bytes = await rootBundle.load(exampleAssetPath(example));
-    final text = utf8.decode(bytes.buffer.asUint8List());
-    // L'hôte peut avoir été libéré ou reconfiguré pendant la lecture.
-    if (!mounted || widget.example != example || widget.state != state) return;
-    final messages = messagesFor(
-      parseExample(text, GenesisContract.defaultCatalogId),
-      state,
-    );
-    String? surfaceId;
-    for (final json in messages) {
-      final message = a2ui.A2uiMessage.fromJson(json);
-      if (message is a2ui.CreateSurfaceMessage) surfaceId = message.surfaceId;
-      _controller.handleMessage(message);
+    try {
+      // `load` plutôt que `loadString` : ce dernier met le résultat en cache,
+      // et un futur déjà résolu ne s'achève plus dans l'horloge simulée d'un
+      // test.
+      final bytes = await rootBundle.load(exampleAssetPath(example));
+      final text = utf8.decode(bytes.buffer.asUint8List());
+      // L'hôte peut avoir été libéré ou reconfiguré pendant la lecture.
+      if (!mounted || widget.example != example || widget.state != state) {
+        return;
+      }
+      final messages = messagesFor(
+        parseExample(text, GenesisContract.defaultCatalogId),
+        state,
+      );
+      // Un second `createSurface` sur le même contrôleur serait rejeté et le
+      // modèle de données resterait rempli : on supprime d'abord la surface.
+      final previous = _surfaceId;
+      _surfaceId = null;
+      if (previous != null) {
+        _controller.handleMessage(
+          a2ui.DeleteSurfaceMessage(surfaceId: previous),
+        );
+      }
+      String? surfaceId;
+      for (final json in messages) {
+        final message = a2ui.A2uiMessage.fromJson(json);
+        if (message is a2ui.CreateSurfaceMessage) surfaceId = message.surfaceId;
+        _controller.handleMessage(message);
+      }
+      setState(() {
+        _error = null;
+        _surfaceId = surfaceId;
+      });
+    } on Object catch (error) {
+      // Une story qui n'affiche rien cache la cause : on la montre.
+      if (!mounted) return;
+      setState(() {
+        _surfaceId = null;
+        _error = 'Chargement de « $example » impossible : $error';
+      });
     }
-    setState(() => _surfaceId = surfaceId);
   }
 
   @override
@@ -145,6 +170,8 @@ class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
 
   @override
   Widget build(BuildContext context) {
+    final error = _error;
+    if (error != null) return Text(error, key: const Key('host-error'));
     final id = _surfaceId;
     if (id == null) return const SizedBox.shrink();
     return Surface(surfaceContext: _controller.contextFor(id));

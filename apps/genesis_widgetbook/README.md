@@ -7,7 +7,7 @@ Catalogue [Widgetbook](https://docs.widgetbook.io/~v4) (4.0.0-beta.14) des briqu
 - `lib/ds/` : stories des briques `DsStatusChip`, `DsSkeleton` et `DsNeutralState` (le squelette n'est couvert qu'ici, une seule fois).
 - `lib/genesis/` : une story par composant du contrat (`KeyIndicator`, `TrendChart`, `ReviewSentiment`, `ReleaseChecklist`, `ActionBar`, `CrashList`), en trois états : `Data` (exemple complet du contrat), `NoData` (surface créée, aucune donnée) et `Neutral` (données invalides, RG-10). L'hôte `GenesisSurfaceHost` crée un `SurfaceController(catalogs: [genesisCatalog()])` et lui rejoue les messages A2UI de l'exemple : le rendu est celui du vrai catalogue, sans simulacre.
 - `assets/examples/` : copies des exemples de `contracts/a2ui/genesis/v1/examples/`. Flutter ne peut pas empaqueter un asset hors du paquet ; `test/examples_assets_test.dart` échoue si une copie diffère de l'original. Après une modification du contrat, recopier le fichier concerné.
-- Thème de scène seul (RG-09), deux cellules réelles du canevas (620×302 et 940×302), animations coupées pour des captures stables.
+- Thème de scène seul (RG-09), deux cellules réelles du canevas (624×302 et 936×302, viewports de 640×318 et 952×318 avec la marge de 8 px de `sceneAppBuilder`), thème Material `sceneMaterialTheme()` partagé avec l'app, animations coupées pour des captures stables.
 
 ## Lancer
 
@@ -20,7 +20,7 @@ Le dossier `web/` est versionné. Il n'y a pas de dossier `linux/` : pour une ex
 
 ## Régénérer le code
 
-Les fichiers `*.stories.g.dart`, `components.g.dart` et `widgetbook.config.dart` sont générés et versionnés (ils sont contrôlés par `dart format` et `flutter analyze`). Après avoir ajouté ou modifié une story :
+Les fichiers `*.stories.g.dart` et `components.g.dart` sont générés et versionnés (ils sont contrôlés par `dart format` et `flutter analyze`). `lib/widgetbook.config.dart` (viewports, scénarios, thème) est écrit à la main. Après avoir ajouté ou modifié une story :
 
 ```sh
 dart run build_runner build
@@ -46,4 +46,4 @@ tool/build_widgetbook.sh [BASE_HREF]
 
 ## Jetons du design system
 
-Les jetons (couleurs, typographie, espacements) viennent de `packages/shared/design_system`, qui les génère avec `tool/build_tokens.sh` (Node requis à ce seul moment). Voir `packages/shared/design_system/tool/build_tokens.sh`.
+Les jetons (couleurs, typographie) viennent de `packages/shared/design_system`, qui les génère avec `tool/build_tokens.sh` (Node requis à ce seul moment). Voir `packages/shared/design_system/tool/build_tokens.sh`.

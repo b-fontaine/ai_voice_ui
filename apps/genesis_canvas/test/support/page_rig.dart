@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/bootstrap/snapshot_service.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/di/injection.dart';
-import 'package:genesis_canvas/app/theme/genesis_theme.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas_page_settings.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
@@ -17,6 +16,8 @@ import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/material.dart'
     show Material, MaterialApp, MaterialType, ThemeData;
 import 'package:genui/genui.dart' show Catalog;
+import 'package:shared_design_system/shared_design_system.dart'
+    show sceneMaterialTheme;
 import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
@@ -184,8 +185,8 @@ class PageRig {
       settings: settings,
     );
     final ThemeData theme = fontFamily == null
-        ? genesisThemeData()
-        : _withFont(genesisThemeData(), fontFamily, fontFamilyFallback);
+        ? sceneMaterialTheme()
+        : _withFont(sceneMaterialTheme(), fontFamily, fontFamilyFallback);
     await tester.pumpWidget(
       themed || fontFamily != null
           ? MaterialApp(

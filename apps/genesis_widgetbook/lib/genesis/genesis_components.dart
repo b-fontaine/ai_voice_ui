@@ -10,37 +10,52 @@ import 'genesis_surface_host.dart';
 // sont privées à `feature_canvas` ; ces classes ne font que choisir l'exemple
 // du contrat que l'hôte rejoue.
 
+const String _kpi = 'act1-kpi';
+const String _trend = 'act1-trend';
+const String _reviews = 'act1-reviews';
+const String _checklist = 'act1-checklist';
+const String _actions = 'act2-actions';
+const String _crashes = 'crashlist-global';
+
+/// Exemples du contrat par composant (sans extension). Source unique, lue par
+/// les six classes ci-dessous et par `examples_assets_test.dart`.
+const Map<String, String> genesisExamples = <String, String>{
+  'KeyIndicator': _kpi,
+  'TrendChart': _trend,
+  'ReviewSentiment': _reviews,
+  'ReleaseChecklist': _checklist,
+  'ActionBar': _actions,
+  'CrashList': _crashes,
+};
+
 /// `KeyIndicator` : surface `kpi` (`act1-kpi.jsonl`).
 class KeyIndicator extends GenesisSurfaceHost {
-  const KeyIndicator({super.key, super.state}) : super(example: 'act1-kpi');
+  const KeyIndicator({super.key, super.state}) : super(example: _kpi);
 }
 
 /// `TrendChart` : surface `trend` (`act1-trend.jsonl`).
 class TrendChart extends GenesisSurfaceHost {
-  const TrendChart({super.key, super.state}) : super(example: 'act1-trend');
+  const TrendChart({super.key, super.state}) : super(example: _trend);
 }
 
 /// `ReviewSentiment` : surface `reviews` (`act1-reviews.jsonl`).
 class ReviewSentiment extends GenesisSurfaceHost {
-  const ReviewSentiment({super.key, super.state})
-    : super(example: 'act1-reviews');
+  const ReviewSentiment({super.key, super.state}) : super(example: _reviews);
 }
 
 /// `ReleaseChecklist` : surface `checklist` (`act1-checklist.jsonl`).
 class ReleaseChecklist extends GenesisSurfaceHost {
-  const ReleaseChecklist({super.key, super.state})
-    : super(example: 'act1-checklist');
+  const ReleaseChecklist({super.key, super.state}) : super(example: _checklist);
 }
 
 /// `ActionBar` : surface `actions` (`act2-actions.jsonl`).
 class ActionBar extends GenesisSurfaceHost {
-  const ActionBar({super.key, super.state}) : super(example: 'act2-actions');
+  const ActionBar({super.key, super.state}) : super(example: _actions);
 }
 
 /// `CrashList` : surface `crashes` (`crashlist-global.jsonl`).
 class CrashList extends GenesisSurfaceHost {
-  const CrashList({super.key, super.state})
-    : super(example: 'crashlist-global');
+  const CrashList({super.key, super.state}) : super(example: _crashes);
 }
 
 /// Enveloppe commune des stories genesis : animations coupées pour des

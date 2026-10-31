@@ -1,17 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genesis_widgetbook/genesis/genesis_components.dart'
+    show genesisExamples;
 import 'package:genesis_widgetbook/genesis/genesis_surface_host.dart';
 
-/// Exemples du contrat dont les stories ont besoin.
-const _examples = <String>[
-  'act1-kpi',
-  'act1-trend',
-  'act1-reviews',
-  'act1-checklist',
-  'act2-actions',
-  'crashlist-global',
-];
+/// Exemples du contrat dont les stories ont besoin (source unique).
+final _examples = genesisExamples.values.toList();
 
 /// Dossier des exemples du contrat, relatif à la racine du paquet (le
 /// répertoire de travail de `flutter test`).

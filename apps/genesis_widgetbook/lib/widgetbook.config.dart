@@ -4,19 +4,20 @@ import 'package:widgetbook/widgetbook.dart';
 import 'components.g.dart';
 import 'scene_app_builder.dart';
 
-/// Cellules réelles de la grille du canevas (px logiques), pour juger chaque
-/// brique à la taille où elle s'affiche.
-const cell620 = ViewportData(
-  name: 'Cellule 620×302',
-  width: 620,
-  height: 302,
+/// Cellules réelles de la grille du canevas (624×302 et 936×302 px logiques),
+/// pour juger chaque brique à la taille où elle s'affiche. Le viewport ajoute
+/// la marge de 8 px par côté de `sceneAppBuilder` (cellule + 2 × 8).
+const cell624 = ViewportData(
+  name: 'Cellule 624×302',
+  width: 640,
+  height: 318,
   pixelRatio: 1,
   platform: TargetPlatform.linux,
 );
-const cell940 = ViewportData(
-  name: 'Cellule 940×302',
-  width: 940,
-  height: 302,
+const cell936 = ViewportData(
+  name: 'Cellule 936×302',
+  width: 952,
+  height: 318,
   pixelRatio: 1,
   platform: TargetPlatform.linux,
 );
@@ -29,12 +30,12 @@ final config = Config(
   components: components,
   appBuilder: sceneAppBuilder,
   addons: [
-    ViewportAddon(const [cell620, cell940]),
+    ViewportAddon(const [cell624, cell936]),
   ],
   scenarioConfig: ScenarioConfig(
     definitions: [
-      ScenarioDefinition(name: cell620.name, modes: [ViewportMode(cell620)]),
-      ScenarioDefinition(name: cell940.name, modes: [ViewportMode(cell940)]),
+      ScenarioDefinition(name: cell624.name, modes: [ViewportMode(cell624)]),
+      ScenarioDefinition(name: cell936.name, modes: [ViewportMode(cell936)]),
     ],
   ),
 );

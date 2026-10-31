@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
-
-/// Thème Material du catalogue : sombre, avec le [SceneTheme] installé comme
-/// extension, comme dans l'app (un seul thème, RG-09).
-ThemeData sceneThemeData() {
-  const scene = SceneTheme.dark();
-  return ThemeData(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: scene.background,
-    extensions: const <ThemeExtension<dynamic>>[scene],
-  );
-}
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneTheme, sceneMaterialTheme;
 
 /// Enveloppe chaque story dans le thème de scène.
 ///
@@ -20,7 +10,7 @@ ThemeData sceneThemeData() {
 Widget sceneAppBuilder(BuildContext context, Widget child) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: sceneThemeData(),
+    theme: sceneMaterialTheme(),
     home: Material(
       color: const SceneTheme.dark().background,
       child: Padding(padding: const EdgeInsets.all(8), child: child),
