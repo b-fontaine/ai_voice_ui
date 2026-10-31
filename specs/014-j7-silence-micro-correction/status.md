@@ -2,8 +2,8 @@
 
 - **Étape** : TDD
 - **Tentatives** : 1/3
-- **Tâche en cours** : T10 (Flutter), T20 (Go)
-- **Fichiers touchés** (tâche en cours) : packages/features/voice_session/{lib/src/api,lib/src/model/voice_transport.dart,test}, testing/voice_fakes ; backend/orchestrator/internal/app/voice/{stopword*.go,config*}, backend/orchestrator/internal/config*
+- **Tâche en cours** : T11 (Flutter), T21 (Go)
+- **Fichiers touchés** (tâche en cours) : packages/entities/session, packages/features/voice_session/{lib/src/model,test} ; backend/orchestrator/internal/{port,app/orchestrate,app/voice/forward.go,app/voice/delegations_test.go}
 - **Branche** : feat/014-j7-silence-micro-correction
 - **Backlog** : EP-02, EP-06
 - **Mis à jour** : 2026-10-31
