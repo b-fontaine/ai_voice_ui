@@ -23,7 +23,7 @@ Le 2026-11-02, le porteur publie un artifact « Genesis Canvas » (version `1793
 
 ## Hypothèses
 - ✅ Portée confirmée par le porteur (voir Décision et Historique).
-- ⚠️ Hypothèse non confirmée : plusieurs valeurs du design system vont contre NFR-05 (texte ≥ 24 px) → [Q-91](../roadmap/open-questions.md) (non bloquante).
+- ⚠️ Hypothèse non confirmée : plusieurs valeurs du design system vont contre NFR-05 (texte ≥ 24 px) → [Q-91](../roadmap/open-questions.md) (non bloquante) ; tranchée par D4.
 
 ## Options
 1. **UI seulement (retenue)** : le design system habille l'app, l'UX et le métier restent ceux de l'app et de `product/`.
@@ -32,7 +32,8 @@ Le 2026-11-02, le porteur publie un artifact « Genesis Canvas » (version `1793
 ## Décision
 - **D1 Portée.** Le design system du 2026-11-02 est la source de l'**UI** : tokens de couleur, typographie, espacements, rayons, ombres, mouvement, apparence des composants. L'application et `product/` restent la source de l'**UX** et des **règles métier** : les exemples du design system ne changent ni comportement ni donnée (liste du Contexte). Hiérarchie : la fiche produit fait foi ([pdr-0017](pdr-0017-source-hierarchy-sheet-over-mockups.md), [pdr-0062](pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details.md)) ; le design system **remplace les maquettes pour l'UI seulement** (les maquettes restent une illustration pour le reste).
 - **D2 Fonctionnalité 017.** Elle applique cet habillage à l'app Flutter : thème (`SceneTheme`, unique `ThemeExtension`, RG-09) et tokens livrés par 013, styles de texte, ombres, animations nommées et durées, apparence des composants existants. Sans changer comportement, données ni contrat A2UI (catalogue fermé, [pdr-0007](pdr-0007-closed-catalog-stage-theme.md)).
-- **D3 Contraintes constatées (pas de choix nouveau).** Polices : Space Grotesk et JetBrains Mono doivent être **embarquées** dans l'app (le `bundle.css` les charge depuis Google Fonts ; aucun téléchargement de police à l'exécution, build reproductible sur machine vierge, NFR-10 et [pdr-0010](pdr-0010-pinned-experimental-versions.md)) ; licence à vérifier par la boucle. Tailles : NFR-05 (≥ 24 px) l'emporte sur les tailles du design system inférieures (`label` 11, `data`, `body`, `button` 15, `ink-faint` ≥ 13) ; la façon de garder la hiérarchie est le point de [Q-91](../roadmap/open-questions.md). `ink-faint` (3,9:1) reste conforme AA seulement à partir de 24 px (« grand texte », 3:1, [ds-a11y-wcag-contrast]).
+- **D3 Contraintes constatées (pas de choix nouveau).** Polices : Space Grotesk et JetBrains Mono doivent être **embarquées** dans l'app (le `bundle.css` les charge depuis Google Fonts ; aucun téléchargement de police à l'exécution, build reproductible sur machine vierge, NFR-10 et [pdr-0010](pdr-0010-pinned-experimental-versions.md)) ; licence à vérifier par la boucle. Tailles : NFR-05 (≥ 24 px) l'emporte sur les tailles du design system inférieures (`label` 11, `data`, `body`, `button` 15, `ink-faint` ≥ 13) ; la façon de garder la hiérarchie est tranchée par D4 ([Q-91](../roadmap/open-questions.md)). `ink-faint` (3,9:1) reste conforme AA seulement à partir de 24 px (« grand texte », 3:1, [ds-a11y-wcag-contrast]).
+- **D4 Tailles (Q-91, 2026-11-02).** Aucun texte de l'app ne passe sous 24 px (NFR-05 inchangée) : les tailles du design system sont relevées à 24 px minimum ; la hiérarchie passe par la graisse, la casse, la famille de police et la couleur. `ink-faint` reste utilisable puisque tout texte est ≥ 24 px (« grand texte », 3:1, [ds-a11y-wcag-contrast]). Choix du porteur : option « Tout à 24 px minimum (Recommandé) », libellé complet : « Les tailles du design system sont relevées à 24 px ; la hiérarchie passe par la graisse, la casse, la police et la couleur. C'est ce que la boucle fera par défaut. » La boucle montre le rendu en capture 1920×1080 ; le porteur le juge en répétition.
 
 ## Raisons
 - Parole du porteur : l'UX et le métier restent dans l'app ; le design system n'apporte que l'UI.
@@ -57,11 +58,12 @@ Documents : [p-sources](../sources/README.md), [p-ar-design-system](../architect
 
 ## Réexaminer si
 - Le porteur veut aussi reprendre l'UX ou le métier d'un exemple du design system.
-- Q-91 conclut qu'il faut baisser NFR-05 pour certaines étiquettes.
+- Le rendu à 24 px minimum écrase la hiérarchie typographique au jugé du porteur (D4 ; baisser NFR-05 ou excepter les étiquettes serait alors une nouvelle décision).
 
 ## Historique
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-11-02 | Acceptée sur la parole du porteur, conversation Claude Code : « Alors, ce n'est qu'un design system avec des exemples. L'application porte l'UX et les règles métier, le design system l'UI. Tu comprends ? » ; à la proposition de l'assistant (« Appliquer le design system se limite donc à son habillage : tokens, styles de texte, animations et apparence des composants dans le thème Flutter, sans toucher ni au comportement ni aux données. Dis-moi si tu veux que je confie ce travail à la boucle. »), le porteur répond : « oui, confie-le à la boucle ». | Benoît FONTAINE (porteur) |
+| 2026-11-02 | Précision D4 (Q-91 tranchée), parole du porteur, conversation Claude Code, option choisie « Tout à 24 px minimum (Recommandé) » : « Les tailles du design system sont relevées à 24 px ; la hiérarchie passe par la graisse, la casse, la police et la couleur. C'est ce que la boucle fera par défaut. » Pas de nouvelle PDR : précision de la même décision. | Benoît FONTAINE (porteur) |
 
 Pas d'archive brute.

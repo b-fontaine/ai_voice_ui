@@ -46,7 +46,8 @@ Questions encore ouvertes qui conditionnent les epics (toutes avant J7, non bloq
 |---|---|
 | Périmètre (EP-04, EP-01 ; NFR-04, NFR-05) | tokens (couleur, espacements, rayons, ombres), styles de texte, polices embarquées, mouvement (animations nommées et durées), apparence des composants existants, dans le thème de scène (013) |
 | Exclusions | tout ce qui relève de l'UX et du métier (D1) : appui long et reçu nominatif sur « Bloquer », règle « À risque », critique des deltas, ordre des agents, nombre de verbatims, bande Décision vide, données et messages d'exemple ; comportement, données, contrat A2UI, catalogue fermé |
-| Points à trancher par la boucle | décisions d'UI touchées (tableau « Conséquences » de la PDR) ; [Q-91](open-questions.md) (tailles contre NFR-05, non bloquante) |
+| Points à trancher par la boucle | décisions d'UI touchées (tableau « Conséquences » de la PDR) ; [Q-91](open-questions.md) tranchée → pdr-0083 D4 |
+| Exigence de taille (D4, Q-91) | aucun texte sous 24 px (NFR-05) : tailles du design system relevées à 24 px minimum ; hiérarchie par graisse, casse, famille et couleur ; `ink-faint` utilisable puisque ≥ 24 px |
 | Preuves attendues | capture `app-smoke` à 1920×1080 comparée aux `preview.html` de la source ; `gate --full` vert |
 
 ## Livrables confiés à l'assistant (2026-10-29)
