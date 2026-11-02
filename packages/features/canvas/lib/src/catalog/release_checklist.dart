@@ -130,10 +130,7 @@ class _ChecklistView extends StatelessWidget {
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              Text(
-                checklist.title,
-                style: theme.label.copyWith(color: theme.textPrimary),
-              ),
+              Text(checklist.title, style: theme.title),
               _DecisionStatus(status: checklist.decisionStatus),
               DsStatusChip(
                 status: checklist.recommendationLevel,
@@ -159,7 +156,7 @@ const double _gap = 8;
 const double _pairGap = 12;
 
 double _chipHeight(SceneTheme theme) =>
-    lineHeightOf(theme.label) + 2 * DsStatusChip.verticalPadding;
+    lineHeightOf(theme.body) + 2 * DsStatusChip.verticalPadding;
 
 /// Liste des critères : jamais de troncature muette, les textes passent à la
 /// ligne. Deux présentations, choisies pour toute la liste :
@@ -270,9 +267,18 @@ abstract class _Layout {
       return max == 0 ? 0 : max.ceilToDouble() + 1;
     }
 
-    final double chip =
-        widest(items.map((_Item i) => i.levelLabel), theme.label) +
-        2 * DsStatusChip.horizontalPadding;
+    // Largeur réelle de la plus large puce, glyphe ou point compris, fournie
+    // par la puce elle-même (même marge d'arrondi que les textes).
+    double chip = 0;
+    for (final _Item i in items) {
+      final double w = DsStatusChip.measure(
+        context,
+        i.level,
+        i.levelLabel,
+      ).width;
+      if (w > chip) chip = w;
+    }
+    if (chip > 0) chip = chip.ceilToDouble() + 1;
     final double label = widest(items.map((_Item i) => i.label), theme.body);
     final double threshold = widest(
       items.map((_Item i) => i.threshold),

@@ -21,12 +21,22 @@ final DsStatusChipComponent = Component<DsStatusChip, StoryArgs<DsStatusChip>>(
   path: 'ds',
   docComment:
       r'''Pastille de statut : la couleur vient du [SceneStatus], le libellé
-(fourni par le backend) est affiché tel quel. Statut `null` : style neutre.''',
+(fourni par le backend) est affiché tel quel. Statut `null` : style neutre.
+
+Selon le design system (`gc-badge`, pdr-0084 U6) :
+- `ok` porte un glyphe ✓ de la couleur `go`, séparé du mot ;
+- `blocking` porte un point de 8 px `nogo` qui bat (`gc-beacon`, seule
+  animation en boucle des statuts) ;
+- `risk` et le statut inconnu n'ont ni glyphe ni point.
+
+Le glyphe et le point sont décoratifs : ils sont exclus de la sémantique,
+seul le mot est annoncé.''',
   stories: [
     $Ok..$generatedName = 'Ok',
     $Risk..$generatedName = 'Risk',
     $Blocking..$generatedName = 'Blocking',
     $Neutral..$generatedName = 'Neutral',
+    $AllStatuses..$generatedName = 'AllStatuses',
   ],
 );
 typedef DsStatusChipScenario = Scenario<DsStatusChip, DsStatusChipArgs>;

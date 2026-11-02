@@ -92,10 +92,62 @@
       "chartOther": {
         "$type": "color",
         "$value": "{color.chart.other}"
+      },
+      "panelTop": {
+        "$type": "color",
+        "$value": "{color.surface200}"
+      },
+      "panelHighlight": {
+        "$type": "color",
+        "$value": "{color.panelHighlight}"
+      },
+      "line": {
+        "$type": "color",
+        "$value": "{color.line}"
+      },
+      "lineStrong": {
+        "$type": "color",
+        "$value": "{color.lineStrong}"
+      },
+      "inkFaint": {
+        "$type": "color",
+        "$value": "{color.inkFaint}"
+      },
+      "plasma": {
+        "$type": "color",
+        "$value": "{color.plasma}"
+      },
+      "plasmaGhost": {
+        "$type": "color",
+        "$value": "{color.plasmaGhost}"
+      },
+      "signalGhost": {
+        "$type": "color",
+        "$value": "{color.signalGhost}"
+      },
+      "surface200": {
+        "$type": "color",
+        "$value": "{color.surface200}"
+      },
+      "surface300": {
+        "$type": "color",
+        "$value": "{color.surface300}"
+      },
+      "orbVeil": {
+        "$type": "color",
+        "$value": "{color.orbVeil}"
       }
     },
     "text": {
       "body": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.24}"
@@ -103,6 +155,10 @@
         "height": {
           "$type": "number",
           "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.400}"
         },
         "color": {
           "$type": "color",
@@ -110,6 +166,14 @@
         }
       },
       "label": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.24}"
@@ -120,7 +184,18 @@
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.600}"
+          "$value": "{weight.500}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": 0.14,
+            "unit": "em",
+            "fontSize": {
+              "value": 24,
+              "unit": "px"
+            }
+          }
         },
         "color": {
           "$type": "color",
@@ -128,17 +203,36 @@
         }
       },
       "value": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.56}"
+          "$value": "{size.76}"
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.110}"
+          "$value": "{lineHeight.100}"
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.700}"
+          "$value": "{weight.600}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": -0.04,
+            "unit": "em",
+            "fontSize": {
+              "value": 76,
+              "unit": "px"
+            }
+          }
         },
         "color": {
           "$type": "color",
@@ -146,9 +240,17 @@
         }
       },
       "title": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.32}"
+          "$value": "{size.24}"
         },
         "height": {
           "$type": "number",
@@ -156,7 +258,7 @@
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.700}"
+          "$value": "{weight.600}"
         },
         "color": {
           "$type": "color",
@@ -164,6 +266,14 @@
         }
       },
       "actIndicator": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.28}"
@@ -180,16 +290,193 @@
           "$type": "color",
           "$value": "{color.text.primary}"
         }
+      },
+      "data": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.500}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "verdict": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.28}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.32over28}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.700}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": 0.04,
+            "unit": "em",
+            "fontSize": {
+              "value": 28,
+              "unit": "px"
+            }
+          }
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "transcript": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.500}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "button": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.600}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      }
+    },
+    "space": {
+      "1": {
+        "$type": "dimension",
+        "$value": "{space.1}"
+      },
+      "2": {
+        "$type": "dimension",
+        "$value": "{space.2}"
+      },
+      "3": {
+        "$type": "dimension",
+        "$value": "{space.3}"
+      },
+      "4": {
+        "$type": "dimension",
+        "$value": "{space.4}"
+      },
+      "6": {
+        "$type": "dimension",
+        "$value": "{space.6}"
+      },
+      "8": {
+        "$type": "dimension",
+        "$value": "{space.8}"
+      }
+    },
+    "radius": {
+      "sm": {
+        "$type": "dimension",
+        "$value": "{radius.sm}"
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": "{radius.md}"
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "{radius.lg}"
+      },
+      "pill": {
+        "$type": "dimension",
+        "$value": "{radius.pill}"
+      }
+    },
+    "shadow": {
+      "panel": {
+        "$type": "shadow",
+        "$value": "{shadow.panel}"
+      },
+      "glowSignal": {
+        "$type": "shadow",
+        "$value": "{shadow.glowSignal}"
+      },
+      "glowNogo": {
+        "$type": "shadow",
+        "$value": "{shadow.glowNogo}"
+      },
+      "glowPlasma": {
+        "$type": "shadow",
+        "$value": "{shadow.glowPlasma}"
       }
     },
     "motion": {
       "appear": {
         "$type": "duration",
-        "$value": "{duration.200}"
+        "$value": "{duration.480}"
       },
       "value": {
         "$type": "duration",
-        "$value": "{duration.150}"
+        "$value": "{duration.160}"
       },
       "status": {
         "$type": "duration",
@@ -201,11 +488,27 @@
       },
       "translation": {
         "$type": "dimension",
-        "$value": "{size.8}"
+        "$value": "{size.10}"
       },
       "link": {
         "$type": "duration",
         "$value": "{duration.1200}"
+      },
+      "beacon": {
+        "$type": "duration",
+        "$value": "{duration.1600}"
+      },
+      "skeleton": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "orb": {
+        "$type": "duration",
+        "$value": "{duration.2000}"
+      },
+      "curve": {
+        "$type": "cubicBezier",
+        "$value": [0.2, 0.8, 0.2, 1]
       }
     }
   }

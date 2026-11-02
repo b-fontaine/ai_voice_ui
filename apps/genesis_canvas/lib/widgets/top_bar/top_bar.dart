@@ -167,12 +167,16 @@ class _TranscriptLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(role, style: theme.label, maxLines: 1),
+        Text(
+          role,
+          style: theme.data.copyWith(color: theme.textSecondary),
+          maxLines: 1,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: theme.body,
+            style: theme.transcript,
             maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
           ),
@@ -217,5 +221,5 @@ class _SessionButton extends StatelessWidget {
 
   /// Texte du bouton au format de la scène (>= 24 px).
   static ButtonStyle _buttonStyle(BuildContext context) =>
-      FilledButton.styleFrom(textStyle: SceneTheme.of(context).label);
+      FilledButton.styleFrom(textStyle: SceneTheme.of(context).button);
 }

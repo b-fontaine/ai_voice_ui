@@ -2,7 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneMotion, SceneMotionScope, SceneTheme;
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
@@ -55,21 +56,14 @@ class VoiceOrb extends StatefulWidget {
 class _VoiceOrbState extends State<VoiceOrb>
     with SingleTickerProviderStateMixin {
   /// Période de la pulsation (repos) et d'un tour (réflexion).
-  static const Duration _period = Duration(seconds: 2);
+  static const Duration _period = SceneMotion.orb;
 
+  // La boucle est lancée par `SceneMotionScope.loop` : elle suit la vitesse de
+  // rejeu et reste à l'arrêt quand les animations sont coupées.
   late final AnimationController _animation = AnimationController(
     vsync: this,
     duration: _period,
-  )..repeat();
-
-  // Alloués une fois : `paint()` ne crée aucun objet de style.
-  final Paint _bodyPaint = Paint()..color = const Color(0xFF7C4DFF);
-  final Paint _flashPaint = Paint()..color = const Color(0xFFFFFFFF);
-  final Paint _arcPaint = Paint()
-    ..color = const Color(0xFFB39DFF)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 3
-    ..strokeCap = StrokeCap.round;
+  );
 
   late final ValueNotifier<bool> _speaking = ValueNotifier<bool>(_isSpeaking);
 
@@ -81,6 +75,12 @@ class _VoiceOrbState extends State<VoiceOrb>
   void initState() {
     super.initState();
     widget.level.addListener(_syncSpeaking);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.loop(context, _animation, _period);
   }
 
   @override
@@ -102,55 +102,62 @@ class _VoiceOrbState extends State<VoiceOrb>
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-    valueListenable: _speaking,
-    builder: (context, speaking, child) => Semantics(
-      label: 'Orbe vocal',
-      value: widget.interrupted
-          ? 'Interrompue'
-          : speaking
-          ? 'parole'
-          : widget.thinking
-          ? 'réflexion'
-          : widget.listening
-          ? 'Écoute'
-          : 'repos',
-      child: child,
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        SizedBox.square(
-          dimension: VoiceOrb.diameter,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              RepaintBoundary(
-                child: CustomPaint(
-                  painter: _OrbPainter(
-                    level: widget.level,
-                    animation: _animation,
-                    thinking: widget.thinking,
-                    interrupted: widget.interrupted,
-                    speakingThreshold: widget.speakingThreshold,
-                    bodyPaint: _bodyPaint,
-                    flashPaint: _flashPaint,
-                    arcPaint: _arcPaint,
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _speaking,
+      builder: (context, speaking, child) => Semantics(
+        label: 'Orbe vocal',
+        value: widget.interrupted
+            ? 'Interrompue'
+            : speaking
+            ? 'parole'
+            : widget.thinking
+            ? 'réflexion'
+            : widget.listening
+            ? 'Écoute'
+            : 'repos',
+        child: child,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox.square(
+            dimension: VoiceOrb.diameter,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _OrbPainter(
+                      level: widget.level,
+                      animation: _animation,
+                      thinking: widget.thinking,
+                      interrupted: widget.interrupted,
+                      speakingThreshold: widget.speakingThreshold,
+                      bodyColor: theme.plasma,
+                      flashColor: theme.textPrimary,
+                      arcColor: theme.plasma,
+                      haloColor: theme.plasmaGhost,
+                    ),
                   ),
                 ),
-              ),
-              if (widget.micMuted) const _MicMutedVeil(),
-            ],
+                if (widget.micMuted) _MicMutedVeil(color: theme.orbVeil),
+              ],
+            ),
           ),
-        ),
-        // Le libellé (24 px au moins, RG-09) ne tient pas dans les 64 points
-        // du disque : il se pose dessous, et la colonne s'élargit d'autant.
-        if (widget.micMuted) const _MicMutedLabel(),
-      ],
-    ),
-  );
+          // Le libellé (24 px au moins, RG-09) ne tient pas dans les 64 points
+          // du disque : il se pose dessous, et la colonne s'élargit d'autant.
+          if (widget.micMuted) const _MicMutedLabel(),
+        ],
+      ),
+    );
+  }
 }
 
+/// Peint l'orbe avec les couleurs reçues du thème (le painter ne lit pas le
+/// contexte). Les `Paint` et le dégradé du halo sont créés une fois, à la
+/// construction : `paint()` n'alloue aucun objet de style.
 class _OrbPainter extends CustomPainter {
   _OrbPainter({
     required this.level,
@@ -158,19 +165,42 @@ class _OrbPainter extends CustomPainter {
     required this.thinking,
     required this.interrupted,
     required this.speakingThreshold,
-    required this.bodyPaint,
-    required this.flashPaint,
-    required this.arcPaint,
-  }) : super(repaint: Listenable.merge(<Listenable>[level, animation]));
+    required this.bodyColor,
+    required this.flashColor,
+    required this.arcColor,
+    required this.haloColor,
+  }) : _bodyPaint = Paint()..color = bodyColor,
+       _flashPaint = Paint()..color = flashColor,
+       _arcPaint = Paint()
+         ..color = arcColor
+         ..style = PaintingStyle.stroke
+         ..strokeWidth = 3
+         ..strokeCap = StrokeCap.round,
+       // Halo `glow-plasma` : dégradé radial de rayon 1 centré à l'origine,
+       // mis à l'échelle au dessin (ni flou ni couche hors écran à 60 Hz).
+       _haloPaint = Paint()
+         ..shader = RadialGradient(
+           colors: <Color>[haloColor, haloColor.withAlpha(0)],
+           stops: const <double>[0.55, 1],
+         ).createShader(Rect.fromCircle(center: Offset.zero, radius: 1)),
+       super(repaint: Listenable.merge(<Listenable>[level, animation]));
 
   final ValueListenable<double> level;
   final Animation<double> animation;
   final bool thinking;
   final bool interrupted;
   final double speakingThreshold;
-  final Paint bodyPaint;
-  final Paint flashPaint;
-  final Paint arcPaint;
+  final Color bodyColor;
+  final Color flashColor;
+  final Color arcColor;
+  final Color haloColor;
+  final Paint _bodyPaint;
+  final Paint _flashPaint;
+  final Paint _arcPaint;
+  final Paint _haloPaint;
+
+  /// Le halo déborde du corps de ce facteur, borné au rayon de l'orbe.
+  static const double _haloReach = 1.3;
 
   static const double _restRadius = 0.62;
   static const double _pulseAmplitude = 0.08;
@@ -185,21 +215,28 @@ class _OrbPainter extends CustomPainter {
 
     if (interrupted) {
       // Interrompue : arrêt net, flash au rayon de repos, sans pulsation.
-      canvas.drawCircle(center, half * _restRadius, flashPaint);
+      canvas.drawCircle(center, half * _restRadius, _flashPaint);
     } else if (value > speakingThreshold) {
       // Parole : le rayon suit le niveau.
       final radius =
           half * (_restRadius + (1 - _restRadius) * value.clamp(0, 1));
-      canvas.drawCircle(center, radius, bodyPaint);
+      final haloRadius = math.min(half, radius * _haloReach);
+      canvas
+        ..save()
+        ..translate(center.dx, center.dy)
+        ..scale(haloRadius)
+        ..drawCircle(Offset.zero, 1, _haloPaint)
+        ..restore();
+      canvas.drawCircle(center, radius, _bodyPaint);
     } else if (thinking) {
       // Réflexion : corps stable et arc qui tourne.
-      canvas.drawCircle(center, half * _thinkingRadius, bodyPaint);
+      canvas.drawCircle(center, half * _thinkingRadius, _bodyPaint);
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: half - arcPaint.strokeWidth),
+        Rect.fromCircle(center: center, radius: half - _arcPaint.strokeWidth),
         animation.value * 2 * math.pi,
         _arcSweep,
         false,
-        arcPaint,
+        _arcPaint,
       );
     } else {
       // Repos : pulsation lente.
@@ -207,7 +244,7 @@ class _OrbPainter extends CustomPainter {
       canvas.drawCircle(
         center,
         half * (_restRadius + _pulseAmplitude * pulse),
-        bodyPaint,
+        _bodyPaint,
       );
     }
   }
@@ -218,19 +255,28 @@ class _OrbPainter extends CustomPainter {
       old.animation != animation ||
       old.thinking != thinking ||
       old.interrupted != interrupted ||
-      old.speakingThreshold != speakingThreshold;
+      old.speakingThreshold != speakingThreshold ||
+      old.bodyColor != bodyColor ||
+      old.flashColor != flashColor ||
+      old.arcColor != arcColor ||
+      old.haloColor != haloColor;
 }
 
 /// Voile « Micro coupé » : disque grisé et barre oblique, sur toute la
 /// surface de l'orbe ; le libellé est [_MicMutedLabel].
 class _MicMutedVeil extends StatelessWidget {
-  const _MicMutedVeil();
+  const _MicMutedVeil({required this.color});
+
+  final Color color;
 
   @override
-  Widget build(BuildContext context) => const DecoratedBox(
-    key: Key('mic-muted-veil'),
-    decoration: BoxDecoration(shape: BoxShape.circle, color: Color(0xB3424242)),
-    child: CustomPaint(painter: _StrikePainter(), child: SizedBox.expand()),
+  Widget build(BuildContext context) => DecoratedBox(
+    key: const Key('mic-muted-veil'),
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    child: CustomPaint(
+      painter: _StrikePainter(SceneTheme.of(context).textPrimary),
+      child: const SizedBox.expand(),
+    ),
   );
 }
 
@@ -247,18 +293,20 @@ class _MicMutedLabel extends StatelessWidget {
     maxLines: 1,
     softWrap: false,
     textAlign: TextAlign.center,
-    style: SceneTheme.of(context).label,
+    style: SceneTheme.of(context).body,
   );
 }
 
 /// Barre oblique du voile, du coin haut gauche au coin bas droit du disque.
 class _StrikePainter extends CustomPainter {
-  const _StrikePainter();
+  _StrikePainter(this.color)
+    : _paint = Paint()
+        ..color = color
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round;
 
-  static final Paint _paint = Paint()
-    ..color = const Color(0xFFFFFFFF)
-    ..strokeWidth = 3
-    ..strokeCap = StrokeCap.round;
+  final Color color;
+  final Paint _paint;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -271,5 +319,5 @@ class _StrikePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_StrikePainter old) => false;
+  bool shouldRepaint(_StrikePainter old) => old.color != color;
 }

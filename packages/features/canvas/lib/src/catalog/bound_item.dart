@@ -73,7 +73,7 @@ CatalogItem boundCatalogItem<T extends Object>({
 /// valeur.
 enum _BoundState { noData, neutral, data }
 
-/// Fondu des valeurs (150 ms, [SceneMotion.value]) au seul passage « sans
+/// Fondu des valeurs (160 ms, [SceneMotion.value]) au seul passage « sans
 /// données » vers « données ».
 ///
 /// Le même widget, à la même place, enveloppe les trois états : son `State`
@@ -99,6 +99,12 @@ class _ValueFadeState extends State<_ValueFade>
     duration: SceneMotion.value,
     value: 1,
   );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.completeIfDisabled(context, _animation);
+  }
 
   @override
   void didUpdateWidget(_ValueFade oldWidget) {
@@ -137,21 +143,18 @@ T? _safeParse<T extends Object>(T? Function(Object raw) parse, Object raw) {
 }
 
 /// Cellule reconnaissable sans valeur : composants reçus, données pas encore.
+///
+/// Elle ne peint rien : le fond est la décoration de panneau que le canevas
+/// pose sous chaque cellule (pdr-0084 U9).
 class NoDataCell extends StatelessWidget {
   const NoDataCell({super.key});
 
   @override
-  Widget build(BuildContext context) => SizedBox.expand(
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: SceneTheme.of(context).surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => const SizedBox.expand();
 }
 
-/// Fond arrondi commun aux cellules complètes.
+/// Cadre commun aux cellules complètes : leur marge intérieure, sans fond ni
+/// rayon (la décoration de panneau du canevas est le fond, pdr-0084 U9).
 class CellFrame extends StatelessWidget {
   const CellFrame({
     super.key,
@@ -167,13 +170,7 @@ class CellFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox.expand(
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: SceneTheme.of(context).surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(padding: padding, child: child),
-    ),
+    child: Padding(padding: padding, child: child),
   );
 }
 
@@ -235,7 +232,7 @@ Text comparisonLine(
   return Text(
     text,
     key: key,
-    style: theme.body.copyWith(color: theme.textSecondary),
+    style: theme.data.copyWith(color: theme.textSecondary),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,
   );

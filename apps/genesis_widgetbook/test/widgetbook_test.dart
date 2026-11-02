@@ -10,6 +10,8 @@ const _expectedBricks = <String>{
   'DsStatusChip',
   'DsSkeleton',
   'DsNeutralState',
+  'ScenePanel',
+  'SceneBackdrop',
 };
 
 /// Les trois états de chaque composant du catalogue genesis (T33). Le
@@ -29,7 +31,7 @@ Future<void> main() async {
 
   // Garde d'ensemble : la configuration ne signale jamais une story absente,
   // ce test compare donc les composants catalogués à ceux attendus.
-  test('le catalogue contient les 6 composants genesis et les 3 briques', () {
+  test('le catalogue contient les 6 composants genesis et les briques', () {
     final names = {for (final c in config.components) c.name};
     expect(names, {...GenesisContract.components, ..._expectedBricks});
     for (final c in config.components) {

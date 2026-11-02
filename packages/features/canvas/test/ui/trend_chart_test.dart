@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:feature_canvas/src/catalog/trend_chart_painter.dart';
@@ -24,9 +25,8 @@ final Finder _cell = find.byKey(const Key('surface-trend'));
 void main() {
   setUpAll(loadRealFonts);
 
-  testWidgets('les étiquettes de l\'axe X prennent la police du thème', (
-    tester,
-  ) async {
+  testWidgets('les étiquettes de l\'axe X prennent le style `data` du thème '
+      '(JetBrains Mono, repli DejaVu Sans)', (tester) async {
     final h = _realFontsHarness(size: const Size(624, 302));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
@@ -35,8 +35,11 @@ void main() {
       find.byKey(const Key('trend-chart-paint')),
     );
     final painter = paint.painter! as TrendChartPainter;
-    expect(painter.labelStyle.fontFamily, realFontFamily);
-    expect(painter.labelStyle.fontFamilyFallback, realFontFallback);
+    const theme = SceneTheme.dark();
+    expect(painter.labelStyle.fontFamily, theme.data.fontFamily);
+    expect(painter.labelStyle.fontFamily, SceneFonts.mono);
+    expect(painter.labelStyle.fontFamilyFallback, SceneFonts.fallbackList);
+    expect(painter.labelStyle.fontSize, theme.data.fontSize);
   });
 
   defineCommonStateTests(
@@ -361,6 +364,7 @@ void main() {
       theme.blockingForeground,
       theme.textSecondary,
       theme.textPrimary,
+      theme.inkFaint,
     };
     for (final s in painter.series) {
       expect(allowed, contains(s.color));
@@ -505,5 +509,72 @@ void main() {
     expect(painter.series.single.color, const SceneTheme.dark().chartIos);
     expect(painter.series.single.dashed, isFalse);
     expect(tester.takeException(), isNull);
+  });
+
+  group('design system (U3, U6)', () {
+    const SceneTheme theme = SceneTheme.dark();
+
+    double luminance(Color c) {
+      double channel(double v) => v <= 0.03928
+          ? v / 12.92
+          : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+      return 0.2126 * channel(c.r) +
+          0.7152 * channel(c.g) +
+          0.0722 * channel(c.b);
+    }
+
+    double contrast(Color a, Color b) {
+      final double la = luminance(a);
+      final double lb = luminance(b);
+      return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+    }
+
+    Future<TrendChartPainter> act2Painter(WidgetTester tester) async {
+      final h = CatalogHarness('trend', 'trend');
+      await h.pump(tester);
+      await h.sendFixtureTo(tester, 3);
+      await h.sendVariant(tester, 'act2');
+      return tester
+              .widget<CustomPaint>(find.byKey(const Key('trend-chart-paint')))
+              .painter!
+          as TrendChartPainter;
+    }
+
+    testWidgets('acte 2 : « 3.3 » en pointillés, « 3.4 » plein, même couleur '
+        'de plateforme', (tester) async {
+      final TrendChartPainter painter = await act2Painter(tester);
+      final byName = {for (final s in painter.series) s.name: s};
+      expect(byName['Android 3.3']!.dashed, isTrue);
+      expect(byName['Android 3.4']!.dashed, isFalse);
+      expect(byName['Android 3.3']!.color, theme.chartAndroid);
+      expect(byName['Android 3.4']!.color, theme.chartAndroid);
+    });
+
+    testWidgets('seuil nogo en tirets : plusieurs segments de la couleur du '
+        'seuil', (tester) async {
+      final TrendChartPainter painter = await act2Painter(tester);
+      expect(painter.thresholdColor, theme.blockingForeground);
+      await tester.pump();
+      final Finder chart = find.byKey(const Key('trend-chart-paint'));
+      expect(
+        tester.renderObject(chart),
+        paints
+          ..line(color: theme.inkFaint) // axe
+          ..line(color: theme.blockingForeground)
+          ..line(color: theme.blockingForeground)
+          ..line(color: theme.blockingForeground),
+        reason: 'une suite de tirets, jamais un trait continu',
+      );
+    });
+
+    testWidgets('graduations d\'axe en ink-faint, texte >= 24 px et >= 3:1 '
+        'sur le panneau', (tester) async {
+      final TrendChartPainter painter = await act2Painter(tester);
+      expect(painter.axisColor, theme.inkFaint);
+      expect(painter.labelStyle.color, theme.inkFaint);
+      expect(painter.labelStyle.fontSize, greaterThanOrEqualTo(24));
+      expect(contrast(theme.inkFaint, theme.panelTop), greaterThanOrEqualTo(3));
+      expect(contrast(theme.inkFaint, theme.surface), greaterThanOrEqualTo(3));
+    });
   });
 }

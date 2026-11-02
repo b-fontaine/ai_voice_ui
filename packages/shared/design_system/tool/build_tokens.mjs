@@ -6,6 +6,12 @@
 // *.tokens.json triés par nom, puis ce script, contenu brut concaténé). Le
 // script entre dans le hash : modifier le générateur sans régénérer fait
 // échouer le test.
+//
+// Extension locale (non DTCG) : `$type: "letterSpacing"`, valeur
+// `{value, unit, fontSize}`. `unit` vaut `em` (CSS, converti en px avec
+// `fontSize`, un `{value, unit: "px"}`) ou `px` (recopié). Le `fontSize` copié
+// doit égaler celui du token frère `fontSize` du même style : le générateur
+// refuse toute divergence.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -40,23 +46,107 @@ function dartName(path) {
   return first + rest.map(upperFirst).join('');
 }
 
-/** Retourne [type Dart, expression Dart] d'un token résolu. */
-function dartValue(token) {
+/** Nombre Dart `double` : tous les chiffres sont conservés (aucun arrondi). */
+function dartDouble(number, where) {
+  if (typeof number !== 'number' || !Number.isFinite(number)) {
+    throw new Error(`Nombre fini attendu : ${where}`);
+  }
+  const text = String(number);
+  return /[.eE]/.test(text) ? text : `${text}.0`;
+}
+
+function pxValue(dimension, where) {
+  if (dimension?.unit !== 'px') throw new Error(`Unité px attendue : ${where}`);
+  return Number(dimension.value);
+}
+
+/** Couleur DTCG 2025.10 : hex sRGB à six chiffres et `alpha` facultatif. */
+function dartColor(value, where) {
+  if (value?.colorSpace !== 'srgb' || !/^#[0-9A-Fa-f]{6}$/.test(value.hex)) {
+    throw new Error(`Couleur sRGB hexadécimale attendue : ${where}`);
+  }
+  const alpha = value.alpha ?? 1;
+  if (typeof alpha !== 'number' || !(alpha >= 0 && alpha <= 1)) {
+    throw new Error(`alpha entre 0 et 1 attendu : ${where}`);
+  }
+  // Octet d'opacité = round(alpha x 255) ; tokens_parity_test vérifie la même
+  // règle contre l'octet de la source.
+  const alphaByte = Math.round(alpha * 255)
+    .toString(16)
+    .toUpperCase()
+    .padStart(2, '0');
+  return `Color(0x${alphaByte}${value.hex.slice(1).toUpperCase()})`;
+}
+
+/**
+ * Rayon de flou de `BoxShadow` pour un flou CSS `cssBlur` (px).
+ *
+ * Le flou CSS B donne un écart type gaussien sigma = B / 2. Flutter calcule
+ * sigma = 0,57735 x r + 0,5 pour `blurRadius = r` (`Shadow.convertRadiusToSigma`),
+ * donc r = (B / 2 - 0,5) / 0,57735. Sous B = 1 le résultat serait nul ou
+ * négatif : pas de flou (r = 0). Les décalages et les étalements (spread) sont
+ * recopiés tels quels.
+ */
+function blurRadiusFromCss(cssBlur) {
+  const radius = (cssBlur / 2 - 0.5) / 0.57735;
+  return radius > 0 ? radius : 0;
+}
+
+function dartShadow(value, where) {
+  const layers = Array.isArray(value) ? value : [value];
+  const items = layers.map((layer) => {
+    if (layer?.inset === true) {
+      throw new Error(
+        `Ombre « inset » non exprimable par BoxShadow : ${where}. ` +
+          'Exprimer le filet par un token couleur peint par le widget.',
+      );
+    }
+    const blur = pxValue(layer.blur ?? { value: 0, unit: 'px' }, where);
+    if (blur < 0) throw new Error(`Flou négatif : ${where}`);
+    const spread = pxValue(layer.spread ?? { value: 0, unit: 'px' }, where);
+    const offsetX = dartDouble(pxValue(layer.offsetX, where), where);
+    const offsetY = dartDouble(pxValue(layer.offsetY, where), where);
+    return (
+      'BoxShadow(' +
+      `color: ${dartColor(layer.color, where)}, ` +
+      `offset: Offset(${offsetX}, ${offsetY}), ` +
+      `blurRadius: ${dartDouble(blurRadiusFromCss(blur), where)}, ` +
+      `spreadRadius: ${dartDouble(spread, where)})`
+    );
+  });
+  return `<BoxShadow>[${items.join(', ')}]`;
+}
+
+function dartString(text) {
+  return `'${String(text).replace(/[\\'$]/g, (c) => `\\${c}`)}'`;
+}
+
+const dartUses = {
+  Color: ['dart:ui', 'Color'],
+  FontVariation: ['dart:ui', 'FontVariation'],
+  FontWeight: ['dart:ui', 'FontWeight'],
+  Offset: ['dart:ui', 'Offset'],
+  BoxShadow: ['package:flutter/painting.dart', 'BoxShadow'],
+  Cubic: ['package:flutter/animation.dart', 'Cubic'],
+};
+
+/**
+ * Retourne [type Dart, expression Dart] d'un token résolu. [allTokens] (tous
+ * les tokens du dictionnaire) sert à confronter un interlettrage en em à la
+ * taille du token frère `fontSize` du même style.
+ */
+export function dartValue(token, allTokens = []) {
   const value = token.$value;
   const where = token.path.join('.');
   switch (token.$type) {
-    case 'color': {
-      if (value.colorSpace !== 'srgb' || !/^#[0-9A-Fa-f]{6}$/.test(value.hex)) {
-        throw new Error(`Couleur sRGB hexadécimale attendue : ${where}`);
-      }
-      return ['Color', `Color(0xFF${value.hex.slice(1).toUpperCase()})`];
-    }
-    case 'dimension': {
-      if (value.unit !== 'px') throw new Error(`Unité px attendue : ${where}`);
-      return ['double', Number(value.value).toFixed(1)];
-    }
+    case 'color':
+      return ['Color', dartColor(value, where)];
+    case 'dimension':
+      return ['double', dartDouble(pxValue(value, where), where)];
     case 'duration': {
-      if (value.unit !== 'ms') throw new Error(`Unité ms attendue : ${where}`);
+      if (value.unit !== 'ms' || !Number.isInteger(Number(value.value))) {
+        throw new Error(`Millisecondes entières attendues : ${where}`);
+      }
       return ['Duration', `Duration(milliseconds: ${Number(value.value)})`];
     }
     case 'fontWeight': {
@@ -66,27 +156,117 @@ function dartValue(token) {
       return ['FontWeight', `FontWeight.w${value}`];
     }
     case 'number':
-      return ['double', Number(value).toFixed(1)];
+      return ['double', dartDouble(Number(value), where)];
+    case 'shadow':
+      return ['List<BoxShadow>', dartShadow(value, where)];
+    case 'cubicBezier': {
+      if (!Array.isArray(value) || value.length !== 4 || !value.every(Number.isFinite)) {
+        throw new Error(`cubicBezier : quatre nombres attendus : ${where}`);
+      }
+      if (value[0] < 0 || value[0] > 1 || value[2] < 0 || value[2] > 1) {
+        throw new Error(`cubicBezier : abscisses entre 0 et 1 attendues : ${where}`);
+      }
+      return ['Cubic', `Cubic(${value.map((n) => dartDouble(n, where)).join(', ')})`];
+    }
+    case 'fontFamily': {
+      if (typeof value === 'string') return ['String', dartString(value)];
+      if (Array.isArray(value) && value.length > 0 && value.every((n) => typeof n === 'string')) {
+        return ['List<String>', `[${value.map(dartString).join(', ')}]`];
+      }
+      throw new Error(`fontFamily : nom ou liste de noms attendu : ${where}`);
+    }
+    case 'letterSpacing': {
+      // Interlettrage CSS en em, converti en px à la taille de police donnée
+      // (Flutter attend des pixels logiques) ; en px, recopié.
+      if (value?.unit === 'px') {
+        return ['double', dartDouble(Number(value.value), where)];
+      }
+      if (value?.unit !== 'em') throw new Error(`Unité em ou px attendue : ${where}`);
+      if (value.fontSize === undefined) {
+        throw new Error(`Interlettrage en em : fontSize (px) requis : ${where}`);
+      }
+      const size = pxValue(value.fontSize, where);
+      const parent = token.path.slice(0, -1).join('.');
+      const sibling = allTokens.find(
+        (other) => other.path.join('.') === `${parent}.fontSize`,
+      );
+      if (sibling !== undefined && pxValue(sibling.$value, where) !== size) {
+        throw new Error(
+          `Interlettrage : fontSize (${size} px) diffère du token fontSize ` +
+            `du style (${pxValue(sibling.$value, where)} px) : ${where}`,
+        );
+      }
+      const computed = Number(value.value) * size;
+      // Retire le bruit de calcul flottant (-0,04 x 76 = -3,0400000000000005).
+      return ['double', dartDouble(Number(computed.toPrecision(12)), where)];
+    }
     default:
       throw new Error(`Type de token non géré (${token.$type}) : ${where}`);
   }
 }
 
+/**
+ * Variation de l'axe `wght` jumelle d'un token `fontWeight` (polices
+ * variables, U11) : `fontWeight` et `FontVariation('wght', n)` portent la même
+ * valeur, générées ensemble pour qu'elles ne divergent jamais. Les styles de
+ * `SceneTheme` sont `const` : ils ne peuvent pas appeler `sceneWeight`. Un
+ * test Dart compare ces constantes à `sceneWeight`. `null` hors graisse.
+ */
+export function dartFontVariations(token) {
+  if (token.$type !== 'fontWeight') return null;
+  const [, weight] = dartValue(token);
+  const wght = Number(weight.replace('FontWeight.w', ''));
+  return [
+    'List<FontVariation>',
+    `[FontVariation('wght', ${dartDouble(wght, token.path.join('.'))})]`,
+  ];
+}
+
+/** Directives `import` nécessaires aux types réellement émis. */
+function dartImports(expressions) {
+  const byLibrary = new Map();
+  for (const [name, [library, symbol]] of Object.entries(dartUses)) {
+    if (!expressions.some((text) => new RegExp(`\\b${name}\\b`).test(text))) continue;
+    byLibrary.set(library, [...(byLibrary.get(library) ?? []), symbol]);
+  }
+  return [...byLibrary.keys()].sort().map((library) => {
+    const symbols = byLibrary.get(library).sort().join(', ');
+    return `import '${library}' show ${symbols};`;
+  });
+}
+
 StyleDictionary.registerFormat({
   name: 'dart/scene-tokens',
   format: ({ dictionary }) => {
-    const lines = dictionary.allTokens
+    const emitted = dictionary.allTokens
       .filter((token) => token.path[0] === 'scene')
       .map((token) => {
-        const [type, expression] = dartValue(token);
-        return `  static const ${type} ${dartName(token.path)} = ${expression};`;
-      });
+        const [type, expression] = dartValue(token, dictionary.allTokens);
+        const name = dartName(token.path);
+        const variations = dartFontVariations(token);
+        return [
+          { type, expression, name },
+          ...(variations === null
+            ? []
+            : [
+                {
+                  type: variations[0],
+                  expression: variations[1],
+                  name: name.replace(/FontWeight$/, 'FontVariations'),
+                },
+              ]),
+        ];
+      })
+      .flat();
+    const lines = emitted.map(
+      ({ type, expression, name }) => `  static const ${type} ${name} = ${expression};`,
+    );
     return [
       '// GENERATED CODE - DO NOT MODIFY BY HAND',
       '// Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.',
       `// tokens-sha256: ${tokensSha256}`,
       '',
-      "import 'dart:ui' show Color, FontWeight;",
+      ...dartImports(emitted.flatMap(({ type, expression }) => [type, expression])),
       '',
       '/// Valeurs de la scène issues des tokens de conception (DTCG).',
       'abstract final class SceneTokens {',
@@ -111,7 +291,10 @@ const styleDictionary = new StyleDictionary({
   },
 });
 
-await styleDictionary.buildAllPlatforms();
-execFileSync('dart', ['format', join(outputDir, outputName)], {
-  stdio: 'inherit',
-});
+// Importé par build_tokens.test.mjs : ne génère que lancé directement.
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+  await styleDictionary.buildAllPlatforms();
+  execFileSync('dart', ['format', join(outputDir, outputName)], {
+    stdio: 'inherit',
+  });
+}

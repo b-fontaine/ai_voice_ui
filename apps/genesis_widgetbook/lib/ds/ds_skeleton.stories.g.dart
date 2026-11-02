@@ -21,9 +21,14 @@ final DsSkeletonComponent = Component<DsSkeleton, StoryArgs<DsSkeleton>>(
   path: 'ds',
   docComment: r'''État squelette (RG-02) : bloc grisé en attendant les données.
 
+Il ne peint pas le fond du panneau (la décoration du canevas, pdr-0084 U9) :
+seul le bloc grisé qui pulse est dessiné, à 16 px du bord de la cellule
+(la marge des cellules), avec le rayon `SceneRadius.md`.
+
 Statique par défaut, pour que `pumpAndSettle` termine. Avec
-`animate: true`, une pulsation douce tourne tant qu'un `TickerMode`
-ancêtre l'autorise.''',
+`animate: true`, une pulsation douce tourne sur la période du jeton
+`motion.skeleton`, pilotée par `SceneMotionScope.loop` : elle suit la vitesse
+de rejeu et s'arrête quand les animations sont coupées.''',
   stories: [$Skeleton..$generatedName = 'Skeleton'],
 );
 typedef DsSkeletonScenario = Scenario<DsSkeleton, DsSkeletonArgs>;

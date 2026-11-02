@@ -85,7 +85,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
 import 'package:shared_core/shared_core.dart'
     show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope, SceneTheme;
+    show SceneBackdrop, SceneMotionScope;
 
 import '../../widgets/agents_rail/agents_rail.dart';
 import '../../widgets/catalog_shelf/catalog_shelf.dart';
@@ -898,8 +898,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
             focusNode: _shortcutFocus,
             child: RepaintBoundary(
               key: _boundaryKey,
-              child: ColoredBox(
-                color: SceneTheme.of(context).background,
+              // Le fond à points est sous le contenu, dans la frontière de
+              // capture ; le fond de la page reste `SceneTheme.background`.
+              child: SceneBackdrop(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: _marginX,
@@ -909,10 +910,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     children: <Widget>[
                       Column(
                         children: <Widget>[
-                          TickerMode(
-                            enabled: !_animationsOff,
-                            // « Démarrer » est inactif en mode scénario et pendant un
-                            // rejeu ; la session voix en cours n'est pas touchée.
+                          // Même réglage d'animation que le canevas : l'orbe
+                          // s'immobilise en scénario, en capture et sous « réduire
+                          // les animations ». « Démarrer » est inactif en mode
+                          // scénario et pendant un rejeu ; la session voix en
+                          // cours n'est pas touchée.
+                          _motionScope(
                             child: BlocSelector<ReplayBloc, ReplayState, bool>(
                               selector: (state) => state is ReplayActive,
                               builder: (context, replaying) => TopBar(

@@ -2,114 +2,114 @@
   "color": {
     "background": {
       "$type": "color",
-      "$value": "{color.ink.950}"
+      "$value": "{color.void}"
     },
     "surface": {
       "$type": "color",
-      "$value": "{color.ink.900}"
+      "$value": "{color.surface100}"
     },
     "text": {
       "primary": {
         "$type": "color",
-        "$value": "{color.mist.100}"
+        "$value": "{color.ink}"
       },
       "secondary": {
         "$type": "color",
-        "$value": "{color.mist.300}"
+        "$value": "{color.inkMuted}"
       }
     },
     "accent": {
       "$type": "color",
-      "$value": "{color.violet.300}"
+      "$value": "{color.signal}"
     },
     "outline": {
       "highlight": {
         "$type": "color",
-        "$value": "{color.violet.300}"
+        "$value": "{color.signal}"
       }
     },
     "status": {
       "ok": {
         "background": {
           "$type": "color",
-          "$value": "{color.green.900}"
+          "$value": "{color.goGhost}"
         },
         "foreground": {
           "$type": "color",
-          "$value": "{color.green.200}"
+          "$value": "{color.go}"
         }
       },
       "risk": {
         "background": {
           "$type": "color",
-          "$value": "{color.amber.900}"
+          "$value": "{color.warnGhost}"
         },
         "foreground": {
           "$type": "color",
-          "$value": "{color.amber.200}"
+          "$value": "{color.warn}"
         }
       },
       "blocking": {
         "background": {
           "$type": "color",
-          "$value": "{color.red.900}"
+          "$value": "{color.nogoGhost}"
         },
         "foreground": {
           "$type": "color",
-          "$value": "{color.red.200}"
+          "$value": "{color.nogo}"
         }
       },
       "neutral": {
         "background": {
           "$type": "color",
-          "$value": "{color.ink.800}"
+          "$value": "{color.surface300}"
         },
         "foreground": {
           "$type": "color",
-          "$value": "{color.mist.200}"
+          "$value": "{color.inkMuted}"
         }
       }
     },
     "action": {
       "neutralBorder": {
         "$type": "color",
-        "$value": "{color.ink.400}"
+        "$value": "{color.inkMuted}"
       },
       "dangerBorder": {
         "$type": "color",
-        "$value": "{color.red.400}"
+        "$value": "{color.nogo}"
       }
     },
     "agent": {
       "working": {
         "$type": "color",
-        "$value": "{color.amber.500}"
+        "$value": "{color.signal}"
       },
       "idle": {
         "$type": "color",
-        "$value": "{color.slate.300}"
+        "$value": "{color.inkFaint}"
       },
       "rejected": {
         "$type": "color",
-        "$value": "{color.amber.400}"
+        "$value": "{color.warn}"
       },
       "interrupted": {
         "$type": "color",
-        "$value": "{color.mist.400}"
+        "$value": "{color.baseline}"
       }
     },
     "chart": {
       "ios": {
         "$type": "color",
-        "$value": "{color.violet.300}"
+        "$value": "{color.ink}"
       },
       "android": {
         "$type": "color",
-        "$value": "{color.blue.300}"
+        "$value": "{color.signal}"
       },
       "other": {
         "$type": "color",
-        "$value": "{color.teal.300}"
+        "$value": "{color.baseline}"
       }
     }
   }

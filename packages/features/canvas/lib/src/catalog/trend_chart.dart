@@ -146,10 +146,10 @@ class _TrendView extends StatelessWidget {
                   thresholdPct: trend.thresholdPct,
                   yMaxPct: trend.yMaxPct,
                   thresholdColor: theme.blockingForeground,
-                  axisColor: theme.textSecondary,
+                  axisColor: theme.inkFaint,
                   labelStyle: sceneTextStyle(
                     context,
-                    theme.body.copyWith(color: theme.textSecondary),
+                    theme.data.copyWith(color: theme.inkFaint),
                   ),
                   textScaler: MediaQuery.textScalerOf(context),
                 ),
@@ -212,7 +212,7 @@ class _TrendHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(title, style: theme.label.copyWith(color: theme.textPrimary)),
+        Text(title, style: theme.title),
         Wrap(spacing: _gap, children: legend),
       ],
     );

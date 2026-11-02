@@ -4,7 +4,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsSkeleton, SceneMotion, SceneMotionScope, SceneTheme;
+    show
+        DsSkeleton,
+        SceneMotion,
+        SceneMotionScope,
+        ScenePanel,
+        ScenePanelDecoration,
+        SceneRadius,
+        SceneTheme;
 
 import '../model/canvas_bloc.dart';
 import '../model/canvas_state.dart';
@@ -192,14 +199,27 @@ class _SurfaceCell extends StatelessWidget {
           if (phase == null) return const SizedBox.shrink();
           return KeyedSubtree(
             key: ValueKey<String>('surface-$id'),
-            // Le contenu (`RepaintBoundary` à place fixe, premier enfant) ne se
-            // remonte pas et ses peintures restent isolées : le `ClipRect`
-            // contient la translation d'apparition, et le contour pointillé
-            // est posé au-dessus du `RepaintBoundary`, sans le repeindre.
+            // Couche panneau (pdr-0084 U9) : la décoration est une sœur
+            // statique sous le contenu, jamais son enveloppe ni dans le
+            // `ClipRect` (son ombre ne serait plus rognée). Elle est en retrait
+            // de [ScenePanel.cellInset] : les cellules sont jointives, deux panneaux
+            // voisins gardent 8 px visibles, et aucun rectangle de cellule ne
+            // change. Le contenu (`RepaintBoundary` à place fixe) ne se remonte
+            // pas et ses peintures restent isolées : le `ClipRect` contient la
+            // translation d'apparition, et le contour pointillé est posé
+            // au-dessus, sans repeindre ni le contenu ni la décoration.
             child: Stack(
               fit: StackFit.expand,
               children: <Widget>[
+                const Positioned.fill(
+                  left: ScenePanel.cellInset,
+                  top: ScenePanel.cellInset,
+                  right: ScenePanel.cellInset,
+                  bottom: ScenePanel.cellInset,
+                  child: ScenePanelDecoration(),
+                ),
                 RepaintBoundary(
+                  key: ValueKey<String>('surface-content-$id'),
                   child: ClipRect(
                     child: _SurfaceAppearance(
                       id: id,
@@ -209,7 +229,13 @@ class _SurfaceCell extends StatelessWidget {
                     ),
                   ),
                 ),
-                _HighlightOutline(id: id, highlight: highlight),
+                Positioned.fill(
+                  left: ScenePanel.cellInset,
+                  top: ScenePanel.cellInset,
+                  right: ScenePanel.cellInset,
+                  bottom: ScenePanel.cellInset,
+                  child: _HighlightOutline(id: id, highlight: highlight),
+                ),
               ],
             ),
           );
@@ -263,6 +289,7 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    SceneMotionScope.completeIfDisabled(context, _animation);
     // Surface qui arrive déjà avec ses composants : le fondu part au montage.
     if (_started) return;
     _started = true;
@@ -366,6 +393,7 @@ class _HighlightOutlineState extends State<_HighlightOutline> {
             key: ValueKey<String>('highlight-${widget.id}'),
             painter: DashedOutlinePainter(
               color: SceneTheme.of(context).highlightOutline,
+              radius: SceneRadius.lg,
             ),
           ),
         )

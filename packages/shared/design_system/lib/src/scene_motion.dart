@@ -4,8 +4,9 @@ import 'generated/scene_tokens.g.dart';
 
 /// Durées et courbe des animations de la scène (pdr-0075 D3).
 ///
-/// Pas d'`Easing.emphasized` : il n'existe pas en Flutter ; la courbe retenue
-/// est `Curves.easeOutCubic`.
+/// Valeurs issues des tokens `motion.*` (pdr-0084 U2). Pas d'`Easing.emphasized`
+/// : il n'existe pas en Flutter ; la courbe est la `Cubic(.2, .8, .2, 1)` du
+/// design system. Aucun flou d'apparition.
 abstract final class SceneMotion {
   /// Fondu squelette vers composants d'une surface.
   static const Duration appear = SceneTokens.motionAppear;
@@ -26,8 +27,17 @@ abstract final class SceneMotion {
   /// pointillés), avant adaptation à la vitesse de rejeu.
   static const Duration link = SceneTokens.motionLink;
 
+  /// Période du battement du statut « Bloquant ».
+  static const Duration beacon = SceneTokens.motionBeacon;
+
+  /// Durée d'un sens de la pulsation du squelette.
+  static const Duration skeleton = SceneTokens.motionSkeleton;
+
+  /// Période de la respiration de l'orbe vocal.
+  static const Duration orb = SceneTokens.motionOrb;
+
   /// Courbe commune à toutes les transitions de la scène.
-  static const Curve curve = Curves.easeOutCubic;
+  static const Curve curve = SceneTokens.motionCurve;
 
   /// [base] divisée par la vitesse de rejeu [speed], bornée au plancher.
   ///
@@ -95,23 +105,40 @@ class SceneMotionScope extends InheritedWidget {
     }
   }
 
+  /// Termine aussitôt une lecture en cours de [controller] si les animations
+  /// viennent d'être coupées (valeur 1, aucun `Ticker` actif).
+  ///
+  /// À appeler dans `didChangeDependencies` d'un état qui joue [play] : une
+  /// animation d'apparition en vol ne doit pas survivre au réglage « réduire
+  /// les animations ».
+  static void completeIfDisabled(
+    BuildContext context,
+    AnimationController controller,
+  ) {
+    if (of(context).disabled && controller.isAnimating) {
+      controller.value = 1;
+    }
+  }
+
   /// Fait tourner [controller] en boucle sur [base] adaptée au réglage en
   /// vigueur (animation sans fin, comme les pointillés de la liaison).
   ///
   /// Période nulle (animations coupées) : le contrôleur s'arrête et garde sa
   /// phase, sans jamais boucler sur une durée nulle. À rappeler quand le
-  /// réglage change (`didChangeDependencies`).
+  /// réglage change (`didChangeDependencies`). Avec [reverse], la phase va et
+  /// vient entre 0 et 1 au lieu de repartir de 0.
   static void loop(
     BuildContext context,
     AnimationController controller,
-    Duration base,
-  ) {
+    Duration base, {
+    bool reverse = false,
+  }) {
     final Duration period = of(context).durationFor(base);
     controller.duration = period;
     if (period == Duration.zero) {
       controller.stop();
     } else {
-      controller.repeat(period: period);
+      controller.repeat(period: period, reverse: reverse);
     }
   }
 

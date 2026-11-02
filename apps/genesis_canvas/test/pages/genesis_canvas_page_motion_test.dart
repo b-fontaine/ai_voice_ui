@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
+import 'package:genesis_canvas/widgets/top_bar/top_bar.dart' show TopBar;
 import 'package:shared_design_system/shared_design_system.dart'
     show SceneMotion, SceneMotionScope;
 
@@ -18,6 +19,54 @@ import '../support/page_rig.dart';
 void main() {
   SceneMotionScope motionOf(WidgetTester tester) => SceneMotionScope.of(
     tester.element(find.byKey(const Key('canvas-board'))),
+  );
+
+  SceneMotionScope topBarMotion(WidgetTester tester) =>
+      SceneMotionScope.of(tester.element(find.byType(TopBar)));
+
+  bool orbRuns(WidgetTester tester) =>
+      tester.binding.transientCallbackCount > 0;
+
+  testWidgets('la barre du haut est sous le réglage d\'animation de la page', (
+    tester,
+  ) async {
+    final rig = PageRig(tester);
+    await rig.mount(tester, themed: true);
+    expect(topBarMotion(tester).disabled, isFalse);
+    expect(topBarMotion(tester).speed, 1);
+    expect(orbRuns(tester), isTrue, reason: 'l\'orbe bat en direct');
+  });
+
+  testWidgets('scénario : barre du haut figée, pumpAndSettle converge', (
+    tester,
+  ) async {
+    final rig = PageRig(tester);
+    final messages = StreamController<ReplayedMessage>();
+    addTearDown(messages.close);
+    await rig.mount(tester, replay: messages.stream, themed: true);
+
+    expect(topBarMotion(tester).disabled, isTrue);
+    expect(find.byKey(const Key('voice-orb')), findsOneWidget);
+    expect(orbRuns(tester), isFalse);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+    'sous « réduire les animations » : l\'orbe est figé, pumpAndSettle converge',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const _NoAnimations();
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      final rig = PageRig(tester);
+      await rig.mount(tester, themed: true);
+
+      expect(topBarMotion(tester).disabled, isTrue);
+      expect(find.byKey(const Key('voice-orb')), findsOneWidget);
+      expect(orbRuns(tester), isFalse, reason: 'aucun Ticker actif');
+      await tester.pumpAndSettle();
+    },
   );
 
   testWidgets('en mode scénario, les durées sont nulles', (tester) async {
@@ -87,7 +136,7 @@ void main() {
     expect(scope.speed, 2);
     expect(
       scope.durationFor(SceneMotion.appear),
-      const Duration(milliseconds: 100),
+      const Duration(milliseconds: 240),
     );
   });
 }

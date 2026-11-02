@@ -1,0 +1,20 @@
+name: ds_fonts_weight_spike
+description: Spike jetable (017 T10) - échelle de graisses des polices variables, capture réelle sous Xvfb.
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.13.0
+dependencies:
+  flutter:
+    sdk: flutter
+flutter:
+  fonts:
+    - family: Space Grotesk
+      fonts:
+        - asset: fonts/SpaceGrotesk-Variable.ttf
+    - family: JetBrains Mono
+      fonts:
+        - asset: fonts/JetBrainsMono-Variable.ttf
+    - family: DejaVu Sans
+      fonts:
+        - asset: fonts/DejaVuSans.ttf

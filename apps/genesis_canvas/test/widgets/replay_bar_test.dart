@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/replay_bar/replay_bar.dart';
 
+import '../support/panel_layers.dart';
 import '../support/replay_rig.dart';
 
 const Key _play = Key('replay-play');
@@ -70,6 +71,16 @@ Future<void> _press(WidgetTester tester, Key key) async {
 }
 
 void main() {
+  barTest('le fond de la barre est la décoration de panneau, sans changer '
+      'son rectangle', (tester) async {
+    await _pump(tester, withJournal: true);
+
+    expectPanelDecoration(tester, find.byType(ReplayBar));
+    final Rect bar = tester.getRect(find.byType(ReplayBar));
+    expect(bar.topLeft, Offset.zero);
+    expect(bar.width, 480);
+  });
+
   barTest('Direct sans journal : tout est inactif, libellé REJEU', (
     tester,
   ) async {

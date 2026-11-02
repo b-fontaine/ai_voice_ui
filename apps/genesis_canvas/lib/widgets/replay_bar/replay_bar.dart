@@ -16,9 +16,14 @@ import 'package:feature_replay/feature_replay.dart'
         ReplayStatus;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show ScenePanel, SceneTheme;
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
+///
+/// Marges et écarts sont serrés pour que le bouton Lecture reste à gauche du
+/// panneau du protocole déplié (qui recouvre la droite de la zone), même avec
+/// l'étiquette « REJEU » en mono 24 px interlettré.
 ///
 /// - rangée 1 : libellé, Lecture/Pause (un seul bouton), Recommencer, curseur
 ///   de position, « Direct » ;
@@ -49,103 +54,98 @@ class ReplayBar extends StatelessWidget {
     final ReplayBloc bloc = context.read<ReplayBloc>();
     return Material(
       type: MaterialType.transparency,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: BlocBuilder<ReplayBloc, ReplayState>(
-            builder: (BuildContext context, ReplayState state) {
-              final bool live = state is ReplayLive;
-              final ReplaySnapshot? snapshot = state is ReplayActive
-                  ? state.snapshot
-                  : null;
-              final bool playing = snapshot?.status == ReplayStatus.playing;
-              final bool canPlay = switch (state) {
-                ReplayLive(:final bool canPlay) => canPlay,
-                ReplayActive() => true,
-              };
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  SizedBox(
-                    height: rowHeight,
-                    child: Row(
-                      children: <Widget>[
-                        Text(
-                          'REJEU',
-                          style: theme.label.copyWith(color: theme.accent),
-                          maxLines: 1,
+      // Fond : décoration de panneau du design system, sœur du contenu.
+      child: ScenePanel(
+        inset: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: BlocBuilder<ReplayBloc, ReplayState>(
+          builder: (BuildContext context, ReplayState state) {
+            final bool live = state is ReplayLive;
+            final ReplaySnapshot? snapshot = state is ReplayActive
+                ? state.snapshot
+                : null;
+            final bool playing = snapshot?.status == ReplayStatus.playing;
+            final bool canPlay = switch (state) {
+              ReplayLive(:final bool canPlay) => canPlay,
+              ReplayActive() => true,
+            };
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(
+                  height: rowHeight,
+                  child: Row(
+                    children: <Widget>[
+                      Text(
+                        'REJEU',
+                        style: theme.label.copyWith(color: theme.accent),
+                        maxLines: 1,
+                      ),
+                      _PlayButton(
+                        playing: playing,
+                        onPressed: !canPlay
+                            ? null
+                            : () => bloc.add(
+                                playing
+                                    ? const ReplayPausePressed()
+                                    : const ReplayPlayPressed(),
+                              ),
+                      ),
+                      IconButton(
+                        key: const Key('replay-restart'),
+                        onPressed: live
+                            ? null
+                            : () => bloc.add(const ReplayRestartPressed()),
+                        style: _iconStyle(theme),
+                        icon: const Icon(
+                          Icons.replay,
+                          semanticLabel: 'Recommencer',
                         ),
-                        const SizedBox(width: 4),
-                        _PlayButton(
-                          playing: playing,
-                          onPressed: !canPlay
-                              ? null
-                              : () => bloc.add(
-                                  playing
-                                      ? const ReplayPausePressed()
-                                      : const ReplayPlayPressed(),
-                                ),
+                      ),
+                      Expanded(
+                        child: _PositionSlider(
+                          snapshot: snapshot,
+                          onSeek: (Duration position) =>
+                              bloc.add(ReplaySeeked(position)),
                         ),
-                        IconButton(
-                          key: const Key('replay-restart'),
-                          onPressed: live
-                              ? null
-                              : () => bloc.add(const ReplayRestartPressed()),
-                          style: _iconStyle(theme),
-                          icon: const Icon(
-                            Icons.replay,
-                            semanticLabel: 'Recommencer',
-                          ),
+                      ),
+                      TextButton(
+                        key: const Key('replay-direct'),
+                        onPressed: live
+                            ? null
+                            : () => bloc.add(const ReplayDirectPressed()),
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.accent,
+                          disabledForegroundColor: theme.neutralForeground,
+                          textStyle: theme.button,
+                          minimumSize: const Size(0, rowHeight),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),
+                        child: const Text('Direct', maxLines: 1),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: rowHeight,
+                  child: Row(
+                    children: <Widget>[
+                      for (final double speed in bloc.settings.speeds)
                         Expanded(
-                          child: _PositionSlider(
-                            snapshot: snapshot,
-                            onSeek: (Duration position) =>
-                                bloc.add(ReplaySeeked(position)),
+                          child: _SpeedChip(
+                            speed: speed,
+                            selected: snapshot?.speed == speed,
+                            onPressed: live
+                                ? null
+                                : () => bloc.add(ReplaySpeedSelected(speed)),
                           ),
                         ),
-                        TextButton(
-                          key: const Key('replay-direct'),
-                          onPressed: live
-                              ? null
-                              : () => bloc.add(const ReplayDirectPressed()),
-                          style: TextButton.styleFrom(
-                            foregroundColor: theme.accent,
-                            disabledForegroundColor: theme.neutralForeground,
-                            textStyle: theme.label,
-                            minimumSize: const Size(0, rowHeight),
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
-                          child: const Text('Direct', maxLines: 1),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                  SizedBox(
-                    height: rowHeight,
-                    child: Row(
-                      children: <Widget>[
-                        for (final double speed in bloc.settings.speeds)
-                          Expanded(
-                            child: _SpeedChip(
-                              speed: speed,
-                              selected: snapshot?.speed == speed,
-                              onPressed: live
-                                  ? null
-                                  : () => bloc.add(ReplaySpeedSelected(speed)),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -208,7 +208,7 @@ class _SpeedChip extends StatelessWidget {
           foregroundColor: theme.background,
           disabledBackgroundColor: theme.neutralBackground,
           disabledForegroundColor: theme.neutralForeground,
-          textStyle: theme.label,
+          textStyle: theme.button,
           minimumSize: minimum,
           padding: padding,
         ),
@@ -221,7 +221,7 @@ class _SpeedChip extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: theme.textPrimary,
         disabledForegroundColor: theme.neutralForeground,
-        textStyle: theme.label,
+        textStyle: theme.button,
         minimumSize: minimum,
         padding: padding,
       ),

@@ -86,10 +86,7 @@ class _CrashListView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            crashes.title,
-            style: theme.label.copyWith(color: theme.textPrimary),
-          ),
+          Text(crashes.title, style: theme.title),
           // Les lignes se partagent la hauteur restante : la cellule est
           // bornée, la liste ne défile pas.
           for (final _CrashRow row in crashes.rows)
@@ -113,7 +110,7 @@ class _CrashRowView extends StatelessWidget {
       children: <Widget>[
         Text(
           '${row.rank}',
-          style: theme.label.copyWith(color: theme.textSecondary),
+          style: theme.data.copyWith(color: theme.textSecondary),
           maxLines: 1,
         ),
         const SizedBox(width: 12),
@@ -139,11 +136,7 @@ class _CrashRowView extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(width: 12),
-        Text(
-          '${row.volume}',
-          style: theme.label.copyWith(color: theme.textPrimary),
-          maxLines: 1,
-        ),
+        Text('${row.volume}', style: theme.data, maxLines: 1),
       ],
     );
   }

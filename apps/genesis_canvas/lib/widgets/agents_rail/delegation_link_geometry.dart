@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneRadius;
+
 /// Tracé d'une liaison de délégation (Q-85, FR-03) entre la tuile de
 /// l'orchestrateur et celle d'un agent, en coordonnées de la zone de peinture.
 ///
@@ -34,7 +37,7 @@ final class DelegationLinkGeometry {
   static const double laneHeight = 11;
 
   /// Rayon des coins arrondis.
-  static const double cornerRadius = 6;
+  static const double cornerRadius = SceneRadius.sm;
 
   /// Rectangle de la tuile de l'orchestrateur.
   final Rect orchestrator;

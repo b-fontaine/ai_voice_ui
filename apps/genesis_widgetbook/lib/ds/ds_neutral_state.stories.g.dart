@@ -21,7 +21,10 @@ final DsNeutralStateComponent =
       name: 'DsNeutralState',
       path: 'ds',
       docComment:
-          r'''État neutre (RG-10) : message court, jamais d'erreur affichée.''',
+          r'''État neutre (RG-10) : message court, jamais d'erreur affichée.
+
+Sans fond ni rayon : la décoration de panneau du canevas est le fond
+(pdr-0084 U9) ; la marge de 16 px est conservée.''',
       stories: [$Neutral..$generatedName = 'Neutral'],
     );
 typedef DsNeutralStateScenario = Scenario<DsNeutralState, DsNeutralStateArgs>;

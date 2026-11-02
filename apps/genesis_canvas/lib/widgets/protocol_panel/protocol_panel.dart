@@ -7,7 +7,8 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
         ProtocolOperation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneRadius, ScenePanel, SceneTheme;
 
 /// Panneau « FLUX A2UI · live » (FR-05) : les messages A2UI en cours de
 /// fabrication, avec le dernier en évidence.
@@ -54,34 +55,27 @@ class ProtocolPanel extends StatelessWidget {
                   : collapsedSize;
               return SizedBox.fromSize(
                 size: size,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: theme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.neutralBackground,
-                      width: 2,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        _Header(state: state),
-                        if (state.expanded)
-                          Expanded(child: _Entries(state: state))
-                        else
-                          Text(
-                            _countText(state.totalCount),
-                            style: theme.body.copyWith(
-                              color: theme.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                // Fond : décoration de panneau du design system, sœur du
+                // contenu.
+                child: ScenePanel(
+                  inset: 0,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _Header(state: state),
+                      if (state.expanded)
+                        Expanded(child: _Entries(state: state))
+                      else
+                        Text(
+                          _countText(state.totalCount),
+                          style: theme.body.copyWith(
+                            color: theme.textSecondary,
                           ),
-                      ],
-                    ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -121,7 +115,7 @@ class _Header extends StatelessWidget {
               context.read<ProtocolFeedBloc>().add(const PanelToggled()),
           style: TextButton.styleFrom(
             foregroundColor: theme.textPrimary,
-            textStyle: theme.label,
+            textStyle: theme.button,
           ),
           child: Text(state.expanded ? 'Replier' : 'Déplier'),
         ),
@@ -186,8 +180,8 @@ class _Entries extends StatelessWidget {
   /// l'entrée en cours. Les hauteurs de ligne viennent du thème de scène.
   static int _capacity(SceneTheme theme, double height) {
     final double header =
-        theme.label.fontSize! * theme.label.height! + _refusedExtra;
-    final double json = 2 * theme.body.fontSize! * _jsonLineHeight;
+        theme.data.fontSize! * theme.data.height! + _refusedExtra;
+    final double json = 2 * theme.data.fontSize! * _jsonLineHeight;
     final double worstEntry =
         _tileTopGap + 2 * _tilePaddingY + 2 * _currentBorder + header + json;
     return (height / worstEntry).floor().clamp(0, ProtocolPanel.visibleEntries);
@@ -230,7 +224,7 @@ class _EntryTile extends StatelessWidget {
         key: current ? const Key('protocol-current') : null,
         decoration: BoxDecoration(
           color: current ? theme.background : null,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: SceneRadius.borderSm,
           border: Border.all(
             color: current ? theme.accent : theme.neutralBackground,
             width: current ? _currentBorder : 1,
@@ -253,7 +247,7 @@ class _EntryTile extends StatelessWidget {
                       surface == null
                           ? _operationName(entry.operation)
                           : '${_operationName(entry.operation)} · $surface',
-                      style: theme.label.copyWith(color: theme.textPrimary),
+                      style: theme.data,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -281,8 +275,8 @@ class _EntryTile extends StatelessWidget {
               Text(
                 entry.json,
                 key: Key('protocol-json-${entry.index}'),
-                style: body.copyWith(
-                  fontFamily: 'monospace',
+                style: theme.data.copyWith(
+                  color: theme.textSecondary,
                   height: _jsonLineHeight,
                 ),
                 maxLines: 2,
@@ -304,14 +298,14 @@ class _RefusedMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final TextStyle style = theme.label.copyWith(
+    final TextStyle style = theme.data.copyWith(
       color: theme.blockingForeground,
     );
     final String? shownCode = code;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.blockingBackground,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: SceneRadius.borderPill,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),

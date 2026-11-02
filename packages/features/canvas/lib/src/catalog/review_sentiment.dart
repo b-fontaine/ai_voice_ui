@@ -109,13 +109,8 @@ class _ReviewsView extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  reviews.title,
-                  style: theme.label.copyWith(color: theme.textPrimary),
-                ),
-              ),
-              Text('${reviews.count} avis · $average ★', style: theme.body),
+              Expanded(child: Text(reviews.title, style: theme.title)),
+              Text('${reviews.count} avis · $average ★', style: theme.data),
             ],
           ),
           const SizedBox(height: 4),
@@ -131,14 +126,14 @@ class _ReviewsView extends StatelessWidget {
               Flexible(
                 child: Text(
                   '${reviews.positivePct} % positifs',
-                  style: theme.body.copyWith(color: theme.okForeground),
+                  style: theme.data.copyWith(color: theme.okForeground),
                 ),
               ),
               const Spacer(),
               Flexible(
                 child: Text(
                   '${reviews.negativePct} % négatifs',
-                  style: theme.body.copyWith(color: theme.blockingForeground),
+                  style: theme.data.copyWith(color: theme.blockingForeground),
                 ),
               ),
             ],
@@ -177,7 +172,7 @@ class _SplitBar extends StatelessWidget {
             child: ColoredBox(color: color),
           );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: SceneRadius.borderSm,
       child: SizedBox(
         key: const Key('review-split-bar'),
         height: 12,

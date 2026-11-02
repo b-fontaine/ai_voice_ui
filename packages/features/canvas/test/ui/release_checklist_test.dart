@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart' show Key, Size, Text, TextOverflow;
+import 'package:flutter/widgets.dart'
+    show BuildContext, Key, SizedBox, Size, Text, TextOverflow;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
@@ -115,6 +116,43 @@ void main() {
       h.inCell(find.widgetWithText(DsStatusChip, 'À RISQUE')),
     );
     expect(reco.status, SceneStatus.risk);
+  });
+
+  testWidgets('la colonne des puces a la largeur mesurée par '
+      'DsStatusChip.measure (glyphe compris)', (tester) async {
+    final h = _realFontsHarness(size: const Size(940, 255));
+    await h.pump(tester);
+    await h.sendFixtureTo(tester, 3);
+
+    final Finder okChip = h.inCell(find.widgetWithText(DsStatusChip, 'Validé'));
+    final Finder riskChips = h.inCell(
+      find.widgetWithText(DsStatusChip, 'À risque'),
+    );
+    expect(okChip, findsOneWidget);
+    expect(riskChips, findsNWidgets(2));
+    final BuildContext context = tester.element(okChip);
+    final Size ok = DsStatusChip.measure(context, SceneStatus.ok, 'Validé');
+    final Size risk = DsStatusChip.measure(
+      context,
+      SceneStatus.risk,
+      'À risque',
+    );
+    // Le glyphe ✓ élargit la puce : la mesure en tient compte.
+    expect(tester.getSize(okChip).width, closeTo(ok.width, 0.01));
+    expect(tester.getSize(riskChips.first).width, closeTo(risk.width, 0.01));
+
+    final double expected =
+        (ok.width > risk.width ? ok.width : risk.width).ceilToDouble() + 1;
+    final Finder cell = find.ancestor(
+      of: okChip,
+      matching: find.byType(SizedBox),
+    );
+    final double cellWidth = tester
+        .widgetList<SizedBox>(cell)
+        .map((SizedBox b) => b.width)
+        .whereType<double>()
+        .first;
+    expect(cellWidth, expected);
   });
 
   testWidgets('12 critères : marque « + N autres », bloquant en 12e visible', (

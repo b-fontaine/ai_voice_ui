@@ -4,10 +4,10 @@ Catalogue [Widgetbook](https://docs.widgetbook.io/~v4) (4.0.0-beta.14) des briqu
 
 ## Contenu
 
-- `lib/ds/` : stories des briques `DsStatusChip`, `DsSkeleton` et `DsNeutralState` (le squelette n'est couvert qu'ici, une seule fois).
+- `lib/ds/` : stories des briques `DsStatusChip` (dont `AllStatuses`, les quatre statuts), `DsSkeleton`, `DsNeutralState`, et des éléments de scène `ScenePanel` (marge par défaut, personnalisée, `glow`) et `SceneBackdrop` (plein cadre). Le squelette n'est couvert qu'ici, une seule fois.
 - `lib/genesis/` : une story par composant du contrat (`KeyIndicator`, `TrendChart`, `ReviewSentiment`, `ReleaseChecklist`, `ActionBar`, `CrashList`), en trois états : `Data` (exemple complet du contrat), `NoData` (surface créée, aucune donnée) et `Neutral` (données invalides, RG-10). L'hôte `GenesisSurfaceHost` crée un `SurfaceController(catalogs: [genesisCatalog()])` et lui rejoue les messages A2UI de l'exemple : le rendu est celui du vrai catalogue, sans simulacre.
 - `assets/examples/` : copies des exemples de `contracts/a2ui/genesis/v1/examples/`. Flutter ne peut pas empaqueter un asset hors du paquet ; `test/examples_assets_test.dart` échoue si une copie diffère de l'original. Après une modification du contrat, recopier le fichier concerné.
-- Thème de scène seul (RG-09), deux cellules réelles du canevas (624×302 et 936×302, viewports de 640×318 et 952×318 avec la marge de 8 px de `sceneAppBuilder`), thème Material `sceneMaterialTheme()` partagé avec l'app, animations coupées pour des captures stables.
+- Thème de scène seul (RG-09), deux cellules réelles du canevas (624×302 et 936×302, viewports de 640×318 et 952×318 avec la marge de 8 px de `sceneAppBuilder`), thème Material `sceneMaterialTheme()` partagé avec l'app, fond `SceneBackdrop` (grille de points) sous chaque story, panneau `ScenePanelDecoration` (retrait de 4 px) sous chaque composant et chaque brique, comme `CanvasBoard` dans l'app, animations coupées pour des captures stables.
 
 ## Lancer
 
@@ -34,7 +34,7 @@ Un composant d'une story porte le nom du type de son constructeur : c'est pourqu
 flutter test
 ```
 
-`test/widgetbook_test.dart` compare les composants du catalogue à `GenesisContract.components` plus les trois briques, puis lance `testWidgetbook` : un PNG et un JSON (arbre de sémantique, violations d'accessibilité) par scénario dans `build/.widgetbook/<Composant>/<Story>/<Cellule>.{png,json}` (dossier ignoré par git). Ces captures ne sont pas comparées à une référence. `test/genesis_surface_host_test.dart` vérifie que l'hôte affiche bien les textes du contrat.
+`test/widgetbook_test.dart` compare les composants du catalogue à `GenesisContract.components` plus les briques et éléments de scène, puis lance `testWidgetbook` : un PNG et un JSON (arbre de sémantique, violations d'accessibilité) par scénario dans `build/.widgetbook/<Composant>/<Story>/<Cellule>.{png,json}` (dossier ignoré par git). Ces captures ne sont pas comparées à une référence. `test/story_frame_test.dart` vérifie que chaque story de composant ou de brique a sa `ScenePanelDecoration` au-dessus du `SceneBackdrop`. `test/genesis_surface_host_test.dart` vérifie que l'hôte affiche bien les textes du contrat.
 
 ## Construire le site web statique
 

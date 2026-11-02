@@ -4,14 +4,30 @@ import 'package:shared_design_system/shared_design_system.dart';
 
 void main() {
   group('SceneMotion', () {
-    test('porte les durées et la courbe de pdr-0075 D3', () {
-      expect(SceneMotion.appear, const Duration(milliseconds: 200));
-      expect(SceneMotion.value, const Duration(milliseconds: 150));
+    test('porte les durées et la courbe de pdr-0084 U2', () {
+      expect(SceneMotion.appear, const Duration(milliseconds: 480));
+      expect(SceneMotion.value, const Duration(milliseconds: 160));
       expect(SceneMotion.status, const Duration(milliseconds: 400));
-      expect(SceneMotion.translation, 8);
+      expect(SceneMotion.translation, 10);
       expect(SceneMotion.link, const Duration(milliseconds: 1200));
+      expect(SceneMotion.beacon, const Duration(milliseconds: 1600));
+      expect(SceneMotion.skeleton, const Duration(milliseconds: 1200));
+      expect(SceneMotion.orb, const Duration(milliseconds: 2000));
       expect(SceneMotion.floor, const Duration(milliseconds: 60));
-      expect(SceneMotion.curve, Curves.easeOutCubic);
+    });
+
+    test('la courbe est Cubic(.2, .8, .2, 1)', () {
+      final Curve curve = SceneMotion.curve;
+      expect(curve, isA<Cubic>());
+      final Cubic cubic = curve as Cubic;
+      expect(
+        <double>[cubic.a, cubic.b, cubic.c, cubic.d],
+        <double>[0.2, 0.8, 0.2, 1],
+      );
+      expect(curve.transform(0), 0);
+      expect(curve.transform(1), 1);
+      // Départ vif, arrivée douce : déjà au-delà de 90 % à mi-parcours.
+      expect(curve.transform(0.5), greaterThan(0.9));
     });
 
     test('la vitesse 1 ne change pas la durée', () {
@@ -24,7 +40,11 @@ void main() {
     test('la vitesse 2 divise la durée', () {
       expect(
         SceneMotion.scaled(SceneMotion.appear, speed: 2),
-        const Duration(milliseconds: 100),
+        const Duration(milliseconds: 240),
+      );
+      expect(
+        SceneMotion.scaled(SceneMotion.status, speed: 2),
+        const Duration(milliseconds: 200),
       );
     });
 
@@ -103,7 +123,7 @@ void main() {
       await tester.pumpWidget(host(disabled: false, speed: 2));
       expect(
         SceneMotionScope.of(ctx).durationFor(SceneMotion.appear),
-        const Duration(milliseconds: 100),
+        const Duration(milliseconds: 240),
       );
     });
 
@@ -146,13 +166,36 @@ void main() {
           speed: 2,
           base: SceneMotion.appear,
         );
-        expect(c.duration, const Duration(milliseconds: 100));
+        expect(c.duration, const Duration(milliseconds: 240));
         expect(c.value, 0);
         expect(c.isAnimating, isTrue);
-        await tester.pump(const Duration(milliseconds: 100));
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(const Duration(milliseconds: 240));
+        await tester.pump(const Duration(milliseconds: 240));
         expect(c.value, 1);
       });
+
+      testWidgets(
+        'disabled en cours de route : la lecture se termine aussitôt',
+        (tester) async {
+          late AnimationController c;
+          Widget host(bool disabled) => SceneMotionScope(
+            disabled: disabled,
+            child: _Player(
+              base: SceneMotion.appear,
+              onController: (controller) => c = controller,
+            ),
+          );
+          await tester.pumpWidget(host(false));
+          await tester.pump(const Duration(milliseconds: 100));
+          expect(c.isAnimating, isTrue);
+          expect(c.value, lessThan(1));
+
+          await tester.pumpWidget(host(true));
+          expect(c.value, 1);
+          expect(c.isAnimating, isFalse);
+          expect(tester.binding.transientCallbackCount, 0);
+        },
+      );
 
       testWidgets('plancher de 60 ms', (tester) async {
         final c = await run(
@@ -205,6 +248,26 @@ void main() {
         expect(c.duration, const Duration(milliseconds: 600));
         await tester.pump(const Duration(milliseconds: 300));
         expect(c.value, closeTo(0.5, 0.01));
+      });
+
+      testWidgets('reverse : la phase repart en sens inverse après 1', (
+        tester,
+      ) async {
+        late AnimationController c;
+        await tester.pumpWidget(
+          SceneMotionScope(
+            child: _Looper(
+              base: SceneMotion.skeleton,
+              reverse: true,
+              onController: (controller) => c = controller,
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 1200));
+        expect(c.value, closeTo(1, 0.01));
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(c.value, closeTo(0.5, 0.01), reason: 'retour vers 0');
+        expect(c.isAnimating, isTrue);
       });
 
       testWidgets('disabled : contrôleur arrêté, phase fixe', (tester) async {
@@ -282,7 +345,10 @@ class _PlayerState extends State<_Player> with SingleTickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
+    if (_started) {
+      SceneMotionScope.completeIfDisabled(context, _controller);
+      return;
+    }
     _started = true;
     SceneMotionScope.play(context, _controller, widget.base);
     widget.onController(_controller);
@@ -301,9 +367,14 @@ class _PlayerState extends State<_Player> with SingleTickerProviderStateMixin {
 /// Boucle un contrôleur via [SceneMotionScope.loop] à chaque changement de
 /// dépendance.
 class _Looper extends StatefulWidget {
-  const _Looper({required this.base, required this.onController});
+  const _Looper({
+    required this.base,
+    required this.onController,
+    this.reverse = false,
+  });
 
   final Duration base;
+  final bool reverse;
   final void Function(AnimationController) onController;
 
   @override
@@ -322,7 +393,12 @@ class _LooperState extends State<_Looper> with SingleTickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    SceneMotionScope.loop(context, _controller, widget.base);
+    SceneMotionScope.loop(
+      context,
+      _controller,
+      widget.base,
+      reverse: widget.reverse,
+    );
   }
 
   @override

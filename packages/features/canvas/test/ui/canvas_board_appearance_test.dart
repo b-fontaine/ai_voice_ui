@@ -9,7 +9,7 @@ import 'package:shared_design_system/shared_design_system.dart' show DsSkeleton;
 import '../support/catalog_harness.dart';
 
 /// Apparition animée d'une surface (013 T21c, pdr-0075 D3) : squelette, puis
-/// composants en fondu de 200 ms, puis valeurs en fondu de 150 ms. L'opacité
+/// composants en fondu de 480 ms, puis valeurs en fondu de 160 ms. L'opacité
 /// est mesurée sur l'écran rendu (produit des opacités des ancêtres).
 const ({bool disabled, double speed}) _live = (disabled: false, speed: 1);
 
@@ -36,6 +36,13 @@ Finder _value() => find.descendant(
   matching: find.text('99,57 %'),
 );
 
+/// Valeur affichée après la mise à jour de l'acte 2 (le « 99,57 % » de l'acte 1
+/// y devient « 99,43 % »).
+Finder _valueAct2() => find.descendant(
+  of: find.byKey(const Key('surface-kpi')),
+  matching: find.text('99,43 %'),
+);
+
 Finder _skeleton() => find.byKey(const Key('skeleton-kpi'));
 
 void main() {
@@ -55,18 +62,18 @@ void main() {
     expect(_skeleton(), findsNothing, reason: 'le squelette part aussitôt');
   });
 
-  testWidgets('après 200 ms les composants sont pleinement visibles', (
+  testWidgets('après 480 ms les composants sont pleinement visibles', (
     tester,
   ) async {
     final h = CatalogHarness('kpi', 'kpi');
     await h.pump(tester, motion: _live);
     await h.sendFixtureTo(tester, 2);
 
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 240));
     final double half = _opacityOf(_content());
     expect(half, inExclusiveRange(0.3, 1.0));
 
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 240));
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
     expect(tester.takeException(), isNull);
@@ -86,7 +93,7 @@ void main() {
     expect(_opacityOf(_value()), 1.0);
   });
 
-  testWidgets('rejeu à 2 x : fondu des composants en 100 ms au plus', (
+  testWidgets('rejeu à 2 x : fondu des composants en 240 ms au plus', (
     tester,
   ) async {
     final h = CatalogHarness('kpi', 'kpi');
@@ -94,46 +101,104 @@ void main() {
     await h.sendFixtureTo(tester, 2);
     expect(_opacityOf(_content()), lessThan(0.05));
 
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(_opacityOf(_content()), lessThan(1.0));
+
+    await tester.pump(const Duration(milliseconds: 120));
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
   });
 
-  testWidgets('les valeurs apparaissent en 150 ms au passage aux données', (
+  testWidgets('les valeurs apparaissent en 160 ms au passage aux données', (
     tester,
   ) async {
     final h = CatalogHarness('kpi', 'kpi');
     await h.pump(tester, motion: _live);
     await h.sendFixtureTo(tester, 2);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 480));
 
     await h.send(tester, h.fixture[2]);
     expect(_opacityOf(_value()), lessThan(0.05));
 
-    await tester.pump(const Duration(milliseconds: 75));
+    await tester.pump(const Duration(milliseconds: 80));
     expect(_opacityOf(_value()), inExclusiveRange(0.3, 1.0));
 
-    await tester.pump(const Duration(milliseconds: 75));
+    await tester.pump(const Duration(milliseconds: 80));
     expect(_opacityOf(_value()), 1.0);
+  });
+
+  testWidgets(
+    'animations coupées en cours de fondu : tout est visible aussitôt',
+    (tester) async {
+      final h = CatalogHarness('kpi', 'kpi');
+      await h.pump(tester, motion: _live);
+      await h.sendFixtureTo(tester, 2);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_opacityOf(_content()), lessThan(1.0));
+      expect(tester.hasRunningAnimations, isTrue);
+
+      await h.pump(tester, motion: (disabled: true, speed: 1));
+
+      expect(_opacityOf(_content()), 1.0);
+      expect(
+        tester.getTopLeft(_content()).dy,
+        tester.getTopLeft(find.byKey(const Key('surface-kpi'))).dy,
+      );
+      expect(tester.hasRunningAnimations, isFalse);
+    },
+  );
+
+  testWidgets('animations coupées en cours de fondu des valeurs', (
+    tester,
+  ) async {
+    final h = CatalogHarness('kpi', 'kpi');
+    await h.pump(tester, motion: _live);
+    await h.sendFixtureTo(tester, 2);
+    await tester.pump(const Duration(milliseconds: 480));
+    await h.send(tester, h.fixture[2]);
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(_opacityOf(_value()), lessThan(1.0));
+
+    await h.pump(tester, motion: (disabled: true, speed: 1));
+
+    expect(_opacityOf(_value()), 1.0);
+    expect(tester.hasRunningAnimations, isFalse);
   });
 
   testWidgets('un updateDataModel ne rejoue aucune animation', (tester) async {
     final h = CatalogHarness('kpi', 'kpi');
     await h.pump(tester, motion: _live);
     await h.sendFixtureTo(tester, 3);
-    await tester.pump(const Duration(milliseconds: 400));
+    // Composants (480 ms) puis valeurs (160 ms).
+    await tester.pump(const Duration(milliseconds: 640));
     expect(_opacityOf(_value()), 1.0);
+    final State surfaceBefore = tester.state(find.byType(Surface));
 
     await h.sendVariant(tester, 'act2');
 
+    expect(tester.state(find.byType(Surface)), same(surfaceBefore));
+    expect(_valueAct2(), findsOneWidget);
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
     expect(find.byType(Surface), findsOneWidget);
-    expect(
-      tester.hasRunningAnimations,
-      isFalse,
-      reason: 'aucune animation ne doit repartir',
-    );
+    // Le point de Bloquant bat en continu (U7) : `hasRunningAnimations` ne
+    // peut plus servir. Aucun fondu ni aucune translation ne repart : le
+    // contenu et la valeur restent opaques et immobiles à plusieurs instants.
+    final Offset contentTopLeft = tester.getTopLeft(_content());
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_opacityOf(_content()), 1.0, reason: 'le fondu repart');
+      expect(
+        _opacityOf(_valueAct2()),
+        1.0,
+        reason: 'le fondu de valeur repart',
+      );
+      expect(
+        tester.getTopLeft(_content()),
+        contentTopLeft,
+        reason: 'la translation repart',
+      );
+    }
     expect(h.engineErrors, isEmpty);
   });
 
@@ -143,7 +208,8 @@ void main() {
     final h = CatalogHarness('checklist', 'checklist');
     await h.pump(tester, motion: _live);
     await h.sendFixtureTo(tester, 3);
-    await tester.pump(const Duration(milliseconds: 400));
+    // Composants (480 ms) puis valeurs (160 ms).
+    await tester.pump(const Duration(milliseconds: 640));
     final Finder status = find.byKey(const Key('decision-status'));
     final State before = tester.state(status);
     final State surfaceBefore = tester.state(find.byType(Surface));
@@ -182,7 +248,7 @@ void main() {
     }
   });
 
-  testWidgets('la translation de 8 px se fait sous surface-<id>', (
+  testWidgets('la translation de 10 px se fait sous surface-<id>', (
     tester,
   ) async {
     final h = CatalogHarness('kpi', 'kpi');
@@ -191,9 +257,9 @@ void main() {
     final Finder cell = find.byKey(const Key('surface-kpi'));
 
     final double top = tester.getTopLeft(_content()).dy;
-    expect(top - tester.getTopLeft(cell).dy, closeTo(8, 0.01));
+    expect(top - tester.getTopLeft(cell).dy, closeTo(10, 0.01));
 
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 480));
     expect(tester.getTopLeft(_content()).dy, tester.getTopLeft(cell).dy);
   });
 
@@ -205,9 +271,9 @@ void main() {
     await h.sendFixtureTo(tester, 2);
     final State before = tester.state(find.byType(Surface));
 
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 480));
     await h.send(tester, h.fixture[2]);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 480));
 
     expect(tester.state(find.byType(Surface)), same(before));
   });
@@ -240,7 +306,7 @@ void main() {
     }
     expect(_opacityOf(_content()), lessThan(0.05));
 
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 480));
     expect(_opacityOf(_content()), 1.0);
   });
 

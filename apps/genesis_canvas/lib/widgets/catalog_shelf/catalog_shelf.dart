@@ -2,7 +2,8 @@ import 'package:feature_catalog_shelf/feature_catalog_shelf.dart'
     show CatalogShelfBloc, CatalogShelfState, ShelfComponent;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneRadius, ScenePanel, SceneTheme;
 
 /// Étagère du catalogue (FR-06) : « CATALOGUE · n / 6 utilisés » puis une
 /// pastille `shelf-Composant` par composant, au nom entier. L'état est porté
@@ -27,53 +28,49 @@ class CatalogShelf extends StatelessWidget {
       child: BlocBuilder<CatalogShelfBloc, CatalogShelfState>(
         builder: (BuildContext context, CatalogShelfState state) {
           final List<ShelfComponent> items = state.components;
-          return DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        'CATALOGUE ·',
-                        style: theme.label.copyWith(color: theme.accent),
+          // Fond : décoration de panneau du design system, sœur du contenu.
+          return ScenePanel(
+            inset: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Text(
+                      'CATALOGUE ·',
+                      style: theme.label.copyWith(color: theme.accent),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '${state.usedCount} / ${state.total} utilisés',
+                        style: theme.label.copyWith(color: theme.textPrimary),
                         maxLines: 1,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          '${state.usedCount} / ${state.total} utilisés',
-                          style: theme.label.copyWith(color: theme.textPrimary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  for (int start = 0; start < items.length; start += perRow)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: <Widget>[
-                          for (
-                            int i = start;
-                            i < start + perRow && i < items.length;
-                            i++
-                          ) ...<Widget>[
-                            if (i > start) const SizedBox(width: 8),
-                            Expanded(child: _Pill(component: items[i])),
-                          ],
-                        ],
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                for (int start = 0; start < items.length; start += perRow)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: <Widget>[
+                        for (
+                          int i = start;
+                          i < start + perRow && i < items.length;
+                          i++
+                        ) ...<Widget>[
+                          if (i > start) const SizedBox(width: 8),
+                          Expanded(child: _Pill(component: items[i])),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
             ),
           );
         },
@@ -97,7 +94,7 @@ class _Pill extends StatelessWidget {
     final Color foreground = used
         ? theme.okForeground
         : theme.neutralForeground;
-    final TextStyle style = theme.label.copyWith(color: foreground);
+    final TextStyle style = theme.body.copyWith(color: foreground);
     return Semantics(
       key: Key('shelf-${component.name}'),
       container: true,
@@ -106,7 +103,7 @@ class _Pill extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: SceneRadius.borderPill,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
