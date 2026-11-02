@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot B (R3, R5, R6, R7a, R8, R10b)
+- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/{lib,test}/**, packages/features/canvas/{lib,test}/**, apps/genesis_widgetbook/{lib,test}/**
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 21:30
