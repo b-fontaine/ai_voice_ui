@@ -24,6 +24,6 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T21 Flutter (optionnelle) **non faite : coupe décidée par la boucle** (voir `status.md`) — `gc-row` (cascade des lignes de checklist, 180 ms) et `gc-wipe` (tracé du graphique) · test d'abord : durée nulle sous `disableAnimations`, aucun rectangle ne bouge, pas de reconstruction des cellules voisines
 
 ## Clôture
-- [ ] T90 `tools/loop/gate.sh --full` vert
+- [x] T90 `tools/loop/gate.sh --full` vert
 - [ ] T91 Revue architect-reviewer + refactorisations
 - [ ] T92 `gate.sh --full` vert après refactorisation ; vérification (capture `app-smoke` 1920×1080 des scénarios d'acte comparée aux `preview.html`) ; `progress.md`, `product/` (design-system.md, pdr-0084 « livrée », Q-91), `knowledge/` si fait nouveau ; fusion et `publish.sh`
