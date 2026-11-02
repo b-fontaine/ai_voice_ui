@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T12b
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/{tokens/**,lib/**,test/**}, packages/features/canvas/{lib,test}/**, apps/genesis_canvas/{lib,test}/**, apps/genesis_widgetbook/** (consommateurs des styles de texte)
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 19:21
