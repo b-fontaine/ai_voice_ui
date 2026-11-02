@@ -525,10 +525,10 @@
     }
   },
   "size": {
-    "8": {
+    "10": {
       "$type": "dimension",
       "$value": {
-        "value": 8,
+        "value": 10,
         "unit": "px"
       }
     },
@@ -598,17 +598,10 @@
         "unit": "ms"
       }
     },
-    "150": {
+    "160": {
       "$type": "duration",
       "$value": {
-        "value": 150,
-        "unit": "ms"
-      }
-    },
-    "200": {
-      "$type": "duration",
-      "$value": {
-        "value": 200,
+        "value": 160,
         "unit": "ms"
       }
     },
@@ -619,10 +612,24 @@
         "unit": "ms"
       }
     },
+    "480": {
+      "$type": "duration",
+      "$value": {
+        "value": 480,
+        "unit": "ms"
+      }
+    },
     "1200": {
       "$type": "duration",
       "$value": {
         "value": 1200,
+        "unit": "ms"
+      }
+    },
+    "1600": {
+      "$type": "duration",
+      "$value": {
+        "value": 1600,
         "unit": "ms"
       }
     }

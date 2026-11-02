@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/animation.dart' show Cubic, Curve;
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
@@ -71,6 +72,16 @@ Duration _ms(Object? value) {
   final map = value! as Map<String, Object?>;
   expect(map['unit'], 'ms');
   return Duration(milliseconds: (map['value']! as num).toInt());
+}
+
+/// Courbe de Bézier DTCG : quatre nombres `[x1, y1, x2, y2]`.
+List<double> _cubic(Object? value) =>
+    (value! as List<Object?>).map((n) => (n! as num).toDouble()).toList();
+
+/// Les quatre points de contrôle de la courbe du code.
+List<double> _cubicOf(Curve curve) {
+  final cubic = curve as Cubic;
+  return <double>[cubic.a, cubic.b, cubic.c, cubic.d];
 }
 
 FontWeight _weight(Object? value) =>
@@ -232,6 +243,9 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.floor', SceneMotion.floor, _ms);
   add('scene.motion.translation', SceneMotion.translation, _px);
   add('scene.motion.link', SceneMotion.link, _ms);
+  add('scene.motion.beacon', SceneMotion.beacon, _ms);
+  add('scene.motion.skeleton', SceneMotion.skeleton, _ms);
+  add('scene.motion.curve', _cubicOf(SceneMotion.curve), _cubic);
   return readings;
 }
 

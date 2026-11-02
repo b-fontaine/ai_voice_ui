@@ -2,7 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneMotionScope, SceneTheme;
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
@@ -57,10 +58,12 @@ class _VoiceOrbState extends State<VoiceOrb>
   /// Période de la pulsation (repos) et d'un tour (réflexion).
   static const Duration _period = Duration(seconds: 2);
 
+  // La boucle est lancée par `SceneMotionScope.loop` : elle suit la vitesse de
+  // rejeu et reste à l'arrêt quand les animations sont coupées.
   late final AnimationController _animation = AnimationController(
     vsync: this,
     duration: _period,
-  )..repeat();
+  );
 
   // Alloués une fois : `paint()` ne crée aucun objet de style.
   final Paint _bodyPaint = Paint()..color = const Color(0xFF7C4DFF);
@@ -81,6 +84,12 @@ class _VoiceOrbState extends State<VoiceOrb>
   void initState() {
     super.initState();
     widget.level.addListener(_syncSpeaking);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.loop(context, _animation, _period);
   }
 
   @override

@@ -472,11 +472,11 @@
     "motion": {
       "appear": {
         "$type": "duration",
-        "$value": "{duration.200}"
+        "$value": "{duration.480}"
       },
       "value": {
         "$type": "duration",
-        "$value": "{duration.150}"
+        "$value": "{duration.160}"
       },
       "status": {
         "$type": "duration",
@@ -488,11 +488,23 @@
       },
       "translation": {
         "$type": "dimension",
-        "$value": "{size.8}"
+        "$value": "{size.10}"
       },
       "link": {
         "$type": "duration",
         "$value": "{duration.1200}"
+      },
+      "beacon": {
+        "$type": "duration",
+        "$value": "{duration.1600}"
+      },
+      "skeleton": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "curve": {
+        "$type": "cubicBezier",
+        "$value": [0.2, 0.8, 0.2, 1]
       }
     }
   }

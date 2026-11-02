@@ -263,6 +263,7 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    SceneMotionScope.completeIfDisabled(context, _animation);
     // Surface qui arrive déjà avec ses composants : le fondu part au montage.
     if (_started) return;
     _started = true;

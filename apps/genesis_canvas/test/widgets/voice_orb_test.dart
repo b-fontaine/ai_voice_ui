@@ -2,6 +2,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneMotionScope;
 
 const Key _orbKey = Key('voice-orb');
 
@@ -359,6 +361,63 @@ void main() {
         tester.getSize(find.byKey(_orbKey)).height,
         lessThanOrEqualTo(104),
       );
+    });
+  });
+
+  group('réglage d\'animation de la scène', () {
+    Widget scoped(
+      ValueNotifier<double> level, {
+      required bool disabled,
+      double speed = 1,
+      bool thinking = false,
+    }) => SceneMotionScope(
+      disabled: disabled,
+      speed: speed,
+      child: _host(level, thinking: thinking),
+    );
+
+    testWidgets('animations actives : la boucle tourne', (tester) async {
+      await tester.pumpWidget(scoped(level, disabled: false));
+      expect(tester.binding.transientCallbackCount, greaterThan(0));
+    });
+
+    testWidgets('animations coupées : aucun Ticker actif, rayon fixe', (
+      tester,
+    ) async {
+      await tester.pumpWidget(scoped(level, disabled: true));
+      expect(tester.binding.transientCallbackCount, 0);
+      final double radius = _bodyRadius(_draw(tester));
+      await tester.pump(const Duration(seconds: 3));
+      expect(_bodyRadius(_draw(tester)), radius);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('animations coupées en réflexion : l\'arc ne tourne pas', (
+      tester,
+    ) async {
+      await tester.pumpWidget(scoped(level, disabled: true, thinking: true));
+      final double start = _arcStart(_draw(tester));
+      await tester.pump(const Duration(seconds: 1));
+      expect(_arcStart(_draw(tester)), start);
+      expect(tester.binding.transientCallbackCount, 0);
+    });
+
+    testWidgets('bascule de disabled : arrêt puis reprise', (tester) async {
+      await tester.pumpWidget(scoped(level, disabled: false));
+      await tester.pumpWidget(scoped(level, disabled: true));
+      expect(tester.binding.transientCallbackCount, 0);
+      await tester.pumpWidget(scoped(level, disabled: false));
+      expect(tester.binding.transientCallbackCount, greaterThan(0));
+    });
+
+    testWidgets('vitesse de rejeu 2 : la pulsation va deux fois plus vite', (
+      tester,
+    ) async {
+      await tester.pumpWidget(scoped(level, disabled: false, speed: 2));
+      final double start = _bodyRadius(_draw(tester));
+      // Une période de 2 s devient 1 s : retour au rayon de départ.
+      await tester.pump(const Duration(seconds: 1));
+      expect(_bodyRadius(_draw(tester)), closeTo(start, 0.01));
     });
   });
 }

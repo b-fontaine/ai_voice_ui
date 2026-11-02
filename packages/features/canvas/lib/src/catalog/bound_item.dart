@@ -73,7 +73,7 @@ CatalogItem boundCatalogItem<T extends Object>({
 /// valeur.
 enum _BoundState { noData, neutral, data }
 
-/// Fondu des valeurs (150 ms, [SceneMotion.value]) au seul passage « sans
+/// Fondu des valeurs (160 ms, [SceneMotion.value]) au seul passage « sans
 /// données » vers « données ».
 ///
 /// Le même widget, à la même place, enveloppe les trois états : son `State`
@@ -99,6 +99,12 @@ class _ValueFadeState extends State<_ValueFade>
     duration: SceneMotion.value,
     value: 1,
   );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.completeIfDisabled(context, _animation);
+  }
 
   @override
   void didUpdateWidget(_ValueFade oldWidget) {

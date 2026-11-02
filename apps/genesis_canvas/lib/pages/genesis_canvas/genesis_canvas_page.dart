@@ -909,10 +909,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     children: <Widget>[
                       Column(
                         children: <Widget>[
-                          TickerMode(
-                            enabled: !_animationsOff,
-                            // « Démarrer » est inactif en mode scénario et pendant un
-                            // rejeu ; la session voix en cours n'est pas touchée.
+                          // Même réglage d'animation que le canevas : l'orbe
+                          // s'immobilise en scénario, en capture et sous « réduire
+                          // les animations ». « Démarrer » est inactif en mode
+                          // scénario et pendant un rejeu ; la session voix en
+                          // cours n'est pas touchée.
+                          _motionScope(
                             child: BlocSelector<ReplayBloc, ReplayState, bool>(
                               selector: (state) => state is ReplayActive,
                               builder: (context, replaying) => TopBar(

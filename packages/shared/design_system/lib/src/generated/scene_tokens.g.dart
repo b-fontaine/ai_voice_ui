@@ -1,9 +1,10 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 741964229768d909b406c02ec990d08c4acc74541cd6e0e956c87d660f9d28e8
+// tokens-sha256: a3c36cfd41b0c393eefa813adb04a070e2d595d4ff73c75f76d3b53866c744b7
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
+import 'package:flutter/animation.dart' show Cubic;
 import 'package:flutter/painting.dart' show BoxShadow;
 
 /// Valeurs de la scène issues des tokens de conception (DTCG).
@@ -207,10 +208,13 @@ abstract final class SceneTokens {
       spreadRadius: 0.0,
     ),
   ];
-  static const Duration motionAppear = Duration(milliseconds: 200);
-  static const Duration motionValue = Duration(milliseconds: 150);
+  static const Duration motionAppear = Duration(milliseconds: 480);
+  static const Duration motionValue = Duration(milliseconds: 160);
   static const Duration motionStatus = Duration(milliseconds: 400);
   static const Duration motionFloor = Duration(milliseconds: 60);
-  static const double motionTranslation = 8.0;
+  static const double motionTranslation = 10.0;
   static const Duration motionLink = Duration(milliseconds: 1200);
+  static const Duration motionBeacon = Duration(milliseconds: 1600);
+  static const Duration motionSkeleton = Duration(milliseconds: 1200);
+  static const Cubic motionCurve = Cubic(0.2, 0.8, 0.2, 1.0);
 }
