@@ -85,7 +85,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
 import 'package:shared_core/shared_core.dart'
     show AppClock, ExitGuard, ExitHandler, ReplayedMessage;
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope, SceneTheme;
+    show SceneBackdrop, SceneMotionScope;
 
 import '../../widgets/agents_rail/agents_rail.dart';
 import '../../widgets/catalog_shelf/catalog_shelf.dart';
@@ -898,8 +898,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
             focusNode: _shortcutFocus,
             child: RepaintBoundary(
               key: _boundaryKey,
-              child: ColoredBox(
-                color: SceneTheme.of(context).background,
+              // Le fond à points est sous le contenu, dans la frontière de
+              // capture ; le fond de la page reste `SceneTheme.background`.
+              child: SceneBackdrop(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: _marginX,

@@ -7,7 +7,8 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
         ProtocolOperation;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneRadius, ScenePanel, SceneTheme;
 
 /// Panneau « FLUX A2UI · live » (FR-05) : les messages A2UI en cours de
 /// fabrication, avec le dernier en évidence.
@@ -54,34 +55,27 @@ class ProtocolPanel extends StatelessWidget {
                   : collapsedSize;
               return SizedBox.fromSize(
                 size: size,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: theme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.neutralBackground,
-                      width: 2,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        _Header(state: state),
-                        if (state.expanded)
-                          Expanded(child: _Entries(state: state))
-                        else
-                          Text(
-                            _countText(state.totalCount),
-                            style: theme.body.copyWith(
-                              color: theme.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                // Fond : décoration de panneau du design system, sœur du
+                // contenu.
+                child: ScenePanel(
+                  inset: 0,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _Header(state: state),
+                      if (state.expanded)
+                        Expanded(child: _Entries(state: state))
+                      else
+                        Text(
+                          _countText(state.totalCount),
+                          style: theme.body.copyWith(
+                            color: theme.textSecondary,
                           ),
-                      ],
-                    ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -230,7 +224,7 @@ class _EntryTile extends StatelessWidget {
         key: current ? const Key('protocol-current') : null,
         decoration: BoxDecoration(
           color: current ? theme.background : null,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: SceneRadius.borderSm,
           border: Border.all(
             color: current ? theme.accent : theme.neutralBackground,
             width: current ? _currentBorder : 1,
@@ -311,7 +305,7 @@ class _RefusedMark extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.blockingBackground,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: SceneRadius.borderPill,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),

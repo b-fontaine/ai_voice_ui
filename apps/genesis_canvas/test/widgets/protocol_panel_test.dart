@@ -10,7 +10,10 @@ import 'package:flutter_test/flutter_test.dart'
     show testWidgets;
 import 'package:genesis_canvas/widgets/protocol_panel/protocol_panel.dart';
 import 'package:shared_core/shared_core.dart';
+import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
+
+import '../support/panel_layers.dart';
 
 class _Clock implements AppClock {
   int now = 1761800000000;
@@ -90,6 +93,40 @@ void main() {
   }
 
   Finder entry(int n) => find.byKey(Key('protocol-entry-$n'));
+
+  testWidgets('le fond du panneau est la décoration de panneau, replié '
+      'comme déplié, sans changer son rectangle', (tester) async {
+    await pumpPanel(tester);
+    await receive(tester, _accepted('createSurface', 'kpi'));
+    final Finder panel = find.byKey(const Key('protocol-panel'));
+
+    expectPanelDecoration(tester, panel);
+    expect(tester.getSize(panel), ProtocolPanel.collapsedSize);
+    expect(tester.getRect(panel).bottomRight, const Offset(1920, 1080));
+
+    await toggle(tester);
+    expectPanelDecoration(tester, panel);
+    expect(tester.getSize(panel), ProtocolPanel.expandedSize);
+    expect(tester.getRect(panel).bottomRight, const Offset(1920, 1080));
+  });
+
+  testWidgets('les entrées du panneau ont le rayon `sm` du design system', (
+    tester,
+  ) async {
+    await pumpPanel(tester);
+    await receive(tester, _accepted('createSurface', 'kpi'));
+    await toggle(tester);
+
+    final Finder tile = find.descendant(
+      of: entry(0),
+      matching: find.byType(DecoratedBox),
+    );
+    expect(
+      (tester.widget<DecoratedBox>(tile.first).decoration as BoxDecoration)
+          .borderRadius,
+      SceneRadius.borderSm,
+    );
+  });
 
   testWidgets('replié par défaut : titre, bouton, aucune entrée même reçue', (
     tester,

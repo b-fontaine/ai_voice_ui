@@ -14,6 +14,7 @@ import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/contrast.dart';
+import '../support/panel_layers.dart';
 
 ValidatedEnvelope _update(String surface, String component) =>
     ValidatedEnvelope(
@@ -194,6 +195,30 @@ void main() {
       allOf(contains('TrendChart'), contains('inutilisé')),
     );
     semantics.dispose();
+  });
+
+  testWidgets('le fond de l\'étagère est la décoration de panneau, sans '
+      'changer son rectangle ni le rayon des puces', (tester) async {
+    await pumpShelf(tester);
+    await receive(tester, _update('kpi', 'KeyIndicator'));
+
+    expectPanelDecoration(tester, find.byType(CatalogShelf));
+    expect(
+      tester.getRect(find.byType(CatalogShelf)),
+      const Rect.fromLTWH(0, 0, 900, 140),
+    );
+    final chip = tester.widget<DecoratedBox>(
+      find
+          .descendant(
+            of: item('KeyIndicator'),
+            matching: find.byType(DecoratedBox),
+          )
+          .first,
+    );
+    expect(
+      (chip.decoration as BoxDecoration).borderRadius,
+      SceneRadius.borderPill,
+    );
   });
 
   testWidgets('l\'icône de chaque état contraste 4,5:1 avec sa puce', (
