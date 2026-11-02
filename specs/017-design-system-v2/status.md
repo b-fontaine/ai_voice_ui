@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T16 + T17 + T18 (réunies : retirer les fonds des cellules sans poser le panneau les laisserait nues ; ordre : T18, puis T16, puis T17)
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas/{lib,test}/**, packages/shared/design_system/{lib,test}/** (ds_skeleton.dart), apps/genesis_canvas/test/** si un test fige un fond de cellule
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 20:30
