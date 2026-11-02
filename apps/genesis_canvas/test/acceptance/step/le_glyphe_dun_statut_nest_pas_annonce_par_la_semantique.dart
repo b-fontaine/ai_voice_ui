@@ -1,5 +1,9 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:shared_design_system/shared_design_system.dart'
+    show DsStatusChip;
 
 import '../support/acte4_harness.dart';
 
@@ -22,9 +26,8 @@ Future<void> leGlypheDunStatutNestPasAnnonceParLaSemantique(
   Acte4Harness.ensureSemantics(tester);
   await tester.pump(const Duration(milliseconds: 16));
   await tester.pump(const Duration(milliseconds: 16));
-  final SemanticsOwner? owner =
-      tester.binding.renderViews.first.owner?.semanticsOwner;
-  expect(owner, isNotNull, reason: "l'arbre sémantique n'est pas actif");
+  final Finder chips = find.byType(DsStatusChip);
+  expect(chips, findsWidgets, reason: 'aucun statut affiché');
   final List<String> announced = <String>[];
   void visit(SemanticsNode node) {
     for (final String text in <String>[
@@ -41,7 +44,17 @@ Future<void> leGlypheDunStatutNestPasAnnonceParLaSemantique(
     });
   }
 
-  visit(owner!.rootSemanticsNode!);
+  // Seuls les descendants d'un `DsStatusChip` sont examinés : le « fait ✓ » de
+  // la Barre d'actions porte légitimement le glyphe dans son libellé.
+  for (final Element chip in chips.evaluate()) {
+    final Finder words = find.descendant(
+      of: find.byWidget(chip.widget),
+      matching: find.byType(Text),
+    );
+    for (final Element word in words.evaluate()) {
+      visit(tester.getSemantics(find.byWidget(word.widget)));
+    }
+  }
   expect(
     announced,
     isEmpty,

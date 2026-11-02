@@ -172,7 +172,7 @@ class _SplitBar extends StatelessWidget {
             child: ColoredBox(color: color),
           );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: SceneRadius.borderSm,
       child: SizedBox(
         key: const Key('review-split-bar'),
         height: 12,

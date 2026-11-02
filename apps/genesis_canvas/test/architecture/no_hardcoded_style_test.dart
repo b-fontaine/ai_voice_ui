@@ -2,9 +2,16 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Style (pdr-0083) : hors du paquet de design, aucune source de `lib/` ne
-/// fixe une couleur ni une famille de police littérale. Les valeurs viennent
-/// de `SceneTheme`.
+/// Style (pdr-0083 D4, RG-09) : hors du paquet de design, aucune source de
+/// `lib/` ne fixe une couleur, une famille, une graisse, un interlettrage, un
+/// rayon ni une taille de texte inférieure à 24 px littéraux. Les valeurs
+/// viennent de `SceneTheme`, de `SceneRadius` et des helpers du design system
+/// (`withSceneWeight`). Détecteur unique du dépôt.
+///
+/// LIMITE : `fontSize: <identifiant>` (taille calculée ou lue ailleurs) ne se
+/// détecte pas par expression régulière ; seuls les littéraux numériques sont
+/// contrôlés. Les tailles calculées sont couvertes par le scénario U-01
+/// (aucun texte rendu sous 24 px).
 
 /// Racine du dépôt (là où vit `tools/loop/gate.sh`).
 Directory _root() {
@@ -19,17 +26,20 @@ Directory _root() {
   return dir;
 }
 
-/// Les sources de `apps/genesis_canvas/lib` et `packages/features/*/lib`.
-/// Le paquet de design, qui définit les valeurs, est hors périmètre.
+/// Les sources de `lib/` de `apps/` et de `packages/` (Widgetbook compris),
+/// hors fichiers générés (`*.g.dart`) et hors paquet de design, qui définit
+/// les valeurs.
 List<File> _libSources(Directory root) {
   final files = <File>[];
-  for (final name in <String>['apps/genesis_canvas', 'packages/features']) {
+  for (final name in <String>['apps', 'packages']) {
     final dir = Directory('${root.path}/$name');
     if (!dir.existsSync()) continue;
     for (final entity in dir.listSync(recursive: true, followLinks: false)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (entity.path.endsWith('.g.dart')) continue;
       final relative = entity.path.substring(root.path.length + 1);
       if (!relative.contains('/lib/')) continue;
+      if (relative.startsWith('packages/shared/design_system/')) continue;
       if (relative.contains('/build/') ||
           relative.contains('/.dart_tool/') ||
           relative.contains('/ephemeral/')) {
@@ -80,8 +90,14 @@ String _codeOfLine(String line, {required List<bool> inBlock}) {
 }
 
 final RegExp _hardcoded = RegExp(
-  r'Color\(\s*0x|\bColors\.|Color\.fromARGB|Color\.fromRGBO|fontFamily\s*:',
+  r'Color\(\s*0x|Color\.from\(|\b(?:Cupertino)?Colors\.|Color\.fromARGB|'
+  r'Color\.fromRGBO|HS[LV]Color\.|fontFamily(?:Fallback)?\s*:|'
+  r'letterSpacing\s*:\s*-?\d|fontWeight\s*:|'
+  r'(?:Border)?Radius\.circular\(\s*\d',
 );
+
+/// Taille littérale (les chaînes sont déjà retirées du code).
+final RegExp _literalSize = RegExp(r'fontSize\s*:\s*(\d+(?:\.\d+)?)\b');
 
 /// Les infractions de [source] : « ligne : motif ».
 List<String> violations(String source) {
@@ -92,6 +108,11 @@ List<String> violations(String source) {
     final code = _codeOfLine(lines[i], inBlock: inBlock);
     for (final m in _hardcoded.allMatches(code)) {
       found.add('${i + 1}:${m.group(0)}');
+    }
+    for (final m in _literalSize.allMatches(code)) {
+      if (double.parse(m.group(1)!) < 24) {
+        found.add('${i + 1}:taille sous 24 px : ${m.group(0)}');
+      }
     }
   }
   return found;
@@ -112,6 +133,39 @@ void main() {
       expect(violations('ok;\nfinal c = Colors.red;').single, startsWith('2:'));
     });
 
+    test('repère chaque motif ajouté par la revue', () {
+      expect(
+        violations('Color.from(alpha: 1, red: 0, green: 0, blue: 0)'),
+        hasLength(1),
+      );
+      expect(violations('final c = CupertinoColors.systemRed;'), hasLength(1));
+      expect(
+        violations('final c = HSLColor.fromAHSL(1, 0, 1, 1);'),
+        hasLength(1),
+      );
+      expect(
+        violations('final c = HSVColor.fromAHSV(1, 0, 1, 1);'),
+        hasLength(1),
+      );
+      expect(violations('TextStyle(letterSpacing: 1.5)'), hasLength(1));
+      expect(violations('TextStyle(letterSpacing: -0.5)'), hasLength(1));
+      expect(
+        violations('TextStyle(fontWeight: FontWeight.w700)'),
+        hasLength(1),
+      );
+      expect(violations('BorderRadius.circular(8)'), hasLength(1));
+      expect(violations('Radius.circular(6)'), hasLength(1));
+      expect(violations('Radius.circular( 6 )'), hasLength(1));
+    });
+
+    test('repère une taille littérale sous 24 px, pas les autres', () {
+      expect(violations('TextStyle(fontSize: 12)'), hasLength(1));
+      expect(violations('TextStyle(fontSize: 23.9)'), hasLength(1));
+      expect(violations('TextStyle(fontSize: 24)'), isEmpty);
+      expect(violations('TextStyle(fontSize: 76.0)'), isEmpty);
+      expect(violations('TextStyle(fontSize: theme.body.fontSize)'), isEmpty);
+    });
+
     test('ignore commentaires, chaînes et usages du thème', () {
       expect(violations('/// Exemple : Color(0xFF000000)'), isEmpty);
       expect(violations('final x = 1; // Colors.red'), isEmpty);
@@ -121,10 +175,32 @@ void main() {
       expect(violations('final c = theme.plasma;'), isEmpty);
       expect(violations('TextStyle(fontFamily: theme.mono)'), hasLength(1));
       expect(violations('final c = SceneColors.plasma;'), isEmpty);
+      expect(violations('/// Color.from( et CupertinoColors.red'), isEmpty);
+      expect(violations('// HSLColor.fromAHSL, HSVColor.fromAHSV'), isEmpty);
+      expect(violations('// letterSpacing: 2 et fontWeight: x'), isEmpty);
+      expect(violations('// BorderRadius.circular(8), fontSize: 12'), isEmpty);
+      expect(
+        violations("final s = 'letterSpacing: 2 fontWeight: w7';"),
+        isEmpty,
+      );
+      expect(
+        violations("final s = 'Radius.circular(6) fontSize: 12';"),
+        isEmpty,
+      );
+      expect(
+        violations("final s = 'CupertinoColors.red HSVColor.x';"),
+        isEmpty,
+      );
+      expect(violations('BorderRadius.circular(SceneRadius.md)'), isEmpty);
+      expect(
+        violations('TextStyle(letterSpacing: theme.label.letterSpacing)'),
+        isEmpty,
+      );
+      expect(violations('withSceneWeight(style, 700)'), isEmpty);
     });
   });
 
-  test('aucune couleur ni police littérale hors du paquet de design', () {
+  test('aucun style littéral hors du paquet de design', () {
     final root = _root();
     final files = _libSources(root);
     expect(files, isNotEmpty);

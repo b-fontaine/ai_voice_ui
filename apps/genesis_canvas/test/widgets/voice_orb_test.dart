@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope, SceneTheme;
+    show SceneMotion, SceneMotionScope, SceneTheme;
 
 const Key _orbKey = Key('voice-orb');
 
@@ -148,6 +148,17 @@ void main() {
     expect(later, isNot(first));
     expect(_state(tester), 'réflexion');
     semantics.dispose();
+  });
+
+  testWidgets('réflexion : un tour dure SceneMotion.orb', (tester) async {
+    await tester.pumpWidget(_host(level, thinking: true));
+
+    final start = _arcStart(_draw(tester));
+    await tester.pump(SceneMotion.orb ~/ 4);
+    expect(_arcStart(_draw(tester)), isNot(closeTo(start, 1e-6)));
+
+    await tester.pump(SceneMotion.orb * 3 ~/ 4);
+    expect(_arcStart(_draw(tester)), closeTo(start, 1e-6));
   });
 
   testWidgets('la parole prime sur la réflexion', (tester) async {

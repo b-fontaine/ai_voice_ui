@@ -36,6 +36,13 @@ Finder _value() => find.descendant(
   matching: find.text('99,57 %'),
 );
 
+/// Valeur affichée après la mise à jour de l'acte 2 (le « 99,57 % » de l'acte 1
+/// y devient « 99,43 % »).
+Finder _valueAct2() => find.descendant(
+  of: find.byKey(const Key('surface-kpi')),
+  matching: find.text('99,43 %'),
+);
+
 Finder _skeleton() => find.byKey(const Key('skeleton-kpi'));
 
 void main() {
@@ -165,9 +172,12 @@ void main() {
     // Composants (480 ms) puis valeurs (160 ms).
     await tester.pump(const Duration(milliseconds: 640));
     expect(_opacityOf(_value()), 1.0);
+    final State surfaceBefore = tester.state(find.byType(Surface));
 
     await h.sendVariant(tester, 'act2');
 
+    expect(tester.state(find.byType(Surface)), same(surfaceBefore));
+    expect(_valueAct2(), findsOneWidget);
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
     expect(find.byType(Surface), findsOneWidget);
@@ -178,6 +188,11 @@ void main() {
     for (var i = 0; i < 3; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       expect(_opacityOf(_content()), 1.0, reason: 'le fondu repart');
+      expect(
+        _opacityOf(_valueAct2()),
+        1.0,
+        reason: 'le fondu de valeur repart',
+      );
       expect(
         tester.getTopLeft(_content()),
         contentTopLeft,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_protocol_feed/feature_protocol_feed.dart';
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart' hide testWidgets;
@@ -54,28 +55,37 @@ void main() {
     await tester.pump();
   });
 
-  Future<void> pumpPanel(WidgetTester tester, {double? zoneHeight}) async {
+  Future<void> pumpPanel(
+    WidgetTester tester, {
+    double? zoneHeight,
+    SceneTheme? theme,
+  }) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: Align(
-          alignment: Alignment.bottomRight,
-          child: SizedBox(
-            height: zoneHeight,
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: BlocProvider<ProtocolFeedBloc>.value(
-                value: bloc,
-                child: const ProtocolPanel(),
-              ),
+    Widget panel = Directionality(
+      textDirection: TextDirection.ltr,
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          height: zoneHeight,
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: BlocProvider<ProtocolFeedBloc>.value(
+              value: bloc,
+              child: const ProtocolPanel(),
             ),
           ),
         ),
       ),
     );
+    if (theme != null) {
+      panel = Theme(
+        data: ThemeData(extensions: <SceneTheme>[theme]),
+        child: panel,
+      );
+    }
+    await tester.pumpWidget(panel);
     bloc.add(ProtocolSourceSubscribed(envelopes.stream));
     await tester.pump();
   }
@@ -441,5 +451,34 @@ void main() {
       if (entry(n).evaluate().isEmpty) continue;
       expect(tester.getRect(entry(n)).bottom, lessThanOrEqualTo(panel.bottom));
     }
+  });
+
+  testWidgets('la capacité suit le style `data` du JSON, pas `body`', (
+    tester,
+  ) async {
+    Future<int> shown(SceneTheme? theme) async {
+      await pumpPanel(tester, zoneHeight: 400, theme: theme);
+      await toggle(tester);
+      for (var i = 0; i < 6; i++) {
+        await receive(tester, _accepted('updateComponents', 's$i'));
+      }
+      final int count = <int>[
+        for (var n = 0; n < 6; n++)
+          if (entry(n).evaluate().isNotEmpty) n,
+      ].length;
+      await tester.pumpWidget(const SizedBox());
+      return count;
+    }
+
+    const SceneTheme base = SceneTheme.dark();
+    final int reference = await shown(base);
+    // Un `body` plus petit ne change pas la hauteur du JSON, rendu en `data`.
+    envelopes = StreamController<ValidatedEnvelope>.broadcast();
+    bloc = ProtocolFeedBloc(clock: _Clock());
+    final int smallBody = await shown(
+      base.copyWith(body: base.body.copyWith(fontSize: 12)),
+    );
+    expect(reference, greaterThan(1));
+    expect(smallBody, reference);
   });
 }

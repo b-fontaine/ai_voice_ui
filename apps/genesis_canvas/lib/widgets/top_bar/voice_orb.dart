@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope, SceneTheme;
+    show SceneMotion, SceneMotionScope, SceneTheme;
 
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
@@ -56,7 +56,7 @@ class VoiceOrb extends StatefulWidget {
 class _VoiceOrbState extends State<VoiceOrb>
     with SingleTickerProviderStateMixin {
   /// Période de la pulsation (repos) et d'un tour (réflexion).
-  static const Duration _period = Duration(seconds: 2);
+  static const Duration _period = SceneMotion.orb;
 
   // La boucle est lancée par `SceneMotionScope.loop` : elle suit la vitesse de
   // rejeu et reste à l'arrêt quand les animations sont coupées.

@@ -181,7 +181,7 @@ class _Entries extends StatelessWidget {
   static int _capacity(SceneTheme theme, double height) {
     final double header =
         theme.data.fontSize! * theme.data.height! + _refusedExtra;
-    final double json = 2 * theme.body.fontSize! * _jsonLineHeight;
+    final double json = 2 * theme.data.fontSize! * _jsonLineHeight;
     final double worstEntry =
         _tileTopGap + 2 * _tilePaddingY + 2 * _currentBorder + header + json;
     return (height / worstEntry).floor().clamp(0, ProtocolPanel.visibleEntries);

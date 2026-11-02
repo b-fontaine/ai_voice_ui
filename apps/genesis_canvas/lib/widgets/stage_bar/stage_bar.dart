@@ -16,7 +16,7 @@ import 'package:feature_voice_session/feature_voice_session.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneTheme, sceneTextStyle;
+    show SceneRadius, SceneTheme, sceneTextStyle;
 
 /// Régie de scène : l'indicateur d'acte (D1), la remise à vide (D4), le
 /// micro et « Faire taire » (014).
@@ -146,7 +146,7 @@ class StageBar extends StatelessWidget {
                                       width: 2,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: SceneRadius.borderMd,
                                     ),
                                   ),
                                   child: Text(label, maxLines: 1),
@@ -209,7 +209,7 @@ ButtonStyle _neutralStyle(SceneTheme theme, TextStyle textStyle) =>
       visualDensity: VisualDensity.standard,
       minimumSize: const Size(StageBar.controlHeight, StageBar.controlHeight),
       side: BorderSide(color: theme.actionNeutralBorder, width: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
       // Inactif mais lisible : paire neutre du thème.
       disabledBackgroundColor: theme.neutralBackground,
       disabledForegroundColor: theme.neutralForeground,

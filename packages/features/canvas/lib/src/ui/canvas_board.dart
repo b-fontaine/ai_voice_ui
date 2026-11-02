@@ -8,6 +8,7 @@ import 'package:shared_design_system/shared_design_system.dart'
         DsSkeleton,
         SceneMotion,
         SceneMotionScope,
+        ScenePanel,
         ScenePanelDecoration,
         SceneRadius,
         SceneTheme;
@@ -170,9 +171,6 @@ class _CanvasBoardState extends State<CanvasBoard> {
   );
 }
 
-/// Retrait de la décoration de panneau dans sa cellule (pdr-0084 U1).
-const double _panelInset = 4;
-
 /// Cellule d'une surface : ne se reconstruit que si la phase de **sa** surface
 /// change.
 ///
@@ -204,7 +202,7 @@ class _SurfaceCell extends StatelessWidget {
             // Couche panneau (pdr-0084 U9) : la décoration est une sœur
             // statique sous le contenu, jamais son enveloppe ni dans le
             // `ClipRect` (son ombre ne serait plus rognée). Elle est en retrait
-            // de [_panelInset] : les cellules sont jointives, deux panneaux
+            // de [ScenePanel.cellInset] : les cellules sont jointives, deux panneaux
             // voisins gardent 8 px visibles, et aucun rectangle de cellule ne
             // change. Le contenu (`RepaintBoundary` à place fixe) ne se remonte
             // pas et ses peintures restent isolées : le `ClipRect` contient la
@@ -214,10 +212,10 @@ class _SurfaceCell extends StatelessWidget {
               fit: StackFit.expand,
               children: <Widget>[
                 const Positioned.fill(
-                  left: _panelInset,
-                  top: _panelInset,
-                  right: _panelInset,
-                  bottom: _panelInset,
+                  left: ScenePanel.cellInset,
+                  top: ScenePanel.cellInset,
+                  right: ScenePanel.cellInset,
+                  bottom: ScenePanel.cellInset,
                   child: ScenePanelDecoration(),
                 ),
                 RepaintBoundary(
@@ -232,10 +230,10 @@ class _SurfaceCell extends StatelessWidget {
                   ),
                 ),
                 Positioned.fill(
-                  left: _panelInset,
-                  top: _panelInset,
-                  right: _panelInset,
-                  bottom: _panelInset,
+                  left: ScenePanel.cellInset,
+                  top: ScenePanel.cellInset,
+                  right: ScenePanel.cellInset,
+                  bottom: ScenePanel.cellInset,
                   child: _HighlightOutline(id: id, highlight: highlight),
                 ),
               ],

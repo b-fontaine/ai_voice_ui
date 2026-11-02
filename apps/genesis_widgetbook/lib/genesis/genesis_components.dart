@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show ScenePanelDecoration, SceneMotionScope;
+    show ScenePanel, ScenePanelDecoration, SceneMotionScope;
 
 import 'genesis_surface_host.dart';
 
@@ -58,10 +58,6 @@ class CrashList extends GenesisSurfaceHost {
   const CrashList({super.key, super.state}) : super(example: _crashes);
 }
 
-/// Retrait de la décoration de panneau par rapport au bord de la cellule,
-/// comme dans `CanvasBoard` (cellules jointives : 8 px visibles entre deux).
-const double _panelInset = 4;
-
 /// Enveloppe commune des stories genesis : la cellule est habillée comme dans
 /// l'app (une `ScenePanelDecoration` sœur sous le contenu, qui garde sa marge
 /// de 16 px), animations coupées pour des captures stables (`SceneMotionScope`,
@@ -72,10 +68,10 @@ Widget genesisStorySetup(Widget child) => SceneMotionScope(
     fit: StackFit.expand,
     children: <Widget>[
       const Positioned.fill(
-        left: _panelInset,
-        top: _panelInset,
-        right: _panelInset,
-        bottom: _panelInset,
+        left: ScenePanel.cellInset,
+        top: ScenePanel.cellInset,
+        right: ScenePanel.cellInset,
+        bottom: ScenePanel.cellInset,
         child: ScenePanelDecoration(),
       ),
       child,
