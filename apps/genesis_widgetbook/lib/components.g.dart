@@ -10,6 +10,8 @@ import 'package:widgetbook/widgetbook.dart' as _widgetbook;
 import 'package:genesis_widgetbook/ds/ds_neutral_state.stories.dart' as _genesis_widgetbook_ds_ds_neutral_state_stories;
 import 'package:genesis_widgetbook/ds/ds_skeleton.stories.dart' as _genesis_widgetbook_ds_ds_skeleton_stories;
 import 'package:genesis_widgetbook/ds/ds_status_chip.stories.dart' as _genesis_widgetbook_ds_ds_status_chip_stories;
+import 'package:genesis_widgetbook/ds/scene_backdrop.stories.dart' as _genesis_widgetbook_ds_scene_backdrop_stories;
+import 'package:genesis_widgetbook/ds/scene_panel.stories.dart' as _genesis_widgetbook_ds_scene_panel_stories;
 import 'package:genesis_widgetbook/genesis/action_bar.stories.dart' as _genesis_widgetbook_genesis_action_bar_stories;
 import 'package:genesis_widgetbook/genesis/crash_list.stories.dart' as _genesis_widgetbook_genesis_crash_list_stories;
 import 'package:genesis_widgetbook/genesis/key_indicator.stories.dart' as _genesis_widgetbook_genesis_key_indicator_stories;
@@ -21,6 +23,8 @@ final components = <_widgetbook.Component>[
   _genesis_widgetbook_ds_ds_neutral_state_stories.DsNeutralStateComponent,
   _genesis_widgetbook_ds_ds_skeleton_stories.DsSkeletonComponent,
   _genesis_widgetbook_ds_ds_status_chip_stories.DsStatusChipComponent,
+  _genesis_widgetbook_ds_scene_backdrop_stories.SceneBackdropComponent,
+  _genesis_widgetbook_ds_scene_panel_stories.ScenePanelComponent,
   _genesis_widgetbook_genesis_action_bar_stories.ActionBarComponent,
   _genesis_widgetbook_genesis_crash_list_stories.CrashListComponent,
   _genesis_widgetbook_genesis_key_indicator_stories.KeyIndicatorComponent,

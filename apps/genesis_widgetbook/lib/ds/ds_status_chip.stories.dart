@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:widgetbook/widgetbook.dart';
 
+import 'ds_story_setup.dart';
+
 part 'ds_status_chip.stories.g.dart';
 
 const meta = Meta(DsStatusChip.new);
@@ -36,5 +38,23 @@ final $Neutral = _Story(
 /// contraintes serrées) l'étirerait sur toute la cellule.
 final defaults = _Defaults(
   setup: (context, child, args) =>
-      Align(alignment: Alignment.topLeft, child: child),
+      dsStorySetup(Align(alignment: Alignment.topLeft, child: child)),
+);
+
+/// Les quatre statuts côte à côte : ok (avec ✓), risque, bloquant (point
+/// battant, immobile ici) et neutre. Le `setup` remplace la puce par la
+/// rangée : le `builder` généré doit rendre un `DsStatusChip`.
+final $AllStatuses = _Story(
+  setup: (context, child, args) => dsStorySetup(
+    const Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      children: [
+        DsStatusChip(status: SceneStatus.ok, label: 'Prêt'),
+        DsStatusChip(status: SceneStatus.risk, label: 'À surveiller'),
+        DsStatusChip(status: SceneStatus.blocking, label: 'Bloquant'),
+        DsStatusChip(status: null, label: 'Inconnu'),
+      ],
+    ),
+  ),
 );

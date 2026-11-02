@@ -20,8 +20,8 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 - [x] T19a Flutter — orbe (rôles `plasma`/`ink`/`orbVeil`, halo en dégradé radial), barre du haut, régie · test d'abord : `no_hardcoded_style_test` (architecture : `Color(0x`, `Colors.`, `Color.fromARGB`, `Color.fromRGBO`, `fontFamily:` hors du paquet de design) rouge sur ces fichiers
 - [x] T19b Flutter — rail des agents, liaison de délégation, panneau du protocole · test d'abord : `no_hardcoded_style_test` rouge sur ces fichiers ; tests de widgets existants verts
 - [x] T19c Flutter — étagère, rejeu, page (`SceneBackdrop` dans la frontière de capture `_boundaryKey`, `main` : licences) · test d'abord : `no_hardcoded_style_test` entièrement vert ; tests de la page verts
-- [ ] T20 Flutter — `genesis_widgetbook` : `scene_app_builder` avec les polices embarquées, stories de `ScenePanel` et des statuts · test d'abord : `testWidgetbook` (61 tests + nouveaux) et test d'ensemble
-- [ ] T21 Flutter (optionnelle, coupe possible) — `gc-row` (cascade des lignes de checklist, 180 ms) et `gc-wipe` (tracé du graphique) · test d'abord : durée nulle sous `disableAnimations`, aucun rectangle ne bouge, pas de reconstruction des cellules voisines
+- [x] T20 Flutter — `genesis_widgetbook` : `scene_app_builder` avec les polices embarquées, stories de `ScenePanel` et des statuts · test d'abord : `testWidgetbook` (61 tests + nouveaux) et test d'ensemble
+- [x] T21 Flutter (optionnelle) **non faite : coupe décidée par la boucle** (voir `status.md`) — `gc-row` (cascade des lignes de checklist, 180 ms) et `gc-wipe` (tracé du graphique) · test d'abord : durée nulle sous `disableAnimations`, aucun rectangle ne bouge, pas de reconstruction des cellules voisines
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert
