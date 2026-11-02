@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T19b + T19c (réunies : seul `voice_orb.dart` violait la règle des styles en dur ; il reste l'apparence des zones du bas et la page)
+- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/{lib,test}/** (widgets/{agents_rail,catalog_shelf,replay_bar,protocol_panel,stage_bar,top_bar}, pages/genesis_canvas, main), packages/shared/design_system/{lib,test}/** si un rôle manque
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 21:00
