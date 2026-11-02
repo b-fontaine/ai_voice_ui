@@ -267,9 +267,18 @@ abstract class _Layout {
       return max == 0 ? 0 : max.ceilToDouble() + 1;
     }
 
-    final double chip =
-        widest(items.map((_Item i) => i.levelLabel), theme.body) +
-        2 * DsStatusChip.horizontalPadding;
+    // Largeur réelle de la plus large puce, glyphe ou point compris, fournie
+    // par la puce elle-même (même marge d'arrondi que les textes).
+    double chip = 0;
+    for (final _Item i in items) {
+      final double w = DsStatusChip.measure(
+        context,
+        i.level,
+        i.levelLabel,
+      ).width;
+      if (w > chip) chip = w;
+    }
+    if (chip > 0) chip = chip.ceilToDouble() + 1;
     final double label = widest(items.map((_Item i) => i.label), theme.body);
     final double threshold = widest(
       items.map((_Item i) => i.threshold),

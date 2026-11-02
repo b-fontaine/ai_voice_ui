@@ -27,8 +27,8 @@ import './step/aucun_libelle_de_la_surface_nest_tronque.dart';
 import './step/aucun_libelle_de_letagere_nest_tronque.dart';
 import './step/les_rectangles_des_zones_de_lecran_nont_pas_bouge.dart';
 import './step/le_statut_est_affiche_avec_son_mot_la_couleur_sur_un_fond_et_le_glyphe.dart';
-import './step/le_statut_est_affiche_avec_son_mot_la_couleur_sur_un_fond_et_sans_glyphe.dart';
 import './step/le_glyphe_dun_statut_nest_pas_annonce_par_la_semantique.dart';
+import './step/le_statut_est_affiche_avec_son_mot_la_couleur_sur_un_fond_et_sans_glyphe.dart';
 import './step/le_contraste_du_mot_de_chaque_statut_sur_son_fond_compose_est_dau_moins.dart';
 import './step/le_contenu_de_la_surface_est_a_peine_visible.dart';
 import './step/le_contenu_de_la_surface_est_decale_de_points_vers_le_bas.dart';
@@ -143,6 +143,7 @@ void main() {
             'go-ghost',
             '✓',
           );
+          await leGlypheDunStatutNestPasAnnonceParLaSemantique(tester);
           await leStatutEstAfficheAvecSonMotLaCouleurSurUnFondEtSansGlyphe(
             tester,
             'risk',
@@ -160,7 +161,6 @@ void main() {
             'nogo',
             'nogo-ghost',
           );
-          await leGlypheDunStatutNestPasAnnonceParLaSemantique(tester);
           await leContrasteDuMotDeChaqueStatutSurSonFondComposeEstDauMoins(
             tester,
             4.5,

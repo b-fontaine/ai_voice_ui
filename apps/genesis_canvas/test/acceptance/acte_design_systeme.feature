@@ -50,11 +50,11 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
   Scénario: U-04 Un statut s'affiche avec son mot et sa couleur du design system, jamais la couleur seule
     Étant donné le tableau de la release 3.4 est affiché
     Alors le statut {'ok'} est affiché avec son mot, la couleur {'go'} sur un fond {'go-ghost'} et le glyphe {'✓'}
+    Et le glyphe d'un statut n'est pas annoncé par la sémantique
     Et le statut {'risk'} est affiché avec son mot, la couleur {'warn'} sur un fond {'warn-ghost'} et sans glyphe
     Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
     Et le serveur émet la liste des crashs jusqu'au temps {'data'}
     Alors le statut {'blocking'} est affiché avec son mot, la couleur {'nogo'} sur un fond {'nogo-ghost'} et sans glyphe
-    Et le glyphe d'un statut n'est pas annoncé par la sémantique
     Et le contraste du mot de chaque statut sur son fond composé est d'au moins {4.5}
 
   @U-05 @FR-04 @NFR-04

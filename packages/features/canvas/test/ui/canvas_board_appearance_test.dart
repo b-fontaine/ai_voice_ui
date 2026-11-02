@@ -171,11 +171,19 @@ void main() {
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
     expect(find.byType(Surface), findsOneWidget);
-    expect(
-      tester.hasRunningAnimations,
-      isFalse,
-      reason: 'aucune animation ne doit repartir',
-    );
+    // Le point de Bloquant bat en continu (U7) : `hasRunningAnimations` ne
+    // peut plus servir. Aucun fondu ni aucune translation ne repart : le
+    // contenu et la valeur restent opaques et immobiles à plusieurs instants.
+    final Offset contentTopLeft = tester.getTopLeft(_content());
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_opacityOf(_content()), 1.0, reason: 'le fondu repart');
+      expect(
+        tester.getTopLeft(_content()),
+        contentTopLeft,
+        reason: 'la translation repart',
+      );
+    }
     expect(h.engineErrors, isEmpty);
   });
 
