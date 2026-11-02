@@ -2,6 +2,7 @@
 # id: p-fn-feature-design-system-017
 # Scénarios complémentaires de 017 (application du design system du 2026-11-02, UI seulement), hors des 9 de la fiche (pdr-0049) ; U-01 à U-06.
 # Décisions : pdr-0083 (portée UI seulement, D4 : aucun texte sous 24 px), pdr-0084 (détails d'UI tranchés par la boucle, pdr-0062) ; exigences NFR-05, NFR-04, FR-04, RG-09.
+# U-02 : les puces de statut, les seuils et les valeurs des critères de la checklist sont en Space Grotesk, pas en JetBrains Mono (pdr-0084 U13 : la mono casse D-02).
 # U-01 et U-03 sont des garde-fous déjà verts avant 017 et qui doivent le rester ; U-02, U-04, U-05 et U-06 sont rouges au départ.
 # Les scénarios D-01 à D-07 de 013 (design-ergonomie-013.feature) restent verts avec les polices embarquées ; D-06 est recalé aux durées de pdr-0084 U2.
 # Automatisé en Flutter : apps/genesis_canvas/test/acceptance/acte_design_systeme.feature ; unitaires : shared/design_system (tokens, thème, mouvement, panneau, statuts, polices), features/canvas (séries).
