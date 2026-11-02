@@ -219,7 +219,15 @@ void main() {
       final Color fill = (box.decoration as BoxDecoration).color ?? background;
       expect(fill, background, reason: component);
       expect(icon, isNotNull, reason: component);
-      expect(contrast(icon!, fill), greaterThanOrEqualTo(4.5));
+      // Les fonds `*-ghost` sont translucides : on les compose d'abord sur les
+      // deux fonds de panneau (haut `surface-200`, bas `surface-100`).
+      for (final Color panel in <Color>[theme.surface, theme.surface200]) {
+        expect(
+          contrast(icon!, Color.alphaBlend(fill, panel)),
+          greaterThanOrEqualTo(4.5),
+          reason: component,
+        );
+      }
     }
   });
 
