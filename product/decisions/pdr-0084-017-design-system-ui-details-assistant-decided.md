@@ -5,7 +5,7 @@ area: decisions
 status: validated
 updated: 2026-11-02
 sources: [specs/017-design-system-v2/spec.md, specs/017-design-system-v2/plan.md, specs/017-design-system-v2/status.md, product/sources/design-system-2026-11-02/README.md, product/sources/design-system-2026-11-02/tokens.json, product/sources/design-system-2026-11-02/components/bundle.css, knowledge:ds-typography, knowledge:ds-motion, knowledge:ds-a11y-wcag-contrast]
-links: [pdr-0083-design-system-v2-ui-only, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0079-013-tokens-exception-to-adr-0005, pdr-0007-closed-catalog-stage-theme, pdr-0017-source-hierarchy-sheet-over-mockups, p-ar-design-system, p-fn-nfr, p-sources, p-rm-backlog, p-rm-open-questions, adr-0005-ds-tokens-style-dictionary]
+links: [pdr-0083-design-system-v2-ui-only, p-ar-design-system-look, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, pdr-0064-008-act2-transform-details-assistant-decided, pdr-0065-009-act3-interact-details-assistant-decided, pdr-0063-007-stage-ui-details-assistant-decided, pdr-0079-013-tokens-exception-to-adr-0005, pdr-0007-closed-catalog-stage-theme, pdr-0017-source-hierarchy-sheet-over-mockups, p-ar-design-system, p-fn-nfr, p-sources, p-rm-backlog, p-rm-open-questions, adr-0005-ds-tokens-style-dictionary]
 tags: [pdr, decision, design-system, ui, 017]
 decision_status: acceptée
 decided_on: 2026-11-02
