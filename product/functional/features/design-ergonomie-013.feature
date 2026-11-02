@@ -1,7 +1,7 @@
 # language: fr
 # id: p-fn-feature-design-ergonomics-013
 # Scénarios complémentaires de 013 (livrée le 2026-10-31), hors des 9 de la fiche (pdr-0049) ; D-01 à D-07 ne sont pas les critères D1 à D8 de la DoD.
-# Décisions : pdr-0072, pdr-0075, pdr-0062 ; exigences FR-04, NFR-04, NFR-05, S-02 ; steps sans chiffre initial (pdr-0022-gherkin-steps-no-leading-digit).
+# D-06 recalé le 2026-11-02 (pdr-0084 U2 : 500 ms et 250 ms à 2 x ; avant 250 et 120 ms). Décisions : pdr-0072, pdr-0075, pdr-0062 ; exigences FR-04, NFR-04, NFR-05, S-02 ; steps sans chiffre initial (pdr-0022-gherkin-steps-no-leading-digit).
 # Automatisé en Flutter : apps/genesis_canvas/test/acceptance/acte_design_ergonomie.feature ; unitaires : features/canvas (reconstruction, peinture), shared/design_system (tokens, mouvement).
 
 Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main, apparition animée
@@ -83,7 +83,7 @@ Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main
     Alors un squelette est visible pour la surface {'crashes'}
     Quand le serveur émet la liste des crashs jusqu'au temps {'components'}
     Alors le contenu de la surface {'crashes'} est à peine visible
-    Quand {250} millisecondes s'écoulent
+    Quand {500} millisecondes s'écoulent
     Alors le contenu de la surface {'crashes'} est pleinement visible
     Et aucun squelette n'est visible pour la surface {'crashes'}
     Quand le serveur émet la liste des crashs jusqu'au temps {'data'}
@@ -109,7 +109,7 @@ Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main
     Et je choisis la vitesse {2}
     Et j'avance par pas de {10} millisecondes jusqu'à ce que les composants de la surface {'checklist'} soient affichés
     Alors le contenu de la surface {'checklist'} est à peine visible
-    Quand {120} millisecondes s'écoulent
+    Quand {250} millisecondes s'écoulent
     Alors le contenu de la surface {'checklist'} est pleinement visible
 
   @D-07 @FR-03 @NFR-04

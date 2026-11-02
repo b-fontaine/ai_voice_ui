@@ -90,7 +90,7 @@ Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main
     Alors un squelette est visible pour la surface {'crashes'}
     Quand le serveur émet la liste des crashs jusqu'au temps {'components'}
     Alors le contenu de la surface {'crashes'} est à peine visible
-    Quand {250} millisecondes s'écoulent
+    Quand {500} millisecondes s'écoulent
     Alors le contenu de la surface {'crashes'} est pleinement visible
     Et aucun squelette n'est visible pour la surface {'crashes'}
     Quand le serveur émet la liste des crashs jusqu'au temps {'data'}
@@ -116,7 +116,7 @@ Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main
     Et je choisis la vitesse {2}
     Et j'avance par pas de {10} millisecondes jusqu'à ce que les composants de la surface {'checklist'} soient affichés
     Alors le contenu de la surface {'checklist'} est à peine visible
-    Quand {120} millisecondes s'écoulent
+    Quand {250} millisecondes s'écoulent
     Alors le contenu de la surface {'checklist'} est pleinement visible
 
   @D-07 @FR-03 @NFR-04
