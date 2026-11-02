@@ -134,8 +134,8 @@ def walk_docs():
         for f in sorted(fs):
             if f == "_template.md":
                 continue
-            if r.split(os.sep)[0] == "sources" and f != "README.md":
-                continue  # sources/ : seuls README.md est documenté, le reste est matière brute
+            if r.split(os.sep)[0] == "sources" and not (r == "sources" and f == "README.md"):
+                continue  # sources/ : seul sources/README.md est documenté, le reste (y compris les README de sources copiées) est matière brute
             if f.endswith((".md", ".feature")):
                 yield os.path.join(d, f), r
 

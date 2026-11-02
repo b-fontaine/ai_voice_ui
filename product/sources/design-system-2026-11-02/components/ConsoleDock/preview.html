@@ -1,0 +1,52 @@
+<!-- @dsCard group="Console" height=190 subtitle="Catalogue, rejeu, flux A2UI live" -->
+<div class="gc-stage">
+<div class="gc-dock">
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Catalogue A2UI</span><span class="gc-mono" style="font-size:13px">5 / 6</span></div>
+    <div class="gc-chips">
+      <span class="gc-chip is-used">KeyIndicator</span><span class="gc-chip is-used">TrendChart</span><span class="gc-chip is-used">ReviewSentiment</span>
+      <span class="gc-chip is-used">ReleaseChecklist</span><span class="gc-chip is-used is-new">ActionBar</span><span class="gc-chip">CrashList</span>
+    </div>
+  </section>
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Rejeu</span><span class="gc-live">Direct</span></div>
+    <div class="gc-replay"><button class="gc-btn gc-btn--sm gc-btn--icon" aria-label="Lecture">▶</button><button class="gc-btn gc-btn--sm gc-btn--icon" aria-label="Rejouer">↺</button><div class="gc-track"><div class="gc-track__fill"></div><div class="gc-track__knob"></div></div></div>
+    <div class="gc-speeds"><button class="gc-speed">0,25×</button><button class="gc-speed">0,5×</button><button class="gc-speed is-on">1×</button><button class="gc-speed">1,5×</button><button class="gc-speed">2×</button></div>
+  </section>
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Flux A2UI</span><span class="gc-live" data-stream-count>12 messages</span></div>
+    <div class="gc-stream" data-stream></div>
+  </section>
+</div>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>

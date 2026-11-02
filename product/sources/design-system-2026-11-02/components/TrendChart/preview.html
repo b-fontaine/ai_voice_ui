@@ -1,0 +1,58 @@
+<!-- @dsCard group="Données" height=340 subtitle="Version courante vs précédente vs seuil" -->
+<div class="gc-stage">
+<section class="gc-panel" style="max-width:640px">
+  <div class="gc-panel__head"><h3 class="gc-title">Taux de crash quotidien · Android</h3><span class="gc-label">% sessions</span></div>
+  <div class="gc-legend" style="margin-bottom:8px"><span><i style="border-color:var(--signal)"></i>3.4</span><span><i style="border-color:var(--baseline);border-top-style:dotted"></i>3.3</span><span><i style="border-color:var(--nogo);border-top-style:dashed"></i>Seuil 0,50 %</span></div>
+  <svg class="gc-chart" viewBox="0 0 600 222" role="img" aria-label="Taux de crash quotidien Android : la 3.4 passe de 0,42 % à 0,75 % en 7 jours et franchit le seuil de 0,50 % au jour 3 ; la 3.3 reste vers 0,29 %.">
+  <g>
+    <line class="grid" x1="44" x2="584" y1="16" y2="16"/><line class="grid" x1="44" x2="584" y1="76" y2="76"/><line class="grid" x1="44" x2="584" y1="136" y2="136"/><line class="grid" x1="44" x2="584" y1="196" y2="196"/>
+    <text class="tick" x="36" y="20" text-anchor="end">0,8</text><text class="tick" x="36" y="80" text-anchor="end">0,6</text><text class="tick" x="36" y="140" text-anchor="end">0,4</text><text class="tick" x="36" y="200" text-anchor="end">0,2</text>
+    <text class="tick" x="44" y="218" text-anchor="middle">J1</text><text class="tick" x="134" y="218" text-anchor="middle">J2</text><text class="tick" x="224" y="218" text-anchor="middle">J3</text><text class="tick" x="314" y="218" text-anchor="middle">J4</text><text class="tick" x="404" y="218" text-anchor="middle">J5</text><text class="tick" x="494" y="218" text-anchor="middle">J6</text><text class="tick" x="584" y="218" text-anchor="middle">J7</text>
+  </g>
+  <line class="s-threshold" x1="44" x2="584" y1="106" y2="106"/>
+  <g class="reveal">
+    <polygon class="s-area" points="44,130 134,118 224,103 314,88 404,70 494,55 584,31 584,196 44,196"/>
+    <polygon class="breach" points="206,106 224,103 314,88 404,70 494,55 584,31 584,106"/>
+    <polyline class="s-base" points="44,172 134,166 224,169 314,163 404,172 494,169 584,172"/>
+    <polyline class="s-current" points="44,130 134,118 224,103 314,88 404,70 494,55 584,31"/>
+    <circle class="dot" cx="44" cy="130" r="3.5"/><circle class="dot" cx="134" cy="118" r="3.5"/><circle class="dot" cx="224" cy="103" r="3.5"/><circle class="dot" cx="314" cy="88" r="3.5"/><circle class="dot" cx="404" cy="70" r="3.5"/><circle class="dot" cx="494" cy="55" r="3.5"/>
+  </g>
+  <g style="animation: gc-rise .4s 1.5s both">
+    <circle class="head-ring" cx="584" cy="31" r="5"/><circle class="head" cx="584" cy="31" r="5"/>
+    <text class="callout" x="572" y="22" text-anchor="end">0,75 %</text>
+    <text class="callout" x="236" y="126">▲ seuil franchi dès J3</text>
+  </g>
+</svg>
+</section>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>

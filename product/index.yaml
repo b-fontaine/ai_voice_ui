@@ -33,7 +33,7 @@ zones:
 meta:
   - {id: p-readme, path: README.md, summary: "Porte d'entrée humaine et IA : produit en bref, par où commencer selon le profil, carte des documents, état, décisions, questions majeures, contribution"}
   - {id: p-conventions, path: _conventions.md, summary: "Où écrire, frontmatter, écriture, traçabilité, cycle de vie des PDR, index YAML, lint"}
-  - {id: p-sources, path: sources/README.md, summary: "Sources primaires : fiche produit (validée) et maquettes (illustration) ; règles d'ajout ; chronologie de la répétition au micro du 2026-10-31 (observation datée)"}
+  - {id: p-sources, path: sources/README.md, summary: "Sources primaires : fiche produit (validée), maquettes (illustration) et design system du 2026-11-02 (source de l'UI seulement, pdr-0083) ; règles d'ajout ; chronologie de la répétition au micro du 2026-10-31 (observation datée)"}
 
 entrypoints:
   - {id: p-readme, why: "vue d'ensemble et carte de la documentation"}
@@ -42,7 +42,7 @@ entrypoints:
   - {id: p-fn-screen, why: "l'écran unique en 6 zones et les états de l'orbe"}
   - {id: p-ar-overview, why: "architecture globale et répartition client / backend"}
   - {id: p-rm-roadmap, why: "jalons J0-J9 datés, dépendances, ordre de coupe"}
-  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-90 ; Q-88 et Q-89 tranchées par pdr-0081 ; Q-90 ouverte, pdr-0082)"}
+  - {id: p-rm-open-questions, why: "tout ce qui n'est pas décidé (écarts E1-E22, Q-01..Q-91 ; Q-88 et Q-89 tranchées par pdr-0081 ; Q-90 ouverte, pdr-0082 ; Q-91 ouverte, pdr-0083)"}
   - {id: pdr-0011-adopt-knowledge-adrs, why: "comment les ADR génériques s'appliquent au produit"}
 
 tasks:
@@ -65,8 +65,8 @@ tasks:
   - task: "Modifier la composition par modèle (plan structuré, repli, passerelle LLM) ou ajouter un composant choisi par l'IA (012)"
     docs: [p-ar-llm-composer, p-ar-backend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-ar-quality, p-fn-catalog, p-fn-dataset, p-fn-feature-llm-composer-012, pdr-0074-012-llm-composer-gateway-crashlist-details, pdr-0070-llm-composer-and-crashlist-012, pdr-0060-small-openai-text-model-guided-a2ui, pdr-0023-example-guided-composition, pdr-0036-real-a2a-agents-produce-a2ui, pdr-0014-six-component-catalog, pdr-0030-llm-budget-20-eur, p-rm-open-questions]
     knowledge: [ma-openai-responses-structured-request, ma-openai-responses-structured-response, ma-openai-small-model-structured-latency, genui-custom-catalog-item, genui-catalog-ids, rt-ephemeral-keys]
-  - task: "Modifier la mise en page, la lisibilité, l'apparition animée, les tokens ou le catalogue Widgetbook (013)"
-    docs: [p-fn-screen, p-ar-design-system, p-ar-frontend-screen, p-ar-frontend, p-fn-catalog, p-fn-nfr, p-ar-quality, p-ar-stack, p-fn-feature-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions]
+  - task: "Modifier la mise en page, la lisibilité, l'apparition animée, les tokens ou le catalogue Widgetbook (013) ; appliquer le design system du 2026-11-02, UI seulement (017)"
+    docs: [pdr-0083-design-system-v2-ui-only, p-sources, p-rm-backlog, p-fn-screen, p-ar-design-system, p-ar-frontend-screen, p-ar-frontend, p-fn-catalog, p-fn-nfr, p-ar-quality, p-ar-stack, p-fn-feature-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0072-design-ergonomics-013, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0017-source-hierarchy-sheet-over-mockups, pdr-0007-closed-catalog-stage-theme, p-rm-open-questions]
     knowledge: [ds-motion, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target, ds-tokens-style-dictionary, ds-tokens-theme-extension, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-testing, ds-widgetbook-4-genui, perf-repaint-boundary, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta]
   - task: "Ajouter ou modifier un composant du catalogue Genesis"
     docs: [p-fn-catalog, p-ar-llm-composer, p-ar-design-system, p-fn-feature-design-ergonomics-013, p-fn-feature-llm-composer-012, p-fn-business-rules, p-fn-mockups, p-ar-frontend, p-ar-frontend-screen, p-ar-quality, pdr-0007-closed-catalog-stage-theme, pdr-0014-six-component-catalog, pdr-0015-app-held-canvas-layout, pdr-0065-009-act3-interact-details-assistant-decided, p-rm-open-questions]
@@ -125,9 +125,9 @@ requirement_index:
   "O-01..O-08, L-01..L-04 (scénarios BDD de 015 ; S-05 complet)": p-fn-feature-chevauchement-liaison-015
   "G-01, G-02, R-01..R-11 (scénarios BDD de 016 ; R-xx distincts des R-01..R-09 de 010)": p-fn-feature-garde-fou-reprise-016
   "E1..E22 (écarts entre sources)": p-fn-mockups
-  "Q-01..Q-90 (questions ouvertes)": p-rm-open-questions
+  "Q-01..Q-91 (questions ouvertes)": p-rm-open-questions
   "R1..R8 (risques), D1..D8 (DoD)": p-fn-risks-acceptance
   "J0..J9 (jalons)": p-rm-roadmap
   "EP-01..EP-10 (epics)": p-rm-backlog
   "SP-00..SP-11 (spikes)": p-rm-spikes
-  "pdr-0001..pdr-0082": decisions/index.yaml
+  "pdr-0001..pdr-0083": decisions/index.yaml

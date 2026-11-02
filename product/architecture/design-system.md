@@ -3,14 +3,16 @@ id: p-ar-design-system
 title: Design system, tokens, apparition animée et catalogue Widgetbook (livré par 013)
 area: architecture
 status: draft
-updated: 2026-10-31
+updated: 2026-11-02
 sources: [specs/013-design-ergonomie/spec.md, specs/013-design-ergonomie/plan.md, specs/013-design-ergonomie/status.md, packages/shared/design_system/tool/build_tokens.mjs, apps/genesis_widgetbook/README.md, knowledge:ds-tokens-style-dictionary, knowledge:ds-motion, knowledge:ds-widgetbook-4-genui]
-links: [pdr-0072-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0007-closed-catalog-stage-theme, p-ar-frontend-screen, p-ar-frontend, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-nfr, p-fn-catalog, p-fn-feature-design-ergonomics-013, p-rm-open-questions, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, ds-tokens-style-dictionary, ds-tokens-theme-extension, ds-motion, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-testing, ds-widgetbook-4-spike, ds-widgetbook-4-genui, perf-repaint-boundary]
+links: [pdr-0083-design-system-v2-ui-only, pdr-0072-design-ergonomics-013, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details, pdr-0007-closed-catalog-stage-theme, p-ar-frontend-screen, p-ar-frontend, p-ar-quality, p-ar-stack, p-fn-screen, p-fn-nfr, p-fn-catalog, p-fn-feature-design-ergonomics-013, p-rm-open-questions, adr-0004-ds-visual-base-m3, adr-0005-ds-tokens-style-dictionary, adr-0006-ds-no-widgetbook-cloud, adr-0008-ds-widgetbook-4-beta, ds-tokens-style-dictionary, ds-tokens-theme-extension, ds-motion, ds-a11y-wcag-contrast, ds-a11y-wcag-focus-target, ds-widgetbook-4-setup, ds-widgetbook-4-stories, ds-widgetbook-4-testing, ds-widgetbook-4-spike, ds-widgetbook-4-genui, perf-repaint-boundary]
 tags: [design-system, tokens, widgetbook, animation, nfr-04, nfr-05, 013]
 ---
 # Design system, apparition animée et catalogue Widgetbook (013)
 
 **En bref.** La fonctionnalité 013 (2026-10-31) ancre le thème de scène dans des **tokens DTCG** générés en Dart, anime l'apparition des surfaces sans rien déplacer (FR-04, NFR-04) et publie un **catalogue Widgetbook** des briques et des six composants genesis. Détails d'interface tranchés par la boucle ([pdr-0075](../decisions/pdr-0075-013-design-ergonomics-details-assistant-decided.md) D3 et D4, sous pdr-0062) ; mise en page : [p-fn-screen](../functional/screen.md), [p-ar-frontend-screen](frontend-screen.md).
+
+> **017 (à venir)** applique le design system du 2026-11-02 à ces tokens et à ce thème, UI seulement ([pdr-0083-design-system-v2-ui-only](../decisions/pdr-0083-design-system-v2-ui-only.md), [source](../sources/design-system-2026-11-02/README.md), [backlog](../roadmap/backlog.md)).
 
 ## Tokens et thème (`packages/shared/design_system`)
 

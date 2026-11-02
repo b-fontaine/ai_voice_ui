@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "assetGroups": {},
+  "blobs": {},
+  "createdOnFiles": {
+    "at": "2026-11-02T13:27:00Z",
+    "v": 1
+  },
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "groups": [],
+  "lastChange": {
+    "at": "2026-11-02T13:40:00Z",
+    "by": "Benoît",
+    "note": "Système HUD futuriste et animé pour la démo Genesis Canvas",
+    "via": "Claude (cloud)"
+  },
+  "layout": "files",
+  "libraries": [],
+  "namespace": "Genesis",
+  "sections": {},
+  "title": "Genesis Canvas"
+}

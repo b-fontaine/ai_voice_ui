@@ -1,0 +1,140 @@
+<!-- @dsCard group="Écrans" height=1100 subtitle="Acte 3 · Interagir — l'écran de démo recomposé" width=1440 page -->
+<div class="gc-stage">
+<div class="gc-screen" style="margin:-20px;width:1440px">
+  <div class="gc-voice">
+  <div class="gc-orb"><span class="gc-orb__ring"></span><span class="gc-orb__ring"></span><span class="gc-orb__ring"></span><span class="gc-orb__core"></span></div>
+  <div class="gc-transcript">
+    <p><span class="who">VOUS</span><span>Compare la 3.3 pour Android</span></p>
+    <p><span class="who ai">IA</span><span data-type="C'est un no-go : 99,43 % de sessions sans crash contre 99,71 % en 3.3."></span></p>
+    <div class="gc-wave" aria-hidden="true"><i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.25s"></i><i style="animation-delay:.05s"></i><i style="animation-delay:.3s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.4s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.35s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.45s"></i><i style="animation-delay:.05s"></i></div>
+  </div>
+  <div>
+    <nav class="gc-acts" aria-label="Actes de la démo">
+      <span class="gc-act is-done"><b>01 ✓</b>Créer</span>
+      <span class="gc-act is-done"><b>02 ✓</b>Transformer</span>
+      <span class="gc-act is-active" aria-current="step"><b>03</b>Interagir</span>
+    </nav>
+    <div class="gc-voice__tools">
+      <button class="gc-btn gc-btn--sm gc-btn--rec">Micro ouvert</button>
+      <button class="gc-btn gc-btn--sm gc-btn--ghost">Faire taire</button>
+      <button class="gc-btn gc-btn--sm gc-btn--ghost">Remettre à vide</button>
+    </div>
+  </div>
+</div>
+  <div class="gc-agents">
+  <span class="gc-label">Agents<br>A2A</span>
+  <div class="gc-agent is-orch"><div class="gc-agent__name"><span class="gc-agent__dot"></span>Orchestrateur</div><div class="gc-agent__state">route · 3 agents</div></div>
+  <div class="gc-agent is-done"><div class="gc-agent__name"><span class="gc-agent__dot"></span>Qualité</div><div class="gc-agent__state"><b>✓</b> KeyIndicator · 1,2 s</div></div>
+  <div class="gc-agent is-done"><div class="gc-agent__name"><span class="gc-agent__dot"></span>Voix du client</div><div class="gc-agent__state"><b>✓</b> ReviewSentiment · 0,9 s</div></div>
+  <div class="gc-agent is-work"><div class="gc-agent__name"><span class="gc-agent__dot"></span>Livraison</div><div class="gc-agent__state">écrit ReleaseChecklist…</div></div>
+</div>
+  <div class="gc-row-2">
+    <section class="gc-panel">
+      <div class="gc-panel__head"><span class="gc-label">Sessions sans crash · Android 3.4 · 7 j</span><span class="gc-badge gc-badge--nogo">Bloquant</span></div>
+      <div class="gc-kpi__value is-nogo"><span data-count="99.43" data-from="100">99,43</span><small>%</small></div>
+      <div class="gc-gauge" aria-hidden="true"><div class="gc-gauge__fill" data-w="43%"></div><div class="gc-gauge__mark" style="left:50%"><span>seuil 99,50</span></div><div class="gc-gauge__ref" style="left:71%"></div></div>
+      <dl class="gc-kpi__deltas" style="margin-top:16px"><dt>vs seuil</dt><dd class="gc-down">−0,07 pt</dd><dt>vs 3.3</dt><dd><span class="gc-down">−0,28 pt</span> <span class="gc-muted">(99,71 %)</span></dd></dl>
+    </section>
+    <section class="gc-panel">
+      <div class="gc-panel__head"><h3 class="gc-title">Taux de crash quotidien · Android</h3><div class="gc-legend"><span><i style="border-color:var(--signal)"></i>3.4</span><span><i style="border-color:var(--baseline);border-top-style:dotted"></i>3.3</span><span><i style="border-color:var(--nogo);border-top-style:dashed"></i>Seuil 0,50 %</span></div></div>
+      <svg class="gc-chart" viewBox="0 0 600 222" style="max-height:230px" role="img" aria-label="Taux de crash quotidien Android : la 3.4 passe de 0,42 % à 0,75 % en 7 jours et franchit le seuil de 0,50 % au jour 3 ; la 3.3 reste vers 0,29 %.">
+  <g>
+    <line class="grid" x1="44" x2="584" y1="16" y2="16"/><line class="grid" x1="44" x2="584" y1="76" y2="76"/><line class="grid" x1="44" x2="584" y1="136" y2="136"/><line class="grid" x1="44" x2="584" y1="196" y2="196"/>
+    <text class="tick" x="36" y="20" text-anchor="end">0,8</text><text class="tick" x="36" y="80" text-anchor="end">0,6</text><text class="tick" x="36" y="140" text-anchor="end">0,4</text><text class="tick" x="36" y="200" text-anchor="end">0,2</text>
+    <text class="tick" x="44" y="218" text-anchor="middle">J1</text><text class="tick" x="134" y="218" text-anchor="middle">J2</text><text class="tick" x="224" y="218" text-anchor="middle">J3</text><text class="tick" x="314" y="218" text-anchor="middle">J4</text><text class="tick" x="404" y="218" text-anchor="middle">J5</text><text class="tick" x="494" y="218" text-anchor="middle">J6</text><text class="tick" x="584" y="218" text-anchor="middle">J7</text>
+  </g>
+  <line class="s-threshold" x1="44" x2="584" y1="106" y2="106"/>
+  <g class="reveal">
+    <polygon class="s-area" points="44,130 134,118 224,103 314,88 404,70 494,55 584,31 584,196 44,196"/>
+    <polygon class="breach" points="206,106 224,103 314,88 404,70 494,55 584,31 584,106"/>
+    <polyline class="s-base" points="44,172 134,166 224,169 314,163 404,172 494,169 584,172"/>
+    <polyline class="s-current" points="44,130 134,118 224,103 314,88 404,70 494,55 584,31"/>
+    <circle class="dot" cx="44" cy="130" r="3.5"/><circle class="dot" cx="134" cy="118" r="3.5"/><circle class="dot" cx="224" cy="103" r="3.5"/><circle class="dot" cx="314" cy="88" r="3.5"/><circle class="dot" cx="404" cy="70" r="3.5"/><circle class="dot" cx="494" cy="55" r="3.5"/>
+  </g>
+  <g style="animation: gc-rise .4s 1.5s both">
+    <circle class="head-ring" cx="584" cy="31" r="5"/><circle class="head" cx="584" cy="31" r="5"/>
+    <text class="callout" x="572" y="22" text-anchor="end">0,75 %</text>
+    <text class="callout" x="236" y="126">▲ seuil franchi dès J3</text>
+  </g>
+</svg>
+    </section>
+  </div>
+  <div class="gc-row-2">
+    <section class="gc-panel" style="animation-delay:.15s">
+      <div class="gc-panel__head"><h3 class="gc-title">Avis · Android 3.4</h3><span class="gc-mono gc-muted" style="font-size:13px">792 avis · 3,7 ★</span></div>
+      <div class="gc-split-legend"><span class="gc-up">70 % positifs</span><span class="gc-down">30 % négatifs · 3.3 : 14 %</span></div>
+      <div class="gc-split"><div class="gc-split__pos" data-w="70%"></div><div class="gc-split__neg" data-w="30%"></div></div>
+      <div class="gc-quote"><span class="gc-quote__meta"><b>1★</b> Android</span><p>L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour.</p></div>
+      <div class="gc-quote" style="animation-delay:.2s"><span class="gc-quote__meta"><b>2★</b> Android</span><p>Après le code reçu par SMS, retour à l'accueil et panier vide.</p></div>
+    </section>
+    <div class="gc-gen" style="margin-top:0">
+      <span class="gc-gen__tag">Livraison · génère</span><div class="gc-gen__scan"></div>
+      <section class="gc-panel" style="height:100%;animation-delay:.3s"><div class="gc-panel__head"><div class="gc-verdict"><h3 class="gc-title">Checklist go/no-go</h3><span class="gc-badge gc-badge--lg gc-badge--nogo">NO-GO Android</span></div><span class="gc-label">2 bloquants / 3</span></div>
+  <table class="gc-check">
+    <thead><tr><th>Critère · 7 j</th><th>Seuil</th><th>3.4</th><th></th></tr></thead>
+    <tbody>
+      <tr class="is-nogo"><td>Sessions sans crash</td><td>≥ 99,50 %</td><td>99,43 % <span class="ref">3.3 : 99,71</span></td><td><span class="gc-badge gc-badge--nogo">Bloquant</span></td></tr>
+      <tr class="is-nogo"><td>Avis négatifs</td><td>≤ 25 %</td><td>30 % <span class="ref">3.3 : 14</span></td><td><span class="gc-badge gc-badge--nogo">Bloquant</span></td></tr>
+      <tr><td>Changelog revu</td><td>100 % PR</td><td>37 / 37</td><td><span class="gc-badge gc-badge--go">Validé</span></td></tr>
+    </tbody>
+  </table></section>
+    </div>
+  </div>
+  <section class="gc-panel" style="padding:14px 24px"><div class="gc-decision">
+  <span class="gc-label">Décision humaine</span>
+  <button class="gc-btn gc-btn--danger" data-hold><i class="gc-hold"></i><span>Maintenir pour bloquer</span></button>
+  <button class="gc-btn" aria-disabled="true" title="2 critères bloquants">Valider la release</button>
+  <span class="gc-decision__note">Recommandation IA : <b>bloquer</b> · 2 critères bloquants</span>
+  <span class="gc-receipt" data-receipt hidden>✓ <b>Bloquée par Benoît</b> · 14:32 · ticket REL-341 ouvert</span>
+</div></section>
+  <div class="gc-dock">
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Catalogue A2UI</span><span class="gc-mono" style="font-size:13px">5 / 6</span></div>
+    <div class="gc-chips">
+      <span class="gc-chip is-used">KeyIndicator</span><span class="gc-chip is-used">TrendChart</span><span class="gc-chip is-used">ReviewSentiment</span>
+      <span class="gc-chip is-used">ReleaseChecklist</span><span class="gc-chip is-used is-new">ActionBar</span><span class="gc-chip">CrashList</span>
+    </div>
+  </section>
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Rejeu</span><span class="gc-live">Direct</span></div>
+    <div class="gc-replay"><button class="gc-btn gc-btn--sm gc-btn--icon" aria-label="Lecture">▶</button><button class="gc-btn gc-btn--sm gc-btn--icon" aria-label="Rejouer">↺</button><div class="gc-track"><div class="gc-track__fill"></div><div class="gc-track__knob"></div></div></div>
+    <div class="gc-speeds"><button class="gc-speed">0,25×</button><button class="gc-speed">0,5×</button><button class="gc-speed is-on">1×</button><button class="gc-speed">1,5×</button><button class="gc-speed">2×</button></div>
+  </section>
+  <section class="gc-panel" style="padding:14px 18px">
+    <div class="gc-panel__head" style="margin:0"><span class="gc-label">Flux A2UI</span><span class="gc-live" data-stream-count>12 messages</span></div>
+    <div class="gc-stream" data-stream></div>
+  </section>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>

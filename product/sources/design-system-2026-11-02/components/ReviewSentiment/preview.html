@@ -1,0 +1,42 @@
+<!-- @dsCard group="Données" height=330 subtitle="Répartition animée + verbatims" -->
+<div class="gc-stage">
+<section class="gc-panel" style="max-width:560px">
+  <div class="gc-panel__head"><h3 class="gc-title">Avis · Android 3.4</h3><span class="gc-mono gc-muted" style="font-size:13px">792 avis · 3,7 ★</span></div>
+  <div class="gc-split-legend"><span class="gc-up">70 % positifs</span><span class="gc-down">30 % négatifs</span></div>
+  <div class="gc-split"><div class="gc-split__pos" data-w="70%"></div><div class="gc-split__neg" data-w="30%"></div></div>
+  <div class="gc-mono gc-muted" style="font-size:13px;margin-top:8px">3.3 : 14 % négatifs · <span class="gc-down">+16 pts</span></div>
+  <div class="gc-quote"><span class="gc-quote__meta"><b>1★</b> Android</span><p>L'app se ferme dès que je valide mon panier. Impossible de payer depuis la mise à jour.</p></div>
+  <div class="gc-quote" style="animation-delay:.2s"><span class="gc-quote__meta"><b>2★</b> Android</span><p>Après le code reçu par SMS, retour à l'accueil et panier vide.</p></div>
+</section>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>

@@ -1,0 +1,41 @@
+<!-- @dsCard group="Décision" height=120 subtitle="Appui long pour confirmer — l'humain décide" -->
+<div class="gc-stage">
+<section class="gc-panel"><div class="gc-decision">
+  <span class="gc-label">Décision humaine</span>
+  <button class="gc-btn gc-btn--danger" data-hold><i class="gc-hold"></i><span>Maintenir pour bloquer</span></button>
+  <button class="gc-btn" aria-disabled="true" title="2 critères bloquants">Valider la release</button>
+  <span class="gc-decision__note">Recommandation IA : <b>bloquer</b> · 2 critères bloquants</span>
+  <span class="gc-receipt" data-receipt hidden>✓ <b>Bloquée par Benoît</b> · 14:32 · ticket REL-341 ouvert</span>
+</div></section>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>

@@ -1,0 +1,54 @@
+<!-- @dsCard group="IA" height=150 subtitle="Orbe, transcription en direct, actes" -->
+<div class="gc-stage">
+<div class="gc-voice">
+  <div class="gc-orb"><span class="gc-orb__ring"></span><span class="gc-orb__ring"></span><span class="gc-orb__ring"></span><span class="gc-orb__core"></span></div>
+  <div class="gc-transcript">
+    <p><span class="who">VOUS</span><span>Compare la 3.3 pour Android</span></p>
+    <p><span class="who ai">IA</span><span data-type="C'est un no-go : 99,43 % de sessions sans crash contre 99,71 % en 3.3."></span></p>
+    <div class="gc-wave" aria-hidden="true"><i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.25s"></i><i style="animation-delay:.05s"></i><i style="animation-delay:.3s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.4s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.35s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.45s"></i><i style="animation-delay:.05s"></i></div>
+  </div>
+  <div>
+    <nav class="gc-acts" aria-label="Actes de la démo">
+      <span class="gc-act is-done"><b>01 ✓</b>Créer</span>
+      <span class="gc-act is-done"><b>02 ✓</b>Transformer</span>
+      <span class="gc-act is-active" aria-current="step"><b>03</b>Interagir</span>
+    </nav>
+    <div class="gc-voice__tools">
+      <button class="gc-btn gc-btn--sm gc-btn--rec">Micro ouvert</button>
+      <button class="gc-btn gc-btn--sm gc-btn--ghost">Faire taire</button>
+      <button class="gc-btn gc-btn--sm gc-btn--ghost">Remettre à vide</button>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var to=+el.dataset.count, from=+(el.dataset.from||0), d=+(el.dataset.dec||2), t0=performance.now(), D=1400;
+    function f(t){var k=Math.min(1,(t-t0)/D), e=1-Math.pow(1-k,3); el.textContent=(from+(to-from)*e).toFixed(d).replace('.',','); if(k<1) requestAnimationFrame(f);}
+    requestAnimationFrame(f);
+  });
+  setTimeout(function(){document.querySelectorAll('[data-w]').forEach(function(e){e.style.width=e.dataset.w;});},80);
+  document.querySelectorAll('[data-type]').forEach(function(el){
+    var s=el.dataset.type, i=0; el.textContent=''; el.classList.add('caret');
+    (function tick(){ el.textContent=s.slice(0,++i); if(i<s.length) setTimeout(tick, 28+Math.random()*30); else setTimeout(function(){el.classList.remove('caret');},1200); })();
+  });
+  var hold=document.querySelector('[data-hold]');
+  if(hold){var tm; var rcpt=document.querySelector('[data-receipt]');
+    function start(){ if(hold.classList.contains('is-confirmed')) return; hold.classList.add('is-holding'); tm=setTimeout(function(){hold.classList.remove('is-holding'); hold.classList.add('is-confirmed'); hold.querySelector('span').textContent='Release bloquée ✓'; if(rcpt) rcpt.hidden=false;},1100);}
+    function stop(){ clearTimeout(tm); hold.classList.remove('is-holding'); }
+    hold.addEventListener('pointerdown',start); ['pointerup','pointerleave'].forEach(function(e){hold.addEventListener(e,stop);});
+    hold.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault(); if(!e.repeat) start();}});
+    hold.addEventListener('keyup',stop);
+  }
+  var st=document.querySelector('[data-stream]');
+  if(st){ var msgs=[
+    ['surfaceUpdate','ReleaseChecklist','#checklist'],['dataModelUpdate','/criteria/0/status','"blocking"'],
+    ['dataModelUpdate','/criteria/1/value','"30 %"'],['surfaceUpdate','ActionBar','#decision'],
+    ['beginRendering','root','"canvas"'],['userAction','block_release','by: Benoît'],
+    ['dataModelUpdate','/verdict','"NO_GO_ANDROID"'],['surfaceUpdate','TrendChart','#crash']]; var n=12;
+    setInterval(function(){ var m=msgs[n%msgs.length]; n++; var d=document.createElement('div');
+      d.innerHTML='<span class="n">#'+String(n).padStart(2,'0')+'</span> <span class="k">'+m[0]+'</span> '+m[1]+' '+m[2]; st.appendChild(d); if(st.children.length>6) st.removeChild(st.firstChild);
+      var c=document.querySelector('[data-stream-count]'); if(c) c.textContent=n+' messages'; },1400); }
+})();
+</script>
