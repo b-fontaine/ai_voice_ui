@@ -7,7 +7,7 @@ Future<List<LicenseEntry>> _entries() => LicenseRegistry.licenses.toList();
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('registerAppLicenses enregistre les licences OFL des deux polices, '
+  test('registerAppLicenses enregistre les licences des trois polices, '
       'une seule fois même appelé deux fois', () async {
     registerAppLicenses();
     registerAppLicenses();
@@ -17,5 +17,6 @@ void main() {
         entries.where((LicenseEntry e) => e.packages.contains(package)).length;
     expect(countOf('Space Grotesk'), 1);
     expect(countOf('JetBrains Mono'), 1);
+    expect(countOf('DejaVu Sans'), 1);
   });
 }

@@ -22,7 +22,8 @@ dev_dependencies:
 
 flutter:
   fonts:
-    # Familles nommées « en clair » avec le préfixe de paquet (voir
+    # Familles déclarées sans préfixe dans le pubspec, référencées avec le
+    # préfixe `packages/shared_design_system/` posé par Flutter (voir
     # lib/src/scene_fonts.dart). Fichiers variables (axe wght).
     - family: Space Grotesk
       fonts:
@@ -36,3 +37,4 @@ flutter:
   assets:
     - assets/fonts/OFL-SpaceGrotesk.txt
     - assets/fonts/OFL-JetBrainsMono.txt
+    - assets/fonts/LICENSE-DejaVu.txt

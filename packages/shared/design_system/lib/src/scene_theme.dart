@@ -232,7 +232,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Bordure de 1 px des panneaux et séparateurs (décoratif, jamais de texte).
   final Color line;
 
-  /// Coins HUD et bordure des contrôles (2,30:1 sur `surface-100`, pas 3:1).
+  /// Séparateurs et coins HUD (2,30:1 sur `surface-100`, pas 3:1).
   final Color lineStrong;
 
   /// Graduations d'axe et état « en veille » (grand texte, 24 px et plus).
@@ -273,7 +273,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Indicateur d'acte de la régie (>= 24 px).
   final TextStyle actIndicator;
 
-  /// Valeur, delta, seuil, nom technique, puce de statut (JetBrains Mono 500,
+  /// Valeurs, deltas, seuils, noms d'agents (JetBrains Mono 500,
   /// chiffres tabulaires).
   final TextStyle data;
 

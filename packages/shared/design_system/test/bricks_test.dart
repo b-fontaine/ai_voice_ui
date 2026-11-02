@@ -232,6 +232,34 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
+    testWidgets('animations coupées en plein battement : aucun halo peint', (
+      tester,
+    ) async {
+      Widget chip({required bool disabled}) => _host(
+        SceneMotionScope(
+          disabled: disabled,
+          child: const DsStatusChip(status: SceneStatus.blocking, label: 'Mot'),
+        ),
+      );
+      final Finder dot = find.descendant(
+        of: find.byType(DsStatusChip),
+        matching: find.byWidgetPredicate(
+          (Widget w) =>
+              w is CustomPaint &&
+              w.size == const Size.square(DsStatusChip.dotSize),
+        ),
+      );
+      await tester.pumpWidget(chip(disabled: false));
+      await tester.pump(const Duration(milliseconds: 600));
+      // En plein battement : halo et point.
+      expect(tester.renderObject(dot), paintsExactlyCountTimes(#drawCircle, 2));
+
+      await tester.pumpWidget(chip(disabled: true));
+      await tester.pump();
+      // Coupé : le point seul, sans halo figé à moitié estompé.
+      expect(tester.renderObject(dot), paintsExactlyCountTimes(#drawCircle, 1));
+    });
+
     testWidgets('le point de Bloquant est isolé et hors sémantique', (
       tester,
     ) async {

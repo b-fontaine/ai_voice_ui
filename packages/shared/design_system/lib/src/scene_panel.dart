@@ -117,11 +117,15 @@ class _PanelDetailPainter extends CustomPainter {
 /// donc largeur − padding.horizontal et hauteur − padding.vertical ; la
 /// décoration, largeur − 2 × inset.
 class ScenePanel extends StatelessWidget {
+  /// Retrait par défaut de la décoration (4 px) : source unique pour les mises
+  /// en page qui réservent la place de la décoration.
+  static const double cellInset = SceneSpace.space1;
+
   const ScenePanel({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(SceneSpace.space4),
-    this.inset = 4,
+    this.inset = cellInset,
     this.glow,
   });
 

@@ -502,6 +502,10 @@
         "$type": "duration",
         "$value": "{duration.1200}"
       },
+      "orb": {
+        "$type": "duration",
+        "$value": "{duration.2000}"
+      },
       "curve": {
         "$type": "cubicBezier",
         "$value": [0.2, 0.8, 0.2, 1]

@@ -12,6 +12,7 @@ void main() {
       expect(SceneMotion.link, const Duration(milliseconds: 1200));
       expect(SceneMotion.beacon, const Duration(milliseconds: 1600));
       expect(SceneMotion.skeleton, const Duration(milliseconds: 1200));
+      expect(SceneMotion.orb, const Duration(milliseconds: 2000));
       expect(SceneMotion.floor, const Duration(milliseconds: 60));
     });
 

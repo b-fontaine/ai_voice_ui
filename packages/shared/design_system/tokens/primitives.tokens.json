@@ -632,6 +632,13 @@
         "value": 1600,
         "unit": "ms"
       }
+    },
+    "2000": {
+      "$type": "duration",
+      "$value": {
+        "value": 2000,
+        "unit": "ms"
+      }
     }
   },
   "font": {

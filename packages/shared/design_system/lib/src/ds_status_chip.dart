@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'scene_motion.dart';
+import 'scene_radius.dart';
 import 'scene_status.dart';
 import 'scene_text_style.dart';
 import 'scene_theme.dart';
@@ -93,7 +94,7 @@ class DsStatusChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.statusBackground(status),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: SceneRadius.borderPill,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -147,6 +148,10 @@ class _BeaconDotState extends State<_BeaconDot>
   void didChangeDependencies() {
     super.didChangeDependencies();
     SceneMotionScope.loop(context, _controller, SceneMotion.beacon);
+    // Animations coupées en plein battement : le point seul, sans halo figé.
+    if (SceneMotionScope.of(context).disabled) {
+      _controller.value = _BeaconPainter._expandEnd;
+    }
   }
 
   @override
@@ -186,14 +191,16 @@ class _BeaconPainter extends CustomPainter {
     if (phase < _expandEnd) {
       final double t = phase / _expandEnd;
       final double spread = _spread * t;
-      canvas.drawCircle(
-        center,
-        radius + spread / 2,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(spread, 0.01)
-          ..color = color.withValues(alpha: color.a * (1 - t)),
-      );
+      if (spread >= 0.5) {
+        canvas.drawCircle(
+          center,
+          radius + spread / 2,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = spread
+            ..color = color.withValues(alpha: color.a * (1 - t)),
+        );
+      }
     }
     canvas.drawCircle(center, radius, Paint()..color = color);
   }

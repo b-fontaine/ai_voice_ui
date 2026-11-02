@@ -21,5 +21,5 @@ statique dérivée des fichiers variables (repli prévu au plan si le rendu des
 graisses échouait) serait donc permise sous l'OFL 1.1, sous réserve de
 conserver la licence.
 
-Les licences OFL sont enregistrées dans le `LicenseRegistry` par
+Les licences des trois polices (deux OFL et DejaVu) sont enregistrées dans le `LicenseRegistry` par
 `registerSceneFontLicenses()` (`lib/src/scene_fonts.dart`).

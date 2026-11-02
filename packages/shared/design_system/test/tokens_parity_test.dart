@@ -89,11 +89,18 @@ FontWeight _weight(Object? value) =>
 
 /// Interlettrage DTCG (`em` x taille de police, ou `px`) en pixels logiques,
 /// arrondi à douze chiffres significatifs comme le fait le générateur.
-double _letterSpacing(Object? value) {
+/// [styleFontSize] est la taille du style lue dans le thème : la copie
+/// imbriquée dans le token doit lui être égale.
+double _letterSpacing(Object? value, double styleFontSize) {
   final map = value! as Map<String, Object?>;
   if (map['unit'] == 'px') return (map['value']! as num).toDouble();
   expect(map['unit'], 'em');
-  final computed = (map['value']! as num) * _px(map['fontSize']);
+  expect(
+    _px(map['fontSize']),
+    styleFontSize,
+    reason: 'fontSize imbriqué de l\'interlettrage != taille du style',
+  );
+  final computed = (map['value']! as num) * styleFontSize;
   return double.parse(computed.toStringAsPrecision(12));
 }
 
@@ -216,7 +223,11 @@ Map<String, _Reading> _buildReadings() {
     );
     // Un style sans interlettrage n'a pas de token.
     if (style.letterSpacing != null) {
-      add('$base.letterSpacing', style.letterSpacing, _letterSpacing);
+      add(
+        '$base.letterSpacing',
+        style.letterSpacing,
+        (v) => _letterSpacing(v, style.fontSize!),
+      );
     }
   }
 
@@ -245,6 +256,7 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.link', SceneMotion.link, _ms);
   add('scene.motion.beacon', SceneMotion.beacon, _ms);
   add('scene.motion.skeleton', SceneMotion.skeleton, _ms);
+  add('scene.motion.orb', SceneMotion.orb, _ms);
   add('scene.motion.curve', _cubicOf(SceneMotion.curve), _cubic);
   return readings;
 }

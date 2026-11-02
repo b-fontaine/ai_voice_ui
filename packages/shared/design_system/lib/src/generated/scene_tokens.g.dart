@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: a3c36cfd41b0c393eefa813adb04a070e2d595d4ff73c75f76d3b53866c744b7
+// tokens-sha256: 24dbc3e95b53200f4d3db7e058d3c5eff55330e72b28efe223ccfd05b3ece8b1
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -216,5 +216,6 @@ abstract final class SceneTokens {
   static const Duration motionLink = Duration(milliseconds: 1200);
   static const Duration motionBeacon = Duration(milliseconds: 1600);
   static const Duration motionSkeleton = Duration(milliseconds: 1200);
+  static const Duration motionOrb = Duration(milliseconds: 2000);
   static const Cubic motionCurve = Cubic(0.2, 0.8, 0.2, 1.0);
 }

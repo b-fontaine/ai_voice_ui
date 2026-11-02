@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart' show sceneFontFiles;
 
 /// Dossier des polices du paquet (les tests tournent à la racine du paquet).
 final Directory _fontsDir = Directory('assets/fonts');
@@ -32,6 +33,19 @@ void main() {
       expect(SceneFonts.mono, 'packages/shared_design_system/JetBrains Mono');
       expect(SceneFonts.fallback, 'packages/shared_design_system/DejaVu Sans');
       expect(SceneFonts.fallbackList, <String>[SceneFonts.fallback]);
+    });
+
+    test('les polices des tests (testing_real_fonts) suivent SceneFonts', () {
+      expect(sceneFontFiles.keys.toSet(), <String>{
+        SceneFonts.sans,
+        SceneFonts.mono,
+        SceneFonts.fallback,
+      });
+      final String pubspec = File('pubspec.yaml').readAsStringSync();
+      for (final String file in sceneFontFiles.values) {
+        expect(pubspec, contains('assets/fonts/$file'), reason: file);
+        expect(File('${_fontsDir.path}/$file').existsSync(), isTrue);
+      }
     });
 
     test('le pubspec déclare les trois familles et leurs fichiers', () async {
@@ -70,7 +84,11 @@ void main() {
       registerSceneFontLicenses();
       final List<LicenseEntry> entries = await LicenseRegistry.licenses
           .toList();
-      for (final String name in <String>['Space Grotesk', 'JetBrains Mono']) {
+      for (final String name in <String>[
+        'Space Grotesk',
+        'JetBrains Mono',
+        'DejaVu Sans',
+      ]) {
         final List<LicenseEntry> mine = entries
             .where((LicenseEntry e) => e.packages.contains(name))
             .toList();
@@ -78,8 +96,12 @@ void main() {
         final String text = mine.single.paragraphs
             .map((LicenseParagraph p) => p.text)
             .join('\n');
-        expect(text, contains('SIL OPEN FONT LICENSE'));
-        expect(text, contains(name));
+        if (name == 'DejaVu Sans') {
+          expect(text, contains('Bitstream Vera'));
+        } else {
+          expect(text, contains('SIL OPEN FONT LICENSE'));
+          expect(text, contains(name));
+        }
       }
     });
   });

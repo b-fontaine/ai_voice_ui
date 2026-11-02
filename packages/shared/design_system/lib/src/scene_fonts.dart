@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 
 /// Familles de police embarquées par le paquet (U11).
 ///
-/// Les noms sont écrits **en clair avec le préfixe de paquet** : Flutter
-/// déclare ainsi les familles d'un paquet dans le `FontManifest.json` de l'app.
+/// Les familles sont déclarées sans préfixe dans le pubspec et référencées
+/// avec le préfixe `packages/shared_design_system/` posé par Flutter dans le
+/// `FontManifest.json` de l'app.
 /// Le paramètre `package:` de `TextStyle` est volontairement évité : il
 /// préfixerait aussi `fontFamilyFallback` et le neutraliserait.
 abstract final class SceneFonts {
@@ -34,9 +35,14 @@ const List<(String, String)> _licenseAssets = <(String, String)>[
     'JetBrains Mono',
     'packages/shared_design_system/assets/fonts/OFL-JetBrainsMono.txt',
   ),
+  (
+    'DejaVu Sans',
+    'packages/shared_design_system/assets/fonts/LICENSE-DejaVu.txt',
+  ),
 ];
 
-/// Enregistre les licences OFL des deux polices dans le [LicenseRegistry]
+/// Enregistre les licences des trois polices (OFL pour Space Grotesk et
+/// JetBrains Mono, Bitstream Vera pour DejaVu Sans) dans le [LicenseRegistry]
 /// (page de licences de l'app). Idempotent : un second appel ne fait rien.
 void registerSceneFontLicenses() {
   if (_licensesRegistered) return;

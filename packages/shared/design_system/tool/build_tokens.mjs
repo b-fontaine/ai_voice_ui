@@ -6,6 +6,12 @@
 // *.tokens.json triés par nom, puis ce script, contenu brut concaténé). Le
 // script entre dans le hash : modifier le générateur sans régénérer fait
 // échouer le test.
+//
+// Extension locale (non DTCG) : `$type: "letterSpacing"`, valeur
+// `{value, unit, fontSize}`. `unit` vaut `em` (CSS, converti en px avec
+// `fontSize`, un `{value, unit: "px"}`) ou `px` (recopié). Le `fontSize` copié
+// doit égaler celui du token frère `fontSize` du même style : le générateur
+// refuse toute divergence.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -124,8 +130,12 @@ const dartUses = {
   Cubic: ['package:flutter/animation.dart', 'Cubic'],
 };
 
-/** Retourne [type Dart, expression Dart] d'un token résolu. */
-export function dartValue(token) {
+/**
+ * Retourne [type Dart, expression Dart] d'un token résolu. [allTokens] (tous
+ * les tokens du dictionnaire) sert à confronter un interlettrage en em à la
+ * taille du token frère `fontSize` du même style.
+ */
+export function dartValue(token, allTokens = []) {
   const value = token.$value;
   const where = token.path.join('.');
   switch (token.$type) {
@@ -175,7 +185,18 @@ export function dartValue(token) {
       if (value.fontSize === undefined) {
         throw new Error(`Interlettrage en em : fontSize (px) requis : ${where}`);
       }
-      const computed = Number(value.value) * pxValue(value.fontSize, where);
+      const size = pxValue(value.fontSize, where);
+      const parent = token.path.slice(0, -1).join('.');
+      const sibling = allTokens.find(
+        (other) => other.path.join('.') === `${parent}.fontSize`,
+      );
+      if (sibling !== undefined && pxValue(sibling.$value, where) !== size) {
+        throw new Error(
+          `Interlettrage : fontSize (${size} px) diffère du token fontSize ` +
+            `du style (${pxValue(sibling.$value, where)} px) : ${where}`,
+        );
+      }
+      const computed = Number(value.value) * size;
       // Retire le bruit de calcul flottant (-0,04 x 76 = -3,0400000000000005).
       return ['double', dartDouble(Number(computed.toPrecision(12)), where)];
     }
@@ -220,7 +241,7 @@ StyleDictionary.registerFormat({
     const emitted = dictionary.allTokens
       .filter((token) => token.path[0] === 'scene')
       .map((token) => {
-        const [type, expression] = dartValue(token);
+        const [type, expression] = dartValue(token, dictionary.allTokens);
         const name = dartName(token.path);
         const variations = dartFontVariations(token);
         return [

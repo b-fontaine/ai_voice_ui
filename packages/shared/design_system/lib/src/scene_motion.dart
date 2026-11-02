@@ -33,6 +33,9 @@ abstract final class SceneMotion {
   /// Durée d'un sens de la pulsation du squelette.
   static const Duration skeleton = SceneTokens.motionSkeleton;
 
+  /// Période de la respiration de l'orbe vocal.
+  static const Duration orb = SceneTokens.motionOrb;
+
   /// Courbe commune à toutes les transitions de la scène.
   static const Curve curve = SceneTokens.motionCurve;
 

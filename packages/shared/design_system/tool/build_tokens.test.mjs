@@ -129,6 +129,17 @@ test('interlettrage en em sans taille refusé', () => {
   );
 });
 
+test('interlettrage en em dont fontSize diffère du token frère refusé', () => {
+  const at = (name, $type, $value) => ({ $type, $value, path: ['scene', 'text', 'value', name] });
+  const spacing = at('letterSpacing', 'letterSpacing', {
+    value: -0.04,
+    unit: 'em',
+    fontSize: px(76),
+  });
+  assert.throws(() => dartValue(spacing, [at('fontSize', 'dimension', px(72))]), /fontSize/);
+  assert.equal(dartValue(spacing, [at('fontSize', 'dimension', px(76))])[1], '-3.04');
+});
+
 test('graisse : variation wght jumelle de la valeur FontWeight', () => {
   assert.deepEqual(dartFontVariations(token('fontWeight', 600)), [
     'List<FontVariation>',

@@ -10,9 +10,9 @@ Polices de la scène Genesis Canvas (spec 017, U11), déclarées dans le
 - `DejaVuSans.ttf` : famille `DejaVu Sans`, repli des glyphes absents des deux
   autres (✓ ▲ ▶ ↺ ◆ ★ et l'espace fine insécable U+202F), statique.
 
-Les familles sont nommées **en clair avec le préfixe de paquet** dans le code
-(`SceneFonts.sans`, `.mono`, `.fallback`) : Flutter les déclare ainsi dans le
-`FontManifest.json` de l'app. Aucun téléchargement à la construction.
+Les familles sont déclarées sans préfixe dans le pubspec et référencées avec le
+préfixe `packages/shared_design_system/` posé par Flutter (`SceneFonts.sans`,
+`.mono`, `.fallback`) dans le `FontManifest.json` de l'app. Aucun téléchargement à la construction.
 
 ## Source épinglée
 
