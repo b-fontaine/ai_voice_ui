@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot A (R1, R4, R7, R9, R10a, rayons du paquet de R6)
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/**, testing/real_fonts/**, apps/genesis_canvas/test/app/bootstrap/**
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 21:20
