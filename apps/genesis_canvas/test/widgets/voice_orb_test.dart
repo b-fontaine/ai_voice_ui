@@ -1,9 +1,12 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope;
+    show SceneMotionScope, SceneTheme;
 
 const Key _orbKey = Key('voice-orb');
 
@@ -43,9 +46,9 @@ Iterable<RecordedInvocation> _named(
   Symbol name,
 ) => calls.where((c) => c.invocation.memberName == name);
 
+// Le corps est le dernier disque : en parole, le halo est peint avant lui.
 double _bodyRadius(List<RecordedInvocation> calls) =>
-    _named(calls, #drawCircle).first.invocation.positionalArguments[1]
-        as double;
+    _named(calls, #drawCircle).last.invocation.positionalArguments[1] as double;
 
 double _arcStart(List<RecordedInvocation> calls) =>
     _named(calls, #drawArc).first.invocation.positionalArguments[1] as double;
@@ -418,6 +421,157 @@ void main() {
       // Une période de 2 s devient 1 s : retour au rayon de départ.
       await tester.pump(const Duration(seconds: 1));
       expect(_bodyRadius(_draw(tester)), closeTo(start, 0.01));
+    });
+  });
+
+  group('couleurs du thème de scène (pdr-0083)', () {
+    const SceneTheme base = SceneTheme.dark();
+    const Color plasma = Color(0xFF123456);
+    const Color ghost = Color(0x44654321);
+    const Color ink = Color(0xFFFEDCBA);
+    const Color veil = Color(0x99112233);
+
+    Widget themed(Widget child, {SceneTheme? theme}) => Theme(
+      data: ThemeData(extensions: <SceneTheme>[theme ?? base]),
+      child: child,
+    );
+
+    final SceneTheme custom = base.copyWith(
+      plasma: plasma,
+      plasmaGhost: ghost,
+      textPrimary: ink,
+      orbVeil: veil,
+    );
+
+    Paint bodyPaint(WidgetTester tester) =>
+        _named(
+              _draw(tester),
+              #drawCircle,
+            ).last.invocation.positionalArguments[2]
+            as Paint;
+
+    testWidgets('repos : le corps prend la couleur plasma du thème', (
+      tester,
+    ) async {
+      await tester.pumpWidget(themed(_host(level)));
+      expect(bodyPaint(tester).color.toARGB32(), base.plasma.toARGB32());
+
+      await tester.pumpWidget(themed(_host(level), theme: custom));
+      expect(bodyPaint(tester).color.toARGB32(), plasma.toARGB32());
+    });
+
+    testWidgets("interrompue : l'éclair prend le texte principal du thème", (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(_host(level, interrupted: true), theme: custom),
+      );
+      expect(bodyPaint(tester).color.toARGB32(), ink.toARGB32());
+    });
+
+    testWidgets("réflexion : l'arc prend la couleur plasma du thème", (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(_host(level, thinking: true), theme: custom),
+      );
+      final Paint arc =
+          _named(
+                _draw(tester),
+                #drawArc,
+              ).first.invocation.positionalArguments[4]
+              as Paint;
+      expect(arc.color.toARGB32(), plasma.toARGB32());
+    });
+
+    testWidgets('micro coupé : le voile prend orbVeil', (tester) async {
+      await tester.pumpWidget(
+        themed(_host(level, micMuted: true), theme: custom),
+      );
+      final DecoratedBox box = tester.widget<DecoratedBox>(
+        find.byKey(const Key('mic-muted-veil')),
+      );
+      expect(
+        (box.decoration as BoxDecoration).color?.toARGB32(),
+        veil.toARGB32(),
+      );
+    });
+
+    testWidgets('un thème qui change repeint avec la nouvelle couleur', (
+      tester,
+    ) async {
+      await tester.pumpWidget(themed(_host(level, thinking: true)));
+      await tester.pumpWidget(
+        themed(_host(level, thinking: true), theme: custom),
+      );
+      final calls = _draw(tester);
+      expect(
+        (_named(calls, #drawCircle).first.invocation.positionalArguments[2]
+                as Paint)
+            .color
+            .toARGB32(),
+        plasma.toARGB32(),
+      );
+    });
+
+    testWidgets('parole : halo en dégradé radial, sans flou ni saveLayer', (
+      tester,
+    ) async {
+      await tester.pumpWidget(themed(_host(level), theme: custom));
+      level.value = 0.6;
+      await tester.pump(const Duration(milliseconds: 16));
+
+      final calls = _draw(tester);
+      final circles = _named(calls, #drawCircle).toList();
+      expect(circles, hasLength(2), reason: 'halo puis corps');
+      final Paint halo =
+          circles.first.invocation.positionalArguments[2] as Paint;
+      final Paint body =
+          circles.last.invocation.positionalArguments[2] as Paint;
+      expect(halo.shader, isNotNull, reason: 'dégradé radial');
+      expect(body.shader, isNull);
+      expect(body.color.toARGB32(), plasma.toARGB32());
+      for (final c in circles) {
+        expect(
+          (c.invocation.positionalArguments[2] as Paint).maskFilter,
+          isNull,
+        );
+      }
+      expect(_named(calls, #saveLayer), isEmpty);
+    });
+
+    testWidgets("l'intensité du halo suit le niveau audio", (tester) async {
+      await tester.pumpWidget(themed(_host(level)));
+      level.value = 0.1;
+      await tester.pump(const Duration(milliseconds: 16));
+      double haloScale() =>
+          _named(_draw(tester), #scale).single.invocation.positionalArguments[0]
+              as double;
+      final low = haloScale();
+      level.value = 0.5;
+      await tester.pump(const Duration(milliseconds: 16));
+      final mid = haloScale();
+
+      expect(mid, greaterThan(low));
+      expect(mid, lessThanOrEqualTo(VoiceOrb.diameter / 2));
+    });
+
+    testWidgets('au repos : un seul disque, sans halo', (tester) async {
+      await tester.pumpWidget(themed(_host(level)));
+      final circles = _named(_draw(tester), #drawCircle).toList();
+      expect(circles, hasLength(1));
+      expect(
+        (circles.single.invocation.positionalArguments[2] as Paint).shader,
+        isNull,
+      );
+    });
+
+    test('la source ne contient ni MaskFilter ni ombre floue', () {
+      final String source = File('lib/widgets/top_bar/voice_orb.dart')
+          .readAsStringSync();
+      expect(source, contains('RadialGradient'));
+      expect(source, isNot(contains('MaskFilter')));
+      expect(source, isNot(contains('BoxShadow')));
     });
   });
 }
