@@ -15,6 +15,9 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
     Et la plateforme simulée est Linux
     Et un faux backend local
     Et l'app lancée sur ce backend avec une horloge virtuelle
+  After:
+    Alors l'app est fermée, le faux backend arrêté et la sémantique libérée
+    Et la plateforme simulée est restaurée
 
   @U-01 @NFR-05
   Scénario: U-01 Aucun texte de l'écran ne passe sous 24 px, aux actes 1, 2 et 3
@@ -55,7 +58,9 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
     Étant donné le tableau de la release 3.4 est affiché
     Alors le statut {'ok'} est affiché avec son mot, la couleur {'go'} sur un fond {'go-ghost'} et le glyphe {'✓'}
     Et le statut {'risk'} est affiché avec son mot, la couleur {'warn'} sur un fond {'warn-ghost'} et sans glyphe
-    Et le statut {'blocking'} est affiché avec son mot, la couleur {'nogo'} sur un fond {'nogo-ghost'} et sans glyphe
+    Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
+    Et le serveur émet la liste des crashs jusqu'au temps {'data'}
+    Alors le statut {'blocking'} est affiché avec son mot, la couleur {'nogo'} sur un fond {'nogo-ghost'} et sans glyphe
     Et le glyphe d'un statut n'est pas annoncé par la sémantique
     Et le contraste du mot de chaque statut sur son fond composé est d'au moins {4.5}
 
@@ -65,10 +70,14 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
     Quand le serveur émet la liste des crashs jusqu'au temps {'components'}
     Alors le contenu de la surface {'crashes'} est à peine visible
     Et le contenu de la surface {'crashes'} est décalé de {10} points vers le bas
-    Quand {500} millisecondes s'écoulent
+    Quand {240} millisecondes s'écoulent
+    Alors le contenu de la surface {'crashes'} n'est pas encore pleinement visible
+    Quand {260} millisecondes s'écoulent
     Alors le contenu de la surface {'crashes'} est pleinement visible
     Et le contenu de la surface {'crashes'} n'est plus décalé
-    Et parmi les statuts, seul le statut {'blocking'} bat en continu
+    Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
+    Et le serveur émet la liste des crashs jusqu'au temps {'data'}
+    Alors parmi les statuts, seul le statut {'blocking'} bat en continu
     Quand les animations du système sont désactivées
     Alors aucune animation en boucle n'est active, orbe et squelette compris
 

@@ -42,6 +42,7 @@ import './step/le_panneau_protocole_deplie_ne_depasse_pas_le_haut_du_canevas.dar
 import './step/un_squelette_est_visible_pour_la_surface.dart';
 import './step/le_contenu_de_la_surface_est_a_peine_visible.dart';
 import './step/millisecondes_secoulent.dart';
+import './step/le_contenu_de_la_surface_nest_pas_encore_pleinement_visible.dart';
 import './step/le_contenu_de_la_surface_est_pleinement_visible.dart';
 import './step/aucun_squelette_nest_visible_pour_la_surface.dart';
 import './step/la_ligne_de_la_liste_des_crashs_est_a_peine_visible.dart';
@@ -220,7 +221,12 @@ void main() {
           await unSqueletteEstVisiblePourLaSurface(tester, 'crashes');
           await leServeurEmetLaListeDesCrashsJusquauTemps(tester, 'components');
           await leContenuDeLaSurfaceEstAPeineVisible(tester, 'crashes');
-          await millisecondesSecoulent(tester, 250);
+          await millisecondesSecoulent(tester, 240);
+          await leContenuDeLaSurfaceNestPasEncorePleinementVisible(
+            tester,
+            'crashes',
+          );
+          await millisecondesSecoulent(tester, 260);
           await leContenuDeLaSurfaceEstPleinementVisible(tester, 'crashes');
           await aucunSqueletteNestVisiblePourLaSurface(tester, 'crashes');
           await leServeurEmetLaListeDesCrashsJusquauTemps(tester, 'data');
@@ -270,6 +276,11 @@ void main() {
           );
           await leContenuDeLaSurfaceEstAPeineVisible(tester, 'checklist');
           await millisecondesSecoulent(tester, 120);
+          await leContenuDeLaSurfaceNestPasEncorePleinementVisible(
+            tester,
+            'checklist',
+          );
+          await millisecondesSecoulent(tester, 130);
           await leContenuDeLaSurfaceEstPleinementVisible(tester, 'checklist');
         } finally {
           await bddTearDown(tester);
