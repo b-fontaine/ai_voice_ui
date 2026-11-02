@@ -61,3 +61,4 @@ Part de l'assistant : décision prise sur délégation (pdr-0062), contestable p
 |---|---|---|
 | 2026-10-30 | Acceptée sous la règle permanente pdr-0062 (fiche muette, détails d'interface et de mécanisme ; C7 déjà validée par pdr-0042). | Assistant (délégation du porteur, pdr-0062) |
 | 2026-10-30 | Clôture de 008 : D1 à D9 livrés et vérifiés (`gate --full` vert, capture `app-smoke act2-replay` conforme) ; documents `product/` complétés ; hypothèse de la demande coupée en deux suivie en Q-74. Aucun changement de décision. | Assistant (clôture de 008) |
+| 2026-11-02 | D8 précisée par [pdr-0084](pdr-0084-017-design-system-ui-details-assistant-decided.md) U3 (017, design system du 2026-11-02) : couleurs de séries iOS `ink`, Android `signal`, autre `baseline`, « 3.3 » en pointillés de la couleur de sa plateforme, seuil `nogo` en tirets ; identification par plateforme conservée. Pas de remplacement. | Assistant (délégation du porteur, pdr-0062) |
