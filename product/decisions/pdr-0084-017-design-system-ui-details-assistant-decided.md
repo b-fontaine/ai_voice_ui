@@ -16,7 +16,7 @@ superseded_by: null
 ---
 # PDR-0084 — 017 : détails d'application du design system tranchés par la boucle
 
-> **En bref.** Le porteur a fixé la portée de 017 ([pdr-0083](pdr-0083-design-system-v2-ui-only.md) : UI seulement, texte ≥ 24 px). La fiche est muette sur la façon d'appliquer l'habillage aux décisions d'UI de 007, 008, 009 et 013 ; la boucle tranche, sous [pdr-0062](pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details.md), les onze points U1 à U11 ci-dessous. Le porteur peut contester chaque point.
+> **En bref.** Le porteur a fixé la portée de 017 ([pdr-0083](pdr-0083-design-system-v2-ui-only.md) : UI seulement, texte ≥ 24 px). La fiche est muette sur la façon d'appliquer l'habillage aux décisions d'UI de 007, 008, 009 et 013 ; la boucle tranche, sous [pdr-0062](pdr-0062-standing-rule-sheet-wins-assistant-decides-ui-details.md), les douze points U1 à U12 ci-dessous. Le porteur peut contester chaque point.
 
 Part de l'assistant : décisions de détail d'interface sur délégation permanente ; aucun choix de périmètre, de mise en scène, de budget ni de fournisseur. Le périmètre est celui de pdr-0083.
 
@@ -33,17 +33,18 @@ Part de l'assistant : décisions de détail d'interface sur délégation permane
 2. Adopter aussi les espacements du design system (gouttière 12 px, marge 32 px) : déplace les rectangles prouvés par S-02 et D-01 et réduit la place pour des textes ≥ 24 px.
 
 ## Décision
-- **U1 Géométrie.** Les jetons `space-1…8` et `radius-sm/md/lg/pill` s'ajoutent comme constantes ; ils règlent le dedans des cellules (padding 24 px des panneaux, rayons 16/10/6, pastilles). La gouttière et la marge d'écran de 8 px, le rail de 96 px et les cellules de 013 sont conservés.
+- **U1 Géométrie.** Les jetons `space-1…8` et `radius-sm/md/lg/pill` s'ajoutent comme constantes ; ils règlent le dedans des cellules (rayons 16/10/6, pastilles). Les 8 px de 013 sont l'écart entre zones de la page et la marge d'écran : conservés, comme le rail de 96 px, les cellules et la marge interne actuelle de 16 px (le `space-6` de 24 px n'est pas appliqué aux cellules). Les cellules de la grille étant jointives, le panneau est en retrait de 4 px pour garder 8 px visibles entre deux panneaux ; bordures jointives si D-02 à D-05 l'exigent.
 - **U2 Mouvement.** `appear` 480 ms, `value` 160 ms, translation 10 px, courbe `Cubic(.2, .8, .2, 1)` ; `status` 400 ms, plancher 60 ms et division par la vitesse de rejeu inchangés. Pas de flou : il coûterait un `saveLayer` par surface (NFR-04). Cela remplace les valeurs de [pdr-0075](pdr-0075-013-design-ergonomics-details-assistant-decided.md) D3 (200 ms, 150 ms, 8 px) ; le reste de D3 (un contrôleur par surface, durée nulle sous `disableAnimations`) est inchangé.
 - **U3 Séries du graphique.** Identification par plateforme conservée, avec des couleurs du design system hors statuts et hors `plasma` : iOS `ink`, Android `signal`, autre `baseline` ; « 3.3 » en pointillés de la couleur de sa plateforme ; seuil `nogo` en tirets. Précise [pdr-0064](pdr-0064-008-act2-transform-details-assistant-decided.md) D8.
 - **U4 Barre d'actions.** Apparence du design system (fond `surface-300`, bordure `line-strong` ou `nogo`, texte `ink` ou `nogo`, focus `signal`) ; interaction inchangée ([pdr-0065](pdr-0065-009-act3-interact-details-assistant-decided.md) D7).
 - **U5 Régie, surbrillance, rejeu.** Contour pointillé `signal`, segment d'acte actif sur `plasma-ghost`, curseur de rejeu sur `surface-300` ; apparence seule ([pdr-0063](pdr-0063-007-stage-ui-details-assistant-decided.md)).
 - **U6 Statuts.** Fond `*-ghost`, texte `go`/`warn`/`nogo`, toujours le mot ; `go` ajoute ✓ dans un widget séparé, exclu de `Semantics`.
-- **U7 Battement.** Une seule animation en boucle propre au design system : le statut Bloquant (`gc-beacon`) ; les boucles existantes (liaison de délégation, orbe, cadre de génération) restent ; tout s'arrête sous `disableAnimations`.
-- **U8 Orbe.** Couleurs `plasma` / `plasma-ghost`, halo `glow-plasma` quand l'IA parle ; logique, états et niveau audio inchangés.
-- **U9 Panneaux et fond.** Dégradé `surface-200` → `surface-100`, bordure `line`, coins HUD `line-strong`, rayon 16, ombre `panel`, au-dessus d'un fond `void` à grille de points de 24 px peinte une fois.
+- **U7 Battement.** Parmi les statuts, seul Bloquant bat en continu (`gc-beacon`) ; les boucles existantes (liaison de délégation, orbe, cadre de génération) restent ; **toutes** passent par `SceneMotionScope.loop` et s'arrêtent sous `disableAnimations`, orbe et squelette compris (ils ne le faisaient pas).
+- **U8 Orbe.** Couleurs en rôles du thème (corps `plasma`, éclair `ink`, voile `orbVeil`), halo `glow-plasma` en dégradé radial quand l'IA parle ; logique, états et niveau audio inchangés.
+- **U9 Panneaux et fond.** Dégradé `surface-200` → `surface-100`, bordure `line`, coins HUD `line-strong`, rayon 16, ombre `panel` (la ligne `inset` devient un filet de 1 px peint par le panneau), en **couche décorative statique sœur** du contenu animé (pas une enveloppe : l'ombre ne doit pas être rognée, pas de double cadre avec `CellFrame`, `NoDataCell` et `DsSkeleton`, qui perdent fond et rayon), au-dessus d'un fond `void` à grille de points de 24 px peinte une fois.
 - **U10 Animations facultatives.** `gc-row` et `gc-wipe` seulement s'il reste du temps après les tâches obligatoires ; le compteur `data-count` est exclu (valeurs intermédiaires qui ne sont pas des données).
-- **U11 Polices.** Fichiers variables embarqués dans `packages/shared/design_system/assets/fonts/`, poids par `FontVariation('wght', n)`, chiffres tabulaires pour les données, repli `Noto Sans` puis `DejaVu Sans`, licences OFL enregistrées dans `LicenseRegistry`, aucune dépendance `google_fonts`.
+- **U11 Polices.** Fichiers variables embarqués dans `packages/shared/design_system/assets/fonts/` (empreintes SHA-256 consignées), poids par `FontVariation('wght', n)` et `fontWeight` identiques, chiffres tabulaires pour les données, repli `DejaVu Sans` embarqué, licences OFL enregistrées dans `LicenseRegistry`, aucune dépendance `google_fonts`.
+- **U12 Scénario D-06 de 013.** Les durées de U2 rendent le scénario D-06 (apparition à 250 ms, 120 ms en ×2) rouge tel quel : il est recalé aux durées de U2 (≈ 500 ms ; ≈ 250 ms en ×2) par product-curate, avec renvoi ici. Conséquence de U2, pas un changement de comportement.
 
 ## Raisons
 - La disposition de 013 est prouvée par des tests de rectangles (S-02, D-01 à D-07) et laisse la place à un texte ≥ 24 px ; l'habillage n'a pas à la défaire (pdr-0083 D1).
@@ -72,5 +73,6 @@ Part de l'assistant : décisions de détail d'interface sur délégation permane
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-11-02 | Acceptée à l'étape Définir de 017, sous pdr-0062 (délégation du porteur) ; signalée dans `specs/progress.md` | Assistant (boucle) |
+| 2026-11-02 | Amendée par la revue du plan de 017 (verdict À AMENDER, P1 à P8) : U1 (cellules jointives, retrait de 4 px, marge de 16 px conservée), U7 (boucles sous `SceneMotionScope.loop`, orbe et squelette compris), U8 (rôles d'orbe, halo radial), U9 (couche sœur, filet de 1 px), U11 (empreintes, repli embarqué), U12 (D-06 recalé). | Assistant (délégation du porteur, pdr-0062) |
 
 Pas d'archive brute.
