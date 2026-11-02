@@ -146,10 +146,10 @@ class _TrendView extends StatelessWidget {
                   thresholdPct: trend.thresholdPct,
                   yMaxPct: trend.yMaxPct,
                   thresholdColor: theme.blockingForeground,
-                  axisColor: theme.textSecondary,
+                  axisColor: theme.inkFaint,
                   labelStyle: sceneTextStyle(
                     context,
-                    theme.data.copyWith(color: theme.textSecondary),
+                    theme.data.copyWith(color: theme.inkFaint),
                   ),
                   textScaler: MediaQuery.textScalerOf(context),
                 ),

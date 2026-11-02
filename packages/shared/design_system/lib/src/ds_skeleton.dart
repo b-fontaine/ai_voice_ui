@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'scene_motion.dart';
+import 'scene_radius.dart';
+import 'scene_space.dart';
 import 'scene_theme.dart';
 
 /// État squelette (RG-02) : bloc grisé en attendant les données.
+///
+/// Il ne peint pas le fond du panneau (la décoration du canevas, pdr-0084 U9) :
+/// seul le bloc grisé qui pulse est dessiné, à 16 px du bord de la cellule
+/// (la marge des cellules), avec le rayon `SceneRadius.md`.
 ///
 /// Statique par défaut, pour que `pumpAndSettle` termine. Avec
 /// `animate: true`, une pulsation douce tourne sur la période du jeton
@@ -69,10 +75,13 @@ class _DsSkeletonState extends State<DsSkeleton>
           _controller.value * 0.6,
         )!;
         return SizedBox.expand(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(SceneSpace.space4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: SceneRadius.borderMd,
+              ),
             ),
           ),
         );

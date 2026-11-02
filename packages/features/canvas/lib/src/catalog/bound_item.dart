@@ -143,21 +143,18 @@ T? _safeParse<T extends Object>(T? Function(Object raw) parse, Object raw) {
 }
 
 /// Cellule reconnaissable sans valeur : composants reçus, données pas encore.
+///
+/// Elle ne peint rien : le fond est la décoration de panneau que le canevas
+/// pose sous chaque cellule (pdr-0084 U9).
 class NoDataCell extends StatelessWidget {
   const NoDataCell({super.key});
 
   @override
-  Widget build(BuildContext context) => SizedBox.expand(
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: SceneTheme.of(context).surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => const SizedBox.expand();
 }
 
-/// Fond arrondi commun aux cellules complètes.
+/// Cadre commun aux cellules complètes : leur marge intérieure, sans fond ni
+/// rayon (la décoration de panneau du canevas est le fond, pdr-0084 U9).
 class CellFrame extends StatelessWidget {
   const CellFrame({
     super.key,
@@ -173,13 +170,7 @@ class CellFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox.expand(
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: SceneTheme.of(context).surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(padding: padding, child: child),
-    ),
+    child: Padding(padding: padding, child: child),
   );
 }
 

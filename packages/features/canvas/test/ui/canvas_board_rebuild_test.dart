@@ -87,12 +87,7 @@ void main() {
   }
 
   int paintsOf(WidgetTester tester, String id) {
-    final Finder boundary = find
-        .descendant(
-          of: find.byKey(ValueKey<String>('slot-$id')),
-          matching: find.byType(RepaintBoundary),
-        )
-        .first;
+    final Finder boundary = find.byKey(ValueKey<String>('surface-content-$id'));
     return (tester.renderObject(
       boundary,
     ) as RenderRepaintBoundary).debugSymmetricPaintCount;
@@ -106,12 +101,7 @@ void main() {
     Future<void> Function() action,
   ) async {
     final RenderObject boundary = tester.renderObject(
-      find
-          .descendant(
-            of: find.byKey(ValueKey<String>('slot-$id')),
-            matching: find.byType(RepaintBoundary),
-          )
-          .first,
+      find.byKey(ValueKey<String>('surface-content-$id')),
     );
     final Set<RenderObject> content = <RenderObject>{};
     void collect(RenderObject object) {
@@ -237,25 +227,13 @@ void main() {
   ) async {
     await threeSurfaces(tester);
     final Element before = tester.element(
-      find
-          .descendant(
-            of: find.byKey(const ValueKey<String>('surface-kpi')),
-            matching: find.byType(RepaintBoundary),
-          )
-          .first,
+      find.byKey(const ValueKey<String>('surface-content-kpi')),
     );
 
     await send(tester, <Object>[updateComponents('kpi', 'C')]);
 
     expect(
-      tester.element(
-        find
-            .descendant(
-              of: find.byKey(const ValueKey<String>('surface-kpi')),
-              matching: find.byType(RepaintBoundary),
-            )
-            .first,
-      ),
+      tester.element(find.byKey(const ValueKey<String>('surface-content-kpi'))),
       same(before),
     );
   });

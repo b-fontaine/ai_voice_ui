@@ -4,6 +4,7 @@ import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_canvas/src/ui/action_availability.dart'
     show ActionAvailability;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
@@ -150,6 +151,66 @@ void main() {
         border(button(tester, 'validate_release'), <WidgetState>{}),
         theme.actionDangerBorder,
       );
+    });
+  });
+
+  group('apparence du design system (U4)', () {
+    const Set<WidgetState> idle = <WidgetState>{};
+    const Set<WidgetState> off = <WidgetState>{WidgetState.disabled};
+
+    Color background(OutlinedButton b, Set<WidgetState> states) =>
+        b.style!.backgroundColor!.resolve(states)!;
+
+    testWidgets('fond surface-300 pour les deux tons, actif ou non', (
+      tester,
+    ) async {
+      await pumpBar(tester, onAction: (_, _) {});
+      for (final String id in <String>['block_release', 'validate_release']) {
+        expect(background(button(tester, id), idle), theme.neutralBackground);
+      }
+      await pumpBar(tester);
+      for (final String id in <String>['block_release', 'validate_release']) {
+        expect(background(button(tester, id), off), theme.neutralBackground);
+      }
+    });
+
+    testWidgets('anneau de focus signal, plus épais que la bordure', (
+      tester,
+    ) async {
+      await pumpBar(tester, onAction: (_, _) {});
+      const Set<WidgetState> focused = <WidgetState>{WidgetState.focused};
+      for (final String id in <String>['block_release', 'validate_release']) {
+        final BorderSide side = button(
+          tester,
+          id,
+        ).style!.side!.resolve(focused)!;
+        expect(side.color, theme.accent, reason: id);
+        expect(side.width, greaterThan(2), reason: id);
+      }
+    });
+
+    testWidgets('au clavier, le bouton focalisé peint réellement l\'anneau '
+        'signal sur le fond surface-300', (tester) async {
+      await pumpBar(tester, onAction: (_, _) {});
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final Finder material = find.descendant(
+        of: find.byKey(const Key('action-block_release')),
+        matching: find.byType(Material),
+      );
+      final Material m = tester.widget<Material>(material.first);
+      expect(m.color, theme.neutralBackground);
+      final ShapeBorder? shape = m.shape;
+      expect((shape! as OutlinedBorder).side.color, theme.accent);
+    });
+
+    testWidgets('cibles d\'au moins 48 px', (tester) async {
+      await pumpBar(tester, onAction: (_, _) {});
+      for (final String id in <String>['block_release', 'validate_release']) {
+        final Size size = tester.getSize(find.byKey(Key('action-$id')));
+        expect(size.height, greaterThanOrEqualTo(48), reason: id);
+        expect(size.width, greaterThanOrEqualTo(48), reason: id);
+      }
     });
   });
 

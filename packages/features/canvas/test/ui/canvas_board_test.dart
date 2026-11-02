@@ -517,9 +517,10 @@ void main() {
           ..path(color: color, style: PaintingStyle.stroke)
           ..path(color: color, style: PaintingStyle.stroke),
       );
+      // Le contour suit le panneau, en retrait de 4 px dans la cellule (T18).
       expect(
-        tester.getSize(outline),
-        tester.getSize(find.byKey(const Key('surface-trend'))),
+        tester.getRect(outline),
+        tester.getRect(find.byKey(const Key('surface-trend'))).deflate(4),
       );
     });
 

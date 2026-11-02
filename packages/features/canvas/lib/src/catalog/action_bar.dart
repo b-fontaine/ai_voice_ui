@@ -68,9 +68,15 @@ const String _toneDanger = 'danger';
     ? (foreground: theme.blockingForeground, border: theme.actionDangerBorder)
     : (foreground: theme.textPrimary, border: theme.actionNeutralBorder);
 
+/// Épaisseur de la bordure d'un bouton actif et de l'anneau de focus.
+const double _activeBorder = 2;
+const double _focusBorder = 3;
+
 /// Style d'un bouton selon son `tone` (code fermé `neutral|danger`), jamais
-/// selon son libellé (RG-09). Le texte reste lisible quand le bouton est
-/// inactif ; seule l'épaisseur de la bordure distingue les deux états.
+/// selon son libellé (RG-09) : fond `surface-300`, bordure `ink-muted` ou
+/// `nogo` (pdr-0084 U4, `line-strong` est sous 3:1), anneau de focus `signal`.
+/// Le texte reste lisible quand le bouton est inactif ; seule l'épaisseur de la
+/// bordure distingue les deux états.
 ButtonStyle _style(SceneTheme theme, String tone) {
   final (:Color foreground, border: Color borderColor) = _toneColors(
     theme,
@@ -80,13 +86,18 @@ ButtonStyle _style(SceneTheme theme, String tone) {
     minimumSize: const Size(0, 48),
     foregroundColor: foreground,
     disabledForegroundColor: foreground,
+    backgroundColor: theme.neutralBackground,
+    disabledBackgroundColor: theme.neutralBackground,
   ).copyWith(
-    side: WidgetStateProperty.resolveWith(
-      (Set<WidgetState> states) => BorderSide(
+    side: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+      if (states.contains(WidgetState.focused)) {
+        return BorderSide(color: theme.accent, width: _focusBorder);
+      }
+      return BorderSide(
         color: borderColor,
-        width: states.contains(WidgetState.disabled) ? 1 : 2,
-      ),
-    ),
+        width: states.contains(WidgetState.disabled) ? 1 : _activeBorder,
+      );
+    }),
   );
 }
 
