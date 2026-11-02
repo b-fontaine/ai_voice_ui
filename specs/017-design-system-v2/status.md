@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T19a
+- **Fichiers touchés** (tâche en cours) : apps/genesis_canvas/lib/widgets/{top_bar,stage_bar}/**, apps/genesis_canvas/test/{architecture,widgets}/**, packages/shared/design_system/{lib,test}/** si un rôle manque
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 20:55
