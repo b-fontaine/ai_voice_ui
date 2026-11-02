@@ -40,4 +40,40 @@ void main() {
     expect(source, contains('colorOrbVeil = Color(0xB3424242)'));
     expect(source, contains('colorPanelHighlight = Color(0x08FFFFFF)'));
   });
+
+  test('chaque graisse a sa variation wght jumelle, constante', () {
+    final weights = RegExp(
+      r'static const FontWeight (text\w+)FontWeight = FontWeight\.w(\d+);',
+    ).allMatches(source).toList();
+    expect(weights.length, greaterThanOrEqualTo(9));
+    for (final match in weights) {
+      expect(
+        source,
+        contains(
+          RegExp(
+            'static const List<FontVariation> ${match.group(1)}FontVariations'
+            r' =\s*\[\s*FontVariation\(\s*.wght.,\s*'
+            '${match.group(2)}.0,?\\s*\\),?\\s*\\];',
+          ),
+        ),
+        reason: match.group(1),
+      );
+    }
+  });
+
+  test('les familles de texte et leur repli sont émises par style', () {
+    expect(
+      source,
+      contains(
+        RegExp(
+          r"textValueFontFamily =\s*'packages/shared_design_system/JetBrains Mono'",
+        ),
+      ),
+    );
+    expect(source, contains('textValueLetterSpacing = -3.04'));
+    expect(source, contains('textLabelLetterSpacing = 3.36'));
+    expect(source, contains('textVerdictLetterSpacing = 1.12'));
+    final fallbacks = RegExp(r'FontFamilyFallback =').allMatches(source);
+    expect(fallbacks.length, 9);
+  });
 }

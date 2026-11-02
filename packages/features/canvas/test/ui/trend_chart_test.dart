@@ -24,9 +24,8 @@ final Finder _cell = find.byKey(const Key('surface-trend'));
 void main() {
   setUpAll(loadRealFonts);
 
-  testWidgets('les étiquettes de l\'axe X prennent la police du thème', (
-    tester,
-  ) async {
+  testWidgets('les étiquettes de l\'axe X prennent le style `data` du thème '
+      '(JetBrains Mono, repli DejaVu Sans)', (tester) async {
     final h = _realFontsHarness(size: const Size(624, 302));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
@@ -35,8 +34,11 @@ void main() {
       find.byKey(const Key('trend-chart-paint')),
     );
     final painter = paint.painter! as TrendChartPainter;
-    expect(painter.labelStyle.fontFamily, realFontFamily);
-    expect(painter.labelStyle.fontFamilyFallback, realFontFallback);
+    const theme = SceneTheme.dark();
+    expect(painter.labelStyle.fontFamily, theme.data.fontFamily);
+    expect(painter.labelStyle.fontFamily, SceneFonts.mono);
+    expect(painter.labelStyle.fontFamilyFallback, SceneFonts.fallbackList);
+    expect(painter.labelStyle.fontSize, theme.data.fontSize);
   });
 
   defineCommonStateTests(

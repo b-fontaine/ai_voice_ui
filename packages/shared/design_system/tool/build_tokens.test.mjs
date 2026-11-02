@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { dartValue } from './build_tokens.mjs';
+import { dartFontVariations, dartValue } from './build_tokens.mjs';
 
 const srgb = (hex, components, alpha) => ({
   colorSpace: 'srgb',
@@ -127,4 +127,15 @@ test('interlettrage en em sans taille refusé', () => {
     () => dartValue(token('letterSpacing', { value: 0.1, unit: 'em' })),
     /fontSize/,
   );
+});
+
+test('graisse : variation wght jumelle de la valeur FontWeight', () => {
+  assert.deepEqual(dartFontVariations(token('fontWeight', 600)), [
+    'List<FontVariation>',
+    "[FontVariation('wght', 600.0)]",
+  ]);
+});
+
+test('seule une graisse a une variation wght', () => {
+  assert.equal(dartFontVariations(token('number', 1.3)), null);
 });

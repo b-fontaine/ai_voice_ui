@@ -149,7 +149,7 @@ class _TrendView extends StatelessWidget {
                   axisColor: theme.textSecondary,
                   labelStyle: sceneTextStyle(
                     context,
-                    theme.body.copyWith(color: theme.textSecondary),
+                    theme.data.copyWith(color: theme.textSecondary),
                   ),
                   textScaler: MediaQuery.textScalerOf(context),
                 ),
@@ -212,7 +212,7 @@ class _TrendHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(title, style: theme.label.copyWith(color: theme.textPrimary)),
+        Text(title, style: theme.title),
         Wrap(spacing: _gap, children: legend),
       ],
     );

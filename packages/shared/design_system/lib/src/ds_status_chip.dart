@@ -32,7 +32,7 @@ class DsStatusChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: theme.label.copyWith(color: theme.statusForeground(status)),
+          style: theme.body.copyWith(color: theme.statusForeground(status)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

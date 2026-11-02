@@ -116,7 +116,7 @@ class ReplayBar extends StatelessWidget {
                           style: TextButton.styleFrom(
                             foregroundColor: theme.accent,
                             disabledForegroundColor: theme.neutralForeground,
-                            textStyle: theme.label,
+                            textStyle: theme.button,
                             minimumSize: const Size(0, rowHeight),
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
@@ -208,7 +208,7 @@ class _SpeedChip extends StatelessWidget {
           foregroundColor: theme.background,
           disabledBackgroundColor: theme.neutralBackground,
           disabledForegroundColor: theme.neutralForeground,
-          textStyle: theme.label,
+          textStyle: theme.button,
           minimumSize: minimum,
           padding: padding,
         ),
@@ -221,7 +221,7 @@ class _SpeedChip extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: theme.textPrimary,
         disabledForegroundColor: theme.neutralForeground,
-        textStyle: theme.label,
+        textStyle: theme.button,
         minimumSize: minimum,
         padding: padding,
       ),

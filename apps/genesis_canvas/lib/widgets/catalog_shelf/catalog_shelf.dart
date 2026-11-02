@@ -97,7 +97,7 @@ class _Pill extends StatelessWidget {
     final Color foreground = used
         ? theme.okForeground
         : theme.neutralForeground;
-    final TextStyle style = theme.label.copyWith(color: foreground);
+    final TextStyle style = theme.body.copyWith(color: foreground);
     return Semantics(
       key: Key('shelf-${component.name}'),
       container: true,

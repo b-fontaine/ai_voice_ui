@@ -144,7 +144,7 @@ class _AgentTile extends StatelessWidget {
             Flexible(
               child: Text(
                 agent.agent,
-                style: theme.label.copyWith(color: theme.textPrimary),
+                style: theme.data,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -270,6 +270,10 @@ void main() {
       'value': theme.value,
       'title': theme.title,
       'actIndicator': theme.actIndicator,
+      'data': theme.data,
+      'verdict': theme.verdict,
+      'transcript': theme.transcript,
+      'button': theme.button,
     };
     styles.forEach((name, style) {
       expect(style.fontSize, isNotNull, reason: name);
@@ -352,6 +356,54 @@ void main() {
           Color.lerp(reads[name]!(theme), white, 0.5),
           reason: name,
         );
+      });
+    });
+
+    test('copyWith, lerp, == et hashCode couvrent les styles de texte', () {
+      const probe = TextStyle(fontSize: 40, color: Color(0xFF00FF00));
+      final copies = <String, SceneTheme Function()>{
+        'body': () => theme.copyWith(body: probe),
+        'label': () => theme.copyWith(label: probe),
+        'value': () => theme.copyWith(value: probe),
+        'title': () => theme.copyWith(title: probe),
+        'actIndicator': () => theme.copyWith(actIndicator: probe),
+        'data': () => theme.copyWith(data: probe),
+        'verdict': () => theme.copyWith(verdict: probe),
+        'transcript': () => theme.copyWith(transcript: probe),
+        'button': () => theme.copyWith(button: probe),
+      };
+      final reads = <String, TextStyle Function(SceneTheme)>{
+        'body': (t) => t.body,
+        'label': (t) => t.label,
+        'value': (t) => t.value,
+        'title': (t) => t.title,
+        'actIndicator': (t) => t.actIndicator,
+        'data': (t) => t.data,
+        'verdict': (t) => t.verdict,
+        'transcript': (t) => t.transcript,
+        'button': (t) => t.button,
+      };
+      copies.forEach((name, copy) {
+        final changed = copy();
+        expect(reads[name]!(changed), probe, reason: name);
+        expect(changed, isNot(theme), reason: '$name dans ==');
+        expect(changed.hashCode, isNot(theme.hashCode), reason: name);
+        expect(reads[name]!(theme.lerp(changed, 1)).fontSize, 40, reason: name);
+        expect(
+          reads[name]!(theme.lerp(changed, 0)).fontSize,
+          reads[name]!(theme).fontSize,
+          reason: name,
+        );
+        final TextStyle mid = reads[name]!(theme.lerp(changed, 0.5));
+        expect(
+          mid.fontSize,
+          closeTo((reads[name]!(theme).fontSize! + 40) / 2, 1e-9),
+          reason: name,
+        );
+        // Les autres styles ne bougent pas.
+        for (final other in reads.keys.where((k) => k != name)) {
+          expect(reads[other]!(changed), reads[other]!(theme), reason: other);
+        }
       });
     });
 

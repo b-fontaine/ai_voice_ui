@@ -115,7 +115,7 @@ class _ActionBarView extends StatelessWidget {
           Flexible(
             child: Text(
               bar.title,
-              style: theme.label,
+              style: theme.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -180,7 +180,7 @@ class _ButtonLabel extends StatelessWidget {
             done ? '$label \u00B7 fait \u2713' : label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: theme.body.copyWith(color: color),
+            style: theme.button.copyWith(color: color),
           ),
         ),
       ],

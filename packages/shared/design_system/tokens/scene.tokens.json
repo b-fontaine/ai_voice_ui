@@ -140,6 +140,14 @@
     },
     "text": {
       "body": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.24}"
@@ -147,6 +155,10 @@
         "height": {
           "$type": "number",
           "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.400}"
         },
         "color": {
           "$type": "color",
@@ -154,6 +166,14 @@
         }
       },
       "label": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.24}"
@@ -164,7 +184,18 @@
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.600}"
+          "$value": "{weight.500}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": 0.14,
+            "unit": "em",
+            "fontSize": {
+              "value": 24,
+              "unit": "px"
+            }
+          }
         },
         "color": {
           "$type": "color",
@@ -172,17 +203,36 @@
         }
       },
       "value": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.56}"
+          "$value": "{size.76}"
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.110}"
+          "$value": "{lineHeight.100}"
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.700}"
+          "$value": "{weight.600}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": -0.04,
+            "unit": "em",
+            "fontSize": {
+              "value": 76,
+              "unit": "px"
+            }
+          }
         },
         "color": {
           "$type": "color",
@@ -190,9 +240,17 @@
         }
       },
       "title": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.32}"
+          "$value": "{size.24}"
         },
         "height": {
           "$type": "number",
@@ -200,7 +258,7 @@
         },
         "fontWeight": {
           "$type": "fontWeight",
-          "$value": "{weight.700}"
+          "$value": "{weight.600}"
         },
         "color": {
           "$type": "color",
@@ -208,6 +266,14 @@
         }
       },
       "actIndicator": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
         "fontSize": {
           "$type": "dimension",
           "$value": "{size.28}"
@@ -219,6 +285,121 @@
         "fontWeight": {
           "$type": "fontWeight",
           "$value": "{weight.700}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "data": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.500}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "verdict": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.mono}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.28}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.32over28}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.700}"
+        },
+        "letterSpacing": {
+          "$type": "letterSpacing",
+          "$value": {
+            "value": 0.04,
+            "unit": "em",
+            "fontSize": {
+              "value": 28,
+              "unit": "px"
+            }
+          }
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "transcript": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.500}"
+        },
+        "color": {
+          "$type": "color",
+          "$value": "{color.text.primary}"
+        }
+      },
+      "button": {
+        "fontFamily": {
+          "$type": "fontFamily",
+          "$value": "{font.sans}"
+        },
+        "fontFamilyFallback": {
+          "$type": "fontFamily",
+          "$value": "{font.fallback}"
+        },
+        "fontSize": {
+          "$type": "dimension",
+          "$value": "{size.24}"
+        },
+        "height": {
+          "$type": "number",
+          "$value": "{lineHeight.130}"
+        },
+        "fontWeight": {
+          "$type": "fontWeight",
+          "$value": "{weight.600}"
         },
         "color": {
           "$type": "color",

@@ -117,6 +117,7 @@ function dartString(text) {
 
 const dartUses = {
   Color: ['dart:ui', 'Color'],
+  FontVariation: ['dart:ui', 'FontVariation'],
   FontWeight: ['dart:ui', 'FontWeight'],
   Offset: ['dart:ui', 'Offset'],
   BoxShadow: ['package:flutter/painting.dart', 'BoxShadow'],
@@ -183,6 +184,23 @@ export function dartValue(token) {
   }
 }
 
+/**
+ * Variation de l'axe `wght` jumelle d'un token `fontWeight` (polices
+ * variables, U11) : `fontWeight` et `FontVariation('wght', n)` portent la même
+ * valeur, générées ensemble pour qu'elles ne divergent jamais. Les styles de
+ * `SceneTheme` sont `const` : ils ne peuvent pas appeler `sceneWeight`. Un
+ * test Dart compare ces constantes à `sceneWeight`. `null` hors graisse.
+ */
+export function dartFontVariations(token) {
+  if (token.$type !== 'fontWeight') return null;
+  const [, weight] = dartValue(token);
+  const wght = Number(weight.replace('FontWeight.w', ''));
+  return [
+    'List<FontVariation>',
+    `[FontVariation('wght', ${dartDouble(wght, token.path.join('.'))})]`,
+  ];
+}
+
 /** Directives `import` nécessaires aux types réellement émis. */
 function dartImports(expressions) {
   const byLibrary = new Map();
@@ -203,8 +221,22 @@ StyleDictionary.registerFormat({
       .filter((token) => token.path[0] === 'scene')
       .map((token) => {
         const [type, expression] = dartValue(token);
-        return { type, expression, name: dartName(token.path) };
-      });
+        const name = dartName(token.path);
+        const variations = dartFontVariations(token);
+        return [
+          { type, expression, name },
+          ...(variations === null
+            ? []
+            : [
+                {
+                  type: variations[0],
+                  expression: variations[1],
+                  name: name.replace(/FontWeight$/, 'FontVariations'),
+                },
+              ]),
+        ];
+      })
+      .flat();
     const lines = emitted.map(
       ({ type, expression, name }) => `  static const ${type} ${name} = ${expression};`,
     );

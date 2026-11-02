@@ -81,7 +81,7 @@ class StageBar extends StatelessWidget {
     // les deux contrôles se rendraient dans la police par défaut du moteur et
     // non dans celle du reste de la scène.
     final TextStyle actStyle = sceneTextStyle(context, theme.actIndicator);
-    final TextStyle resetStyle = sceneTextStyle(context, theme.label);
+    final TextStyle resetStyle = sceneTextStyle(context, theme.button);
     return Material(
       type: MaterialType.transparency,
       child: SizedBox(
@@ -231,7 +231,7 @@ class _VoiceControls extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     final ButtonStyle style = _neutralStyle(
       theme,
-      sceneTextStyle(context, theme.label),
+      sceneTextStyle(context, theme.button),
     );
     return Column(
       mainAxisSize: MainAxisSize.min,

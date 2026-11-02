@@ -121,7 +121,7 @@ class _Header extends StatelessWidget {
               context.read<ProtocolFeedBloc>().add(const PanelToggled()),
           style: TextButton.styleFrom(
             foregroundColor: theme.textPrimary,
-            textStyle: theme.label,
+            textStyle: theme.button,
           ),
           child: Text(state.expanded ? 'Replier' : 'Déplier'),
         ),
@@ -186,7 +186,7 @@ class _Entries extends StatelessWidget {
   /// l'entrée en cours. Les hauteurs de ligne viennent du thème de scène.
   static int _capacity(SceneTheme theme, double height) {
     final double header =
-        theme.label.fontSize! * theme.label.height! + _refusedExtra;
+        theme.data.fontSize! * theme.data.height! + _refusedExtra;
     final double json = 2 * theme.body.fontSize! * _jsonLineHeight;
     final double worstEntry =
         _tileTopGap + 2 * _tilePaddingY + 2 * _currentBorder + header + json;
@@ -253,7 +253,7 @@ class _EntryTile extends StatelessWidget {
                       surface == null
                           ? _operationName(entry.operation)
                           : '${_operationName(entry.operation)} · $surface',
-                      style: theme.label.copyWith(color: theme.textPrimary),
+                      style: theme.data,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -281,8 +281,8 @@ class _EntryTile extends StatelessWidget {
               Text(
                 entry.json,
                 key: Key('protocol-json-${entry.index}'),
-                style: body.copyWith(
-                  fontFamily: 'monospace',
+                style: theme.data.copyWith(
+                  color: theme.textSecondary,
                   height: _jsonLineHeight,
                 ),
                 maxLines: 2,
@@ -304,7 +304,7 @@ class _RefusedMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final TextStyle style = theme.label.copyWith(
+    final TextStyle style = theme.data.copyWith(
       color: theme.blockingForeground,
     );
     final String? shownCode = code;

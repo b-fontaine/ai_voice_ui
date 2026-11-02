@@ -235,7 +235,7 @@ Text comparisonLine(
   return Text(
     text,
     key: key,
-    style: theme.body.copyWith(color: theme.textSecondary),
+    style: theme.data.copyWith(color: theme.textSecondary),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,
   );

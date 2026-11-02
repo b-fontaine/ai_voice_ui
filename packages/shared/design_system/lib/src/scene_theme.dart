@@ -7,6 +7,12 @@ import 'scene_status.dart';
 ///
 /// Toutes les tailles de texte sont >= 24 px (RG-09, NFR-05) et les paires
 /// texte/fond respectent le contraste WCAG AA (vérifié par `scene_theme_test`).
+/// Chiffres de largeur fixe des styles de données (`data`, `value`,
+/// `verdict`) : les valeurs qui changent ne font pas trembler la mise en page.
+const List<FontFeature> _tabularFigures = <FontFeature>[
+  FontFeature.tabularFigures(),
+];
+
 @immutable
 class SceneTheme extends ThemeExtension<SceneTheme> {
   const SceneTheme({
@@ -49,6 +55,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.value,
     required this.title,
     required this.actIndicator,
+    required this.data,
+    required this.verdict,
+    required this.transcript,
+    required this.button,
   });
 
   /// Thème sombre de la démo, construit depuis les constantes `SceneTokens`
@@ -89,33 +99,91 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface300 = SceneTokens.colorSurface300,
       orbVeil = SceneTokens.colorOrbVeil,
       body = const TextStyle(
+        fontFamily: SceneTokens.textBodyFontFamily,
+        fontFamilyFallback: SceneTokens.textBodyFontFamilyFallback,
         fontSize: SceneTokens.textBodyFontSize,
         height: SceneTokens.textBodyHeight,
+        fontWeight: SceneTokens.textBodyFontWeight,
+        fontVariations: SceneTokens.textBodyFontVariations,
         color: SceneTokens.textBodyColor,
       ),
       label = const TextStyle(
+        fontFamily: SceneTokens.textLabelFontFamily,
+        fontFamilyFallback: SceneTokens.textLabelFontFamilyFallback,
         fontSize: SceneTokens.textLabelFontSize,
         height: SceneTokens.textLabelHeight,
         fontWeight: SceneTokens.textLabelFontWeight,
+        fontVariations: SceneTokens.textLabelFontVariations,
+        letterSpacing: SceneTokens.textLabelLetterSpacing,
         color: SceneTokens.textLabelColor,
       ),
       value = const TextStyle(
+        fontFamily: SceneTokens.textValueFontFamily,
+        fontFamilyFallback: SceneTokens.textValueFontFamilyFallback,
         fontSize: SceneTokens.textValueFontSize,
         height: SceneTokens.textValueHeight,
         fontWeight: SceneTokens.textValueFontWeight,
+        fontVariations: SceneTokens.textValueFontVariations,
+        letterSpacing: SceneTokens.textValueLetterSpacing,
+        fontFeatures: _tabularFigures,
         color: SceneTokens.textValueColor,
       ),
       title = const TextStyle(
+        fontFamily: SceneTokens.textTitleFontFamily,
+        fontFamilyFallback: SceneTokens.textTitleFontFamilyFallback,
         fontSize: SceneTokens.textTitleFontSize,
         height: SceneTokens.textTitleHeight,
         fontWeight: SceneTokens.textTitleFontWeight,
+        fontVariations: SceneTokens.textTitleFontVariations,
         color: SceneTokens.textTitleColor,
       ),
       actIndicator = const TextStyle(
+        fontFamily: SceneTokens.textActIndicatorFontFamily,
+        fontFamilyFallback: SceneTokens.textActIndicatorFontFamilyFallback,
         fontSize: SceneTokens.textActIndicatorFontSize,
         height: SceneTokens.textActIndicatorHeight,
         fontWeight: SceneTokens.textActIndicatorFontWeight,
+        fontVariations: SceneTokens.textActIndicatorFontVariations,
         color: SceneTokens.textActIndicatorColor,
+      ),
+      data = const TextStyle(
+        fontFamily: SceneTokens.textDataFontFamily,
+        fontFamilyFallback: SceneTokens.textDataFontFamilyFallback,
+        fontSize: SceneTokens.textDataFontSize,
+        height: SceneTokens.textDataHeight,
+        fontWeight: SceneTokens.textDataFontWeight,
+        fontVariations: SceneTokens.textDataFontVariations,
+        fontFeatures: _tabularFigures,
+        color: SceneTokens.textDataColor,
+      ),
+      verdict = const TextStyle(
+        fontFamily: SceneTokens.textVerdictFontFamily,
+        fontFamilyFallback: SceneTokens.textVerdictFontFamilyFallback,
+        fontSize: SceneTokens.textVerdictFontSize,
+        height: SceneTokens.textVerdictHeight,
+        fontWeight: SceneTokens.textVerdictFontWeight,
+        fontVariations: SceneTokens.textVerdictFontVariations,
+        letterSpacing: SceneTokens.textVerdictLetterSpacing,
+        fontFeatures: _tabularFigures,
+        color: SceneTokens.textVerdictColor,
+      ),
+      transcript = const TextStyle(
+        fontFamily: SceneTokens.textTranscriptFontFamily,
+        fontFamilyFallback: SceneTokens.textTranscriptFontFamilyFallback,
+        fontSize: SceneTokens.textTranscriptFontSize,
+        height: SceneTokens.textTranscriptHeight,
+        fontWeight: SceneTokens.textTranscriptFontWeight,
+        fontVariations: SceneTokens.textTranscriptFontVariations,
+        color: SceneTokens.textTranscriptColor,
+      ),
+      button = const TextStyle(
+        fontFamily: SceneTokens.textButtonFontFamily,
+        fontFamilyFallback: SceneTokens.textButtonFontFamilyFallback,
+        fontSize: SceneTokens.textButtonFontSize,
+        height: SceneTokens.textButtonHeight,
+        fontWeight: SceneTokens.textButtonFontWeight,
+        fontVariations: SceneTokens.textButtonFontVariations,
+        color: SceneTokens.textButtonColor,
       );
 
   final Color background;
@@ -188,15 +256,35 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Voile de l'orbe vocal.
   final Color orbVeil;
 
+  /// Texte courant (Space Grotesk 400).
   final TextStyle body;
+
+  /// Étiquette HUD en capitales (« AGENTS A2A », « CATALOGUE ») : JetBrains
+  /// Mono 500, interlettrage 0,14 em, `textSecondary`. Réservé à ces
+  /// étiquettes ; les valeurs, noms et puces prennent [data] ou [body].
   final TextStyle label;
 
-  /// Grande valeur d'indicateur.
+  /// Grande valeur d'indicateur (`kpi-xl`, JetBrains Mono 600, tabulaire).
   final TextStyle value;
+
+  /// Titre de panneau (Space Grotesk 600).
   final TextStyle title;
 
   /// Indicateur d'acte de la régie (>= 24 px).
   final TextStyle actIndicator;
+
+  /// Valeur, delta, seuil, nom technique, puce de statut (JetBrains Mono 500,
+  /// chiffres tabulaires).
+  final TextStyle data;
+
+  /// Verdict (JetBrains Mono 700, tabulaire).
+  final TextStyle verdict;
+
+  /// Transcription vocale (Space Grotesk 500).
+  final TextStyle transcript;
+
+  /// Libellé de bouton (Space Grotesk 600).
+  final TextStyle button;
 
   /// Lit l'extension dans le thème courant ; repli sur le thème sombre.
   static SceneTheme of(BuildContext context) =>
@@ -259,6 +347,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     TextStyle? value,
     TextStyle? title,
     TextStyle? actIndicator,
+    TextStyle? data,
+    TextStyle? verdict,
+    TextStyle? transcript,
+    TextStyle? button,
   }) {
     return SceneTheme(
       background: background ?? this.background,
@@ -300,6 +392,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       value: value ?? this.value,
       title: title ?? this.title,
       actIndicator: actIndicator ?? this.actIndicator,
+      data: data ?? this.data,
+      verdict: verdict ?? this.verdict,
+      transcript: transcript ?? this.transcript,
+      button: button ?? this.button,
     );
   }
 
@@ -348,6 +444,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       value: s(value, other.value),
       title: s(title, other.title),
       actIndicator: s(actIndicator, other.actIndicator),
+      data: s(data, other.data),
+      verdict: s(verdict, other.verdict),
+      transcript: s(transcript, other.transcript),
+      button: s(button, other.button),
     );
   }
 
@@ -392,7 +492,11 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.label == label &&
       other.value == value &&
       other.title == title &&
-      other.actIndicator == actIndicator;
+      other.actIndicator == actIndicator &&
+      other.data == data &&
+      other.verdict == verdict &&
+      other.transcript == transcript &&
+      other.button == button;
 
   @override
   int get hashCode => Object.hashAll(<Object>[
@@ -435,5 +539,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     value,
     title,
     actIndicator,
+    data,
+    verdict,
+    transcript,
+    button,
   ]);
 }

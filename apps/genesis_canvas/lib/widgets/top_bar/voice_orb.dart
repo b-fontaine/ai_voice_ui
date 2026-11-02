@@ -247,7 +247,7 @@ class _MicMutedLabel extends StatelessWidget {
     maxLines: 1,
     softWrap: false,
     textAlign: TextAlign.center,
-    style: SceneTheme.of(context).label,
+    style: SceneTheme.of(context).body,
   );
 }
 

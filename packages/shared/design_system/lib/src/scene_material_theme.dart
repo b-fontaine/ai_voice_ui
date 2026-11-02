@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'scene_fonts.dart';
 import 'scene_theme.dart';
+import 'scene_weight.dart';
 
 /// Taille minimale de texte de la scène (px logiques, RG-09).
 const double _minFontSize = 24;
@@ -10,6 +12,12 @@ const double _minFontSize = 24;
 /// (NFR-05 : lisible à distance), pour que même un `Text` sans style explicite
 /// respecte la taille minimale. Les styles de Material sans taille propre
 /// (avant localisation) prennent ce plancher.
+///
+/// Famille par défaut de tout le `textTheme` : Space Grotesk, avec le repli
+/// DejaVu Sans pour les glyphes absents (✓ ▲ ▶ ↺ ◆ ★). Les graisses passent
+/// par [sceneWeight] (`fontWeight` et axe `wght` ensemble). Les boutons
+/// Material (texte, rempli, contour, élevé) prennent le style `button` du
+/// [SceneTheme].
 ThemeData sceneMaterialTheme() {
   const scene = SceneTheme.dark();
   final base = ThemeData(
@@ -19,6 +27,18 @@ ThemeData sceneMaterialTheme() {
   return base.copyWith(
     scaffoldBackgroundColor: scene.background,
     textTheme: _withMinimumSize(base.textTheme, _minFontSize),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(textStyle: scene.button),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(textStyle: scene.button),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(textStyle: scene.button),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(textStyle: scene.button),
+    ),
   );
 }
 
@@ -26,9 +46,15 @@ TextTheme _withMinimumSize(TextTheme theme, double minimum) {
   TextStyle? floor(TextStyle? style) {
     if (style == null) return null;
     final size = style.fontSize;
-    return size == null || size < minimum
+    final sized = size == null || size < minimum
         ? style.copyWith(fontSize: minimum)
         : style;
+    return sized
+        .copyWith(
+          fontFamily: SceneFonts.sans,
+          fontFamilyFallback: SceneFonts.fallbackList,
+        )
+        .withSceneWeight((style.fontWeight ?? FontWeight.w400).value);
   }
 
   return theme.copyWith(

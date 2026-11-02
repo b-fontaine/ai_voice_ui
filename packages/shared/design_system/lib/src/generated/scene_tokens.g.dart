@@ -1,8 +1,8 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 1de009de94dccf0109b75a80e551cf12dc4372a588de0174421073b329acbbcd
+// tokens-sha256: 741964229768d909b406c02ec990d08c4acc74541cd6e0e956c87d660f9d28e8
 
-import 'dart:ui' show Color, FontWeight, Offset;
+import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
 import 'package:flutter/painting.dart' show BoxShadow;
 
@@ -42,25 +42,117 @@ abstract final class SceneTokens {
   static const Color colorSurface200 = Color(0xFF101731);
   static const Color colorSurface300 = Color(0xFF18213F);
   static const Color colorOrbVeil = Color(0xB3424242);
+  static const String textBodyFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> textBodyFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
   static const double textBodyFontSize = 24.0;
   static const double textBodyHeight = 1.3;
+  static const FontWeight textBodyFontWeight = FontWeight.w400;
+  static const List<FontVariation> textBodyFontVariations = [
+    FontVariation('wght', 400.0),
+  ];
   static const Color textBodyColor = Color(0xFFEAF0FF);
+  static const String textLabelFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> textLabelFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
   static const double textLabelFontSize = 24.0;
   static const double textLabelHeight = 1.3;
-  static const FontWeight textLabelFontWeight = FontWeight.w600;
+  static const FontWeight textLabelFontWeight = FontWeight.w500;
+  static const List<FontVariation> textLabelFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const double textLabelLetterSpacing = 3.36;
   static const Color textLabelColor = Color(0xFF93A1CC);
-  static const double textValueFontSize = 56.0;
-  static const double textValueHeight = 1.1;
-  static const FontWeight textValueFontWeight = FontWeight.w700;
+  static const String textValueFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> textValueFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textValueFontSize = 76.0;
+  static const double textValueHeight = 1.0;
+  static const FontWeight textValueFontWeight = FontWeight.w600;
+  static const List<FontVariation> textValueFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const double textValueLetterSpacing = -3.04;
   static const Color textValueColor = Color(0xFFEAF0FF);
-  static const double textTitleFontSize = 32.0;
+  static const String textTitleFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> textTitleFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textTitleFontSize = 24.0;
   static const double textTitleHeight = 1.2;
-  static const FontWeight textTitleFontWeight = FontWeight.w700;
+  static const FontWeight textTitleFontWeight = FontWeight.w600;
+  static const List<FontVariation> textTitleFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
   static const Color textTitleColor = Color(0xFFEAF0FF);
+  static const String textActIndicatorFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> textActIndicatorFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
   static const double textActIndicatorFontSize = 28.0;
   static const double textActIndicatorHeight = 1.2;
   static const FontWeight textActIndicatorFontWeight = FontWeight.w700;
+  static const List<FontVariation> textActIndicatorFontVariations = [
+    FontVariation('wght', 700.0),
+  ];
   static const Color textActIndicatorColor = Color(0xFFEAF0FF);
+  static const String textDataFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> textDataFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textDataFontSize = 24.0;
+  static const double textDataHeight = 1.3;
+  static const FontWeight textDataFontWeight = FontWeight.w500;
+  static const List<FontVariation> textDataFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const Color textDataColor = Color(0xFFEAF0FF);
+  static const String textVerdictFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> textVerdictFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textVerdictFontSize = 28.0;
+  static const double textVerdictHeight = 1.1428571428571428;
+  static const FontWeight textVerdictFontWeight = FontWeight.w700;
+  static const List<FontVariation> textVerdictFontVariations = [
+    FontVariation('wght', 700.0),
+  ];
+  static const double textVerdictLetterSpacing = 1.12;
+  static const Color textVerdictColor = Color(0xFFEAF0FF);
+  static const String textTranscriptFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> textTranscriptFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textTranscriptFontSize = 24.0;
+  static const double textTranscriptHeight = 1.3;
+  static const FontWeight textTranscriptFontWeight = FontWeight.w500;
+  static const List<FontVariation> textTranscriptFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const Color textTranscriptColor = Color(0xFFEAF0FF);
+  static const String textButtonFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> textButtonFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double textButtonFontSize = 24.0;
+  static const double textButtonHeight = 1.3;
+  static const FontWeight textButtonFontWeight = FontWeight.w600;
+  static const List<FontVariation> textButtonFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const Color textButtonColor = Color(0xFFEAF0FF);
   static const double space1 = 4.0;
   static const double space2 = 8.0;
   static const double space3 = 12.0;

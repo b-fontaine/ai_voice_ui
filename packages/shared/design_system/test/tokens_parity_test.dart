@@ -76,6 +76,30 @@ Duration _ms(Object? value) {
 FontWeight _weight(Object? value) =>
     FontWeight.values.firstWhere((w) => w.value == (value! as num).toInt());
 
+/// Interlettrage DTCG (`em` x taille de police, ou `px`) en pixels logiques,
+/// arrondi à douze chiffres significatifs comme le fait le générateur.
+double _letterSpacing(Object? value) {
+  final map = value! as Map<String, Object?>;
+  if (map['unit'] == 'px') return (map['value']! as num).toDouble();
+  expect(map['unit'], 'em');
+  final computed = (map['value']! as num) * _px(map['fontSize']);
+  return double.parse(computed.toStringAsPrecision(12));
+}
+
+/// Les styles de texte du thème, par nom de token `scene.text.<nom>`.
+const SceneTheme _themeForText = SceneTheme.dark();
+final Map<String, TextStyle> _textStyles = <String, TextStyle>{
+  'body': _themeForText.body,
+  'label': _themeForText.label,
+  'value': _themeForText.value,
+  'title': _themeForText.title,
+  'actIndicator': _themeForText.actIndicator,
+  'data': _themeForText.data,
+  'verdict': _themeForText.verdict,
+  'transcript': _themeForText.transcript,
+  'button': _themeForText.button,
+};
+
 /// Rayon de flou de `BoxShadow` pour un flou CSS [cssBlur] : le flou CSS `B`
 /// donne un écart type de `B / 2`, et `blurRadius = r` donne
 /// `sigma = 0,57735 r + 0,5` (`Shadow.convertRadiusToSigma`).
@@ -116,8 +140,13 @@ const SceneTheme _theme = SceneTheme.dark();
 
 Map<String, _Reading> _buildReadings() {
   final readings = <String, _Reading>{};
-  void add(String path, Object? actual, Object? Function(Object?) parse) {
-    readings[path] = (actual: actual, parse: parse);
+  void add(
+    String path,
+    Object? actual,
+    Object? Function(Object?) parse, {
+    String suffix = '',
+  }) {
+    readings['$path$suffix'] = (actual: actual, parse: parse);
   }
 
   final colors = <String, Color>{
@@ -158,23 +187,27 @@ Map<String, _Reading> _buildReadings() {
   };
   colors.forEach((name, color) => add('scene.color.$name', color, _color));
 
-  final styles = <String, TextStyle>{
-    'body': _theme.body,
-    'label': _theme.label,
-    'value': _theme.value,
-    'title': _theme.title,
-    'actIndicator': _theme.actIndicator,
-  };
-  styles.forEach((name, style) {
-    final base = 'scene.text.$name';
+  for (final entry in _textStyles.entries) {
+    final style = entry.value;
+    final base = 'scene.text.${entry.key}';
+    add('$base.fontFamily', style.fontFamily, (v) => v);
+    add('$base.fontFamilyFallback', style.fontFamilyFallback, (v) => v);
     add('$base.fontSize', style.fontSize, _px);
     add('$base.height', style.height, (v) => (v! as num).toDouble());
     add('$base.color', style.color, _color);
-    // Une graisse non définie par le style n'a pas de token (voir le test).
-    if (style.fontWeight != null) {
-      add('$base.fontWeight', style.fontWeight, _weight);
+    add('$base.fontWeight', style.fontWeight, _weight);
+    // La variation wght jumelle (polices variables) porte la même valeur.
+    add(
+      '$base.fontWeight',
+      style.fontVariations,
+      (v) => sceneWeight((v! as num).toInt()).variations,
+      suffix: '#variation',
+    );
+    // Un style sans interlettrage n'a pas de token.
+    if (style.letterSpacing != null) {
+      add('$base.letterSpacing', style.letterSpacing, _letterSpacing);
     }
-  });
+  }
 
   add('scene.space.1', SceneSpace.space1, _px);
   add('scene.space.2', SceneSpace.space2, _px);
@@ -209,10 +242,11 @@ void main() {
     final group = _sceneReadings.entries.where((e) => e.key.startsWith(prefix));
     expect(group, isNotEmpty, reason: prefix);
     for (final entry in group) {
-      expect(tokens, contains(entry.key));
+      final tokenPath = entry.key.split('#').first;
+      expect(tokens, contains(tokenPath));
       expect(
         entry.value.actual,
-        entry.value.parse(tokens[entry.key]),
+        entry.value.parse(tokens[tokenPath]),
         reason: entry.key,
       );
     }
@@ -222,22 +256,17 @@ void main() {
     expectGroup('scene.color.');
   });
 
-  test('typographie : taille, hauteur, graisse et couleur de chaque style', () {
+  test('typographie : famille, taille, hauteur, graisse, interlettrage', () {
     expectGroup('scene.text.');
-    for (final entry in <String, TextStyle>{
-      'body': _theme.body,
-      'label': _theme.label,
-      'value': _theme.value,
-      'title': _theme.title,
-      'actIndicator': _theme.actIndicator,
-    }.entries) {
-      if (entry.value.fontWeight == null) {
-        expect(
-          tokens,
-          isNot(contains('scene.text.${entry.key}.fontWeight')),
-          reason: entry.key,
-        );
-      }
+    // Chaque champ d'un style a son token, sans token orphelin : un style sans
+    // interlettrage n'en a pas.
+    for (final entry in _textStyles.entries) {
+      final path = 'scene.text.${entry.key}.letterSpacing';
+      expect(
+        tokens.containsKey(path),
+        entry.value.letterSpacing != null,
+        reason: path,
+      );
     }
   });
 
@@ -294,6 +323,12 @@ void main() {
   test('aucun token de scène sans contrepartie dans le code', () {
     final scene = tokens.keys.where((p) => p.startsWith('scene.')).toSet();
     expect(scene.difference(_sceneReadings.keys.toSet()), isEmpty);
-    expect(_sceneReadings.keys.toSet().difference(scene), isEmpty);
+    expect(
+      _sceneReadings.keys
+          .map((k) => k.split('#').first)
+          .toSet()
+          .difference(scene),
+      isEmpty,
+    );
   });
 }
