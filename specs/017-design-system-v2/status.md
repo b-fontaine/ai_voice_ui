@@ -1,9 +1,9 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T10
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/{assets/fonts/**,lib/**,test/**,pubspec.yaml}, testing/real_fonts/**, apps/genesis_canvas/test/acceptance/step/** (câblage des licences)
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-02 19:00
