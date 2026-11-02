@@ -5,7 +5,7 @@ tags: [typography, text-theme, material-3, google-fonts, design-system]
 status: verified
 updated: 2026-10-27
 sources: [https://api.flutter.dev/flutter/material/TextTheme-class.html, https://docs.flutter.dev/release/breaking-changes/3-19-deprecations, https://raw.githubusercontent.com/material-components/material-web/main/tokens/versions/v0_192/_md-sys-typescale.scss, https://m3.material.io/styles/typography/type-scale-tokens, https://m3.material.io/styles/typography/applying-type, https://m3.material.io/foundations/layout/breakpoints/overview, https://pub.dev/packages/google_fonts]
-links: [ds-tokens-theme-extension, ds-spacing-shape-elevation, ds-material-ui-decoupling, ds-tokens-dtcg-format]
+links: [ds-variable-fonts-embedded, ds-tokens-theme-extension, ds-spacing-shape-elevation, ds-material-ui-decoupling, ds-tokens-dtcg-format]
 ---
 # L'échelle de types M3 est une table fixe de 15 rôles : on change les polices, pas les tailles
 
