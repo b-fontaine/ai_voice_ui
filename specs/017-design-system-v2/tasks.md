@@ -25,5 +25,5 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## Clôture
 - [x] T90 `tools/loop/gate.sh --full` vert
-- [ ] T91 Revue architect-reviewer + refactorisations
-- [ ] T92 `gate.sh --full` vert après refactorisation ; vérification (capture `app-smoke` 1920×1080 des scénarios d'acte comparée aux `preview.html`) ; `progress.md`, `product/` (design-system.md, pdr-0084 « livrée », Q-91), `knowledge/` si fait nouveau ; fusion et `publish.sh`
+- [x] T91 Revue architect-reviewer + refactorisations
+- [x] T92 `gate.sh --full` vert après refactorisation ; vérification (capture `app-smoke` 1920×1080 des scénarios d'acte comparée aux `preview.html`) ; `progress.md`, `product/` (design-system.md, pdr-0084 « livrée », Q-91), `knowledge/` si fait nouveau ; fusion et `publish.sh`
