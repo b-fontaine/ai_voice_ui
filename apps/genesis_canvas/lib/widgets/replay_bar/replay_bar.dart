@@ -20,6 +20,10 @@ import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
 ///
+/// Marges et écarts sont serrés pour que le bouton Lecture reste à gauche du
+/// panneau du protocole déplié (qui recouvre la droite de la zone), même avec
+/// l'étiquette « REJEU » en mono 24 px interlettré.
+///
 /// - rangée 1 : libellé, Lecture/Pause (un seul bouton), Recommencer, curseur
 ///   de position, « Direct » ;
 /// - rangée 2 : les cinq vitesses.
@@ -55,7 +59,7 @@ class ReplayBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: BlocBuilder<ReplayBloc, ReplayState>(
             builder: (BuildContext context, ReplayState state) {
               final bool live = state is ReplayLive;
@@ -79,7 +83,6 @@ class ReplayBar extends StatelessWidget {
                           style: theme.label.copyWith(color: theme.accent),
                           maxLines: 1,
                         ),
-                        const SizedBox(width: 4),
                         _PlayButton(
                           playing: playing,
                           onPressed: !canPlay
