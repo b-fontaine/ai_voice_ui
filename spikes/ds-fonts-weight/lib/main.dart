@@ -5,15 +5,21 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-/// Spike jetable (017 T10) : échelle de graisses 400/500/600/700 en trois
-/// variantes (wght + fontWeight, fontWeight seul, wght seul) pour les deux
-/// familles. Écrit une capture PNG dans $SPIKE_PNG, imprime l'encre mesurée de
-/// chaque ligne (moteur réel), puis quitte.
+/// Spike jetable (017, R2 du lot M) : mesure de l'encre dans le vrai moteur
+/// pour les quatre variantes de pose de la graisse, par famille et par graisse.
+///  a = wght seul (fontWeight w400) ; b = wght + FontWeight(n) (sceneWeight) ;
+///  c = FontWeight(n) seul ; d = FontWeight standard (w400..w700) seul.
+/// Imprime des lignes `INK famille variante n valeur`, écrit une capture PNG
+/// dans $SPIKE_PNG, puis quitte.
 void main() => runApp(const _Spike());
 
-const String _sample = '99,43 % NO-GO ✓▲▶↺◆ éàç';
+const String _sample = '99,43 % NO-GO ANDROID';
+const List<int> _weights = <int>[400, 500, 600, 700];
+const List<String> _variants = <String>['a', 'b', 'c', 'd'];
 final GlobalKey _page = GlobalKey();
 final Map<String, GlobalKey> _lines = <String, GlobalKey>{};
+
+FontWeight _standard(int n) => FontWeight.values[n ~/ 100 - 1];
 
 class _Spike extends StatefulWidget {
   const _Spike();
@@ -51,20 +57,21 @@ class _SpikeState extends State<_Spike> {
     });
   }
 
-  Widget _line(
-    String family,
-    String tag,
-    int w,
-    FontWeight? fw,
-    bool variation,
-  ) {
-    final GlobalKey key = _lines['$family|$tag|$w'] = GlobalKey();
+  Widget _line(String family, String variant, int w) {
+    final String id = family.replaceAll(' ', '');
+    final GlobalKey key = _lines['$id $variant $w'] = GlobalKey();
+    final FontWeight? fw = switch (variant) {
+      'a' => FontWeight.w400,
+      'b' || 'c' => FontWeight(w),
+      _ => _standard(w),
+    };
+    final bool variation = variant == 'a' || variant == 'b';
     return Row(
       children: <Widget>[
         SizedBox(
-          width: 130,
+          width: 70,
           child: Text(
-            '$w $tag',
+            '$variant $w',
             style: const TextStyle(color: Colors.amber, fontSize: 16),
           ),
         ),
@@ -72,8 +79,8 @@ class _SpikeState extends State<_Spike> {
           key: key,
           child: Container(
             color: Colors.black,
-            height: 36,
-            width: 420,
+            height: 56,
+            width: 560,
             alignment: Alignment.centerLeft,
             child: Text(
               _sample,
@@ -81,7 +88,7 @@ class _SpikeState extends State<_Spike> {
               style: TextStyle(
                 fontFamily: family,
                 fontFamilyFallback: const <String>['DejaVu Sans'],
-                fontSize: 24,
+                fontSize: 40,
                 color: Colors.white,
                 fontWeight: fw,
                 fontVariations: variation
@@ -96,21 +103,15 @@ class _SpikeState extends State<_Spike> {
   }
 
   Widget _column(String family) {
-    final List<Widget> rows = <Widget>[
-      Text(family, style: const TextStyle(color: Colors.amber, fontSize: 24)),
-      for (final int w in <int>[400, 500, 600, 700])
-        _line(family, 'var+fw', w, FontWeight(w), true),
-      const SizedBox(height: 8),
-      for (final int w in <int>[400, 500, 600, 700])
-        _line(family, 'fw', w, FontWeight(w), false),
-      const SizedBox(height: 8),
-      for (final int w in <int>[400, 700]) _line(family, 'var', w, null, true),
-    ];
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: rows,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(family, style: const TextStyle(color: Colors.amber, fontSize: 24)),
+        for (final String v in _variants) ...<Widget>[
+          for (final int w in _weights) _line(family, v, w),
+          const SizedBox(height: 8),
+        ],
+      ],
     );
   }
 
@@ -125,13 +126,17 @@ class _SpikeState extends State<_Spike> {
           child: Container(
             color: const Color(0xFF0B0F14),
             padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _column('Space Grotesk'),
-                const SizedBox(width: 16),
-                _column('JetBrains Mono'),
-              ],
+            child: FittedBox(
+              fit: BoxFit.contain,
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _column('Space Grotesk'),
+                  const SizedBox(width: 16),
+                  _column('JetBrains Mono'),
+                ],
+              ),
             ),
           ),
         ),

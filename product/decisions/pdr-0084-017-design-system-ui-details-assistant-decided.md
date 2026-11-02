@@ -77,6 +77,7 @@ Part de l'assistant : décisions de détail d'interface sur délégation permane
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-11-02 | Acceptée à l'étape Définir de 017, sous pdr-0062 (délégation du porteur) ; signalée dans `specs/progress.md` | Assistant (boucle) |
+| 2026-11-02 | U11 reconfirmée après mesure sous le vrai moteur (Impeller sous Xvfb, 3 lancements, bruit nul) : `FontVariation('wght', n)` + `FontWeight(n)` (`sceneWeight`) donne la même encre que l'axe seul à 500, 600 et 700 pour les deux familles (écart 0,0 %) ; pas de gras synthétique. | Assistant (délégation du porteur, pdr-0062) |
 | 2026-11-02 | Revue du code de 017 : U13, U14 et U15 ajoutées (décisions de réalisation jusque-là consignées seulement dans `status.md` et `progress.md`), U8 amendée (halo `plasmaGhost` plafonné au cadre, pas de `glow-plasma` complet). | Assistant (délégation du porteur, pdr-0062) |
 | 2026-11-02 | Précision U4 à l'implémentation de T11 : bordure neutre des boutons en `ink-muted` au lieu de `line-strong` (contraste mesuré 2,30 à 2,44:1 < 3:1, WCAG 1.4.11). | Assistant (délégation du porteur, pdr-0062) |
 | 2026-11-02 | Précision U9 à l'implémentation de T14 : coins HUD au nombre de deux (haut gauche, bas droit), comme `.gc-panel::before` du design system ; la source l'emporte sur les « quatre coins » du plan. | Assistant (délégation du porteur, pdr-0062) |
