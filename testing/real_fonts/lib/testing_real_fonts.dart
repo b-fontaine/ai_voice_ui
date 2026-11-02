@@ -9,4 +9,6 @@ export 'src/real_fonts.dart'
         realFontFallback,
         realFontFiles,
         fontsDirectory,
+        sceneFontFiles,
+        sceneFontsDirectory,
         loadRealFonts;

@@ -17,3 +17,22 @@ dev_dependencies:
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
+  testing_real_fonts:
+    path: ../../../testing/real_fonts
+
+flutter:
+  fonts:
+    # Familles nommées « en clair » avec le préfixe de paquet (voir
+    # lib/src/scene_fonts.dart). Fichiers variables (axe wght).
+    - family: Space Grotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Variable.ttf
+    - family: DejaVu Sans
+      fonts:
+        - asset: assets/fonts/DejaVuSans.ttf
+  assets:
+    - assets/fonts/OFL-SpaceGrotesk.txt
+    - assets/fonts/OFL-JetBrainsMono.txt

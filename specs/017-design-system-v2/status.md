@@ -1,12 +1,12 @@
 # 017 — État
 
 - **Étape** : TDD
-- **Tentatives** : 1/3
-- **Tâche en cours** : T10
-- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/{assets/fonts/**,lib/**,test/**,pubspec.yaml}, testing/real_fonts/**, apps/genesis_canvas/test/acceptance/step/** (câblage des licences)
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
+- **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/017-design-system-v2
 - **Backlog** : EP-04, EP-01
-- **Mis à jour** : 2026-11-02 19:00
+- **Mis à jour** : 2026-11-02 19:12
 
 ## Journal
 | Date | Étape | Fait | Preuve (journal gate.sh, capture) |
@@ -14,6 +14,7 @@
 | 2026-11-02 | Définir | `spec.md` (périmètre, décisions d'UI U1 à U11, tailles ≥ 24 px, scénarios U-01 à U-06), `plan.md`, `tasks.md` (T01, T10 à T21, T90 à T92). Consultations : `product-lookup` (pdr-0083, Q-91, NFR-05), `kb-lookup` ([ds-typography], [ds-tokens-style-dictionary], [ds-motion], [ds-a11y-wcag-contrast]). Constats : les deux polices n'existent qu'en fichiers variables (dépôt `google/fonts`, `ofl/spacegrotesk` et `ofl/jetbrainsmono`, OFL) ; Node 26.12.1 disponible pour `tool/build_tokens.sh` | commit `specs/017-design-system-v2` |
 | 2026-11-02 | Revue du plan | `architect-reviewer` (mode PLAN) : verdict **À AMENDER** (P1 à P3 bloquantes, P4 à P7 importantes, P8 mineure) ; toutes intégrées : `spec.md` (U1, U7 à U9, U11, U12, table de tailles complète), `plan.md` (contrats tokens, façades, peinture, polices, mouvement, risques), `tasks.md` (T01 avec D-06, T10 étendu, T11 générateur, T12a/b, T13 boucles, T19a/b/c), pdr-0084 amendée | commits de `specs/017-design-system-v2` et `product/decisions` |
 | 2026-11-02 | Gherkin | T01 : `product/functional/features/design-system-017.feature` (U-01 à U-06) enregistré dans les index ; D-06 recalé (480 ms prouvé par une attente intermédiaire : 240 + 260 ms, 120 + 130 ms à 2 x) ; U-04 et U-05 passent par l'acte 2 pour voir « Bloquant » (au tableau 3.4 seuls `ok` et `risk` existent). Automatisation (`feature-developer`, tests seulement, `lib/` intact) dans `apps/genesis_canvas/test/acceptance/` : `acte_design_systeme.feature`/`_test.dart`, 20 steps, 4 supports. **Sortie rouge attendue** : U-01 et U-03 verts (garde-fous) ; U-02 rouge `données hors police JetBrains Mono : « Arrêter » : famille aucune…` ; U-04 rouge `mot « Validé » (statut ok) : couleur #8ff0b5ff, attendue go #3ef2a5ff` ; U-05 rouge `Expected: a numeric value within <0.5> of <10.0>  Actual: <8.0>` ; U-06 rouge `série « Android 3.4 » : couleur #6cb6ffff, attendue signal #3de8ffff` ; D-06 recalé rouge `le contenu de crashes est déjà pleinement visible` (240 ms) et `le contenu de checklist est déjà pleinement visible` (×2). Rejeu des steps suivants (sonde jetable) : blocking `#ffb3b8ff` attendue `nogo`, glyphe ✓ absent, battement `[]`, 7 `Ticker` actifs sous `disableAnimations` | `.omc/state/loop/gates/20261102-185534-unit-flutter.log` (8 contrôles, 340 tests, TOUT VERT) ; contrôle de la session : `flutter test test/acceptance/acte_design_systeme_test.dart` → +2 -4 |
+| 2026-11-02 | TDD | **T10 faite** : polices variables Space Grotesk (wght 300–700) et JetBrains Mono (wght 100–800) embarquées dans `packages/shared/design_system/assets/fonts/` avec DejaVu Sans (repli) ; source épinglée sur le commit `6c1dbe27…` de `google/fonts`, SHA-256 dans `README.md` et `LICENSES.md` (recalculés par un test), OFL sans « Reserved Font Name » ; `scene_fonts.dart` (`SceneFonts`, `registerSceneFontLicenses`), `scene_weight.dart` (`sceneWeight` : `FontWeight(n)` et `FontVariation('wght', n)` ensemble) ; `loadRealFonts` charge aussi les trois familles préfixées. Rouge initial : `Undefined name 'SceneFonts'` et symboles `sceneWeight`/`SceneWeight` absents (3 fichiers de test ne compilaient pas). **Encre mesurée (flutter_test, 40 px)** : Space Grotesk 8385 / 10203 / 11091 / 12419 (400/500/600/700), JetBrains Mono 8376 / 9491 / 10072 / 10633 ; wght 700 seul = wght 700 + w700 = w700 seul. **Vrai moteur (Impeller OpenGLES sous Xvfb)** : graisses nettement différentes (capture ouverte et lue : `spikes/ds-fonts-weight/weights.png`) ; la variation seule est un peu plus légère que `fontWeight` (2174 contre 2307 ; 1909 contre 1964) : l'assistant pose donc les deux. **Glyphes** : ✓ ▲ ▶ ↺ ◆ ★ et U+202F absents de Space Grotesk, ✓ ↺ ★ et U+202F de JetBrains Mono ; DejaVu Sans les couvre tous. **Écart au plan** : familles déclarées sans préfixe dans le pubspec (Flutter pose `packages/shared_design_system/`), plan corrigé. U-02 : steps de licences et de `FontManifest` verts, textes toujours en Roboto (T12b) ; 013 : seul D-06 recalé rouge | `.omc/state/loop/gates/20261102-190309-unit-flutter.log` (19 contrôles, TOUT VERT) ; capture `spikes/ds-fonts-weight/weights.png` |
 
 ## Revue d'architecte
 **Revue du plan (mode PLAN, `architect-reviewer`, Opus) : verdict À AMENDER** — 3 bloquantes, 4 importantes, 1 mineure. Toutes intégrées dans `spec.md`, `plan.md`, `tasks.md` et [pdr-0084](../../product/decisions/pdr-0084-017-design-system-ui-details-assistant-decided.md).
@@ -35,3 +36,5 @@ Aucune bloquante. Q-91 tranchée (pdr-0083 D4). Le porteur juge le rendu à 24 p
 - Le peintre du graphique reste `TrendChartPainter` avec les champs `series` (nom, couleur, `dashed`) et `thresholdColor` (le step U-06 les lit).
 - Le step des licences lit `LicenseRegistry` : `registerSceneFontLicenses()` doit s'exécuter sur le chemin de lancement des tests (T10).
 - Les tests d'animation lisent l'opacité (< 0,99 = pas encore visible) et la translation rendue de `surface-<id>`.
+- Les styles de `SceneTheme` (T12b) listent `SceneFonts.fallback` dans `fontFamilyFallback` : ✓ ▲ ▶ ↺ ◆ ★ et U+202F viennent de DejaVu Sans (plus épais, peu variable ; ✓ est un glyphe du statut `ok`, U6).
+- `packages/shared/design_system` a une dev_dependency de workspace `testing_real_fonts` (chemin) : seulement pour les tests de polices.
