@@ -96,10 +96,7 @@ void main() {
     matching: find.byWidgetPredicate(
       (w) =>
           w is Icon &&
-          w.icon ==
-              (state == 'utilisé'
-                  ? Icons.check_circle
-                  : Icons.radio_button_unchecked),
+          w.icon == (state == 'utilisé' ? Icons.square : Icons.square_outlined),
     ),
   );
 
@@ -199,7 +196,7 @@ void main() {
   });
 
   testWidgets('le fond de l\'étagère est la décoration de panneau, sans '
-      'changer son rectangle ni le rayon des puces', (tester) async {
+      'changer son rectangle ; les puces ont le rayon sm', (tester) async {
     await pumpShelf(tester);
     await receive(tester, _update('kpi', 'KeyIndicator'));
 
@@ -218,7 +215,7 @@ void main() {
     );
     expect(
       (chip.decoration as BoxDecoration).borderRadius,
-      SceneRadius.borderPill,
+      SceneRadius.borderSm,
     );
   });
 
@@ -230,8 +227,8 @@ void main() {
     const theme = SceneTheme.dark();
 
     for (final (component, background) in <(String, Color)>[
-      ('KeyIndicator', theme.okBackground),
-      ('TrendChart', theme.neutralBackground),
+      ('KeyIndicator', theme.signalGhost),
+      ('TrendChart', theme.surface),
     ]) {
       final Color? icon = tester.widget<Icon>(iconOf(component)).color;
       final box = tester.widget<DecoratedBox>(

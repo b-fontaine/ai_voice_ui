@@ -53,7 +53,10 @@ abstract final class AcceptanceKeys {
   /// Toutes les entrées montrées par le panneau (clés `protocol-entry-<n>`).
   static Finder protocolEntries() => find.byWidgetPredicate((widget) {
     final key = widget.key;
-    return key is ValueKey<String> && key.value.startsWith('protocol-entry-');
+    // Les sous-éléments d'une entrée (`protocol-entry-<n>-no`, `-kind`) ne
+    // sont pas des entrées.
+    return key is ValueKey<String> &&
+        RegExp(r'^protocol-entry-\d+$').hasMatch(key.value);
   });
 
   /// Entrée en cours (mise en évidence) du panneau : exactement une quand le

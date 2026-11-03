@@ -8,7 +8,7 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneRadius, ScenePanel, SceneTheme;
+    show DsPanelHead, SceneRadius, ScenePanel, SceneTheme;
 
 /// Panneau « FLUX A2UI · live » (FR-05) : les messages A2UI en cours de
 /// fabrication, avec le dernier en évidence.
@@ -98,28 +98,18 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            'FLUX A2UI · live',
-            style: theme.label.copyWith(color: theme.accent),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+    return DsPanelHead(
+      label: 'FLUX A2UI · live',
+      trailing: TextButton(
+        key: const Key('protocol-toggle'),
+        onPressed: () =>
+            context.read<ProtocolFeedBloc>().add(const PanelToggled()),
+        style: TextButton.styleFrom(
+          foregroundColor: theme.textPrimary,
+          textStyle: theme.button,
         ),
-        const SizedBox(width: 8),
-        TextButton(
-          key: const Key('protocol-toggle'),
-          onPressed: () =>
-              context.read<ProtocolFeedBloc>().add(const PanelToggled()),
-          style: TextButton.styleFrom(
-            foregroundColor: theme.textPrimary,
-            textStyle: theme.button,
-          ),
-          child: Text(state.expanded ? 'Replier' : 'Déplier'),
-        ),
-      ],
+        child: Text(state.expanded ? 'Replier' : 'Déplier'),
+      ),
     );
   }
 }
@@ -129,6 +119,9 @@ const double _tileTopGap = 8;
 const double _tilePaddingY = 6;
 const double _currentBorder = 3;
 const double _jsonLineHeight = 1.2;
+
+// Le masque de dégradé du flux s'opacifie à 30 % de la hauteur.
+const double _maskStop = 0.3;
 
 /// Surcroît de hauteur de la marque « refusé » (ses 2 px de marge verticale
 /// de chaque côté) sur une ligne d'en-tête.
@@ -159,17 +152,37 @@ class _Entries extends StatelessWidget {
         final List<ProtocolEntry> shown = state.entries.length > capacity
             ? state.entries.sublist(state.entries.length - capacity)
             : state.entries;
+        final bool trimmed = shown.length < state.entries.length;
+        final Widget list = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final (int position, ProtocolEntry entry) in shown.indexed)
+              _EntryTile(
+                entry: entry,
+                position: position,
+                current: entry.index == state.highlightedIndex,
+              ),
+          ],
+        );
         return ClipRect(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final ProtocolEntry entry in shown)
-                _EntryTile(
-                  entry: entry,
-                  current: entry.index == state.highlightedIndex,
-                ),
-            ],
-          ),
+          // `gc-stream` : les entrées écartées s'estompent en haut (de
+          // transparent à opaque à 30 %) ; rien à estomper quand tout tient.
+          child: trimmed
+              ? ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  // Seul l'alpha compte (mode `dstIn`).
+                  shaderCallback: (Rect bounds) => LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      theme.background.withValues(alpha: 0),
+                      theme.background,
+                    ],
+                    stops: const <double>[0, _maskStop],
+                  ).createShader(bounds),
+                  child: list,
+                )
+              : list,
         );
       },
     );
@@ -189,9 +202,20 @@ class _Entries extends StatelessWidget {
 }
 
 class _EntryTile extends StatelessWidget {
-  const _EntryTile({required this.entry, required this.current});
+  const _EntryTile({
+    required this.entry,
+    required this.position,
+    required this.current,
+  });
 
   final ProtocolEntry entry;
+
+  /// Rang d'affichage (0 = la plus ancienne des entrées montrées) : il
+  /// numérote les clés `protocol-entry-<n>-no` et `-kind`, de sorte que
+  /// `protocol-entry-0-no` existe même quand les plus anciennes entrées du
+  /// journal sont écartées. Le numéro affiché (`#nn`) est celui du message
+  /// ([ProtocolEntry.index]).
+  final int position;
   final bool current;
 
   static String _operationName(ProtocolOperation operation) =>
@@ -215,7 +239,13 @@ class _EntryTile extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     final String? surface = entry.surfaceId;
     final String? agent = entry.agent;
-    final TextStyle body = theme.body.copyWith(color: theme.textSecondary);
+    // Liste mono `gc-stream` : 12 points, `ink-muted` (jamais `ink-faint`, F12),
+    // le genre du message en `signal`.
+    final TextStyle line = theme.micro.agentState.copyWith(
+      color: theme.textSecondary,
+    );
+    final TextStyle kindStyle = line.copyWith(color: theme.accent);
+    final String kind = _operationName(entry.operation);
     return Padding(
       key: Key('protocol-entry-${entry.index}'),
       padding: const EdgeInsets.only(top: _tileTopGap),
@@ -240,24 +270,37 @@ class _EntryTile extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Text(_time(entry.timestampMs), style: body, maxLines: 1),
+                  Text(
+                    '#${_two(entry.index)}',
+                    key: Key('protocol-entry-$position-no'),
+                    style: line,
+                    maxLines: 1,
+                  ),
                   const SizedBox(width: 12),
                   Flexible(
-                    child: Text(
-                      surface == null
-                          ? _operationName(entry.operation)
-                          : '${_operationName(entry.operation)} · $surface',
-                      style: theme.data,
+                    child: Text.rich(
+                      TextSpan(
+                        style: kindStyle,
+                        children: <InlineSpan>[
+                          TextSpan(text: kind),
+                          if (surface != null)
+                            TextSpan(text: ' · $surface', style: line),
+                        ],
+                      ),
+                      key: Key('protocol-entry-$position-kind'),
+                      style: kindStyle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Text(_time(entry.timestampMs), style: line, maxLines: 1),
                   if (agent != null) ...<Widget>[
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
                         agent,
-                        style: body,
+                        style: line,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

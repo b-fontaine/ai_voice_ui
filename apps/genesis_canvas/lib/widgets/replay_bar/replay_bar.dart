@@ -17,7 +17,7 @@ import 'package:feature_replay/feature_replay.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show ScenePanel, SceneTheme;
+    show DsCaps, SceneRadius, ScenePanel, SceneShadow, SceneTheme;
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
 ///
@@ -92,16 +92,16 @@ class ReplayBar extends StatelessWidget {
                                     : const ReplayPlayPressed(),
                               ),
                       ),
-                      IconButton(
-                        key: const Key('replay-restart'),
-                        onPressed: live
-                            ? null
-                            : () => bloc.add(const ReplayRestartPressed()),
-                        style: _iconStyle(theme),
+                      _IconTarget(
+                        buttonKey: const Key('replay-restart'),
+                        visualKey: const Key('replay-restart-visual'),
                         icon: const Icon(
                           Icons.replay,
                           semanticLabel: 'Recommencer',
                         ),
+                        onPressed: live
+                            ? null
+                            : () => bloc.add(const ReplayRestartPressed()),
                       ),
                       Expanded(
                         child: _PositionSlider(
@@ -110,19 +110,10 @@ class ReplayBar extends StatelessWidget {
                               bloc.add(ReplaySeeked(position)),
                         ),
                       ),
-                      TextButton(
-                        key: const Key('replay-direct'),
+                      _DirectButton(
                         onPressed: live
                             ? null
                             : () => bloc.add(const ReplayDirectPressed()),
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.accent,
-                          disabledForegroundColor: theme.neutralForeground,
-                          textStyle: theme.button,
-                          minimumSize: const Size(0, rowHeight),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        child: const Text('Direct', maxLines: 1),
                       ),
                     ],
                   ),
@@ -135,7 +126,11 @@ class ReplayBar extends StatelessWidget {
                         Expanded(
                           child: _SpeedChip(
                             speed: speed,
-                            selected: snapshot?.speed == speed,
+                            // En direct, la vitesse par défaut est celle du prochain rejeu.
+                            selected:
+                                (snapshot?.speed ??
+                                    bloc.settings.defaultSpeed) ==
+                                speed,
                             onPressed: live
                                 ? null
                                 : () => bloc.add(ReplaySpeedSelected(speed)),
@@ -153,13 +148,81 @@ class ReplayBar extends StatelessWidget {
   }
 }
 
-ButtonStyle _iconStyle(SceneTheme theme) => IconButton.styleFrom(
-  foregroundColor: theme.textPrimary,
-  // Inactif mais lisible à distance (le gris par défaut disparaît).
-  disabledForegroundColor: theme.neutralForeground,
-  iconSize: 36,
-  minimumSize: const Size.square(ReplayBar.rowHeight),
-);
+/// Style d'un bouton dont le fond est porté par son visuel : cible de 48
+/// points, fond et ombre transparents.
+ButtonStyle _targetStyle(
+  SceneTheme theme, {
+  EdgeInsetsGeometry padding = EdgeInsets.zero,
+}) {
+  final Color clear = theme.background.withValues(alpha: 0);
+  return ButtonStyle(
+    backgroundColor: WidgetStatePropertyAll<Color>(clear),
+    overlayColor: WidgetStatePropertyAll<Color>(clear),
+    shadowColor: WidgetStatePropertyAll<Color>(clear),
+    surfaceTintColor: WidgetStatePropertyAll<Color>(clear),
+    minimumSize: const WidgetStatePropertyAll<Size>(
+      Size(ReplayBar.rowHeight, ReplayBar.rowHeight),
+    ),
+    padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(padding),
+    shape: WidgetStatePropertyAll<OutlinedBorder>(
+      RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
+    ),
+  );
+}
+
+/// Bouton icône `gc-btn--sm gc-btn--icon` : visuel de 34 points (rayon `md`,
+/// fond `surface-300`, bordure `ink-muted`) centré dans une cible de 48.
+class _IconTarget extends StatelessWidget {
+  const _IconTarget({
+    required this.buttonKey,
+    required this.visualKey,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  /// Hauteur et largeur du visuel.
+  static const double visual = 34;
+
+  /// Taille du glyphe dans le visuel.
+  static const double glyph = 22;
+
+  final Key buttonKey;
+  final Key visualKey;
+  final Icon icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return IconButton(
+      key: buttonKey,
+      onPressed: onPressed,
+      style: _targetStyle(theme),
+      icon: SizedBox.square(
+        key: visualKey,
+        dimension: visual,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.surface300,
+            borderRadius: SceneRadius.borderMd,
+            border: Border.all(color: theme.textSecondary),
+          ),
+          child: Center(
+            child: Icon(
+              icon.icon,
+              semanticLabel: icon.semanticLabel,
+              size: glyph,
+              // Inactif mais lisible à distance (le gris par défaut disparaît).
+              color: onPressed == null
+                  ? theme.neutralForeground
+                  : theme.textPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _PlayButton extends StatelessWidget {
   const _PlayButton({required this.playing, required this.onPressed});
@@ -168,22 +231,71 @@ class _PlayButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    key: const Key('replay-play'),
-    onPressed: onPressed,
-    style: _iconStyle(SceneTheme.of(context)),
+  Widget build(BuildContext context) => _IconTarget(
+    buttonKey: const Key('replay-play'),
+    visualKey: const Key('replay-play-visual'),
     icon: playing
         ? const Icon(Icons.pause, semanticLabel: 'Pause')
         : const Icon(Icons.play_arrow, semanticLabel: 'Lecture'),
+    onPressed: onPressed,
   );
 }
 
+/// « Direct » (`gc-live`) : point `signal` de 6 points puis le mot en capitales
+/// `signal`. Le point clignotera au niveau B (T34, `gc-blink`).
+class _DirectButton extends StatelessWidget {
+  const _DirectButton({required this.onPressed});
+
+  /// Diamètre du point.
+  static const double dot = 6;
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return TextButton(
+      key: const Key('replay-direct'),
+      onPressed: onPressed,
+      style: _targetStyle(
+        theme,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          DecoratedBox(
+            key: const Key('replay-direct-dot'),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: theme.accent,
+            ),
+            child: const SizedBox.square(dimension: dot),
+          ),
+          const SizedBox(width: 6),
+          DsCaps(
+            'Direct',
+            style: theme.micro.badge.copyWith(color: theme.accent),
+            maxLines: 1,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Vitesse `gc-speed` : segment de 26 points (rayon `sm`, bordure `line`,
+/// texte `ink-muted`) dans une cible de 48 ; sélectionné (`is-on`) : fond et
+/// bordure `ink`, texte `void`.
 class _SpeedChip extends StatelessWidget {
   const _SpeedChip({
     required this.speed,
     required this.selected,
     required this.onPressed,
   });
+
+  /// Hauteur du segment.
+  static const double visualHeight = 26;
 
   final double speed;
   final bool selected;
@@ -192,42 +304,47 @@ class _SpeedChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final Key key = Key('replay-speed-${ReplayBar._speedId(speed)}');
-    final Widget label = Text(
-      ReplayBar.speedLabel(speed),
-      maxLines: 1,
-      softWrap: false,
-    );
-    const EdgeInsets padding = EdgeInsets.symmetric(horizontal: 2);
-    const Size minimum = Size(0, ReplayBar.rowHeight);
-    if (selected) {
-      return FilledButton(
-        key: key,
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.accent,
-          foregroundColor: theme.background,
-          disabledBackgroundColor: theme.neutralBackground,
-          disabledForegroundColor: theme.neutralForeground,
-          textStyle: theme.button,
-          minimumSize: minimum,
-          padding: padding,
+    final String id = ReplayBar._speedId(speed);
+    final Widget label = SizedBox(
+      key: Key('replay-speed-$id-visual'),
+      width: double.infinity,
+      height: visualHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: selected ? theme.textPrimary : null,
+          borderRadius: SceneRadius.borderSm,
+          border: Border.all(color: selected ? theme.textPrimary : theme.line),
         ),
-        child: label,
-      );
-    }
-    return TextButton(
-      key: key,
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor: theme.textPrimary,
-        disabledForegroundColor: theme.neutralForeground,
-        textStyle: theme.button,
-        minimumSize: minimum,
-        padding: padding,
+        child: Center(
+          child: Text(
+            ReplayBar.speedLabel(speed),
+            maxLines: 1,
+            softWrap: false,
+            style: theme.micro.speed.copyWith(
+              color: selected ? theme.background : theme.textSecondary,
+            ),
+          ),
+        ),
       ),
-      child: label,
     );
+    final ButtonStyle style = _targetStyle(
+      theme,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+    );
+    final Key key = Key('replay-speed-$id');
+    return selected
+        ? FilledButton(
+            key: key,
+            onPressed: onPressed,
+            style: style,
+            child: label,
+          )
+        : TextButton(
+            key: key,
+            onPressed: onPressed,
+            style: style,
+            child: label,
+          );
   }
 }
 
@@ -256,32 +373,129 @@ class _PositionSliderState extends State<_PositionSlider> {
     final double value = (_dragging ?? snapshot?.position.inMilliseconds ?? 0)
         .toDouble()
         .clamp(0, max);
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        activeTrackColor: theme.accent,
-        inactiveTrackColor: theme.neutralBackground,
-        thumbColor: theme.accent,
-        disabledActiveTrackColor: theme.neutralForeground,
-        disabledInactiveTrackColor: theme.neutralBackground,
-        disabledThumbColor: theme.neutralForeground,
+    final double fraction = _fraction(snapshot, value, max);
+    final Color clear = theme.background.withValues(alpha: 0);
+    return SizedBox(
+      height: ReplayBar.rowHeight,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          // Visuel : piste, remplissage et poignée, inset de la poignée.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _knob / 2),
+            child: _TrackVisual(fraction: fraction),
+          ),
+          // Interaction : la glissière fonctionnelle, transparente, dont la
+          // piste coïncide avec le visuel.
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: _trackHeight,
+              trackShape: const RectangularSliderTrackShape(),
+              thumbShape: const RoundSliderThumbShape(
+                enabledThumbRadius: _knob / 2,
+                disabledThumbRadius: _knob / 2,
+                elevation: 0,
+                pressedElevation: 0,
+              ),
+              overlayShape: const RoundSliderOverlayShape(
+                overlayRadius: _knob / 2,
+              ),
+              showValueIndicator: ShowValueIndicator.never,
+              activeTrackColor: clear,
+              inactiveTrackColor: clear,
+              thumbColor: clear,
+              overlayColor: clear,
+              disabledActiveTrackColor: clear,
+              disabledInactiveTrackColor: clear,
+              disabledThumbColor: clear,
+            ),
+            child: Slider(
+              key: const Key('replay-slider'),
+              value: value,
+              max: max,
+              onChanged: snapshot == null
+                  ? null
+                  : (double v) => setState(() => _dragging = v),
+              onChangeEnd: snapshot == null
+                  ? null
+                  : (double v) {
+                      setState(() => _dragging = null);
+                      widget.onSeek(Duration(milliseconds: v.round()));
+                    },
+            ),
+          ),
+        ],
       ),
-      child: SizedBox(
-        height: ReplayBar.rowHeight,
-        child: Slider(
-          key: const Key('replay-slider'),
-          value: value,
-          max: max,
-          onChanged: snapshot == null
-              ? null
-              : (double v) => setState(() => _dragging = v),
-          onChangeEnd: snapshot == null
-              ? null
-              : (double v) {
-                  setState(() => _dragging = null);
-                  widget.onSeek(Duration(milliseconds: v.round()));
-                },
-        ),
-      ),
+    );
+  }
+
+  /// Fraction affichée : la piste est pleine en direct (bord du direct).
+  static double _fraction(ReplaySnapshot? snapshot, double value, double max) =>
+      snapshot == null ? 1 : (value / max).clamp(0.0, 1.0);
+}
+
+const double _trackHeight = 4;
+const double _knob = 14;
+
+/// Piste `gc-track` (4 points, `surface-300`), remplissage `signal` et
+/// poignée ronde `ink` de 14 points à lueur `signal`.
+class _TrackVisual extends StatelessWidget {
+  const _TrackVisual({required this.fraction});
+
+  final double fraction;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        return SizedBox(
+          height: _trackHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              Positioned.fill(
+                child: DecoratedBox(
+                  key: const Key('replay-track'),
+                  decoration: BoxDecoration(
+                    color: theme.surface300,
+                    borderRadius: SceneRadius.borderPill,
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: fraction,
+                    child: DecoratedBox(
+                      key: const Key('replay-track-fill'),
+                      decoration: BoxDecoration(
+                        color: theme.accent,
+                        borderRadius: SceneRadius.borderPill,
+                      ),
+                      child: const SizedBox(height: _trackHeight),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: box.maxWidth * fraction - _knob / 2,
+                top: (_trackHeight - _knob) / 2,
+                child: DecoratedBox(
+                  key: const Key('replay-track-knob'),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.textPrimary,
+                    boxShadow: SceneShadow.glowSignal,
+                  ),
+                  child: const SizedBox.square(dimension: _knob),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
