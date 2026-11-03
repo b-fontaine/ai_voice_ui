@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_design_system/shared_design_system.dart'
+    show SceneShadow;
 
 import 'trend_geometry.dart';
 
@@ -64,10 +66,6 @@ const double _baseWidth = 2;
 /// Rayon d'un point de série (`.dot`) et épaisseur de son bord.
 const double _dotRadius = 3.5;
 const double _dotStroke = 2;
-
-/// Écart type du flou de la lueur de la série courante (`drop-shadow` de 6 px).
-const double _glowSigma = 3;
-const double _glowAlpha = 0x88 / 255;
 
 /// Peintre du tracé : ligne de seuil en tirets, séries et leurs points.
 ///
@@ -154,12 +152,15 @@ class TrendChartPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = s.color.withValues(alpha: _glowAlpha)
+          ..color = s.color.withValues(alpha: SceneShadow.seriesGlowAlpha)
           ..strokeWidth = _currentWidth
           ..style = PaintingStyle.stroke
           ..strokeJoin = StrokeJoin.round
           ..strokeCap = StrokeCap.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, _glowSigma),
+          ..maskFilter = const MaskFilter.blur(
+            BlurStyle.normal,
+            SceneShadow.seriesGlowSigma,
+          ),
       );
       canvas.drawPath(
         path,

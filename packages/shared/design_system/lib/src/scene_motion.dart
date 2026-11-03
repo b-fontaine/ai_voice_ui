@@ -79,6 +79,33 @@ abstract final class SceneMotion {
   /// Période du clignotement en créneaux (`gc-blink`).
   static const Duration blink = SceneTokens.motionBlink;
 
+  /// Période du clignotement du curseur de la réplique de l'IA
+  /// (`.caret::after`, `gc-blink .9s`).
+  static const Duration caretBlink = SceneTokens.motionCaretBlink;
+
+  /// Durée pendant laquelle le curseur reste après la dernière modification
+  /// de la réplique.
+  static const Duration caretHold = SceneTokens.motionCaretHold;
+
+  /// Période du clignotement du point d'enregistrement du micro.
+  static const Duration recBlink = SceneTokens.motionRecBlink;
+
+  /// Période du battement du point d'un agent au travail (`gc-beacon 1.2s`).
+  static const Duration agentBeacon = SceneTokens.motionAgentBeacon;
+
+  /// Retard d'apparition du point de tête d'une série de graphique.
+  static const Duration headDelay = SceneTokens.motionHeadDelay;
+
+  /// Montée du point de tête d'une série de graphique.
+  static const Duration headRise = SceneTokens.motionHeadRise;
+
+  /// Apparition d'une entrée du flux de protocole (`gc-row .35s`, plus vive
+  /// que [row]).
+  static const Duration streamRow = SceneTokens.motionStreamRow;
+
+  /// Retard de la part négative d'une répartition (`split`) sur la positive.
+  static const Duration splitDelay = SceneTokens.motionSplitDelay;
+
   /// Écart type du flou de départ d'une apparition, en pixels logiques.
   static const double blur = SceneTokens.motionBlur;
 

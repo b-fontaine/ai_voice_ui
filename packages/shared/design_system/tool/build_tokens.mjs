@@ -12,6 +12,12 @@
 // `fontSize`, un `{value, unit: "px"}`) ou `px` (recopié). Le `fontSize` copié
 // doit égaler celui du token frère `fontSize` du même style : le générateur
 // refuse toute divergence.
+//
+// Extension locale (non DTCG) : une couche d'ombre peut porter `blurRadius`
+// (`{value, unit: "px"}`) au lieu de `blur` : c'est le rayon de flou Flutter,
+// recopié sans la conversion depuis le flou CSS. Réservé aux lueurs dont le
+// rayon Flutter est fixé (point d'agent, chiffre héros). Les deux ensemble
+// sont refusés.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -101,8 +107,16 @@ function dartShadow(value, where) {
           'Exprimer le filet par un token couleur peint par le widget.',
       );
     }
+    if (layer.blur !== undefined && layer.blurRadius !== undefined) {
+      throw new Error(`blur et blurRadius exclusifs : ${where}`);
+    }
     const blur = pxValue(layer.blur ?? { value: 0, unit: 'px' }, where);
     if (blur < 0) throw new Error(`Flou négatif : ${where}`);
+    const blurRadius =
+      layer.blurRadius === undefined
+        ? blurRadiusFromCss(blur)
+        : pxValue(layer.blurRadius, where);
+    if (blurRadius < 0) throw new Error(`Rayon de flou négatif : ${where}`);
     const spread = pxValue(layer.spread ?? { value: 0, unit: 'px' }, where);
     const offsetX = dartDouble(pxValue(layer.offsetX, where), where);
     const offsetY = dartDouble(pxValue(layer.offsetY, where), where);
@@ -110,7 +124,7 @@ function dartShadow(value, where) {
       'BoxShadow(' +
       `color: ${dartColor(layer.color, where)}, ` +
       `offset: Offset(${offsetX}, ${offsetY}), ` +
-      `blurRadius: ${dartDouble(blurRadiusFromCss(blur), where)}, ` +
+      `blurRadius: ${dartDouble(blurRadius, where)}, ` +
       `spreadRadius: ${dartDouble(spread, where)})`
     );
   });

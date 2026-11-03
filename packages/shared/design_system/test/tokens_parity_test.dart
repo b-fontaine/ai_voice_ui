@@ -147,7 +147,10 @@ double _blurRadius(double cssBlur) {
 }
 
 /// Ombres DTCG (tableau ou ombre seule) vers `BoxShadow`. Une ombre `inset`
-/// n'est pas exprimable : le token ne doit pas en contenir.
+/// n'est pas exprimable : le token ne doit pas en contenir. Extension locale :
+/// `blurRadius` (px) donne directement le rayon de flou Flutter, sans
+/// conversion depuis le flou CSS `blur` (lueurs dont le rayon est fixé en
+/// Flutter, comme le point de l'orchestrateur ou le chiffre héros).
 List<BoxShadow> _shadows(Object? value) {
   final list = value is List<Object?> ? value : <Object?>[value];
   return [
@@ -158,7 +161,9 @@ List<BoxShadow> _shadows(Object? value) {
         return BoxShadow(
           color: _color(map['color']),
           offset: Offset(_px(map['offsetX']), _px(map['offsetY'])),
-          blurRadius: _blurRadius(_px(map['blur'])),
+          blurRadius: map['blurRadius'] != null
+              ? _px(map['blurRadius'])
+              : _blurRadius(_px(map['blur'])),
           spreadRadius: map['spread'] == null ? 0 : _px(map['spread']),
         );
       }(),
@@ -222,6 +227,10 @@ Map<String, _Reading> _buildReadings() {
     'surface200': _theme.surface200,
     'surface300': _theme.surface300,
     'orbVeil': _theme.orbVeil,
+    'plasmaLine': _theme.plasmaLine,
+    'plasmaOutline': _theme.plasmaOutline,
+    'signalLine': _theme.signalLine,
+    'signalLineSoft': _theme.signalLineSoft,
   };
   colors.forEach((name, color) => add('scene.color.$name', color, _color));
 
@@ -272,6 +281,18 @@ Map<String, _Reading> _buildReadings() {
   add('scene.shadow.glowSignal', SceneShadow.glowSignal, _shadows);
   add('scene.shadow.glowNogo', SceneShadow.glowNogo, _shadows);
   add('scene.shadow.glowPlasma', SceneShadow.glowPlasma, _shadows);
+  add('scene.shadow.glowPlasmaDot', SceneShadow.glowPlasmaDot, _shadows);
+  add('scene.shadow.textGlowNogo', SceneShadow.textGlowNogo, _shadows);
+  add(
+    'scene.shadow.seriesGlowAlpha',
+    SceneShadow.seriesGlowAlpha,
+    (v) => (v! as num).toDouble(),
+  );
+  add(
+    'scene.shadow.seriesGlowSigma',
+    SceneShadow.seriesGlowSigma,
+    (v) => (v! as num).toDouble(),
+  );
 
   add('scene.motion.appear', SceneMotion.appear, _ms);
   add('scene.motion.value', SceneMotion.value, _ms);
@@ -296,6 +317,14 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.indet', SceneMotion.indet, _ms);
   add('scene.motion.ring', SceneMotion.ring, _ms);
   add('scene.motion.blink', SceneMotion.blink, _ms);
+  add('scene.motion.caretBlink', SceneMotion.caretBlink, _ms);
+  add('scene.motion.caretHold', SceneMotion.caretHold, _ms);
+  add('scene.motion.recBlink', SceneMotion.recBlink, _ms);
+  add('scene.motion.agentBeacon', SceneMotion.agentBeacon, _ms);
+  add('scene.motion.headDelay', SceneMotion.headDelay, _ms);
+  add('scene.motion.headRise', SceneMotion.headRise, _ms);
+  add('scene.motion.streamRow', SceneMotion.streamRow, _ms);
+  add('scene.motion.splitDelay', SceneMotion.splitDelay, _ms);
   add('scene.motion.blur', SceneMotion.blur, (v) => (v! as num).toDouble());
   add('scene.motion.scale', SceneMotion.scale, (v) => (v! as num).toDouble());
   add('scene.motion.curve', _cubicOf(SceneMotion.curve), _cubic);
@@ -376,6 +405,10 @@ void main() {
       'scene.color.plasmaGhost': 0x24,
       'scene.color.panelHighlight': 0x08,
       'scene.color.orbVeil': 0xB3,
+      'scene.color.plasmaLine': 0x54,
+      'scene.color.plasmaOutline': 0x88,
+      'scene.color.signalLine': 0x66,
+      'scene.color.signalLineSoft': 0x55,
     };
     sourceAlpha.forEach((path, byte) {
       final map = tokens[path]! as Map<String, Object?>;
@@ -383,6 +416,15 @@ void main() {
       expect(_sceneReadings[path]!.actual, isA<Color>());
       expect(((_sceneReadings[path]!.actual! as Color).a * 255).round(), byte);
     });
+  });
+
+  test('lueurs : octet d\'opacité et rayon de flou des ombres dérivées', () {
+    expect(SceneShadow.glowPlasmaDot.single.color, const Color(0x99A58BFF));
+    expect(SceneShadow.glowPlasmaDot.single.blurRadius, 10);
+    expect(SceneShadow.textGlowNogo.single.color, const Color(0x55FF5A76));
+    expect(SceneShadow.textGlowNogo.single.blurRadius, 32);
+    expect(SceneShadow.seriesGlowAlpha, closeTo(0x88 / 255, 1e-9));
+    expect(SceneShadow.seriesGlowSigma, 3);
   });
 
   test('espacements : constantes de SceneSpace', () {
@@ -398,12 +440,17 @@ void main() {
     for (final path in tokens.keys.where(
       (p) => p.startsWith('scene.shadow.'),
     )) {
-      final shadows = _sceneReadings[path]!.actual! as List<BoxShadow>;
+      final actual = _sceneReadings[path]!.actual;
+      // Ombres seulement : `seriesGlow*` sont des nombres.
+      if (actual is! List<BoxShadow>) continue;
+      final shadows = actual;
       final list = tokens[path]! is List
           ? tokens[path]! as List
           : [tokens[path]];
       for (var i = 0; i < shadows.length; i++) {
         final css = (list[i]! as Map<String, Object?>);
+        // Les ombres à `blurRadius` n'ont pas de flou CSS à confronter.
+        if (css['blur'] == null) continue;
         final blur = _px(css['blur']);
         if (blur > 1) {
           expect(shadows[i].blurSigma, closeTo(blur / 2, 1e-9), reason: path);

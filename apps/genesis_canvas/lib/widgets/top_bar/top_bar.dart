@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsBlink, DsCaps, SceneTheme;
+    show DsBlink, DsCaps, SceneMotion, SceneTheme;
 
 import 'sm_button.dart';
 import 'voice_failure_message.dart';
@@ -269,16 +269,13 @@ class _TranscriptLine extends StatelessWidget {
 class _Caret extends StatelessWidget {
   const _Caret({required this.height});
 
-  /// Période du clignotement (`.caret::after`, `gc-blink .9s`).
-  static const Duration blinkPeriod = Duration(milliseconds: 900);
-
   final double height;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(left: 2, bottom: 4),
     child: DsBlink(
-      period: blinkPeriod,
+      period: SceneMotion.caretBlink,
       child: DecoratedBox(
         key: const Key('transcript-ai-caret'),
         decoration: BoxDecoration(color: SceneTheme.of(context).plasma),
@@ -289,13 +286,10 @@ class _Caret extends StatelessWidget {
 }
 
 /// Dit à [builder] si l'IA est en train d'écrire sa réplique : vrai dès que le
-/// texte change, et jusqu'à [hold] après la dernière modification (le curseur
+/// texte change, et jusqu'à [SceneMotion.caretHold] après la dernière modification (le curseur
 /// reste un instant, comme dans le design system).
 class _CaretWhileWriting extends StatefulWidget {
   const _CaretWhileWriting({required this.text, required this.builder});
-
-  /// Durée pendant laquelle le curseur reste après la dernière modification.
-  static const Duration hold = Duration(milliseconds: 1200);
 
   final String text;
   final Widget Function(BuildContext context, bool writing) builder;
@@ -314,7 +308,7 @@ class _CaretWhileWritingState extends State<_CaretWhileWriting> {
     if (oldWidget.text != widget.text && widget.text.isNotEmpty) {
       _writing = true;
       _timer?.cancel();
-      _timer = Timer(_CaretWhileWriting.hold, () {
+      _timer = Timer(SceneMotion.caretHold, () {
         if (mounted) setState(() => _writing = false);
       });
     }

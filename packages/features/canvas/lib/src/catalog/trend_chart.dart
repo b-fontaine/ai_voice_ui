@@ -157,13 +157,12 @@ Color _platformColor(SceneTheme theme, String name) {
 
 /// Début du point de tête dans la lecture (`gc-rise .4s 1.5s`) : il apparaît
 /// quand le tracé s'achève.
-const Duration _headDelay = Duration(milliseconds: 1500);
-const Duration _headRise = Duration(milliseconds: 400);
 
 /// Durée de la lecture : le dévoilement (1,6 s), puis la fin de l'apparition de
 /// la tête. Une seule horloge ; chaque phase en prend une tranche.
-final Duration _total = _headDelay + _headRise > SceneMotion.wipe
-    ? _headDelay + _headRise
+final Duration _total =
+    SceneMotion.headDelay + SceneMotion.headRise > SceneMotion.wipe
+    ? SceneMotion.headDelay + SceneMotion.headRise
     : SceneMotion.wipe;
 
 double _share(Duration d) => d.inMicroseconds / _total.inMicroseconds;
@@ -197,7 +196,7 @@ class _TrendViewState extends State<_TrendView>
   ).animate(oneShot);
 
   late final Animation<double> _rise = CurveTween(
-    curve: Interval(_share(_headDelay), 1, curve: SceneMotion.curve),
+    curve: Interval(_share(SceneMotion.headDelay), 1, curve: SceneMotion.curve),
   ).animate(oneShot);
 
   @override

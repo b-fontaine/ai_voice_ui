@@ -72,6 +72,21 @@ test('ombre : flou CSS B converti en blurRadius, spread et offset recopiés', ()
   assert.ok(expression.includes('spreadRadius: 1.0'), expression);
 });
 
+test('ombre : blurRadius recopié sans conversion, avec blur refusé', () => {
+  const layer = {
+    color: srgb('#A58BFF', [0.647059, 0.545098, 1], 0.6),
+    offsetX: px(0),
+    offsetY: px(0),
+    blurRadius: px(10),
+  };
+  const [, expression] = dartValue(token('shadow', [layer]));
+  assert.ok(expression.includes('blurRadius: 10.0'), expression);
+  assert.throws(
+    () => dartValue(token('shadow', [{ ...layer, blur: px(10) }])),
+    /exclusifs/,
+  );
+});
+
 test('ombre inset refusée avec une erreur claire', () => {
   assert.throws(
     () =>

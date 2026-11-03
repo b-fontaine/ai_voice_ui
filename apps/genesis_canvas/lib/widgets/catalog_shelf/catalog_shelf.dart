@@ -152,7 +152,7 @@ class _PillState extends State<_Pill>
     final Color foreground = used ? theme.accent : theme.textSecondary;
     final TextStyle style = theme.micro.chip.copyWith(color: foreground);
     final Border border = Border.all(
-      color: used ? theme.accent.withValues(alpha: 1 / 3) : theme.line,
+      color: used ? theme.signalLineSoft : theme.line,
     );
     return Semantics(
       key: Key('shelf-${component.name}'),

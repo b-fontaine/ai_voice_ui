@@ -51,6 +51,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.surface200,
     required this.surface300,
     required this.orbVeil,
+    required this.plasmaLine,
+    required this.plasmaOutline,
+    required this.signalLine,
+    required this.signalLineSoft,
     required this.body,
     required this.label,
     required this.value,
@@ -100,6 +104,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200 = SceneTokens.colorSurface200,
       surface300 = SceneTokens.colorSurface300,
       orbVeil = SceneTokens.colorOrbVeil,
+      plasmaLine = SceneTokens.colorPlasmaLine,
+      plasmaOutline = SceneTokens.colorPlasmaOutline,
+      signalLine = SceneTokens.colorSignalLine,
+      signalLineSoft = SceneTokens.colorSignalLineSoft,
       body = const TextStyle(
         fontFamily: SceneTokens.textBodyFontFamily,
         fontFamilyFallback: SceneTokens.textBodyFontFamilyFallback,
@@ -259,6 +267,20 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Voile de l'orbe vocal.
   final Color orbVeil;
 
+  // Couleurs translucides dérivées (revue d'architecte R7) : un rôle par
+  // usage, jamais un alpha posé au point d'appel.
+  /// Plasma à 33 % : bordure de la tuile de l'orchestrateur.
+  final Color plasmaLine;
+
+  /// Plasma à 53 % : contour du segment d'acte actif.
+  final Color plasmaOutline;
+
+  /// Signal à 40 % : bordure de la tuile d'un agent au travail.
+  final Color signalLine;
+
+  /// Signal à un tiers : bordure d'une puce du catalogue déjà utilisée.
+  final Color signalLineSoft;
+
   /// Texte courant (Space Grotesk 400).
   final TextStyle body;
 
@@ -348,6 +370,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     Color? surface200,
     Color? surface300,
     Color? orbVeil,
+    Color? plasmaLine,
+    Color? plasmaOutline,
+    Color? signalLine,
+    Color? signalLineSoft,
     TextStyle? body,
     TextStyle? label,
     TextStyle? value,
@@ -394,6 +420,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200: surface200 ?? this.surface200,
       surface300: surface300 ?? this.surface300,
       orbVeil: orbVeil ?? this.orbVeil,
+      plasmaLine: plasmaLine ?? this.plasmaLine,
+      plasmaOutline: plasmaOutline ?? this.plasmaOutline,
+      signalLine: signalLine ?? this.signalLine,
+      signalLineSoft: signalLineSoft ?? this.signalLineSoft,
       body: body ?? this.body,
       label: label ?? this.label,
       value: value ?? this.value,
@@ -447,6 +477,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200: c(surface200, other.surface200),
       surface300: c(surface300, other.surface300),
       orbVeil: c(orbVeil, other.orbVeil),
+      plasmaLine: c(plasmaLine, other.plasmaLine),
+      plasmaOutline: c(plasmaOutline, other.plasmaOutline),
+      signalLine: c(signalLine, other.signalLine),
+      signalLineSoft: c(signalLineSoft, other.signalLineSoft),
       body: s(body, other.body),
       label: s(label, other.label),
       value: s(value, other.value),
@@ -497,6 +531,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.surface200 == surface200 &&
       other.surface300 == surface300 &&
       other.orbVeil == orbVeil &&
+      other.plasmaLine == plasmaLine &&
+      other.plasmaOutline == plasmaOutline &&
+      other.signalLine == signalLine &&
+      other.signalLineSoft == signalLineSoft &&
       other.body == body &&
       other.label == label &&
       other.value == value &&
@@ -544,6 +582,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     surface200,
     surface300,
     orbVeil,
+    plasmaLine,
+    plasmaOutline,
+    signalLine,
+    signalLineSoft,
     body,
     label,
     value,

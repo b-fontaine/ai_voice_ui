@@ -206,9 +206,6 @@ class _ActSegments extends StatelessWidget {
   final String label;
   final bool replaying;
 
-  /// Contour du segment actif : `plasma` à 53 % (`#a58bff88` du CSS).
-  static const double _activeOutlineAlpha = 0x88 / 0xFF;
-
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
@@ -312,13 +309,7 @@ class _Segment extends StatelessWidget {
         decoration: BoxDecoration(
           color: active ? theme.plasmaGhost : null,
           borderRadius: SceneRadius.borderPill,
-          border: active
-              ? Border.all(
-                  color: theme.plasma.withValues(
-                    alpha: _ActSegments._activeOutlineAlpha,
-                  ),
-                )
-              : null,
+          border: active ? Border.all(color: theme.plasmaOutline) : null,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),

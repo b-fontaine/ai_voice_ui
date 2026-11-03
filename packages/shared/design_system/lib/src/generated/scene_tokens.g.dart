@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: d943ae2075190731fd1828f036cda55e56d5008dd46c26812e3dfcb1843ec2b3
+// tokens-sha256: 495f1567416b573a30e3b47e9dbafe0728f30af6f5c40713e7a4ff312f470537
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -43,6 +43,10 @@ abstract final class SceneTokens {
   static const Color colorSurface200 = Color(0xFF101731);
   static const Color colorSurface300 = Color(0xFF18213F);
   static const Color colorOrbVeil = Color(0xB3424242);
+  static const Color colorPlasmaLine = Color(0x54A58BFF);
+  static const Color colorPlasmaOutline = Color(0x88A58BFF);
+  static const Color colorSignalLine = Color(0x663DE8FF);
+  static const Color colorSignalLineSoft = Color(0x553DE8FF);
   static const String textBodyFontFamily =
       'packages/shared_design_system/Space Grotesk';
   static const List<String> textBodyFontFamilyFallback = [
@@ -376,6 +380,24 @@ abstract final class SceneTokens {
       spreadRadius: 0.0,
     ),
   ];
+  static const List<BoxShadow> shadowGlowPlasmaDot = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x99A58BFF),
+      offset: Offset(0.0, 0.0),
+      blurRadius: 10.0,
+      spreadRadius: 0.0,
+    ),
+  ];
+  static const List<BoxShadow> shadowTextGlowNogo = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x55FF5A76),
+      offset: Offset(0.0, 0.0),
+      blurRadius: 32.0,
+      spreadRadius: 0.0,
+    ),
+  ];
+  static const double shadowSeriesGlowAlpha = 0.5333333333333333;
+  static const double shadowSeriesGlowSigma = 3.0;
   static const Duration motionAppear = Duration(milliseconds: 480);
   static const Duration motionValue = Duration(milliseconds: 160);
   static const Duration motionStatus = Duration(milliseconds: 400);
@@ -399,6 +421,14 @@ abstract final class SceneTokens {
   static const Duration motionIndet = Duration(milliseconds: 1300);
   static const Duration motionRing = Duration(milliseconds: 1800);
   static const Duration motionBlink = Duration(milliseconds: 1000);
+  static const Duration motionCaretBlink = Duration(milliseconds: 900);
+  static const Duration motionCaretHold = Duration(milliseconds: 1200);
+  static const Duration motionRecBlink = Duration(milliseconds: 1200);
+  static const Duration motionAgentBeacon = Duration(milliseconds: 1200);
+  static const Duration motionHeadDelay = Duration(milliseconds: 1500);
+  static const Duration motionHeadRise = Duration(milliseconds: 400);
+  static const Duration motionStreamRow = Duration(milliseconds: 350);
+  static const Duration motionSplitDelay = Duration(milliseconds: 200);
   static const double motionBlur = 4.0;
   static const double motionScale = 0.985;
   static const Cubic motionCurve = Cubic(0.2, 0.8, 0.2, 1.0);

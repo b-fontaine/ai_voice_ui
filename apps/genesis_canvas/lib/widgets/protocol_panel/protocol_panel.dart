@@ -254,10 +254,6 @@ class _EntryTile extends StatefulWidget {
 /// repeints. Animations coupées : l'entrée est en place d'emblée.
 class _EntryTileState extends State<_EntryTile>
     with SingleTickerProviderStateMixin<_EntryTile>, SceneOneShot<_EntryTile> {
-  /// Durée de l'apparition (`gc-row .35s` du flux, plus vive que la ligne de
-  /// tableau, 480 ms).
-  static const Duration appear = Duration(milliseconds: 350);
-
   /// Glissement de départ, en points (`translateX(-12px)`).
   static const double slide = 12;
 
@@ -267,7 +263,7 @@ class _EntryTileState extends State<_EntryTile>
       .animate(oneShot);
 
   @override
-  Duration get oneShotBase => appear;
+  Duration get oneShotBase => SceneMotion.streamRow;
 
   @override
   void didChangeDependencies() {

@@ -22,6 +22,8 @@ void main() {
       'shadowGlowSignal',
       'shadowGlowNogo',
       'shadowGlowPlasma',
+      'shadowGlowPlasmaDot',
+      'shadowTextGlowNogo',
     ]);
     for (final match in shadows) {
       expect(match.group(1), 'const', reason: match.group(2));

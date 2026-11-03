@@ -7,13 +7,9 @@ import 'package:shared_design_system/shared_design_system.dart'
 /// répartition (`.gc-split { gap: 2px }`).
 const double splitGap = 2;
 
-/// Retard de la part négative sur la part positive
-/// (`transition: width … .2s`).
-const Duration splitNegativeDelay = Duration(milliseconds: 200);
-
 /// Durée totale de l'animation de la barre : remplissage de la part négative
-/// comprise, qui démarre [splitNegativeDelay] plus tard.
-Duration get splitDuration => SceneMotion.gauge + splitNegativeDelay;
+/// comprise, qui démarre [SceneMotion.splitDelay] plus tard.
+Duration get splitDuration => SceneMotion.gauge + SceneMotion.splitDelay;
 
 /// Parts (de 0 à 1) de la barre lues des pourcentages positif et négatif ;
 /// `null` si un pourcentage est illisible (hors de 0 à 100, ou somme
@@ -39,10 +35,10 @@ double _window(double t, Duration begin, Duration end) {
 double splitPositiveProgress(double t) =>
     _window(t, Duration.zero, SceneMotion.gauge);
 
-/// Progression de la part négative : même durée, [splitNegativeDelay] plus
+/// Progression de la part négative : même durée, [SceneMotion.splitDelay] plus
 /// tard.
 double splitNegativeProgress(double t) =>
-    _window(t, splitNegativeDelay, splitDuration);
+    _window(t, SceneMotion.splitDelay, splitDuration);
 
 /// Largeurs des deux parts sur une piste de [track] px : proportionnelles aux
 /// [shares], multipliées par leur progression ; si elles ne tiennent pas avec

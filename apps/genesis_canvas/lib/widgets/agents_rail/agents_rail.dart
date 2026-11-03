@@ -10,6 +10,7 @@ import 'package:shared_design_system/shared_design_system.dart'
         SceneMotion,
         SceneMotionScope,
         SceneRadius,
+        SceneShadow,
         SceneTheme;
 
 import 'delegation_link_geometry.dart' show DelegationLinkGeometry;
@@ -103,13 +104,6 @@ class _AgentTile extends StatelessWidget {
   /// Épaisseur de la barre indéterminée.
   static const double barHeight = 2;
 
-  /// Période du battement du point d'un agent au travail (`gc-beacon 1.2s`,
-  /// la puce Bloquant bat plus lentement : 1,6 s).
-  static const Duration beaconPeriod = Duration(milliseconds: 1200);
-
-  /// Halo du point de l'orchestrateur.
-  static const double glowBlur = 10;
-
   /// Glyphe d'un agent terminé.
   static const String doneGlyph = '✓';
 
@@ -137,12 +131,12 @@ class _AgentTile extends StatelessWidget {
         AgentRunState.interrupted => theme.agentInterrupted,
       };
 
-  /// Bordure : `plasma` à 33 % (orchestrateur), `signal` à 40 % (au travail),
-  /// `line` sinon.
+  /// Bordure : `plasmaLine` (orchestrateur), `signalLine` (au travail), `line`
+  /// sinon.
   static Color _borderColor(SceneTheme theme, AgentRunState state) =>
       switch (state) {
-        AgentRunState.orchestrating => theme.plasma.withValues(alpha: 0.33),
-        AgentRunState.working => theme.accent.withValues(alpha: 0.4),
+        AgentRunState.orchestrating => theme.plasmaLine,
+        AgentRunState.working => theme.signalLine,
         _ => theme.line,
       };
 
@@ -167,12 +161,7 @@ class _AgentTile extends StatelessWidget {
         shape: BoxShape.circle,
         color: dot,
         boxShadow: state == AgentRunState.orchestrating
-            ? <BoxShadow>[
-                BoxShadow(
-                  color: theme.plasma.withValues(alpha: 0.6),
-                  blurRadius: glowBlur,
-                ),
-              ]
+            ? SceneShadow.glowPlasmaDot
             : null,
       ),
       child: const SizedBox.square(dimension: DelegationLinkGeometry.dotSize),
@@ -211,7 +200,7 @@ class _AgentTile extends StatelessWidget {
                               ? DsBeacon(
                                   color: dot,
                                   size: DelegationLinkGeometry.dotSize,
-                                  period: beaconPeriod,
+                                  period: SceneMotion.agentBeacon,
                                   child: dotView,
                                 )
                               : dotView,

@@ -110,10 +110,6 @@ class _Comparison {
   }
 }
 
-/// Lueur `nogo` du chiffre héros (`text-shadow: 0 0 32px #ff5a7655`).
-const double _glowBlur = 32;
-const double _glowAlpha = 0x55 / 255;
-
 class _Complete extends StatefulWidget {
   const _Complete({required this.kpi});
 
@@ -248,13 +244,9 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    // Lueur `nogo` du chiffre héros (`text-shadow: 0 0 32px #ff5a7655`).
     final List<Shadow>? glow = status == SceneStatus.blocking
-        ? <Shadow>[
-            Shadow(
-              color: theme.blockingForeground.withValues(alpha: _glowAlpha),
-              blurRadius: _glowBlur,
-            ),
-          ]
+        ? SceneShadow.textGlowNogo
         : null;
     final TextStyle valueStyle = theme.value.copyWith(shadows: glow);
     final TextStyle unitStyle = theme.micro.kpiUnit.copyWith(

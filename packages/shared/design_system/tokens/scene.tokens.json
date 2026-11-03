@@ -136,6 +136,22 @@
       "orbVeil": {
         "$type": "color",
         "$value": "{color.orbVeil}"
+      },
+      "plasmaLine": {
+        "$type": "color",
+        "$value": "{color.plasmaLine}"
+      },
+      "plasmaOutline": {
+        "$type": "color",
+        "$value": "{color.plasmaOutline}"
+      },
+      "signalLine": {
+        "$type": "color",
+        "$value": "{color.signalLine}"
+      },
+      "signalLineSoft": {
+        "$type": "color",
+        "$value": "{color.signalLineSoft}"
       }
     },
     "text": {
@@ -895,6 +911,24 @@
       "glowPlasma": {
         "$type": "shadow",
         "$value": "{shadow.glowPlasma}"
+      },
+      "glowPlasmaDot": {
+        "$type": "shadow",
+        "$value": "{shadow.glowPlasmaDot}"
+      },
+      "textGlowNogo": {
+        "$type": "shadow",
+        "$value": "{shadow.textGlowNogo}"
+      },
+      "seriesGlowAlpha": {
+        "$type": "number",
+        "$description": "Opacité de la lueur d'une série de graphique (0x88 / 255) ; la couleur est celle de la série.",
+        "$value": 0.5333333333333333
+      },
+      "seriesGlowSigma": {
+        "$type": "number",
+        "$description": "Écart type du flou de la lueur d'une série (drop-shadow de 6 px).",
+        "$value": 3
       }
     },
     "motion": {
@@ -989,6 +1023,38 @@
       "blink": {
         "$type": "duration",
         "$value": "{duration.1000}"
+      },
+      "caretBlink": {
+        "$type": "duration",
+        "$value": "{duration.900}"
+      },
+      "caretHold": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "recBlink": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "agentBeacon": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "headDelay": {
+        "$type": "duration",
+        "$value": "{duration.1500}"
+      },
+      "headRise": {
+        "$type": "duration",
+        "$value": "{duration.400}"
+      },
+      "streamRow": {
+        "$type": "duration",
+        "$value": "{duration.350}"
+      },
+      "splitDelay": {
+        "$type": "duration",
+        "$value": "{duration.200}"
       },
       "blur": {
         "$type": "number",
