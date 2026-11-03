@@ -44,7 +44,7 @@ Le panneau déplié (780×620, ancré en bas à droite) recouvrait x 1116..1896,
 - Hauteur 472 px (3 entrées) ; déplacement de la barre de rejeu (voir Options).
 
 ## Conséquences
-- [p-ar-frontend-screen](../architecture/frontend-screen.md) § Acte 4 et [p-ar-replay](../architecture/replay.md) mis à jour à la clôture de 018.
+- [p-ar-frontend-screen](../architecture/frontend-screen.md) § Acte 4 et [p-ar-replay](../architecture/replay.md) mis à jour à la clôture de 018 (2026-11-03).
 - Le contournement de 017 ([pdr-0084](pdr-0084-017-design-system-ui-details-assistant-decided.md) U15 d : remplissage de la barre) n'est plus nécessaire dans son principe ; sa géométrie de 8 px est conservée pour ne pas bouger les rectangles.
 
 ## Réexaminer si
@@ -54,3 +54,4 @@ Le panneau déplié (780×620, ancré en bas à droite) recouvrait x 1116..1896,
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-11-03 | Acceptée dans le cadre de 018 (revue du plan, P4). | Assistant (délégation du porteur, pdr-0062) |
+| 2026-11-03 | Livrée par 018 (`gate --full` vert, 67 contrôles ; capture 1920×1080 conforme : panneau x 1116..1896, y 304..924, barre de rejeu entière visible). Conséquence assumée à montrer au porteur : la légende du graphique de la cellule de droite du haut est tronquée. | Boucle (clôture de 018) |

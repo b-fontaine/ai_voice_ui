@@ -3,9 +3,9 @@ id: p-ar-replay
 title: Journal A2UI et rejeu (acte 4)
 area: architecture
 status: validated
-updated: 2026-10-30
-sources: [specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/plan.md, specs/010-j6-act4-replay/status.md, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
-links: [p-ar-overview, p-ar-frontend, p-ar-frontend-screen, p-rm-roadmap, p-rm-backlog, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
+updated: 2026-11-03
+sources: [specs/018-replay-bar-reachable/spec.md, specs/018-replay-bar-reachable/plan.md, specs/018-replay-bar-reachable/status.md, specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/plan.md, specs/010-j6-act4-replay/status.md, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
+links: [pdr-0085-replay-bar-not-covered-by-protocol-panel, pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided, p-fn-feature-replay-bar-018, p-ar-overview, p-ar-frontend, p-ar-frontend-screen, p-rm-roadmap, p-rm-backlog, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
 tags: [rejeu, replay, journal, acte-4, determinisme]
 ---
 # Journal A2UI et rejeu (acte 4)
@@ -85,8 +85,11 @@ Une valeur invalide donne une erreur de configuration en français, sans recopie
 | `GENESIS_REPLAY_JOURNAL_MAX` | plafond du journal | 5000 ; 1 à 100000 |
 | `GENESIS_REPLAY_SPEED` | vitesse au premier démarrage | 1 ; l'une de 0,25 / 0,5 / 1 / 1,5 / 2 |
 | `GENESIS_REPLAY_AT` | mode capture : fraction de la durée comprimée | absent ; 0 à 1 |
+| `GENESIS_PROTOCOL_EXPANDED` (018) | démarrer avec le panneau du protocole déplié, pour la capture | absent (replié) ; `1`/`true` ou `0`/`false` |
 
-**Mode capture** (`GENESIS_REPLAY_AT`, avec `GENESIS_SCENARIO` et `GENESIS_SNAPSHOT`) : à la fin du scénario scripté, la page entre en rejeu, se positionne à la fraction demandée, met en pause puis capture (`GENESIS_REPLAY_AT=0.5 app-smoke.sh act3-replay`). Sans la variable, le comportement de 000 est inchangé.
+**Mode capture** (`GENESIS_REPLAY_AT`, avec `GENESIS_SCENARIO` et `GENESIS_SNAPSHOT`) : à la fin du scénario scripté, la page entre en rejeu, se positionne à la fraction demandée, met en pause puis capture (`GENESIS_REPLAY_AT=0.5 app-smoke.sh act3-replay`). Sans la variable, le comportement de 000 est inchangé. Avec `GENESIS_PROTOCOL_EXPANDED=1`, la capture montre le panneau déplié (`GENESIS_REPLAY_AT=0.5 GENESIS_PROTOCOL_EXPANDED=1 app-smoke.sh act1-replay`).
+
+**Barre toujours atteignable (018, [pdr-0085](../decisions/pdr-0085-replay-bar-not-covered-by-protocol-panel.md), [pdr-0086](../decisions/pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided.md))** : le panneau déplié est posé au-dessus de la rangée du bas ([p-ar-frontend-screen](frontend-screen.md) § Acte 4), donc les commandes de la barre (Lecture, Recommencer, glissière, « Direct », vitesses) restent visibles et atteignables, panneau déplié ou replié ; scénarios RB-01 à RB-03.
 
 ## Déterminisme
 
