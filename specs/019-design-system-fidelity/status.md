@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T32a, T32b
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas (canvas_board : port generation), packages/shared/design_system (ds_gen_frame), apps/genesis_canvas/lib/pages/genesis_canvas/genesis_canvas_page.dart, tests, histoire Widgetbook
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
