@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/surface_restored.dart';
 import 'bound_item.dart';
 import 'text_metrics.dart';
 import 'trend_chart_painter.dart';
 import 'trend_geometry.dart';
+import 'trend_head.dart';
+import 'trend_legend.dart';
 
 /// `TrendChart` : courbes par série (3.3 / 3.4), seuil, jours, légende.
 ///
@@ -170,13 +173,6 @@ double _share(Duration d) => d.inMicroseconds / _total.inMicroseconds;
 /// Marge autour du tracé que le dévoilement ne rogne pas (lueur, points).
 const double _bleed = 8;
 
-/// Distance de la valeur de tête au disque et de l'annotation au seuil.
-const double _headGap = 12;
-const double _calloutGap = 8;
-
-/// Rayon du disque de tête (`.head`, r = 5).
-const double _headRadius = 5;
-
 class _TrendView extends StatefulWidget {
   const _TrendView({required this.trend});
 
@@ -188,7 +184,7 @@ class _TrendView extends StatefulWidget {
 
 class _TrendViewState extends State<_TrendView>
     with SingleTickerProviderStateMixin<_TrendView>, SceneOneShot<_TrendView> {
-  late final bool _restored = DsRise.settledOf(context);
+  late final bool _restored = SurfaceRestored.of(context);
   bool _started = false;
 
   late final Animation<double> _wipe = CurveTween(
@@ -243,7 +239,7 @@ class _TrendViewState extends State<_TrendView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           DsPanelHead.title(title: trend.title, wrap: true),
-          _Legend(series: series, trend: trend),
+          TrendLegend(series: series, thresholdPct: trend.thresholdPct),
           const SizedBox(height: 8),
           Expanded(
             child: LayoutBuilder(
@@ -408,7 +404,7 @@ class _TrendViewState extends State<_TrendView>
         ),
         if (focus != null && trend.headValue != null)
           Positioned.fill(
-            child: _HeadLayer(
+            child: TrendHeadLayer(
               animation: _rise,
               reveal: oneShot,
               plot: plot,
@@ -471,303 +467,4 @@ class _Wipe extends CustomClipper<Rect> {
 
   @override
   bool shouldReclip(_Wipe oldClipper) => oldClipper.progress != progress;
-}
-
-/// Point de tête, sa valeur et l'annotation : apparaissent après le tracé
-/// (`gc-rise`, sans flou), en widgets `Text` posés par la géométrie.
-class _HeadLayer extends StatelessWidget {
-  const _HeadLayer({
-    required this.animation,
-    required this.reveal,
-    required this.plot,
-    required this.head,
-    required this.color,
-    required this.value,
-    required this.aboveThreshold,
-    required this.callout,
-    required this.calloutAt,
-  });
-
-  final Animation<double> animation;
-
-  /// Lecture complète du tracé (1 à la fin) : l'anneau de tête attend sa fin.
-  final Animation<double> reveal;
-  final Rect plot;
-
-  /// Centre du disque de tête, dans la région du graphique.
-  final Offset head;
-  final Color color;
-  final String value;
-  final bool aboveThreshold;
-  final String? callout;
-
-  /// Croisement du seuil, dans la région du graphique.
-  final Offset? calloutAt;
-
-  @override
-  Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    final TextStyle calloutStyle = theme.micro.callout.copyWith(
-      color: theme.blockingForeground,
-    );
-    final double textHeight = lineHeightOf(theme.micro.callout);
-    return DsReveal(
-      animation: animation,
-      from: const Offset(0, SceneMotion.translation),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints box) => Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            Positioned(
-              left: head.dx - _headRadius,
-              top: head.dy - _headRadius,
-              width: 2 * _headRadius,
-              height: 2 * _headRadius,
-              child: _HeadRing(
-                key: const Key('trend-head-ring'),
-                reveal: reveal,
-                color: SceneTheme.of(context).accent,
-              ),
-            ),
-            Positioned(
-              left: head.dx - _headRadius,
-              top: head.dy - _headRadius,
-              width: 2 * _headRadius,
-              height: 2 * _headRadius,
-              child: DecoratedBox(
-                key: const Key('trend-head'),
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-            ),
-            Positioned(
-              right: box.maxWidth - (head.dx - _headGap),
-              bottom:
-                  box.maxHeight - math.max(head.dy - 4, plot.top + textHeight),
-              child: Text(
-                value,
-                key: const Key('trend-head-value'),
-                style: aboveThreshold
-                    ? calloutStyle
-                    : calloutStyle.copyWith(color: theme.textSecondary),
-                maxLines: 1,
-                softWrap: false,
-              ),
-            ),
-            if (callout != null && calloutAt != null)
-              Positioned(
-                left: calloutAt!.dx + _headGap,
-                top: calloutAt!.dy + _calloutGap,
-                child: Text(
-                  callout!,
-                  key: const Key('trend-callout'),
-                  style: calloutStyle,
-                  maxLines: 1,
-                  softWrap: false,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Légende (`.gc-legend`) : un trait de 18 x 3 px par série, puis le seuil en
-/// tirets. Les entrées passent à la ligne du `Wrap` plutôt que d'être coupées.
-class _Legend extends StatelessWidget {
-  const _Legend({required this.series, required this.trend});
-
-  final List<TrendSeries> series;
-  final _Trend trend;
-
-  @override
-  Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    return Wrap(
-      spacing: 16,
-      runSpacing: 4,
-      children: <Widget>[
-        for (final TrendSeries s in series)
-          _LegendEntry(
-            key: Key('trend-series-${s.name}'),
-            swatchKey: Key('trend-swatch-${s.name}'),
-            color: s.color,
-            style: s.dashed ? TrendSwatchStyle.dotted : TrendSwatchStyle.solid,
-            text: s.name,
-          ),
-        _LegendEntry(
-          key: const Key('trend-threshold-legend'),
-          swatchKey: const Key('trend-threshold-swatch'),
-          color: theme.blockingForeground,
-          style: TrendSwatchStyle.dashed,
-          text: 'Seuil ${formatPct(trend.thresholdPct)}',
-        ),
-      ],
-    );
-  }
-}
-
-class _LegendEntry extends StatelessWidget {
-  const _LegendEntry({
-    super.key,
-    required this.swatchKey,
-    required this.color,
-    required this.style,
-    required this.text,
-  });
-
-  final Key swatchKey;
-  final Color color;
-  final TrendSwatchStyle style;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        SizedBox(
-          key: swatchKey,
-          width: 18,
-          height: 3,
-          child: CustomPaint(
-            painter: TrendSwatchPainter(color: color, style: style),
-          ),
-        ),
-        const SizedBox(width: 6),
-        // Flexible : seul un nom plus large que la cellule entière prend
-        // l'ellipse (garde contre un débordement du tracé).
-        Flexible(
-          child: Text(
-            text,
-            style: theme.micro.legend.copyWith(color: theme.textSecondary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Anneau de tête (`gc-ring`, 1,8 s, pdr-0088 F9) : un cercle `signal` de
-/// trait 2 qui grossit de 1 à 3 en s'estompant de .9 à 0, en boucle, **une fois
-/// le tracé fini** ([reveal] à 1). Il s'éteint quand le tracé rejoue.
-///
-/// Un contrôleur propre, lancé une fois par `SceneMotionScope.loop` à la fin du
-/// tracé, dans son propre `RepaintBoundary` ; le painter écoute le contrôleur
-/// (pas de reconstruction par image : le graphique est sous des
-/// `LayoutBuilder`). **Phase de repos** (animations coupées) : invisible, aucun
-/// `Ticker`.
-class _HeadRing extends StatefulWidget {
-  const _HeadRing({super.key, required this.reveal, required this.color});
-
-  final Animation<double> reveal;
-  final Color color;
-
-  @override
-  State<_HeadRing> createState() => _HeadRingState();
-}
-
-class _HeadRingState extends State<_HeadRing>
-    with SingleTickerProviderStateMixin, SceneLoop<_HeadRing> {
-  @override
-  Duration get loopBase => SceneMotion.ring;
-
-  // Boucle à la fin du tracé, repos (invisible, phase 0) pendant le tracé et
-  // sous `disabled`.
-  @override
-  bool get loopActive =>
-      widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.reveal.addStatusListener(_onRevealStatus);
-  }
-
-  @override
-  void didUpdateWidget(_HeadRing oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.reveal != widget.reveal) {
-      oldWidget.reveal.removeStatusListener(_onRevealStatus);
-      widget.reveal.addStatusListener(_onRevealStatus);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _sync();
-  }
-
-  void _onRevealStatus(AnimationStatus status) => _sync();
-
-  void _sync() {
-    syncLoop();
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    widget.reveal.removeStatusListener(_onRevealStatus);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: RepaintBoundary(
-        child: CustomPaint(
-          painter: _HeadRingPainter(
-            phase: loop,
-            color: widget.color,
-            visible: loopActive,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeadRingPainter extends CustomPainter {
-  _HeadRingPainter({
-    required this.phase,
-    required this.color,
-    required this.visible,
-  }) : super(repaint: phase);
-
-  /// Échelle finale de l'anneau (`scale(3)`) et opacité de départ (.9).
-  static const double _endScale = 3;
-  static const double _startOpacity = 0.9;
-
-  /// Épaisseur du trait au départ (`stroke-width: 2`, mise à l'échelle avec
-  /// le cercle).
-  static const double _stroke = 2;
-
-  final Animation<double> phase;
-  final Color color;
-
-  /// Faux pendant le tracé et sous animations coupées : rien n'est peint.
-  final bool visible;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (!visible) return;
-    final double t = Curves.easeOut.transform(phase.value);
-    final double scale = 1 + (_endScale - 1) * t;
-    canvas.drawCircle(
-      size.center(Offset.zero),
-      size.width / 2 * scale,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = _stroke * scale
-        ..color = color.withValues(alpha: _startOpacity * (1 - t)),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_HeadRingPainter old) =>
-      old.phase != phase || old.color != color || old.visible != visible;
 }

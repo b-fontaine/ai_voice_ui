@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/surface_restored.dart';
 import 'bound_item.dart';
 import 'split_share.dart';
 import 'text_metrics.dart';
@@ -129,7 +130,7 @@ class _ReviewsViewState extends State<_ReviewsView>
     with
         SingleTickerProviderStateMixin<_ReviewsView>,
         SceneOneShot<_ReviewsView> {
-  late final bool _restored = DsRise.settledOf(context);
+  late final bool _restored = SurfaceRestored.of(context);
   bool _started = false;
 
   @override
@@ -154,7 +155,7 @@ class _ReviewsViewState extends State<_ReviewsView>
     final String average = reviews.average
         .toStringAsFixed(1)
         .replaceAll('.', ',');
-    final TextStyle legend = theme.micro.delta.withSceneWeight(600);
+    final TextStyle legend = theme.micro.splitLegend;
     final ({double positive, double negative})? shares = splitShares(
       reviews.positivePct,
       reviews.negativePct,

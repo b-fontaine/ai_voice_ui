@@ -148,12 +148,23 @@ class _DsGenFrameState extends State<DsGenFrame>
 
   AnimationController get _controller => loop;
 
+  late final Animation<double> _opacity = _GenFrameOpacity(
+    _controller,
+    () => widget.done,
+  );
+
   bool _doneStarted = false;
   bool _finished = false;
 
   @override
   void initState() {
     super.initState();
+    // La période est un plus petit commun multiple : un jeton de durée
+    // modifié ne doit pas la rendre absurde.
+    assert(
+      DsGenFrame.loopPeriod <= const Duration(minutes: 2),
+      'période de la boucle trop longue : ${DsGenFrame.loopPeriod}',
+    );
     _controller.addStatusListener((AnimationStatus status) {
       // Fin du fondu : on est dans l'image qui le termine (hors construction),
       // le parent peut retirer le cadre dans cette même image.
@@ -213,10 +224,10 @@ class _DsGenFrameState extends State<DsGenFrame>
         : '${widget.agent} · $_generates';
     final double tagTop = math.max(0, widget.inset - DsGenFrame.tagHeight / 2);
     return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _controller,
+      child: FadeTransition(
         // Peinture et étiquette sont construites une fois : seule l'opacité
         // suit l'image, au-dessus de la clé du cadre.
+        opacity: _opacity,
         child: Stack(
           clipBehavior: Clip.none,
           fit: StackFit.expand,
@@ -248,18 +259,28 @@ class _DsGenFrameState extends State<DsGenFrame>
             ),
           ],
         ),
-        builder: (BuildContext context, Widget? child) {
-          final double opacity = DsGenFrame.phasesAt(
-            _controller.value,
-            done: widget.done,
-          ).opacity;
-          return Opacity(opacity: opacity, child: child);
-        },
       ),
     );
   }
 
   static const String _generates = 'génère';
+}
+
+/// Opacité du cadre, dérivée du contrôleur unique : 1 en boucle, puis le
+/// fondu de la fin (`phasesAt`). Lue par `FadeTransition`, qui ne reconstruit
+/// rien : seule la couche d'opacité suit l'image.
+class _GenFrameOpacity extends Animation<double>
+    with AnimationWithParentMixin<double> {
+  _GenFrameOpacity(this.parent, this._isDone);
+
+  @override
+  final Animation<double> parent;
+
+  final bool Function() _isDone;
+
+  @override
+  double get value =>
+      DsGenFrame.phasesAt(parent.value, done: _isDone()).opacity;
 }
 
 /// Pastille « `Agent` · génère » : fond `void`, bordure et texte `signal`,

@@ -139,6 +139,22 @@ void main() {
       wght: 600,
       letterSpacing: null,
     ),
+    'criterion': (
+      pick: (m) => m.criterion,
+      family: sans,
+      size: 15,
+      height: 20 / 15,
+      wght: 500,
+      letterSpacing: null,
+    ),
+    'splitLegend': (
+      pick: (m) => m.splitLegend,
+      family: mono,
+      size: 14,
+      height: 20 / 14,
+      wght: 600,
+      letterSpacing: null,
+    ),
   };
 
   final micro = const SceneTheme.dark().micro;

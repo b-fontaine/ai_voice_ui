@@ -17,6 +17,7 @@ import '../model/canvas_bloc.dart';
 import '../model/canvas_state.dart';
 import 'dashed_outline_painter.dart';
 import 'generation_target.dart';
+import 'surface_restored.dart';
 
 /// Grille des surfaces actives (FR-01). Vide tant qu'aucune surface n'existe.
 ///
@@ -325,7 +326,10 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance> {
     return DsRise(
       settled: _settled,
       // La `Surface` est construite une fois : seul l'habillage suit l'image.
-      child: Surface(surfaceContext: widget.controller.contextFor(widget.id)),
+      child: SurfaceRestored(
+        restored: _settled,
+        child: Surface(surfaceContext: widget.controller.contextFor(widget.id)),
+      ),
     );
   }
 }

@@ -136,6 +136,8 @@ final Map<String, TextStyle> _microStyles = <String, TextStyle>{
   'callout': _themeForText.micro.callout,
   'segment': _themeForText.micro.segment,
   'segmentNo': _themeForText.micro.segmentNo,
+  'criterion': _themeForText.micro.criterion,
+  'splitLegend': _themeForText.micro.splitLegend,
 };
 
 /// Rayon de flou de `BoxShadow` pour un flou CSS [cssBlur] : le flou CSS `B`

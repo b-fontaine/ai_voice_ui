@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 495f1567416b573a30e3b47e9dbafe0728f30af6f5c40713e7a4ff312f470537
+// tokens-sha256: 5f03fa31f20c3d9b7911dded3b28215862c8983c9c8c7dfc885830513c7b131c
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -324,6 +324,28 @@ abstract final class SceneTokens {
   static const double microSegmentNoHeight = 1.0;
   static const FontWeight microSegmentNoFontWeight = FontWeight.w600;
   static const List<FontVariation> microSegmentNoFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const String microCriterionFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> microCriterionFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microCriterionFontSize = 15.0;
+  static const double microCriterionHeight = 1.3333333333333333;
+  static const FontWeight microCriterionFontWeight = FontWeight.w500;
+  static const List<FontVariation> microCriterionFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microSplitLegendFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microSplitLegendFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microSplitLegendFontSize = 14.0;
+  static const double microSplitLegendHeight = 1.4285714285714286;
+  static const FontWeight microSplitLegendFontWeight = FontWeight.w600;
+  static const List<FontVariation> microSplitLegendFontVariations = [
     FontVariation('wght', 600.0),
   ];
   static const double space1 = 4.0;

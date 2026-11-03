@@ -53,12 +53,15 @@ abstract final class SceneStyleHarness {
   ];
 
   /// Rôles de texte du `SceneTheme` qui portent des mots (Space Grotesk) :
-  /// titre, texte courant, bouton, transcription.
+  /// titre, texte courant, bouton, transcription, et le critère de la
+  /// checklist (micro-style sans 500 15/20 : même triplet que `data`, donc
+  /// commun aux deux familles et non classé).
   static const List<String> wordRoles = <String>[
     'title',
     'body',
     'button',
     'transcript',
+    'micro.criterion',
   ];
 
   static final Map<String, TextStyle Function(dynamic)> _roleGetters =
@@ -71,6 +74,7 @@ abstract final class SceneStyleHarness {
         'body': (dynamic t) => t.body as TextStyle,
         'button': (dynamic t) => t.button as TextStyle,
         'transcript': (dynamic t) => t.transcript as TextStyle,
+        'micro.criterion': (dynamic t) => t.micro.criterion as TextStyle,
       };
 
   /// Le style du rôle [role] dans [theme] ; `null` si le thème ne porte pas
@@ -101,23 +105,6 @@ abstract final class SceneStyleHarness {
             near(style.letterSpacing, role.letterSpacing, 0.01));
   }
 
-  /// Paragraphes de la colonne des critères de la checklist (`gc-check`,
-  /// 019 T22) : des mots en sans 500, 15 px sur 20 px, soit exactement le
-  /// triplet (taille, graisse, interligne) du rôle `data` en mono. Le style ne
-  /// suffit plus à les classer : ils ne sont rangés dans aucune famille de rôles.
-  static Set<RenderParagraph> _criterionParagraphs(WidgetTester tester) {
-    final Finder cells = find.byWidgetPredicate((Widget w) {
-      final Key? key = w.key;
-      return key is ValueKey<String> &&
-          RegExp(r'^checklist-cell-\d+-0$').hasMatch(key.value);
-    });
-    return tester
-        .renderObjectList<RenderParagraph>(
-          find.descendant(of: cells, matching: find.byType(RichText)),
-        )
-        .toSet();
-  }
-
   /// Paragraphes visibles dont le style correspond à un des [roles] et à
   /// aucun des [otherRoles] (un style commun aux deux familles de rôles ne
   /// prouve rien et n'est pas classé).
@@ -127,17 +114,22 @@ abstract final class SceneStyleHarness {
     required List<String> otherRoles,
   }) {
     final SceneTheme sceneTheme = theme(tester);
-    List<TextStyle> styles(List<String> names) => <TextStyle>[
-      for (final String name in names) ?roleStyle(sceneTheme, name),
-    ];
-    final List<TextStyle> mine = styles(roles);
-    final List<TextStyle> others = styles(otherRoles);
-    final Set<RenderParagraph> unclassified = _criterionParagraphs(tester);
+    // Un rôle `micro.*` est un style de composant, propre à une famille : il
+    // ne classe un texte que si la famille est aussi la sienne. Sans cela, le
+    // critère de la checklist (sans) rendrait tout le rôle `data` (mono, même
+    // triplet) commun aux deux familles.
+    bool matches(TextStyle? style, String name, TextStyle role) =>
+        matchesRole(style, role) &&
+        (!name.startsWith('micro.') ||
+            bareFamily(style?.fontFamily) == bareFamily(role.fontFamily));
+    bool inFamily(TextStyle? style, List<String> names) =>
+        names.any((String name) {
+          final TextStyle? role = roleStyle(sceneTheme, name);
+          return role != null && matches(style, name, role);
+        });
     return visibleParagraphs(tester).where((RenderParagraph p) {
       final TextStyle? style = p.text.style;
-      if (unclassified.contains(p)) return false;
-      return mine.any((TextStyle r) => matchesRole(style, r)) &&
-          !others.any((TextStyle r) => matchesRole(style, r));
+      return inFamily(style, roles) && !inFamily(style, otherRoles);
     }).toList();
   }
 

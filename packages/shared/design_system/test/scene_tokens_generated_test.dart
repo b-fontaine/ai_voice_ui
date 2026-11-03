@@ -75,10 +75,10 @@ void main() {
     expect(source, contains('textValueLetterSpacing = -3.04'));
     expect(source, contains('textLabelLetterSpacing = 1.54'));
     expect(source, contains('textVerdictLetterSpacing = 1.12'));
-    // 9 styles de texte et 15 micro-styles, chacun avec son repli.
+    // 9 styles de texte et 17 micro-styles, chacun avec son repli.
     final textFallbacks = RegExp(r'text\w+FontFamilyFallback =');
     final microFallbacks = RegExp(r'micro\w+FontFamilyFallback =');
     expect(textFallbacks.allMatches(source).length, 9);
-    expect(microFallbacks.allMatches(source).length, 15);
+    expect(microFallbacks.allMatches(source).length, 17);
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/surface_restored.dart';
 import 'bound_item.dart';
 import 'fr_percent.dart';
 import 'gauge_scale.dart';
@@ -121,7 +122,7 @@ class _Complete extends StatefulWidget {
 
 class _CompleteState extends State<_Complete>
     with SingleTickerProviderStateMixin<_Complete>, SceneOneShot<_Complete> {
-  late final bool _restored = DsRise.settledOf(context);
+  late final bool _restored = SurfaceRestored.of(context);
   bool _started = false;
 
   FrPercent? get _value => widget.kpi.percent;

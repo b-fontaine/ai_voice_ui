@@ -28,6 +28,8 @@ class SceneMicroStyles {
     required this.callout,
     required this.segment,
     required this.segmentNo,
+    required this.criterion,
+    required this.splitLegend,
   });
 
   /// Micro-styles issus des jetons générés (`scene.micro.*`).
@@ -154,6 +156,22 @@ class SceneMicroStyles {
         height: SceneTokens.microSegmentNoHeight,
         fontWeight: SceneTokens.microSegmentNoFontWeight,
         fontVariations: SceneTokens.microSegmentNoFontVariations,
+      ),
+      criterion = const TextStyle(
+        fontFamily: SceneTokens.microCriterionFontFamily,
+        fontFamilyFallback: SceneTokens.microCriterionFontFamilyFallback,
+        fontSize: SceneTokens.microCriterionFontSize,
+        height: SceneTokens.microCriterionHeight,
+        fontWeight: SceneTokens.microCriterionFontWeight,
+        fontVariations: SceneTokens.microCriterionFontVariations,
+      ),
+      splitLegend = const TextStyle(
+        fontFamily: SceneTokens.microSplitLegendFontFamily,
+        fontFamilyFallback: SceneTokens.microSplitLegendFontFamilyFallback,
+        fontSize: SceneTokens.microSplitLegendFontSize,
+        height: SceneTokens.microSplitLegendHeight,
+        fontWeight: SceneTokens.microSplitLegendFontWeight,
+        fontVariations: SceneTokens.microSplitLegendFontVariations,
       );
 
   /// Pastille de statut (`.gc-badge`) : mono 600 12 px, 0,08 em, capitales.
@@ -201,6 +219,12 @@ class SceneMicroStyles {
   /// Numéro d'un segment d'acte (`.gc-act b`) : mono 600 11.
   final TextStyle segmentNo;
 
+  /// Première colonne de la checklist (`.gc-check` : critère) : sans 500 15/20.
+  final TextStyle criterion;
+
+  /// Légende du partage d'avis (`.gc-split` : pourcentages) : mono 600 14/20.
+  final TextStyle splitLegend;
+
   SceneMicroStyles copyWith({
     TextStyle? badge,
     TextStyle? badgeLg,
@@ -217,6 +241,8 @@ class SceneMicroStyles {
     TextStyle? callout,
     TextStyle? segment,
     TextStyle? segmentNo,
+    TextStyle? criterion,
+    TextStyle? splitLegend,
   }) {
     return SceneMicroStyles(
       badge: badge ?? this.badge,
@@ -234,6 +260,8 @@ class SceneMicroStyles {
       callout: callout ?? this.callout,
       segment: segment ?? this.segment,
       segmentNo: segmentNo ?? this.segmentNo,
+      criterion: criterion ?? this.criterion,
+      splitLegend: splitLegend ?? this.splitLegend,
     );
   }
 
@@ -256,6 +284,8 @@ class SceneMicroStyles {
       callout: s(callout, other.callout),
       segment: s(segment, other.segment),
       segmentNo: s(segmentNo, other.segmentNo),
+      criterion: s(criterion, other.criterion),
+      splitLegend: s(splitLegend, other.splitLegend),
     );
   }
 
@@ -276,7 +306,9 @@ class SceneMicroStyles {
       other.agentState == agentState &&
       other.callout == callout &&
       other.segment == segment &&
-      other.segmentNo == segmentNo;
+      other.segmentNo == segmentNo &&
+      other.criterion == criterion &&
+      other.splitLegend == splitLegend;
 
   @override
   int get hashCode => Object.hashAll(<Object>[
@@ -295,5 +327,7 @@ class SceneMicroStyles {
     callout,
     segment,
     segmentNo,
+    criterion,
+    splitLegend,
   ]);
 }

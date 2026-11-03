@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:entity_catalog/entity_catalog.dart'
-    show ValidatedEnvelope, ValidationAccepted;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
     show
         AgentActivityBloc,
@@ -23,6 +21,7 @@ import 'package:feature_canvas/feature_canvas.dart'
         DecisionStatusObserved,
         CanvasActionState,
         GenerationTarget,
+        generationTargetOf,
         CanvasBloc,
         CanvasBoard,
         CanvasResetRequested,
@@ -213,7 +212,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // nouveau message A2UI.
   final ValueNotifier<GenerationTarget?> _generation =
       ValueNotifier<GenerationTarget?>(null);
-  StreamSubscription<ValidatedEnvelope>? _generationSubscription;
+  StreamSubscription<GenerationTarget?>? _generationSubscription;
   late final CatalogShelfBloc _shelfBloc = CatalogShelfBloc();
   late final StageBloc _stageBloc = StageBloc();
   // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
@@ -401,7 +400,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
-    _generationSubscription = _gate.validatedBranch().listen(_onValidated);
+    // Un `createSurface` accepté désigne la surface en cours de génération
+    // (`generationTargetOf` ; `null` : la cible ne change pas).
+    _generationSubscription = _gate
+        .validatedBranch()
+        .map(generationTargetOf)
+        .where((GenerationTarget? t) => t != null)
+        .listen((GenerationTarget? t) => _generation.value = t);
     // Capture de vérification (spec 018) : `PanelToggled` est une bascule ;
     // on garantit le panneau déplié, un seul basculement.
     if (_settings.protocolExpandedAtStart && !_protocolBloc.state.expanded) {
@@ -477,21 +482,6 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
 
   /// Identifiant de la surface de la Barre d'actions (fin de l'acte 2).
   static const String _actionsSurfaceId = 'actions';
-
-  /// Un `createSurface` accepté désigne la surface en cours de génération et
-  /// son agent (`null` en scénario et en rejeu). Seul un `createSurface` change
-  /// la cible : une mutation de l'acte 2 ne rouvre pas de cadre.
-  void _onValidated(ValidatedEnvelope envelope) {
-    if (envelope.verdict is! ValidationAccepted) return;
-    final Object? body = envelope.raw['createSurface'];
-    final Object? id = body is Map ? body['surfaceId'] : null;
-    if (id is String) {
-      _generation.value = GenerationTarget(
-        surfaceId: id,
-        agent: envelope.agent,
-      );
-    }
-  }
 
   /// Fait avancer l'indicateur d'acte (jamais en arrière). Sans effet en mode
   /// scénario et pendant le rejeu de l'acte 4 : un message rejoué ou vivant

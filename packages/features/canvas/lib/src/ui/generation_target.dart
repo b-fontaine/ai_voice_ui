@@ -1,3 +1,5 @@
+import 'package:entity_catalog/entity_catalog.dart'
+    show ValidatedEnvelope, ValidationAccepted;
 import 'package:flutter/foundation.dart' show immutable;
 
 /// Surface que la page désigne comme **en cours de génération** : la dernière
@@ -31,4 +33,17 @@ class GenerationTarget {
 
   @override
   String toString() => 'GenerationTarget($surfaceId, agent: $agent)';
+}
+
+/// Cible de génération désignée par [envelope], ou `null`.
+///
+/// Seul un `createSurface` **accepté** change la cible : une mutation
+/// (`updateComponents`, `updateDataModel`) ou un message refusé ne rouvre pas
+/// de cadre.
+GenerationTarget? generationTargetOf(ValidatedEnvelope envelope) {
+  if (envelope.verdict is! ValidationAccepted) return null;
+  final Object? body = envelope.raw['createSurface'];
+  final Object? id = body is Map ? body['surfaceId'] : null;
+  if (id is! String) return null;
+  return GenerationTarget(surfaceId: id, agent: envelope.agent);
 }
