@@ -5,7 +5,7 @@ tags: [flutter, widget-test, fonts, overflow, layout]
 status: verified
 updated: 2026-10-30
 sources: [https://api.flutter.dev/flutter/services/FontLoader-class.html]
-links: [test-mock-boundaries-only, test-golden-alchemist]
+links: [test-mock-boundaries-only, test-golden-alchemist, test-flutter-hit-test-reachability]
 ---
 # Un test de widget en police Ahem ne voit pas le débordement d'une cellule qui s'affiche trop haute sur la vraie police
 

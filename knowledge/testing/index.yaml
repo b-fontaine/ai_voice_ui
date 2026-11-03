@@ -28,5 +28,6 @@ notes:
   # strategy/
   - {id: test-mock-boundaries-only, path: strategy/mock-boundaries-only.md, summary: "Ne doubler que les frontières (runner voix, transport A2UI, horloge); fake vs mock", tags: [mock, fake, architecture]}
   - {id: test-flutter-real-fonts-overflow, path: strategy/real-fonts-overflow.md, summary: "La police de test Ahem masque un débordement dû au repli de glyphes (★) : tester à la géométrie exacte avec les polices réelles chargées par FontLoader, hermétiques", tags: [flutter, widget-test, fonts, overflow, layout]}
+  - {id: test-flutter-hit-test-reachability, path: strategy/hit-test-reachability.md, summary: "tap ne fait jamais échouer un clic manqué (warnIfMissed) : prouver l'atteignabilité par hitTestable() et rectangle hors du recouvrement ; clics qui traversent un calque transparent", tags: [widget-test, hit-test, tap, layout]}
   - {id: test-pyramid-flutter, path: strategy/pyramid-flutter.md, summary: "Pyramide unit/widget/integration (doc Flutter 3.47) et répartition proposée", tags: [strategy, unit, widgets, integration]}
   - {id: test-tdd-red-green-refactor, path: strategy/tdd-red-green-refactor.md, summary: "Cycle red/green/refactor appliqué au projet, outside-in depuis Gherkin", tags: [tdd, method]}

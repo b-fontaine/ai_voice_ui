@@ -99,7 +99,7 @@ tasks:
   - task: "Enregistrer une dépendance (get_it / injectable)"
     notes: [di-setup-versions, di-registration-annotations, di-factory-method-module, di-named-implementations, di-environments-order, di-get-it-scopes, di-dispose-method, di-micro-packages, di-no-service-locator, di-testing]
   - task: "Écrire un test BDD (Gherkin / bdd_widget_test)"
-    notes: [test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-build-yaml, test-bdd-hooks-steps, test-bdd-app-running-fixture, test-mock-boundaries-only, di-environments-order, proj-sk-patterns]
+    notes: [test-tdd-red-green-refactor, test-bdd-widget-test, test-bdd-feature-syntax, test-bdd-gherkin-practices, test-bdd-build-yaml, test-bdd-hooks-steps, test-bdd-app-running-fixture, test-mock-boundaries-only, di-environments-order, proj-sk-patterns, test-flutter-hit-test-reachability]
   - task: "Écrire un test unitaire de Bloc ou de code temps réel"
     notes: [test-bloc-test, test-bloc-mockbloc-whenlisten, test-mocktail-essentials, test-mocktail-vs-mockito, test-fake-async-streams, test-realtime-fake-runner, test-mock-boundaries-only, di-testing]
   - task: "Ajouter un composant au catalogue GenUI"
