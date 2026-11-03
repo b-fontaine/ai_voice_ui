@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/replay_bar_harness.dart';
@@ -12,4 +13,13 @@ Future<void> chaqueCommandeDeLaBarreDeRejeuEstAtteignable(
   for (final key in ReplayBarHarness.controls) {
     ReplayBarHarness.expectReachable(tester, key);
   }
+  final speedWidgets = find.byWidgetPredicate((widget) {
+    final key = widget.key;
+    return key is ValueKey<String> && key.value.startsWith('replay-speed-');
+  });
+  expect(
+    speedWidgets.evaluate().length,
+    ReplayBarHarness.speeds.length,
+    reason: 'la barre doit proposer exactement les vitesses attendues',
+  );
 }

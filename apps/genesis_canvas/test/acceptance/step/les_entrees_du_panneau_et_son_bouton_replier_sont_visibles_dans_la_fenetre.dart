@@ -1,14 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/design_harness.dart';
 import '../support/keys.dart';
 
 /// Usage: les entrées du panneau et son bouton Replier sont visibles dans la fenêtre
 Future<void> lesEntreesDuPanneauEtSonBoutonReplierSontVisiblesDansLaFenetre(
   WidgetTester tester,
 ) async {
-  final window =
-      Offset.zero & (tester.view.physicalSize / tester.view.devicePixelRatio);
+  final window = DesignHarness.windowRect(tester);
   bool inside(Rect r) =>
       r.left >= window.left - 0.5 &&
       r.top >= window.top - 0.5 &&
@@ -25,23 +25,20 @@ Future<void> lesEntreesDuPanneauEtSonBoutonReplierSontVisiblesDansLaFenetre(
     isTrue,
     reason: 'le bouton « Replier » sort de la fenêtre ($window)',
   );
-  final entries = find.byWidgetPredicate(
-    (w) =>
-        w.key is ValueKey<String> &&
-        (w.key! as ValueKey<String>).value.startsWith('protocol-entry-'),
-  );
+  final entries = AcceptanceKeys.protocolEntries();
   expect(
     entries,
     findsWidgets,
     reason: 'le panneau déplié ne montre aucune entrée',
   );
-  for (final element in entries.evaluate()) {
-    final rect = tester.getRect(find.byElementPredicate((e) => e == element));
+  for (var i = 0; i < entries.evaluate().length; i++) {
+    final entry = entries.at(i);
+    final rect = tester.getRect(entry);
     expect(
       inside(rect),
       isTrue,
       reason:
-          'l\'entrée ${element.widget.key} ($rect) sort de la fenêtre ($window)',
+          'l\'entrée ${entry.evaluate().single.widget.key} ($rect) sort de la fenêtre ($window)',
     );
   }
 }

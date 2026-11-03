@@ -17,7 +17,7 @@ Future<void> lePanneauProtocoleDeplieNeDepassePasLeHautDuCanevas(
     greaterThanOrEqualTo(board.top - 0.5),
     reason: 'le panneau déplié ($panel) dépasse le haut du canevas ($board)',
   );
-  final window = tester.view.physicalSize / tester.view.devicePixelRatio;
-  expect(panel.bottom, lessThanOrEqualTo(window.height + 0.5));
-  expect(panel.right, lessThanOrEqualTo(window.width + 0.5));
+  final window = DesignHarness.windowRect(tester);
+  expect(panel.bottom, lessThanOrEqualTo(window.bottom + 0.5));
+  expect(panel.right, lessThanOrEqualTo(window.right + 0.5));
 }

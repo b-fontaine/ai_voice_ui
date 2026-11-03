@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/design_harness.dart';
 import '../support/keys.dart';
+import '../support/replay_bar_harness.dart';
 
 /// Usage: les commandes hors du panneau restent atteignables
 ///
@@ -26,4 +28,12 @@ Future<void> lesCommandesHorsDuPanneauRestentAtteignables(
           'le clic sur $key ne traverse pas le panneau : $key est recouvert',
     );
   }
+  // `reset-button` et `mic-button` sont hors du Stack du panneau : on mesure
+  // aussi un point du canevas au ras du bord gauche du panneau.
+  final panel = DesignHarness.rectOf(tester, AcceptanceKeys.protocolPanel);
+  ReplayBarHarness.expectHit(
+    tester,
+    AcceptanceKeys.canvasBoard,
+    panel.centerLeft - const Offset(4, 0),
+  );
 }

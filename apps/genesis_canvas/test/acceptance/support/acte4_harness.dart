@@ -4,6 +4,7 @@ import 'package:genui/genui.dart';
 import 'package:shared_core/shared_core.dart' show AppClock;
 
 import 'keys.dart';
+import 'replay_bar_harness.dart';
 
 /// Horloge de l'app virtuelle (frontière « temps », pdr-0038) : elle n'avance
 /// que sur ordre du scénario, ce qui donne au journal des écarts exacts, sans
@@ -163,11 +164,7 @@ class Acte4Harness {
       isTrue,
       reason: 'la commande $key est inactive (onPressed: null)',
     );
-    expect(
-      finder.hitTestable(),
-      findsOneWidget,
-      reason: 'la commande $key est recouverte',
-    );
+    ReplayBarHarness.expectHitTestable(tester, key);
     await tester.tap(finder);
     await settle(tester);
   }

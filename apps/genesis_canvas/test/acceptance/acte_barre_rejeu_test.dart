@@ -9,8 +9,10 @@ import './step/lapp_est_fermee_le_faux_backend_arrete_et_la_semantique_liberee.d
 import './step/le_tableau_de_la_release34_est_joue_en_direct_une_surface_toutes_les_secondes.dart';
 import './step/le_rejeu_est_en_pause_a_miparcours.dart';
 import './step/je_clique_sur_le_bouton_du_panneau_protocole.dart';
+import './step/le_panneau_protocole_est_deplie.dart';
 import './step/chaque_commande_de_la_barre_de_rejeu_est_atteignable.dart';
-import './step/lextremite_droite_de_la_glissiere_est_atteignable.dart';
+import './step/les_deux_extremites_de_la_glissiere_sont_atteignables.dart';
+import './step/le_panneau_protocole_est_replie.dart';
 import './step/la_barre_dactions_est_jouee_en_direct.dart';
 import './step/le_panneau_protocole_deplie_ne_recouvre_ni_la_rangee_du_bas_ni_le_rail.dart';
 import './step/les_entrees_du_panneau_et_son_bouton_replier_sont_visibles_dans_la_fenetre.dart';
@@ -43,8 +45,9 @@ void main() {
           );
           await leRejeuEstEnPauseAMiparcours(tester);
           await jeCliqueSurLeBoutonDuPanneauProtocole(tester);
+          await lePanneauProtocoleEstDeplie(tester);
           await chaqueCommandeDeLaBarreDeRejeuEstAtteignable(tester);
-          await lextremiteDroiteDeLaGlissiereEstAtteignable(tester);
+          await lesDeuxExtremitesDeLaGlissiereSontAtteignables(tester);
         } finally {
           await bddTearDown(tester);
         }
@@ -61,8 +64,9 @@ void main() {
             2,
           );
           await leRejeuEstEnPauseAMiparcours(tester);
+          await lePanneauProtocoleEstReplie(tester);
           await chaqueCommandeDeLaBarreDeRejeuEstAtteignable(tester);
-          await lextremiteDroiteDeLaGlissiereEstAtteignable(tester);
+          await lesDeuxExtremitesDeLaGlissiereSontAtteignables(tester);
         } finally {
           await bddTearDown(tester);
         }
@@ -80,6 +84,7 @@ void main() {
           );
           await laBarreDactionsEstJoueeEnDirect(tester);
           await jeCliqueSurLeBoutonDuPanneauProtocole(tester);
+          await lePanneauProtocoleEstDeplie(tester);
           await lePanneauProtocoleDeplieNeRecouvreNiLaRangeeDuBasNiLeRail(
             tester,
           );

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/acte4_harness.dart';
+import '../support/replay_bar_harness.dart';
 
 /// Usage: je place le curseur au milieu
 ///
@@ -8,6 +9,8 @@ import '../support/acte4_harness.dart';
 Future<void> jePlaceLeCurseurAuMilieu(WidgetTester tester) async {
   final slider = find.byKey(ReplayKeys.slider);
   expect(slider, findsOneWidget, reason: 'widget replay-slider introuvable');
-  await tester.tapAt(tester.getCenter(slider));
+  final center = tester.getCenter(slider);
+  ReplayBarHarness.expectHit(tester, ReplayKeys.slider, center);
+  await tester.tapAt(center);
   await Acte4Harness.settle(tester);
 }

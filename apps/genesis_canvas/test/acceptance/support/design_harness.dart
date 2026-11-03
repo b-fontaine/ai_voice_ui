@@ -56,6 +56,10 @@ class DesignHarness {
 
   static Finder surface(String id) => find.byKey(AcceptanceKeys.surface(id));
 
+  /// Rectangle de la fenêtre de test, en pixels logiques.
+  static Rect windowRect(WidgetTester tester) =>
+      Offset.zero & (tester.view.physicalSize / tester.view.devicePixelRatio);
+
   static Rect rectOf(WidgetTester tester, Key key) {
     final finder = find.byKey(key);
     expect(finder, findsOneWidget, reason: 'widget $key introuvable');

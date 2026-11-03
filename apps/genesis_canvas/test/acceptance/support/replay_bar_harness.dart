@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'acte4_harness.dart';
+import 'design_harness.dart';
 import 'keys.dart';
 
 /// Mesures de la spec 018 : la barre de rejeu reste atteignable, panneau du
@@ -19,15 +20,8 @@ abstract final class ReplayBarHarness {
     for (final speed in speeds) ReplayKeys.speed(speed),
   ];
 
-  static Rect panelRect(WidgetTester tester) {
-    final finder = find.byKey(AcceptanceKeys.protocolPanel);
-    expect(finder, findsOneWidget, reason: 'protocol-panel introuvable');
-    return tester.getRect(finder);
-  }
-
-  /// Une commande est atteignable quand le clic l'atteint et que son
-  /// rectangle ne recoupe pas celui du panneau.
-  static void expectReachable(WidgetTester tester, Key key) {
+  /// La commande [key] existe et le clic l'atteint (rien ne la recouvre).
+  static void expectHitTestable(WidgetTester tester, Key key) {
     final finder = find.byKey(key);
     expect(finder, findsOneWidget, reason: 'la commande $key est introuvable');
     expect(
@@ -35,8 +29,17 @@ abstract final class ReplayBarHarness {
       findsOneWidget,
       reason: 'la commande $key est recouverte',
     );
-    final Rect control = tester.getRect(finder);
-    final Rect panel = panelRect(tester);
+  }
+
+  /// Une commande est atteignable quand le clic l'atteint et que son
+  /// rectangle ne recoupe pas celui du panneau.
+  static void expectReachable(WidgetTester tester, Key key) {
+    expectHitTestable(tester, key);
+    final Rect control = tester.getRect(find.byKey(key));
+    final Rect panel = DesignHarness.rectOf(
+      tester,
+      AcceptanceKeys.protocolPanel,
+    );
     expect(
       control.overlaps(panel),
       isFalse,

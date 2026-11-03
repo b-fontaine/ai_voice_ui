@@ -1,5 +1,6 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/keys.dart';
 
 /// Usage: le panneau protocole déplié montre {4} entrées
 ///
@@ -9,11 +10,7 @@ Future<void> lePanneauProtocoleDeplieMontreEntrees(
   WidgetTester tester,
   num count,
 ) async {
-  final entries = find.byWidgetPredicate(
-    (w) =>
-        w.key is ValueKey<String> &&
-        (w.key! as ValueKey<String>).value.startsWith('protocol-entry-'),
-  );
+  final entries = AcceptanceKeys.protocolEntries();
   expect(
     entries.evaluate().length,
     count,
