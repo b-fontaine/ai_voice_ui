@@ -57,7 +57,7 @@ void main() {
       Finder chip(String text) => h.inCell(
         find.descendant(
           of: find.byKey(const Key('decision-status')),
-          matching: find.text(text),
+          matching: findTextIgnoringCase(text),
         ),
       );
       expect(chip('En attente de décision'), findsOneWidget);
@@ -97,7 +97,8 @@ void main() {
       final RenderParagraph before = tester.renderObject<RenderParagraph>(
         h.inCell(find.text('Checklist go/no-go')),
       );
-      expect(before.text.style?.fontSize, greaterThanOrEqualTo(24));
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(before.text.style?.fontSize, greaterThanOrEqualTo(11));
       expect(tester.takeException(), isNull);
     });
   }
@@ -124,11 +125,11 @@ void main() {
     );
     // Les images à durée nulle n'avancent pas la transition : l'ancien et le
     // nouveau statut sont brièvement tous deux présents.
-    expect(find.text('Bloquée'), findsOneWidget);
-    expect(find.text('En attente de décision'), findsOneWidget);
+    expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
+    expect(findTextIgnoringCase('En attente de décision'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('En attente de décision'), findsNothing);
-    expect(find.text('Bloquée'), findsOneWidget);
+    expect(findTextIgnoringCase('En attente de décision'), findsNothing);
+    expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
   });
 
   group('transition du statut sous SceneMotionScope (R3)', () {
@@ -165,8 +166,8 @@ void main() {
       await blockedWith(tester, (disabled: true, speed: 1));
       await tester.pump();
       expect(chips(), findsOneWidget);
-      expect(find.text('Bloquée'), findsOneWidget);
-      expect(find.text('En attente de décision'), findsNothing);
+      expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
+      expect(findTextIgnoringCase('En attente de décision'), findsNothing);
     });
 
     testWidgets('vitesse 2 : la transition dure 200 ms', (tester) async {

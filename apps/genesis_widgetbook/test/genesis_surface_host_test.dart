@@ -64,7 +64,8 @@ void main() {
       GenesisSurfaceState.data,
       find.text('99,57 %'),
     );
-    expect(find.text('Sessions sans crash'), findsOneWidget);
+    // L'étiquette de l'en-tête s'affiche en capitales (pdr-0088 F6).
+    expect(find.text('SESSIONS SANS CRASH'), findsOneWidget);
     expect(find.text('99,57 %'), findsOneWidget);
     expect(find.byKey(const Key('nodata-kpi')), findsNothing);
     expect(find.byKey(const Key('neutral-kpi')), findsNothing);

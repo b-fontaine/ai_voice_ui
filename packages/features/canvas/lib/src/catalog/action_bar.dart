@@ -4,6 +4,7 @@ import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/action_availability.dart';
+import '../ui/dashed_outline_painter.dart';
 import 'bound_item.dart';
 
 /// `ActionBar` : la Barre d'actions (titre et boutons de décision) liée à
@@ -62,44 +63,27 @@ class _ActionBar {
 /// Ton `danger` de `GenesisContract.actionTones` (l'autre est `neutral`).
 const String _toneDanger = 'danger';
 
-/// Couleurs d'un bouton selon son `tone` : seule résolution du ton.
-({Color foreground, Color border}) _toneColors(SceneTheme theme, String tone) =>
-    tone == _toneDanger
-    ? (foreground: theme.blockingForeground, border: theme.actionDangerBorder)
-    : (foreground: theme.textPrimary, border: theme.actionNeutralBorder);
+/// Hauteur du visuel d'un bouton (`.gc-btn`, 44 px) ; la cible interactive
+/// reste de 48 pt, le visuel y est centré (D-05 de 013).
+const double _visualHeight = 44;
+const double _targetHeight = 48;
+const double _visualPadding = 20;
 
-/// Épaisseur de la bordure d'un bouton actif et de l'anneau de focus.
-const double _activeBorder = 2;
-const double _focusBorder = 3;
+/// Espace entre l'étiquette et les boutons (`.gc-decision`, gap 14).
+const double _gap = 14;
 
-/// Style d'un bouton selon son `tone` (code fermé `neutral|danger`), jamais
-/// selon son libellé (RG-09) : fond `surface-300`, bordure `ink-muted` ou
-/// `nogo` (pdr-0084 U4, `line-strong` est sous 3:1), anneau de focus `signal`.
-/// Le texte reste lisible quand le bouton est inactif ; seule l'épaisseur de la
-/// bordure distingue les deux états.
-ButtonStyle _style(SceneTheme theme, String tone) {
-  final (:Color foreground, border: Color borderColor) = _toneColors(
-    theme,
-    tone,
-  );
-  return OutlinedButton.styleFrom(
-    minimumSize: const Size(0, 48),
-    foregroundColor: foreground,
-    disabledForegroundColor: foreground,
-    backgroundColor: theme.neutralBackground,
-    disabledBackgroundColor: theme.neutralBackground,
-  ).copyWith(
-    side: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
-      if (states.contains(WidgetState.focused)) {
-        return BorderSide(color: theme.accent, width: _focusBorder);
-      }
-      return BorderSide(
-        color: borderColor,
-        width: states.contains(WidgetState.disabled) ? 1 : _activeBorder,
-      );
-    }),
-  );
+/// Couleur du texte d'un bouton : le ton quand il est actif, `ink-muted`
+/// quand il est désactivé (jamais `ink-faint` sous 24 px, pdr-0088 F12).
+Color _foreground(SceneTheme theme, String tone, {required bool disabled}) {
+  if (disabled) return theme.textSecondary;
+  return tone == _toneDanger ? theme.blockingForeground : theme.textPrimary;
 }
+
+/// Style du bouton interactif : seule la cible de 48 pt et l'anneau de focus
+/// `signal` (pdr-0084 U4, `sceneTargetStyle`) ; l'apparence est celle du
+/// visuel [_ButtonVisual].
+ButtonStyle _style(SceneTheme theme) =>
+    sceneTargetStyle(theme, height: _targetHeight);
 
 class _ActionBarView extends StatelessWidget {
   const _ActionBarView({required this.bar, required this.surfaceId});
@@ -123,16 +107,17 @@ class _ActionBarView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: <Widget>[
+          // Étiquette du bandeau : le `title` de la surface, en capitales.
           Flexible(
-            child: Text(
+            child: DsCaps(
               bar.title,
-              style: theme.title,
+              key: const Key('actions-label'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           for (final _Action action in bar.actions) ...<Widget>[
-            const SizedBox(width: 16),
+            const SizedBox(width: _gap),
             Flexible(
               child: OutlinedButton(
                 key: Key('action-${action.id}'),
@@ -140,10 +125,12 @@ class _ActionBarView extends StatelessWidget {
                 onPressed: enabled && !done.contains(action.id)
                     ? () => availability!.onAction(action.id, surfaceId)
                     : null,
-                style: _style(theme, action.tone),
-                child: _ButtonLabel(
+                style: _style(theme),
+                child: _ButtonVisual(
+                  id: action.id,
                   label: action.label,
                   tone: action.tone,
+                  disabled: !(enabled && !done.contains(action.id)),
                   done: done.contains(action.id),
                   busy: !done.contains(action.id) && busy == action.id,
                 ),
@@ -156,27 +143,36 @@ class _ActionBarView extends StatelessWidget {
   }
 }
 
-/// Contenu d'un bouton : libellé, précédé d'un indicateur quand l'action est
+/// Visuel d'un bouton (`.gc-btn`) : 44 px de haut, rayon `md`, fond
+/// `surface-300`, bordure 1 px `ink-muted` ; en ton `danger`, texte et bordure
+/// `nogo`, fond `nogo-ghost` et lueur ; désactivé, bordure en tirets et texte
+/// `ink-muted`. Contient le libellé, précédé d'un indicateur quand l'action est
 /// en cours, ou suivi de « fait ✓ » quand la décision est en place.
-class _ButtonLabel extends StatelessWidget {
-  const _ButtonLabel({
+class _ButtonVisual extends StatelessWidget {
+  const _ButtonVisual({
+    required this.id,
     required this.label,
     required this.tone,
+    required this.disabled,
     required this.done,
     required this.busy,
   });
 
+  final String id;
   final String label;
   final String tone;
+  final bool disabled;
   final bool done;
   final bool busy;
 
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final Color color = _toneColors(theme, tone).foreground;
-    return Row(
+    final bool danger = tone == _toneDanger;
+    final Color color = _foreground(theme, tone, disabled: disabled);
+    final Widget content = Row(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         if (busy) ...<Widget>[
           SizedBox(
@@ -195,6 +191,40 @@ class _ButtonLabel extends StatelessWidget {
           ),
         ),
       ],
+    );
+    final Container visual = Container(
+      key: Key('action-$id-visual'),
+      height: _visualHeight,
+      padding: const EdgeInsets.symmetric(horizontal: _visualPadding),
+      decoration: BoxDecoration(
+        color: danger && !disabled
+            ? theme.blockingBackground
+            : theme.surface300,
+        borderRadius: SceneRadius.borderMd,
+        border: disabled
+            ? null
+            : Border.all(
+                color: danger
+                    ? theme.actionDangerBorder
+                    : theme.actionNeutralBorder,
+              ),
+        boxShadow: danger && !disabled ? SceneShadow.glowNogo : null,
+      ),
+      child: content,
+    );
+    if (!disabled) return visual;
+    // Bordure en tirets : sur le bord du visuel (padding compris), pas autour
+    // du texte (capture de vérification de 019).
+    return CustomPaint(
+      key: Key('action-$id-dashes'),
+      foregroundPainter: DashedOutlinePainter(
+        color: theme.actionNeutralBorder,
+        strokeWidth: 1,
+        dash: 5,
+        gap: 3,
+        radius: SceneRadius.md,
+      ),
+      child: visual,
     );
   }
 }

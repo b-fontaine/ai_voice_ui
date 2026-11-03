@@ -117,8 +117,8 @@ void main() {
             1,
             2,
           );
-          await leTexteDeLaSurfaceFaitAuMoinsPx(tester, 'checklist', 24);
-          await leTexteDeLaSurfaceFaitAuMoinsPx(tester, 'reviews', 24);
+          await leTexteDeLaSurfaceFaitAuMoinsPx(tester, 'checklist', 11);
+          await leTexteDeLaSurfaceFaitAuMoinsPx(tester, 'reviews', 11);
           await aucuneErreurNestSignalee(tester);
         } finally {
           await bddTearDown(tester);

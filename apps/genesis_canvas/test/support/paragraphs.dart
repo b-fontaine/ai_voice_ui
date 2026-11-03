@@ -2,8 +2,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Taille minimale de texte de la scène (RG-09, NFR-05).
-const double minSceneFontSize = 24;
+/// Taille minimale de texte de la scène : 11 px, le plus petit style de
+/// l'échelle du design system (`label`). Le plancher de 24 px (RG-09, NFR-05)
+/// est levé par pdr-0087 / pdr-0088 F1.
+const double minSceneFontSize = 11;
 
 /// Les paragraphes de texte rendus sous [root] (toute l'arborescence si
 /// `null`) dont la taille est inférieure à [minSceneFontSize], décrits par

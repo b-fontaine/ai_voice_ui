@@ -31,13 +31,30 @@ void expectPanelDecoration(WidgetTester tester, Finder zone) {
   );
   expect(clipping, findsNothing, reason: 'aucun Clip rogneur au-dessus');
   const SceneTheme theme = SceneTheme.dark();
-  final Iterable<DecoratedBox> filled = tester
-      .widgetList<DecoratedBox>(
-        find.descendant(of: zone, matching: find.byType(DecoratedBox)),
-      )
-      .where((DecoratedBox box) {
-        final Decoration d = box.decoration;
-        return d is BoxDecoration && d.color == theme.surface;
-      });
+  // Les puces du catalogue (`shelf-<composant>`) ont légitimement le fond
+  // `surface-100` du design system : elles ne sont pas un fond de zone.
+  bool inShelfChip(Element element) {
+    var inside = false;
+    element.visitAncestorElements((Element ancestor) {
+      final Key? key = ancestor.widget.key;
+      if (key is ValueKey<String> && key.value.startsWith('shelf-')) {
+        inside = true;
+        return false;
+      }
+      return true;
+    });
+    return inside;
+  }
+
+  final Iterable<Widget> filled = find
+      .descendant(of: zone, matching: find.byType(DecoratedBox))
+      .evaluate()
+      .where((Element element) {
+        final Decoration d = (element.widget as DecoratedBox).decoration;
+        return d is BoxDecoration &&
+            d.color == theme.surface &&
+            !inShelfChip(element);
+      })
+      .map((Element element) => element.widget);
   expect(filled, isEmpty, reason: 'plus de fond `surface` peint à la main');
 }

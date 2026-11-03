@@ -25,21 +25,19 @@ final Finder _cell = find.byKey(const Key('surface-trend'));
 void main() {
   setUpAll(loadRealFonts);
 
-  testWidgets('les étiquettes de l\'axe X prennent le style `data` du thème '
-      '(JetBrains Mono, repli DejaVu Sans)', (tester) async {
+  testWidgets('les jours de l\'axe X prennent le style `tick` du thème '
+      '(JetBrains Mono, repli DejaVu Sans), en ink-muted', (tester) async {
     final h = _realFontsHarness(size: const Size(624, 302));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
-    final paint = tester.widget<CustomPaint>(
-      find.byKey(const Key('trend-chart-paint')),
-    );
-    final painter = paint.painter! as TrendChartPainter;
+    final Text day = tester.widget(h.inCell(find.text('J1')));
     const theme = SceneTheme.dark();
-    expect(painter.labelStyle.fontFamily, theme.data.fontFamily);
-    expect(painter.labelStyle.fontFamily, SceneFonts.mono);
-    expect(painter.labelStyle.fontFamilyFallback, SceneFonts.fallbackList);
-    expect(painter.labelStyle.fontSize, theme.data.fontSize);
+    expect(day.style?.fontFamily, theme.micro.tick.fontFamily);
+    expect(day.style?.fontFamily, SceneFonts.mono);
+    expect(day.style?.fontFamilyFallback, SceneFonts.fallbackList);
+    expect(day.style?.fontSize, theme.micro.tick.fontSize);
+    expect(day.style?.color, theme.textSecondary);
   });
 
   defineCommonStateTests(
@@ -132,7 +130,9 @@ void main() {
       find.byKey(const Key('trend-chart-paint')),
     );
     final painter = paint.painter! as TrendChartPainter;
-    expect(painter.days, hasLength(7));
+    for (var i = 1; i <= 7; i++) {
+      expect(h.inCell(find.text('J$i')), findsOneWidget);
+    }
     expect(painter.series, hasLength(2));
     expect(h.engineErrors, isEmpty);
     expect(tester.takeException(), isNull);
@@ -160,7 +160,7 @@ void main() {
       h.inCell(find.byKey(const Key('trend-chart-paint'))),
       findsOneWidget,
     );
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
   });
 
   group('en-tête : titre sur sa ligne, légende dessous (D2)', () {
@@ -214,7 +214,7 @@ void main() {
           );
         }
         expect(paint.height, greaterThan(100));
-        h.expectTextAtLeast24(tester);
+        h.expectTextAtLeastScaleMinimum(tester);
         expect(tester.takeException(), isNull);
         expect(h.engineErrors, isEmpty);
       });
@@ -226,15 +226,18 @@ void main() {
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       final data = cloneJson(h.data);
+      // pdr-0087 / pdr-0088 F1 : à 18 px, un titre ne passe à la ligne qu'à
+      // partir d'environ 65 caractères.
       const title =
-          'Taux de crash du jour sur Android pour la version 3.4 de la release';
+          'Taux de crash du jour sur Android pour la version 3.4 de la release, '
+          'comparé aux trois versions précédentes sur quatorze jours';
       data['title'] = title;
       await h.sendData(tester, data);
 
       final Finder text = h.inCell(find.text(title));
       expect(text, findsOneWidget);
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+      expect(tester.getSize(text).height, greaterThan(titleLineHeight() * 1.5));
       expect(
         tester
             .getSize(h.inCell(find.byKey(const Key('trend-chart-paint'))))
@@ -269,9 +272,7 @@ void main() {
       double yMax = 1.0,
       double threshold = 0.5,
       List<TrendSeries>? series,
-      List<String> days = const <String>['J1', 'J2', 'J3'],
     }) => TrendChartPainter(
-      days: days,
       series:
           series ??
           const <TrendSeries>[
@@ -284,8 +285,7 @@ void main() {
       thresholdPct: threshold,
       yMaxPct: yMax,
       thresholdColor: const Color(0xFFFF0000),
-      axisColor: const Color(0xFF888888),
-      labelStyle: const TextStyle(fontSize: 24, color: Color(0xFFFFFFFF)),
+      dotFill: const Color(0xFF000000),
     );
 
     test('yFor convertit une valeur en ordonnée bornée par yMaxPct', () {
@@ -327,6 +327,46 @@ void main() {
       );
     });
 
+    test(
+      'chaque point de la série courante a son disque (deux cercles : '
+      'fond et bord) ; le dernier de la série suivie est laissé à la tête',
+      () {
+        int circles(int? headSeries) {
+          final recorder = TestRecordingCanvas();
+          TrendChartPainter(
+            series: const <TrendSeries>[
+              TrendSeries(
+                name: 'A',
+                points: <double>[0.1, 0.5, 0.9],
+                color: Color(0xFFFFFFFF),
+              ),
+              TrendSeries(
+                name: 'A 3.3',
+                points: <double>[0.1, 0.2, 0.3],
+                color: Color(0xFFFFFFFF),
+                dashed: true,
+              ),
+            ],
+            thresholdPct: 0.5,
+            yMaxPct: 1,
+            thresholdColor: const Color(0xFFFF0000),
+            dotFill: const Color(0xFF000000),
+            headSeries: headSeries,
+          ).paint(recorder, const Size(300, 150));
+          return recorder.invocations
+              .where((r) => r.invocation.memberName == #drawCircle)
+              .length;
+        }
+
+        expect(
+          circles(null),
+          6,
+          reason: '3 points x 2 cercles, 3.3 sans point',
+        );
+        expect(circles(0), 4, reason: 'le point de tête remplace le dernier');
+      },
+    );
+
     testWidgets('paint ne lève pas, y compris hors bornes', (tester) async {
       final p = build(
         series: const <TrendSeries>[
@@ -364,13 +404,11 @@ void main() {
       theme.blockingForeground,
       theme.textSecondary,
       theme.textPrimary,
-      theme.inkFaint,
     };
     for (final s in painter.series) {
       expect(allowed, contains(s.color));
     }
     expect(allowed, contains(painter.thresholdColor));
-    expect(allowed, contains(painter.axisColor));
   });
 
   testWidgets('acte 2 : le titre et la légende s affichent en entier', (
@@ -434,7 +472,7 @@ void main() {
       false,
       true,
     ], reason: 'la 3.3 se distingue par le trait pointillé');
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });
@@ -559,7 +597,6 @@ void main() {
       expect(
         tester.renderObject(chart),
         paints
-          ..line(color: theme.inkFaint) // axe
           ..line(color: theme.blockingForeground)
           ..line(color: theme.blockingForeground)
           ..line(color: theme.blockingForeground),
@@ -567,14 +604,34 @@ void main() {
       );
     });
 
-    testWidgets('graduations d\'axe en ink-faint, texte >= 24 px et >= 3:1 '
-        'sur le panneau', (tester) async {
-      final TrendChartPainter painter = await act2Painter(tester);
-      expect(painter.axisColor, theme.inkFaint);
-      expect(painter.labelStyle.color, theme.inkFaint);
-      expect(painter.labelStyle.fontSize, greaterThanOrEqualTo(24));
-      expect(contrast(theme.inkFaint, theme.panelTop), greaterThanOrEqualTo(3));
-      expect(contrast(theme.inkFaint, theme.surface), greaterThanOrEqualTo(3));
-    });
+    testWidgets(
+      'grille en `line` (décorative), graduations et jours de 12 px en '
+      'ink-muted à 4,5:1 au moins',
+      (tester) async {
+        await act2Painter(tester);
+        // pdr-0088 F12 : un texte de moins de 24 px n\'est jamais en
+        // ink-faint ; seule la grille, décorative, prend la couleur `line`.
+        final Finder grid = find.descendant(
+          of: find.byKey(const Key('trend-grid')),
+          matching: find.byType(CustomPaint),
+          matchRoot: true,
+        );
+        expect(
+          tester.renderObject(grid.first),
+          paints..line(color: theme.line),
+        );
+        final Text day = tester.widget(find.text('J1'));
+        expect(day.style?.color, theme.textSecondary);
+        expect(day.style?.fontSize, theme.micro.tick.fontSize);
+        expect(
+          contrast(day.style!.color!, theme.panelTop),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          contrast(day.style!.color!, theme.surface),
+          greaterThanOrEqualTo(4.5),
+        );
+      },
+    );
   });
 }

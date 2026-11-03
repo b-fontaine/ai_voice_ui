@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../../support/pump_until.dart';
 import '../support/keys.dart';
@@ -12,7 +13,7 @@ Future<void> leStatutDeLaChecklistNePassePasA(
   expect(
     find.descendant(
       of: find.byKey(AcceptanceKeys.surface('checklist')),
-      matching: find.text(status),
+      matching: findTextIgnoringCase(status),
     ),
     findsNothing,
     reason: 'la checklist affiche « $status » alors que rien ne le justifie',

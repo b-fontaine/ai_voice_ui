@@ -42,8 +42,9 @@ Fonctionnalité: Design et ergonomie - écran lisible, régie à portée de main
     Et aucun libellé de la surface {'checklist'} n'est tronqué
     Et aucun libellé de la surface {'reviews'} n'est tronqué
     Et la surface {'reviews'} affiche entre {1} et {2} extraits d'avis entiers et l'indication « + N avis » pour les autres
-    Et le texte de la surface {'checklist'} fait au moins {24} px
-    Et le texte de la surface {'reviews'} fait au moins {24} px
+    # pdr-0087 / pdr-0088 F1 : échelle du design system, le plancher de 24 px est levé (11 px au plus bas).
+    Et le texte de la surface {'checklist'} fait au moins {11} px
+    Et le texte de la surface {'reviews'} fait au moins {11} px
     Et aucune erreur n'est signalée
 
   @D-03 @FR-06 @NFR-05

@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 /// Aides des scénarios U-01 à U-06 (spec 017) : texte visible, polices par
 /// rôle du thème de la scène, statuts, mouvement. Elles observent l'écran
@@ -52,12 +53,15 @@ abstract final class SceneStyleHarness {
   ];
 
   /// Rôles de texte du `SceneTheme` qui portent des mots (Space Grotesk) :
-  /// titre, texte courant, bouton, transcription.
+  /// titre, texte courant, bouton, transcription, et le critère de la
+  /// checklist (micro-style sans 500 15/20 : même triplet que `data`, donc
+  /// commun aux deux familles et non classé).
   static const List<String> wordRoles = <String>[
     'title',
     'body',
     'button',
     'transcript',
+    'micro.criterion',
   ];
 
   static final Map<String, TextStyle Function(dynamic)> _roleGetters =
@@ -70,6 +74,7 @@ abstract final class SceneStyleHarness {
         'body': (dynamic t) => t.body as TextStyle,
         'button': (dynamic t) => t.button as TextStyle,
         'transcript': (dynamic t) => t.transcript as TextStyle,
+        'micro.criterion': (dynamic t) => t.micro.criterion as TextStyle,
       };
 
   /// Le style du rôle [role] dans [theme] ; `null` si le thème ne porte pas
@@ -109,15 +114,22 @@ abstract final class SceneStyleHarness {
     required List<String> otherRoles,
   }) {
     final SceneTheme sceneTheme = theme(tester);
-    List<TextStyle> styles(List<String> names) => <TextStyle>[
-      for (final String name in names) ?roleStyle(sceneTheme, name),
-    ];
-    final List<TextStyle> mine = styles(roles);
-    final List<TextStyle> others = styles(otherRoles);
+    // Un rôle `micro.*` est un style de composant, propre à une famille : il
+    // ne classe un texte que si la famille est aussi la sienne. Sans cela, le
+    // critère de la checklist (sans) rendrait tout le rôle `data` (mono, même
+    // triplet) commun aux deux familles.
+    bool matches(TextStyle? style, String name, TextStyle role) =>
+        matchesRole(style, role) &&
+        (!name.startsWith('micro.') ||
+            bareFamily(style?.fontFamily) == bareFamily(role.fontFamily));
+    bool inFamily(TextStyle? style, List<String> names) =>
+        names.any((String name) {
+          final TextStyle? role = roleStyle(sceneTheme, name);
+          return role != null && matches(style, name, role);
+        });
     return visibleParagraphs(tester).where((RenderParagraph p) {
       final TextStyle? style = p.text.style;
-      return mine.any((TextStyle r) => matchesRole(style, r)) &&
-          !others.any((TextStyle r) => matchesRole(style, r));
+      return inFamily(style, roles) && !inFamily(style, otherRoles);
     }).toList();
   }
 
@@ -155,7 +167,10 @@ abstract final class SceneStyleHarness {
 
   /// Couleur du texte [label] dans la puce numéro [index] de [chips].
   static Color wordColor(WidgetTester tester, Finder chip, String label) {
-    final Finder text = find.descendant(of: chip, matching: find.text(label));
+    final Finder text = find.descendant(
+      of: chip,
+      matching: findTextIgnoringCase(label),
+    );
     expect(
       text,
       findsOneWidget,

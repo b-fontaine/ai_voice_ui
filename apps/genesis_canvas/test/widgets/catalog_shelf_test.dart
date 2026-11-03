@@ -96,10 +96,7 @@ void main() {
     matching: find.byWidgetPredicate(
       (w) =>
           w is Icon &&
-          w.icon ==
-              (state == 'utilisé'
-                  ? Icons.check_circle
-                  : Icons.radio_button_unchecked),
+          w.icon == (state == 'utilisé' ? Icons.square : Icons.square_outlined),
     ),
   );
 
@@ -118,7 +115,7 @@ void main() {
     await pumpShelf(tester);
 
     expect(find.byKey(const Key('catalog-shelf')), findsOneWidget);
-    expect(find.text('CATALOGUE ·'), findsOneWidget);
+    expect(findTextIgnoringCase('CATALOGUE ·'), findsOneWidget);
     expect(find.text('0 / 6 utilisés'), findsOneWidget);
     for (final component in all) {
       expect(item(component), findsOneWidget, reason: component);
@@ -133,7 +130,7 @@ void main() {
   });
 
   testWidgets('polices réelles : six noms entiers, aucun paragraphe tronqué, '
-      'texte de 24 px au moins, en 6/6 comme en 0/6', (tester) async {
+      'texte de 11 px au moins, en 6/6 comme en 0/6', (tester) async {
     await loadRealFonts(alsoAs: const <String>['Roboto']);
     await pumpShelf(tester);
     expect(paragraphsTruncated(tester), isEmpty, reason: '0 / 6');
@@ -151,7 +148,8 @@ void main() {
     expect(tester.takeException(), isNull);
     for (final text in tester.widgetList<Text>(find.byType(Text))) {
       final size = text.style?.fontSize ?? 0;
-      expect(size, greaterThanOrEqualTo(24), reason: text.data);
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(size, greaterThanOrEqualTo(11), reason: text.data);
     }
   });
 
@@ -198,7 +196,7 @@ void main() {
   });
 
   testWidgets('le fond de l\'étagère est la décoration de panneau, sans '
-      'changer son rectangle ni le rayon des puces', (tester) async {
+      'changer son rectangle ; les puces ont le rayon sm', (tester) async {
     await pumpShelf(tester);
     await receive(tester, _update('kpi', 'KeyIndicator'));
 
@@ -217,7 +215,7 @@ void main() {
     );
     expect(
       (chip.decoration as BoxDecoration).borderRadius,
-      SceneRadius.borderPill,
+      SceneRadius.borderSm,
     );
   });
 
@@ -229,8 +227,8 @@ void main() {
     const theme = SceneTheme.dark();
 
     for (final (component, background) in <(String, Color)>[
-      ('KeyIndicator', theme.okBackground),
-      ('TrendChart', theme.neutralBackground),
+      ('KeyIndicator', theme.signalGhost),
+      ('TrendChart', theme.surface),
     ]) {
       final Color? icon = tester.widget<Icon>(iconOf(component)).color;
       final box = tester.widget<DecoratedBox>(

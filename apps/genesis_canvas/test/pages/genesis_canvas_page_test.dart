@@ -20,6 +20,7 @@ import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:genui/genui.dart' show Catalog;
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:get_it/get_it.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
@@ -196,8 +197,8 @@ void main() {
       'utilisés » seuls, ni « CANEVAS » ni « release-3-4 »', (tester) async {
     await launch(tester, _valid);
 
-    expect(find.text('AGENTS A2A'), findsOneWidget);
-    expect(find.text('CATALOGUE ·'), findsOneWidget);
+    expect(findTextIgnoringCase('AGENTS A2A'), findsOneWidget);
+    expect(findTextIgnoringCase('CATALOGUE ·'), findsOneWidget);
     expect(find.text('1 / 6 utilisés'), findsOneWidget);
     expect(find.text('CANEVAS'), findsNothing);
     expect(find.textContaining('CANEVAS'), findsNothing);

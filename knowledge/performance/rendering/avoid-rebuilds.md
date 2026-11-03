@@ -6,7 +6,7 @@ status: verified
 updated: 2026-10-26
 sources:
   - https://docs.flutter.dev/perf/best-practices
-links: [perf-bloc-scoped-rebuilds, perf-repaint-boundary, perf-audio-visualizer-60hz]
+links: [perf-bloc-scoped-rebuilds, perf-repaint-boundary, perf-audio-visualizer-60hz, perf-layoutbuilder-animated-descendant]
 ---
 # Un rebuild coûte ce qu'il reconstruit : réduire la portée, réutiliser les instances
 

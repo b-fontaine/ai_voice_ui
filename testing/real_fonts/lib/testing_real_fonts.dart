@@ -2,6 +2,8 @@
 /// lisibilité (NFR-05) des slices et de l'app.
 library;
 
+export 'src/find_text_ignoring_case.dart'
+    show findTextIgnoringCase, findTextContainingIgnoringCase;
 export 'src/paragraphs_truncated.dart' show paragraphsTruncated;
 export 'src/real_fonts.dart'
     show

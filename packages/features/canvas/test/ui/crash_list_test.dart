@@ -206,8 +206,11 @@ void main() {
     );
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
+    // pdr-0087 / pdr-0088 F1 : à 18 px, un titre ne passe à la ligne qu'à
+    // partir d'environ 65 caractères.
     const title =
-        'Principaux crashs de la version 3.4 sur Android cette semaine';
+        'Principaux crashs de la version 3.4 sur Android cette semaine, '
+        'classés par nombre de sessions touchées et par plateforme';
     await h.sendData(tester, <String, Object>{
       'title': title,
       'items': <Object>[_item(1, 'très long ' * 30), _item(2, 'court')],
@@ -228,7 +231,7 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('crash-label-1'))).overflow,
       TextOverflow.ellipsis,
     );
-    expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+    expect(tester.getSize(text).height, greaterThan(titleLineHeight() * 1.5));
     expect(tester.takeException(), isNull);
   });
 

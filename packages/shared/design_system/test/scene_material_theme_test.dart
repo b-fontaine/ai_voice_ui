@@ -11,7 +11,7 @@ void main() {
     expect(theme.scaffoldBackgroundColor, const SceneTheme.dark().background);
   });
 
-  test('tous les styles de texte de Material font au moins 24 px', () {
+  test('tous les styles de texte de Material font au moins 11 px', () {
     final text = theme.textTheme;
     final styles = <String, TextStyle?>{
       'displayLarge': text.displayLarge,
@@ -32,7 +32,8 @@ void main() {
     };
     styles.forEach((name, style) {
       expect(style?.fontSize, isNotNull, reason: name);
-      expect(style!.fontSize, greaterThanOrEqualTo(24), reason: name);
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(style!.fontSize, greaterThanOrEqualTo(11), reason: name);
     });
   });
 
@@ -98,7 +99,8 @@ void main() {
     final TextStyle style = rich.text.style!;
     expect(style.fontFamily, SceneFonts.sans);
     expect(style.fontFamilyFallback, SceneFonts.fallbackList);
-    expect(style.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(style.fontSize, greaterThanOrEqualTo(11));
   });
 
   test('boutons Material : texte en style button (Space Grotesk 600)', () {

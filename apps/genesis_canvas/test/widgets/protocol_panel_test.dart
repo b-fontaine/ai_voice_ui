@@ -145,7 +145,7 @@ void main() {
     await receive(tester, _accepted('createSurface', 'kpi'));
 
     expect(find.byKey(const Key('protocol-panel')), findsOneWidget);
-    expect(find.text('FLUX A2UI · live'), findsOneWidget);
+    expect(findTextIgnoringCase('FLUX A2UI · live'), findsOneWidget);
     expect(find.byKey(const Key('protocol-toggle')), findsOneWidget);
     expect(entry(0), findsNothing);
     expect(find.byKey(const Key('protocol-current')), findsNothing);

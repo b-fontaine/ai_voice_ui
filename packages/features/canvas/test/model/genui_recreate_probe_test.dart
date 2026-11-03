@@ -72,6 +72,9 @@ void main() {
       );
       await settle(tester);
     }
+    // Le compteur du KPI descend de 100 vers sa valeur pendant
+    // `SceneMotion.count` (pdr-0088 F3 et F13) : on compare les rendus finis.
+    await tester.pump(SceneMotion.count + const Duration(milliseconds: 50));
   }
 
   testWidgets(
@@ -138,7 +141,8 @@ void main() {
       }
       expect(find.byType(Surface), findsNWidgets(expectedIds.length));
       final List<String> reference = shownTexts(tester);
-      expect(reference, contains('Sessions sans crash'));
+      // L'étiquette du KPI s'affiche en capitales (pdr-0088 F6).
+      expect(reference, contains('SESSIONS SANS CRASH'));
       expect(reference, contains('99,57 %'));
       expect(rejected, isEmpty);
       expect(engineErrors, isEmpty);

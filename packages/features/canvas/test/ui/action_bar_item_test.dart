@@ -54,7 +54,7 @@ void main() {
     tester,
   ) async {
     await pumpActions(tester);
-    expect(find.text('Décision'), findsOneWidget);
+    expect(find.text('DÉCISION'), findsOneWidget);
     expect(find.text('Bloquer la release'), findsOneWidget);
     expect(find.text('Valider la release'), findsOneWidget);
     expect(find.byKey(const Key('neutral-actions')), findsNothing);

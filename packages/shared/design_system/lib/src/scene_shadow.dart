@@ -21,4 +21,20 @@ abstract final class SceneShadow {
 
   /// Orbe vocal quand l'IA parle.
   static const List<BoxShadow> glowPlasma = SceneTokens.shadowGlowPlasma;
+
+  /// Halo du point de l'orchestrateur (rail des agents) : plasma à 60 %, rayon
+  /// de flou de 10.
+  static const List<BoxShadow> glowPlasmaDot = SceneTokens.shadowGlowPlasmaDot;
+
+  /// Lueur `nogo` du chiffre héros bloquant (`text-shadow`) : `nogo` à un
+  /// tiers, rayon de flou de 32. S'applique aussi à `Shadow` (un `BoxShadow`
+  /// en est un).
+  static const List<BoxShadow> textGlowNogo = SceneTokens.shadowTextGlowNogo;
+
+  /// Opacité de la lueur d'une série de graphique : la couleur est celle de la
+  /// série, donc ce n'est pas une ombre complète.
+  static const double seriesGlowAlpha = SceneTokens.shadowSeriesGlowAlpha;
+
+  /// Écart type du flou de la lueur d'une série de graphique.
+  static const double seriesGlowSigma = SceneTokens.shadowSeriesGlowSigma;
 }

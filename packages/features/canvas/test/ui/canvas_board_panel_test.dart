@@ -107,11 +107,13 @@ void main() {
             reason: 'l\'ombre ne doit jamais être rognée ($clip)',
           );
         }
-        // Ordre du Stack : décoration, contenu animé, contour de surbrillance.
+        // Ordre du Stack : décoration, contenu animé, cadre de génération
+        // (019 T32b, toujours présent, vide hors génération), contour de
+        // surbrillance.
         final Stack stack = tester.widget<Stack>(
           find.descendant(of: cell(id), matching: find.byType(Stack)).first,
         );
-        expect(stack.children, hasLength(3));
+        expect(stack.children, hasLength(4));
         final Widget first = stack.children[0];
         expect(first, isA<Positioned>());
         expect(

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/act_indicator_finder.dart';
 import '../support/acte4_harness.dart';
-import '../support/keys.dart';
 
 /// Usage: la zone Rejeu est en pause à mi-parcours
 ///
@@ -13,10 +13,7 @@ Future<void> laZoneRejeuEstEnPauseAMiparcours(WidgetTester tester) async {
   try {
     await tester.pump();
     expect(
-      find.descendant(
-        of: find.byKey(AcceptanceKeys.actIndicator),
-        matching: find.textContaining('Acte 4 · Rejeu'),
-      ),
+      findActIndicatorLabel('Acte 4 · Rejeu'),
       findsOneWidget,
       reason: "l'indicateur d'acte doit afficher « Acte 4 · Rejeu »",
     );

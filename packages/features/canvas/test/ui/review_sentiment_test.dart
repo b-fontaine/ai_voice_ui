@@ -8,7 +8,7 @@ import '../support/catalog_harness.dart';
 final Finder excerptRows = find.byWidgetPredicate(
   (w) =>
       w.key is ValueKey &&
-      '${(w.key as ValueKey).value}'.startsWith('review-excerpt-'),
+      RegExp(r'^reviews-card-\d+$').hasMatch('${(w.key as ValueKey).value}'),
 );
 
 /// Cellule d'une grille 3 x 2 à 1920 x 1080 : 624 x 302.
@@ -115,7 +115,7 @@ void main() {
       h.inCell(find.textContaining("L'app se ferme dès que je valide")),
       findsOneWidget,
     );
-    expect(h.inCell(find.byKey(const Key('review-split-bar'))), findsOneWidget);
+    expect(h.inCell(find.byKey(const Key('reviews-split'))), findsOneWidget);
     expect(h.engineErrors, isEmpty);
     expect(tester.takeException(), isNull);
   });
@@ -151,7 +151,7 @@ void main() {
         reason: 'texte exact « + N avis »',
       );
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
       expect(h.engineErrors, isEmpty);
     });
@@ -175,20 +175,20 @@ void main() {
       expect(tester.widget<Text>(text).maxLines, isNull);
     });
 
-    testWidgets('2 x 2 (936 x 302), acte 2 : même nombre d\'extraits '
-        'qu\'en 3 x 2, compte cohérent', (tester) async {
+    testWidgets('2 x 2 (936 x 302), acte 2 : les trois cartes tiennent en '
+        'entier, donc aucune indication « + N avis »', (tester) async {
       final h = _realFontsHarness(size: gridCell2x2);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
 
-      // La hauteur (302 px) limite les extraits, pas la largeur : le nombre
-      // reste celui du 3 x 2.
+      // Largeur doublée : chaque texte tient sur moins de lignes, les trois
+      // cartes entrent dans les 302 px (pdr-0088 F1, T23).
       final int shown = h.inCell(excerptRows).evaluate().length;
-      expect(shown, 1);
-      expect(_hiddenCount(tester), 3 - shown);
+      expect(shown, 3);
+      expect(_hiddenCount(tester), isNull);
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
     });
 
@@ -238,11 +238,12 @@ void main() {
     expect(text.data, '3.3 : 14 % négatifs · +16 pts');
     final theme = const SceneTheme.dark();
     expect(text.style?.color, theme.textSecondary);
-    expect(text.style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(text.style?.fontSize, greaterThanOrEqualTo(11));
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     expect(h.inCell(find.textContaining('Avis · Android')), findsOneWidget);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });

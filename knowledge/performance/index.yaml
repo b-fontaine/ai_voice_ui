@@ -17,6 +17,7 @@ notes:
   # rendering/
   - {id: perf-avoid-rebuilds, path: rendering/avoid-rebuilds.md, summary: "const, setState bas, child réutilisé, pas d'operator== sur widgets", tags: [rebuild, const]}
   - {id: perf-bloc-scoped-rebuilds, path: rendering/bloc-scoped-rebuilds.md, summary: "buildWhen, BlocSelector, context.select; jamais d'audio 60Hz dans le BlocState", tags: [bloc, rebuild]}
+  - {id: perf-layoutbuilder-animated-descendant, path: rendering/layoutbuilder-animated-descendant.md, summary: "Sous un LayoutBuilder, AnimatedBuilder/SlideTransition remet en page et repeint à chaque image : FadeTransition, CustomPainter(repaint:), RenderProxyBox à la peinture", tags: [layoutbuilder, animation, layout, repaint, rebuild]}
   - {id: perf-lazy-lists, path: rendering/lazy-lists-and-intrinsics.md, summary: "ListView.builder, itemExtent, slivers, éviter passes intrinsèques et shrinkWrap", tags: [listview, lazy, layout]}
   - {id: perf-repaint-boundary, path: rendering/repaint-boundary.md, summary: "Isoler les zones repeintes souvent; debugRepaintRainbowEnabled; coût mémoire GPU", tags: [repaint, layers]}
   - {id: perf-savelayer, path: rendering/savelayer-opacity-clip.md, summary: "saveLayer/Opacity/clip/ombres: coûts raster et diagnostic DevTools", tags: [raster, opacity, clip]}

@@ -7,7 +7,7 @@ updated: 2026-10-26
 sources:
   - https://api.flutter.dev/flutter/widgets/RepaintBoundary-class.html
   - https://docs.flutter.dev/perf/ui-performance
-links: [perf-audio-visualizer-60hz, perf-avoid-rebuilds, perf-profile-mode-devtools]
+links: [perf-audio-visualizer-60hz, perf-avoid-rebuilds, perf-profile-mode-devtools, perf-layoutbuilder-animated-descendant]
 ---
 # RepaintBoundary crée un layer séparé : un repaint s'y arrête
 
@@ -25,3 +25,4 @@ RepaintBoundary(
 ## ⚠️ Pièges
 - Chaque boundary est un layer, et le cache raster consomme beaucoup de mémoire GPU (doc ui-performance). À placer là où le rainbow montre un problème, pas partout.
 - `ListView` ajoute déjà des RepaintBoundary par item (`addRepaintBoundaries: true` par défaut), inutile d'en rajouter.
+- Une animation (même ponctuelle) posée dans la couche d'un voisin la fait repeindre avec lui : un boundary par animation (voir [perf-layoutbuilder-animated-descendant]).

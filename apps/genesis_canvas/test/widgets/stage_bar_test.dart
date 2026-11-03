@@ -24,7 +24,9 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
     show RelayFailure, RelayFailureKind;
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
+import '../support/act_indicator_finder.dart';
 import '../support/contrast.dart';
+import '../support/focus_ring.dart';
 import '../support/paragraphs.dart';
 import '../support/replay_rig.dart';
 
@@ -140,38 +142,73 @@ void main() {
   group('couleurs de la régie (thème de scène)', () {
     const theme = SceneTheme.dark();
 
-    ButtonStyle styleOf(WidgetTester tester, String key) =>
-        tester.widget<ButtonStyleButton>(find.byKey(Key(key))).style!;
+    /// Fond (premier remplissage opaque du visuel, sinon le fond de page) et
+    /// bordure du visuel de 34 points d'un contrôle.
+    (Color fill, Color border) visualOf(WidgetTester tester, String key) {
+      final box = tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: find.byKey(Key(key)),
+              matching: find.byType(DecoratedBox),
+              matchRoot: true,
+            ),
+          )
+          .map((box) => box.decoration)
+          .whereType<BoxDecoration>()
+          .first;
+      final Color fill = box.color ?? theme.background;
+      return (
+        fill.a == 0 ? theme.background : fill,
+        (box.border! as Border).top.color,
+      );
+    }
 
-    Color? resolve(WidgetStateProperty<Color?>? p, Set<WidgetState> states) =>
-        p?.resolve(states);
+    Color textColor(WidgetTester tester, String key) => tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byKey(Key(key)),
+            matching: find.byType(Text),
+            matchRoot: true,
+          ),
+        )
+        .last
+        .style!
+        .color!;
 
-    void expectGroup(WidgetTester tester, Set<WidgetState> resetStates) {
-      for (final entry in <String, Set<WidgetState>>{
-        'act-indicator': <WidgetState>{},
-        'reset-button': resetStates,
-      }.entries) {
-        final style = styleOf(tester, entry.key);
-        final fg = resolve(style.foregroundColor, entry.value)!;
-        final bg =
-            resolve(style.backgroundColor, entry.value) ?? theme.background;
-        final border = style.side!.resolve(entry.value)!.color;
+    void expectGroup(WidgetTester tester) {
+      // « Remettre à vide » : texte 4,5:1 et bordure 3:1 sur le fond de page.
+      final (Color fill, Color border) = visualOf(
+        tester,
+        'reset-button-visual',
+      );
+      expect(
+        contrast(textColor(tester, 'reset-button-visual'), fill),
+        greaterThanOrEqualTo(4.5),
+        reason: 'reset-button texte/fond',
+      );
+      expect(
+        contrast(border, theme.background),
+        greaterThanOrEqualTo(3),
+        reason: 'reset-button bordure/fond de page',
+      );
+      // Segments : jamais `inkFaint` (pdr-0088 F12) et texte lisible.
+      for (var i = 1; i <= 3; i++) {
+        final String key = 'act-segment-$i';
+        expect(textColor(tester, key), isNot(theme.inkFaint));
+        final Color bg = i == 1
+            ? Color.alphaBlend(theme.plasmaGhost, theme.surface)
+            : theme.surface;
         expect(
-          contrast(fg, bg),
+          contrast(textColor(tester, key), bg),
           greaterThanOrEqualTo(4.5),
-          reason: '${entry.key} texte/fond',
-        );
-        expect(
-          contrast(border, theme.background),
-          greaterThanOrEqualTo(3),
-          reason: '${entry.key} bordure/fond de page',
+          reason: '$key texte/fond',
         );
       }
     }
 
     testWidgets('actifs : texte 4,5:1 et bordure 3:1', (tester) async {
       await pumpBar(tester);
-      expectGroup(tester, <WidgetState>{});
+      expectGroup(tester);
     });
 
     testWidgets('inactifs : texte 4,5:1 et bordure 3:1', (tester) async {
@@ -184,30 +221,34 @@ void main() {
           state: AgentTaskState.working,
         ),
       );
-      expectGroup(tester, <WidgetState>{WidgetState.disabled});
+      expectGroup(tester);
     });
   });
 
   testWidgets('acte 1 par défaut : « Acte 1/3 · Créer »', (tester) async {
     await pumpBar(tester);
 
-    expect(
-      find.descendant(of: indicator(), matching: find.text('Acte 1/3 · Créer')),
-      findsOneWidget,
-    );
+    expect(findActIndicatorLabel('Acte 1/3 · Créer'), findsOneWidget);
   });
 
-  testWidgets('l\'indicateur d\'acte prend le style actIndicator du thème', (
-    tester,
-  ) async {
+  testWidgets('les segments d\'acte prennent les micro-styles segment et '
+      'segmentNo du thème', (tester) async {
     await pumpBar(tester);
 
-    final style = tester
-        .renderObject<RenderParagraph>(find.text('Acte 1/3 · Créer'))
+    const theme = SceneTheme.dark();
+    TextStyle? styleOf(String text) => tester
+        .renderObject<RenderParagraph>(
+          find.descendant(
+            of: find.byKey(const Key('act-segment-1')),
+            matching: find.text(text),
+          ),
+        )
         .text
         .style;
-    expect(style?.fontSize, const SceneTheme.dark().actIndicator.fontSize);
-    expect(style?.fontSize, greaterThanOrEqualTo(24));
+    expect(styleOf('Créer')?.fontSize, theme.micro.segment.fontSize);
+    expect(styleOf('01')?.fontSize, theme.micro.segmentNo.fontSize);
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas).
+    expect(theme.micro.segmentNo.fontSize, greaterThanOrEqualTo(11));
   });
 
   testWidgets(
@@ -219,10 +260,7 @@ void main() {
         await tester.tap(indicator());
         await tester.pump();
         await tester.pump();
-        expect(
-          find.descendant(of: indicator(), matching: find.text(text)),
-          findsOneWidget,
-        );
+        expect(findActIndicatorLabel(text), findsOneWidget);
       }
 
       await clickAndExpect('Acte 2/3 · Transformer');
@@ -243,7 +281,228 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
+  });
+
+  group('sélecteur d\'actes en segments (F8, T31)', () {
+    Finder segment(int n) => find.byKey(Key('act-segment-$n'));
+
+    String shown(WidgetTester tester, int n) => tester
+        .widgetList<Text>(
+          find.descendant(
+            of: segment(n),
+            matching: find.byType(Text),
+            matchRoot: true,
+          ),
+        )
+        .map((t) => t.data!)
+        .join(' ');
+
+    Color? fill(WidgetTester tester, int n) => tester
+        .widgetList<DecoratedBox>(
+          find.descendant(
+            of: segment(n),
+            matching: find.byType(DecoratedBox),
+            matchRoot: true,
+          ),
+        )
+        .map((box) => box.decoration)
+        .whereType<BoxDecoration>()
+        .map((d) => d.color)
+        .firstWhere((c) => c != null, orElse: () => null);
+
+    Color numberColor(WidgetTester tester, int n) => tester
+        .widgetList<Text>(
+          find.descendant(
+            of: segment(n),
+            matching: find.byType(Text),
+            matchRoot: true,
+          ),
+        )
+        .first
+        .style!
+        .color!;
+
+    Future<void> advance(WidgetTester tester) async {
+      await tester.tap(indicator());
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('acte 1 : « 01 » actif, les deux suivants à venir', (
+      tester,
+    ) async {
+      await pumpBar(tester);
+
+      const theme = SceneTheme.dark();
+      expect(shown(tester, 1), '01 Créer');
+      expect(shown(tester, 2), '02 Transformer');
+      expect(shown(tester, 3), '03 Interagir');
+      expect(fill(tester, 1), theme.plasmaGhost);
+      expect(fill(tester, 2), isNull);
+      expect(fill(tester, 3), isNull);
+      expect(numberColor(tester, 1), theme.plasma);
+      // F12 : un segment à venir n'est jamais en `inkFaint`.
+      expect(numberColor(tester, 2), theme.textSecondary);
+      expect(numberColor(tester, 3), theme.textSecondary);
+    });
+
+    testWidgets('acte 2 : « 01 ✓ » fait en go, « 02 » actif', (tester) async {
+      await pumpBar(tester);
+      await advance(tester);
+
+      const theme = SceneTheme.dark();
+      expect(shown(tester, 1), '01 ✓ Créer');
+      expect(shown(tester, 2), '02 Transformer');
+      expect(fill(tester, 1), isNull);
+      expect(fill(tester, 2), theme.plasmaGhost);
+      expect(numberColor(tester, 1), theme.okForeground);
+    });
+
+    testWidgets('acte 3 : deux segments faits, le dernier actif', (
+      tester,
+    ) async {
+      await pumpBar(tester);
+      await advance(tester);
+      await advance(tester);
+
+      expect(shown(tester, 1), '01 ✓ Créer');
+      expect(shown(tester, 2), '02 ✓ Transformer');
+      expect(shown(tester, 3), '03 Interagir');
+      expect(fill(tester, 3), const SceneTheme.dark().plasmaGhost);
+    });
+
+    testWidgets('un seul bouton : cliquer n\'importe quel segment passe à '
+        'l\'acte suivant', (tester) async {
+      await pumpBar(tester);
+
+      expect(find.byKey(const Key('act-indicator')), findsOneWidget);
+      await tester.tap(segment(3));
+      await tester.pump();
+      await tester.pump();
+
+      expect(stage.state.act, 2);
+    });
+
+    testWidgets('texte accessible inchangé : « Acte n/3 · nom »', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pumpBar(tester);
+
+      expect(tester.getSemantics(indicator()).label, 'Acte 1/3 · Créer');
+      semantics.dispose();
+    });
+
+    testWidgets('en rejeu : un seul segment « Acte 4 · Rejeu », non '
+        'cliquable', (tester) async {
+      await pumpBar(tester);
+      replay.bloc.add(const ReplayPlayPressed());
+      await tester.pump();
+      await tester.pump();
+
+      expect(segment(1), findsNothing);
+      expect(segment(2), findsNothing);
+      expect(segment(3), findsNothing);
+      final Finder single = find.byKey(const Key('act-segment-replay'));
+      expect(single, findsOneWidget);
+      expect(
+        find.descendant(of: single, matching: find.text('Acte 4 · Rejeu')),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<TextButton>(indicator()).onPressed,
+        isNull,
+        reason: 'non cliquable',
+      );
+    });
+  });
+
+  group('boutons du haut sm (F1, T31)', () {
+    void linuxTest(
+      String description,
+      Future<void> Function(WidgetTester tester) body,
+    ) => testWidgets(description, (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await body(tester);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    linuxTest('visuels de 34 points au centre de cibles d\'au moins 48', (
+      tester,
+    ) async {
+      await pumpBar(tester);
+
+      for (final (String target, String visual) in <(String, String)>[
+        ('mic-button', 'mic-button-visual'),
+        ('silence-button', 'silence-button-visual'),
+        ('reset-button', 'reset-button-visual'),
+      ]) {
+        final Rect t = tester.getRect(find.byKey(Key(target)));
+        final Rect v = tester.getRect(find.byKey(Key(visual)));
+        expect(v.height, 34, reason: visual);
+        expect(t.height, greaterThanOrEqualTo(48), reason: target);
+        expect(v.center.dy, closeTo(t.center.dy, 0.5), reason: 'centré');
+        expect(t.contains(v.topLeft) && t.contains(v.bottomRight), isTrue);
+      }
+    });
+
+    linuxTest('le visuel du micro est plein (surface-300), ceux de « Faire '
+        'taire » et « Remettre à vide » sont fantômes', (tester) async {
+      await pumpBar(tester);
+
+      const theme = SceneTheme.dark();
+      BoxDecoration decoration(String key) => tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: find.byKey(Key(key)),
+              matching: find.byType(DecoratedBox),
+              matchRoot: true,
+            ),
+          )
+          .map((box) => box.decoration)
+          .whereType<BoxDecoration>()
+          .first;
+
+      expect(decoration('mic-button-visual').color, theme.surface300);
+      expect(decoration('silence-button-visual').color, isNull);
+      expect(decoration('reset-button-visual').color, isNull);
+      for (final String key in <String>[
+        'mic-button-visual',
+        'silence-button-visual',
+        'reset-button-visual',
+      ]) {
+        final BoxDecoration d = decoration(key);
+        expect(d.borderRadius, SceneRadius.borderMd, reason: key);
+        // pdr-0084 U4 : jamais `line-strong` (2,3:1) comme bordure de bouton.
+        expect((d.border! as Border).top.color, theme.textSecondary);
+      }
+    });
+
+    linuxTest('le point d\'enregistrement n\'existe que micro ouvert', (
+      tester,
+    ) async {
+      await pumpBar(tester);
+      final dot = find.byKey(const Key('mic-rec-dot'));
+
+      expect(dot, findsNothing, reason: 'hors session');
+
+      await startVoice(tester);
+      expect(dot, findsOneWidget, reason: 'micro ouvert');
+      expect(tester.getSize(dot), const Size.square(8));
+      final decoration =
+          tester.widget<DecoratedBox>(dot).decoration as BoxDecoration;
+      expect(decoration.color, const SceneTheme.dark().blockingForeground);
+      expect(decoration.shape, BoxShape.circle);
+
+      await voiceHarness.session.setMicMuted(true);
+      await tester.pump();
+      await tester.pump();
+      expect(dot, findsNothing, reason: 'micro coupé');
+    });
   });
 
   testWidgets('« Remettre à vide » appelle onResetPressed, une fois par clic', (
@@ -314,7 +573,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.textContaining('Acte 2/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 2/3'), findsOneWidget);
   });
 
   testWidgets('« Remettre à vide » est inactif quand un agent est en attente', (
@@ -344,20 +603,18 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(
-      find.descendant(of: indicator(), matching: find.text('Acte 4 · Rejeu')),
-      findsOneWidget,
-    );
+    expect(findActIndicatorLabel('Acte 4 · Rejeu'), findsOneWidget);
     await tester.tap(indicator());
     await tester.pump();
     await tester.pump();
     expect(stage.state.act, 1, reason: 'le clic ne change plus d\'acte');
-    expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+    expect(findTextIgnoringCase('Acte 4 · Rejeu'), findsOneWidget);
     final style = tester
-        .renderObject<RenderParagraph>(find.text('Acte 4 · Rejeu'))
+        .renderObject<RenderParagraph>(findTextIgnoringCase('Acte 4 · Rejeu'))
         .text
         .style;
-    expect(style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(style?.fontSize, greaterThanOrEqualTo(11));
   });
 
   testWidgets('en rejeu : « Remettre à vide » quitte le rejeu, sans reset', (
@@ -375,7 +632,7 @@ void main() {
     expect(resets, 0, reason: 'la remise à vide classique ne part pas');
     expect(replay.stage.exits, 1);
     expect(replay.bloc.state, isA<ReplayLive>());
-    expect(find.text('Acte 1/3 · Créer'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3 · Créer'), findsOneWidget);
   });
 
   testWidgets('en rejeu : « Remettre à vide » reste actif même si occupé', (
@@ -404,13 +661,18 @@ void main() {
     await tester.pump();
     await tester.pump();
     final ReplayState before = replay.bloc.state;
-    final Text label = tester.widget<Text>(find.text('Acte 4 · Rejeu'));
+    final Text label = tester.widget<Text>(
+      findTextIgnoringCase('Acte 4 · Rejeu'),
+    );
 
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(replay.bloc.state, isNot(before), reason: 'la position a avancé');
     expect(
-      identical(tester.widget<Text>(find.text('Acte 4 · Rejeu')), label),
+      identical(
+        tester.widget<Text>(findTextIgnoringCase('Acte 4 · Rejeu')),
+        label,
+      ),
       isTrue,
       reason: 'le sous-arbre n\'est pas reconstruit à chaque pas',
     );
@@ -455,14 +717,14 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Acte 2/3 · Transformer'), findsOneWidget);
+      expect(findActIndicatorLabel('Acte 2/3 · Transformer'), findsOneWidget);
       expect(paragraphsTruncated(tester), isEmpty);
       expect(tester.takeException(), isNull);
 
       replay.bloc.add(const ReplayPlayPressed());
       await tester.pump();
       await tester.pump();
-      expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+      expect(findTextIgnoringCase('Acte 4 · Rejeu'), findsOneWidget);
       expect(paragraphsTruncated(tester), isEmpty);
     });
 
@@ -481,15 +743,35 @@ void main() {
       semantics.dispose();
     });
 
-    linuxTest('le contrôle d\'acte a une bordure et un contraste de scène', (
-      tester,
-    ) async {
+    linuxTest('le sélecteur d\'actes est une pilule surface-100 à bordure '
+        'line, dans une cible de 48 points', (tester) async {
       await pumpBar(tester);
 
-      final button = tester.widget<TextButton>(indicator());
-      final side = button.style?.side?.resolve(<WidgetState>{});
-      expect(side, isNotNull, reason: 'bordure explicite');
-      expect(side!.color, const SceneTheme.dark().accent);
+      const theme = SceneTheme.dark();
+      final pill = tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: indicator(),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .map((box) => box.decoration)
+          .whereType<BoxDecoration>()
+          .firstWhere((d) => d.color == theme.surface);
+      expect((pill.border! as Border).top.color, theme.line);
+      expect(pill.borderRadius, SceneRadius.borderPill);
+      expect(
+        tester.getRect(indicator()).height,
+        greaterThanOrEqualTo(48),
+        reason: 'cible',
+      );
+      final Rect visual = tester.getRect(
+        find.descendant(
+          of: indicator(),
+          matching: find.byKey(const Key('act-segment-1')),
+        ),
+      );
+      expect(visual.height, 34);
     });
   });
 
@@ -618,7 +900,7 @@ void main() {
       );
     });
 
-    linuxTest('libellés entiers à 24 px au moins, polices réelles', (
+    linuxTest('libellés entiers à 11 px au moins, polices réelles', (
       tester,
     ) async {
       await loadRealFonts();
@@ -760,6 +1042,39 @@ void main() {
       expect(find.byKey(const Key('status-message')), findsOneWidget);
       expect(tester.takeException(), isNull);
       expect(paragraphsBelowMinimum(tester), isEmpty);
+    });
+  });
+
+  group('focus clavier visible (pdr-0084 U4)', () {
+    testWidgets('mic-button, silence-button et reset-button : anneau signal '
+        'de 2 points au focus', (tester) async {
+      await pumpBar(tester);
+      await startVoice(tester);
+
+      for (final String id in <String>[
+        'mic-button',
+        'silence-button',
+        'reset-button',
+        'act-indicator',
+      ]) {
+        final Key child = id == 'act-indicator'
+            ? const Key('act-segment-1')
+            : Key('$id-visual');
+        await expectFocusRing(tester, Key(id), child);
+      }
+    });
+
+    testWidgets('act-indicator désactivé en rejeu : pas de focus, pas '
+        'd\'anneau', (tester) async {
+      await pumpBar(tester);
+      replay.bloc.add(const ReplayPlayPressed());
+      await tester.pump();
+      await tester.pump();
+
+      Focus.of(tester.element(find.byKey(const Key('act-segment-replay'))))
+          .requestFocus();
+      await tester.pump();
+      expect(paintedSide(tester, const Key('act-indicator')), BorderSide.none);
     });
   });
 }

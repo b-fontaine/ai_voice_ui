@@ -99,6 +99,16 @@ void main() {
       'surface200': (theme.surface200, const Color(0xFF101731)),
       'surface300': (theme.surface300, const Color(0xFF18213F)),
       'orbVeil': (theme.orbVeil, const Color(0xB3424242)),
+      'plasmaLine = plasma 33 %': (theme.plasmaLine, const Color(0x54A58BFF)),
+      'plasmaOutline = plasma 53 %': (
+        theme.plasmaOutline,
+        const Color(0x88A58BFF),
+      ),
+      'signalLine = signal 40 %': (theme.signalLine, const Color(0x663DE8FF)),
+      'signalLineSoft = signal 33 %': (
+        theme.signalLineSoft,
+        const Color(0x553DE8FF),
+      ),
     };
     expected.forEach((name, pair) {
       test(name, () => expect(pair.$1, pair.$2));
@@ -144,11 +154,14 @@ void main() {
           greaterThanOrEqualTo(minimum),
         );
       });
-      test('ink-faint >= 3:1 (grand texte, 24 px) sur $backgroundName', () {
-        // 24 px et plus seulement : 3,79:1 sur surface-200, 3,40:1 sur
-        // surface-300 (relevé de la revue du plan).
-        expect(contrast(theme.inkFaint, background), greaterThanOrEqualTo(3));
-      });
+      test(
+        'ink-faint >= 3:1 (décoratif, composants inactifs) sur $backgroundName',
+        () {
+          // Jamais un texte de moins de 24 px (pdr-0088 F12, text_contrast_small_test) :
+          // 3,79:1 sur surface-200, 3,40:1 sur surface-300 (relevé de la revue du plan).
+          expect(contrast(theme.inkFaint, background), greaterThanOrEqualTo(3));
+        },
+      );
     });
     test('ink-muted >= 7:1 sur surface-100', () {
       expect(
@@ -263,7 +276,9 @@ void main() {
     );
   });
 
-  test('toutes les tailles de texte sont >= 24 px', () {
+  test('échelle du design system : tailles de 11 à 76 px, sans plancher', () {
+    // pdr-0087 / pdr-0088 F1 : le plancher de 24 px est levé ; le détail de
+    // chaque style est dans scene_theme_scale_test.
     final styles = {
       'body': theme.body,
       'label': theme.label,
@@ -277,7 +292,7 @@ void main() {
     };
     styles.forEach((name, style) {
       expect(style.fontSize, isNotNull, reason: name);
-      expect(style.fontSize, greaterThanOrEqualTo(24), reason: name);
+      expect(style.fontSize, inInclusiveRange(11, 76), reason: name);
     });
     expect(theme.value.fontSize, greaterThanOrEqualTo(48));
   });
@@ -326,6 +341,10 @@ void main() {
         'surface200': () => theme.copyWith(surface200: white),
         'surface300': () => theme.copyWith(surface300: white),
         'orbVeil': () => theme.copyWith(orbVeil: white),
+        'plasmaLine': () => theme.copyWith(plasmaLine: white),
+        'plasmaOutline': () => theme.copyWith(plasmaOutline: white),
+        'signalLine': () => theme.copyWith(signalLine: white),
+        'signalLineSoft': () => theme.copyWith(signalLineSoft: white),
       };
       final reads = <String, Color Function(SceneTheme)>{
         'panelTop': (t) => t.panelTop,
@@ -339,6 +358,10 @@ void main() {
         'surface200': (t) => t.surface200,
         'surface300': (t) => t.surface300,
         'orbVeil': (t) => t.orbVeil,
+        'plasmaLine': (t) => t.plasmaLine,
+        'plasmaOutline': (t) => t.plasmaOutline,
+        'signalLine': (t) => t.signalLine,
+        'signalLineSoft': (t) => t.signalLineSoft,
       };
       copies.forEach((name, copy) {
         final changed = copy();

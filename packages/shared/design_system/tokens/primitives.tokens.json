@@ -273,6 +273,62 @@
         "hex": "#424242"
       },
       "$description": "Voile de l'orbe vocal (0xB3424242), repris de la valeur codée jusqu'ici dans voice_orb.dart."
+    },
+    "plasmaLine": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.647059,
+          0.545098,
+          1.0
+        ],
+        "alpha": 0.33,
+        "hex": "#A58BFF"
+      },
+      "$description": "Plasma à 33 % : bordure de la tuile de l'orchestrateur."
+    },
+    "plasmaOutline": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.647059,
+          0.545098,
+          1.0
+        ],
+        "alpha": 0.533333,
+        "hex": "#A58BFF"
+      },
+      "$description": "Plasma à 53 % (#a58bff88) : contour du segment d'acte actif."
+    },
+    "signalLine": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.239216,
+          0.909804,
+          1.0
+        ],
+        "alpha": 0.4,
+        "hex": "#3DE8FF"
+      },
+      "$description": "Signal à 40 % : bordure de la tuile d'un agent au travail."
+    },
+    "signalLineSoft": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.239216,
+          0.909804,
+          1.0
+        ],
+        "alpha": 0.333333,
+        "hex": "#3DE8FF"
+      },
+      "$description": "Signal à un tiers : bordure d'une puce du catalogue déjà utilisée."
     }
   },
   "space": {
@@ -522,6 +578,66 @@
           }
         }
       ]
+    },
+    "glowPlasmaDot": {
+      "$type": "shadow",
+      "$description": "Halo du point de l'orchestrateur. Extension locale : blurRadius est le rayon de flou Flutter, recopié sans conversion depuis un flou CSS.",
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.647059,
+              0.545098,
+              1.0
+            ],
+            "alpha": 0.6,
+            "hex": "#A58BFF"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 0,
+            "unit": "px"
+          },
+          "blurRadius": {
+            "value": 10,
+            "unit": "px"
+          }
+        }
+      ]
+    },
+    "textGlowNogo": {
+      "$type": "shadow",
+      "$description": "Lueur du chiffre héros bloquant (text-shadow). Extension locale : blurRadius est le rayon de flou Flutter, recopié sans conversion depuis un flou CSS.",
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.352941,
+              0.462745
+            ],
+            "alpha": 0.333333,
+            "hex": "#FF5A76"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 0,
+            "unit": "px"
+          },
+          "blurRadius": {
+            "value": 32,
+            "unit": "px"
+          }
+        }
+      ]
     }
   },
   "size": {
@@ -605,6 +721,27 @@
         "unit": "ms"
       }
     },
+    "180": {
+      "$type": "duration",
+      "$value": {
+        "value": 180,
+        "unit": "ms"
+      }
+    },
+    "200": {
+      "$type": "duration",
+      "$value": {
+        "value": 200,
+        "unit": "ms"
+      }
+    },
+    "350": {
+      "$type": "duration",
+      "$value": {
+        "value": 350,
+        "unit": "ms"
+      }
+    },
     "400": {
       "$type": "duration",
       "$value": {
@@ -619,10 +756,52 @@
         "unit": "ms"
       }
     },
+    "600": {
+      "$type": "duration",
+      "$value": {
+        "value": 600,
+        "unit": "ms"
+      }
+    },
+    "900": {
+      "$type": "duration",
+      "$value": {
+        "value": 900,
+        "unit": "ms"
+      }
+    },
+    "1000": {
+      "$type": "duration",
+      "$value": {
+        "value": 1000,
+        "unit": "ms"
+      }
+    },
     "1200": {
       "$type": "duration",
       "$value": {
         "value": 1200,
+        "unit": "ms"
+      }
+    },
+    "1300": {
+      "$type": "duration",
+      "$value": {
+        "value": 1300,
+        "unit": "ms"
+      }
+    },
+    "1400": {
+      "$type": "duration",
+      "$value": {
+        "value": 1400,
+        "unit": "ms"
+      }
+    },
+    "1500": {
+      "$type": "duration",
+      "$value": {
+        "value": 1500,
         "unit": "ms"
       }
     },
@@ -633,10 +812,38 @@
         "unit": "ms"
       }
     },
+    "1800": {
+      "$type": "duration",
+      "$value": {
+        "value": 1800,
+        "unit": "ms"
+      }
+    },
     "2000": {
       "$type": "duration",
       "$value": {
         "value": 2000,
+        "unit": "ms"
+      }
+    },
+    "2200": {
+      "$type": "duration",
+      "$value": {
+        "value": 2200,
+        "unit": "ms"
+      }
+    },
+    "2400": {
+      "$type": "duration",
+      "$value": {
+        "value": 2400,
+        "unit": "ms"
+      }
+    },
+    "2800": {
+      "$type": "duration",
+      "$value": {
+        "value": 2800,
         "unit": "ms"
       }
     }

@@ -8,7 +8,14 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneRadius, ScenePanel, SceneTheme;
+    show
+        DsPanelHead,
+        DsShift,
+        SceneMotion,
+        SceneOneShot,
+        SceneRadius,
+        ScenePanel,
+        SceneTheme;
 
 /// Panneau « FLUX A2UI · live » (FR-05) : les messages A2UI en cours de
 /// fabrication, avec le dernier en évidence.
@@ -98,28 +105,18 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            'FLUX A2UI · live',
-            style: theme.label.copyWith(color: theme.accent),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+    return DsPanelHead(
+      label: 'FLUX A2UI · live',
+      trailing: TextButton(
+        key: const Key('protocol-toggle'),
+        onPressed: () =>
+            context.read<ProtocolFeedBloc>().add(const PanelToggled()),
+        style: TextButton.styleFrom(
+          foregroundColor: theme.textPrimary,
+          textStyle: theme.button,
         ),
-        const SizedBox(width: 8),
-        TextButton(
-          key: const Key('protocol-toggle'),
-          onPressed: () =>
-              context.read<ProtocolFeedBloc>().add(const PanelToggled()),
-          style: TextButton.styleFrom(
-            foregroundColor: theme.textPrimary,
-            textStyle: theme.button,
-          ),
-          child: Text(state.expanded ? 'Replier' : 'Déplier'),
-        ),
-      ],
+        child: Text(state.expanded ? 'Replier' : 'Déplier'),
+      ),
     );
   }
 }
@@ -130,14 +127,29 @@ const double _tilePaddingY = 6;
 const double _currentBorder = 3;
 const double _jsonLineHeight = 1.2;
 
+// Le masque de dégradé du flux s'opacifie à 30 % de la hauteur.
+const double _maskStop = 0.3;
+
 /// Surcroît de hauteur de la marque « refusé » (ses 2 px de marge verticale
 /// de chaque côté) sur une ligne d'en-tête.
 const double _refusedExtra = 4;
 
-class _Entries extends StatelessWidget {
+class _Entries extends StatefulWidget {
   const _Entries({required this.state});
 
   final ProtocolFeedState state;
+
+  @override
+  State<_Entries> createState() => _EntriesState();
+}
+
+class _EntriesState extends State<_Entries> {
+  // La liste garde ses entrées (et leur état d'apparition) quand le masque de
+  // dégradé apparaît ou disparaît autour d'elle : sans cela, une entrée déjà
+  // arrivée rejouerait son entrée.
+  final GlobalKey _listKey = GlobalKey();
+
+  ProtocolFeedState get state => widget.state;
 
   @override
   Widget build(BuildContext context) {
@@ -159,17 +171,42 @@ class _Entries extends StatelessWidget {
         final List<ProtocolEntry> shown = state.entries.length > capacity
             ? state.entries.sublist(state.entries.length - capacity)
             : state.entries;
-        return ClipRect(
+        final bool trimmed = shown.length < state.entries.length;
+        final Widget list = KeyedSubtree(
+          key: _listKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              for (final ProtocolEntry entry in shown)
+              for (final (int position, ProtocolEntry entry) in shown.indexed)
                 _EntryTile(
+                  // Une entrée garde son état en changeant de rang.
+                  key: ValueKey<int>(entry.index),
                   entry: entry,
+                  position: position,
                   current: entry.index == state.highlightedIndex,
                 ),
             ],
           ),
+        );
+        return ClipRect(
+          // `gc-stream` : les entrées écartées s'estompent en haut (de
+          // transparent à opaque à 30 %) ; rien à estomper quand tout tient.
+          child: trimmed
+              ? ShaderMask(
+                  blendMode: BlendMode.dstIn,
+                  // Seul l'alpha compte (mode `dstIn`).
+                  shaderCallback: (Rect bounds) => LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      theme.background.withValues(alpha: 0),
+                      theme.background,
+                    ],
+                    stops: const <double>[0, _maskStop],
+                  ).createShader(bounds),
+                  child: list,
+                )
+              : list,
         );
       },
     );
@@ -188,11 +225,57 @@ class _Entries extends StatelessWidget {
   }
 }
 
-class _EntryTile extends StatelessWidget {
-  const _EntryTile({required this.entry, required this.current});
+class _EntryTile extends StatefulWidget {
+  const _EntryTile({
+    super.key,
+    required this.entry,
+    required this.position,
+    required this.current,
+  });
 
   final ProtocolEntry entry;
+
+  /// Rang d'affichage (0 = la plus ancienne des entrées montrées) : il
+  /// numérote les clés `protocol-entry-<n>-no` et `-kind`, de sorte que
+  /// `protocol-entry-0-no` existe même quand les plus anciennes entrées du
+  /// journal sont écartées. Le numéro affiché (`#nn`) est celui du message
+  /// ([ProtocolEntry.index]).
+  final int position;
   final bool current;
+
+  @override
+  State<_EntryTile> createState() => _EntryTileState();
+}
+
+/// Apparition d'une entrée (`.gc-stream div`, `gc-row .35s`, pdr-0088 F9) :
+/// fondu et glissement de 12 px depuis la gauche, joués **une fois**, à
+/// l'arrivée de l'entrée. Un contrôleur par entrée (`SceneOneShot`), dans son
+/// propre `RepaintBoundary` : les autres lignes et l'en-tête ne sont pas
+/// repeints. Animations coupées : l'entrée est en place d'emblée.
+class _EntryTileState extends State<_EntryTile>
+    with SingleTickerProviderStateMixin<_EntryTile>, SceneOneShot<_EntryTile> {
+  /// Glissement de départ, en points (`translateX(-12px)`).
+  static const double slide = 12;
+
+  bool _started = false;
+
+  late final Animation<double> _eased = CurveTween(curve: SceneMotion.curve)
+      .animate(oneShot);
+
+  @override
+  Duration get oneShotBase => SceneMotion.streamRow;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    playOneShot();
+  }
+
+  ProtocolEntry get entry => widget.entry;
+  int get position => widget.position;
+  bool get current => widget.current;
 
   static String _operationName(ProtocolOperation operation) =>
       switch (operation) {
@@ -215,8 +298,14 @@ class _EntryTile extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     final String? surface = entry.surfaceId;
     final String? agent = entry.agent;
-    final TextStyle body = theme.body.copyWith(color: theme.textSecondary);
-    return Padding(
+    // Liste mono `gc-stream` : 12 points, `ink-muted` (jamais `ink-faint`, F12),
+    // le genre du message en `signal`.
+    final TextStyle line = theme.micro.agentState.copyWith(
+      color: theme.textSecondary,
+    );
+    final TextStyle kindStyle = line.copyWith(color: theme.accent);
+    final String kind = _operationName(entry.operation);
+    final Widget tile = Padding(
       key: Key('protocol-entry-${entry.index}'),
       padding: const EdgeInsets.only(top: _tileTopGap),
       child: DecoratedBox(
@@ -240,24 +329,37 @@ class _EntryTile extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Text(_time(entry.timestampMs), style: body, maxLines: 1),
+                  Text(
+                    '#${_two(entry.index)}',
+                    key: Key('protocol-entry-$position-no'),
+                    style: line,
+                    maxLines: 1,
+                  ),
                   const SizedBox(width: 12),
                   Flexible(
-                    child: Text(
-                      surface == null
-                          ? _operationName(entry.operation)
-                          : '${_operationName(entry.operation)} · $surface',
-                      style: theme.data,
+                    child: Text.rich(
+                      TextSpan(
+                        style: kindStyle,
+                        children: <InlineSpan>[
+                          TextSpan(text: kind),
+                          if (surface != null)
+                            TextSpan(text: ' · $surface', style: line),
+                        ],
+                      ),
+                      key: Key('protocol-entry-$position-kind'),
+                      style: kindStyle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Text(_time(entry.timestampMs), style: line, maxLines: 1),
                   if (agent != null) ...<Widget>[
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
                         agent,
-                        style: body,
+                        style: line,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -284,6 +386,20 @@ class _EntryTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _eased,
+        // Transitions de rendu, sans reconstruction par image : cette liste est
+        // sous un `LayoutBuilder`, qu'un `AnimatedBuilder` (ou une
+        // `SlideTransition`, qui est un `AnimatedWidget`) ferait remettre en
+        // page à chaque image.
+        child: DsShift(
+          progress: _eased,
+          offset: const Offset(-slide, 0),
+          child: tile,
         ),
       ),
     );

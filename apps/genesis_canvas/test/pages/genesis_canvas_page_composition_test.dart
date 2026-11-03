@@ -14,6 +14,7 @@ import 'package:flutter/material.dart' show FilledButton, OutlinedButton;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/page_rig.dart';
 
@@ -281,7 +282,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('vivant'), findsOneWidget);
+      expect(findTextIgnoringCase('vivant'), findsOneWidget);
     });
 
     testWidgets('un message vivant refusé par le gate : code consigné, '
@@ -305,7 +306,7 @@ void main() {
       rig.receive(data());
       await tester.pump();
       await tester.pump();
-      expect(find.text('vivant'), findsOneWidget);
+      expect(findTextIgnoringCase('vivant'), findsOneWidget);
     });
 
     testWidgets('avec scénario : la source vivante n\'est pas branchée au '
@@ -323,7 +324,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('vivant'), findsNothing);
+      expect(findTextIgnoringCase('vivant'), findsNothing);
       expect(rig.errors.toString(), isEmpty);
     });
 

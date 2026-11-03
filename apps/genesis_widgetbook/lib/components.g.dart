@@ -7,7 +7,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:widgetbook/widgetbook.dart' as _widgetbook;
+import 'package:genesis_widgetbook/ds/ds_beacon.stories.dart' as _genesis_widgetbook_ds_ds_beacon_stories;
+import 'package:genesis_widgetbook/ds/ds_blink.stories.dart' as _genesis_widgetbook_ds_ds_blink_stories;
+import 'package:genesis_widgetbook/ds/ds_caps.stories.dart' as _genesis_widgetbook_ds_ds_caps_stories;
+import 'package:genesis_widgetbook/ds/ds_gauge.stories.dart' as _genesis_widgetbook_ds_ds_gauge_stories;
+import 'package:genesis_widgetbook/ds/ds_gen_frame.stories.dart' as _genesis_widgetbook_ds_ds_gen_frame_stories;
 import 'package:genesis_widgetbook/ds/ds_neutral_state.stories.dart' as _genesis_widgetbook_ds_ds_neutral_state_stories;
+import 'package:genesis_widgetbook/ds/ds_panel_head.stories.dart' as _genesis_widgetbook_ds_ds_panel_head_stories;
 import 'package:genesis_widgetbook/ds/ds_skeleton.stories.dart' as _genesis_widgetbook_ds_ds_skeleton_stories;
 import 'package:genesis_widgetbook/ds/ds_status_chip.stories.dart' as _genesis_widgetbook_ds_ds_status_chip_stories;
 import 'package:genesis_widgetbook/ds/scene_backdrop.stories.dart' as _genesis_widgetbook_ds_scene_backdrop_stories;
@@ -20,7 +26,13 @@ import 'package:genesis_widgetbook/genesis/review_sentiment.stories.dart' as _ge
 import 'package:genesis_widgetbook/genesis/trend_chart.stories.dart' as _genesis_widgetbook_genesis_trend_chart_stories;
 
 final components = <_widgetbook.Component>[
+  _genesis_widgetbook_ds_ds_beacon_stories.DsBeaconComponent,
+  _genesis_widgetbook_ds_ds_blink_stories.DsBlinkComponent,
+  _genesis_widgetbook_ds_ds_caps_stories.DsCapsComponent,
+  _genesis_widgetbook_ds_ds_gauge_stories.DsGaugeComponent,
+  _genesis_widgetbook_ds_ds_gen_frame_stories.DsGenFrameComponent,
   _genesis_widgetbook_ds_ds_neutral_state_stories.DsNeutralStateComponent,
+  _genesis_widgetbook_ds_ds_panel_head_stories.DsPanelHeadComponent,
   _genesis_widgetbook_ds_ds_skeleton_stories.DsSkeletonComponent,
   _genesis_widgetbook_ds_ds_status_chip_stories.DsStatusChipComponent,
   _genesis_widgetbook_ds_scene_backdrop_stories.SceneBackdropComponent,

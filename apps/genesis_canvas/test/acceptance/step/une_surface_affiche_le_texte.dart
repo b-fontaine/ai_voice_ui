@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Surface;
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 /// Usage: une surface affiche le texte {'Sessions sans crash'}
 ///
@@ -13,7 +14,8 @@ Future<void> uneSurfaceAfficheLeTexte(WidgetTester tester, String text) async {
   expect(
     find.descendant(
       of: find.descendant(of: find.byKey(kpi), matching: find.byType(Surface)),
-      matching: find.text(text),
+      // L'étiquette du KPI s'affiche en capitales (pdr-0088 F3 et F6).
+      matching: findTextIgnoringCase(text),
     ),
     findsOneWidget,
     reason: 'le moteur genui doit rendre « $text » dans la cellule surface-kpi',

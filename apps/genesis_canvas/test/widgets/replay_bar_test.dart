@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/replay_bar/replay_bar.dart';
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../support/focus_ring.dart';
 import '../support/panel_layers.dart';
 import '../support/replay_rig.dart';
 
@@ -88,7 +91,7 @@ void main() {
     await _pump(tester, withJournal: false);
 
     expect(find.byKey(const Key('replay-bar')), findsOneWidget);
-    expect(find.text('REJEU'), findsOneWidget);
+    expect(findTextIgnoringCase('REJEU'), findsOneWidget);
     expect(tester.getSemantics(find.byKey(_play)).label, 'Lecture');
     expect(_enabled(tester, _play), isFalse);
     expect(_enabled(tester, _restart), isFalse);
@@ -241,7 +244,7 @@ void main() {
   });
 
   for (final bool active in <bool>[false, true]) {
-    barTest('aucun débordement à 480 x 140, textes >= 24 px, cibles >= 48 px '
+    barTest('aucun débordement à 480 x 140, textes >= 11 px, cibles >= 48 px '
         '(${active ? 'rejeu' : 'direct'})', (tester) async {
       await _pump(tester, withJournal: true);
       if (active) await _press(tester, _play);
@@ -254,7 +257,8 @@ void main() {
           in find.descendant(of: bar, matching: find.byType(Text)).evaluate()) {
         final TextStyle style = DefaultTextStyle.of(e).style
             .merge((e.widget as Text).style);
-        expect(style.fontSize, greaterThanOrEqualTo(24));
+        // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+        expect(style.fontSize, greaterThanOrEqualTo(11));
       }
       for (final Key key in <Key>[
         _play,
@@ -271,4 +275,45 @@ void main() {
       }
     });
   }
+
+  barTest('focus clavier : Lecture et une vitesse ont l\'anneau signal de '
+      '2 points', (tester) async {
+    await _pump(tester, withJournal: true);
+    await expectFocusRing(tester, _play, const Key('replay-play-visual'));
+
+    await _press(tester, _play);
+    await expectFocusRing(
+      tester,
+      _speedKey('1.5'),
+      const Key('replay-speed-1.5-visual'),
+    );
+  });
+
+  barTest('focus clavier : la glissière peint un anneau signal de 2 points '
+      'autour de la poignée', (tester) async {
+    await _pump(tester, withJournal: true);
+    await _press(tester, _play);
+    const Key ring = Key('replay-track-knob-focus');
+    expect(find.byKey(ring), findsNothing);
+    final Rect knob = tester.getRect(
+      find.byKey(const Key('replay-track-knob')),
+    );
+
+    tester.widget<Slider>(find.byKey(_slider)).focusNode!.requestFocus();
+    await tester.pump();
+
+    expect(find.byKey(ring), findsOneWidget);
+    final BoxDecoration decoration =
+        tester.widget<DecoratedBox>(find.byKey(ring)).decoration
+            as BoxDecoration;
+    final Border border = decoration.border! as Border;
+    expect(border.top.color, const SceneTheme.dark().accent);
+    expect(border.top.width, 2);
+    expect(tester.getRect(find.byKey(ring)).center, knob.center);
+    expect(
+      tester.getRect(find.byKey(const Key('replay-track-knob'))),
+      knob,
+      reason: 'la poignée ne bouge pas',
+    );
+  });
 }

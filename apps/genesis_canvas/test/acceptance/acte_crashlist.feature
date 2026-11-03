@@ -51,7 +51,8 @@ Fonctionnalité: Liste des crashs - cinquième surface du canevas
     Soit le tableau de la release 3.4 est affiché
     Quand le serveur émet la liste des crashs jusqu'au temps {'data'}
     Alors la liste des crashs affiche {5} lignes
-    Et le texte de la liste des crashs fait au moins {24} px
+    # pdr-0087 / pdr-0088 F1 : échelle du design system, le plancher de 24 px est levé (11 px au plus bas).
+    Et le texte de la liste des crashs fait au moins {11} px
     Et chaque libellé de la liste des crashs tient sur {1} ligne puis une ellipse
     Et aucune erreur n'est signalée
 

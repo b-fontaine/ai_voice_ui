@@ -89,17 +89,17 @@ void main() {
   });
 
   testWidgets(
-    'enfant : largeur - 2 x padding ; décoration : largeur - 2 x inset',
+    'enfant : marge 24 × 20 du design system ; décoration : largeur - 2 x inset',
     (tester) async {
       await tester.pumpWidget(
         _host(const ScenePanel(child: SizedBox.expand(key: Key('c')))),
       );
-      // Défauts : padding 16, inset 4.
-      expect(tester.getSize(find.byKey(const Key('c'))), const Size(368, 268));
+      // Défauts : padding 24 horizontal × 20 vertical (`.gc-panel`), inset 4.
+      expect(tester.getSize(find.byKey(const Key('c'))), const Size(352, 260));
       expect(
         tester.getTopLeft(find.byKey(const Key('c'))) -
             tester.getTopLeft(find.byType(ScenePanel)),
-        const Offset(16, 16),
+        const Offset(24, 20),
       );
       expect(tester.getSize(_decoration), const Size(392, 292));
       expect(

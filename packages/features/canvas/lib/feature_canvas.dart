@@ -30,3 +30,5 @@ export 'src/model/canvas_state.dart'
     show CanvasSourceStatus, CanvasState, SurfacePhase;
 export 'src/ui/action_availability.dart' show CanvasActionScope;
 export 'src/ui/canvas_board.dart' show CanvasBoard;
+export 'src/ui/generation_target.dart'
+    show GenerationTarget, generationTargetOf;

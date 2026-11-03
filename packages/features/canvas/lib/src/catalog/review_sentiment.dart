@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
+import '../ui/surface_restored.dart';
 import 'bound_item.dart';
+import 'split_share.dart';
 import 'text_metrics.dart';
 
-/// `ReviewSentiment` : répartition positifs / négatifs, note moyenne et
-/// 3 extraits d'avis, et la ligne de comparaison de l'acte 2 si `comparison`
-/// est complet.
+/// `ReviewSentiment` : en-tête (titre, nombre d'avis et note moyenne),
+/// légende et barre de répartition positifs / négatifs, ligne de comparaison
+/// de l'acte 2 si `comparison` est complet, puis les extraits d'avis en
+/// cartes (`gc-quote`).
 final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
   description: 'Sentiment des avis lié à /reviews.',
@@ -89,119 +92,205 @@ class _Reviews {
   }
 }
 
-class _ReviewsView extends StatelessWidget {
+/// Hauteur de la barre de répartition (`.gc-split`).
+const double _barHeight = 10;
+
+/// Espace au-dessus de la légende (`margin: 10px 0 4px`), sous l'en-tête
+/// dont la marge basse (14 px) se confond avec lui.
+const double _legendBottom = 4;
+
+/// Espace entre la barre (ou la ligne de comparaison) et les cartes, et entre
+/// deux cartes (`.gc-quote { margin-top: 10px }`).
+const double _cardGap = 10;
+
+/// Espace au-dessus de la ligne de comparaison (`margin-top: 8px`).
+const double _comparisonGap = 8;
+
+/// Remplissage d'une carte (`padding: 12px 14px`).
+const double _cardPadV = 12;
+const double _cardPadH = 14;
+
+/// Espace entre « 1★ Android » et le texte (`gap: 4px 12px`, colonnes).
+const double _cardColumnGap = 12;
+
+class _ReviewsView extends StatefulWidget {
   const _ReviewsView({required this.reviews});
 
   final _Reviews reviews;
 
   @override
+  State<_ReviewsView> createState() => _ReviewsViewState();
+}
+
+/// Joue une fois, au premier `data` de la surface (pdr-0088 F13), le
+/// remplissage de la barre (1,4 s, le négatif 200 ms plus tard) et
+/// l'apparition des cartes : un seul contrôleur. Une mise à jour des données
+/// se fait sur place.
+class _ReviewsViewState extends State<_ReviewsView>
+    with
+        SingleTickerProviderStateMixin<_ReviewsView>,
+        SceneOneShot<_ReviewsView> {
+  late final bool _restored = SurfaceRestored.of(context);
+  bool _started = false;
+
+  @override
+  Duration get oneShotBase => splitDuration;
+
+  // Surface restaurée : l'état final, sans animation.
+  @override
+  double get oneShotInitialValue => _restored ? 1 : 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!_restored) playOneShot();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    final _Reviews reviews = widget.reviews;
     final String average = reviews.average
         .toStringAsFixed(1)
         .replaceAll('.', ',');
-    // Les en-têtes passent à la ligne si besoin ; les extraits prennent la
+    final TextStyle legend = theme.micro.splitLegend;
+    final ({double positive, double negative})? shares = splitShares(
+      reviews.positivePct,
+      reviews.negativePct,
+    );
+    // Les en-têtes passent à la ligne si besoin ; les cartes prennent la
     // hauteur restante de la cellule (302 px à 1920 × 1080) et n'y figurent
     // qu'en entier.
     return CellFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: Text(reviews.title, style: theme.title)),
-              Text('${reviews.count} avis · $average ★', style: theme.data),
-            ],
+          DsPanelHead.title(
+            title: reviews.title,
+            wrap: true,
+            trailing: Text(
+              '${reviews.count} avis · $average ★',
+              style: theme.micro.legend.copyWith(color: theme.textSecondary),
+            ),
           ),
-          const SizedBox(height: 4),
-          _SplitBar(
-            positive: reviews.positivePct,
-            negative: reviews.negativePct,
-          ),
-          const SizedBox(height: 4),
           // Chaque pourcentage cède de la place à l'autre dans une cellule
           // étroite (3 × 2) et passe à la ligne au lieu de déborder.
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Flexible(
                 child: Text(
                   '${reviews.positivePct} % positifs',
-                  style: theme.data.copyWith(color: theme.okForeground),
+                  key: const Key('reviews-legend-pos'),
+                  style: legend.copyWith(color: theme.okForeground),
                 ),
               ),
-              const Spacer(),
               Flexible(
                 child: Text(
                   '${reviews.negativePct} % négatifs',
-                  style: theme.data.copyWith(color: theme.blockingForeground),
+                  key: const Key('reviews-legend-neg'),
+                  textAlign: TextAlign.end,
+                  style: legend.copyWith(color: theme.blockingForeground),
                 ),
               ),
             ],
           ),
-          if (reviews.comparison != null)
+          if (shares != null) ...<Widget>[
+            const SizedBox(height: _legendBottom),
+            _SplitBar(shares: shares, progress: oneShot),
+          ],
+          if (reviews.comparison != null) ...<Widget>[
+            const SizedBox(height: _comparisonGap),
             comparisonLine(
               context,
               key: const Key('comparison-reviews'),
               text: reviews.comparison!,
             ),
-          const SizedBox(height: 4),
-          Expanded(child: _Excerpts(excerpts: reviews.excerpts)),
+          ],
+          Expanded(
+            child: _Excerpts(excerpts: reviews.excerpts, progress: oneShot),
+          ),
         ],
       ),
     );
   }
 }
 
-/// Barre de répartition : part positive, part négative, reste neutre.
+/// Barre de répartition (`.gc-split`) : 10 px, rayon 5, fond `surface-300`,
+/// part positive à gauche, part négative à droite, écart de 2 px.
 class _SplitBar extends StatelessWidget {
-  const _SplitBar({required this.positive, required this.negative});
+  const _SplitBar({required this.shares, required this.progress});
 
-  final int positive;
-  final int negative;
+  final ({double positive, double negative}) shares;
+  final Animation<double> progress;
 
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    final int pos = positive.clamp(0, 100);
-    final int neg = negative.clamp(0, 100 - pos);
-    final int rest = 100 - pos - neg;
-    Widget part(int flex, Color color) => flex == 0
-        ? const SizedBox.shrink()
-        : Expanded(
-            flex: flex,
-            child: ColoredBox(color: color),
-          );
-    return ClipRRect(
-      borderRadius: SceneRadius.borderSm,
+    return RepaintBoundary(
       child: SizedBox(
-        key: const Key('review-split-bar'),
-        height: 12,
-        child: Row(
-          children: <Widget>[
-            part(pos, theme.okForeground),
-            part(rest, theme.neutralBackground),
-            part(neg, theme.blockingForeground),
-          ],
+        key: const Key('reviews-split'),
+        height: _barHeight,
+        child: ClipRRect(
+          borderRadius: SceneRadius.borderPill,
+          child: ColoredBox(
+            color: theme.surface300,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) =>
+                  AnimatedBuilder(
+                    animation: progress,
+                    builder: (BuildContext context, Widget? _) {
+                      final ({double positive, double negative})
+                      w = splitWidths(
+                        track: constraints.maxWidth,
+                        shares: shares,
+                        positiveProgress: splitPositiveProgress(progress.value),
+                        negativeProgress: splitNegativeProgress(progress.value),
+                      );
+                      return Stack(
+                        children: <Widget>[
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: w.positive,
+                            child: ColoredBox(
+                              key: const Key('reviews-split-pos'),
+                              color: theme.okForeground,
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: w.negative,
+                            child: ColoredBox(
+                              key: const Key('reviews-split-neg'),
+                              color: theme.blockingForeground,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// Remplissage vertical sous chaque extrait.
-const double _excerptGap = 4;
-
-/// Espace entre « 1★ Android » et le texte de l'extrait.
-const double _headGap = 12;
-
-/// Les extraits qui tiennent en entier dans la hauteur disponible, dans
-/// l'ordre du contrat, puis « + N avis » pour les autres. Un extrait n'est
-/// jamais coupé ni tronqué : s'il ne tient pas, il rejoint les N avis non
-/// affichés.
+/// Les cartes qui tiennent en entier dans la hauteur disponible, dans l'ordre
+/// du contrat, puis « + N avis » pour les autres. Un extrait n'est jamais
+/// coupé ni tronqué : s'il ne tient pas, il rejoint les N avis non affichés.
 class _Excerpts extends StatelessWidget {
-  const _Excerpts({required this.excerpts});
+  const _Excerpts({required this.excerpts, required this.progress});
 
   final List<_Excerpt> excerpts;
+  final Animation<double> progress;
 
   static String _head(_Excerpt e) => '${e.stars}★ ${e.platform}';
 
@@ -210,36 +299,39 @@ class _Excerpts extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double moreHeight = lineHeightOf(theme.body) + _excerptGap;
+        final double moreHeight = lineHeightOf(theme.body);
         final double budget = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : double.infinity;
         final List<double> heights = <double>[
           for (final _Excerpt e in excerpts)
-            _rowHeight(context, theme, e, constraints.maxWidth),
+            _cardHeight(context, theme, e, constraints.maxWidth),
         ];
-        // Plus grand préfixe d'extraits qui tient, avec la ligne « + N avis »
+        // Plus grand préfixe de cartes qui tient, avec la ligne « + N avis »
         // s'il en reste.
         int shown = 0;
         double used = 0;
         for (int i = 0; i < excerpts.length; i++) {
           final bool last = i == excerpts.length - 1;
-          final double next = used + heights[i];
-          if (next + (last ? 0 : moreHeight) > budget) break;
+          final double next = used + _cardGap + heights[i];
+          if (next + (last ? 0 : _cardGap + moreHeight) > budget) break;
           used = next;
           shown = i + 1;
         }
         final int hidden = excerpts.length - shown;
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             for (int i = 0; i < shown; i++)
-              _ExcerptRow(key: Key('review-excerpt-$i'), excerpt: excerpts[i]),
-            if (hidden > 0 && moreHeight <= budget)
-              MoreLine(
-                textKey: const Key('review-more'),
-                text: '+ $hidden avis',
-                height: moreHeight,
+              _Card(index: i, excerpt: excerpts[i], progress: progress),
+            if (hidden > 0 && _cardGap + moreHeight <= budget)
+              Padding(
+                padding: const EdgeInsets.only(top: _cardGap),
+                child: MoreLine(
+                  textKey: const Key('review-more'),
+                  text: '+ $hidden avis',
+                  height: moreHeight,
+                ),
               ),
           ],
         );
@@ -247,60 +339,104 @@ class _Excerpts extends StatelessWidget {
     );
   }
 
-  static double _textWidth(
-    BuildContext context,
-    SceneTheme theme,
-    _Excerpt e,
-    double maxWidth,
-  ) =>
-      maxWidth -
-      measureTextWidth(context, _head(e), theme.body).ceilToDouble() -
-      1 -
-      _headGap;
-
-  static double _rowHeight(
+  static double _cardHeight(
     BuildContext context,
     SceneTheme theme,
     _Excerpt e,
     double maxWidth,
   ) {
-    final double head = measureTextHeight(
+    final double metaWidth = measureTextWidth(
       context,
       _head(e),
-      theme.body,
-      maxWidth,
-    );
+      theme.micro.quoteMeta,
+    ).ceilToDouble();
+    final double textWidth =
+        maxWidth - 2 * _cardPadH - metaWidth - 1 - _cardColumnGap;
     final double text = measureTextHeight(
       context,
       e.text,
-      theme.body,
-      _textWidth(context, theme, e, maxWidth),
+      theme.micro.quote,
+      textWidth,
     );
-    return (head > text ? head : text) + _excerptGap;
+    final double meta = lineHeightOf(theme.micro.quoteMeta);
+    return 2 * _cardPadV + (meta > text ? meta : text);
   }
 }
 
-class _ExcerptRow extends StatelessWidget {
-  const _ExcerptRow({super.key, required this.excerpt});
+/// Une carte de verbatim (`.gc-quote`) : `surface-300`, rayon `md`, note et
+/// plateforme à gauche, texte à droite. Elle apparaît (`gc-rise` sans flou :
+/// opacité et glissement de 10 px) [index] × `stagger` après la première.
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.index,
+    required this.excerpt,
+    required this.progress,
+  });
 
+  final int index;
   final _Excerpt excerpt;
+  final Animation<double> progress;
+
+  /// Part de la lecture commune occupée par cette carte, avec la courbe du
+  /// design system.
+  Interval _interval() {
+    final double total = splitDuration.inMicroseconds.toDouble();
+    final double begin = (SceneMotion.stagger * index).inMicroseconds / total;
+    final double end = begin + SceneMotion.appear.inMicroseconds / total;
+    return Interval(begin, end, curve: SceneMotion.curve);
+  }
 
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: _excerptGap),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            _Excerpts._head(excerpt),
-            style: theme.body.copyWith(color: theme.textSecondary),
-          ),
-          const SizedBox(width: _headGap),
-          Expanded(child: Text(excerpt.text, style: theme.body)),
-        ],
+    final Widget card = Padding(
+      padding: const EdgeInsets.only(top: _cardGap),
+      child: Container(
+        key: Key('reviews-card-$index'),
+        padding: const EdgeInsets.symmetric(
+          vertical: _cardPadV,
+          horizontal: _cardPadH,
+        ),
+        decoration: BoxDecoration(
+          color: theme.surface300,
+          borderRadius: SceneRadius.borderMd,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: '${excerpt.stars}★',
+                    style: TextStyle(color: theme.blockingForeground),
+                  ),
+                  TextSpan(text: ' ${excerpt.platform}'),
+                ],
+              ),
+              key: Key('reviews-card-$index-meta'),
+              softWrap: false,
+              style: theme.micro.quoteMeta.copyWith(color: theme.textSecondary),
+            ),
+            const SizedBox(width: _cardColumnGap),
+            Expanded(
+              child: Text(
+                excerpt.text,
+                key: Key('reviews-card-$index-text'),
+                style: theme.micro.quote.copyWith(color: theme.textPrimary),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+    // Opacité et glissement seulement : le flou de `gc-rise` est réservé aux
+    // surfaces (pdr-0088 F5), jamais à leurs cartes.
+    return DsReveal(
+      animation: progress,
+      from: const Offset(0, SceneMotion.translation),
+      interval: _interval(),
+      child: card,
     );
   }
 }

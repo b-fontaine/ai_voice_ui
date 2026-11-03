@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'generated/scene_tokens.g.dart';
+import 'scene_micro_styles.dart';
 import 'scene_status.dart';
 
 /// Thème de la scène Genesis Canvas (fond sombre, texte lisible à distance).
 ///
-/// Toutes les tailles de texte sont >= 24 px (RG-09, NFR-05) et les paires
+/// Les tailles de texte suivent le design system (`tokens.json`, pdr-0088 F1) et les paires
 /// texte/fond respectent le contraste WCAG AA (vérifié par `scene_theme_test`).
 /// Chiffres de largeur fixe des styles de données (`data`, `value`,
 /// `verdict`) : les valeurs qui changent ne font pas trembler la mise en page.
@@ -50,6 +51,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.surface200,
     required this.surface300,
     required this.orbVeil,
+    required this.plasmaLine,
+    required this.plasmaOutline,
+    required this.signalLine,
+    required this.signalLineSoft,
     required this.body,
     required this.label,
     required this.value,
@@ -59,6 +64,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.verdict,
     required this.transcript,
     required this.button,
+    this.micro = const SceneMicroStyles.dark(),
   });
 
   /// Thème sombre de la démo, construit depuis les constantes `SceneTokens`
@@ -98,6 +104,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200 = SceneTokens.colorSurface200,
       surface300 = SceneTokens.colorSurface300,
       orbVeil = SceneTokens.colorOrbVeil,
+      plasmaLine = SceneTokens.colorPlasmaLine,
+      plasmaOutline = SceneTokens.colorPlasmaOutline,
+      signalLine = SceneTokens.colorSignalLine,
+      signalLineSoft = SceneTokens.colorSignalLineSoft,
       body = const TextStyle(
         fontFamily: SceneTokens.textBodyFontFamily,
         fontFamilyFallback: SceneTokens.textBodyFontFamilyFallback,
@@ -184,7 +194,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
         fontWeight: SceneTokens.textButtonFontWeight,
         fontVariations: SceneTokens.textButtonFontVariations,
         color: SceneTokens.textButtonColor,
-      );
+      ),
+      micro = const SceneMicroStyles.dark();
 
   final Color background;
   final Color surface;
@@ -256,6 +267,20 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Voile de l'orbe vocal.
   final Color orbVeil;
 
+  // Couleurs translucides dérivées (revue d'architecte R7) : un rôle par
+  // usage, jamais un alpha posé au point d'appel.
+  /// Plasma à 33 % : bordure de la tuile de l'orchestrateur.
+  final Color plasmaLine;
+
+  /// Plasma à 53 % : contour du segment d'acte actif.
+  final Color plasmaOutline;
+
+  /// Signal à 40 % : bordure de la tuile d'un agent au travail.
+  final Color signalLine;
+
+  /// Signal à un tiers : bordure d'une puce du catalogue déjà utilisée.
+  final Color signalLineSoft;
+
   /// Texte courant (Space Grotesk 400).
   final TextStyle body;
 
@@ -285,6 +310,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
 
   /// Libellé de bouton (Space Grotesk 600).
   final TextStyle button;
+
+  /// Micro-styles de `bundle.css` (`micro.badge`, `micro.chip`…), sans couleur.
+  final SceneMicroStyles micro;
 
   /// Lit l'extension dans le thème courant ; repli sur le thème sombre.
   static SceneTheme of(BuildContext context) =>
@@ -342,6 +370,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     Color? surface200,
     Color? surface300,
     Color? orbVeil,
+    Color? plasmaLine,
+    Color? plasmaOutline,
+    Color? signalLine,
+    Color? signalLineSoft,
     TextStyle? body,
     TextStyle? label,
     TextStyle? value,
@@ -351,6 +383,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     TextStyle? verdict,
     TextStyle? transcript,
     TextStyle? button,
+    SceneMicroStyles? micro,
   }) {
     return SceneTheme(
       background: background ?? this.background,
@@ -387,6 +420,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200: surface200 ?? this.surface200,
       surface300: surface300 ?? this.surface300,
       orbVeil: orbVeil ?? this.orbVeil,
+      plasmaLine: plasmaLine ?? this.plasmaLine,
+      plasmaOutline: plasmaOutline ?? this.plasmaOutline,
+      signalLine: signalLine ?? this.signalLine,
+      signalLineSoft: signalLineSoft ?? this.signalLineSoft,
       body: body ?? this.body,
       label: label ?? this.label,
       value: value ?? this.value,
@@ -396,6 +433,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       verdict: verdict ?? this.verdict,
       transcript: transcript ?? this.transcript,
       button: button ?? this.button,
+      micro: micro ?? this.micro,
     );
   }
 
@@ -439,6 +477,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       surface200: c(surface200, other.surface200),
       surface300: c(surface300, other.surface300),
       orbVeil: c(orbVeil, other.orbVeil),
+      plasmaLine: c(plasmaLine, other.plasmaLine),
+      plasmaOutline: c(plasmaOutline, other.plasmaOutline),
+      signalLine: c(signalLine, other.signalLine),
+      signalLineSoft: c(signalLineSoft, other.signalLineSoft),
       body: s(body, other.body),
       label: s(label, other.label),
       value: s(value, other.value),
@@ -448,6 +490,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       verdict: s(verdict, other.verdict),
       transcript: s(transcript, other.transcript),
       button: s(button, other.button),
+      micro: micro.lerp(other.micro, t),
     );
   }
 
@@ -488,6 +531,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.surface200 == surface200 &&
       other.surface300 == surface300 &&
       other.orbVeil == orbVeil &&
+      other.plasmaLine == plasmaLine &&
+      other.plasmaOutline == plasmaOutline &&
+      other.signalLine == signalLine &&
+      other.signalLineSoft == signalLineSoft &&
       other.body == body &&
       other.label == label &&
       other.value == value &&
@@ -496,7 +543,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.data == data &&
       other.verdict == verdict &&
       other.transcript == transcript &&
-      other.button == button;
+      other.button == button &&
+      other.micro == micro;
 
   @override
   int get hashCode => Object.hashAll(<Object>[
@@ -534,6 +582,10 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     surface200,
     surface300,
     orbVeil,
+    plasmaLine,
+    plasmaOutline,
+    signalLine,
+    signalLineSoft,
     body,
     label,
     value,
@@ -543,5 +595,6 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     verdict,
     transcript,
     button,
+    micro,
   ]);
 }

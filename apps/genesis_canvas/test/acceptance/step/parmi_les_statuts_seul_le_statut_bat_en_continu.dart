@@ -6,35 +6,27 @@ import '../support/scene_style_harness.dart';
 
 /// Usage: parmi les statuts, seul le statut {'blocking'} bat en continu
 ///
-/// Une puce « bat » quand une animation (`AnimatedWidget`, `AnimatedBuilder`,
-/// `ListenableBuilder`) placée dans son sous-arbre, ou sur la chaîne de ses
-/// ancêtres jusqu'au premier qui contient une puce d'un autre statut, change
-/// de valeur et reste en cours à trois instants espacés. Une animation finie
-/// (apparition, changement de statut) ne compte pas.
+/// Une puce « bat » quand un `Listenable` placé dans son sous-arbre, ou sur la
+/// chaîne de ses ancêtres jusqu'au premier qui contient une puce d'un autre
+/// statut (animation d'un `AnimatedWidget`, `AnimatedBuilder` ou
+/// `ListenableBuilder`, ou `CustomPainter` d'un `CustomPaint`, qui est lui-même
+/// un `Listenable`), notifie dans chacun des deux intervalles consécutifs
+/// (250 ms, puis 130 ms) et, s'il s'agit d'une animation, est encore en cours
+/// à la fin. Une animation finie (apparition, changement de statut) ne compte
+/// pas.
 Future<void> parmiLesStatutsSeulLeStatutBatEnContinu(
   WidgetTester tester,
   String beating,
 ) async {
   final SceneStatus expected = SceneStatusCode.of(beating);
-  final Map<SceneStatus, Set<Animation<double>>> animations =
-      <SceneStatus, Set<Animation<double>>>{
-        for (final SceneStatus s in SceneStatus.values)
-          s: <Animation<double>>{},
+  final Map<SceneStatus, Set<Listenable>> listenables =
+      <SceneStatus, Set<Listenable>>{
+        for (final SceneStatus s in SceneStatus.values) s: <Listenable>{},
       };
   for (final SceneStatus status in SceneStatus.values) {
     final Finder chips = SceneStyleHarness.chips(status);
     for (final Element chip in chips.evaluate()) {
-      animations[status]!.addAll(_animationsOf(chip, status));
-    }
-  }
-
-  final Map<Animation<double>, List<double>> samples =
-      <Animation<double>, List<double>>{};
-  void sample() {
-    for (final Set<Animation<double>> set in animations.values) {
-      for (final Animation<double> a in set) {
-        samples.putIfAbsent(a, () => <double>[]).add(a.value);
-      }
+      listenables[status]!.addAll(_listenablesOf(chip, status));
     }
   }
 
@@ -45,23 +37,33 @@ Future<void> parmiLesStatutsSeulLeStatutBatEnContinu(
     isTrue,
     reason: "aucune puce de statut n'est affichée",
   );
-  sample();
-  await tester.pump(const Duration(milliseconds: 250));
-  sample();
-  await tester.pump(const Duration(milliseconds: 130));
-  sample();
 
-  bool loops(Animation<double> a) {
-    final List<double> v = samples[a]!;
-    final bool moving = v[0] != v[1] || v[1] != v[2];
-    return moving && a.status.isAnimating;
+  // Notifications reçues, par `Listenable` et par intervalle.
+  var window = 0;
+  final Map<Listenable, List<int>> counts = <Listenable, List<int>>{};
+  final Map<Listenable, VoidCallback> counters = <Listenable, VoidCallback>{};
+  for (final Set<Listenable> set in listenables.values) {
+    for (final Listenable l in set) {
+      final List<int> perWindow = counts.putIfAbsent(l, () => <int>[0, 0]);
+      counters[l] = () => perWindow[window]++;
+      l.addListener(counters[l]!);
+    }
+  }
+  await tester.pump(const Duration(milliseconds: 250));
+  window = 1;
+  await tester.pump(const Duration(milliseconds: 130));
+  counters.forEach((Listenable l, VoidCallback c) => l.removeListener(c));
+
+  bool loops(Listenable l) {
+    final List<int> perWindow = counts[l]!;
+    final bool ongoing = l is! Animation<double> || l.status.isAnimating;
+    return perWindow[0] > 0 && perWindow[1] > 0 && ongoing;
   }
 
   // Les statuts absents de l'écran ne sont pas jugés : à l'acte 1 aucune puce
   // « blocking » n'existe encore.
   final Set<SceneStatus> beats = <SceneStatus>{
-    for (final MapEntry<SceneStatus, Set<Animation<double>>> e
-        in animations.entries)
+    for (final MapEntry<SceneStatus, Set<Listenable>> e in listenables.entries)
       if (e.value.any(loops)) e.key,
   };
   final Set<SceneStatus> shown = <SceneStatus>{
@@ -78,17 +80,20 @@ Future<void> parmiLesStatutsSeulLeStatutBatEnContinu(
   );
 }
 
-/// Animations qui pilotent la puce [chip] : celles de son sous-arbre et celles
+/// `Listenable` qui pilotent la puce [chip] : ceux de son sous-arbre et ceux
 /// de ses ancêtres, jusqu'au premier ancêtre qui contient aussi une puce d'un
 /// autre statut.
-Set<Animation<double>> _animationsOf(Element chip, SceneStatus status) {
-  final Set<Animation<double>> found = <Animation<double>>{};
+Set<Listenable> _listenablesOf(Element chip, SceneStatus status) {
+  final Set<Listenable> found = <Listenable>{};
   void collect(Widget widget) {
-    final Listenable? listenable = switch (widget) {
-      AnimatedWidget(:final Listenable listenable) => listenable,
-      _ => null,
-    };
-    if (listenable is Animation<double>) found.add(listenable);
+    switch (widget) {
+      case AnimatedWidget(:final Listenable listenable):
+        if (listenable is Animation<double>) found.add(listenable);
+      case CustomPaint(:final CustomPainter? painter, :final foregroundPainter):
+        if (painter != null) found.add(painter);
+        if (foregroundPainter != null) found.add(foregroundPainter);
+      default:
+    }
   }
 
   void walk(Element element) {

@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart'
     as flutter_test
     show testWidgets;
 import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
+import 'package:genesis_canvas/widgets/agents_rail/delegation_link_geometry.dart';
 import 'package:genesis_canvas/widgets/agents_rail/delegation_link_painter.dart';
 import 'package:genesis_canvas/widgets/agents_rail/delegation_links.dart';
 import 'package:shared_design_system/shared_design_system.dart';
@@ -81,7 +82,7 @@ void main() {
 
     expect(find.byKey(const Key('agents-rail')), findsOneWidget);
     // Seul le repère de zone est affiché ; aucune tuile.
-    expect(find.text('AGENTS A2A'), findsOneWidget);
+    expect(findTextIgnoringCase('AGENTS A2A'), findsOneWidget);
     expect(find.byWidgetPredicate((w) => w is Text), findsOneWidget);
   });
 
@@ -117,7 +118,7 @@ void main() {
         idle: const <String>['Livraison'],
       ),
     );
-    final Rect title = tester.getRect(find.text('AGENTS A2A'));
+    final Rect title = tester.getRect(findTextIgnoringCase('AGENTS A2A'));
     final List<Rect> tiles = <Rect>[
       for (final String n in <String>['Orchestrateur', 'Qualité', 'Livraison'])
         tester.getRect(row(n)),
@@ -243,12 +244,7 @@ void main() {
       await pumpRail(tester);
       const theme = SceneTheme.dark();
       Color? dot(String agent) => tester
-          .widgetList<DecoratedBox>(
-            find.descendant(
-              of: row(agent),
-              matching: find.byType(DecoratedBox),
-            ),
-          )
+          .widgetList<DecoratedBox>(find.byKey(Key('agent-dot-$agent')))
           .map((b) => (b.decoration as BoxDecoration).color)
           .first;
 
@@ -449,7 +445,7 @@ void main() {
     );
   });
 
-  testWidgets('tout le texte du rail fait au moins 24 px et reste lisible', (
+  testWidgets('tout le texte du rail fait au moins 11 px et reste lisible', (
     tester,
   ) async {
     await pumpRail(tester);
@@ -615,14 +611,18 @@ void main() {
       expect(anyLink, findsNothing);
     });
 
-    testWidgets('la clé de la tuile reste sur la colonne de l\'agent', (
+    testWidgets('la clé de la ligne enveloppe la tuile de l\'agent', (
       tester,
     ) async {
       await pumpRail(tester);
       await plan(tester);
       await tester.pump();
       expect(row('Qualité'), findsOneWidget);
-      expect(tester.widget(row('Qualité')), isA<Column>());
+      expect(tester.widget(row('Qualité')), isA<KeyedSubtree>());
+      expect(
+        tester.getRect(find.byKey(const Key('agent-tile-Qualité'))),
+        tester.getRect(row('Qualité')),
+      );
     });
 
     testWidgets('la liaison part de l\'orchestrateur et arrive à la tuile', (
@@ -637,8 +637,14 @@ void main() {
       final Rect mark = tester.getRect(link('Voix du client'));
       // Le repère contient le tracé : de la pastille de l'orchestrateur à
       // celle de l'agent, au-dessus des tuiles.
-      expect(mark.left, lessThanOrEqualTo(orchestrator.left + 7));
-      expect(mark.right, greaterThanOrEqualTo(target.left + 7));
+      expect(
+        mark.left,
+        lessThanOrEqualTo(orchestrator.left + DelegationLinkGeometry.inset),
+      );
+      expect(
+        mark.right,
+        greaterThanOrEqualTo(target.left + DelegationLinkGeometry.inset),
+      );
       expect(mark.bottom, lessThanOrEqualTo(orchestrator.top));
       expect(mark.top, greaterThanOrEqualTo(0));
     });
@@ -711,7 +717,12 @@ void main() {
       expect(after.right, lessThan(before.right));
       expect(
         after.right,
-        closeTo(tester.getRect(row('Voix du client')).left + 7 + 1.5, 0.01),
+        closeTo(
+          tester.getRect(row('Voix du client')).left +
+              DelegationLinkGeometry.inset +
+              1.5,
+          0.01,
+        ),
         reason: 'le trait arrive au-dessus de la pastille de la tuile',
       );
     });
@@ -891,7 +902,7 @@ void main() {
         expect(
           find.descendant(
             of: find.byType(RepaintBoundary),
-            matching: find.text('AGENTS A2A'),
+            matching: findTextIgnoringCase('AGENTS A2A'),
           ),
           findsNothing,
           reason: 'les tuiles ne sont pas sous la frontière du tracé',

@@ -99,7 +99,8 @@ Fonctionnalité: Acte 3 - interagir avec un composant généré
   Scénario: C6 Les boutons sont lisibles et atteignables
     Soit la checklist go/no-go est affichée
     Alors les boutons de la Barre d'actions sont actifs
-    Et les boutons de la Barre d'actions ont un texte d'au moins {24} px et une cible d'au moins {48} px
+    # pdr-0087 / pdr-0088 F1 : échelle du design system, le plancher de 24 px est levé (11 px au plus bas).
+    Et les boutons de la Barre d'actions ont un texte d'au moins {11} px et une cible d'au moins {48} px
 
   Scénario: A1 La Barre d'actions arrive sous la grille sans bouger les quatre surfaces
     Soit le tableau de la release 3.4 est affiché

@@ -15,7 +15,9 @@ Future<void> chaqueCommandeDeLaBarreDeRejeuEstAtteignable(
   }
   final speedWidgets = find.byWidgetPredicate((widget) {
     final key = widget.key;
-    return key is ValueKey<String> && key.value.startsWith('replay-speed-');
+    // Hors visuels `replay-speed-<v>-visual` (019) : une cible par vitesse.
+    return key is ValueKey<String> &&
+        RegExp(r'^replay-speed-[\d.]+$').hasMatch(key.value);
   });
   expect(
     speedWidgets.evaluate().length,

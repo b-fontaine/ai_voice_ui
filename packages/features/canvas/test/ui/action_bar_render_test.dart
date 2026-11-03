@@ -83,47 +83,41 @@ void main() {
   OutlinedButton button(WidgetTester tester, String id) =>
       tester.widget<OutlinedButton>(find.byKey(Key('action-$id')));
 
-  Color foreground(OutlinedButton b, Set<WidgetState> states) =>
-      b.style!.foregroundColor!.resolve(states)!;
+  BoxDecoration visual(WidgetTester tester, String id) =>
+      tester.widget<Container>(find.byKey(Key('action-$id-visual'))).decoration!
+          as BoxDecoration;
 
-  Color border(OutlinedButton b, Set<WidgetState> states) =>
-      b.style!.side!.resolve(states)!.color;
+  Color borderOf(WidgetTester tester, String id) =>
+      (visual(tester, id).border! as Border).top.color;
+
+  Color labelColor(WidgetTester tester, String label) =>
+      tester.widget<Text>(find.text(label)).style!.color!;
 
   group('couleur par ton, jamais par libellé (RG-09)', () {
     testWidgets('bouton actif : danger et neutral ont leurs jetons', (
       tester,
     ) async {
       await pumpBar(tester, onAction: (_, _) {});
-      final OutlinedButton danger = button(tester, 'block_release');
-      final OutlinedButton neutral = button(tester, 'validate_release');
-      expect(foreground(danger, <WidgetState>{}), theme.blockingForeground);
-      expect(border(danger, <WidgetState>{}), theme.actionDangerBorder);
-      expect(foreground(neutral, <WidgetState>{}), theme.textPrimary);
-      expect(border(neutral, <WidgetState>{}), theme.actionNeutralBorder);
-    });
-
-    testWidgets('le texte peint reprend la couleur du ton', (tester) async {
-      await pumpBar(tester, onAction: (_, _) {});
+      expect(borderOf(tester, 'block_release'), theme.actionDangerBorder);
+      expect(borderOf(tester, 'validate_release'), theme.actionNeutralBorder);
       expect(
-        tester.widget<Text>(find.text('Bloquer la release')).style!.color,
+        labelColor(tester, 'Bloquer la release'),
         theme.blockingForeground,
       );
-      expect(
-        tester.widget<Text>(find.text('Valider la release')).style!.color,
-        theme.textPrimary,
-      );
+      expect(labelColor(tester, 'Valider la release'), theme.textPrimary);
     });
 
-    testWidgets('bouton inactif : mêmes jetons, texte lisible', (tester) async {
+    testWidgets('bouton inactif : texte ink-muted, bordure en tirets', (
+      tester,
+    ) async {
       await pumpBar(tester);
-      final OutlinedButton danger = button(tester, 'block_release');
-      final OutlinedButton neutral = button(tester, 'validate_release');
-      const Set<WidgetState> off = <WidgetState>{WidgetState.disabled};
-      expect(danger.enabled, isFalse);
-      expect(foreground(danger, off), theme.blockingForeground);
-      expect(border(danger, off), theme.actionDangerBorder);
-      expect(foreground(neutral, off), theme.textPrimary);
-      expect(border(neutral, off), theme.actionNeutralBorder);
+      expect(button(tester, 'block_release').enabled, isFalse);
+      for (final String id in <String>['block_release', 'validate_release']) {
+        expect(find.byKey(Key('action-$id-dashes')), findsOneWidget);
+        expect(visual(tester, id).border, isNull);
+      }
+      expect(labelColor(tester, 'Bloquer la release'), theme.textSecondary);
+      expect(labelColor(tester, 'Valider la release'), theme.textSecondary);
     });
 
     testWidgets('les tons permutés, la couleur suit le ton et non le libellé', (
@@ -139,44 +133,28 @@ void main() {
           return v;
         },
       );
+      expect(labelColor(tester, 'Bloquer la release'), theme.textPrimary);
       expect(
-        foreground(button(tester, 'block_release'), <WidgetState>{}),
-        theme.textPrimary,
-      );
-      expect(
-        foreground(button(tester, 'validate_release'), <WidgetState>{}),
+        labelColor(tester, 'Valider la release'),
         theme.blockingForeground,
       );
-      expect(
-        border(button(tester, 'validate_release'), <WidgetState>{}),
-        theme.actionDangerBorder,
-      );
+      expect(borderOf(tester, 'validate_release'), theme.actionDangerBorder);
     });
   });
 
   group('apparence du design system (U4)', () {
-    const Set<WidgetState> idle = <WidgetState>{};
-    const Set<WidgetState> off = <WidgetState>{WidgetState.disabled};
-
-    Color background(OutlinedButton b, Set<WidgetState> states) =>
-        b.style!.backgroundColor!.resolve(states)!;
-
-    testWidgets('fond surface-300 pour les deux tons, actif ou non', (
-      tester,
-    ) async {
+    testWidgets('fond surface-300 en neutre et désactivé, nogo-ghost en '
+        'danger actif', (tester) async {
       await pumpBar(tester, onAction: (_, _) {});
-      for (final String id in <String>['block_release', 'validate_release']) {
-        expect(background(button(tester, id), idle), theme.neutralBackground);
-      }
+      expect(visual(tester, 'validate_release').color, theme.surface300);
+      expect(visual(tester, 'block_release').color, theme.blockingBackground);
       await pumpBar(tester);
       for (final String id in <String>['block_release', 'validate_release']) {
-        expect(background(button(tester, id), off), theme.neutralBackground);
+        expect(visual(tester, id).color, theme.surface300);
       }
     });
 
-    testWidgets('anneau de focus signal, plus épais que la bordure', (
-      tester,
-    ) async {
+    testWidgets('anneau de focus signal de 2 px', (tester) async {
       await pumpBar(tester, onAction: (_, _) {});
       const Set<WidgetState> focused = <WidgetState>{WidgetState.focused};
       for (final String id in <String>['block_release', 'validate_release']) {
@@ -185,12 +163,12 @@ void main() {
           id,
         ).style!.side!.resolve(focused)!;
         expect(side.color, theme.accent, reason: id);
-        expect(side.width, greaterThan(2), reason: id);
+        expect(side.width, 2, reason: id);
       }
     });
 
     testWidgets('au clavier, le bouton focalisé peint réellement l\'anneau '
-        'signal sur le fond surface-300', (tester) async {
+        'signal', (tester) async {
       await pumpBar(tester, onAction: (_, _) {});
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
@@ -199,17 +177,19 @@ void main() {
         matching: find.byType(Material),
       );
       final Material m = tester.widget<Material>(material.first);
-      expect(m.color, theme.neutralBackground);
       final ShapeBorder? shape = m.shape;
       expect((shape! as OutlinedBorder).side.color, theme.accent);
     });
 
-    testWidgets('cibles d\'au moins 48 px', (tester) async {
+    testWidgets('cibles d\'au moins 48 px autour d\'un visuel de 44 px', (
+      tester,
+    ) async {
       await pumpBar(tester, onAction: (_, _) {});
       for (final String id in <String>['block_release', 'validate_release']) {
         final Size size = tester.getSize(find.byKey(Key('action-$id')));
         expect(size.height, greaterThanOrEqualTo(48), reason: id);
         expect(size.width, greaterThanOrEqualTo(48), reason: id);
+        expect(tester.getSize(find.byKey(Key('action-$id-visual'))).height, 44);
       }
     });
   });
@@ -321,7 +301,7 @@ void main() {
   });
 
   group('lisibilité et bandeau de 72 px', () {
-    testWidgets('textes >= 24 px, cibles >= 48 px, sans débordement', (
+    testWidgets('textes >= 11 px, cibles >= 48 px, sans débordement', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(940, 400);
@@ -340,9 +320,10 @@ void main() {
         },
       );
       expect(tester.takeException(), isNull);
-      for (final String label in <String>['Décision', 'Geler', 'Valider']) {
+      for (final String label in <String>['DÉCISION', 'Geler', 'Valider']) {
         final Text text = tester.widget<Text>(find.text(label));
-        expect(text.style!.fontSize, greaterThanOrEqualTo(24), reason: label);
+        // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+        expect(text.style!.fontSize, greaterThanOrEqualTo(11), reason: label);
       }
       for (final String id in <String>['block_release', 'validate_release']) {
         final Size size = tester.getSize(find.byKey(Key('action-$id')));
@@ -365,7 +346,7 @@ void main() {
 
   group('libellé très long dans le bandeau de 72 px', () {
     testWidgets('120 caractères : aucun débordement, cible >= 48 px, '
-        'texte >= 24 px', (tester) async {
+        'texte >= 11 px', (tester) async {
       tester.view.physicalSize = const Size(940, 400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -391,7 +372,8 @@ void main() {
       final Text text = tester.widget<Text>(
         find.descendant(of: long, matching: find.byType(Text)),
       );
-      expect(text.style!.fontSize, greaterThanOrEqualTo(24));
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(text.style!.fontSize, greaterThanOrEqualTo(11));
     });
   });
 
@@ -409,7 +391,7 @@ void main() {
           return v;
         },
       );
-      expect(find.text('Choix de la salle'), findsOneWidget);
+      expect(find.text('CHOIX DE LA SALLE'), findsOneWidget);
       expect(find.text('Geler la sortie'), findsOneWidget);
       expect(find.text('Go pour demain'), findsOneWidget);
       expect(find.text('Bloquer la release'), findsNothing);

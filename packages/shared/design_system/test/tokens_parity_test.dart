@@ -118,6 +118,28 @@ final Map<String, TextStyle> _textStyles = <String, TextStyle>{
   'button': _themeForText.button,
 };
 
+/// Les micro-styles (`SceneTheme.micro`), par nom de token
+/// `scene.micro.<nom>`. Sans couleur : elle vient du rôle du composant.
+final Map<String, TextStyle> _microStyles = <String, TextStyle>{
+  'badge': _themeForText.micro.badge,
+  'badgeLg': _themeForText.micro.badgeLg,
+  'kpiUnit': _themeForText.micro.kpiUnit,
+  'delta': _themeForText.micro.delta,
+  'tick': _themeForText.micro.tick,
+  'legend': _themeForText.micro.legend,
+  'chip': _themeForText.micro.chip,
+  'speed': _themeForText.micro.speed,
+  'quote': _themeForText.micro.quote,
+  'quoteMeta': _themeForText.micro.quoteMeta,
+  'agentName': _themeForText.micro.agentName,
+  'agentState': _themeForText.micro.agentState,
+  'callout': _themeForText.micro.callout,
+  'segment': _themeForText.micro.segment,
+  'segmentNo': _themeForText.micro.segmentNo,
+  'criterion': _themeForText.micro.criterion,
+  'splitLegend': _themeForText.micro.splitLegend,
+};
+
 /// Rayon de flou de `BoxShadow` pour un flou CSS [cssBlur] : le flou CSS `B`
 /// donne un écart type de `B / 2`, et `blurRadius = r` donne
 /// `sigma = 0,57735 r + 0,5` (`Shadow.convertRadiusToSigma`).
@@ -127,7 +149,10 @@ double _blurRadius(double cssBlur) {
 }
 
 /// Ombres DTCG (tableau ou ombre seule) vers `BoxShadow`. Une ombre `inset`
-/// n'est pas exprimable : le token ne doit pas en contenir.
+/// n'est pas exprimable : le token ne doit pas en contenir. Extension locale :
+/// `blurRadius` (px) donne directement le rayon de flou Flutter, sans
+/// conversion depuis le flou CSS `blur` (lueurs dont le rayon est fixé en
+/// Flutter, comme le point de l'orchestrateur ou le chiffre héros).
 List<BoxShadow> _shadows(Object? value) {
   final list = value is List<Object?> ? value : <Object?>[value];
   return [
@@ -138,7 +163,9 @@ List<BoxShadow> _shadows(Object? value) {
         return BoxShadow(
           color: _color(map['color']),
           offset: Offset(_px(map['offsetX']), _px(map['offsetY'])),
-          blurRadius: _blurRadius(_px(map['blur'])),
+          blurRadius: map['blurRadius'] != null
+              ? _px(map['blurRadius'])
+              : _blurRadius(_px(map['blur'])),
           spreadRadius: map['spread'] == null ? 0 : _px(map['spread']),
         );
       }(),
@@ -202,17 +229,26 @@ Map<String, _Reading> _buildReadings() {
     'surface200': _theme.surface200,
     'surface300': _theme.surface300,
     'orbVeil': _theme.orbVeil,
+    'plasmaLine': _theme.plasmaLine,
+    'plasmaOutline': _theme.plasmaOutline,
+    'signalLine': _theme.signalLine,
+    'signalLineSoft': _theme.signalLineSoft,
   };
   colors.forEach((name, color) => add('scene.color.$name', color, _color));
 
-  for (final entry in _textStyles.entries) {
+  final styles = <String, TextStyle>{
+    for (final e in _textStyles.entries) 'text.${e.key}': e.value,
+    for (final e in _microStyles.entries) 'micro.${e.key}': e.value,
+  };
+  for (final entry in styles.entries) {
     final style = entry.value;
-    final base = 'scene.text.${entry.key}';
+    final base = 'scene.${entry.key}';
     add('$base.fontFamily', style.fontFamily, (v) => v);
     add('$base.fontFamilyFallback', style.fontFamilyFallback, (v) => v);
     add('$base.fontSize', style.fontSize, _px);
     add('$base.height', style.height, (v) => (v! as num).toDouble());
-    add('$base.color', style.color, _color);
+    // Les micro-styles n'ont pas de couleur (elle vient du rôle du thème).
+    if (style.color != null) add('$base.color', style.color, _color);
     add('$base.fontWeight', style.fontWeight, _weight);
     // La variation wght jumelle (polices variables) porte la même valeur.
     add(
@@ -247,6 +283,18 @@ Map<String, _Reading> _buildReadings() {
   add('scene.shadow.glowSignal', SceneShadow.glowSignal, _shadows);
   add('scene.shadow.glowNogo', SceneShadow.glowNogo, _shadows);
   add('scene.shadow.glowPlasma', SceneShadow.glowPlasma, _shadows);
+  add('scene.shadow.glowPlasmaDot', SceneShadow.glowPlasmaDot, _shadows);
+  add('scene.shadow.textGlowNogo', SceneShadow.textGlowNogo, _shadows);
+  add(
+    'scene.shadow.seriesGlowAlpha',
+    SceneShadow.seriesGlowAlpha,
+    (v) => (v! as num).toDouble(),
+  );
+  add(
+    'scene.shadow.seriesGlowSigma',
+    SceneShadow.seriesGlowSigma,
+    (v) => (v! as num).toDouble(),
+  );
 
   add('scene.motion.appear', SceneMotion.appear, _ms);
   add('scene.motion.value', SceneMotion.value, _ms);
@@ -257,6 +305,30 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.beacon', SceneMotion.beacon, _ms);
   add('scene.motion.skeleton', SceneMotion.skeleton, _ms);
   add('scene.motion.orb', SceneMotion.orb, _ms);
+  add('scene.motion.row', SceneMotion.row, _ms);
+  add('scene.motion.stagger', SceneMotion.stagger, _ms);
+  add('scene.motion.wipe', SceneMotion.wipe, _ms);
+  add('scene.motion.count', SceneMotion.count, _ms);
+  add('scene.motion.gauge', SceneMotion.gauge, _ms);
+  add('scene.motion.spin', SceneMotion.spin, _ms);
+  add('scene.motion.scan', SceneMotion.scan, _ms);
+  add('scene.motion.fade', SceneMotion.fade, _ms);
+  add('scene.motion.flash', SceneMotion.flash, _ms);
+  add('scene.motion.wave', SceneMotion.wave, _ms);
+  add('scene.motion.orbRing', SceneMotion.orbRing, _ms);
+  add('scene.motion.indet', SceneMotion.indet, _ms);
+  add('scene.motion.ring', SceneMotion.ring, _ms);
+  add('scene.motion.blink', SceneMotion.blink, _ms);
+  add('scene.motion.caretBlink', SceneMotion.caretBlink, _ms);
+  add('scene.motion.caretHold', SceneMotion.caretHold, _ms);
+  add('scene.motion.recBlink', SceneMotion.recBlink, _ms);
+  add('scene.motion.agentBeacon', SceneMotion.agentBeacon, _ms);
+  add('scene.motion.headDelay', SceneMotion.headDelay, _ms);
+  add('scene.motion.headRise', SceneMotion.headRise, _ms);
+  add('scene.motion.streamRow', SceneMotion.streamRow, _ms);
+  add('scene.motion.splitDelay', SceneMotion.splitDelay, _ms);
+  add('scene.motion.blur', SceneMotion.blur, (v) => (v! as num).toDouble());
+  add('scene.motion.scale', SceneMotion.scale, (v) => (v! as num).toDouble());
   add('scene.motion.curve', _cubicOf(SceneMotion.curve), _cubic);
   return readings;
 }
@@ -296,6 +368,35 @@ void main() {
     }
   });
 
+  test('micro-styles : famille, taille, hauteur, graisse, interlettrage', () {
+    expectGroup('scene.micro.');
+    // Même ensemble de styles dans les deux sens : tout micro-style du JSON
+    // existe dans le Dart généré (et le thème), et inversement.
+    final jsonNames = tokens.keys
+        .where((p) => p.startsWith('scene.micro.'))
+        .map((p) => p.split('.')[2])
+        .toSet();
+    expect(jsonNames, _microStyles.keys.toSet());
+    final generated = File('lib/src/generated/scene_tokens.g.dart')
+        .readAsStringSync();
+    final generatedNames = RegExp(
+      r'static const double micro([A-Za-z]+)FontSize =',
+    ).allMatches(generated).map((m) => m.group(1)!).toSet();
+    expect(
+      generatedNames.map((n) => n[0].toLowerCase() + n.substring(1)).toSet(),
+      jsonNames,
+    );
+    for (final entry in _microStyles.entries) {
+      expect(entry.value.color, isNull, reason: '${entry.key} sans couleur');
+      final path = 'scene.micro.${entry.key}.letterSpacing';
+      expect(
+        tokens.containsKey(path),
+        entry.value.letterSpacing != null,
+        reason: path,
+      );
+    }
+  });
+
   test('alpha : l\'octet d\'opacité vaut round(alpha x 255) de la source', () {
     // Octets d'opacité du design system (tokens.json : #RRGGBBAA).
     const sourceAlpha = <String, int>{
@@ -306,6 +407,10 @@ void main() {
       'scene.color.plasmaGhost': 0x24,
       'scene.color.panelHighlight': 0x08,
       'scene.color.orbVeil': 0xB3,
+      'scene.color.plasmaLine': 0x54,
+      'scene.color.plasmaOutline': 0x88,
+      'scene.color.signalLine': 0x66,
+      'scene.color.signalLineSoft': 0x55,
     };
     sourceAlpha.forEach((path, byte) {
       final map = tokens[path]! as Map<String, Object?>;
@@ -313,6 +418,15 @@ void main() {
       expect(_sceneReadings[path]!.actual, isA<Color>());
       expect(((_sceneReadings[path]!.actual! as Color).a * 255).round(), byte);
     });
+  });
+
+  test('lueurs : octet d\'opacité et rayon de flou des ombres dérivées', () {
+    expect(SceneShadow.glowPlasmaDot.single.color, const Color(0x99A58BFF));
+    expect(SceneShadow.glowPlasmaDot.single.blurRadius, 10);
+    expect(SceneShadow.textGlowNogo.single.color, const Color(0x55FF5A76));
+    expect(SceneShadow.textGlowNogo.single.blurRadius, 32);
+    expect(SceneShadow.seriesGlowAlpha, closeTo(0x88 / 255, 1e-9));
+    expect(SceneShadow.seriesGlowSigma, 3);
   });
 
   test('espacements : constantes de SceneSpace', () {
@@ -328,12 +442,17 @@ void main() {
     for (final path in tokens.keys.where(
       (p) => p.startsWith('scene.shadow.'),
     )) {
-      final shadows = _sceneReadings[path]!.actual! as List<BoxShadow>;
+      final actual = _sceneReadings[path]!.actual;
+      // Ombres seulement : `seriesGlow*` sont des nombres.
+      if (actual is! List<BoxShadow>) continue;
+      final shadows = actual;
       final list = tokens[path]! is List
           ? tokens[path]! as List
           : [tokens[path]];
       for (var i = 0; i < shadows.length; i++) {
         final css = (list[i]! as Map<String, Object?>);
+        // Les ombres à `blurRadius` n'ont pas de flou CSS à confronter.
+        if (css['blur'] == null) continue;
         final blur = _px(css['blur']);
         if (blur > 1) {
           expect(shadows[i].blurSigma, closeTo(blur / 2, 1e-9), reason: path);

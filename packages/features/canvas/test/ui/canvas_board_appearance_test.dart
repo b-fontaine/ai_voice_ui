@@ -11,6 +11,10 @@ import '../support/catalog_harness.dart';
 /// Apparition animée d'une surface (013 T21c, pdr-0075 D3) : squelette, puis
 /// composants en fondu de 480 ms, puis valeurs en fondu de 160 ms. L'opacité
 /// est mesurée sur l'écran rendu (produit des opacités des ancêtres).
+///
+/// Recalé par pdr-0087 / pdr-0088 F5 : l'apparition est celle de `DsRise`
+/// (`gc-rise`), avec un flou de départ (σ 4 vers 0) et une échelle .985 vers 1,
+/// au lieu du fondu sans flou de 017.
 const ({bool disabled, double speed}) _live = (disabled: false, speed: 1);
 
 double _opacityOf(Finder finder) {
@@ -26,22 +30,37 @@ double _opacityOf(Finder finder) {
   return opacity;
 }
 
+/// Écart type du flou actif posé sur le contenu par un `ImageFiltered`.
+double _blurOf(Finder finder) {
+  var sigma = 0.0;
+  finder.evaluate().first.visitAncestorElements((Element ancestor) {
+    final Widget w = ancestor.widget;
+    if (w is ImageFiltered && w.enabled) {
+      final RegExpMatch? m = RegExp(r'blur\(([\d.]+)')
+          .firstMatch(w.imageFilter.toString());
+      if (m != null) sigma = double.parse(m.group(1)!);
+    }
+    return true;
+  });
+  return sigma;
+}
+
 Finder _content() => find.descendant(
   of: find.byKey(const Key('surface-kpi')),
   matching: find.byType(Surface),
 );
 
+/// Le chiffre héros, cherché par sa clé : son texte descend de 100 vers la
+/// valeur pendant `SceneMotion.count` (compteur, pdr-0088 F3 et F13), donc la
+/// chaîne de données n'est affichée qu'à la fin.
 Finder _value() => find.descendant(
   of: find.byKey(const Key('surface-kpi')),
-  matching: find.text('99,57 %'),
+  matching: find.byKey(const Key('kpi-value')),
 );
 
-/// Valeur affichée après la mise à jour de l'acte 2 (le « 99,57 % » de l'acte 1
-/// y devient « 99,43 % »).
-Finder _valueAct2() => find.descendant(
-  of: find.byKey(const Key('surface-kpi')),
-  matching: find.text('99,43 %'),
-);
+/// Le chiffre héros après la mise à jour de l'acte 2 (« 99,57 % » devient
+/// « 99,43 % » à la fin du compteur, qui rejoue : pdr-0088 F13).
+Finder _valueAct2() => _value();
 
 Finder _skeleton() => find.byKey(const Key('skeleton-kpi'));
 
@@ -261,6 +280,45 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 480));
     expect(tester.getTopLeft(_content()).dy, tester.getTopLeft(cell).dy);
+  });
+
+  testWidgets(
+    'l\'apparition porte le flou de 4 et l\'échelle .985 (pdr-0088 F5)',
+    (tester) async {
+      final h = CatalogHarness('kpi', 'kpi');
+      await h.pump(tester, motion: _live);
+      await h.sendFixtureTo(tester, 2);
+      expect(_blurOf(_content()), closeTo(4, 0.01));
+      expect(
+        tester
+            .renderObject<RenderBox>(_content())
+            .getTransformTo(null)
+            .storage[0],
+        closeTo(0.985, 1e-6),
+      );
+
+      await tester.pump(const Duration(milliseconds: 240));
+      expect(_blurOf(_content()), inExclusiveRange(0, 4));
+
+      await tester.pump(const Duration(milliseconds: 241));
+      expect(_blurOf(_content()), 0);
+      expect(
+        tester
+            .renderObject<RenderBox>(_content())
+            .getTransformTo(null)
+            .storage[0],
+        1,
+      );
+    },
+  );
+
+  testWidgets('animations coupées : aucun flou, même à la première image', (
+    tester,
+  ) async {
+    final h = CatalogHarness('kpi', 'kpi');
+    await h.pump(tester, motion: (disabled: true, speed: 1));
+    await h.sendFixtureTo(tester, 2);
+    expect(_blurOf(_content()), 0);
   });
 
   testWidgets('le State de la Surface survit au fondu et aux données', (

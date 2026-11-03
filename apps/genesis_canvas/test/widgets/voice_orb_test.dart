@@ -194,9 +194,10 @@ void main() {
     addTearDown(() => debugOnRebuildDirtyWidget = previous);
     await tester.pumpWidget(_host(level));
     final baseline = rebuilt;
+    // Le corps de l'orbe ; les anneaux ont chacun leur CustomPaint.
     final render = tester.renderObject<RenderCustomPaint>(
       find.descendant(
-        of: find.byKey(_orbKey),
+        of: find.byKey(const Key('voice-orb-core')),
         matching: find.byType(CustomPaint),
       ),
     );
@@ -356,7 +357,7 @@ void main() {
       expect(find.text('Micro coupé'), findsNothing);
     });
 
-    testWidgets('le libellé fait 24 px au moins (RG-09) et ne déborde pas', (
+    testWidgets('le libellé fait 11 px au moins (RG-09) et ne déborde pas', (
       tester,
     ) async {
       await tester.pumpWidget(_host(level, micMuted: true));
@@ -364,7 +365,8 @@ void main() {
       final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
         find.text('Micro coupé'),
       );
-      expect(paragraph.text.style?.fontSize, greaterThanOrEqualTo(24));
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(paragraph.text.style?.fontSize, greaterThanOrEqualTo(11));
       expect(paragraph.didExceedMaxLines, isFalse);
       expect(tester.takeException(), isNull);
       // Sous le disque, dans les 104 points utiles de la barre du haut.

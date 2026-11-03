@@ -19,12 +19,11 @@ Future<void> leComposantDeLetagereEst(
     item,
     "l'étagère doit contenir le composant $component (shelf-$component)",
   );
-  // L'état est porté par l'icône (013, D-04) : coche pleine pour « utilisé »,
-  // cercle vide pour « inutilisé ». Le libellé de sémantique est vérifié par
+  // L'état est porté par l'icône (013, D-04) : carré plein pour « utilisé »,
+  // carré vide pour « inutilisé » (019, `gc-chip`). Le libellé de sémantique
+  // est vérifié par
   // `le composant {...} de l'étagère porte une icône d'état et est annoncé`.
-  final icon = state == 'utilisé'
-      ? Icons.check_circle
-      : Icons.radio_button_unchecked;
+  final icon = state == 'utilisé' ? Icons.square : Icons.square_outlined;
   await SessionHarness.waitFor(
     tester,
     find.descendant(of: item, matching: find.byIcon(icon)),

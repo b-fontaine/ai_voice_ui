@@ -20,6 +20,8 @@ import 'package:feature_canvas/feature_canvas.dart'
         CanvasActionSettings,
         DecisionStatusObserved,
         CanvasActionState,
+        GenerationTarget,
+        generationTargetOf,
         CanvasBloc,
         CanvasBoard,
         CanvasResetRequested,
@@ -204,6 +206,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // Surface en évidence du panneau du protocole : le canevas la lit par
   // cellule, sans que le board ni les voisines se reconstruisent (013, P6).
   final ValueNotifier<String?> _highlight = ValueNotifier<String?>(null);
+  // Surface en cours de génération (la dernière créée) et son agent : lus par
+  // chaque cellule du canevas pour son cadre de génération (019, pdr-0088 F11).
+  // Déduits de l'enveloppe validée (`ValidatedEnvelope.agent`), jamais d'un
+  // nouveau message A2UI.
+  final ValueNotifier<GenerationTarget?> _generation =
+      ValueNotifier<GenerationTarget?>(null);
+  StreamSubscription<GenerationTarget?>? _generationSubscription;
   late final CatalogShelfBloc _shelfBloc = CatalogShelfBloc();
   late final StageBloc _stageBloc = StageBloc();
   // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
@@ -391,6 +400,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
+    // Un `createSurface` accepté désigne la surface en cours de génération
+    // (`generationTargetOf` ; `null` : la cible ne change pas).
+    _generationSubscription = _gate
+        .validatedBranch()
+        .map(generationTargetOf)
+        .where((GenerationTarget? t) => t != null)
+        .listen((GenerationTarget? t) => _generation.value = t);
     // Capture de vérification (spec 018) : `PanelToggled` est une bascule ;
     // on garantit le panneau déplié, un seul basculement.
     if (_settings.protocolExpandedAtStart && !_protocolBloc.state.expanded) {
@@ -482,6 +498,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// backend, ni le journal, ni l'acte, ni les agents, ni le Bloc d'action ne
   /// sont touchés.
   void _clearScene({required bool keepPanelOpen}) {
+    _generation.value = null;
     _gate.reset();
     _bloc.add(const CanvasResetRequested());
     _protocolBloc.add(
@@ -702,8 +719,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_activitySubscription?.cancel());
     unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
+    unawaited(_generationSubscription?.cancel());
     _lifecycle.dispose();
     _highlight.dispose();
+    _generation.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
     // avant la source qu'elle écoute.
@@ -813,21 +832,19 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 
+  // Le réglage d'animation est posé plus haut, sur toute la scène. Pas de
+  // `TickerMode` : il figerait l'apparition à l'opacité 0.
   Widget _canvasZone() => Expanded(
-    // Réglage d'animation du canevas : durée nulle en scénario, en capture et
-    // sous « réduire les animations » ; vitesse du rejeu en cours sinon. Pas
-    // de `TickerMode` ici : il figerait l'apparition à l'opacité 0.
-    child: _motionScope(
-      child: BlocSelector<ReplayBloc, ReplayState, bool>(
-        selector: (state) => state is ReplayActive,
-        // Rejeu (scénario ou acte 4) : aucune requête ne part.
-        builder: (context, replaying) => CanvasActionScope(
-          enabled: !_scenarioMode && !replaying,
-          child: CanvasBoard(
-            key: const Key('canvas-board'),
-            controller: _controller,
-            highlight: _highlight,
-          ),
+    child: BlocSelector<ReplayBloc, ReplayState, bool>(
+      selector: (state) => state is ReplayActive,
+      // Rejeu (scénario ou acte 4) : aucune requête ne part.
+      builder: (context, replaying) => CanvasActionScope(
+        enabled: !_scenarioMode && !replaying,
+        child: CanvasBoard(
+          key: const Key('canvas-board'),
+          controller: _controller,
+          highlight: _highlight,
+          generation: _generation,
         ),
       ),
     ),
@@ -967,15 +984,17 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     horizontal: _marginX,
                     vertical: _marginY,
                   ),
-                  child: Column(
-                    children: <Widget>[
-                      // Même réglage d'animation que le canevas : l'orbe
-                      // s'immobilise en scénario, en capture et sous « réduire
-                      // les animations ». « Démarrer » est inactif en mode
-                      // scénario et pendant un rejeu ; la session voix en
-                      // cours n'est pas touchée.
-                      _motionScope(
-                        child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                  // Un seul réglage d'animation pour toute la scène (barre du
+                  // haut, rail, canevas, pied et panneau du protocole,
+                  // 019 P2) : l'orbe, la liaison de délégation et toute
+                  // boucle s'immobilisent en scénario, en capture et sous
+                  // « réduire les animations ». « Démarrer » est inactif en
+                  // mode scénario et pendant un rejeu ; la session voix en
+                  // cours n'est pas touchée.
+                  child: _motionScope(
+                    child: Column(
+                      children: <Widget>[
+                        BlocSelector<ReplayBloc, ReplayState, bool>(
                           selector: (state) => state is ReplayActive,
                           builder: (context, replaying) => TopBar(
                             orbLevel: _orb.level,
@@ -988,33 +1007,28 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: _gap),
-                      // Même réglage d'animation que le canevas : la liaison
-                      // de délégation du rail reste fixe quand les
-                      // animations sont coupées.
-                      _motionScope(
-                        child: const SizedBox(
+                        const SizedBox(height: _gap),
+                        const SizedBox(
                           height: _railHeight,
                           child: AgentsRail(),
                         ),
-                      ),
-                      const SizedBox(height: _gap),
-                      Expanded(
-                        child: Stack(
-                          children: <Widget>[
-                            Column(
-                              children: <Widget>[
-                                _canvasZone(),
-                                const SizedBox(height: _gap),
-                                _bottomRow(),
-                              ],
-                            ),
-                            _protocolPanelSlot(),
-                          ],
+                        const SizedBox(height: _gap),
+                        Expanded(
+                          child: Stack(
+                            children: <Widget>[
+                              Column(
+                                children: <Widget>[
+                                  _canvasZone(),
+                                  const SizedBox(height: _gap),
+                                  _bottomRow(),
+                                ],
+                              ),
+                              _protocolPanelSlot(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

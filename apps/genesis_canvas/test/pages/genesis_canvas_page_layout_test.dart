@@ -6,13 +6,15 @@ import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../support/act_indicator_finder.dart';
 import '../support/page_rig.dart';
 import '../support/paragraphs.dart';
 
 /// Test de page à 1920 × 1080, DPR 1 (A7d du plan 007) : les quatre fixtures du
 /// contrat jouées par le faux canal, panneau replié puis déplié. Aucune erreur
-/// de rendu (dont les débordements), tout texte de l'écran à 24 px au moins,
+/// de rendu (dont les débordements), tout texte de l'écran à 11 px au moins,
 /// zones aux hauteurs du budget.
 ///
 /// Les tests de widgets de `flutter_test` rendent le texte avec la police
@@ -41,12 +43,12 @@ void main() {
     expect(
       paragraphsBelowMinimum(tester),
       isEmpty,
-      reason: 'tout texte de l\'écran doit faire au moins 24 px',
+      reason: 'tout texte de l\'écran doit faire au moins 11 px',
     );
   }
 
   testWidgets('acte 1 complet, panneau replié : zones au budget, aucun '
-      'débordement, texte >= 24 px', (tester) async {
+      'débordement, texte >= 11 px', (tester) async {
     final rig = await playAct1(tester);
 
     expectCleanScreen(tester, rig);
@@ -98,7 +100,7 @@ void main() {
     // Rail, étagère, indicateur d'acte et panneau sont tous présents.
     expect(find.byKey(const Key('agent-Qualité')), findsOneWidget);
     expect(find.text('4 / 6 utilisés'), findsOneWidget);
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
     expect(find.byKey(const Key('protocol-entry-0')), findsNothing);
     // Le thème de scène est installé au niveau du ThemeData.
     expect(
@@ -108,7 +110,7 @@ void main() {
   });
 
   testWidgets('acte 2 après l\'acte 1 : lignes de comparaison, deux entrées de '
-      'légende, aucun débordement, texte >= 24 px', (tester) async {
+      'légende, aucun débordement, texte >= 11 px', (tester) async {
     final rig = await playAct1(tester);
     final surfaces = (await tester.runAsync(
       () => ContractFixtures.followUpSurfaces(
@@ -168,11 +170,15 @@ void main() {
       lessThanOrEqualTo(rectOf(tester, 'canvas-board').bottom),
     );
     expect(find.text('5 / 6 utilisés'), findsOneWidget);
-    expect(find.byKey(const Key('comparison-kpi')), findsOneWidget);
+    // pdr-0088 F3 : la comparaison du KPI est la ligne « vs 3.3 » des deltas.
+    expect(find.byKey(const Key('kpi-delta-comparison-label')), findsOneWidget);
     expect(find.byKey(const Key('comparison-reviews')), findsOneWidget);
     expect(find.byKey(const Key('trend-series-Android 3.4')), findsOneWidget);
     expect(find.byKey(const Key('trend-series-Android 3.3')), findsOneWidget);
-    for (final key in const ['comparison-kpi', 'comparison-reviews']) {
+    for (final key in const [
+      'kpi-delta-comparison-value',
+      'comparison-reviews',
+    ]) {
       final r = rectOf(tester, key);
       expect(r.right, lessThanOrEqualTo(1920), reason: key);
       expect(r.bottom, lessThanOrEqualTo(1080), reason: key);
@@ -309,8 +315,8 @@ void main() {
 
     expectCleanScreen(tester, rig);
     expect(find.text('0 / 6 utilisés'), findsOneWidget);
-    expect(find.text('REJEU'), findsOneWidget);
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findTextIgnoringCase('REJEU'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
   });
 
   testWidgets('après la remise à vide : écran initial, aucun débordement', (

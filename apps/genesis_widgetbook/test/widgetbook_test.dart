@@ -10,6 +10,12 @@ const _expectedBricks = <String>{
   'DsStatusChip',
   'DsSkeleton',
   'DsNeutralState',
+  'DsGauge',
+  'DsGenFrame',
+  'DsPanelHead',
+  'DsCaps',
+  'DsBlink',
+  'DsBeacon',
   'ScenePanel',
   'SceneBackdrop',
 };

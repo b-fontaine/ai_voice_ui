@@ -13,6 +13,14 @@ abstract final class ScenePalette {
   static const Color signal = Color(0xFF3DE8FF);
   static const Color plasma = Color(0xFFA58BFF);
   static const Color baseline = Color(0xFF8592BB);
+  static const Color inkMuted = Color(0xFF93A1CC);
+
+  /// `ink-faint` (et `agentIdle`, de même valeur) : 4,35:1 au mieux, donc
+  /// interdit à tout texte de moins de 24 px (pdr-0088 F12).
+  static const Color inkFaint = Color(0xFF66739E);
+  static const Color line = Color(0xFF1F2A4D);
+  static const Color signalGhost = Color(0x1F3DE8FF);
+  static const Color plasmaGhost = Color(0x24A58BFF);
   static const Color go = Color(0xFF3EF2A5);
   static const Color goGhost = Color(0x1C3EF2A5);
   static const Color warn = Color(0xFFFFC845);
@@ -39,6 +47,11 @@ abstract final class ScenePalette {
     'signal': signal,
     'plasma': plasma,
     'baseline': baseline,
+    'ink-muted': inkMuted,
+    'ink-faint': inkFaint,
+    'line': line,
+    'signal-ghost': signalGhost,
+    'plasma-ghost': plasmaGhost,
     'go': go,
     'go-ghost': goGhost,
     'warn': warn,
