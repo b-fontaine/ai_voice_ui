@@ -1,11 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
+import 'text_metrics.dart';
 import 'trend_chart_painter.dart';
+import 'trend_geometry.dart';
 
 /// `TrendChart` : courbes par série (3.3 / 3.4), seuil, jours, légende.
+///
+/// Habillage du design system (spec 019, pdr-0088 F4) : légende à traits, grille,
+/// axe des valeurs, zone sous la série courante, zone de franchissement du
+/// seuil, point de tête avec sa valeur et annotation « ▲ seuil franchi dès Jn ».
+/// Toutes ces valeurs sont dérivées de la donnée (`trend_geometry.dart`) ; le
+/// tracé se dévoile de gauche à droite (`gc-wipe`).
 final CatalogItem trendChartItem = boundCatalogItem<_Trend>(
   name: 'TrendChart',
   description: 'Courbe de tendance liée à /trend.',
@@ -29,6 +39,12 @@ class _Trend {
     required this.yMaxPct,
     required this.days,
     required this.series,
+    required this.focus,
+    required this.area,
+    required this.breach,
+    required this.breachX,
+    required this.callout,
+    required this.headValue,
   });
 
   final String title;
@@ -36,6 +52,35 @@ class _Trend {
   final double yMaxPct;
   final List<String> days;
   final List<_RawSeries> series;
+
+  /// Dérivations de la série suivie (`trend_geometry.dart`), faites une fois à
+  /// l'analyse : jamais de calcul de donnée dans `build`.
+  final TrendFocus? focus;
+  final List<TrendPoint> area;
+  final List<TrendPoint> breach;
+
+  /// Abscisse (indice fractionnaire de jour) du croisement du seuil.
+  final double? breachX;
+
+  /// « ▲ seuil franchi dès J5 » ; `null` sans franchissement.
+  final String? callout;
+
+  /// « 0,84 % » : dernier point de la série suivie.
+  final String? headValue;
+
+  /// Mêmes séries (noms et points) ? Un titre qui change ne rejoue pas le tracé.
+  bool sameSeries(_Trend other) {
+    if (other.series.length != series.length) return false;
+    for (int i = 0; i < series.length; i++) {
+      final _RawSeries a = series[i];
+      final _RawSeries b = other.series[i];
+      if (a.name != b.name || a.points.length != b.points.length) return false;
+      for (int k = 0; k < a.points.length; k++) {
+        if (a.points[k] != b.points[k]) return false;
+      }
+    }
+    return true;
+  }
 
   static _Trend? tryParse(Object raw) {
     if (raw is! Map) return null;
@@ -75,18 +120,33 @@ class _Trend {
       }
       series.add(_RawSeries(name, points));
     }
+    final TrendFocus? focus = trendFocus(<({String name, List<double> points})>[
+      for (final _RawSeries s in series) (name: s.name, points: s.points),
+    ], threshold);
+    final List<double>? followed = focus == null
+        ? null
+        : series[focus.seriesIndex].points;
     return _Trend(
       title: title,
       thresholdPct: threshold,
       yMaxPct: yMax,
       days: days,
       series: series,
+      focus: focus,
+      area: followed == null ? const <TrendPoint>[] : areaPolygon(followed),
+      breach: followed == null
+          ? const <TrendPoint>[]
+          : breachPolygon(followed, threshold),
+      breachX: followed == null ? null : breachCrossingX(followed, threshold),
+      callout: followed == null
+          ? null
+          : breachCallout(days, followed, threshold),
+      headValue: followed == null || followed.isEmpty
+          ? null
+          : formatPct(followed.last),
     );
   }
 }
-
-/// « 0.5 » donne « 0,50 % » (format français de la fiche).
-String _pct(double v) => '${v.toStringAsFixed(2).replaceAll('.', ',')} %';
 
 Color _platformColor(SceneTheme theme, String name) {
   final String lower = name.toLowerCase();
@@ -95,79 +155,465 @@ Color _platformColor(SceneTheme theme, String name) {
   return theme.chartOther;
 }
 
-class _TrendView extends StatelessWidget {
+/// Début du point de tête dans la lecture (`gc-rise .4s 1.5s`) : il apparaît
+/// quand le tracé s'achève.
+const Duration _headDelay = Duration(milliseconds: 1500);
+const Duration _headRise = Duration(milliseconds: 400);
+
+/// Durée de la lecture : le dévoilement (1,6 s), puis la fin de l'apparition de
+/// la tête. Une seule horloge ; chaque phase en prend une tranche.
+final Duration _total = _headDelay + _headRise > SceneMotion.wipe
+    ? _headDelay + _headRise
+    : SceneMotion.wipe;
+
+double _share(Duration d) => d.inMicroseconds / _total.inMicroseconds;
+
+/// Marge autour du tracé que le dévoilement ne rogne pas (lueur, points).
+const double _bleed = 8;
+
+/// Distance de la valeur de tête au disque et de l'annotation au seuil.
+const double _headGap = 12;
+const double _calloutGap = 8;
+
+/// Rayon du disque de tête (`.head`, r = 5).
+const double _headRadius = 5;
+
+class _TrendView extends StatefulWidget {
   const _TrendView({required this.trend});
 
   final _Trend trend;
 
   @override
+  State<_TrendView> createState() => _TrendViewState();
+}
+
+class _TrendViewState extends State<_TrendView>
+    with SingleTickerProviderStateMixin<_TrendView>, SceneOneShot<_TrendView> {
+  late final bool _restored = DsRise.settledOf(context);
+  bool _started = false;
+
+  late final Animation<double> _wipe = CurveTween(
+    curve: Interval(0, _share(SceneMotion.wipe), curve: SceneMotion.curve),
+  ).animate(oneShot);
+
+  late final Animation<double> _rise = CurveTween(
+    curve: Interval(_share(_headDelay), 1, curve: SceneMotion.curve),
+  ).animate(oneShot);
+
+  @override
+  Duration get oneShotBase => _total;
+
+  // Surface restaurée : l'état final, sans rejouer le tracé (pdr-0088 F13).
+  @override
+  double get oneShotInitialValue => _restored ? 1 : 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!_restored) playOneShot();
+  }
+
+  // Le tracé rejoue à chaque changement de série (mutation de l'acte 2), jamais
+  // à une mise à jour qui laisse les séries inchangées.
+  @override
+  void didUpdateWidget(_TrendView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.trend.sameSeries(widget.trend)) playOneShot();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    final _Trend trend = widget.trend;
     // Couleur par plateforme (préfixe du nom), jamais une couleur de statut ;
-    // la série « 3.3 » se distingue par le trait pointillé. Le seuil prend la
-    // couleur « bloquant ».
+    // la série comparée « 3.3 » se distingue par le pointillé. Le seuil prend
+    // la couleur « bloquant ».
     final List<TrendSeries> series = <TrendSeries>[
       for (final _RawSeries raw in trend.series)
         TrendSeries(
           name: raw.name,
           points: raw.points,
           color: _platformColor(theme, raw.name),
-          dashed: raw.name.endsWith('3.3'),
+          dashed: isComparedSeries(raw.name),
         ),
     ];
     return CellFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _TrendHeader(
-            title: trend.title,
-            legend: <_LegendEntry>[
-              for (final TrendSeries s in series)
-                _LegendEntry(
-                  key: Key('trend-series-${s.name}'),
-                  color: s.color,
-                  text: s.name,
-                ),
-              _LegendEntry(
-                color: theme.blockingForeground,
-                text: 'Seuil ${_pct(trend.thresholdPct)}',
-              ),
-            ],
-          ),
+          DsPanelHead.title(title: trend.title, wrap: true),
+          _Legend(series: series, trend: trend),
           const SizedBox(height: 8),
           Expanded(
-            child: RepaintBoundary(
-              child: CustomPaint(
-                key: const Key('trend-chart-paint'),
-                size: Size.infinite,
-                painter: TrendChartPainter(
-                  days: trend.days,
-                  series: series,
-                  thresholdPct: trend.thresholdPct,
-                  yMaxPct: trend.yMaxPct,
-                  thresholdColor: theme.blockingForeground,
-                  axisColor: theme.inkFaint,
-                  // Graduations de 15 px : ink-muted (4,5:1), jamais ink-faint
-                  // sous 24 px (pdr-0088 F12). L'axe, décoratif, reste ink-faint.
-                  labelStyle: sceneTextStyle(
-                    context,
-                    theme.data.copyWith(color: theme.textSecondary),
-                  ),
-                  textScaler: MediaQuery.textScalerOf(context),
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) =>
+                  _chart(context, theme, series, constraints.biggest),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _chart(
+    BuildContext context,
+    SceneTheme theme,
+    List<TrendSeries> series,
+    Size size,
+  ) {
+    final _Trend trend = widget.trend;
+    final TextStyle tickStyle = theme.micro.tick.copyWith(
+      color: theme.textSecondary,
+    );
+    final List<double> ticks = trendTicks(trend.yMaxPct);
+    double axisWidth = 0;
+    for (final double tick in ticks) {
+      final double w = measureTextWidth(context, formatTick(tick), tickStyle);
+      if (w > axisWidth) axisWidth = w;
+    }
+    final double tickHeight = measureTextHeight(
+      context,
+      '0',
+      tickStyle,
+      double.infinity,
+    );
+    final List<double> dayWidths = <double>[
+      for (final String day in trend.days)
+        measureTextWidth(context, day, tickStyle).ceilToDouble() + 1,
+    ];
+    final Rect? plot = trendPlotRect(
+      size: size,
+      axisLabelWidth: axisWidth.ceilToDouble() + 1,
+      firstDayWidth: dayWidths.first,
+      lastDayWidth: dayWidths.last,
+      tickHeight: tickHeight,
+      dayHeight: tickHeight,
+    );
+    if (plot == null) return const SizedBox.shrink();
+
+    final int count = trend.days.length;
+    Offset project(TrendPoint p) => Offset(
+      trendX(p.x, count, plot.width),
+      trendY(p.y, trend.yMaxPct, plot.height),
+    );
+    final TrendFocus? focus = trend.focus;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        // Statique : grille et valeurs de l'axe, hors du dévoilement.
+        Positioned.fromRect(
+          rect: plot,
+          child: KeyedSubtree(
+            key: const Key('trend-plot'),
+            child: CustomPaint(
+              key: const Key('trend-grid'),
+              painter: TrendGridPainter(
+                ticks: ticks,
+                yMaxPct: trend.yMaxPct,
+                color: theme.line,
+              ),
+            ),
+          ),
+        ),
+        Positioned.fromRect(
+          rect: Rect.fromLTRB(
+            0,
+            plot.top - tickHeight / 2,
+            plot.left - trendAxisGap,
+            plot.bottom + tickHeight / 2,
+          ),
+          child: Stack(
+            key: const Key('trend-axis'),
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              for (final double tick in ticks)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top:
+                      plot.top +
+                      trendY(tick, trend.yMaxPct, plot.height) -
+                      tickHeight / 2 -
+                      (plot.top - tickHeight / 2),
+                  child: Text(
+                    formatTick(tick),
+                    style: tickStyle,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        for (int i = 0; i < count; i++)
+          Positioned(
+            left:
+                plot.left +
+                trendX(i.toDouble(), count, plot.width) -
+                dayWidths[i] / 2,
+            top: plot.bottom + trendDayGap,
+            width: dayWidths[i],
+            child: Text(
+              trend.days[i],
+              style: tickStyle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+            ),
+          ),
+        // Séries et zones : dévoilées de gauche à droite par un `ClipRect` à
+        // `reclip`, au-dessus d'un `RepaintBoundary` qui garde leur image.
+        Positioned.fromRect(
+          rect: plot.inflate(_bleed),
+          child: ClipRect(
+            key: const Key('trend-reveal'),
+            clipper: _Wipe(_wipe),
+            child: RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.all(_bleed),
+                child: Stack(
+                  fit: StackFit.expand,
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    if (trend.area.isNotEmpty)
+                      _zone(
+                        const Key('trend-area'),
+                        trend.area.map(project).toList(),
+                        theme.signalGhost,
+                      ),
+                    if (trend.breach.isNotEmpty)
+                      _zone(
+                        const Key('trend-breach'),
+                        trend.breach.map(project).toList(),
+                        theme.blockingBackground,
+                      ),
+                    CustomPaint(
+                      key: const Key('trend-chart-paint'),
+                      painter: TrendChartPainter(
+                        series: series,
+                        thresholdPct: trend.thresholdPct,
+                        yMaxPct: trend.yMaxPct,
+                        thresholdColor: theme.blockingForeground,
+                        dotFill: theme.background,
+                        headSeries: focus?.seriesIndex,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (focus != null && trend.headValue != null)
+          Positioned.fill(
+            child: _HeadLayer(
+              animation: _rise,
+              plot: plot,
+              head: plot.topLeft + project(_headPoint(focus, trend)),
+              color: series[focus.seriesIndex].color,
+              value: trend.headValue!,
+              aboveThreshold:
+                  trend.series[focus.seriesIndex].points.last >
+                  trend.thresholdPct,
+              callout: trend.callout,
+              calloutAt: trend.breachX == null
+                  ? null
+                  : plot.topLeft +
+                        project(TrendPoint(trend.breachX!, trend.thresholdPct)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  TrendPoint _headPoint(TrendFocus focus, _Trend trend) {
+    final List<double> points = trend.series[focus.seriesIndex].points;
+    return TrendPoint((points.length - 1).toDouble(), points.last);
+  }
+
+  /// Zone pleine posée par sa boîte englobante : un widget de la géométrie
+  /// exacte du polygone.
+  Widget _zone(Key key, List<Offset> points, Color color) {
+    double minX = points.first.dx, maxX = minX;
+    double minY = points.first.dy, maxY = minY;
+    for (final Offset p in points) {
+      minX = math.min(minX, p.dx);
+      maxX = math.max(maxX, p.dx);
+      minY = math.min(minY, p.dy);
+      maxY = math.max(maxY, p.dy);
+    }
+    final Rect box = Rect.fromLTRB(minX, minY, maxX, maxY);
+    return Positioned.fromRect(
+      rect: box,
+      child: CustomPaint(
+        key: key,
+        painter: TrendPolygonPainter(
+          points: <Offset>[for (final Offset p in points) p - box.topLeft],
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+/// Rognage du dévoilement : la fraction de la largeur déjà découverte.
+class _Wipe extends CustomClipper<Rect> {
+  _Wipe(this.progress) : super(reclip: progress);
+
+  final Animation<double> progress;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width * progress.value, size.height);
+
+  @override
+  bool shouldReclip(_Wipe oldClipper) => oldClipper.progress != progress;
+}
+
+/// Point de tête, sa valeur et l'annotation : apparaissent après le tracé
+/// (`gc-rise`, sans flou), en widgets `Text` posés par la géométrie.
+class _HeadLayer extends StatelessWidget {
+  const _HeadLayer({
+    required this.animation,
+    required this.plot,
+    required this.head,
+    required this.color,
+    required this.value,
+    required this.aboveThreshold,
+    required this.callout,
+    required this.calloutAt,
+  });
+
+  final Animation<double> animation;
+  final Rect plot;
+
+  /// Centre du disque de tête, dans la région du graphique.
+  final Offset head;
+  final Color color;
+  final String value;
+  final bool aboveThreshold;
+  final String? callout;
+
+  /// Croisement du seuil, dans la région du graphique.
+  final Offset? calloutAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    final TextStyle calloutStyle = theme.micro.callout.copyWith(
+      color: theme.blockingForeground,
+    );
+    final double textHeight = lineHeightOf(theme.micro.callout);
+    return FadeTransition(
+      opacity: animation,
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (BuildContext context, Widget? child) => Transform.translate(
+          offset: Offset(0, SceneMotion.translation * (1 - animation.value)),
+          child: child,
+        ),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints box) => Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              Positioned(
+                left: head.dx - _headRadius,
+                top: head.dy - _headRadius,
+                width: 2 * _headRadius,
+                height: 2 * _headRadius,
+                child: DecoratedBox(
+                  key: const Key('trend-head'),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: box.maxWidth - (head.dx - _headGap),
+                bottom:
+                    box.maxHeight -
+                    math.max(head.dy - 4, plot.top + textHeight),
+                child: Text(
+                  value,
+                  key: const Key('trend-head-value'),
+                  style: aboveThreshold
+                      ? calloutStyle
+                      : calloutStyle.copyWith(color: theme.textSecondary),
+                  maxLines: 1,
+                  softWrap: false,
+                ),
+              ),
+              if (callout != null && calloutAt != null)
+                Positioned(
+                  left: calloutAt!.dx + _headGap,
+                  top: calloutAt!.dy + _calloutGap,
+                  child: Text(
+                    callout!,
+                    key: const Key('trend-callout'),
+                    style: calloutStyle,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Légende (`.gc-legend`) : un trait de 18 x 3 px par série, puis le seuil en
+/// tirets. Les entrées passent à la ligne du `Wrap` plutôt que d'être coupées.
+class _Legend extends StatelessWidget {
+  const _Legend({required this.series, required this.trend});
+
+  final List<TrendSeries> series;
+  final _Trend trend;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return Wrap(
+      spacing: 16,
+      runSpacing: 4,
+      children: <Widget>[
+        for (final TrendSeries s in series)
+          _LegendEntry(
+            key: Key('trend-series-${s.name}'),
+            swatchKey: Key('trend-swatch-${s.name}'),
+            color: s.color,
+            style: s.dashed ? TrendSwatchStyle.dotted : TrendSwatchStyle.solid,
+            text: s.name,
+          ),
+        _LegendEntry(
+          key: const Key('trend-threshold-legend'),
+          swatchKey: const Key('trend-threshold-swatch'),
+          color: theme.blockingForeground,
+          style: TrendSwatchStyle.dashed,
+          text: 'Seuil ${formatPct(trend.thresholdPct)}',
+        ),
+      ],
+    );
+  }
 }
 
 class _LegendEntry extends StatelessWidget {
-  const _LegendEntry({super.key, required this.color, required this.text});
+  const _LegendEntry({
+    super.key,
+    required this.swatchKey,
+    required this.color,
+    required this.style,
+    required this.text,
+  });
 
+  final Key swatchKey;
   final Color color;
+  final TrendSwatchStyle style;
   final String text;
 
   @override
@@ -176,46 +622,25 @@ class _LegendEntry extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        SizedBox(
+          key: swatchKey,
+          width: 18,
+          height: 3,
+          child: CustomPaint(
+            painter: TrendSwatchPainter(color: color, style: style),
+          ),
         ),
-        const SizedBox(width: 8),
-        // Une entrée passe à la ligne du `Wrap` plutôt que d'être coupée ; seul
-        // un nom plus large que la cellule entière prend l'ellipse (garde
-        // contre un débordement du tracé).
+        const SizedBox(width: 6),
+        // Flexible : seul un nom plus large que la cellule entière prend
+        // l'ellipse (garde contre un débordement du tracé).
         Flexible(
           child: Text(
             text,
-            style: theme.body,
+            style: theme.micro.legend.copyWith(color: theme.textSecondary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-      ],
-    );
-  }
-}
-
-/// En-tête : le titre sur sa propre ligne (il passe à la ligne s'il est long,
-/// jamais tronqué), la légende dessous dans un `Wrap`, le tracé sur le reste.
-class _TrendHeader extends StatelessWidget {
-  const _TrendHeader({required this.title, required this.legend});
-
-  static const double _gap = 20;
-
-  final String title;
-  final List<_LegendEntry> legend;
-
-  @override
-  Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(title, style: theme.title),
-        Wrap(spacing: _gap, children: legend),
       ],
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'trend_geometry.dart';
+
 /// Une série du graphique : nom, un point par jour (en %), couleur.
 @immutable
 class TrendSeries {
@@ -29,11 +31,17 @@ class TrendSeries {
   int get hashCode => Object.hash(name, color, dashed, Object.hashAll(points));
 }
 
-/// Dessine `path` en tirets (12 px tracés, 8 px vides).
-void _drawDashed(Canvas canvas, Path path, Paint paint) {
+/// Dessine `path` en motif : [on] pixels tracés, [off] pixels vides.
+void _drawPattern(
+  Canvas canvas,
+  Path path,
+  Paint paint, {
+  required double on,
+  required double off,
+}) {
   for (final metric in path.computeMetrics()) {
-    for (double d = 0; d < metric.length; d += 20) {
-      final double end = d + 12 > metric.length ? metric.length : d + 12;
+    for (double d = 0; d < metric.length; d += on + off) {
+      final double end = d + on > metric.length ? metric.length : d + on;
       canvas.drawPath(metric.extractPath(d, end), paint);
     }
   }
@@ -47,122 +55,137 @@ bool _sameList<T>(List<T> a, List<T> b) {
   return true;
 }
 
-/// Peintre du graphique de tendance : courbes, ligne de seuil, jours.
+/// Épaisseur du trait de la série courante (`.s-current`).
+const double _currentWidth = 3;
+
+/// Épaisseur du trait de la série comparée (`.s-base`).
+const double _baseWidth = 2;
+
+/// Rayon d'un point de série (`.dot`) et épaisseur de son bord.
+const double _dotRadius = 3.5;
+const double _dotStroke = 2;
+
+/// Écart type du flou de la lueur de la série courante (`drop-shadow` de 6 px).
+const double _glowSigma = 3;
+const double _glowAlpha = 0x88 / 255;
+
+/// Peintre du tracé : ligne de seuil en tirets, séries et leurs points.
 ///
-/// Les valeurs sont bornées par `yMaxPct` (jamais de tracé hors cadre). Le
-/// texte des jours est peint à la taille de [labelStyle] (>= 24 px, RG-09).
+/// Il peint dans la zone du tracé (de la taille de [Size] reçue) et **ne pose
+/// aucun texte** : jours et graduations sont des widgets `Text` (pas de mise
+/// en page de texte à chaque image). Les valeurs sont bornées par `yMaxPct`
+/// (jamais de tracé hors cadre). La série courante porte une lueur ; la série
+/// comparée est en pointillés ronds. Le dernier point de la série
+/// [headSeries] n'est pas peint : le point de tête, apparu ensuite, le
+/// remplace.
 class TrendChartPainter extends CustomPainter {
   TrendChartPainter({
-    required this.days,
     required this.series,
     required this.thresholdPct,
     required this.yMaxPct,
     required this.thresholdColor,
-    required this.axisColor,
-    required this.labelStyle,
-    this.textScaler = TextScaler.noScaling,
+    required this.dotFill,
+    this.headSeries,
   });
 
-  final List<String> days;
   final List<TrendSeries> series;
   final double thresholdPct;
   final double yMaxPct;
   final Color thresholdColor;
-  final Color axisColor;
-  final TextStyle labelStyle;
 
-  /// Échelle de texte de l'environnement (comme celle d'un `Text`).
-  final TextScaler textScaler;
+  /// Remplissage des points de série (`void`).
+  final Color dotFill;
+
+  /// Position de la série suivie dans [series], ou `null`.
+  final int? headSeries;
 
   /// Ordonnée (0 = haut) d'une [value] dans une zone de [height] pixels,
   /// bornée entre 0 et `yMaxPct`.
-  double yFor(double value, double height) {
-    final double ratio = (value / yMaxPct).clamp(0.0, 1.0);
-    return height * (1 - ratio);
-  }
+  double yFor(double value, double height) => trendY(value, yMaxPct, height);
 
   /// Abscisse du jour [index] parmi [count], sur [width] pixels. Un seul jour
   /// est centré.
   double xFor(int index, int count, double width) =>
-      count <= 1 ? width / 2 : width * index / (count - 1);
+      trendX(index.toDouble(), count, width);
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.isEmpty || days.isEmpty) return;
-    final List<TextPainter> labels = <TextPainter>[
-      for (final String day in days)
-        TextPainter(
-          text: TextSpan(text: day, style: labelStyle),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-          ellipsis: '…',
-          textScaler: textScaler,
-        )..layout(),
-    ];
-    final double labelHeight = labels.fold<double>(
-      0,
-      (double m, TextPainter t) => t.height > m ? t.height : m,
-    );
-    final double halfLabel = labels.first.width / 2;
-    final double lastHalf = labels.last.width / 2;
-    final double plotLeft = halfLabel;
-    final double plotWidth = size.width - halfLabel - lastHalf;
-    final double plotHeight = size.height - labelHeight - 8;
-    if (plotWidth <= 0 || plotHeight <= 0) return;
+    if (size.isEmpty) return;
 
-    final Paint axis = Paint()
-      ..color = axisColor
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(plotLeft, plotHeight),
-      Offset(plotLeft + plotWidth, plotHeight),
-      axis,
-    );
-
-    // Ligne de seuil en pointillés.
-    final double ty = yFor(thresholdPct, plotHeight);
+    // Seuil : tirets de 8 px, 6 px de vide (`.s-threshold`).
+    final double ty = yFor(thresholdPct, size.height);
     final Paint threshold = Paint()
       ..color = thresholdColor
-      ..strokeWidth = 2;
-    for (double x = plotLeft; x < plotLeft + plotWidth; x += 16) {
-      final double end = x + 8 > plotLeft + plotWidth
-          ? plotLeft + plotWidth
-          : x + 8;
+      ..strokeWidth = 1.5;
+    for (double x = 0; x < size.width; x += 14) {
+      final double end = x + 8 > size.width ? size.width : x + 8;
       canvas.drawLine(Offset(x, ty), Offset(end, ty), threshold);
     }
 
-    for (final TrendSeries s in series) {
-      final Paint line = Paint()
-        ..color = s.color
-        ..strokeWidth = 3
-        ..style = PaintingStyle.stroke
-        ..strokeJoin = StrokeJoin.round;
+    Path pathOf(TrendSeries s) {
       final Path path = Path();
       for (int i = 0; i < s.points.length; i++) {
         final Offset p = Offset(
-          plotLeft + xFor(i, s.points.length, plotWidth),
-          yFor(s.points[i], plotHeight),
+          xFor(i, s.points.length, size.width),
+          yFor(s.points[i], size.height),
         );
         if (i == 0) {
           path.moveTo(p.dx, p.dy);
         } else {
           path.lineTo(p.dx, p.dy);
         }
-        canvas.drawCircle(p, 4, Paint()..color = s.color);
       }
-      if (s.dashed) {
-        _drawDashed(canvas, path, line);
-      } else {
-        canvas.drawPath(path, line);
-      }
+      return path;
     }
 
-    for (int i = 0; i < labels.length; i++) {
-      final double cx = plotLeft + xFor(i, labels.length, plotWidth);
-      labels[i].paint(canvas, Offset(cx - labels[i].width / 2, plotHeight + 8));
+    // La série comparée d'abord : la courante la recouvre.
+    for (final TrendSeries s in series.where((TrendSeries s) => s.dashed)) {
+      final Paint line = Paint()
+        ..color = s.color
+        ..strokeWidth = _baseWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      _drawPattern(canvas, pathOf(s), line, on: 0.1, off: 6);
     }
-    for (final TextPainter label in labels) {
-      label.dispose();
+    for (int index = 0; index < series.length; index++) {
+      final TrendSeries s = series[index];
+      if (s.dashed) continue;
+      final Path path = pathOf(s);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = s.color.withValues(alpha: _glowAlpha)
+          ..strokeWidth = _currentWidth
+          ..style = PaintingStyle.stroke
+          ..strokeJoin = StrokeJoin.round
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, _glowSigma),
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = s.color
+          ..strokeWidth = _currentWidth
+          ..style = PaintingStyle.stroke
+          ..strokeJoin = StrokeJoin.round
+          ..strokeCap = StrokeCap.round,
+      );
+      final int dots = index == headSeries
+          ? s.points.length - 1
+          : s.points.length;
+      final Paint fill = Paint()..color = dotFill;
+      final Paint rim = Paint()
+        ..color = s.color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _dotStroke;
+      for (int i = 0; i < dots; i++) {
+        final Offset p = Offset(
+          xFor(i, s.points.length, size.width),
+          yFor(s.points[i], size.height),
+        );
+        canvas.drawCircle(p, _dotRadius, fill);
+        canvas.drawCircle(p, _dotRadius, rim);
+      }
     }
   }
 
@@ -171,9 +194,111 @@ class TrendChartPainter extends CustomPainter {
       old.thresholdPct != thresholdPct ||
       old.yMaxPct != yMaxPct ||
       old.thresholdColor != thresholdColor ||
-      old.axisColor != axisColor ||
-      old.labelStyle != labelStyle ||
-      old.textScaler != textScaler ||
-      !_sameList(old.days, days) ||
+      old.dotFill != dotFill ||
+      old.headSeries != headSeries ||
       !_sameList(old.series, series);
+}
+
+/// Grille statique du tracé : une ligne par graduation et la base (valeur 0),
+/// couleur `line`. Hors du dévoilement.
+class TrendGridPainter extends CustomPainter {
+  const TrendGridPainter({
+    required this.ticks,
+    required this.yMaxPct,
+    required this.color,
+  });
+
+  /// Valeurs des graduations, en %.
+  final List<double> ticks;
+  final double yMaxPct;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final Paint line = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    for (final double tick in ticks) {
+      final double y = trendY(tick, yMaxPct, size.height);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
+    }
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(size.width, size.height),
+      line,
+    );
+  }
+
+  @override
+  bool shouldRepaint(TrendGridPainter old) =>
+      old.yMaxPct != yMaxPct ||
+      old.color != color ||
+      !_sameList(old.ticks, ticks);
+}
+
+/// Zone pleine (sous la série, de franchissement) : un polygone de sommets
+/// [points], déjà en pixels dans le repère du widget.
+class TrendPolygonPainter extends CustomPainter {
+  const TrendPolygonPainter({required this.points, required this.color});
+
+  final List<Offset> points;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 3) return;
+    canvas.drawPath(Path()..addPolygon(points, true), Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(TrendPolygonPainter old) =>
+      old.color != color || !_sameList(old.points, points);
+}
+
+/// Trait de légende de 18 x 3 px (`.gc-legend i`) : plein, en points ronds
+/// (série comparée) ou en tirets (seuil).
+enum TrendSwatchStyle { solid, dotted, dashed }
+
+class TrendSwatchPainter extends CustomPainter {
+  const TrendSwatchPainter({required this.color, required this.style});
+
+  final Color color;
+  final TrendSwatchStyle style;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()..color = color;
+    switch (style) {
+      case TrendSwatchStyle.solid:
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Offset.zero & size,
+            Radius.circular(size.height / 2),
+          ),
+          paint,
+        );
+      case TrendSwatchStyle.dotted:
+        // Points ronds de 3 px, un tous les 6 px.
+        for (double x = size.height / 2; x < size.width; x += size.height * 2) {
+          canvas.drawCircle(Offset(x, size.height / 2), size.height / 2, paint);
+        }
+      case TrendSwatchStyle.dashed:
+        for (double x = 0; x < size.width; x += 8) {
+          canvas.drawRect(
+            Rect.fromLTWH(
+              x,
+              0,
+              (x + 5 > size.width ? size.width - x : 5),
+              size.height,
+            ),
+            paint,
+          );
+        }
+    }
+  }
+
+  @override
+  bool shouldRepaint(TrendSwatchPainter old) =>
+      old.color != color || old.style != style;
 }

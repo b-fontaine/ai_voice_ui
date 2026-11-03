@@ -23,8 +23,8 @@ class DsPanelHead extends StatelessWidget {
     super.key,
     required String this.title,
     this.trailing,
-  }) : label = null,
-       wrap = false;
+    this.wrap = false,
+  }) : label = null;
 
   /// Espace minimal entre le côté gauche et [trailing].
   static const double gap = 12;
@@ -41,8 +41,8 @@ class DsPanelHead extends StatelessWidget {
   /// Statut ou élément affiché à droite.
   final Widget? trailing;
 
-  /// Vrai : l'étiquette passe à la ligne au lieu de se tronquer (un libellé
-  /// de donnée ne doit jamais être coupé par une ellipse).
+  /// Vrai : l'étiquette ou le titre passe à la ligne au lieu de se tronquer
+  /// (un libellé de donnée ne doit jamais être coupé par une ellipse).
   final bool wrap;
 
   @override
@@ -58,8 +58,8 @@ class DsPanelHead extends StatelessWidget {
         : Text(
             title!,
             style: theme.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            maxLines: wrap ? null : 1,
+            overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
           );
     final Widget? right = trailing;
     return Padding(

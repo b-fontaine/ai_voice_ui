@@ -88,6 +88,37 @@ void main() {
     expect(find.byType(DsCaps), findsNothing);
   });
 
+  testWidgets('titre libre avec wrap : retour à la ligne, sans ellipse', (
+    tester,
+  ) async {
+    const String long =
+        'Taux de crash du jour sur Android pour la version 3.4 de la release, '
+        'comparé aux trois versions précédentes sur quatorze jours';
+    await tester.pumpWidget(
+      _host(const DsPanelHead.title(title: long, wrap: true), width: 300),
+    );
+    final Text widget = tester.widget(find.text(long));
+    expect(widget.maxLines, isNull);
+    expect(widget.overflow, isNot(TextOverflow.ellipsis));
+    final double line = widget.style!.fontSize! * widget.style!.height!;
+    expect(tester.getSize(find.text(long)).height, greaterThan(line * 1.5));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('titre libre sans wrap : une ligne tronquée', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        const DsPanelHead.title(title: 'Un titre trop long pour la place'),
+        width: 120,
+      ),
+    );
+    final Text widget = tester.widget(
+      find.text('Un titre trop long pour la place'),
+    );
+    expect(widget.maxLines, 1);
+    expect(widget.overflow, TextOverflow.ellipsis);
+  });
+
   testWidgets('wrap : une longue étiquette passe à la ligne, sans ellipse', (
     tester,
   ) async {
