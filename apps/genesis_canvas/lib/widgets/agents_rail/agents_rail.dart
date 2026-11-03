@@ -3,7 +3,13 @@ import 'package:feature_agent_activity/feature_agent_activity.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsCaps, SceneRadius, SceneTheme;
+    show
+        DsBeacon,
+        DsCaps,
+        SceneMotion,
+        SceneMotionScope,
+        SceneRadius,
+        SceneTheme;
 
 import 'delegation_link_geometry.dart' show DelegationLinkGeometry;
 import 'delegation_links.dart';
@@ -93,11 +99,12 @@ class _AgentTile extends StatelessWidget {
 
   final AgentStatus agent;
 
-  /// Largeur de la barre indéterminée, en part de la tuile (`gc-indet`).
-  static const double barWidthFactor = 0.4;
-
   /// Épaisseur de la barre indéterminée.
   static const double barHeight = 2;
+
+  /// Période du battement du point d'un agent au travail (`gc-beacon 1.2s`,
+  /// la puce Bloquant bat plus lentement : 1,6 s).
+  static const Duration beaconPeriod = Duration(milliseconds: 1200);
 
   /// Halo du point de l'orchestrateur.
   static const double glowBlur = 10;
@@ -153,6 +160,22 @@ class _AgentTile extends StatelessWidget {
       color: stateColor,
     );
     final Color dot = _dotColor(theme, state);
+    final Widget dotView = DecoratedBox(
+      key: Key('agent-dot-${agent.agent}'),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: dot,
+        boxShadow: state == AgentRunState.orchestrating
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: theme.plasma.withValues(alpha: 0.6),
+                  blurRadius: glowBlur,
+                ),
+              ]
+            : null,
+      ),
+      child: const SizedBox.square(dimension: DelegationLinkGeometry.dotSize),
+    );
     return KeyedSubtree(
       key: Key('agent-${agent.agent}'),
       child: DecoratedBox(
@@ -183,26 +206,14 @@ class _AgentTile extends StatelessWidget {
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          DecoratedBox(
-                            key: Key('agent-dot-${agent.agent}'),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: dot,
-                              boxShadow: state == AgentRunState.orchestrating
-                                  ? <BoxShadow>[
-                                      BoxShadow(
-                                        color: theme.plasma.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        blurRadius: glowBlur,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: const SizedBox.square(
-                              dimension: DelegationLinkGeometry.dotSize,
-                            ),
-                          ),
+                          working
+                              ? DsBeacon(
+                                  color: dot,
+                                  size: DelegationLinkGeometry.dotSize,
+                                  period: beaconPeriod,
+                                  child: dotView,
+                                )
+                              : dotView,
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
@@ -256,16 +267,9 @@ class _AgentTile extends StatelessWidget {
                     right: 0,
                     bottom: 0,
                     height: barHeight,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: barWidthFactor,
-                        heightFactor: 1,
-                        child: ColoredBox(
-                          key: Key('agent-bar-${agent.agent}'),
-                          color: theme.accent,
-                        ),
-                      ),
+                    child: _IndeterminateBar(
+                      barKey: Key('agent-bar-${agent.agent}'),
+                      color: theme.accent,
                     ),
                   ),
               ],
@@ -275,4 +279,106 @@ class _AgentTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Barre indéterminée d'un agent au travail (`gc-indet`, 1,3 s, pdr-0088 F9) :
+/// un segment de 40 % de la largeur qui glisse de -100 % à
+/// 260 % de sa propre largeur, sur la courbe du design system, en boucle.
+///
+/// La clé va sur le segment (taille 40 % × 2 px, inchangée). Un seul
+/// contrôleur, lancé une fois par `SceneMotionScope.loop` ; la tuile
+/// (`ClipRRect`) rogne ce qui dépasse. Dans son `RepaintBoundary` : le texte de
+/// la tuile n'est pas repeint. **Phase de repos** (animations coupées) : le
+/// segment immobile, à gauche et visible, comme avant le niveau B.
+class _IndeterminateBar extends StatefulWidget {
+  const _IndeterminateBar({required this.barKey, required this.color});
+
+  /// Largeur du segment, en part de la tuile (`width: 40%`).
+  static const double widthFactor = 0.4;
+
+  /// Départ et arrivée du glissement, en largeurs du segment.
+  static const double from = -1;
+  static const double to = 2.6;
+
+  /// Clé du segment (`agent-bar-<nom>`).
+  final Key barKey;
+
+  final Color color;
+
+  @override
+  State<_IndeterminateBar> createState() => _IndeterminateBarState();
+}
+
+class _IndeterminateBarState extends State<_IndeterminateBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: SceneMotion.indet,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SceneMotionScope.loop(context, _controller, SceneMotion.indet);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool still = SceneMotionScope.of(context).disabled;
+    return RepaintBoundary(
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: _IndeterminateBar.widthFactor,
+          heightFactor: 1,
+          // Le segment est peint par un `CustomPainter` qui écoute le
+          // contrôleur : aucune reconstruction par image (les tuiles sont sous
+          // un `LayoutBuilder`, qu'un `AnimatedBuilder` remettrait en page à
+          // chaque image). La clé est sur ce `CustomPaint` (40 % × 2 pt).
+          child: CustomPaint(
+            key: widget.barKey,
+            painter: _BarPainter(
+              phase: _controller,
+              color: widget.color,
+              still: still,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Peint le segment de la barre indéterminée, décalé de -100 % à 260 % de sa
+/// propre largeur selon la phase ; immobile à gauche si [still].
+class _BarPainter extends CustomPainter {
+  _BarPainter({required this.phase, required this.color, required this.still})
+    : super(repaint: phase);
+
+  final Animation<double> phase;
+  final Color color;
+  final bool still;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double shift = still
+        ? 0
+        : _IndeterminateBar.from +
+              (_IndeterminateBar.to - _IndeterminateBar.from) *
+                  SceneMotion.curve.transform(phase.value);
+    canvas.drawRect(
+      Rect.fromLTWH(shift * size.width, 0, size.width, size.height),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BarPainter old) =>
+      old.phase != phase || old.color != color || old.still != still;
 }

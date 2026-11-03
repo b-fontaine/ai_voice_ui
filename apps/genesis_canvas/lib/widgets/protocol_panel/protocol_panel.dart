@@ -6,9 +6,16 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
         ProtocolFeedState,
         ProtocolOperation;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsPanelHead, SceneRadius, ScenePanel, SceneTheme;
+    show
+        DsPanelHead,
+        SceneMotion,
+        SceneOneShot,
+        SceneRadius,
+        ScenePanel,
+        SceneTheme;
 
 /// Panneau « FLUX A2UI · live » (FR-05) : les messages A2UI en cours de
 /// fabrication, avec le dernier en évidence.
@@ -127,10 +134,22 @@ const double _maskStop = 0.3;
 /// de chaque côté) sur une ligne d'en-tête.
 const double _refusedExtra = 4;
 
-class _Entries extends StatelessWidget {
+class _Entries extends StatefulWidget {
   const _Entries({required this.state});
 
   final ProtocolFeedState state;
+
+  @override
+  State<_Entries> createState() => _EntriesState();
+}
+
+class _EntriesState extends State<_Entries> {
+  // La liste garde ses entrées (et leur état d'apparition) quand le masque de
+  // dégradé apparaît ou disparaît autour d'elle : sans cela, une entrée déjà
+  // arrivée rejouerait son entrée.
+  final GlobalKey _listKey = GlobalKey();
+
+  ProtocolFeedState get state => widget.state;
 
   @override
   Widget build(BuildContext context) {
@@ -153,16 +172,21 @@ class _Entries extends StatelessWidget {
             ? state.entries.sublist(state.entries.length - capacity)
             : state.entries;
         final bool trimmed = shown.length < state.entries.length;
-        final Widget list = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            for (final (int position, ProtocolEntry entry) in shown.indexed)
-              _EntryTile(
-                entry: entry,
-                position: position,
-                current: entry.index == state.highlightedIndex,
-              ),
-          ],
+        final Widget list = KeyedSubtree(
+          key: _listKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final (int position, ProtocolEntry entry) in shown.indexed)
+                _EntryTile(
+                  // Une entrée garde son état en changeant de rang.
+                  key: ValueKey<int>(entry.index),
+                  entry: entry,
+                  position: position,
+                  current: entry.index == state.highlightedIndex,
+                ),
+            ],
+          ),
         );
         return ClipRect(
           // `gc-stream` : les entrées écartées s'estompent en haut (de
@@ -201,8 +225,9 @@ class _Entries extends StatelessWidget {
   }
 }
 
-class _EntryTile extends StatelessWidget {
+class _EntryTile extends StatefulWidget {
   const _EntryTile({
+    super.key,
     required this.entry,
     required this.position,
     required this.current,
@@ -217,6 +242,44 @@ class _EntryTile extends StatelessWidget {
   /// ([ProtocolEntry.index]).
   final int position;
   final bool current;
+
+  @override
+  State<_EntryTile> createState() => _EntryTileState();
+}
+
+/// Apparition d'une entrée (`.gc-stream div`, `gc-row .35s`, pdr-0088 F9) :
+/// fondu et glissement de 12 px depuis la gauche, joués **une fois**, à
+/// l'arrivée de l'entrée. Un contrôleur par entrée (`SceneOneShot`), dans son
+/// propre `RepaintBoundary` : les autres lignes et l'en-tête ne sont pas
+/// repeints. Animations coupées : l'entrée est en place d'emblée.
+class _EntryTileState extends State<_EntryTile>
+    with SingleTickerProviderStateMixin<_EntryTile>, SceneOneShot<_EntryTile> {
+  /// Durée de l'apparition (`gc-row .35s` du flux, plus vive que la ligne de
+  /// tableau, 480 ms).
+  static const Duration appear = Duration(milliseconds: 350);
+
+  /// Glissement de départ, en points (`translateX(-12px)`).
+  static const double slide = 12;
+
+  bool _started = false;
+
+  late final Animation<double> _eased = CurveTween(curve: SceneMotion.curve)
+      .animate(oneShot);
+
+  @override
+  Duration get oneShotBase => appear;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    playOneShot();
+  }
+
+  ProtocolEntry get entry => widget.entry;
+  int get position => widget.position;
+  bool get current => widget.current;
 
   static String _operationName(ProtocolOperation operation) =>
       switch (operation) {
@@ -246,7 +309,7 @@ class _EntryTile extends StatelessWidget {
     );
     final TextStyle kindStyle = line.copyWith(color: theme.accent);
     final String kind = _operationName(entry.operation);
-    return Padding(
+    final Widget tile = Padding(
       key: Key('protocol-entry-${entry.index}'),
       padding: const EdgeInsets.only(top: _tileTopGap),
       child: DecoratedBox(
@@ -330,6 +393,87 @@ class _EntryTile extends StatelessWidget {
         ),
       ),
     );
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _eased,
+        // Transitions de rendu, sans reconstruction par image : cette liste est
+        // sous un `LayoutBuilder`, qu'un `AnimatedBuilder` (ou une
+        // `SlideTransition`, qui est un `AnimatedWidget`) ferait remettre en
+        // page à chaque image.
+        child: _Shifted(progress: _eased, distance: slide, child: tile),
+      ),
+    );
+  }
+}
+
+/// Décale son enfant vers la gauche de `distance × (1 - progress)` points, à la
+/// peinture seulement : aucune reconstruction ni mise en page quand
+/// [progress] change (`translateX(-12px)` de `gc-row`).
+class _Shifted extends SingleChildRenderObjectWidget {
+  const _Shifted({
+    required this.progress,
+    required this.distance,
+    required super.child,
+  });
+
+  final Animation<double> progress;
+  final double distance;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderShifted(progress, distance);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderShifted renderObject) {
+    renderObject
+      ..progress = progress
+      ..distance = distance;
+  }
+}
+
+class _RenderShifted extends RenderProxyBox {
+  _RenderShifted(this._progress, this._distance);
+
+  Animation<double> _progress;
+  double _distance;
+
+  set progress(Animation<double> value) {
+    if (value == _progress) return;
+    if (attached) _progress.removeListener(markNeedsPaint);
+    _progress = value;
+    if (attached) _progress.addListener(markNeedsPaint);
+    markNeedsPaint();
+  }
+
+  set distance(double value) {
+    if (value == _distance) return;
+    _distance = value;
+    markNeedsPaint();
+  }
+
+  double get _dx => -_distance * (1 - _progress.value);
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _progress.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    _progress.removeListener(markNeedsPaint);
+    super.detach();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final RenderBox? child = this.child;
+    if (child != null) context.paintChild(child, offset.translate(_dx, 0));
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    transform.translateByDouble(_dx, 0, 0, 1);
   }
 }
 

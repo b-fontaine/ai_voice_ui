@@ -411,6 +411,7 @@ class _TrendViewState extends State<_TrendView>
           Positioned.fill(
             child: _HeadLayer(
               animation: _rise,
+              reveal: oneShot,
               plot: plot,
               head: plot.topLeft + project(_headPoint(focus, trend)),
               color: series[focus.seriesIndex].color,
@@ -478,6 +479,7 @@ class _Wipe extends CustomClipper<Rect> {
 class _HeadLayer extends StatelessWidget {
   const _HeadLayer({
     required this.animation,
+    required this.reveal,
     required this.plot,
     required this.head,
     required this.color,
@@ -488,6 +490,9 @@ class _HeadLayer extends StatelessWidget {
   });
 
   final Animation<double> animation;
+
+  /// Lecture complète du tracé (1 à la fin) : l'anneau de tête attend sa fin.
+  final Animation<double> reveal;
   final Rect plot;
 
   /// Centre du disque de tête, dans la région du graphique.
@@ -519,6 +524,17 @@ class _HeadLayer extends StatelessWidget {
           builder: (BuildContext context, BoxConstraints box) => Stack(
             clipBehavior: Clip.none,
             children: <Widget>[
+              Positioned(
+                left: head.dx - _headRadius,
+                top: head.dy - _headRadius,
+                width: 2 * _headRadius,
+                height: 2 * _headRadius,
+                child: _HeadRing(
+                  key: const Key('trend-head-ring'),
+                  reveal: reveal,
+                  color: SceneTheme.of(context).accent,
+                ),
+              ),
               Positioned(
                 left: head.dx - _headRadius,
                 top: head.dy - _headRadius,
@@ -644,4 +660,132 @@ class _LegendEntry extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Anneau de tête (`gc-ring`, 1,8 s, pdr-0088 F9) : un cercle `signal` de
+/// trait 2 qui grossit de 1 à 3 en s'estompant de .9 à 0, en boucle, **une fois
+/// le tracé fini** ([reveal] à 1). Il s'éteint quand le tracé rejoue.
+///
+/// Un contrôleur propre, lancé une fois par `SceneMotionScope.loop` à la fin du
+/// tracé, dans son propre `RepaintBoundary` ; le painter écoute le contrôleur
+/// (pas de reconstruction par image : le graphique est sous des
+/// `LayoutBuilder`). **Phase de repos** (animations coupées) : invisible, aucun
+/// `Ticker`.
+class _HeadRing extends StatefulWidget {
+  const _HeadRing({super.key, required this.reveal, required this.color});
+
+  final Animation<double> reveal;
+  final Color color;
+
+  @override
+  State<_HeadRing> createState() => _HeadRingState();
+}
+
+class _HeadRingState extends State<_HeadRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: SceneMotion.ring,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    widget.reveal.addStatusListener(_onRevealStatus);
+  }
+
+  @override
+  void didUpdateWidget(_HeadRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.reveal != widget.reveal) {
+      oldWidget.reveal.removeStatusListener(_onRevealStatus);
+      widget.reveal.addStatusListener(_onRevealStatus);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  void _onRevealStatus(AnimationStatus status) => _sync();
+
+  // Boucle à la fin du tracé, repos pendant le tracé et sous `disabled`.
+  void _sync() {
+    final bool running =
+        widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
+    if (running) {
+      SceneMotionScope.loop(context, _controller, SceneMotion.ring);
+    } else {
+      _controller.stop();
+      _controller.value = 0;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.reveal.removeStatusListener(_onRevealStatus);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool visible =
+        widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _HeadRingPainter(
+            phase: _controller,
+            color: widget.color,
+            visible: visible,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeadRingPainter extends CustomPainter {
+  _HeadRingPainter({
+    required this.phase,
+    required this.color,
+    required this.visible,
+  }) : super(repaint: phase);
+
+  /// Échelle finale de l'anneau (`scale(3)`) et opacité de départ (.9).
+  static const double _endScale = 3;
+  static const double _startOpacity = 0.9;
+
+  /// Épaisseur du trait au départ (`stroke-width: 2`, mise à l'échelle avec
+  /// le cercle).
+  static const double _stroke = 2;
+
+  final Animation<double> phase;
+  final Color color;
+
+  /// Faux pendant le tracé et sous animations coupées : rien n'est peint.
+  final bool visible;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!visible) return;
+    final double t = Curves.easeOut.transform(phase.value);
+    final double scale = 1 + (_endScale - 1) * t;
+    canvas.drawCircle(
+      size.center(Offset.zero),
+      size.width / 2 * scale,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _stroke * scale
+        ..color = color.withValues(alpha: _startOpacity * (1 - t)),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_HeadRingPainter old) =>
+      old.phase != phase || old.color != color || old.visible != visible;
 }

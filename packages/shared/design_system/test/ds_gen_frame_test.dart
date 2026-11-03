@@ -152,18 +152,47 @@ void main() {
   });
 
   group('mouvement', () {
-    testWidgets('un seul contrôleur tourne, le cadre se repeint', (
+    // pdr-0088 F9, T34 : le cadre (un contrôleur) et le losange de l'étiquette
+    // (`gc-blink`, un second contrôleur dans son `RepaintBoundary`).
+    testWidgets(
+      'deux contrôleurs tournent (cadre, losange), le cadre se repeint',
+      (tester) async {
+        await tester.pumpWidget(_host());
+        expect(tester.binding.transientCallbackCount, 2);
+        final int before = _paints(tester);
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 16));
+        }
+        expect(_paints(tester), greaterThan(before));
+        expect(tester.binding.transientCallbackCount, 2);
+        await tester.pumpWidget(_host(disabled: true));
+      },
+    );
+
+    // pdr-0088 F9, T34 : le losange de l'étiquette clignote (`gc-blink`, 1 s)
+    // dans son propre RepaintBoundary ; plein au repos.
+    testWidgets('le losange de l\'étiquette clignote en 1 s, plein au repos', (
       tester,
     ) async {
       await tester.pumpWidget(_host());
-      expect(tester.binding.transientCallbackCount, 1);
-      final int before = _paints(tester);
-      for (var i = 0; i < 6; i++) {
-        await tester.pump(const Duration(milliseconds: 16));
-      }
-      expect(_paints(tester), greaterThan(before));
-      expect(tester.binding.transientCallbackCount, 1);
+      final Finder blink = find.descendant(
+        of: _tag(),
+        matching: find.byType(DsBlink),
+      );
+      expect(blink, findsOneWidget);
+      expect(tester.widget<DsBlink>(blink).period, SceneMotion.blink);
+      double dim() => tester
+          .widget<FadeTransition>(
+            find.descendant(of: blink, matching: find.byType(FadeTransition)),
+          )
+          .opacity
+          .value;
+      expect(dim(), 1);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(dim(), DsBlink.dimmedOpacity);
       await tester.pumpWidget(_host(disabled: true));
+      expect(dim(), 1);
+      expect(tester.binding.transientCallbackCount, 0);
     });
 
     testWidgets('sous animations coupées : aucune boucle, cadre statique', (
@@ -180,7 +209,7 @@ void main() {
     ) async {
       await tester.pumpWidget(_host());
       await tester.pump(const Duration(milliseconds: 300));
-      expect(tester.binding.transientCallbackCount, 1);
+      expect(tester.binding.transientCallbackCount, 2);
       await tester.pumpWidget(_host(disabled: true));
       expect(tester.binding.transientCallbackCount, 0);
     });
@@ -198,7 +227,7 @@ void main() {
 
         await tester.pump(const Duration(seconds: 1));
         expect(_opacity(tester), 1);
-        expect(tester.binding.transientCallbackCount, 1);
+        expect(tester.binding.transientCallbackCount, 2);
         final int before = _paints(tester);
         await tester.pump(const Duration(milliseconds: 100));
         expect(_paints(tester), greaterThan(before), reason: 'encore animé');

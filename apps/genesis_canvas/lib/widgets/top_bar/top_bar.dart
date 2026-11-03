@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsCaps, SceneTheme;
+    show DsBlink, DsCaps, SceneTheme;
 
 import 'sm_button.dart';
 import 'voice_failure_message.dart';
@@ -263,20 +263,27 @@ class _TranscriptLine extends StatelessWidget {
 }
 
 /// Curseur de saisie (`.caret::after`) : barre de 2 points, `plasma`, de la
-/// hauteur du texte, posée contre le bas de la dernière ligne. Il est statique
-/// ici ; son clignotement (`gc-blink`) est du niveau B (T34).
+/// hauteur du texte, posée contre le bas de la dernière ligne. Il clignote
+/// (`gc-blink` .9 s, `DsBlink`, pdr-0088 F9, T34) tant qu'il est affiché,
+/// c'est-à-dire tant que la réplique s'écrit et 1,2 s après ; plein au repos.
 class _Caret extends StatelessWidget {
   const _Caret({required this.height});
+
+  /// Période du clignotement (`.caret::after`, `gc-blink .9s`).
+  static const Duration blinkPeriod = Duration(milliseconds: 900);
 
   final double height;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(left: 2, bottom: 4),
-    child: DecoratedBox(
-      key: const Key('transcript-ai-caret'),
-      decoration: BoxDecoration(color: SceneTheme.of(context).plasma),
-      child: SizedBox(width: 2, height: height),
+    child: DsBlink(
+      period: blinkPeriod,
+      child: DecoratedBox(
+        key: const Key('transcript-ai-caret'),
+        decoration: BoxDecoration(color: SceneTheme.of(context).plasma),
+        child: SizedBox(width: 2, height: height),
+      ),
     ),
   );
 }

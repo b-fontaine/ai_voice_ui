@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneRadius, SceneTheme, sceneTextStyle;
+    show DsBlink, SceneRadius, SceneTheme, sceneTextStyle;
 
 /// Bouton `gc-btn--sm` du design system dans une cible de pointage de 48
 /// points (NFR-05, D-05).
@@ -12,7 +12,7 @@ import 'package:shared_design_system/shared_design_system.dart'
 /// `line-strong`, 2,3:1, pdr-0084 U4). Le bouton plein a le fond `surface-300` ;
 /// le bouton fantôme ([ghost], `gc-btn--ghost`) n'a pas de fond. [recording]
 /// ajoute le point d'enregistrement (`gc-btn--rec::before`, 8 points `nogo`,
-/// clé `mic-rec-dot`).
+/// clé `mic-rec-dot`, qui clignote : [recBlinkPeriod], `DsBlink`).
 ///
 /// La logique reste chez l'appelant : [onPressed] `null` désactive le bouton.
 /// La sémantique de bouton porte [semanticsLabel] (par défaut [label]).
@@ -36,6 +36,10 @@ class SmButton extends StatelessWidget {
 
   /// Diamètre du point d'enregistrement.
   static const double recDotSize = 8;
+
+  /// Période du clignotement du point d'enregistrement (`gc-btn--rec::before`,
+  /// `gc-blink 1.2s`).
+  static const Duration recBlinkPeriod = Duration(milliseconds: 1200);
 
   /// Clé du bouton Material, c'est-à-dire de la cible.
   final Key buttonKey;
@@ -95,13 +99,17 @@ class SmButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   if (recording) ...<Widget>[
-                    DecoratedBox(
-                      key: const Key('mic-rec-dot'),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.blockingForeground,
+                    // `gc-blink` 1,2 s (pdr-0088 F9, T34) : plein au repos.
+                    DsBlink(
+                      period: recBlinkPeriod,
+                      child: DecoratedBox(
+                        key: const Key('mic-rec-dot'),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.blockingForeground,
+                        ),
+                        child: const SizedBox.square(dimension: recDotSize),
                       ),
-                      child: const SizedBox.square(dimension: recDotSize),
                     ),
                     const SizedBox(width: 8),
                   ],

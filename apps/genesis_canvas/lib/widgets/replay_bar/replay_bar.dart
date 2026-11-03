@@ -17,7 +17,7 @@ import 'package:feature_replay/feature_replay.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsCaps, SceneRadius, ScenePanel, SceneShadow, SceneTheme;
+    show DsBlink, DsCaps, SceneRadius, ScenePanel, SceneShadow, SceneTheme;
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
 ///
@@ -242,7 +242,9 @@ class _PlayButton extends StatelessWidget {
 }
 
 /// « Direct » (`gc-live`) : point `signal` de 6 points puis le mot en capitales
-/// `signal`. Le point clignotera au niveau B (T34, `gc-blink`).
+/// `signal`. Tant que le direct est affiché (bouton inactif : on est en
+/// direct), le point clignote (`gc-blink` 1 s, `DsBlink`, pdr-0088 F9, T34) ;
+/// en rejeu, le bouton ramène au direct et son point reste plein.
 class _DirectButton extends StatelessWidget {
   const _DirectButton({required this.onPressed});
 
@@ -254,6 +256,12 @@ class _DirectButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    final bool live = onPressed == null;
+    final Widget dotWidget = DecoratedBox(
+      key: const Key('replay-direct-dot'),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: theme.accent),
+      child: const SizedBox.square(dimension: dot),
+    );
     return TextButton(
       key: const Key('replay-direct'),
       onPressed: onPressed,
@@ -264,14 +272,7 @@ class _DirectButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          DecoratedBox(
-            key: const Key('replay-direct-dot'),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: theme.accent,
-            ),
-            child: const SizedBox.square(dimension: dot),
-          ),
+          if (live) DsBlink(child: dotWidget) else dotWidget,
           const SizedBox(width: 6),
           DsCaps(
             'Direct',

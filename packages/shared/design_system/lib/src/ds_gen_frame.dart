@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'ds_blink.dart';
 import 'ds_caps.dart';
 import 'scene_motion.dart';
 import 'scene_radius.dart';
@@ -266,8 +267,9 @@ class _DsGenFrameState extends State<DsGenFrame>
 }
 
 /// Pastille « `Agent` · génère » : fond `void`, bordure et texte `signal`,
-/// capitales, lueur `signal`. Le losange est statique ici (le clignotement
-/// `gc-blink` est de niveau B).
+/// capitales, lueur `signal`. Le losange clignote (`gc-blink`, 1 s,
+/// [DsBlink], son propre `RepaintBoundary`, plein au repos) : c'est le second
+/// contrôleur du cadre pendant la génération (pdr-0088 F9, T34).
 class _GenTag extends StatelessWidget {
   const _GenTag({super.key, required this.label, required this.theme});
 
@@ -290,11 +292,13 @@ class _GenTag extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ExcludeSemantics(
-              child: Transform.rotate(
-                angle: math.pi / 4,
-                child: SizedBox.square(
-                  dimension: DsGenFrame.diamond,
-                  child: ColoredBox(color: theme.accent),
+              child: DsBlink(
+                child: Transform.rotate(
+                  angle: math.pi / 4,
+                  child: SizedBox.square(
+                    dimension: DsGenFrame.diamond,
+                    child: ColoredBox(color: theme.accent),
+                  ),
                 ),
               ),
             ),

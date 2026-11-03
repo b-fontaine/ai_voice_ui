@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ds_beacon.dart' show BeaconPainter;
 import 'ds_caps.dart';
 import 'scene_motion.dart';
 import 'scene_radius.dart';
@@ -171,7 +172,9 @@ class DsStatusChip extends StatelessWidget {
 /// s'estompant (`gc-beacon`), période [SceneMotion.beacon].
 ///
 /// Isolé dans son `RepaintBoundary` : son battement ne repeint pas la cellule
-/// voisine. Immobile quand les animations sont coupées.
+/// voisine. Immobile quand les animations sont coupées. Le peintre est celui de
+/// `DsBeacon` ; le point reste ici un `AnimatedBuilder` (le contrôle U-05
+/// reconnaît le battement d'une puce à son `AnimatedWidget`).
 class _BeaconDot extends StatefulWidget {
   const _BeaconDot({required this.color});
 
@@ -194,7 +197,7 @@ class _BeaconDotState extends State<_BeaconDot>
     SceneMotionScope.loop(context, _controller, SceneMotion.beacon);
     // Animations coupées en plein battement : le point seul, sans halo figé.
     if (SceneMotionScope.of(context).disabled) {
-      _controller.value = _BeaconPainter._expandEnd;
+      _controller.value = BeaconPainter.expandEnd;
     }
   }
 
@@ -210,46 +213,12 @@ class _BeaconDotState extends State<_BeaconDot>
       animation: _controller,
       builder: (BuildContext context, Widget? _) => CustomPaint(
         size: const Size.square(DsStatusChip.dotSize),
-        painter: _BeaconPainter(color: widget.color, phase: _controller.value),
+        painter: BeaconPainter(
+          color: widget.color,
+          phase: _controller,
+          drawDot: true,
+        ),
       ),
     ),
   );
-}
-
-class _BeaconPainter extends CustomPainter {
-  const _BeaconPainter({required this.color, required this.phase});
-
-  /// Étendue maximale du halo, en pixels.
-  static const double _spread = 7;
-
-  /// Part de la période où le halo s'étend avant de disparaître.
-  static const double _expandEnd = 0.7;
-
-  final Color color;
-  final double phase;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Offset center = size.center(Offset.zero);
-    final double radius = size.width / 2;
-    if (phase < _expandEnd) {
-      final double t = phase / _expandEnd;
-      final double spread = _spread * t;
-      if (spread >= 0.5) {
-        canvas.drawCircle(
-          center,
-          radius + spread / 2,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = spread
-            ..color = color.withValues(alpha: color.a * (1 - t)),
-        );
-      }
-    }
-    canvas.drawCircle(center, radius, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_BeaconPainter old) =>
-      old.color != color || old.phase != phase;
 }

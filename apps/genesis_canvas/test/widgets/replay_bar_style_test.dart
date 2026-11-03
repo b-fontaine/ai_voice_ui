@@ -232,11 +232,29 @@ void main() {
     );
   });
 
-  barTest('aucune boucle : rien ne tourne hors rejeu, ni sous '
-      'disableAnimations', (tester) async {
+  // pdr-0088 F9, T34 : la seule boucle de la barre est le clignotement du point
+  // « Direct » (`gc-blink`), tant que le direct est affiché ; elle s'arrête en
+  // rejeu et sous animations coupées.
+  barTest('sous disableAnimations : aucune boucle, pas même le point '
+      '« Direct »', (tester) async {
     await _pump(tester, motionDisabled: true);
     expect(tester.hasRunningAnimations, isFalse);
     expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  barTest('seule boucle : le point « Direct » en direct ; rien en rejeu', (
+    tester,
+  ) async {
+    await _pump(tester);
+    expect(tester.binding.transientCallbackCount, 1);
+    await _press(tester, 'replay-play');
+    expect(find.byType(DsBlink), findsNothing);
+    await tester.pump(const Duration(seconds: 1)); // fin de l'encre du bouton
+    expect(
+      tester.binding.transientCallbackCount,
+      0,
+      reason: 'le rejeu ne bat pas : le direct n\'est plus affiché',
+    );
   });
 
   barTest('le rectangle de la barre est celui de 018', (tester) async {

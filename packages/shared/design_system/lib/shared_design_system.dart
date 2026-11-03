@@ -1,6 +1,8 @@
 /// API publique de shared_design_system : thème de scène et briques.
 library;
 
+export 'src/ds_beacon.dart' show DsBeacon;
+export 'src/ds_blink.dart' show DsBlink;
 export 'src/ds_caps.dart' show DsCaps;
 export 'src/ds_gauge.dart' show DsGauge, DsGaugeKeys;
 export 'src/ds_gen_frame.dart' show DsGenFrame;

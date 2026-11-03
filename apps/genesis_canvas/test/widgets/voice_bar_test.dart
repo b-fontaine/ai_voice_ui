@@ -10,9 +10,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:genesis_canvas/widgets/top_bar/voice_wave.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotionScope, SceneTheme;
+    show DsBlink, SceneMotionScope, SceneTheme;
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
+
+import '../support/motion_probe.dart';
 
 /// Barre vocale (T31) : anneaux de l'orbe, onde et transcription « VOUS » /
 /// « IA » à curseur. Le mouvement n'existe que quand l'IA parle (A-06) ; la
@@ -285,8 +287,9 @@ void main() {
 
     void testBar(
       String description,
-      Future<void> Function(WidgetTester tester) body,
-    ) => testWidgets(description, (tester) async {
+      Future<void> Function(WidgetTester tester) body, {
+      bool motionDisabled = false,
+    }) => testWidgets(description, (tester) async {
       events = StreamController<SessionEvent>.broadcast();
       voiceHarness = VoiceHarness();
       voice = VoiceSessionBloc(voiceHarness.session);
@@ -317,9 +320,15 @@ void main() {
                 fontFamily: realFontFamily,
                 fontFamilyFallback: realFontFallback,
               ),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: TopBar(orbLevel: level),
+              child: SceneMotionScope(
+                disabled: motionDisabled,
+                child: RepaintBoundary(
+                  key: const Key('bar-outer'),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: TopBar(orbLevel: level),
+                  ),
+                ),
               ),
             ),
           ),
@@ -417,6 +426,41 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byKey(const Key('transcript-ai-caret')), findsNothing);
+    });
+
+    // pdr-0088 F9, T34 : le curseur clignote (`gc-blink` .9 s) tant que la
+    // réplique s'écrit et 1,2 s après, dans son propre RepaintBoundary.
+    testBar('le curseur clignote en .9 s, dans son RepaintBoundary, sans '
+        'redémarrer quand la réplique s\'allonge', (tester) async {
+      await expectBlinkContract(
+        tester,
+        key: const Key('transcript-ai-caret'),
+        period: const Duration(milliseconds: 900),
+        mount: () => say(tester, TranscriptRole.ai, 'Le tableau'),
+        rebuild: () => say(tester, TranscriptRole.ai, ' est prêt'),
+        outer: find.byKey(const Key('bar-outer')),
+      );
+    });
+
+    testBar('animations coupées : le curseur reste plein et ne tourne pas', (
+      tester,
+    ) async {
+      await say(tester, TranscriptRole.ai, 'Le tableau');
+      const caret = Key('transcript-ai-caret');
+      expect(find.byKey(caret), findsOneWidget);
+      expect(blinkOpacity(tester, caret), 1);
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(blinkOpacity(tester, caret), 1);
+      expect(tester.binding.transientCallbackCount, 0);
+    }, motionDisabled: true);
+
+    testBar('le curseur s\'arrête avec la réplique : plus de boucle 1,2 s '
+        'après', (tester) async {
+      await say(tester, TranscriptRole.ai, 'Le tableau');
+      expect(find.byType(DsBlink), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1300));
+      expect(find.byKey(const Key('transcript-ai-caret')), findsNothing);
+      expect(find.byType(DsBlink), findsNothing);
     });
 
     testBar('l\'onde est dans la barre, sous la transcription, et la barre '

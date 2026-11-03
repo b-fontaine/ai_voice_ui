@@ -124,7 +124,9 @@ void main() {
         reason: key,
       );
     }
-    expect(tester.binding.transientCallbackCount, 0);
+    // Tracé fini : seule boucle restante, l'anneau de tête (`gc-ring`,
+    // pdr-0088 F9, T34).
+    expect(tester.binding.transientCallbackCount, 1);
   });
 
   testWidgets('animations coupées : état final aussitôt, aucun Ticker', (
@@ -181,6 +183,7 @@ void main() {
     expect(find.text('Autre titre'), findsOneWidget);
     expect(_visible(tester), 1);
     expect(_opacity(tester, _head), 1);
-    expect(tester.binding.transientCallbackCount, 0);
+    // Rien ne rejoue ; l'anneau de tête (T34) est la seule boucle.
+    expect(tester.binding.transientCallbackCount, 1);
   });
 }
