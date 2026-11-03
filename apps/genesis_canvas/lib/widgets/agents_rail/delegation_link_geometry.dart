@@ -8,7 +8,8 @@ import 'package:shared_design_system/shared_design_system.dart'
 /// l'orchestrateur et celle d'un agent, en coordonnées de la zone de peinture.
 ///
 /// Le trait part au-dessus de la pastille de l'orchestrateur, monte dans la
-/// bande libre au-dessus des tuiles ((96 - 2 × 24 × 1,3) / 2 = 16,8 px), file à
+/// bande libre au-dessus des tuiles ((96 - hauteur de la tuile) / 2, plus de
+/// 16 px), file à
 /// l'horizontale au-dessus des tuiles intermédiaires puis redescend au-dessus
 /// de la pastille de l'agent. Aucune partie du trait ne recouvre un libellé.
 ///
@@ -22,12 +23,18 @@ final class DelegationLinkGeometry {
   /// Épaisseur du trait (élément graphique lisible, >= 3 px).
   static const double strokeWidth = 3;
 
-  /// Diamètre de la pastille d'état d'une tuile.
-  static const double dotSize = 14;
+  /// Diamètre du point d'état d'une tuile (`gc-agent`).
+  static const double dotSize = 8;
 
-  /// Décalage horizontal depuis le bord gauche d'une tuile : centre de sa
-  /// pastille.
-  static const double inset = dotSize / 2;
+  /// Épaisseur de la bordure d'une tuile.
+  static const double tileBorder = 1;
+
+  /// Remplissage horizontal d'une tuile (bordure non comprise).
+  static const double tilePaddingX = 14;
+
+  /// Décalage horizontal depuis le bord gauche d'une tuile : centre de son
+  /// point (bordure et remplissage compris).
+  static const double inset = tileBorder + tilePaddingX + dotSize / 2;
 
   /// Écart entre le pied du trait et le haut de la tuile.
   static const double clearance = 2;
