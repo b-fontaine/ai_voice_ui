@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T21
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas/lib/src/catalog/trend_chart.dart, trend_chart_painter.dart (+ fonctions pures de série), tests, histoire Widgetbook
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
