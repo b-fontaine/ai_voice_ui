@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot E (R6, R7)
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system (tokens/scene.tokens.json, générés, scene_theme, scene_shadow, scene_motion), apps/genesis_canvas/lib/widgets, packages/features/canvas/lib/src/catalog, no_hardcoded_style_test, tokens_parity_test
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
