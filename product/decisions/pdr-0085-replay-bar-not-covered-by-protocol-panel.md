@@ -43,7 +43,7 @@ Q-92 (a) : le panneau du protocole déplié (x 1116..1896, y 452..1072) recouvre
 - Replier le panneau avant de rejouer : dépend d'un geste du présentateur en direct.
 
 ## Conséquences
-- Fonctionnalité **018** inscrite au [backlog](../roadmap/backlog.md) et à `specs/progress.md`.
+- Fonctionnalité **018** (livrée le 2026-11-03) inscrite au [backlog](../roadmap/backlog.md) et à `specs/progress.md`.
 - Preuves attendues : test d'acceptation par commande, panneau déplié et replié ; capture `app-smoke` 1920×1080 ; `gate --full` vert.
 
 ## Réexaminer si
@@ -53,5 +53,6 @@ Q-92 (a) : le panneau du protocole déplié (x 1116..1896, y 452..1072) recouvre
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-11-03 | Acceptée. Proposition de l'assistant : « Je te conseille de faire corriger Q-92 (a) par la boucle maintenant plutôt que d'attendre la répétition : ce bug peut bloquer l'acte 4 sur scène. Veux-tu que je la lui confie ? ». Réponse du porteur : « oui, confie-le à la boucle » (conversation Claude Code, 2026-11-03). | Benoît FONTAINE (porteur) |
+| 2026-11-03 | Livrée par 018 (`gate --full` vert, 67 contrôles ; capture 1920×1080 conforme). Mise en page retenue : [pdr-0086](pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided.md). | Boucle (clôture de 018) |
 
 Pas d'archive brute.

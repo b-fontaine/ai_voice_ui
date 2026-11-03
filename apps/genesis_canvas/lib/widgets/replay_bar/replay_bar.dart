@@ -21,9 +21,10 @@ import 'package:shared_design_system/shared_design_system.dart'
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
 ///
-/// Marges et écarts sont serrés pour que le bouton Lecture reste à gauche du
-/// panneau du protocole déplié (qui recouvre la droite de la zone), même avec
-/// l'étiquette « REJEU » en mono 24 px interlettré.
+/// Le panneau du protocole déplié se pose au-dessus de la rangée du bas
+/// (pdr-0086) : il ne recouvre pas cette zone. Marges et écarts restent serrés
+/// pour que l'étiquette « REJEU » en mono 24 px interlettré tienne sur la
+/// rangée.
 ///
 /// - rangée 1 : libellé, Lecture/Pause (un seul bouton), Recommencer, curseur
 ///   de position, « Direct » ;

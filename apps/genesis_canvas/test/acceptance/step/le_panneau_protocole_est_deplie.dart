@@ -1,6 +1,6 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/keys.dart';
 import '../support/session_harness.dart';
 
 /// Usage: le panneau protocole est déplié
@@ -11,10 +11,7 @@ import '../support/session_harness.dart';
 Future<void> lePanneauProtocoleEstDeplie(WidgetTester tester) async {
   await SessionHarness.waitFor(
     tester,
-    find.byWidgetPredicate((widget) {
-      final key = widget.key;
-      return key is ValueKey<String> && key.value.startsWith('protocol-entry-');
-    }),
+    AcceptanceKeys.protocolEntries(),
     'déplié, le panneau doit afficher ses entrées (protocol-entry-<n>)',
   );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 /// Clés de widgets de l'écran de l'acte 1 (spec 007), **source unique** des
 /// scénarios d'acceptation S-01 et A1 à A5. T16 les reprend dans les widgets
@@ -48,6 +49,12 @@ abstract final class AcceptanceKeys {
   /// Entrée numéro [n] (depuis 0) du panneau ; absente quand le panneau est
   /// replié ou vide.
   static Key protocolEntry(int n) => Key('protocol-entry-$n');
+
+  /// Toutes les entrées montrées par le panneau (clés `protocol-entry-<n>`).
+  static Finder protocolEntries() => find.byWidgetPredicate((widget) {
+    final key = widget.key;
+    return key is ValueKey<String> && key.value.startsWith('protocol-entry-');
+  });
 
   /// Entrée en cours (mise en évidence) du panneau : exactement une quand le
   /// panneau est déplié et non vide. Elle affiche l'opération et la surface.

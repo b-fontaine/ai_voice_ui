@@ -56,6 +56,7 @@ class GenesisConfig {
     this.replayJournalMaxEntries = defaultReplayJournalMaxEntries,
     this.replayDefaultSpeed = defaultReplaySpeed,
     this.replayCaptureAt,
+    this.protocolExpandedAtStart = false,
     // Un paramètre nommé ne peut pas être un formel privé.
     // ignore: prefer_initializing_formals
   }) : _backendUrl = backendUrl,
@@ -141,6 +142,7 @@ class GenesisConfig {
         _readReplayJournalMax(environment) ?? defaultReplayJournalMaxEntries,
     replayDefaultSpeed: _readReplaySpeed(environment) ?? defaultReplaySpeed,
     replayCaptureAt: _readReplayCaptureAt(environment),
+    protocolExpandedAtStart: _readProtocolExpanded(environment),
   );
 
   static const String _backendUrlVariable = 'GENESIS_BACKEND_URL';
@@ -290,6 +292,12 @@ class GenesisConfig {
   /// 0 à 1), où la capture est prise en mode scénario ; `null` : capture de la
   /// fin du scénario, sans entrer en rejeu.
   final double? replayCaptureAt;
+
+  /// Démarre avec le panneau du protocole déplié (`GENESIS_PROTOCOL_EXPANDED`,
+  /// `1`/`true` ou `0`/`false`, sans casse, espaces ignorés ; absente ou vide :
+  /// faux ; autre valeur : erreur de configuration) : sert à la capture de
+  /// vérification (spec 018).
+  final bool protocolExpandedAtStart;
 
   /// Silence au-delà duquel l'orbe retombe au repos.
   final Duration orbSilenceTimeout;
@@ -484,6 +492,7 @@ class GenesisConfig {
   static const String _replayJournalMaxVariable = 'GENESIS_REPLAY_JOURNAL_MAX';
   static const String _replaySpeedVariable = 'GENESIS_REPLAY_SPEED';
   static const String _replayCaptureAtVariable = 'GENESIS_REPLAY_AT';
+  static const String _protocolExpandedVariable = 'GENESIS_PROTOCOL_EXPANDED';
   static final RegExp _positiveIntegerPattern = RegExp(r'^\d{1,6}$');
   static final RegExp _decimalPattern = RegExp(r'^\d(\.\d{1,3})?$');
 
@@ -542,6 +551,18 @@ class GenesisConfig {
       );
     }
     return fraction;
+  }
+
+  static bool _readProtocolExpanded(Map<String, String> environment) {
+    final raw = _read(environment, _protocolExpandedVariable)?.toLowerCase();
+    return switch (raw) {
+      null || '0' || 'false' => false,
+      '1' || 'true' => true,
+      _ => throw const GenesisConfigException(
+        'La variable $_protocolExpandedVariable est invalide : l\'une des '
+        'valeurs 1, true, 0 ou false est attendue.',
+      ),
+    };
   }
 
   static String? _readCatalogId(Map<String, String> environment) {

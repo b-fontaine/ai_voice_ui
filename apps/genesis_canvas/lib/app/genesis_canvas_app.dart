@@ -138,6 +138,7 @@ class _GenesisCanvasAppState extends State<GenesisCanvasApp> {
             replayJournalMaxEntries: config.replayJournalMaxEntries,
             replayDefaultSpeed: config.replayDefaultSpeed,
             replayCaptureAt: config.replayCaptureAt,
+            protocolExpandedAtStart: config.protocolExpandedAtStart,
           ),
         ),
       ),

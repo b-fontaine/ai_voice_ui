@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genesis_canvas/app/config/genesis_config.dart';
+import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
@@ -197,6 +200,14 @@ void main() {
     expect(panel.overlaps(board), isTrue, reason: 'recouvre le canevas');
     expect(panel.right, lessThanOrEqualTo(1920));
     expect(panel.top, greaterThanOrEqualTo(0));
+    // Le panneau déplié se pose au-dessus de la rangée du bas (pdr-0086), dans
+    // la hauteur du canevas, sans toucher le rail.
+    final bottomRow = rectOf(tester, 'bottom-row');
+    final rail = tester.getRect(find.byType(AgentsRail));
+    expect(panel.bottom, lessThanOrEqualTo(bottomRow.top));
+    expect(panel.top, greaterThanOrEqualTo(board.top));
+    expect(panel.bottom, lessThanOrEqualTo(board.bottom));
+    expect(panel.overlaps(rail), isFalse, reason: 'ne recouvre pas le rail');
     // Le canevas et ses cellules n'ont pas bougé.
     expect(rectOf(tester, 'canvas-board'), board);
     for (final entry in cells.entries) {
@@ -210,7 +221,83 @@ void main() {
     await tester.pump();
     await tester.pump();
     expectCleanScreen(tester, rig);
+    final folded = rectOf(tester, 'protocol-panel');
+    expect(folded.size, const Size(460, 140));
+    expect(folded.bottomRight, rectOf(tester, 'bottom-row').bottomRight);
+    expect(folded.top, bottomRow.top);
+  });
+
+  testWidgets('GENESIS_PROTOCOL_EXPANDED : la page démarre avec le panneau '
+      'déplié, un seul basculement', (tester) async {
+    final rig = PageRig(
+      tester,
+      config: const GenesisConfig(protocolExpandedAtStart: true),
+    );
+    await rig.mount(tester, themed: true);
+    await rig.start(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Replier'), findsOneWidget);
+    expect(rectOf(tester, 'protocol-panel').size, const Size(780, 620));
+    // Les reconstructions suivantes ne rebasculent pas le panneau.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Replier'), findsOneWidget);
+    expect(rectOf(tester, 'protocol-panel').size, const Size(780, 620));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sans GENESIS_PROTOCOL_EXPANDED : le panneau reste replié', (
+    tester,
+  ) async {
+    final rig = PageRig(tester);
+    await rig.mount(tester, themed: true);
+    await rig.start(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Déplier'), findsOneWidget);
+    final panel = rectOf(tester, 'protocol-panel');
+    final bottomRow = rectOf(tester, 'bottom-row');
+    expect(panel.size, const Size(460, 140));
+    expect(panel.bottomRight, bottomRow.bottomRight);
+    expect(panel.top, bottomRow.top);
+  });
+
+  testWidgets('bouton du panneau : le focus et la sémantique suivent le '
+      'déplacement du panneau', (tester) async {
+    final rig = PageRig(tester);
+    await rig.mount(tester, themed: true);
+    await rig.start(tester);
+    final semantics = tester.ensureSemantics();
+    final toggle = find.byKey(const Key('protocol-toggle'));
+    final FocusNode button = Focus.of(tester.element(find.text('Déplier')));
+    button.requestFocus();
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus, same(button));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.pump();
+    expect(rectOf(tester, 'protocol-panel').height, greaterThan(140));
+    expect(find.text('Replier'), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus, same(button));
+    expect(tester.getSemantics(toggle).label, contains('Replier'));
+    final Rect window = Offset.zero & const Size(1920, 1080);
+    final Rect buttonRect = tester.getRect(toggle);
+    expect(
+      window.expandToInclude(buttonRect),
+      window,
+      reason: 'le bouton « Replier » reste dans la fenêtre',
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.pump();
     expect(rectOf(tester, 'protocol-panel').height, 140);
+    expect(find.text('Déplier'), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus, same(button));
+    semantics.dispose();
   });
 
   testWidgets('écran vide au départ : zones présentes, aucun débordement', (

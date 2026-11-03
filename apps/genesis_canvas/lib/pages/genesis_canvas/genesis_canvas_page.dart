@@ -30,6 +30,7 @@ import 'package:feature_catalog_shelf/feature_catalog_shelf.dart'
     show CatalogShelfBloc, CatalogShelfCleared, CatalogShelfSourceSubscribed;
 import 'package:feature_protocol_feed/feature_protocol_feed.dart'
     show
+        PanelToggled,
         ProtocolFeedBloc,
         ProtocolFeedCleared,
         ProtocolFeedEntriesCleared,
@@ -390,6 +391,11 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
+    // Capture de vérification (spec 018) : `PanelToggled` est une bascule ;
+    // on garantit le panneau déplié, un seul basculement.
+    if (_settings.protocolExpandedAtStart && !_protocolBloc.state.expanded) {
+      _protocolBloc.add(const PanelToggled());
+    }
     if (replay != null) {
       // Le routeur ne ferme pas sa sortie à la fin du flux : la fin du
       // scénario déclenche la capture (comportement de 000).
@@ -807,6 +813,61 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 
+  Widget _canvasZone() => Expanded(
+    // Réglage d'animation du canevas : durée nulle en scénario, en capture et
+    // sous « réduire les animations » ; vitesse du rejeu en cours sinon. Pas
+    // de `TickerMode` ici : il figerait l'apparition à l'opacité 0.
+    child: _motionScope(
+      child: BlocSelector<ReplayBloc, ReplayState, bool>(
+        selector: (state) => state is ReplayActive,
+        // Rejeu (scénario ou acte 4) : aucune requête ne part.
+        builder: (context, replaying) => CanvasActionScope(
+          enabled: !_scenarioMode && !replaying,
+          child: CanvasBoard(
+            key: const Key('canvas-board'),
+            controller: _controller,
+            highlight: _highlight,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _bottomRow() => SizedBox(
+    key: const Key('bottom-row'),
+    height: _bottomRowHeight,
+    child: Row(
+      children: <Widget>[
+        const Expanded(child: CatalogShelf()),
+        const SizedBox(width: 16),
+        const SizedBox(width: _replayWidth, child: ReplayBar()),
+        const SizedBox(width: 16),
+        // Emplacement du panneau replié : le panneau lui-même est posé
+        // par-dessus (voir `_protocolPanelSlot`).
+        SizedBox(width: ProtocolPanel.collapsedSize.width),
+      ],
+    ),
+  );
+
+  // Replié, le panneau occupe son emplacement dans la rangée du bas ; déplié,
+  // il grandit vers le haut, au-dessus de la rangée (pdr-0086), et recouvre le
+  // canevas à droite sans le redimensionner. Le `Padding` est toujours présent :
+  // seule sa valeur change, l'élément du bouton et son focus restent.
+  Widget _protocolPanelSlot() => Positioned.fill(
+    child: Align(
+      alignment: Alignment.bottomRight,
+      child: BlocSelector<ProtocolFeedBloc, ProtocolFeedState, bool>(
+        selector: (state) => state.expanded,
+        builder: (context, expanded) => Padding(
+          padding: EdgeInsets.only(
+            bottom: expanded ? _bottomRowHeight + _gap : 0,
+          ),
+          child: const ProtocolPanel(),
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
     providers: [
@@ -906,95 +967,52 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     horizontal: _marginX,
                     vertical: _marginY,
                   ),
-                  child: Stack(
+                  child: Column(
                     children: <Widget>[
-                      Column(
-                        children: <Widget>[
-                          // Même réglage d'animation que le canevas : l'orbe
-                          // s'immobilise en scénario, en capture et sous « réduire
-                          // les animations ». « Démarrer » est inactif en mode
-                          // scénario et pendant un rejeu ; la session voix en
-                          // cours n'est pas touchée.
-                          _motionScope(
-                            child: BlocSelector<ReplayBloc, ReplayState, bool>(
-                              selector: (state) => state is ReplayActive,
-                              builder: (context, replaying) => TopBar(
-                                orbLevel: _orb.level,
-                                speakingThreshold:
-                                    _settings.orbSpeakingThreshold,
-                                startEnabled: !_scenarioMode && !replaying,
-                                stage: StageBar(
-                                  onResetPressed: _resetStage,
-                                  onSilencePressed: _silenceRemote,
-                                  onMicPressed: _toggleMic,
-                                ),
-                              ),
+                      // Même réglage d'animation que le canevas : l'orbe
+                      // s'immobilise en scénario, en capture et sous « réduire
+                      // les animations ». « Démarrer » est inactif en mode
+                      // scénario et pendant un rejeu ; la session voix en
+                      // cours n'est pas touchée.
+                      _motionScope(
+                        child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                          selector: (state) => state is ReplayActive,
+                          builder: (context, replaying) => TopBar(
+                            orbLevel: _orb.level,
+                            speakingThreshold: _settings.orbSpeakingThreshold,
+                            startEnabled: !_scenarioMode && !replaying,
+                            stage: StageBar(
+                              onResetPressed: _resetStage,
+                              onSilencePressed: _silenceRemote,
+                              onMicPressed: _toggleMic,
                             ),
                           ),
-                          const SizedBox(height: _gap),
-                          // Même réglage d'animation que le canevas : la liaison
-                          // de délégation du rail reste fixe quand les
-                          // animations sont coupées.
-                          _motionScope(
-                            child: const SizedBox(
-                              height: _railHeight,
-                              child: AgentsRail(),
-                            ),
-                          ),
-                          const SizedBox(height: _gap),
-                          Expanded(
-                            // Réglage d'animation du canevas : durée nulle en
-                            // scénario, en capture et sous « réduire les
-                            // animations » ; vitesse du rejeu en cours sinon. Pas de
-                            // `TickerMode` ici : il figerait l'apparition à
-                            // l'opacité 0.
-                            child: _motionScope(
-                              child:
-                                  BlocSelector<ReplayBloc, ReplayState, bool>(
-                                    selector: (state) => state is ReplayActive,
-                                    // Rejeu (scénario ou acte 4) : aucune requête ne
-                                    // part.
-                                    builder: (context, replaying) =>
-                                        CanvasActionScope(
-                                          enabled: !_scenarioMode && !replaying,
-                                          child: CanvasBoard(
-                                            key: const Key('canvas-board'),
-                                            controller: _controller,
-                                            highlight: _highlight,
-                                          ),
-                                        ),
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: _gap),
-                          SizedBox(
-                            height: _bottomRowHeight,
-                            child: Row(
+                        ),
+                      ),
+                      const SizedBox(height: _gap),
+                      // Même réglage d'animation que le canevas : la liaison
+                      // de délégation du rail reste fixe quand les
+                      // animations sont coupées.
+                      _motionScope(
+                        child: const SizedBox(
+                          height: _railHeight,
+                          child: AgentsRail(),
+                        ),
+                      ),
+                      const SizedBox(height: _gap),
+                      Expanded(
+                        child: Stack(
+                          children: <Widget>[
+                            Column(
                               children: <Widget>[
-                                const Expanded(child: CatalogShelf()),
-                                const SizedBox(width: 16),
-                                const SizedBox(
-                                  width: _replayWidth,
-                                  child: ReplayBar(),
-                                ),
-                                const SizedBox(width: 16),
-                                // Emplacement du panneau replié : le panneau lui-même
-                                // est posé par-dessus (voir ci-dessous).
-                                SizedBox(
-                                  width: ProtocolPanel.collapsedSize.width,
-                                ),
+                                _canvasZone(),
+                                const SizedBox(height: _gap),
+                                _bottomRow(),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                      // Replié, le panneau occupe son emplacement ; déplié, il
-                      // grandit vers le haut et recouvre le canevas à droite sans le
-                      // redimensionner.
-                      const Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: ProtocolPanel(),
+                            _protocolPanelSlot(),
+                          ],
+                        ),
                       ),
                     ],
                   ),

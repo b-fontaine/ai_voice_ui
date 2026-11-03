@@ -83,5 +83,6 @@ Part de l'assistant : décisions de détail d'interface sur délégation permane
 | 2026-11-02 | Précision U4 à l'implémentation de T11 : bordure neutre des boutons en `ink-muted` au lieu de `line-strong` (contraste mesuré 2,30 à 2,44:1 < 3:1, WCAG 1.4.11). | Assistant (délégation du porteur, pdr-0062) |
 | 2026-11-02 | Précision U9 à l'implémentation de T14 : coins HUD au nombre de deux (haut gauche, bas droit), comme `.gc-panel::before` du design system ; la source l'emporte sur les « quatre coins » du plan. | Assistant (délégation du porteur, pdr-0062) |
 | 2026-11-02 | Amendée par la revue du plan de 017 (verdict À AMENDER, P1 à P8) : U1 (cellules jointives, retrait de 4 px, marge de 16 px conservée), U7 (boucles sous `SceneMotionScope.loop`, orbe et squelette compris), U8 (rôles d'orbe, halo radial), U9 (couche sœur, filet de 1 px), U11 (empreintes, repli embarqué), U12 (D-06 recalé). | Assistant (délégation du porteur, pdr-0062) |
+| 2026-11-03 | U15 (d) : la raison du contournement (panneau du protocole qui recouvre la barre de rejeu) disparaît avec [pdr-0086](pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided.md) (018) ; la géométrie de 8 px est conservée. | Assistant (délégation du porteur, pdr-0062) |
 
 Pas d'archive brute.

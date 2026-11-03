@@ -25,6 +25,7 @@ class GenesisCanvasPageSettings {
     required this.replayMaxGap,
     required this.replayDefaultSpeed,
     this.replayCaptureAt,
+    this.protocolExpandedAtStart = false,
   });
 
   /// Temps de montée du lissage de l'orbe.
@@ -87,6 +88,9 @@ class GenesisCanvasPageSettings {
   /// capture.
   final double? replayCaptureAt;
 
+  /// Démarre avec le panneau du protocole déplié (capture de vérification).
+  final bool protocolExpandedAtStart;
+
   @override
   bool operator ==(Object other) =>
       other is GenesisCanvasPageSettings &&
@@ -108,7 +112,8 @@ class GenesisCanvasPageSettings {
       other.replayTick == replayTick &&
       other.replayMaxGap == replayMaxGap &&
       other.replayDefaultSpeed == replayDefaultSpeed &&
-      other.replayCaptureAt == replayCaptureAt;
+      other.replayCaptureAt == replayCaptureAt &&
+      other.protocolExpandedAtStart == protocolExpandedAtStart;
 
   @override
   int get hashCode => Object.hash(
@@ -131,5 +136,6 @@ class GenesisCanvasPageSettings {
     replayMaxGap,
     replayDefaultSpeed,
     replayCaptureAt,
+    protocolExpandedAtStart,
   );
 }
