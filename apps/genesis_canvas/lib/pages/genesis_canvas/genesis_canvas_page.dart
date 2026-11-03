@@ -968,6 +968,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                           ),
                           const SizedBox(height: _gap),
                           SizedBox(
+                            key: const Key('bottom-row'),
                             height: _bottomRowHeight,
                             child: Row(
                               children: <Widget>[

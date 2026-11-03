@@ -163,6 +163,11 @@ class Acte4Harness {
       isTrue,
       reason: 'la commande $key est inactive (onPressed: null)',
     );
+    expect(
+      finder.hitTestable(),
+      findsOneWidget,
+      reason: 'la commande $key est recouverte',
+    );
     await tester.tap(finder);
     await settle(tester);
   }

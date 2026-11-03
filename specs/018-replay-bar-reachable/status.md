@@ -1,6 +1,6 @@
 # 018 — État
 
-- **Étape** : Gherkin
+- **Étape** : TDD
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -13,6 +13,7 @@
 |---|---|---|---|
 | 2026-11-03 | Définir | `spec.md`, `plan.md`, `tasks.md` (T01, T10, T90 à T92). Consultations : `product-lookup` (pdr-0085, Q-92 a, p-ar-replay, frontend-screen), `kb-lookup` (test-bdd-app-running-fixture, test-mock-boundaries-only). Mise en page choisie sous pdr-0062 : le panneau déplié se pose au-dessus de la rangée du bas. | commit `3b6a22b` |
 | 2026-11-03 | Revue du plan | `architect-reviewer` (mode PLAN, Opus) : verdict **À AMENDER** (P1, P2 bloquantes ; P3 à P7 importantes ; P8 mineure) ; toutes intégrées dans `spec.md`, `plan.md` (pose du panneau dans la page, `ProtocolPanel` inchangé, `Key('bottom-row')`, `GENESIS_PROTOCOL_EXPANDED`, fichiers du contournement de 017) et `tasks.md` (T01 durci, T02 nouvelle : pdr-0086, T11 nouvelle) | verdict ci-dessous |
+| 2026-11-03 | Gherkin | **T01 faite** : `Acte4Harness.press` strict (`hitTestable()` avant `tester.tap`) ; `product/functional/features/replay-bar-018.feature` (RB-01 à RB-03, indexé) et sa copie `acte_barre_rejeu.feature` ; sept steps et `replay_bar_harness.dart` ; seule ligne de production : `Key('bottom-row')` sur la rangée du bas. **Rouge attendu, pour la bonne raison** (`flutter test test/acceptance/acte4_rejouer_test.dart test/acceptance/acte_barre_rejeu_test.dart` : 15 verts, 3 rouges) : R-01 « la commande replay-speed-2 est recouverte » (`Found 0 widgets` hitTestable) ; RB-01 « replay-play est recouverte : son rectangle (1084.8, 954.0, 1136.8, 1002.0) recoupe le panneau (1116.0, 452.0, 1896.0, 1072.0) » (passe `hitTestable()` par 3,2 px, échoue sur le rectangle) ; RB-03 « Expected ≤ 932.5, Actual 1072.0 : le panneau recouvre la rangée du bas » ; **RB-02 vert**. Vérifié aussi (RB-03 sans sa première assertion) : 4 entrées montrées, `kpi`, `reset-button`, `mic-button`, `action-block_release` traversent le panneau, le bouton « Replier » est dans la fenêtre. `gate --unit flutter` vert, 372 tests | `.omc/state/loop/gates/20261103-073603-unit-flutter.log` |
 
 ## Revue d'architecte
 **Revue du plan (mode PLAN) : verdict À AMENDER, toutes intégrées.**

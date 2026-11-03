@@ -78,7 +78,7 @@ tasks:
     docs: [pdr-0012-voice-provider-openai, p-ar-voice-interruption, p-ar-backend, p-ar-frontend, p-ar-security, p-ar-agents-protocols, p-ar-app-channel-contract, p-fn-nfr]
     knowledge: [rt-gpt-live-overview, rt-gpt-live-webrtc-session, rt-gpt-live-delegation, rt-gpt-live-sideband, rt-ephemeral-keys, rt-provider-abstraction, rt-graceful-close, proj-avw-risks]
   - task: "Implémenter l'enregistrement du flux A2UI et le rejeu (acte 4)"
-    docs: [p-ar-replay, p-ar-frontend-screen, p-fn-screen, p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-risks-acceptance, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0005-frozen-fictional-dataset]
+    docs: [p-ar-replay, p-ar-frontend-screen, p-fn-screen, p-fn-requirements, p-fn-business-rules, p-fn-feature-voice-screen-generation, p-fn-risks-acceptance, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0085-replay-bar-not-covered-by-protocol-panel, pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided, p-fn-feature-replay-bar-018, pdr-0005-frozen-fictional-dataset]
     knowledge: [genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only]
   - task: "Construire l'écran (6 zones, orbe, rail et liaison animée de délégation, flux protocole, étagère, rejeu)"
     docs: [p-fn-screen, p-fn-feature-chevauchement-liaison-015, p-fn-mockups, p-fn-glossary, p-ar-frontend, p-ar-frontend-screen, p-ar-design-system, pdr-0075-013-design-ergonomics-details-assistant-decided, pdr-0008-single-screen-show-the-making, pdr-0028-linux-demo-machine, pdr-0033-optional-shortcuts-mouse-first]
@@ -122,6 +122,7 @@ requirement_index:
   "S-01..S-09 (scénarios BDD)": p-fn-requirements
   "D-01..D-07 (scénarios BDD de 013, à ne pas confondre avec D1..D8 de la DoD)": p-fn-feature-design-ergonomics-013
   "U-01..U-06 (scénarios BDD de 017)": p-fn-feature-design-system-017
+  "RB-01..RB-03 (scénarios BDD de 018)": p-fn-feature-replay-bar-018
   "M-01, M-02, S-07 bis, C-01..C-05 (scénarios BDD de 014 ; C-01..C-05 à ne pas confondre avec C-01..C-08 de 012)": p-fn-feature-silence-micro-correction-014
   "O-01..O-08, L-01..L-04 (scénarios BDD de 015 ; S-05 complet)": p-fn-feature-chevauchement-liaison-015
   "G-01, G-02, R-01..R-11 (scénarios BDD de 016 ; R-xx distincts des R-01..R-09 de 010)": p-fn-feature-garde-fou-reprise-016
