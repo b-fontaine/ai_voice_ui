@@ -25,6 +25,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 import '../support/contrast.dart';
+import '../support/focus_ring.dart';
 import '../support/paragraphs.dart';
 import '../support/replay_rig.dart';
 
@@ -1055,6 +1056,39 @@ void main() {
       expect(find.byKey(const Key('status-message')), findsOneWidget);
       expect(tester.takeException(), isNull);
       expect(paragraphsBelowMinimum(tester), isEmpty);
+    });
+  });
+
+  group('focus clavier visible (pdr-0084 U4)', () {
+    testWidgets('mic-button, silence-button et reset-button : anneau signal '
+        'de 2 points au focus', (tester) async {
+      await pumpBar(tester);
+      await startVoice(tester);
+
+      for (final String id in <String>[
+        'mic-button',
+        'silence-button',
+        'reset-button',
+        'act-indicator',
+      ]) {
+        final Key child = id == 'act-indicator'
+            ? const Key('act-segment-1')
+            : Key('$id-visual');
+        await expectFocusRing(tester, Key(id), child);
+      }
+    });
+
+    testWidgets('act-indicator désactivé en rejeu : pas de focus, pas '
+        'd\'anneau', (tester) async {
+      await pumpBar(tester);
+      replay.bloc.add(const ReplayPlayPressed());
+      await tester.pump();
+      await tester.pump();
+
+      Focus.of(tester.element(find.byKey(const Key('act-segment-replay'))))
+          .requestFocus();
+      await tester.pump();
+      expect(paintedSide(tester, const Key('act-indicator')), BorderSide.none);
     });
   });
 }

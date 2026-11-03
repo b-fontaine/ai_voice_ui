@@ -16,7 +16,7 @@ import 'package:feature_voice_session/feature_voice_session.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneRadius, SceneTheme, sceneTextStyle;
+    show SceneRadius, SceneTheme, sceneTargetStyle, sceneTextStyle;
 
 import '../top_bar/sm_button.dart';
 
@@ -174,24 +174,15 @@ class StageBar extends StatelessWidget {
   }
 }
 
-/// Style de la cible d'un contrôle de la régie : transparente, d'au moins
-/// [StageBar.controlHeight] points de haut, sans marges (le visuel dessine fond
-/// et bordure). `visualDensity` standard : sans cela, la densité de la
-/// plateforme réduirait la cible.
+/// Style de la cible de l'indicateur d'acte : cible transparente de
+/// [StageBar.controlHeight] points (`sceneTargetStyle`, anneau de focus
+/// `signal`), forme de pilule. Texte seul en rejeu : pas de teinte « inactif ».
 ButtonStyle _targetStyle(SceneTheme theme) {
-  final Color clear = theme.background.withValues(alpha: 0);
-  return TextButton.styleFrom(
-    backgroundColor: clear,
-    disabledBackgroundColor: clear,
-    foregroundColor: theme.textPrimary,
-    // Texte seul en rejeu : pas de teinte « inactif ».
-    disabledForegroundColor: theme.textPrimary,
-    overlayColor: clear,
-    visualDensity: VisualDensity.standard,
-    minimumSize: const Size(StageBar.controlHeight, StageBar.controlHeight),
-    padding: EdgeInsets.zero,
+  return sceneTargetStyle(
+    theme,
     shape: RoundedRectangleBorder(borderRadius: SceneRadius.borderPill),
-  );
+    height: StageBar.controlHeight,
+  ).copyWith(foregroundColor: WidgetStatePropertyAll<Color>(theme.textPrimary));
 }
 
 /// Sélecteur d'actes (`.gc-acts`) : pilule `surface-100` à bordure `line`,

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/replay_bar/replay_bar.dart';
+import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../support/focus_ring.dart';
 import '../support/panel_layers.dart';
 import '../support/replay_rig.dart';
 
@@ -273,4 +275,45 @@ void main() {
       }
     });
   }
+
+  barTest('focus clavier : Lecture et une vitesse ont l\'anneau signal de '
+      '2 points', (tester) async {
+    await _pump(tester, withJournal: true);
+    await expectFocusRing(tester, _play, const Key('replay-play-visual'));
+
+    await _press(tester, _play);
+    await expectFocusRing(
+      tester,
+      _speedKey('1.5'),
+      const Key('replay-speed-1.5-visual'),
+    );
+  });
+
+  barTest('focus clavier : la glissière peint un anneau signal de 2 points '
+      'autour de la poignée', (tester) async {
+    await _pump(tester, withJournal: true);
+    await _press(tester, _play);
+    const Key ring = Key('replay-track-knob-focus');
+    expect(find.byKey(ring), findsNothing);
+    final Rect knob = tester.getRect(
+      find.byKey(const Key('replay-track-knob')),
+    );
+
+    tester.widget<Slider>(find.byKey(_slider)).focusNode!.requestFocus();
+    await tester.pump();
+
+    expect(find.byKey(ring), findsOneWidget);
+    final BoxDecoration decoration =
+        tester.widget<DecoratedBox>(find.byKey(ring)).decoration
+            as BoxDecoration;
+    final Border border = decoration.border! as Border;
+    expect(border.top.color, const SceneTheme.dark().accent);
+    expect(border.top.width, 2);
+    expect(tester.getRect(find.byKey(ring)).center, knob.center);
+    expect(
+      tester.getRect(find.byKey(const Key('replay-track-knob'))),
+      knob,
+      reason: 'la poignée ne bouge pas',
+    );
+  });
 }

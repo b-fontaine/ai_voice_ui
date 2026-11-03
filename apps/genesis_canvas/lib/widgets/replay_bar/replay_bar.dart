@@ -17,7 +17,14 @@ import 'package:feature_replay/feature_replay.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsBlink, DsCaps, SceneRadius, ScenePanel, SceneShadow, SceneTheme;
+    show
+        DsBlink,
+        DsCaps,
+        SceneRadius,
+        ScenePanel,
+        SceneShadow,
+        SceneTheme,
+        sceneTargetStyle;
 
 /// Zone « REJEU » (FR-09, pdr-0066 D4) : deux rangées de 48 px.
 ///
@@ -149,25 +156,15 @@ class ReplayBar extends StatelessWidget {
 }
 
 /// Style d'un bouton dont le fond est porté par son visuel : cible de 48
-/// points, fond et ombre transparents.
+/// points (`sceneTargetStyle`, anneau de focus `signal`), marges [padding].
 ButtonStyle _targetStyle(
   SceneTheme theme, {
   EdgeInsetsGeometry padding = EdgeInsets.zero,
 }) {
-  final Color clear = theme.background.withValues(alpha: 0);
-  return ButtonStyle(
-    backgroundColor: WidgetStatePropertyAll<Color>(clear),
-    overlayColor: WidgetStatePropertyAll<Color>(clear),
-    shadowColor: WidgetStatePropertyAll<Color>(clear),
-    surfaceTintColor: WidgetStatePropertyAll<Color>(clear),
-    minimumSize: const WidgetStatePropertyAll<Size>(
-      Size(ReplayBar.rowHeight, ReplayBar.rowHeight),
-    ),
-    padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(padding),
-    shape: WidgetStatePropertyAll<OutlinedBorder>(
-      RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
-    ),
-  );
+  return sceneTargetStyle(
+    theme,
+    height: ReplayBar.rowHeight,
+  ).copyWith(padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(padding));
 }
 
 /// Bouton icône `gc-btn--sm gc-btn--icon` : visuel de 34 points (rayon `md`,
@@ -364,6 +361,16 @@ class _PositionSlider extends StatefulWidget {
 class _PositionSliderState extends State<_PositionSlider> {
   double? _dragging;
 
+  /// Nœud de focus de la glissière : le visuel y dessine l'anneau de focus.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'replay-slider');
+  bool _focused = false;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
@@ -384,7 +391,7 @@ class _PositionSliderState extends State<_PositionSlider> {
           // Visuel : piste, remplissage et poignée, inset de la poignée.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: _knob / 2),
-            child: _TrackVisual(fraction: fraction),
+            child: _TrackVisual(fraction: fraction, focused: _focused),
           ),
           // Interaction : la glissière fonctionnelle, transparente, dont la
           // piste coïncide avec le visuel.
@@ -410,19 +417,28 @@ class _PositionSliderState extends State<_PositionSlider> {
               disabledInactiveTrackColor: clear,
               disabledThumbColor: clear,
             ),
-            child: Slider(
-              key: const Key('replay-slider'),
-              value: value,
-              max: max,
-              onChanged: snapshot == null
-                  ? null
-                  : (double v) => setState(() => _dragging = v),
-              onChangeEnd: snapshot == null
-                  ? null
-                  : (double v) {
-                      setState(() => _dragging = null);
-                      widget.onSeek(Duration(milliseconds: v.round()));
-                    },
+            // Focus passif : signale seulement que la glissière (nœud
+            // [_focusNode]) a le focus ; il n'en prend jamais lui-même.
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onFocusChange: (bool focused) =>
+                  setState(() => _focused = focused),
+              child: Slider(
+                key: const Key('replay-slider'),
+                focusNode: _focusNode,
+                value: value,
+                max: max,
+                onChanged: snapshot == null
+                    ? null
+                    : (double v) => setState(() => _dragging = v),
+                onChangeEnd: snapshot == null
+                    ? null
+                    : (double v) {
+                        setState(() => _dragging = null);
+                        widget.onSeek(Duration(milliseconds: v.round()));
+                      },
+              ),
             ),
           ),
         ],
@@ -438,12 +454,19 @@ class _PositionSliderState extends State<_PositionSlider> {
 const double _trackHeight = 4;
 const double _knob = 14;
 
+/// Anneau de focus de la poignée : 2 points d'écart, 2 points d'épaisseur.
+const double _focusRingWidth = 2;
+const double _focusRing = _knob + 4 * _focusRingWidth;
+
 /// Piste `gc-track` (4 points, `surface-300`), remplissage `signal` et
 /// poignée ronde `ink` de 14 points à lueur `signal`.
 class _TrackVisual extends StatelessWidget {
-  const _TrackVisual({required this.fraction});
+  const _TrackVisual({required this.fraction, required this.focused});
 
   final double fraction;
+
+  /// Focus clavier sur la glissière : un anneau `signal` entoure la poignée.
+  final bool focused;
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +516,22 @@ class _TrackVisual extends StatelessWidget {
                   child: const SizedBox.square(dimension: _knob),
                 ),
               ),
+              if (focused)
+                Positioned(
+                  left: box.maxWidth * fraction - _focusRing / 2,
+                  top: (_trackHeight - _focusRing) / 2,
+                  child: DecoratedBox(
+                    key: const Key('replay-track-knob-focus'),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: theme.accent,
+                        width: _focusRingWidth,
+                      ),
+                    ),
+                    child: const SizedBox.square(dimension: _focusRing),
+                  ),
+                ),
             ],
           ),
         );

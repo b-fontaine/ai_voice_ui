@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show DsBlink, SceneRadius, SceneTheme, sceneTextStyle;
+    show DsBlink, SceneRadius, SceneTheme, sceneTargetStyle, sceneTextStyle;
 
 /// Bouton `gc-btn--sm` du design system dans une cible de pointage de 48
 /// points (NFR-05, D-05).
@@ -61,7 +61,6 @@ class SmButton extends StatelessWidget {
       context,
       theme.button,
     ).copyWith(color: enabled ? theme.textPrimary : theme.neutralForeground);
-    final Color clear = theme.background.withValues(alpha: 0);
     return Semantics(
       button: true,
       enabled: enabled,
@@ -70,18 +69,14 @@ class SmButton extends StatelessWidget {
       child: FilledButton(
         key: buttonKey,
         onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: clear,
-          disabledBackgroundColor: clear,
-          foregroundColor: theme.textPrimary,
-          disabledForegroundColor: theme.neutralForeground,
-          overlayColor: clear,
-          shadowColor: clear,
-          surfaceTintColor: clear,
-          visualDensity: VisualDensity.standard,
-          minimumSize: const Size(targetHeight, targetHeight),
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
+        style: sceneTargetStyle(theme, height: targetHeight).copyWith(
+          foregroundColor: WidgetStateProperty.resolveWith((
+            Set<WidgetState> states,
+          ) {
+            return states.contains(WidgetState.disabled)
+                ? theme.neutralForeground
+                : theme.textPrimary;
+          }),
         ),
         child: SizedBox(
           key: visualKey,

@@ -68,7 +68,6 @@ const String _toneDanger = 'danger';
 const double _visualHeight = 44;
 const double _targetHeight = 48;
 const double _visualPadding = 20;
-const double _focusBorder = 2;
 
 /// Espace entre l'étiquette et les boutons (`.gc-decision`, gap 14).
 const double _gap = 14;
@@ -81,23 +80,10 @@ Color _foreground(SceneTheme theme, String tone, {required bool disabled}) {
 }
 
 /// Style du bouton interactif : seule la cible de 48 pt et l'anneau de focus
-/// `signal` (pdr-0084 U4) ; l'apparence est celle du visuel [_ButtonVisual].
-ButtonStyle _style(SceneTheme theme) {
-  final Color clear = theme.surface300.withValues(alpha: 0);
-  return OutlinedButton.styleFrom(
-    minimumSize: const Size(0, _targetHeight),
-    padding: EdgeInsets.zero,
-    backgroundColor: clear,
-    disabledBackgroundColor: clear,
-    shape: const RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
-  ).copyWith(
-    side: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
-      return states.contains(WidgetState.focused)
-          ? BorderSide(color: theme.accent, width: _focusBorder)
-          : BorderSide.none;
-    }),
-  );
-}
+/// `signal` (pdr-0084 U4, `sceneTargetStyle`) ; l'apparence est celle du
+/// visuel [_ButtonVisual].
+ButtonStyle _style(SceneTheme theme) =>
+    sceneTargetStyle(theme, height: _targetHeight);
 
 class _ActionBarView extends StatelessWidget {
   const _ActionBarView({required this.bar, required this.surfaceId});
