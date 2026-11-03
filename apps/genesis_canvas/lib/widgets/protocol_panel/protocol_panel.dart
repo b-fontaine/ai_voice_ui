@@ -6,11 +6,11 @@ import 'package:feature_protocol_feed/feature_protocol_feed.dart'
         ProtocolFeedState,
         ProtocolOperation;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
     show
         DsPanelHead,
+        DsShift,
         SceneMotion,
         SceneOneShot,
         SceneRadius,
@@ -400,80 +400,13 @@ class _EntryTileState extends State<_EntryTile>
         // sous un `LayoutBuilder`, qu'un `AnimatedBuilder` (ou une
         // `SlideTransition`, qui est un `AnimatedWidget`) ferait remettre en
         // page à chaque image.
-        child: _Shifted(progress: _eased, distance: slide, child: tile),
+        child: DsShift(
+          progress: _eased,
+          offset: const Offset(-slide, 0),
+          child: tile,
+        ),
       ),
     );
-  }
-}
-
-/// Décale son enfant vers la gauche de `distance × (1 - progress)` points, à la
-/// peinture seulement : aucune reconstruction ni mise en page quand
-/// [progress] change (`translateX(-12px)` de `gc-row`).
-class _Shifted extends SingleChildRenderObjectWidget {
-  const _Shifted({
-    required this.progress,
-    required this.distance,
-    required super.child,
-  });
-
-  final Animation<double> progress;
-  final double distance;
-
-  @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderShifted(progress, distance);
-
-  @override
-  void updateRenderObject(BuildContext context, _RenderShifted renderObject) {
-    renderObject
-      ..progress = progress
-      ..distance = distance;
-  }
-}
-
-class _RenderShifted extends RenderProxyBox {
-  _RenderShifted(this._progress, this._distance);
-
-  Animation<double> _progress;
-  double _distance;
-
-  set progress(Animation<double> value) {
-    if (value == _progress) return;
-    if (attached) _progress.removeListener(markNeedsPaint);
-    _progress = value;
-    if (attached) _progress.addListener(markNeedsPaint);
-    markNeedsPaint();
-  }
-
-  set distance(double value) {
-    if (value == _distance) return;
-    _distance = value;
-    markNeedsPaint();
-  }
-
-  double get _dx => -_distance * (1 - _progress.value);
-
-  @override
-  void attach(PipelineOwner owner) {
-    super.attach(owner);
-    _progress.addListener(markNeedsPaint);
-  }
-
-  @override
-  void detach() {
-    _progress.removeListener(markNeedsPaint);
-    super.detach();
-  }
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    final RenderBox? child = this.child;
-    if (child != null) context.paintChild(child, offset.translate(_dx, 0));
-  }
-
-  @override
-  void applyPaintTransform(RenderBox child, Matrix4 transform) {
-    transform.translateByDouble(_dx, 0, 0, 1);
   }
 }
 

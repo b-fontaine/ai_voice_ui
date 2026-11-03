@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'scene_loop.dart';
 import 'scene_motion.dart';
 
 /// Point qui bat (`gc-beacon`) : un point plein de [size] px et un halo qui
@@ -41,37 +42,25 @@ class DsBeacon extends StatefulWidget {
 }
 
 class _DsBeaconState extends State<DsBeacon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: widget.period,
-  );
+    with SingleTickerProviderStateMixin, SceneLoop<DsBeacon> {
+  @override
+  Duration get loopBase => widget.period;
+
+  // Animations coupées en plein battement : le point seul, sans halo figé.
+  @override
+  double get loopRestValue => BeaconPainter.expandEnd;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _sync();
+    syncLoop();
   }
 
   @override
   void didUpdateWidget(DsBeacon oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Seul un changement de période relance la boucle.
-    if (oldWidget.period != widget.period) _sync();
-  }
-
-  void _sync() {
-    SceneMotionScope.loop(context, _controller, widget.period);
-    // Animations coupées en plein battement : le point seul, sans halo figé.
-    if (SceneMotionScope.of(context).disabled) {
-      _controller.value = BeaconPainter.expandEnd;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    syncLoop();
   }
 
   @override
@@ -82,7 +71,7 @@ class _DsBeaconState extends State<DsBeacon>
       size: Size.square(widget.size),
       painter: BeaconPainter(
         color: widget.color,
-        phase: _controller,
+        phase: loop,
         drawDot: widget.child == null,
       ),
       child: widget.child,

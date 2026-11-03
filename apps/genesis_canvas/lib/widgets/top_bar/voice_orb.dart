@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotion, SceneMotionScope, SceneTheme;
+    show SceneLoop, SceneMotion, SceneMotionScope, SceneTheme;
 
 import 'speaking_gate.dart';
 
@@ -63,7 +63,8 @@ class VoiceOrb extends StatefulWidget {
   State<VoiceOrb> createState() => _VoiceOrbState();
 }
 
-class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
+class _VoiceOrbState extends State<VoiceOrb>
+    with TickerProviderStateMixin, SceneLoop<VoiceOrb> {
   /// Période de la pulsation (repos) et d'un tour (réflexion).
   static const Duration _period = SceneMotion.orb;
 
@@ -74,12 +75,10 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     duration: _period,
   );
 
-  // Boucle des anneaux : une période propre (`gc-orbring`, 2,4 s), lancée une
-  // fois par `SceneMotionScope.loop`, jamais au franchissement du seuil.
-  late final AnimationController _ringsAnimation = AnimationController(
-    vsync: this,
-    duration: SceneMotion.orbRing,
-  );
+  // Boucle des anneaux (`SceneLoop`) : une période propre (`gc-orbring`, 2,4 s),
+  // lancée une fois, jamais au franchissement du seuil.
+  @override
+  Duration get loopBase => SceneMotion.orbRing;
 
   late final ValueNotifier<bool> _speaking = ValueNotifier<bool>(_isSpeaking);
 
@@ -102,7 +101,7 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     SceneMotionScope.loop(context, _animation, _period);
-    SceneMotionScope.loop(context, _ringsAnimation, SceneMotion.orbRing);
+    syncLoop();
   }
 
   @override
@@ -126,7 +125,6 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     _speaking.dispose();
     _ringsGate.dispose();
     _animation.dispose();
-    _ringsAnimation.dispose();
     super.dispose();
   }
 
@@ -185,9 +183,7 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
                           index: i,
                           // Hors parole ou animations coupées : aucun
                           // abonnement, donc aucune peinture.
-                          animation: speaking && !still
-                              ? _ringsAnimation
-                              : null,
+                          animation: speaking && !still ? loop : null,
                           color: theme.plasma,
                         ),
                       ),

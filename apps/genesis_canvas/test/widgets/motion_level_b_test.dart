@@ -487,12 +487,7 @@ void main() {
     double slide(WidgetTester tester, int index) {
       final Finder entry = _key('protocol-entry-$index');
       final Finder shifted = find
-          .ancestor(
-            of: entry,
-            matching: find.byWidgetPredicate(
-              (Widget w) => w.runtimeType.toString() == '_Shifted',
-            ),
-          )
+          .ancestor(of: entry, matching: find.byType(DsShift))
           .first;
       return tester.getTopLeft(entry).dx - tester.getTopLeft(shifted).dx;
     }

@@ -512,71 +512,61 @@ class _HeadLayer extends StatelessWidget {
       color: theme.blockingForeground,
     );
     final double textHeight = lineHeightOf(theme.micro.callout);
-    return FadeTransition(
-      opacity: animation,
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (BuildContext context, Widget? child) => Transform.translate(
-          offset: Offset(0, SceneMotion.translation * (1 - animation.value)),
-          child: child,
-        ),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints box) => Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Positioned(
-                left: head.dx - _headRadius,
-                top: head.dy - _headRadius,
-                width: 2 * _headRadius,
-                height: 2 * _headRadius,
-                child: _HeadRing(
-                  key: const Key('trend-head-ring'),
-                  reveal: reveal,
-                  color: SceneTheme.of(context).accent,
-                ),
+    return DsReveal(
+      animation: animation,
+      from: const Offset(0, SceneMotion.translation),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) => Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            Positioned(
+              left: head.dx - _headRadius,
+              top: head.dy - _headRadius,
+              width: 2 * _headRadius,
+              height: 2 * _headRadius,
+              child: _HeadRing(
+                key: const Key('trend-head-ring'),
+                reveal: reveal,
+                color: SceneTheme.of(context).accent,
               ),
-              Positioned(
-                left: head.dx - _headRadius,
-                top: head.dy - _headRadius,
-                width: 2 * _headRadius,
-                height: 2 * _headRadius,
-                child: DecoratedBox(
-                  key: const Key('trend-head'),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+            ),
+            Positioned(
+              left: head.dx - _headRadius,
+              top: head.dy - _headRadius,
+              width: 2 * _headRadius,
+              height: 2 * _headRadius,
+              child: DecoratedBox(
+                key: const Key('trend-head'),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
+            ),
+            Positioned(
+              right: box.maxWidth - (head.dx - _headGap),
+              bottom:
+                  box.maxHeight - math.max(head.dy - 4, plot.top + textHeight),
+              child: Text(
+                value,
+                key: const Key('trend-head-value'),
+                style: aboveThreshold
+                    ? calloutStyle
+                    : calloutStyle.copyWith(color: theme.textSecondary),
+                maxLines: 1,
+                softWrap: false,
+              ),
+            ),
+            if (callout != null && calloutAt != null)
               Positioned(
-                right: box.maxWidth - (head.dx - _headGap),
-                bottom:
-                    box.maxHeight -
-                    math.max(head.dy - 4, plot.top + textHeight),
+                left: calloutAt!.dx + _headGap,
+                top: calloutAt!.dy + _calloutGap,
                 child: Text(
-                  value,
-                  key: const Key('trend-head-value'),
-                  style: aboveThreshold
-                      ? calloutStyle
-                      : calloutStyle.copyWith(color: theme.textSecondary),
+                  callout!,
+                  key: const Key('trend-callout'),
+                  style: calloutStyle,
                   maxLines: 1,
                   softWrap: false,
                 ),
               ),
-              if (callout != null && calloutAt != null)
-                Positioned(
-                  left: calloutAt!.dx + _headGap,
-                  top: calloutAt!.dy + _calloutGap,
-                  child: Text(
-                    callout!,
-                    key: const Key('trend-callout'),
-                    style: calloutStyle,
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -682,11 +672,15 @@ class _HeadRing extends StatefulWidget {
 }
 
 class _HeadRingState extends State<_HeadRing>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: SceneMotion.ring,
-  );
+    with SingleTickerProviderStateMixin, SceneLoop<_HeadRing> {
+  @override
+  Duration get loopBase => SceneMotion.ring;
+
+  // Boucle à la fin du tracé, repos (invisible, phase 0) pendant le tracé et
+  // sous `disabled`.
+  @override
+  bool get loopActive =>
+      widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
 
   @override
   void initState() {
@@ -711,37 +705,26 @@ class _HeadRingState extends State<_HeadRing>
 
   void _onRevealStatus(AnimationStatus status) => _sync();
 
-  // Boucle à la fin du tracé, repos pendant le tracé et sous `disabled`.
   void _sync() {
-    final bool running =
-        widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
-    if (running) {
-      SceneMotionScope.loop(context, _controller, SceneMotion.ring);
-    } else {
-      _controller.stop();
-      _controller.value = 0;
-    }
+    syncLoop();
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     widget.reveal.removeStatusListener(_onRevealStatus);
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool visible =
-        widget.reveal.isCompleted && !SceneMotionScope.of(context).disabled;
     return IgnorePointer(
       child: RepaintBoundary(
         child: CustomPaint(
           painter: _HeadRingPainter(
-            phase: _controller,
+            phase: loop,
             color: widget.color,
-            visible: visible,
+            visible: loopActive,
           ),
         ),
       ),

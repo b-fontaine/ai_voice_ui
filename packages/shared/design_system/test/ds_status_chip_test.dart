@@ -258,42 +258,55 @@ void main() {
       }
     });
 
-    testWidgets(
-      'seul Bloquant bat (1,6 s), les autres statuts sont immobiles',
-      (tester) async {
-        for (final SceneStatus? status in fills.keys) {
-          await tester.pumpWidget(
-            _host(DsStatusChip(status: status, label: 'Mot')),
-          );
-          final List<Animation<double>> animations = find
-              .descendant(
-                of: find.byType(DsStatusChip),
-                matching: find.byWidgetPredicate(
-                  (Widget w) =>
-                      w is AnimatedWidget && w.listenable is Animation<double>,
-                ),
-              )
-              .evaluate()
-              .map((Element e) => (e.widget as AnimatedWidget).listenable)
-              .cast<Animation<double>>()
-              .toList();
-          var beats = false;
-          for (final Animation<double> a in animations) {
-            final double before = a.value;
-            await tester.pump(const Duration(milliseconds: 300));
-            if (a.isAnimating && a.value != before) beats = true;
-          }
-          expect(
-            beats,
-            status == SceneStatus.blocking,
-            reason: 'statut ${status?.name}',
-          );
-          if (status != SceneStatus.blocking) {
-            expect(tester.hasRunningAnimations, isFalse);
-          }
+    testWidgets('seul Bloquant bat (1,6 s), les autres statuts sont immobiles', (
+      tester,
+    ) async {
+      for (final SceneStatus? status in fills.keys) {
+        await tester.pumpWidget(
+          _host(DsStatusChip(status: status, label: 'Mot')),
+        );
+        // Un battement : un `AnimatedWidget` ou un `CustomPainter` (un
+        // `Listenable`) qui notifie entre deux images, tant qu'il est en cours.
+        final List<Listenable> listenables = find
+            .descendant(
+              of: find.byType(DsStatusChip),
+              matching: find.byWidgetPredicate(
+                (Widget w) =>
+                    (w is AnimatedWidget &&
+                        w.listenable is Animation<double>) ||
+                    (w is CustomPaint && w.painter != null),
+              ),
+            )
+            .evaluate()
+            .map(
+              (Element e) => switch (e.widget) {
+                AnimatedWidget(:final Listenable listenable) => listenable,
+                CustomPaint(:final CustomPainter painter?) => painter,
+                _ => throw StateError('widget inattendu'),
+              },
+            )
+            .toList();
+        var notifications = 0;
+        void count() => notifications++;
+        for (final Listenable l in listenables) {
+          l.addListener(count);
         }
-      },
-    );
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 300));
+        for (final Listenable l in listenables) {
+          l.removeListener(count);
+        }
+        final bool beats = notifications > 0 && tester.hasRunningAnimations;
+        expect(
+          beats,
+          status == SceneStatus.blocking,
+          reason: 'statut ${status?.name}',
+        );
+        if (status != SceneStatus.blocking) {
+          expect(tester.hasRunningAnimations, isFalse);
+        }
+      }
+    });
 
     testWidgets('sous disabled : point plein, sans halo, aucune animation', (
       tester,

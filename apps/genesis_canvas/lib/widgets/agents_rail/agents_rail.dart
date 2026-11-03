@@ -6,6 +6,7 @@ import 'package:shared_design_system/shared_design_system.dart'
     show
         DsBeacon,
         DsCaps,
+        SceneLoop,
         SceneMotion,
         SceneMotionScope,
         SceneRadius,
@@ -310,22 +311,14 @@ class _IndeterminateBar extends StatefulWidget {
 }
 
 class _IndeterminateBarState extends State<_IndeterminateBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: SceneMotion.indet,
-  );
+    with SingleTickerProviderStateMixin, SceneLoop<_IndeterminateBar> {
+  @override
+  Duration get loopBase => SceneMotion.indet;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    SceneMotionScope.loop(context, _controller, SceneMotion.indet);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    syncLoop();
   }
 
   @override
@@ -344,7 +337,7 @@ class _IndeterminateBarState extends State<_IndeterminateBar>
           child: CustomPaint(
             key: widget.barKey,
             painter: _BarPainter(
-              phase: _controller,
+              phase: loop,
               color: widget.color,
               still: still,
             ),

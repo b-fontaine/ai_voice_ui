@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
-    show SceneMotion, SceneMotionScope, SceneTheme;
+    show SceneLoop, SceneMotion, SceneMotionScope, SceneTheme;
 
 import 'speaking_gate.dart';
 
@@ -35,11 +35,9 @@ class VoiceWave extends StatefulWidget {
 }
 
 class _VoiceWaveState extends State<VoiceWave>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animation = AnimationController(
-    vsync: this,
-    duration: SceneMotion.wave,
-  );
+    with SingleTickerProviderStateMixin, SceneLoop<VoiceWave> {
+  @override
+  Duration get loopBase => SceneMotion.wave;
 
   late SpeakingGate _gate = _newGate();
 
@@ -49,7 +47,7 @@ class _VoiceWaveState extends State<VoiceWave>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    SceneMotionScope.loop(context, _animation, SceneMotion.wave);
+    syncLoop();
   }
 
   @override
@@ -65,7 +63,6 @@ class _VoiceWaveState extends State<VoiceWave>
   @override
   void dispose() {
     _gate.dispose();
-    _animation.dispose();
     super.dispose();
   }
 
@@ -83,7 +80,7 @@ class _VoiceWaveState extends State<VoiceWave>
             child: CustomPaint(
               painter: _WavePainter(
                 // Hors parole, aucun abonnement : le tableau ne se repeint pas.
-                animation: active ? _animation : null,
+                animation: active ? loop : null,
                 color: color,
               ),
               size: const Size(_WavePainter.width, VoiceWave.height),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'ds_blink.dart';
 import 'ds_caps.dart';
+import 'scene_loop.dart';
 import 'scene_motion.dart';
 import 'scene_radius.dart';
 import 'scene_shadow.dart';
@@ -139,11 +140,13 @@ class DsGenFrame extends StatefulWidget {
 }
 
 class _DsGenFrameState extends State<DsGenFrame>
-    with SingleTickerProviderStateMixin<DsGenFrame> {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: DsGenFrame.loopPeriod,
-  );
+    with SingleTickerProviderStateMixin<DsGenFrame>, SceneLoop<DsGenFrame> {
+  // Le même contrôleur boucle pendant la génération (`syncLoop`), puis joue la
+  // fin (dernier tour et fondu) : `syncLoop` n'est appelé que hors `done`.
+  @override
+  Duration get loopBase => DsGenFrame.loopPeriod;
+
+  AnimationController get _controller => loop;
 
   bool _doneStarted = false;
   bool _finished = false;
@@ -179,8 +182,7 @@ class _DsGenFrameState extends State<DsGenFrame>
     if (!widget.done) {
       _doneStarted = false;
       _finished = false;
-      SceneMotionScope.loop(context, _controller, DsGenFrame.loopPeriod);
-      if (scope.disabled) _controller.value = 0;
+      syncLoop();
       return;
     }
     if (scope.disabled) {
@@ -201,12 +203,6 @@ class _DsGenFrameState extends State<DsGenFrame>
     WidgetsBinding.instance.addPostFrameCallback((Duration _) {
       if (mounted) widget.onFinished?.call();
     });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override

@@ -376,13 +376,13 @@ class _Card extends StatelessWidget {
   final _Excerpt excerpt;
   final Animation<double> progress;
 
-  /// Progression (0 à 1, courbe du design system) de l'apparition.
-  double _appearance() {
+  /// Part de la lecture commune occupée par cette carte, avec la courbe du
+  /// design system.
+  Interval _interval() {
     final double total = splitDuration.inMicroseconds.toDouble();
     final double begin = (SceneMotion.stagger * index).inMicroseconds / total;
     final double end = begin + SceneMotion.appear.inMicroseconds / total;
-    final double k = ((progress.value - begin) / (end - begin)).clamp(0.0, 1.0);
-    return SceneMotion.curve.transform(k);
+    return Interval(begin, end, curve: SceneMotion.curve);
   }
 
   @override
@@ -431,19 +431,11 @@ class _Card extends StatelessWidget {
     );
     // Opacité et glissement seulement : le flou de `gc-rise` est réservé aux
     // surfaces (pdr-0088 F5), jamais à leurs cartes.
-    return AnimatedBuilder(
+    return DsReveal(
       animation: progress,
+      from: const Offset(0, SceneMotion.translation),
+      interval: _interval(),
       child: card,
-      builder: (BuildContext context, Widget? child) {
-        final double t = _appearance();
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, SceneMotion.translation * (1 - t)),
-            child: child,
-          ),
-        );
-      },
     );
   }
 }

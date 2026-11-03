@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'ds_beacon.dart' show BeaconPainter;
+import 'ds_beacon.dart' show DsBeacon;
 import 'ds_caps.dart';
-import 'scene_motion.dart';
 import 'scene_radius.dart';
 import 'scene_shadow.dart';
 import 'scene_status.dart';
@@ -128,7 +127,9 @@ class DsStatusChip extends StatelessWidget {
           maxLines: 1,
         ),
       ),
-      SceneStatus.blocking => ExcludeSemantics(child: _BeaconDot(color: color)),
+      SceneStatus.blocking => ExcludeSemantics(
+        child: DsBeacon(color: color, size: dotSize),
+      ),
       SceneStatus.risk || null => null,
     };
     return Container(
@@ -166,59 +167,4 @@ class DsStatusChip extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Point de Bloquant : 6 px pleins et un halo qui s'étend de 7 px en
-/// s'estompant (`gc-beacon`), période [SceneMotion.beacon].
-///
-/// Isolé dans son `RepaintBoundary` : son battement ne repeint pas la cellule
-/// voisine. Immobile quand les animations sont coupées. Le peintre est celui de
-/// `DsBeacon` ; le point reste ici un `AnimatedBuilder` (le contrôle U-05
-/// reconnaît le battement d'une puce à son `AnimatedWidget`).
-class _BeaconDot extends StatefulWidget {
-  const _BeaconDot({required this.color});
-
-  final Color color;
-
-  @override
-  State<_BeaconDot> createState() => _BeaconDotState();
-}
-
-class _BeaconDotState extends State<_BeaconDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: SceneMotion.beacon,
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    SceneMotionScope.loop(context, _controller, SceneMotion.beacon);
-    // Animations coupées en plein battement : le point seul, sans halo figé.
-    if (SceneMotionScope.of(context).disabled) {
-      _controller.value = BeaconPainter.expandEnd;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => RepaintBoundary(
-    child: AnimatedBuilder(
-      animation: _controller,
-      builder: (BuildContext context, Widget? _) => CustomPaint(
-        size: const Size.square(DsStatusChip.dotSize),
-        painter: BeaconPainter(
-          color: widget.color,
-          phase: _controller,
-          drawDot: true,
-        ),
-      ),
-    ),
-  );
 }

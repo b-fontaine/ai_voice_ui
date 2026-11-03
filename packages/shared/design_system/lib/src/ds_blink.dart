@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'scene_loop.dart';
 import 'scene_motion.dart';
 
 /// Clignotement en créneaux (`gc-blink`, `steps(2)`, pdr-0088 F9) : l'enfant
@@ -37,37 +38,28 @@ class DsBlink extends StatefulWidget {
   State<DsBlink> createState() => _DsBlinkState();
 }
 
-class _DsBlinkState extends State<DsBlink> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: widget.period,
-  );
+class _DsBlinkState extends State<DsBlink>
+    with SingleTickerProviderStateMixin, SceneLoop<DsBlink> {
+  @override
+  Duration get loopBase => widget.period;
 
-  late final Animation<double> _opacity = _controller.drive(const _Steps());
+  // Animations coupées : enfant plein (phase 0), jamais figé en demi-teinte.
+  @override
+  double get loopRestValue => 0;
+
+  late final Animation<double> _opacity = loop.drive(const _Steps());
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _sync();
+    syncLoop();
   }
 
   @override
   void didUpdateWidget(DsBlink oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Seul un changement de période relance la boucle.
-    if (oldWidget.period != widget.period) _sync();
-  }
-
-  void _sync() {
-    SceneMotionScope.loop(context, _controller, widget.period);
-    // Animations coupées : enfant plein, jamais figé en demi-teinte.
-    if (SceneMotionScope.of(context).disabled) _controller.value = 0;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    syncLoop();
   }
 
   @override

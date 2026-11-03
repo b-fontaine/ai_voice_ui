@@ -447,24 +447,11 @@ class _RowReveal extends StatelessWidget {
     final int rank = index < _cascadeCap ? index : _cascadeCap - 1;
     final double begin = SceneMotion.stagger.inMicroseconds * rank / total;
     final double end = begin + SceneMotion.row.inMicroseconds / total;
-    final Interval interval = Interval(
-      begin,
-      end > 1 ? 1 : end,
-      curve: SceneMotion.curve,
-    );
-    return AnimatedBuilder(
+    return DsReveal(
       animation: animation,
+      from: const Offset(-_rowShift, 0),
+      interval: Interval(begin, end > 1 ? 1 : end, curve: SceneMotion.curve),
       child: child,
-      builder: (BuildContext context, Widget? child) {
-        final double t = interval.transform(animation.value);
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(-_rowShift * (1 - t), 0),
-            child: child,
-          ),
-        );
-      },
     );
   }
 }
