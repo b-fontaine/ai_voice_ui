@@ -170,7 +170,29 @@ class _ButtonVisual extends StatelessWidget {
     final SceneTheme theme = SceneTheme.of(context);
     final bool danger = tone == _toneDanger;
     final Color color = _foreground(theme, tone, disabled: disabled);
-    return Container(
+    final Widget content = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        if (busy) ...<Widget>[
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 3, color: color),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Flexible(
+          child: Text(
+            done ? '$label \u00B7 fait \u2713' : label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.button.copyWith(color: color),
+          ),
+        ),
+      ],
+    );
+    final Container visual = Container(
       key: Key('action-$id-visual'),
       height: _visualHeight,
       padding: const EdgeInsets.symmetric(horizontal: _visualPadding),
@@ -188,40 +210,21 @@ class _ButtonVisual extends StatelessWidget {
               ),
         boxShadow: danger && !disabled ? SceneShadow.glowNogo : null,
       ),
-      child: CustomPaint(
-        key: disabled ? Key('action-$id-dashes') : null,
-        painter: disabled
-            ? DashedOutlinePainter(
-                color: theme.actionNeutralBorder,
-                strokeWidth: 1,
-                dash: 5,
-                gap: 3,
-                radius: SceneRadius.md,
-              )
-            : null,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            if (busy) ...<Widget>[
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 3, color: color),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Flexible(
-              child: Text(
-                done ? '$label \u00B7 fait \u2713' : label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.button.copyWith(color: color),
-              ),
-            ),
-          ],
-        ),
+      child: content,
+    );
+    if (!disabled) return visual;
+    // Bordure en tirets : sur le bord du visuel (padding compris), pas autour
+    // du texte (capture de vérification de 019).
+    return CustomPaint(
+      key: Key('action-$id-dashes'),
+      foregroundPainter: DashedOutlinePainter(
+        color: theme.actionNeutralBorder,
+        strokeWidth: 1,
+        dash: 5,
+        gap: 3,
+        radius: SceneRadius.md,
       ),
+      child: visual,
     );
   }
 }

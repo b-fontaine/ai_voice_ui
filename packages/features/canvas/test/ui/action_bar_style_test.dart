@@ -135,6 +135,18 @@ void main() {
     expect(textColor(tester, 'Valider la release'), isNot(theme.inkFaint));
   });
 
+  testWidgets('désactivé : la bordure en tirets longe le bord du visuel '
+      '(padding compris), pas le texte (capture de vérification de 019)', (
+    tester,
+  ) async {
+    await pumpBar(tester);
+    for (final String id in <String>['block_release', 'validate_release']) {
+      final Rect visual = tester.getRect(find.byKey(Key('action-$id-visual')));
+      final Rect outline = tester.getRect(dashes(id));
+      expect(outline, visual, reason: id);
+    }
+  });
+
   testWidgets('décision en place : désactivé, tirets', (tester) async {
     await pumpBar(
       tester,
