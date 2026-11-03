@@ -46,7 +46,7 @@ void main() {
     // L'ancien statut quitte la pastille à la fin de la transition.
     await tester.pump(const Duration(seconds: 1));
 
-    expect(h.inCell(find.text('Bloquée')), findsOneWidget);
+    expect(h.inCell(findTextIgnoringCase('Bloquée')), findsOneWidget);
     expect(h.inCell(find.text('En attente de décision')), findsNothing);
     expect(h.inCell(find.text('Checklist go/no-go')), findsOneWidget);
     expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
@@ -71,8 +71,8 @@ void main() {
 
     await tester.pump(const Duration(seconds: 1));
 
-    expect(h.inCell(find.text('Validée')), findsOneWidget);
-    expect(h.inCell(find.text('Bloquée')), findsNothing);
+    expect(h.inCell(findTextIgnoringCase('Validée')), findsOneWidget);
+    expect(h.inCell(findTextIgnoringCase('Bloquée')), findsNothing);
     expect(h.inCell(find.text('Checklist go/no-go')), findsOneWidget);
     expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
     expect(

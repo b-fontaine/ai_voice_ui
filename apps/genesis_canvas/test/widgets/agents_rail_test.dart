@@ -81,7 +81,7 @@ void main() {
 
     expect(find.byKey(const Key('agents-rail')), findsOneWidget);
     // Seul le repère de zone est affiché ; aucune tuile.
-    expect(find.text('AGENTS A2A'), findsOneWidget);
+    expect(findTextIgnoringCase('AGENTS A2A'), findsOneWidget);
     expect(find.byWidgetPredicate((w) => w is Text), findsOneWidget);
   });
 
@@ -117,7 +117,7 @@ void main() {
         idle: const <String>['Livraison'],
       ),
     );
-    final Rect title = tester.getRect(find.text('AGENTS A2A'));
+    final Rect title = tester.getRect(findTextIgnoringCase('AGENTS A2A'));
     final List<Rect> tiles = <Rect>[
       for (final String n in <String>['Orchestrateur', 'Qualité', 'Livraison'])
         tester.getRect(row(n)),
@@ -891,7 +891,7 @@ void main() {
         expect(
           find.descendant(
             of: find.byType(RepaintBoundary),
-            matching: find.text('AGENTS A2A'),
+            matching: findTextIgnoringCase('AGENTS A2A'),
           ),
           findsNothing,
           reason: 'les tuiles ne sont pas sous la frontière du tracé',

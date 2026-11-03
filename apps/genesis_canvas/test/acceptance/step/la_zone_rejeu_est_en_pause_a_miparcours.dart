@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/acte4_harness.dart';
 import '../support/keys.dart';
@@ -15,7 +16,7 @@ Future<void> laZoneRejeuEstEnPauseAMiparcours(WidgetTester tester) async {
     expect(
       find.descendant(
         of: find.byKey(AcceptanceKeys.actIndicator),
-        matching: find.textContaining('Acte 4 · Rejeu'),
+        matching: findTextContainingIgnoringCase('Acte 4 · Rejeu'),
       ),
       findsOneWidget,
       reason: "l'indicateur d'acte doit afficher « Acte 4 · Rejeu »",

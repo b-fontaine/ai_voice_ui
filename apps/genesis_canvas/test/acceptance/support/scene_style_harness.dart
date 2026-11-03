@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 /// Aides des scénarios U-01 à U-06 (spec 017) : texte visible, polices par
 /// rôle du thème de la scène, statuts, mouvement. Elles observent l'écran
@@ -155,7 +156,10 @@ abstract final class SceneStyleHarness {
 
   /// Couleur du texte [label] dans la puce numéro [index] de [chips].
   static Color wordColor(WidgetTester tester, Finder chip, String label) {
-    final Finder text = find.descendant(of: chip, matching: find.text(label));
+    final Finder text = find.descendant(
+      of: chip,
+      matching: findTextIgnoringCase(label),
+    );
     expect(
       text,
       findsOneWidget,

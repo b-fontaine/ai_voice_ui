@@ -9,6 +9,7 @@ import 'package:feature_stage_controls/feature_stage_controls.dart'
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 
 import '../support/page_rig.dart';
@@ -190,7 +191,7 @@ void main() {
     await settle(tester);
     await tester.pump(const Duration(seconds: 2));
     await tester.pump();
-    expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+    expect(findTextIgnoringCase('Acte 4 · Rejeu'), findsOneWidget);
     expect(act(rig), 1);
   });
 }

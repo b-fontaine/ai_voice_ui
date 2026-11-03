@@ -118,7 +118,7 @@ void main() {
     await pumpShelf(tester);
 
     expect(find.byKey(const Key('catalog-shelf')), findsOneWidget);
-    expect(find.text('CATALOGUE ·'), findsOneWidget);
+    expect(findTextIgnoringCase('CATALOGUE ·'), findsOneWidget);
     expect(find.text('0 / 6 utilisés'), findsOneWidget);
     for (final component in all) {
       expect(item(component), findsOneWidget, reason: component);

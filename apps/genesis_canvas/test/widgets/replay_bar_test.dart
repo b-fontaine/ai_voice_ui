@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/widgets/replay_bar/replay_bar.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/panel_layers.dart';
 import '../support/replay_rig.dart';
@@ -88,7 +89,7 @@ void main() {
     await _pump(tester, withJournal: false);
 
     expect(find.byKey(const Key('replay-bar')), findsOneWidget);
-    expect(find.text('REJEU'), findsOneWidget);
+    expect(findTextIgnoringCase('REJEU'), findsOneWidget);
     expect(tester.getSemantics(find.byKey(_play)).label, 'Lecture');
     expect(_enabled(tester, _play), isFalse);
     expect(_enabled(tester, _restart), isFalse);

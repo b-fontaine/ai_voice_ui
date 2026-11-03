@@ -1,7 +1,9 @@
 /// API publique de shared_design_system : thème de scène et briques.
 library;
 
+export 'src/ds_caps.dart' show DsCaps;
 export 'src/ds_neutral_state.dart' show DsNeutralState;
+export 'src/ds_panel_head.dart' show DsPanelHead;
 export 'src/ds_skeleton.dart' show DsSkeleton;
 export 'src/ds_status_chip.dart' show DsStatusChip;
 export 'src/scene_backdrop.dart' show SceneBackdrop;

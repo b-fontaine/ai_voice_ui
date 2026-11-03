@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart'
-    show BuildContext, Key, SizedBox, Size, Text, TextOverflow;
+    show BuildContext, Key, Widget, SizedBox, Size, Text, TextOverflow;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
@@ -23,6 +23,14 @@ CatalogHarness _realFontsHarness({Size size = gridCell3x2}) => CatalogHarness(
   size: size,
   fontFamily: realFontFamily,
   fontFamilyFallback: realFontFallback,
+);
+
+/// Puce de statut dont le **libellé de donnée** est [label], exactement : la
+/// fixture distingue « À risque » (critères) de « À RISQUE » (recommandation),
+/// et la casse affichée (capitales du design system) n'entre pas en jeu.
+Finder _chipLabeled(String label) => find.byWidgetPredicate(
+  (Widget w) => w is DsStatusChip && w.label == label,
+  description: 'DsStatusChip « $label »',
 );
 
 void main() {
@@ -87,10 +95,10 @@ void main() {
     expect(h.inCell(find.text('37 PR')), findsOneWidget);
     expect(h.inCell(find.text('revue faite')), findsOneWidget);
     expect(h.inCell(find.text('24 %')), findsOneWidget);
-    expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
+    expect(h.inCell(_chipLabeled('À RISQUE')), findsOneWidget);
     expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
-    expect(h.inCell(find.text('Validé')), findsOneWidget);
-    expect(h.inCell(find.text('À risque')), findsNWidgets(2));
+    expect(h.inCell(findTextIgnoringCase('Validé')), findsOneWidget);
+    expect(h.inCell(_chipLabeled('À risque')), findsNWidgets(2));
     // 3 puces d item + recommandation + statut de décision.
     expect(h.inCell(find.byType(DsStatusChip)), findsNWidgets(5));
     expect(h.engineErrors, isEmpty);
@@ -108,12 +116,10 @@ void main() {
     (data['items'] as List)[2]['levelLabel'] = 'Validé';
     await h.sendData(tester, data);
 
-    final chip = tester.widget<DsStatusChip>(
-      h.inCell(find.widgetWithText(DsStatusChip, 'Validé')),
-    );
+    final chip = tester.widget<DsStatusChip>(h.inCell(_chipLabeled('Validé')));
     expect(chip.status, SceneStatus.blocking);
     final reco = tester.widget<DsStatusChip>(
-      h.inCell(find.widgetWithText(DsStatusChip, 'À RISQUE')),
+      h.inCell(_chipLabeled('À RISQUE')),
     );
     expect(reco.status, SceneStatus.risk);
   });
@@ -124,10 +130,8 @@ void main() {
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
-    final Finder okChip = h.inCell(find.widgetWithText(DsStatusChip, 'Validé'));
-    final Finder riskChips = h.inCell(
-      find.widgetWithText(DsStatusChip, 'À risque'),
-    );
+    final Finder okChip = h.inCell(_chipLabeled('Validé'));
+    final Finder riskChips = h.inCell(_chipLabeled('À risque'));
     expect(okChip, findsOneWidget);
     expect(riskChips, findsNWidgets(2));
     final BuildContext context = tester.element(okChip);
@@ -189,11 +193,11 @@ void main() {
     // 3 critères de 36 px tiennent avec la marque : 9 critères masqués.
     expect(h.inCell(find.text('+ 9 autres critères')), findsOneWidget);
     expect(h.inCell(find.text('Critère bloquant')), findsOneWidget);
-    expect(h.inCell(find.text('Bloquant')), findsOneWidget);
+    expect(h.inCell(findTextIgnoringCase('Bloquant')), findsOneWidget);
     expect(h.inCell(find.text('Critère 1')), findsOneWidget);
     expect(h.inCell(find.text('Critère 2')), findsOneWidget);
     expect(h.inCell(find.text('Critère 3')), findsNothing);
-    expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
+    expect(h.inCell(_chipLabeled('À RISQUE')), findsOneWidget);
     expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
     h.expectTextAtLeastScaleMinimum(tester);
   });
@@ -266,7 +270,7 @@ void main() {
       expect(h.inCell(find.text('99,43 % (3.3 : 99,71 %)')), findsOneWidget);
       expect(h.inCell(find.text('30 % (3.3 : 14 %)')), findsOneWidget);
       expect(h.inCell(find.text('NO-GO Android')), findsOneWidget);
-      expect(h.inCell(find.text('Bloquant')), findsNWidgets(2));
+      expect(h.inCell(findTextIgnoringCase('Bloquant')), findsNWidgets(2));
       expect(find.byKey(const Key('neutral-checklist')), findsNothing);
       h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
@@ -336,7 +340,7 @@ void main() {
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
 
-      expect(h.inCell(find.text('Bloquant')), findsNWidgets(2));
+      expect(h.inCell(findTextIgnoringCase('Bloquant')), findsNWidgets(2));
       final bool changelogShown = h
           .inCell(find.text('Changelog validé'))
           .evaluate()

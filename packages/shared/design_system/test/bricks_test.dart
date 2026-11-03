@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 Widget _host(Widget child) => MaterialApp(
   theme: ThemeData(extensions: const [SceneTheme.dark()]),
@@ -160,7 +161,7 @@ void main() {
           status == SceneStatus.ok ? findsOneWidget : findsNothing,
           reason: 'statut ${status?.name}',
         );
-        expect(find.text('Validé'), findsOneWidget);
+        expect(findTextIgnoringCase('Validé'), findsOneWidget);
         if (status == SceneStatus.ok) {
           final glyph = tester.renderObject<RenderParagraph>(
             find.descendant(
@@ -176,7 +177,10 @@ void main() {
             ),
             findsWidgets,
           );
-          expect(tester.getSemantics(find.text('Validé')).label, 'Validé');
+          expect(
+            tester.getSemantics(findTextIgnoringCase('Validé')).label,
+            'Validé',
+          );
           expect(find.bySemanticsLabel(RegExp('✓')), findsNothing);
         }
       }

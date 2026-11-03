@@ -121,10 +121,17 @@ class ScenePanel extends StatelessWidget {
   /// en page qui réservent la place de la décoration.
   static const double cellInset = SceneSpace.space1;
 
+  /// Marge interne du design system (`.gc-panel { padding: 20px 24px }`) :
+  /// 20 px en vertical, 24 px en horizontal.
+  static const EdgeInsets defaultPadding = EdgeInsets.symmetric(
+    vertical: 20,
+    horizontal: SceneSpace.space6,
+  );
+
   const ScenePanel({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(SceneSpace.space4),
+    this.padding = defaultPadding,
     this.inset = cellInset,
     this.glow,
   });

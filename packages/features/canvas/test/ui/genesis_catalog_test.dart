@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 const Map<String, Object> _kpi = <String, Object>{
   'label': 'Sessions sans crash',
@@ -133,7 +134,7 @@ void main() {
     expect(inCell(find.text('Sessions sans crash')), findsOneWidget);
     expect(inCell(find.text('−0,36 pt')), findsOneWidget);
     expect(inCell(find.text('≥ 99,50 %')), findsOneWidget);
-    expect(inCell(find.text('À risque')), findsOneWidget);
+    expect(inCell(findTextIgnoringCase('À risque')), findsOneWidget);
     expect(inCell(find.byType(DsStatusChip)), findsOneWidget);
     expect(find.byKey(const Key('nodata-kpi')), findsNothing);
     expect(find.byKey(const Key('neutral-kpi')), findsNothing);

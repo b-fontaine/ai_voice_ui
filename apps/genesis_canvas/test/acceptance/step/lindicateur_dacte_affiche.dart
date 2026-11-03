@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/keys.dart';
 import '../support/session_harness.dart';
@@ -9,7 +10,7 @@ Future<void> lindicateurDacteAffiche(WidgetTester tester, String text) async {
     tester,
     find.descendant(
       of: find.byKey(AcceptanceKeys.actIndicator),
-      matching: find.textContaining(text),
+      matching: findTextContainingIgnoringCase(text),
     ),
     "l'indicateur d'acte (act-indicator) doit afficher « $text »",
   );

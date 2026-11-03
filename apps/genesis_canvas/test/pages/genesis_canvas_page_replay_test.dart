@@ -15,6 +15,7 @@ import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 
 import '../support/page_rig.dart';
@@ -320,7 +321,7 @@ void main() {
 
       final decision = find.descendant(
         of: find.byKey(const Key('surface-checklist')),
-        matching: find.text('Bloquée'),
+        matching: findTextIgnoringCase('Bloquée'),
       );
       expect(decision, findsOneWidget, reason: 'décision affichée en direct');
 

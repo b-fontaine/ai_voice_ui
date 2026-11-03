@@ -66,16 +66,23 @@ abstract final class StatusHarness {
           (e.widget as Text).data ?? (e.widget as Text).textSpan!.toPlainText(),
       ];
       if (glyph == null) {
-        expect(texts, <String>[
-          label,
-        ], reason: 'puce « $label » (statut $code) : seul le mot est attendu');
+        // Le mot peut être affiché en capitales (DsCaps) : casse ignorée.
+        expect(
+          [for (final String t in texts) t.toLowerCase()],
+          <String>[label.toLowerCase()],
+          reason: 'puce « $label » (statut $code) : seul le mot est attendu',
+        );
       } else {
         expect(
           texts,
           contains(glyph),
           reason: 'puce « $label » (statut $code) : glyphe « $glyph » absent',
         );
-        expect(texts, contains(label), reason: 'le mot « $label » est absent');
+        expect(
+          texts.map((String t) => t.toLowerCase()),
+          contains(label.toLowerCase()),
+          reason: 'le mot « $label » est absent',
+        );
       }
     }
   }

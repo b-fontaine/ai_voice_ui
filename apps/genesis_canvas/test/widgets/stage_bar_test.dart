@@ -192,7 +192,10 @@ void main() {
     await pumpBar(tester);
 
     expect(
-      find.descendant(of: indicator(), matching: find.text('Acte 1/3 · Créer')),
+      find.descendant(
+        of: indicator(),
+        matching: findTextIgnoringCase('Acte 1/3 · Créer'),
+      ),
       findsOneWidget,
     );
   });
@@ -203,7 +206,7 @@ void main() {
     await pumpBar(tester);
 
     final style = tester
-        .renderObject<RenderParagraph>(find.text('Acte 1/3 · Créer'))
+        .renderObject<RenderParagraph>(findTextIgnoringCase('Acte 1/3 · Créer'))
         .text
         .style;
     expect(style?.fontSize, const SceneTheme.dark().actIndicator.fontSize);
@@ -346,16 +349,19 @@ void main() {
     await tester.pump();
 
     expect(
-      find.descendant(of: indicator(), matching: find.text('Acte 4 · Rejeu')),
+      find.descendant(
+        of: indicator(),
+        matching: findTextIgnoringCase('Acte 4 · Rejeu'),
+      ),
       findsOneWidget,
     );
     await tester.tap(indicator());
     await tester.pump();
     await tester.pump();
     expect(stage.state.act, 1, reason: 'le clic ne change plus d\'acte');
-    expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+    expect(findTextIgnoringCase('Acte 4 · Rejeu'), findsOneWidget);
     final style = tester
-        .renderObject<RenderParagraph>(find.text('Acte 4 · Rejeu'))
+        .renderObject<RenderParagraph>(findTextIgnoringCase('Acte 4 · Rejeu'))
         .text
         .style;
     // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
@@ -377,7 +383,7 @@ void main() {
     expect(resets, 0, reason: 'la remise à vide classique ne part pas');
     expect(replay.stage.exits, 1);
     expect(replay.bloc.state, isA<ReplayLive>());
-    expect(find.text('Acte 1/3 · Créer'), findsOneWidget);
+    expect(findTextIgnoringCase('Acte 1/3 · Créer'), findsOneWidget);
   });
 
   testWidgets('en rejeu : « Remettre à vide » reste actif même si occupé', (
@@ -406,13 +412,18 @@ void main() {
     await tester.pump();
     await tester.pump();
     final ReplayState before = replay.bloc.state;
-    final Text label = tester.widget<Text>(find.text('Acte 4 · Rejeu'));
+    final Text label = tester.widget<Text>(
+      findTextIgnoringCase('Acte 4 · Rejeu'),
+    );
 
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(replay.bloc.state, isNot(before), reason: 'la position a avancé');
     expect(
-      identical(tester.widget<Text>(find.text('Acte 4 · Rejeu')), label),
+      identical(
+        tester.widget<Text>(findTextIgnoringCase('Acte 4 · Rejeu')),
+        label,
+      ),
       isTrue,
       reason: 'le sous-arbre n\'est pas reconstruit à chaque pas',
     );
@@ -457,14 +468,14 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Acte 2/3 · Transformer'), findsOneWidget);
+      expect(findTextIgnoringCase('Acte 2/3 · Transformer'), findsOneWidget);
       expect(paragraphsTruncated(tester), isEmpty);
       expect(tester.takeException(), isNull);
 
       replay.bloc.add(const ReplayPlayPressed());
       await tester.pump();
       await tester.pump();
-      expect(find.text('Acte 4 · Rejeu'), findsOneWidget);
+      expect(findTextIgnoringCase('Acte 4 · Rejeu'), findsOneWidget);
       expect(paragraphsTruncated(tester), isEmpty);
     });
 

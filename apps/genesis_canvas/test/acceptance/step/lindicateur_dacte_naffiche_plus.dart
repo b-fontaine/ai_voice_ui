@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/keys.dart';
 
@@ -11,7 +12,10 @@ Future<void> lindicateurDacteNaffichePlus(
   final indicator = find.byKey(AcceptanceKeys.actIndicator);
   expect(indicator, findsOneWidget, reason: 'act-indicator absent');
   expect(
-    find.descendant(of: indicator, matching: find.textContaining(text)),
+    find.descendant(
+      of: indicator,
+      matching: findTextContainingIgnoringCase(text),
+    ),
     findsNothing,
     reason: "l'indicateur d'acte affiche encore « $text »",
   );
