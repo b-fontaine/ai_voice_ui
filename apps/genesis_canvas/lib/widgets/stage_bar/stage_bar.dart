@@ -18,6 +18,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_design_system/shared_design_system.dart'
     show SceneRadius, SceneTheme, sceneTextStyle;
 
+import '../top_bar/sm_button.dart';
+
 /// Régie de scène : l'indicateur d'acte (D1), la remise à vide (D4), le
 /// micro et « Faire taire » (014).
 ///
@@ -28,8 +30,11 @@ import 'package:shared_design_system/shared_design_system.dart'
 /// | micro (`mic-button`)       | indicateur d'acte (`act-indicator`) |
 /// | « Faire taire » (`silence-button`) | « Remettre à vide » (`reset-button`) |
 ///
-/// - `act-indicator` : « Acte n/3 · nom » ; un clic passe à l'acte suivant
-///   (cyclique), souris d'abord (pdr-0033) ;
+/// - `act-indicator` : un seul bouton à apparence de trois segments
+///   `act-segment-1` à `-3` (« 01 ✓ Créer », « 02 ✓ Transformer »,
+///   « 03 Interagir », pdr-0088 F8) ; son texte accessible reste « Acte n/3 ·
+///   nom » ; un clic, où qu'il tombe, passe à l'acte suivant (cyclique), souris
+///   d'abord (pdr-0033) ;
 /// - `reset-button` : « Remettre à vide » ; il n'agit pas lui-même, il appelle
 ///   [onResetPressed] (la page coordonne tous les Blocs, A4a du plan 007).
 ///   Inactif tant qu'un agent travaille : le backend refuserait (409) de
@@ -41,14 +46,15 @@ import 'package:shared_design_system/shared_design_system.dart'
 ///   l'orbe n'est pas `Interrupted` (idempotent) ; il appelle
 ///   [onSilencePressed].
 ///
-/// Les contrôles sont hauts d'au moins [controlHeight] points sous Linux
-/// (NFR-05) : `visualDensity` standard et `minimumSize` explicites, sans quoi
-/// la densité de la plateforme réduirait la cible. Texte de scène (24 px et
-/// plus, RG-09), bordure du thème de scène et `Semantics` de bouton.
+/// Les cibles de pointage sont hautes d'au moins [controlHeight] points sous
+/// Linux (NFR-05, D-05) : `visualDensity` standard et `minimumSize`
+/// explicites, sans quoi la densité de la plateforme réduirait la cible. Le
+/// visuel de 34 points (`gc-btn--sm`, `SmButton`) ou la pilule des actes est
+/// centré dans sa cible. `Semantics` de bouton.
 ///
-/// En rejeu (`ReplayActive`, pdr-0066 D3 et D8) : l'indicateur affiche
-/// « Acte 4 · Rejeu » en texte seul (non cliquable) et « Remettre à vide »
-/// équivaut à « Direct » (`ReplayDirectPressed`), toujours actif.
+/// En rejeu (`ReplayActive`, pdr-0066 D3 et D8) : l'indicateur affiche le seul
+/// segment « Acte 4 · Rejeu » (non cliquable) et « Remettre à vide » équivaut
+/// à « Direct » (`ReplayDirectPressed`), toujours actif.
 class StageBar extends StatelessWidget {
   const StageBar({
     super.key,
@@ -76,12 +82,6 @@ class StageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    // Le style d'un bouton Material remplace celui de l'ambiance : sans cela,
-    // les deux contrôles se rendraient dans la police par défaut du moteur et
-    // non dans celle du reste de la scène.
-    final TextStyle actStyle = sceneTextStyle(context, theme.actIndicator);
-    final TextStyle resetStyle = sceneTextStyle(context, theme.button);
     return Material(
       type: MaterialType.transparency,
       child: SizedBox(
@@ -128,28 +128,12 @@ class StageBar extends StatelessWidget {
                                       : () => context.read<StageBloc>().add(
                                           const StageActAdvanced(),
                                         ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: theme.accent,
-                                    // Texte seul en rejeu : pas de teinte « inactif ».
-                                    disabledForegroundColor: theme.accent,
-                                    textStyle: actStyle,
-                                    visualDensity: VisualDensity.standard,
-                                    minimumSize: const Size(
-                                      controlHeight,
-                                      controlHeight,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    side: BorderSide(
-                                      color: theme.accent,
-                                      width: 2,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: SceneRadius.borderMd,
-                                    ),
+                                  style: _targetStyle(SceneTheme.of(context)),
+                                  child: _ActSegments(
+                                    act: stage.act,
+                                    label: label,
+                                    replaying: replaying,
                                   ),
-                                  child: Text(label, maxLines: 1),
                                 ),
                               );
                             },
@@ -163,25 +147,16 @@ class StageBar extends StatelessWidget {
                             selector: (AgentActivityState state) =>
                                 state.anyBusy,
                             builder: (BuildContext context, bool working) {
-                              final bool enabled = replaying || !working;
-                              return Semantics(
-                                button: true,
-                                enabled: enabled,
+                              return SmButton(
+                                buttonKey: const Key('reset-button'),
+                                visualKey: const Key('reset-button-visual'),
                                 label: 'Remettre à vide',
-                                excludeSemantics: true,
-                                child: FilledButton(
-                                  key: const Key('reset-button'),
-                                  onPressed: replaying
-                                      ? () => context.read<ReplayBloc>().add(
-                                          const ReplayDirectPressed(),
-                                        )
-                                      : (working ? null : onResetPressed),
-                                  style: _neutralStyle(theme, resetStyle),
-                                  child: const Text(
-                                    'Remettre à vide',
-                                    maxLines: 1,
-                                  ),
-                                ),
+                                ghost: true,
+                                onPressed: replaying
+                                    ? () => context.read<ReplayBloc>().add(
+                                        const ReplayDirectPressed(),
+                                      )
+                                    : (working ? null : onResetPressed),
                               );
                             },
                           ),
@@ -199,21 +174,188 @@ class StageBar extends StatelessWidget {
   }
 }
 
-/// Style commun des boutons neutres de la régie : fond de scène, texte
-/// principal, bordure neutre (A5, C3), actif comme inactif.
-ButtonStyle _neutralStyle(SceneTheme theme, TextStyle textStyle) =>
-    FilledButton.styleFrom(
-      backgroundColor: theme.neutralBackground,
-      foregroundColor: theme.textPrimary,
-      textStyle: textStyle,
-      visualDensity: VisualDensity.standard,
-      minimumSize: const Size(StageBar.controlHeight, StageBar.controlHeight),
-      side: BorderSide(color: theme.actionNeutralBorder, width: 2),
-      shape: RoundedRectangleBorder(borderRadius: SceneRadius.borderMd),
-      // Inactif mais lisible : paire neutre du thème.
-      disabledBackgroundColor: theme.neutralBackground,
-      disabledForegroundColor: theme.neutralForeground,
+/// Style de la cible d'un contrôle de la régie : transparente, d'au moins
+/// [StageBar.controlHeight] points de haut, sans marges (le visuel dessine fond
+/// et bordure). `visualDensity` standard : sans cela, la densité de la
+/// plateforme réduirait la cible.
+ButtonStyle _targetStyle(SceneTheme theme) {
+  final Color clear = theme.background.withValues(alpha: 0);
+  return TextButton.styleFrom(
+    backgroundColor: clear,
+    disabledBackgroundColor: clear,
+    foregroundColor: theme.textPrimary,
+    // Texte seul en rejeu : pas de teinte « inactif ».
+    disabledForegroundColor: theme.textPrimary,
+    overlayColor: clear,
+    visualDensity: VisualDensity.standard,
+    minimumSize: const Size(StageBar.controlHeight, StageBar.controlHeight),
+    padding: EdgeInsets.zero,
+    shape: RoundedRectangleBorder(borderRadius: SceneRadius.borderPill),
+  );
+}
+
+/// Sélecteur d'actes (`.gc-acts`) : pilule `surface-100` à bordure `line`,
+/// trois segments de 34 points (`.gc-act`) : « 01 ✓ Créer », « 02 ✓
+/// Transformer », « 03 Interagir ». Fait : numéro `go` avec ✓, mot `ink-muted`
+/// ; actif : fond `plasma-ghost`, contour `plasma` à 53 %, numéro `plasma`,
+/// mot `ink` ; à venir : numéro et mot `ink-muted` (jamais `ink-faint`,
+/// pdr-0088 F12). Les mots sont ceux de `StageState.actName`.
+///
+/// En rejeu ([replaying]), un seul segment « Acte 4 · Rejeu » au style
+/// `actIndicator`. Hors rejeu, le libellé complet [label] (« Acte n/3 · nom »)
+/// est aussi présent sous forme de texte invisible et sans taille : c'est le
+/// texte que lisent les scénarios d'acceptation (I-01) ; le lecteur d'écran,
+/// lui, passe par le `Semantics` du bouton.
+class _ActSegments extends StatelessWidget {
+  const _ActSegments({
+    required this.act,
+    required this.label,
+    required this.replaying,
+  });
+
+  final int act;
+  final String label;
+  final bool replaying;
+
+  /// Contour du segment actif : `plasma` à 53 % (`#a58bff88` du CSS).
+  static const double _activeOutlineAlpha = 0x88 / 0xFF;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return SizedBox(
+      height: SmButton.visualHeight + 10,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: SceneRadius.borderPill,
+          border: Border.all(color: theme.line),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          // Les polices de la scène tiennent dans la colonne ; le repli
+          // réduit la pilule plutôt que de déborder avec une autre police.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (replaying)
+                  _Segment(
+                    key: const Key('act-segment-replay'),
+                    active: true,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: sceneTextStyle(
+                        context,
+                        theme.actIndicator,
+                      ).copyWith(color: theme.textPrimary),
+                    ),
+                  )
+                else ...<Widget>[
+                  for (var i = 1; i <= StageState.actCount; i++) ...<Widget>[
+                    if (i > 1) const SizedBox(width: 4),
+                    _actSegment(context, theme, i),
+                  ],
+                  // Libellé complet, sans taille ni peinture.
+                  ExcludeSemantics(
+                    child: SizedBox.shrink(
+                      child: OverflowBox(
+                        maxWidth: double.infinity,
+                        maxHeight: double.infinity,
+                        child: Opacity(
+                          opacity: 0,
+                          child: Text(
+                            label,
+                            softWrap: false,
+                            style: sceneTextStyle(context, theme.actIndicator),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _actSegment(BuildContext context, SceneTheme theme, int n) {
+    final bool done = n < act;
+    final bool active = n == act;
+    final Color numberColor = done
+        ? theme.okForeground
+        : active
+        ? theme.plasma
+        : theme.textSecondary;
+    final Color wordColor = active ? theme.textPrimary : theme.textSecondary;
+    final String number = n.toString().padLeft(2, '0');
+    return _Segment(
+      key: Key('act-segment-$n'),
+      active: active,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            done ? '$number ✓' : number,
+            maxLines: 1,
+            style: sceneTextStyle(
+              context,
+              theme.micro.segmentNo,
+            ).copyWith(color: numberColor),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            StageState.actNames[n - 1],
+            maxLines: 1,
+            style: sceneTextStyle(
+              context,
+              theme.micro.segment,
+            ).copyWith(color: wordColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un segment de 34 points (`.gc-act`) ; actif, il a le fond `plasma-ghost` et
+/// le contour `plasma`.
+class _Segment extends StatelessWidget {
+  const _Segment({super.key, required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final SceneTheme theme = SceneTheme.of(context);
+    return SizedBox(
+      height: SmButton.visualHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: active ? theme.plasmaGhost : null,
+          borderRadius: SceneRadius.borderPill,
+          border: active
+              ? Border.all(
+                  color: theme.plasma.withValues(
+                    alpha: _ActSegments._activeOutlineAlpha,
+                  ),
+                )
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Center(widthFactor: 1, child: child),
+        ),
+      ),
+    );
+  }
+}
 
 /// Colonne « voix » : micro et « Faire taire ». Les boutons n'agissent pas
 /// eux-mêmes : la page porte les commandes.
@@ -228,11 +370,6 @@ class _VoiceControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SceneTheme theme = SceneTheme.of(context);
-    final ButtonStyle style = _neutralStyle(
-      theme,
-      sceneTextStyle(context, theme.button),
-    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -242,20 +379,13 @@ class _VoiceControls extends StatelessWidget {
               (status is Active, status is Active && status.micMuted),
           builder: (BuildContext context, (bool, bool) state) {
             final (bool active, bool muted) = state;
-            final String label = muted
-                ? 'Rétablir le micro'
-                : 'Couper le micro';
-            return Semantics(
-              button: true,
-              enabled: active,
-              label: label,
-              excludeSemantics: true,
-              child: FilledButton(
-                key: const Key('mic-button'),
-                onPressed: active ? onMicPressed : null,
-                style: style,
-                child: Text(label, maxLines: 1),
-              ),
+            return SmButton(
+              buttonKey: const Key('mic-button'),
+              visualKey: const Key('mic-button-visual'),
+              label: muted ? 'Rétablir le micro' : 'Couper le micro',
+              // Point d'enregistrement : le micro est ouvert.
+              recording: active && !muted,
+              onPressed: active ? onMicPressed : null,
             );
           },
         ),
@@ -270,18 +400,14 @@ class _VoiceControls extends StatelessWidget {
               buildWhen: (OrbPhase previous, OrbPhase current) =>
                   (previous is Interrupted) != (current is Interrupted),
               builder: (BuildContext context, OrbPhase phase) {
-                final bool enabled = canSilence(status, phase);
-                return Semantics(
-                  button: true,
-                  enabled: enabled,
+                return SmButton(
+                  buttonKey: const Key('silence-button'),
+                  visualKey: const Key('silence-button-visual'),
                   label: 'Faire taire',
-                  excludeSemantics: true,
-                  child: FilledButton(
-                    key: const Key('silence-button'),
-                    onPressed: enabled ? onSilencePressed : null,
-                    style: style,
-                    child: const Text('Faire taire', maxLines: 1),
-                  ),
+                  ghost: true,
+                  onPressed: canSilence(status, phase)
+                      ? onSilencePressed
+                      : null,
                 );
               },
             );

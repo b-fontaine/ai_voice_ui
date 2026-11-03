@@ -194,9 +194,10 @@ void main() {
     addTearDown(() => debugOnRebuildDirtyWidget = previous);
     await tester.pumpWidget(_host(level));
     final baseline = rebuilt;
+    // Le corps de l'orbe ; les anneaux ont chacun leur CustomPaint.
     final render = tester.renderObject<RenderCustomPaint>(
       find.descendant(
-        of: find.byKey(_orbKey),
+        of: find.byKey(const Key('voice-orb-core')),
         matching: find.byType(CustomPaint),
       ),
     );

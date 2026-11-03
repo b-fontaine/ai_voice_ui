@@ -14,6 +14,8 @@ import 'package:flutter_test/flutter_test.dart'
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart'
+    show findTextIgnoringCase;
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
 import '../support/paragraphs.dart';
@@ -474,7 +476,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(paragraphsBelowMinimum(tester), isEmpty);
       const theme = SceneTheme.dark();
-      final role = tester.widget<Text>(find.text('Vous'));
+      final role = tester.widget<Text>(findTextIgnoringCase('Vous'));
       expect(role.style?.color, theme.textSecondary);
     });
   });
@@ -521,7 +523,7 @@ void main() {
       final orbBefore = orbBuilds;
       final render = tester.renderObject<RenderCustomPaint>(
         find.descendant(
-          of: find.byKey(const Key('voice-orb')),
+          of: find.byKey(const Key('voice-orb-core')),
           matching: find.byType(CustomPaint),
         ),
       );

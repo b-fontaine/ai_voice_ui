@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_design_system/shared_design_system.dart'
     show SceneMotion, SceneMotionScope, SceneTheme;
 
+import 'speaking_gate.dart';
+
 /// Orbe vocal (FR-01) : repos (pulsation lente), parole (le rayon suit le
 /// niveau), réflexion (un arc tourne) et, après une coupure de parole
 /// (FR-19, RG-17), « Interrompue » (arrêt net, flash) puis « Écoute ».
@@ -15,6 +17,14 @@ import 'package:shared_design_system/shared_design_system.dart'
 /// ([perf-repaint-boundary]). Le micro coupé n'est pas une phase : [micMuted]
 /// ajoute un voile par-dessus. Seul le franchissement de [speakingThreshold]
 /// met à jour le libellé d'accessibilité.
+///
+/// Trois anneaux (`gc-orbring`, clés `voice-orb-ring-0` à `-2`) s'étendent
+/// autour du corps (`voice-orb-core`) **seulement quand l'IA parle**. Leur
+/// boucle (période [SceneMotion.orbRing], anneaux décalés d'un tiers de
+/// période) tourne en continu et n'est jamais relancée quand le niveau
+/// franchit le seuil ; une hystérésis ([SpeakingGate]) évite qu'ils
+/// clignotent autour du seuil. Hors parole, ou animations coupées, ils sont
+/// invisibles et ne se repeignent pas.
 class VoiceOrb extends StatefulWidget {
   const VoiceOrb({
     super.key = const Key('voice-orb'),
@@ -53,8 +63,7 @@ class VoiceOrb extends StatefulWidget {
   State<VoiceOrb> createState() => _VoiceOrbState();
 }
 
-class _VoiceOrbState extends State<VoiceOrb>
-    with SingleTickerProviderStateMixin {
+class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
   /// Période de la pulsation (repos) et d'un tour (réflexion).
   static const Duration _period = SceneMotion.orb;
 
@@ -65,7 +74,19 @@ class _VoiceOrbState extends State<VoiceOrb>
     duration: _period,
   );
 
+  // Boucle des anneaux : une période propre (`gc-orbring`, 2,4 s), lancée une
+  // fois par `SceneMotionScope.loop`, jamais au franchissement du seuil.
+  late final AnimationController _ringsAnimation = AnimationController(
+    vsync: this,
+    duration: SceneMotion.orbRing,
+  );
+
   late final ValueNotifier<bool> _speaking = ValueNotifier<bool>(_isSpeaking);
+
+  late SpeakingGate _ringsGate = _newRingsGate();
+
+  SpeakingGate _newRingsGate() =>
+      SpeakingGate(level: widget.level, threshold: widget.speakingThreshold);
 
   bool get _isSpeaking => widget.level.value > widget.speakingThreshold;
 
@@ -81,6 +102,7 @@ class _VoiceOrbState extends State<VoiceOrb>
   void didChangeDependencies() {
     super.didChangeDependencies();
     SceneMotionScope.loop(context, _animation, _period);
+    SceneMotionScope.loop(context, _ringsAnimation, SceneMotion.orbRing);
   }
 
   @override
@@ -90,6 +112,11 @@ class _VoiceOrbState extends State<VoiceOrb>
       oldWidget.level.removeListener(_syncSpeaking);
       widget.level.addListener(_syncSpeaking);
     }
+    if (oldWidget.level != widget.level ||
+        oldWidget.speakingThreshold != widget.speakingThreshold) {
+      _ringsGate.dispose();
+      _ringsGate = _newRingsGate();
+    }
     _syncSpeaking();
   }
 
@@ -97,13 +124,16 @@ class _VoiceOrbState extends State<VoiceOrb>
   void dispose() {
     widget.level.removeListener(_syncSpeaking);
     _speaking.dispose();
+    _ringsGate.dispose();
     _animation.dispose();
+    _ringsAnimation.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
+    final bool still = SceneMotionScope.of(context).disabled;
     return ValueListenableBuilder<bool>(
       valueListenable: _speaking,
       builder: (context, speaking, child) => Semantics(
@@ -126,8 +156,11 @@ class _VoiceOrbState extends State<VoiceOrb>
             dimension: VoiceOrb.diameter,
             child: Stack(
               fit: StackFit.expand,
+              // Les anneaux débordent du disque (échelle jusqu'à 1,25).
+              clipBehavior: Clip.none,
               children: <Widget>[
                 RepaintBoundary(
+                  key: const Key('voice-orb-core'),
                   child: CustomPaint(
                     painter: _OrbPainter(
                       level: widget.level,
@@ -142,6 +175,24 @@ class _VoiceOrbState extends State<VoiceOrb>
                     ),
                   ),
                 ),
+                for (var i = 0; i < _RingsPainter.count; i++)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _ringsGate,
+                    builder: (context, speaking, child) => RepaintBoundary(
+                      key: Key('voice-orb-ring-$i'),
+                      child: CustomPaint(
+                        painter: _RingsPainter(
+                          index: i,
+                          // Hors parole ou animations coupées : aucun
+                          // abonnement, donc aucune peinture.
+                          animation: speaking && !still
+                              ? _ringsAnimation
+                              : null,
+                          color: theme.plasma,
+                        ),
+                      ),
+                    ),
+                  ),
                 if (widget.micMuted) _MicMutedVeil(color: theme.orbVeil),
               ],
             ),
@@ -260,6 +311,52 @@ class _OrbPainter extends CustomPainter {
       old.flashColor != flashColor ||
       old.arcColor != arcColor ||
       old.haloColor != haloColor;
+}
+
+/// Un anneau de l'orbe (`.gc-orb__ring`) : bordure de 1,5 point, couleur de
+/// l'orbe, échelle de 0,55 à 1,25 et opacité de 0,8 à 0 sur une période
+/// (`gc-orbring`, sortie douce). Les anneaux sont décalés d'un tiers de période
+/// (0,8 s sur 2,4 s). Sans [animation], rien n'est peint (repos).
+class _RingsPainter extends CustomPainter {
+  _RingsPainter({
+    required this.index,
+    required this.animation,
+    required this.color,
+  }) : _paint = Paint()
+         ..style = PaintingStyle.stroke
+         ..strokeWidth = 1.5,
+       super(repaint: animation);
+
+  /// Nombre d'anneaux.
+  static const int count = 3;
+
+  static const double _fromScale = 0.55;
+  static const double _toScale = 1.25;
+  static const double _fromOpacity = 0.8;
+
+  final int index;
+  final Animation<double>? animation;
+  final Color color;
+  final Paint _paint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Animation<double>? phase = animation;
+    if (phase == null) return;
+    final double t = Curves.easeOut.transform(
+      (phase.value - index / count) % 1,
+    );
+    _paint.color = color.withValues(alpha: _fromOpacity * (1 - t));
+    canvas.drawCircle(
+      size.center(Offset.zero),
+      size.shortestSide / 2 * (_fromScale + (_toScale - _fromScale) * t),
+      _paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingsPainter old) =>
+      old.index != index || old.animation != animation || old.color != color;
 }
 
 /// Voile « Micro coupé » : disque grisé et barre oblique, sur toute la
