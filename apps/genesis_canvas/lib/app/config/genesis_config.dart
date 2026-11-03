@@ -294,8 +294,9 @@ class GenesisConfig {
   final double? replayCaptureAt;
 
   /// Démarre avec le panneau du protocole déplié (`GENESIS_PROTOCOL_EXPANDED`,
-  /// `1`/`true` ou `0`/`false`, défaut faux) : sert à la capture de
-  /// vérification (spec 018) ; sans valeur, la variable est inactive.
+  /// `1`/`true` ou `0`/`false`, sans casse, espaces ignorés ; absente ou vide :
+  /// faux ; autre valeur : erreur de configuration) : sert à la capture de
+  /// vérification (spec 018).
   final bool protocolExpandedAtStart;
 
   /// Silence au-delà duquel l'orbe retombe au repos.

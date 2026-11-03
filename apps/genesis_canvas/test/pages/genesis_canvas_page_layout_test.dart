@@ -221,7 +221,10 @@ void main() {
     await tester.pump();
     await tester.pump();
     expectCleanScreen(tester, rig);
-    expect(rectOf(tester, 'protocol-panel').height, 140);
+    final folded = rectOf(tester, 'protocol-panel');
+    expect(folded.size, const Size(460, 140));
+    expect(folded.bottomRight, rectOf(tester, 'bottom-row').bottomRight);
+    expect(folded.top, bottomRow.top);
   });
 
   testWidgets('GENESIS_PROTOCOL_EXPANDED : la page démarre avec le panneau '
@@ -254,7 +257,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('Déplier'), findsOneWidget);
-    expect(rectOf(tester, 'protocol-panel').height, 140);
+    final panel = rectOf(tester, 'protocol-panel');
+    final bottomRow = rectOf(tester, 'bottom-row');
+    expect(panel.size, const Size(460, 140));
+    expect(panel.bottomRight, bottomRow.bottomRight);
+    expect(panel.top, bottomRow.top);
   });
 
   testWidgets('bouton du panneau : le focus et la sémantique suivent le '

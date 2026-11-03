@@ -391,9 +391,9 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
-    // Capture de vérification (spec 018) : un seul basculement, au montage ;
-    // le panneau démarre replié, donc il se déplie.
-    if (_settings.protocolExpandedAtStart) {
+    // Capture de vérification (spec 018) : `PanelToggled` est une bascule ;
+    // on garantit le panneau déplié, un seul basculement.
+    if (_settings.protocolExpandedAtStart && !_protocolBloc.state.expanded) {
       _protocolBloc.add(const PanelToggled());
     }
     if (replay != null) {
@@ -813,6 +813,61 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 
+  Widget _canvasZone() => Expanded(
+    // Réglage d'animation du canevas : durée nulle en scénario, en capture et
+    // sous « réduire les animations » ; vitesse du rejeu en cours sinon. Pas
+    // de `TickerMode` ici : il figerait l'apparition à l'opacité 0.
+    child: _motionScope(
+      child: BlocSelector<ReplayBloc, ReplayState, bool>(
+        selector: (state) => state is ReplayActive,
+        // Rejeu (scénario ou acte 4) : aucune requête ne part.
+        builder: (context, replaying) => CanvasActionScope(
+          enabled: !_scenarioMode && !replaying,
+          child: CanvasBoard(
+            key: const Key('canvas-board'),
+            controller: _controller,
+            highlight: _highlight,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _bottomRow() => SizedBox(
+    key: const Key('bottom-row'),
+    height: _bottomRowHeight,
+    child: Row(
+      children: <Widget>[
+        const Expanded(child: CatalogShelf()),
+        const SizedBox(width: 16),
+        const SizedBox(width: _replayWidth, child: ReplayBar()),
+        const SizedBox(width: 16),
+        // Emplacement du panneau replié : le panneau lui-même est posé
+        // par-dessus (voir `_protocolPanelSlot`).
+        SizedBox(width: ProtocolPanel.collapsedSize.width),
+      ],
+    ),
+  );
+
+  // Replié, le panneau occupe son emplacement dans la rangée du bas ; déplié,
+  // il grandit vers le haut, au-dessus de la rangée (pdr-0086), et recouvre le
+  // canevas à droite sans le redimensionner. Le `Padding` est toujours présent :
+  // seule sa valeur change, l'élément du bouton et son focus restent.
+  Widget _protocolPanelSlot() => Positioned.fill(
+    child: Align(
+      alignment: Alignment.bottomRight,
+      child: BlocSelector<ProtocolFeedBloc, ProtocolFeedState, bool>(
+        selector: (state) => state.expanded,
+        builder: (context, expanded) => Padding(
+          padding: EdgeInsets.only(
+            bottom: expanded ? _bottomRowHeight + _gap : 0,
+          ),
+          child: const ProtocolPanel(),
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
     providers: [
@@ -950,90 +1005,12 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                           children: <Widget>[
                             Column(
                               children: <Widget>[
-                                Expanded(
-                                  // Réglage d'animation du canevas : durée nulle en
-                                  // scénario, en capture et sous « réduire les
-                                  // animations » ; vitesse du rejeu en cours sinon. Pas de
-                                  // `TickerMode` ici : il figerait l'apparition à
-                                  // l'opacité 0.
-                                  child: _motionScope(
-                                    child:
-                                        BlocSelector<
-                                          ReplayBloc,
-                                          ReplayState,
-                                          bool
-                                        >(
-                                          selector: (state) =>
-                                              state is ReplayActive,
-                                          // Rejeu (scénario ou acte 4) : aucune requête ne
-                                          // part.
-                                          builder: (context, replaying) =>
-                                              CanvasActionScope(
-                                                enabled:
-                                                    !_scenarioMode &&
-                                                    !replaying,
-                                                child: CanvasBoard(
-                                                  key: const Key(
-                                                    'canvas-board',
-                                                  ),
-                                                  controller: _controller,
-                                                  highlight: _highlight,
-                                                ),
-                                              ),
-                                        ),
-                                  ),
-                                ),
+                                _canvasZone(),
                                 const SizedBox(height: _gap),
-                                SizedBox(
-                                  key: const Key('bottom-row'),
-                                  height: _bottomRowHeight,
-                                  child: Row(
-                                    children: <Widget>[
-                                      const Expanded(child: CatalogShelf()),
-                                      const SizedBox(width: 16),
-                                      const SizedBox(
-                                        width: _replayWidth,
-                                        child: ReplayBar(),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      // Emplacement du panneau replié : le panneau lui-même
-                                      // est posé par-dessus (voir ci-dessous).
-                                      SizedBox(
-                                        width:
-                                            ProtocolPanel.collapsedSize.width,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                _bottomRow(),
                               ],
                             ),
-                            // Replié, le panneau occupe son emplacement dans la
-                            // rangée du bas ; déplié, il grandit vers le haut,
-                            // au-dessus de la rangée (pdr-0086), et recouvre le
-                            // canevas à droite sans le redimensionner. Le
-                            // `Padding` est toujours présent : seule sa valeur
-                            // change, l'élément du bouton et son focus restent.
-                            Positioned.fill(
-                              child: Align(
-                                alignment: Alignment.bottomRight,
-                                child:
-                                    BlocSelector<
-                                      ProtocolFeedBloc,
-                                      ProtocolFeedState,
-                                      bool
-                                    >(
-                                      selector: (state) => state.expanded,
-                                      builder: (context, expanded) => Padding(
-                                        padding: EdgeInsets.only(
-                                          bottom: expanded
-                                              ? _bottomRowHeight + _gap
-                                              : 0,
-                                        ),
-                                        child: const ProtocolPanel(),
-                                      ),
-                                    ),
-                              ),
-                            ),
+                            _protocolPanelSlot(),
                           ],
                         ),
                       ),
