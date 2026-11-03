@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot D (R4, R3, R5)
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system (scene_loop, ds_blink, ds_beacon, ds_status_chip, ds_gen_frame, ds_shift, ds_reveal), apps/genesis_canvas/lib/widgets (agents_rail, voice_wave, voice_orb, protocol_panel), packages/features/canvas (trend_chart, release_checklist, review_sentiment), steps U-05
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
