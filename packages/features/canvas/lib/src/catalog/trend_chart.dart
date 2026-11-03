@@ -147,9 +147,11 @@ class _TrendView extends StatelessWidget {
                   yMaxPct: trend.yMaxPct,
                   thresholdColor: theme.blockingForeground,
                   axisColor: theme.inkFaint,
+                  // Graduations de 15 px : ink-muted (4,5:1), jamais ink-faint
+                  // sous 24 px (pdr-0088 F12). L'axe, décoratif, reste ink-faint.
                   labelStyle: sceneTextStyle(
                     context,
-                    theme.data.copyWith(color: theme.inkFaint),
+                    theme.data.copyWith(color: theme.textSecondary),
                   ),
                   textScaler: MediaQuery.textScalerOf(context),
                 ),

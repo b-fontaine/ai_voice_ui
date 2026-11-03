@@ -34,7 +34,7 @@ void main() {
       findsOneWidget,
     );
     expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
   });
 
@@ -45,15 +45,18 @@ void main() {
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     final data = cloneJson(h.data);
+    // pdr-0087 / pdr-0088 F1 : à 18 px, un titre ne passe à la ligne qu'à
+    // partir d'environ 65 caractères.
     const label =
-        'Sessions sans crash sur Android pendant les sept derniers jours';
+        'Sessions sans crash sur Android pendant les sept derniers jours de '
+        'la release, tous appareils et toutes versions confondus';
     data['label'] = label;
     await h.sendData(tester, data);
 
     final Finder text = h.inCell(find.text(label));
     expect(text, findsOneWidget);
     expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-    expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+    expect(tester.getSize(text).height, greaterThan(titleLineHeight() * 1.5));
     expect(tester.takeException(), isNull);
   });
 
@@ -71,11 +74,12 @@ void main() {
     expect(text.data, '3.3 : 99,71 % · \u22120,28 pt');
     final theme = const SceneTheme.dark();
     expect(text.style?.color, theme.textSecondary);
-    expect(text.style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(text.style?.fontSize, greaterThanOrEqualTo(11));
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     expect(h.inCell(find.text('99,43 %')), findsOneWidget);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });

@@ -103,7 +103,7 @@ void main() {
           await leTableauDeLaRelease34EstAffiche(tester);
           await leServeurEmetLaListeDesCrashsJusquauTemps(tester, 'data');
           await laListeDesCrashsAfficheLignes(tester, 5);
-          await leTexteDeLaListeDesCrashsFaitAuMoinsPx(tester, 24);
+          await leTexteDeLaListeDesCrashsFaitAuMoinsPx(tester, 11);
           await chaqueLibelleDeLaListeDesCrashsTientSurLignePuisUneEllipse(
             tester,
             1,

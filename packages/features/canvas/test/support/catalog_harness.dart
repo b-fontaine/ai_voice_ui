@@ -181,16 +181,17 @@ class CatalogHarness {
     matching: finder,
   );
 
-  /// Vérifie que tous les textes de la cellule font au moins 24 px.
-  void expectTextAtLeast24(WidgetTester tester) {
+  /// Vérifie que tous les textes de la cellule font au moins 11 px (le plus petit style de l'échelle du design system, pdr-0087).
+  void expectTextAtLeastScaleMinimum(WidgetTester tester) {
     final paragraphs = tester
         .renderObjectList<RenderParagraph>(inCell(find.byType(RichText)))
         .toList();
     expect(paragraphs, isNotEmpty);
     for (final RenderParagraph p in paragraphs) {
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
       expect(
         p.text.style?.fontSize,
-        greaterThanOrEqualTo(24),
+        greaterThanOrEqualTo(11),
         reason: '${p.text}',
       );
     }
@@ -269,14 +270,14 @@ void defineCommonStateTests({
     });
   }
 
-  testWidgets('$component : textes >= 24 px, sans débordement à 940 x 255', (
+  testWidgets('$component : textes >= 11 px, sans débordement à 940 x 255', (
     tester,
   ) async {
     final h = CatalogHarness(surface, fixtureName, variant: variant);
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });
@@ -290,4 +291,18 @@ void defineCommonStateTests({
     await h.sendData(tester, cloneJson(h.data)..remove('title'));
     expect(tester.takeException(), isNull);
   });
+}
+
+/// Hauteur d'une ligne du style `title` (18 px sur 24 px d'interligne dans le
+/// design system) : un titre qui a passé à la ligne dépasse 1,5 fois cette
+/// hauteur. Remplace les 31,2 px du plancher de 24 px (pdr-0087 / pdr-0088 F1).
+double titleLineHeight() {
+  const SceneTheme theme = SceneTheme.dark();
+  return theme.title.fontSize! * theme.title.height!;
+}
+
+/// Hauteur d'une ligne du style `body` (15 px sur 22 px d'interligne).
+double bodyLineHeight() {
+  const SceneTheme theme = SceneTheme.dark();
+  return theme.body.fontSize! * theme.body.height!;
 }

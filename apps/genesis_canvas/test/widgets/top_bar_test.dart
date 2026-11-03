@@ -409,7 +409,7 @@ void main() {
     });
   });
 
-  group('zone de la barre supérieure (budget 128 px, texte >= 24 px)', () {
+  group('zone de la barre supérieure (budget 128 px, texte >= 11 px)', () {
     testWidgets('la barre fait 128 px de haut et accueille la régie', (
       tester,
     ) async {
@@ -437,7 +437,7 @@ void main() {
       );
     });
 
-    testWidgets('transcription longue et message d\'état : tout >= 24 px, '
+    testWidgets('transcription longue et message d\'état : tout >= 11 px, '
         'sans débordement', (tester) async {
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1;

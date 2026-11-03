@@ -449,7 +449,7 @@ void main() {
     );
   });
 
-  testWidgets('tout le texte du rail fait au moins 24 px et reste lisible', (
+  testWidgets('tout le texte du rail fait au moins 11 px et reste lisible', (
     tester,
   ) async {
     await pumpRail(tester);

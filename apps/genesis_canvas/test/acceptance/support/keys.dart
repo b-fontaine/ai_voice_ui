@@ -97,7 +97,7 @@ abstract final class AcceptanceKeys {
   static Key crashRow(int rank) => Key('crash-row-$rank');
 
   /// `Text` du libellé de la ligne de rang [rank] de la `CrashList` : deux
-  /// lignes au plus puis ellipse, texte d'au moins 24 px (pdr-0074 D9, A7).
+  /// lignes au plus puis ellipse, texte d'au moins 11 px depuis pdr-0087 (pdr-0074 D9, A7).
   static Key crashLabel(int rank) => Key('crash-label-$rank');
 
   /// Canevas (existe déjà).

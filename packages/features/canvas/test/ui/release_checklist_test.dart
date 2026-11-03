@@ -158,7 +158,9 @@ void main() {
   testWidgets('12 critères : marque « + N autres », bloquant en 12e visible', (
     tester,
   ) async {
-    final h = _realFontsHarness(size: const Size(940, 255));
+    // pdr-0087 / pdr-0088 F1 : les lignes passent de 45 à 36 px (texte de
+    // 15 px) ; la cellule est réduite pour que la liste déborde encore.
+    final h = _realFontsHarness(size: const Size(940, 220));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     final data = cloneJson(h.data);
@@ -184,7 +186,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
-    // 3 critères de 45 px tiennent avec la marque : 9 critères masqués.
+    // 3 critères de 36 px tiennent avec la marque : 9 critères masqués.
     expect(h.inCell(find.text('+ 9 autres critères')), findsOneWidget);
     expect(h.inCell(find.text('Critère bloquant')), findsOneWidget);
     expect(h.inCell(find.text('Bloquant')), findsOneWidget);
@@ -193,12 +195,14 @@ void main() {
     expect(h.inCell(find.text('Critère 3')), findsNothing);
     expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
     expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
   });
 
   testWidgets('critères masqués : bloquants puis risques en priorité, '
       'ordre d\'origine conservé', (tester) async {
-    final h = _realFontsHarness(size: const Size(940, 340));
+    // pdr-0087 / pdr-0088 F1 : lignes de 36 px au lieu de 45 px, cellule
+    // réduite en conséquence (340 → 280 px).
+    final h = _realFontsHarness(size: const Size(940, 280));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     final data = cloneJson(h.data);
@@ -220,7 +224,7 @@ void main() {
     await h.sendData(tester, data);
 
     expect(tester.takeException(), isNull);
-    // 5 critères de 45 px tiennent avec la marque : seul E est masqué.
+    // 5 critères de 36 px tiennent avec la marque : seul E est masqué.
     expect(h.inCell(find.text('+ 1 autres critères')), findsOneWidget);
     expect(h.inCell(find.text('A')), findsOneWidget);
     expect(h.inCell(find.text('C')), findsOneWidget);
@@ -264,7 +268,7 @@ void main() {
       expect(h.inCell(find.text('NO-GO Android')), findsOneWidget);
       expect(h.inCell(find.text('Bloquant')), findsNWidgets(2));
       expect(find.byKey(const Key('neutral-checklist')), findsNothing);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
       expect(h.engineErrors, isEmpty);
     },
@@ -300,13 +304,13 @@ void main() {
     expect(h.inCell(find.text('GO iOS')), findsOneWidget);
     expect(h.inCell(find.text('99,80 %')), findsOneWidget);
     expect(find.byKey(const Key('neutral-checklist')), findsNothing);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });
 
   group('polices réelles, cellule 3 x 2 de 624 x 302 (D2)', () {
-    testWidgets('acte 2 : aucun paragraphe tronqué, texte >= 24 px, aucun '
+    testWidgets('acte 2 : aucun paragraphe tronqué, texte >= 11 px, aucun '
         'débordement', (tester) async {
       final h = _realFontsHarness();
       await h.pump(tester);
@@ -314,7 +318,7 @@ void main() {
       await h.sendVariant(tester, 'act2');
 
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
       expect(h.engineErrors, isEmpty);
       // Le libellé complet est rendu, sur autant de lignes que nécessaire.
@@ -352,8 +356,12 @@ void main() {
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       final data = cloneJson(h.data);
+      // pdr-0087 / pdr-0088 F1 : le libellé est en 15 px (interligne 22 px) ;
+      // il est rallongé pour passer à la ligne dans sa colonne.
       const label =
-          'Taux de sessions sans crash sur Android pendant les sept derniers jours';
+          'Taux de sessions sans crash sur Android pendant les sept derniers '
+          'jours de la release, tous appareils et toutes versions confondus, '
+          'hors sessions de test internes';
       (data['items'] as List)[0]['label'] = label;
       await h.sendData(tester, data);
 
@@ -365,7 +373,7 @@ void main() {
       expect(widget.maxLines, isNull);
       expect(
         tester.getSize(text).height,
-        greaterThan(31.3 * 1.5),
+        greaterThan(bodyLineHeight() * 1.5),
         reason: 'le libellé doit occuper plusieurs lignes',
       );
       expect(tester.takeException(), isNull);

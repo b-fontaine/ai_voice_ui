@@ -144,11 +144,14 @@ void main() {
           greaterThanOrEqualTo(minimum),
         );
       });
-      test('ink-faint >= 3:1 (grand texte, 24 px) sur $backgroundName', () {
-        // 24 px et plus seulement : 3,79:1 sur surface-200, 3,40:1 sur
-        // surface-300 (relevé de la revue du plan).
-        expect(contrast(theme.inkFaint, background), greaterThanOrEqualTo(3));
-      });
+      test(
+        'ink-faint >= 3:1 (décoratif, composants inactifs) sur $backgroundName',
+        () {
+          // Jamais un texte de moins de 24 px (pdr-0088 F12, text_contrast_small_test) :
+          // 3,79:1 sur surface-200, 3,40:1 sur surface-300 (relevé de la revue du plan).
+          expect(contrast(theme.inkFaint, background), greaterThanOrEqualTo(3));
+        },
+      );
     });
     test('ink-muted >= 7:1 sur surface-100', () {
       expect(
@@ -263,7 +266,9 @@ void main() {
     );
   });
 
-  test('toutes les tailles de texte sont >= 24 px', () {
+  test('échelle du design system : tailles de 11 à 76 px, sans plancher', () {
+    // pdr-0087 / pdr-0088 F1 : le plancher de 24 px est levé ; le détail de
+    // chaque style est dans scene_theme_scale_test.
     final styles = {
       'body': theme.body,
       'label': theme.label,
@@ -277,7 +282,7 @@ void main() {
     };
     styles.forEach((name, style) {
       expect(style.fontSize, isNotNull, reason: name);
-      expect(style.fontSize, greaterThanOrEqualTo(24), reason: name);
+      expect(style.fontSize, inInclusiveRange(11, 76), reason: name);
     });
     expect(theme.value.fontSize, greaterThanOrEqualTo(48));
   });

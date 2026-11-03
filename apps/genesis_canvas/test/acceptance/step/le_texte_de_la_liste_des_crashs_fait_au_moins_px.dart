@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/keys.dart';
 
-/// Usage: le texte de la liste des crashs fait au moins {24} px
+/// Usage: le texte de la liste des crashs fait au moins {11} px
 ///
 /// Lisibilité à la distance d'une salle (NFR-03) : taille résolue de chaque
 /// paragraphe de la cellule `surface-crashes`.

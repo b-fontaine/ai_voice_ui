@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/acte3_harness.dart';
 
-/// Usage: les boutons de la Barre d'actions ont un texte d'au moins {24} px et une cible d'au moins {48} px
+/// Usage: les boutons de la Barre d'actions ont un texte d'au moins {11} px et une cible d'au moins {48} px
 ///
 /// Lisibilité à la distance d'une salle (NFR-03) et cible tactile : le corps
 /// du texte (taille résolue du paragraphe) et la boîte du bouton.

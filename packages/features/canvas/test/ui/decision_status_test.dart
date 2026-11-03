@@ -97,7 +97,8 @@ void main() {
       final RenderParagraph before = tester.renderObject<RenderParagraph>(
         h.inCell(find.text('Checklist go/no-go')),
       );
-      expect(before.text.style?.fontSize, greaterThanOrEqualTo(24));
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(before.text.style?.fontSize, greaterThanOrEqualTo(11));
       expect(tester.takeException(), isNull);
     });
   }

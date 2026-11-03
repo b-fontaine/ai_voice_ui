@@ -321,7 +321,7 @@ void main() {
   });
 
   group('lisibilité et bandeau de 72 px', () {
-    testWidgets('textes >= 24 px, cibles >= 48 px, sans débordement', (
+    testWidgets('textes >= 11 px, cibles >= 48 px, sans débordement', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(940, 400);
@@ -342,7 +342,8 @@ void main() {
       expect(tester.takeException(), isNull);
       for (final String label in <String>['Décision', 'Geler', 'Valider']) {
         final Text text = tester.widget<Text>(find.text(label));
-        expect(text.style!.fontSize, greaterThanOrEqualTo(24), reason: label);
+        // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+        expect(text.style!.fontSize, greaterThanOrEqualTo(11), reason: label);
       }
       for (final String id in <String>['block_release', 'validate_release']) {
         final Size size = tester.getSize(find.byKey(Key('action-$id')));
@@ -365,7 +366,7 @@ void main() {
 
   group('libellé très long dans le bandeau de 72 px', () {
     testWidgets('120 caractères : aucun débordement, cible >= 48 px, '
-        'texte >= 24 px', (tester) async {
+        'texte >= 11 px', (tester) async {
       tester.view.physicalSize = const Size(940, 400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -391,7 +392,8 @@ void main() {
       final Text text = tester.widget<Text>(
         find.descendant(of: long, matching: find.byType(Text)),
       );
-      expect(text.style!.fontSize, greaterThanOrEqualTo(24));
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(text.style!.fontSize, greaterThanOrEqualTo(11));
     });
   });
 

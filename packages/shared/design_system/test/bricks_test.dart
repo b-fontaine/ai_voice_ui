@@ -40,7 +40,8 @@ void main() {
     final text = find.text('Données indisponibles');
     expect(text, findsOneWidget);
     expect(find.byType(Icon), findsOneWidget);
-    expect(_fontSizeOf(tester, text), greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(_fontSizeOf(tester, text), greaterThanOrEqualTo(11));
   });
 
   testWidgets('DsStatusChip affiche le libellé tel quel', (tester) async {
@@ -55,7 +56,8 @@ void main() {
     expect(tester.takeException(), isNull);
     final text = find.text('À risque (libellé du backend)');
     expect(text, findsOneWidget);
-    expect(_fontSizeOf(tester, text), greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(_fontSizeOf(tester, text), greaterThanOrEqualTo(11));
     final box = tester.widget<DecoratedBox>(
       find
           .descendant(

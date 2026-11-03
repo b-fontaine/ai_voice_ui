@@ -133,7 +133,7 @@ void main() {
   });
 
   testWidgets('polices réelles : six noms entiers, aucun paragraphe tronqué, '
-      'texte de 24 px au moins, en 6/6 comme en 0/6', (tester) async {
+      'texte de 11 px au moins, en 6/6 comme en 0/6', (tester) async {
     await loadRealFonts(alsoAs: const <String>['Roboto']);
     await pumpShelf(tester);
     expect(paragraphsTruncated(tester), isEmpty, reason: '0 / 6');
@@ -151,7 +151,8 @@ void main() {
     expect(tester.takeException(), isNull);
     for (final text in tester.widgetList<Text>(find.byType(Text))) {
       final size = text.style?.fontSize ?? 0;
-      expect(size, greaterThanOrEqualTo(24), reason: text.data);
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+      expect(size, greaterThanOrEqualTo(11), reason: text.data);
     }
   });
 

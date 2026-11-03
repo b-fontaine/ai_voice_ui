@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 24dbc3e95b53200f4d3db7e058d3c5eff55330e72b28efe223ccfd05b3ece8b1
+// tokens-sha256: 3520a4c47221fba83fc31bc772b9811cd6583f89a9fd87f0428ab51e0debe319
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -48,8 +48,8 @@ abstract final class SceneTokens {
   static const List<String> textBodyFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textBodyFontSize = 24.0;
-  static const double textBodyHeight = 1.3;
+  static const double textBodyFontSize = 15.0;
+  static const double textBodyHeight = 1.4666666666666666;
   static const FontWeight textBodyFontWeight = FontWeight.w400;
   static const List<FontVariation> textBodyFontVariations = [
     FontVariation('wght', 400.0),
@@ -60,13 +60,13 @@ abstract final class SceneTokens {
   static const List<String> textLabelFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textLabelFontSize = 24.0;
-  static const double textLabelHeight = 1.3;
+  static const double textLabelFontSize = 11.0;
+  static const double textLabelHeight = 1.2727272727272727;
   static const FontWeight textLabelFontWeight = FontWeight.w500;
   static const List<FontVariation> textLabelFontVariations = [
     FontVariation('wght', 500.0),
   ];
-  static const double textLabelLetterSpacing = 3.36;
+  static const double textLabelLetterSpacing = 1.54;
   static const Color textLabelColor = Color(0xFF93A1CC);
   static const String textValueFontFamily =
       'packages/shared_design_system/JetBrains Mono';
@@ -86,8 +86,8 @@ abstract final class SceneTokens {
   static const List<String> textTitleFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textTitleFontSize = 24.0;
-  static const double textTitleHeight = 1.2;
+  static const double textTitleFontSize = 18.0;
+  static const double textTitleHeight = 1.3333333333333333;
   static const FontWeight textTitleFontWeight = FontWeight.w600;
   static const List<FontVariation> textTitleFontVariations = [
     FontVariation('wght', 600.0),
@@ -110,8 +110,8 @@ abstract final class SceneTokens {
   static const List<String> textDataFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textDataFontSize = 24.0;
-  static const double textDataHeight = 1.3;
+  static const double textDataFontSize = 15.0;
+  static const double textDataHeight = 1.3333333333333333;
   static const FontWeight textDataFontWeight = FontWeight.w500;
   static const List<FontVariation> textDataFontVariations = [
     FontVariation('wght', 500.0),
@@ -135,8 +135,8 @@ abstract final class SceneTokens {
   static const List<String> textTranscriptFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textTranscriptFontSize = 24.0;
-  static const double textTranscriptHeight = 1.3;
+  static const double textTranscriptFontSize = 20.0;
+  static const double textTranscriptHeight = 1.4;
   static const FontWeight textTranscriptFontWeight = FontWeight.w500;
   static const List<FontVariation> textTranscriptFontVariations = [
     FontVariation('wght', 500.0),
@@ -147,8 +147,8 @@ abstract final class SceneTokens {
   static const List<String> textButtonFontFamilyFallback = [
     'packages/shared_design_system/DejaVu Sans',
   ];
-  static const double textButtonFontSize = 24.0;
-  static const double textButtonHeight = 1.3;
+  static const double textButtonFontSize = 15.0;
+  static const double textButtonHeight = 1.3333333333333333;
   static const FontWeight textButtonFontWeight = FontWeight.w600;
   static const List<FontVariation> textButtonFontVariations = [
     FontVariation('wght', 600.0),

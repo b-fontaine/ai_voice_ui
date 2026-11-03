@@ -12,7 +12,7 @@ import '../support/paragraphs.dart';
 
 /// Test de page à 1920 × 1080, DPR 1 (A7d du plan 007) : les quatre fixtures du
 /// contrat jouées par le faux canal, panneau replié puis déplié. Aucune erreur
-/// de rendu (dont les débordements), tout texte de l'écran à 24 px au moins,
+/// de rendu (dont les débordements), tout texte de l'écran à 11 px au moins,
 /// zones aux hauteurs du budget.
 ///
 /// Les tests de widgets de `flutter_test` rendent le texte avec la police
@@ -41,12 +41,12 @@ void main() {
     expect(
       paragraphsBelowMinimum(tester),
       isEmpty,
-      reason: 'tout texte de l\'écran doit faire au moins 24 px',
+      reason: 'tout texte de l\'écran doit faire au moins 11 px',
     );
   }
 
   testWidgets('acte 1 complet, panneau replié : zones au budget, aucun '
-      'débordement, texte >= 24 px', (tester) async {
+      'débordement, texte >= 11 px', (tester) async {
     final rig = await playAct1(tester);
 
     expectCleanScreen(tester, rig);
@@ -108,7 +108,7 @@ void main() {
   });
 
   testWidgets('acte 2 après l\'acte 1 : lignes de comparaison, deux entrées de '
-      'légende, aucun débordement, texte >= 24 px', (tester) async {
+      'légende, aucun débordement, texte >= 11 px', (tester) async {
     final rig = await playAct1(tester);
     final surfaces = (await tester.runAsync(
       () => ContractFixtures.followUpSurfaces(

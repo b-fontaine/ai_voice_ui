@@ -241,7 +241,7 @@ void main() {
   });
 
   for (final bool active in <bool>[false, true]) {
-    barTest('aucun débordement à 480 x 140, textes >= 24 px, cibles >= 48 px '
+    barTest('aucun débordement à 480 x 140, textes >= 11 px, cibles >= 48 px '
         '(${active ? 'rejeu' : 'direct'})', (tester) async {
       await _pump(tester, withJournal: true);
       if (active) await _press(tester, _play);
@@ -254,7 +254,8 @@ void main() {
           in find.descendant(of: bar, matching: find.byType(Text)).evaluate()) {
         final TextStyle style = DefaultTextStyle.of(e).style
             .merge((e.widget as Text).style);
-        expect(style.fontSize, greaterThanOrEqualTo(24));
+        // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+        expect(style.fontSize, greaterThanOrEqualTo(11));
       }
       for (final Key key in <Key>[
         _play,

@@ -207,7 +207,8 @@ void main() {
         .text
         .style;
     expect(style?.fontSize, const SceneTheme.dark().actIndicator.fontSize);
-    expect(style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(style?.fontSize, greaterThanOrEqualTo(11));
   });
 
   testWidgets(
@@ -357,7 +358,8 @@ void main() {
         .renderObject<RenderParagraph>(find.text('Acte 4 · Rejeu'))
         .text
         .style;
-    expect(style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(style?.fontSize, greaterThanOrEqualTo(11));
   });
 
   testWidgets('en rejeu : « Remettre à vide » quitte le rejeu, sans reset', (
@@ -618,7 +620,7 @@ void main() {
       );
     });
 
-    linuxTest('libellés entiers à 24 px au moins, polices réelles', (
+    linuxTest('libellés entiers à 11 px au moins, polices réelles', (
       tester,
     ) async {
       await loadRealFonts();

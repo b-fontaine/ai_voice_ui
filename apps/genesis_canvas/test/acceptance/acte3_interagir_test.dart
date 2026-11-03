@@ -223,7 +223,7 @@ void main() {
         await lesBoutonsDeLaBarreDactionsSontActifs(tester);
         await lesBoutonsDeLaBarreDactionsOntUnTexteDauMoinsPxEtUneCibleDauMoinsPx(
           tester,
-          24,
+          11,
           48,
         );
       } finally {

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/paragraphs.dart';
 
-/// Usage: tout texte visible de l'écran fait au moins {24} px
+/// Usage: tout texte visible de l'écran fait au moins {11} px
 ///
 /// Parcourt tous les paragraphes rendus (`Text` et `RichText`, `Material`
 /// compris) hors `Offstage` : les fautifs sont listés dans le message d'échec.
@@ -11,7 +11,11 @@ Future<void> toutTexteVisibleDeLecranFaitAuMoinsPx(
   WidgetTester tester,
   num size,
 ) async {
-  expect(size, minSceneFontSize, reason: 'seuil de la scène : RG-09, NFR-05');
+  expect(
+    size,
+    minSceneFontSize,
+    reason: 'seuil de la scène : 11 px (pdr-0087 / pdr-0088 F1)',
+  );
   final List<String> small = paragraphsBelowMinimum(tester);
   expect(
     small,

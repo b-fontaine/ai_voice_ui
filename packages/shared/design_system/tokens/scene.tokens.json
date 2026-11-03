@@ -150,11 +150,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 15,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.130}"
+          "$value": 1.4666666666666666
         },
         "fontWeight": {
           "$type": "fontWeight",
@@ -176,11 +179,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 11,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.130}"
+          "$value": 1.2727272727272727
         },
         "fontWeight": {
           "$type": "fontWeight",
@@ -192,7 +198,7 @@
             "value": 0.14,
             "unit": "em",
             "fontSize": {
-              "value": 24,
+              "value": 11,
               "unit": "px"
             }
           }
@@ -250,11 +256,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 18,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.120}"
+          "$value": 1.3333333333333333
         },
         "fontWeight": {
           "$type": "fontWeight",
@@ -302,11 +311,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 15,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.130}"
+          "$value": 1.3333333333333333
         },
         "fontWeight": {
           "$type": "fontWeight",
@@ -365,11 +377,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 20,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.130}"
+          "$value": 1.4
         },
         "fontWeight": {
           "$type": "fontWeight",
@@ -391,11 +406,14 @@
         },
         "fontSize": {
           "$type": "dimension",
-          "$value": "{size.24}"
+          "$value": {
+            "value": 15,
+            "unit": "px"
+          }
         },
         "height": {
           "$type": "number",
-          "$value": "{lineHeight.130}"
+          "$value": 1.3333333333333333
         },
         "fontWeight": {
           "$type": "fontWeight",

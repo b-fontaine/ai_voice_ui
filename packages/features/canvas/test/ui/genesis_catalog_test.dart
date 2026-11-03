@@ -225,7 +225,7 @@ void main() {
     });
   }
 
-  testWidgets('tout texte affiché fait au moins 24 px', (tester) async {
+  testWidgets('tout texte affiché fait au moins 11 px', (tester) async {
     createEngine();
     await pumpBoard(tester);
     await sendFixtureTo(tester, 3);
@@ -240,9 +240,10 @@ void main() {
         .toList();
     expect(paragraphs, isNotEmpty);
     for (final RenderParagraph p in paragraphs) {
+      // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
       expect(
         p.text.style?.fontSize,
-        greaterThanOrEqualTo(24),
+        greaterThanOrEqualTo(11),
         reason: '${p.text}',
       );
     }

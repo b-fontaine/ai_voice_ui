@@ -17,6 +17,18 @@ const Size gridCell3x2 = Size(624, 302);
 /// Cellule d'une grille 2 x 2 à 1920 x 1080 : 936 x 302.
 const Size gridCell2x2 = Size(936, 302);
 
+/// Cellules à la hauteur réduite (pdr-0087 / pdr-0088 F1) : à 15 px, les trois
+/// extraits de l'acte 2 tiennent en entier dans 302 px, ce qui n'exerce plus
+/// la règle « extraits entiers puis + N avis » (D2). La hauteur est abaissée
+/// pour que la cellule déborde encore ; T23 (cartes de verbatims) rétablit la
+/// cellule réelle.
+///
+/// Plage utile mesurée : de 200 à 230 px en 3 x 2 ; en 2 x 2, autour de 190 px
+/// (170 px n'affiche aucun extrait, 200 px les trois : extraits sur une seule
+/// ligne dans 936 px).
+const Size reducedCell3x2 = Size(624, 220);
+const Size reducedCell2x2 = Size(936, 190);
+
 /// Harnais en polices réelles (Ahem, environ 24 px par glyphe, ne permet de
 /// juger ni la largeur d'une ligne ni son retour à la ligne).
 CatalogHarness _realFontsHarness({Size size = gridCell3x2}) => CatalogHarness(
@@ -134,7 +146,7 @@ void main() {
   group('extraits entiers puis « + N avis » (D2)', () {
     testWidgets('3 x 2 (624 x 302), acte 2 : extraits entiers, nombre fixé, '
         'aucun paragraphe tronqué', (tester) async {
-      final h = _realFontsHarness();
+      final h = _realFontsHarness(size: reducedCell3x2);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
@@ -151,7 +163,7 @@ void main() {
         reason: 'texte exact « + N avis »',
       );
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
       expect(h.engineErrors, isEmpty);
     });
@@ -177,7 +189,7 @@ void main() {
 
     testWidgets('2 x 2 (936 x 302), acte 2 : même nombre d\'extraits '
         'qu\'en 3 x 2, compte cohérent', (tester) async {
-      final h = _realFontsHarness(size: gridCell2x2);
+      final h = _realFontsHarness(size: reducedCell2x2);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
@@ -188,7 +200,7 @@ void main() {
       expect(shown, 1);
       expect(_hiddenCount(tester), 3 - shown);
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      h.expectTextAtLeast24(tester);
+      h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
     });
 
@@ -238,11 +250,12 @@ void main() {
     expect(text.data, '3.3 : 14 % négatifs · +16 pts');
     final theme = const SceneTheme.dark();
     expect(text.style?.color, theme.textSecondary);
-    expect(text.style?.fontSize, greaterThanOrEqualTo(24));
+    // pdr-0087 / pdr-0088 F1 : échelle du design system (11 px au plus bas), plus de plancher de 24 px.
+    expect(text.style?.fontSize, greaterThanOrEqualTo(11));
     expect(text.maxLines, 1);
     expect(text.overflow, TextOverflow.ellipsis);
     expect(h.inCell(find.textContaining('Avis · Android')), findsOneWidget);
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });

@@ -160,7 +160,7 @@ void main() {
       h.inCell(find.byKey(const Key('trend-chart-paint'))),
       findsOneWidget,
     );
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
   });
 
   group('en-tête : titre sur sa ligne, légende dessous (D2)', () {
@@ -214,7 +214,7 @@ void main() {
           );
         }
         expect(paint.height, greaterThan(100));
-        h.expectTextAtLeast24(tester);
+        h.expectTextAtLeastScaleMinimum(tester);
         expect(tester.takeException(), isNull);
         expect(h.engineErrors, isEmpty);
       });
@@ -226,15 +226,18 @@ void main() {
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       final data = cloneJson(h.data);
+      // pdr-0087 / pdr-0088 F1 : à 18 px, un titre ne passe à la ligne qu'à
+      // partir d'environ 65 caractères.
       const title =
-          'Taux de crash du jour sur Android pour la version 3.4 de la release';
+          'Taux de crash du jour sur Android pour la version 3.4 de la release, '
+          'comparé aux trois versions précédentes sur quatorze jours';
       data['title'] = title;
       await h.sendData(tester, data);
 
       final Finder text = h.inCell(find.text(title));
       expect(text, findsOneWidget);
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
-      expect(tester.getSize(text).height, greaterThan(31.3 * 1.5));
+      expect(tester.getSize(text).height, greaterThan(titleLineHeight() * 1.5));
       expect(
         tester
             .getSize(h.inCell(find.byKey(const Key('trend-chart-paint'))))
@@ -434,7 +437,7 @@ void main() {
       false,
       true,
     ], reason: 'la 3.3 se distingue par le trait pointillé');
-    h.expectTextAtLeast24(tester);
+    h.expectTextAtLeastScaleMinimum(tester);
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
   });
@@ -567,14 +570,34 @@ void main() {
       );
     });
 
-    testWidgets('graduations d\'axe en ink-faint, texte >= 24 px et >= 3:1 '
-        'sur le panneau', (tester) async {
-      final TrendChartPainter painter = await act2Painter(tester);
-      expect(painter.axisColor, theme.inkFaint);
-      expect(painter.labelStyle.color, theme.inkFaint);
-      expect(painter.labelStyle.fontSize, greaterThanOrEqualTo(24));
-      expect(contrast(theme.inkFaint, theme.panelTop), greaterThanOrEqualTo(3));
-      expect(contrast(theme.inkFaint, theme.surface), greaterThanOrEqualTo(3));
-    });
+    testWidgets(
+      'axe en ink-faint (décoratif), graduations de 15 px en ink-muted '
+      'à 4,5:1 au moins',
+      (tester) async {
+        final TrendChartPainter painter = await act2Painter(tester);
+        // pdr-0087 / pdr-0088 F1 et F12 : les graduations ont la taille de
+        // `data` (15 px), donc le contraste d'un texte courant ; seul l'axe,
+        // décoratif, reste en ink-faint (3:1 suffit).
+        expect(painter.axisColor, theme.inkFaint);
+        expect(painter.labelStyle.color, theme.textSecondary);
+        expect(painter.labelStyle.fontSize, theme.data.fontSize);
+        expect(
+          contrast(theme.inkFaint, theme.panelTop),
+          greaterThanOrEqualTo(3),
+        );
+        expect(
+          contrast(theme.inkFaint, theme.surface),
+          greaterThanOrEqualTo(3),
+        );
+        expect(
+          contrast(painter.labelStyle.color!, theme.panelTop),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          contrast(painter.labelStyle.color!, theme.surface),
+          greaterThanOrEqualTo(4.5),
+        );
+      },
+    );
   });
 }

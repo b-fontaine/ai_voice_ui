@@ -71,7 +71,7 @@ void main() {
       ),
     );
     expect(source, contains('textValueLetterSpacing = -3.04'));
-    expect(source, contains('textLabelLetterSpacing = 3.36'));
+    expect(source, contains('textLabelLetterSpacing = 1.54'));
     expect(source, contains('textVerdictLetterSpacing = 1.12'));
     final fallbacks = RegExp(r'FontFamilyFallback =').allMatches(source);
     expect(fallbacks.length, 9);
