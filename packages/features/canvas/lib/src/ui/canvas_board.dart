@@ -5,9 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart'
     show
+        DsRise,
         DsSkeleton,
-        SceneMotion,
-        SceneMotionScope,
         ScenePanel,
         ScenePanelDecoration,
         SceneRadius,
@@ -245,18 +244,18 @@ class _SurfaceCell extends StatelessWidget {
 
 /// Passage du squelette aux composants d'une surface (D-06, pdr-0075 D3).
 ///
-/// Un seul `AnimationController` par surface. Tant que la phase est
-/// `skeleton`, le squelette est seul à l'écran. Au passage aux composants, le
-/// squelette part aussitôt et la `Surface` est montée une fois pour toutes
-/// (son `State` n'est jamais recréé) : elle apparaît en fondu en se décalant de
-/// [SceneMotion.translation] vers sa place. La durée vient de
-/// [SceneMotionScope] : nulle si les animations sont coupées (jamais de
+/// Tant que la phase est `skeleton`, le squelette est seul à l'écran. Au
+/// passage aux composants, le squelette part aussitôt et la `Surface` est
+/// montée une fois pour toutes dans un [DsRise] (son `State` n'est jamais
+/// recréé) : elle apparaît en fondu, de flou et de 10 px
+/// vers sa place (`gc-rise`, pdr-0087 / pdr-0088 F5). La durée vient de
+/// `SceneMotionScope` : nulle si les animations sont coupées (jamais de
 /// `TickerMode`), divisée par la vitesse du rejeu sinon.
 ///
 /// Une surface présente dès le premier rendu du canevas (`restored`,
-/// restauration) est directement pleinement visible. Une surface qui arrive
-/// ensuite apparaît en fondu, même si sa phase est déjà `components` ou `data`
-/// (le rejeu reconstruit une surface d'un seul coup).
+/// restauration) est directement en place. Une surface qui arrive ensuite
+/// apparaît, même si sa phase est déjà `components` ou `data` (le rejeu
+/// reconstruit une surface d'un seul coup).
 class _SurfaceAppearance extends StatefulWidget {
   const _SurfaceAppearance({
     required this.id,
@@ -276,47 +275,16 @@ class _SurfaceAppearance extends StatefulWidget {
   State<_SurfaceAppearance> createState() => _SurfaceAppearanceState();
 }
 
-class _SurfaceAppearanceState extends State<_SurfaceAppearance>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animation = AnimationController(
-    vsync: this,
-    duration: SceneMotion.appear,
-    value: widget.restored && widget.phase != SurfacePhase.skeleton ? 1 : 0,
-  );
-
-  bool _started = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    SceneMotionScope.completeIfDisabled(context, _animation);
-    // Surface qui arrive déjà avec ses composants : le fondu part au montage.
-    if (_started) return;
-    _started = true;
-    if (!widget.restored && widget.phase != SurfacePhase.skeleton) _play();
-  }
+class _SurfaceAppearanceState extends State<_SurfaceAppearance> {
+  /// Le premier [DsRise] de la cellule est déjà en place si la surface était
+  /// restaurée avec ses composants ; tout [DsRise] suivant joue.
+  late bool _settled = widget.restored && widget.phase != SurfacePhase.skeleton;
 
   @override
   void didUpdateWidget(_SurfaceAppearance oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final bool wasSkeleton = oldWidget.phase == SurfacePhase.skeleton;
-    final bool isSkeleton = widget.phase == SurfacePhase.skeleton;
-    if (wasSkeleton == isSkeleton) return;
-    if (isSkeleton) {
-      _animation.value = 0;
-    } else {
-      _play();
-    }
-  }
-
-  void _play() {
-    SceneMotionScope.play(context, _animation, SceneMotion.appear);
-  }
-
-  @override
-  void dispose() {
-    _animation.dispose();
-    super.dispose();
+    // Retour au squelette : le prochain [DsRise] joue.
+    if (widget.phase == SurfacePhase.skeleton) _settled = false;
   }
 
   @override
@@ -324,20 +292,10 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance>
     if (widget.phase == SurfacePhase.skeleton) {
       return DsSkeleton(key: ValueKey<String>('skeleton-${widget.id}'));
     }
-    return AnimatedBuilder(
-      animation: _animation,
+    return DsRise(
+      settled: _settled,
       // La `Surface` est construite une fois : seul l'habillage suit l'image.
       child: Surface(surfaceContext: widget.controller.contextFor(widget.id)),
-      builder: (BuildContext context, Widget? surface) {
-        final double t = SceneMotion.curve.transform(_animation.value);
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, SceneMotion.translation * (1 - t)),
-            child: surface,
-          ),
-        );
-      },
     );
   }
 }

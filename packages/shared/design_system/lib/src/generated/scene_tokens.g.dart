@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: a50dd0931ac056539e0f44878d42f399b6ad49c50232f399229f579f62fec09a
+// tokens-sha256: d943ae2075190731fd1828f036cda55e56d5008dd46c26812e3dfcb1843ec2b3
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -385,5 +385,21 @@ abstract final class SceneTokens {
   static const Duration motionBeacon = Duration(milliseconds: 1600);
   static const Duration motionSkeleton = Duration(milliseconds: 1200);
   static const Duration motionOrb = Duration(milliseconds: 2000);
+  static const Duration motionRow = Duration(milliseconds: 480);
+  static const Duration motionStagger = Duration(milliseconds: 180);
+  static const Duration motionWipe = Duration(milliseconds: 1600);
+  static const Duration motionCount = Duration(milliseconds: 1400);
+  static const Duration motionGauge = Duration(milliseconds: 1400);
+  static const Duration motionSpin = Duration(milliseconds: 2800);
+  static const Duration motionScan = Duration(milliseconds: 2200);
+  static const Duration motionFade = Duration(milliseconds: 600);
+  static const Duration motionFlash = Duration(milliseconds: 1200);
+  static const Duration motionWave = Duration(milliseconds: 1000);
+  static const Duration motionOrbRing = Duration(milliseconds: 2400);
+  static const Duration motionIndet = Duration(milliseconds: 1300);
+  static const Duration motionRing = Duration(milliseconds: 1800);
+  static const Duration motionBlink = Duration(milliseconds: 1000);
+  static const double motionBlur = 4.0;
+  static const double motionScale = 0.985;
   static const Cubic motionCurve = Cubic(0.2, 0.8, 0.2, 1.0);
 }

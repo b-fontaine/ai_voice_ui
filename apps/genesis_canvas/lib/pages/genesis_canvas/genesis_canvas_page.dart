@@ -813,21 +813,18 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const double _bottomRowHeight = 140;
   static const double _replayWidth = 480;
 
+  // Le réglage d'animation est posé plus haut, sur toute la scène. Pas de
+  // `TickerMode` : il figerait l'apparition à l'opacité 0.
   Widget _canvasZone() => Expanded(
-    // Réglage d'animation du canevas : durée nulle en scénario, en capture et
-    // sous « réduire les animations » ; vitesse du rejeu en cours sinon. Pas
-    // de `TickerMode` ici : il figerait l'apparition à l'opacité 0.
-    child: _motionScope(
-      child: BlocSelector<ReplayBloc, ReplayState, bool>(
-        selector: (state) => state is ReplayActive,
-        // Rejeu (scénario ou acte 4) : aucune requête ne part.
-        builder: (context, replaying) => CanvasActionScope(
-          enabled: !_scenarioMode && !replaying,
-          child: CanvasBoard(
-            key: const Key('canvas-board'),
-            controller: _controller,
-            highlight: _highlight,
-          ),
+    child: BlocSelector<ReplayBloc, ReplayState, bool>(
+      selector: (state) => state is ReplayActive,
+      // Rejeu (scénario ou acte 4) : aucune requête ne part.
+      builder: (context, replaying) => CanvasActionScope(
+        enabled: !_scenarioMode && !replaying,
+        child: CanvasBoard(
+          key: const Key('canvas-board'),
+          controller: _controller,
+          highlight: _highlight,
         ),
       ),
     ),
@@ -967,15 +964,17 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                     horizontal: _marginX,
                     vertical: _marginY,
                   ),
-                  child: Column(
-                    children: <Widget>[
-                      // Même réglage d'animation que le canevas : l'orbe
-                      // s'immobilise en scénario, en capture et sous « réduire
-                      // les animations ». « Démarrer » est inactif en mode
-                      // scénario et pendant un rejeu ; la session voix en
-                      // cours n'est pas touchée.
-                      _motionScope(
-                        child: BlocSelector<ReplayBloc, ReplayState, bool>(
+                  // Un seul réglage d'animation pour toute la scène (barre du
+                  // haut, rail, canevas, pied et panneau du protocole,
+                  // 019 P2) : l'orbe, la liaison de délégation et toute
+                  // boucle s'immobilisent en scénario, en capture et sous
+                  // « réduire les animations ». « Démarrer » est inactif en
+                  // mode scénario et pendant un rejeu ; la session voix en
+                  // cours n'est pas touchée.
+                  child: _motionScope(
+                    child: Column(
+                      children: <Widget>[
+                        BlocSelector<ReplayBloc, ReplayState, bool>(
                           selector: (state) => state is ReplayActive,
                           builder: (context, replaying) => TopBar(
                             orbLevel: _orb.level,
@@ -988,33 +987,28 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: _gap),
-                      // Même réglage d'animation que le canevas : la liaison
-                      // de délégation du rail reste fixe quand les
-                      // animations sont coupées.
-                      _motionScope(
-                        child: const SizedBox(
+                        const SizedBox(height: _gap),
+                        const SizedBox(
                           height: _railHeight,
                           child: AgentsRail(),
                         ),
-                      ),
-                      const SizedBox(height: _gap),
-                      Expanded(
-                        child: Stack(
-                          children: <Widget>[
-                            Column(
-                              children: <Widget>[
-                                _canvasZone(),
-                                const SizedBox(height: _gap),
-                                _bottomRow(),
-                              ],
-                            ),
-                            _protocolPanelSlot(),
-                          ],
+                        const SizedBox(height: _gap),
+                        Expanded(
+                          child: Stack(
+                            children: <Widget>[
+                              Column(
+                                children: <Widget>[
+                                  _canvasZone(),
+                                  const SizedBox(height: _gap),
+                                  _bottomRow(),
+                                ],
+                              ),
+                              _protocolPanelSlot(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

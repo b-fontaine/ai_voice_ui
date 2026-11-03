@@ -6,7 +6,8 @@ import 'generated/scene_tokens.g.dart';
 ///
 /// Valeurs issues des tokens `motion.*` (pdr-0084 U2). Pas d'`Easing.emphasized`
 /// : il n'existe pas en Flutter ; la courbe est la `Cubic(.2, .8, .2, 1)` du
-/// design system. Aucun flou d'apparition.
+/// design system. L'apparition d'une surface porte un flou de départ
+/// ([blur], pdr-0087 / pdr-0088 F5).
 abstract final class SceneMotion {
   /// Fondu squelette vers composants d'une surface.
   static const Duration appear = SceneTokens.motionAppear;
@@ -35,6 +36,54 @@ abstract final class SceneMotion {
 
   /// Période de la respiration de l'orbe vocal.
   static const Duration orb = SceneTokens.motionOrb;
+
+  /// Apparition d'une ligne (`gc-row`).
+  static const Duration row = SceneTokens.motionRow;
+
+  /// Décalage entre deux lignes d'une cascade.
+  static const Duration stagger = SceneTokens.motionStagger;
+
+  /// Tracé d'une série (`gc-wipe`).
+  static const Duration wipe = SceneTokens.motionWipe;
+
+  /// Compteur d'un indicateur clé.
+  static const Duration count = SceneTokens.motionCount;
+
+  /// Remplissage d'une jauge.
+  static const Duration gauge = SceneTokens.motionGauge;
+
+  /// Rotation de l'arc du cadre de génération (`gc-spin`).
+  static const Duration spin = SceneTokens.motionSpin;
+
+  /// Balayage du cadre de génération (`gc-scan`).
+  static const Duration scan = SceneTokens.motionScan;
+
+  /// Fondu lent (`gc-fade`).
+  static const Duration fade = SceneTokens.motionFade;
+
+  /// Éclat d'une puce nouvelle (`gc-flash`).
+  static const Duration flash = SceneTokens.motionFlash;
+
+  /// Période de l'onde de l'orbe (`gc-wave`).
+  static const Duration wave = SceneTokens.motionWave;
+
+  /// Période des anneaux de l'orbe (`gc-orbring`).
+  static const Duration orbRing = SceneTokens.motionOrbRing;
+
+  /// Barre indéterminée (`gc-indet`).
+  static const Duration indet = SceneTokens.motionIndet;
+
+  /// Anneau de tête d'une série (`gc-ring`).
+  static const Duration ring = SceneTokens.motionRing;
+
+  /// Période du clignotement en créneaux (`gc-blink`).
+  static const Duration blink = SceneTokens.motionBlink;
+
+  /// Écart type du flou de départ d'une apparition, en pixels logiques.
+  static const double blur = SceneTokens.motionBlur;
+
+  /// Échelle de départ d'une apparition (1 à l'arrivée).
+  static const double scale = SceneTokens.motionScale;
 
   /// Courbe commune à toutes les transitions de la scène.
   static const Curve curve = SceneTokens.motionCurve;

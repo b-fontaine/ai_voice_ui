@@ -934,9 +934,78 @@
         "$type": "duration",
         "$value": "{duration.2000}"
       },
+      "row": {
+        "$type": "duration",
+        "$value": "{duration.480}"
+      },
+      "stagger": {
+        "$type": "duration",
+        "$value": "{duration.180}"
+      },
+      "wipe": {
+        "$type": "duration",
+        "$value": "{duration.1600}"
+      },
+      "count": {
+        "$type": "duration",
+        "$value": "{duration.1400}"
+      },
+      "gauge": {
+        "$type": "duration",
+        "$value": "{duration.1400}"
+      },
+      "spin": {
+        "$type": "duration",
+        "$value": "{duration.2800}"
+      },
+      "scan": {
+        "$type": "duration",
+        "$value": "{duration.2200}"
+      },
+      "fade": {
+        "$type": "duration",
+        "$value": "{duration.600}"
+      },
+      "flash": {
+        "$type": "duration",
+        "$value": "{duration.1200}"
+      },
+      "wave": {
+        "$type": "duration",
+        "$value": "{duration.1000}"
+      },
+      "orbRing": {
+        "$type": "duration",
+        "$value": "{duration.2400}"
+      },
+      "indet": {
+        "$type": "duration",
+        "$value": "{duration.1300}"
+      },
+      "ring": {
+        "$type": "duration",
+        "$value": "{duration.1800}"
+      },
+      "blink": {
+        "$type": "duration",
+        "$value": "{duration.1000}"
+      },
+      "blur": {
+        "$type": "number",
+        "$value": 4
+      },
+      "scale": {
+        "$type": "number",
+        "$value": 0.985
+      },
       "curve": {
         "$type": "cubicBezier",
-        "$value": [0.2, 0.8, 0.2, 1]
+        "$value": [
+          0.2,
+          0.8,
+          0.2,
+          1
+        ]
       }
     }
   }

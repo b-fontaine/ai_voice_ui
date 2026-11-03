@@ -282,6 +282,22 @@ Map<String, _Reading> _buildReadings() {
   add('scene.motion.beacon', SceneMotion.beacon, _ms);
   add('scene.motion.skeleton', SceneMotion.skeleton, _ms);
   add('scene.motion.orb', SceneMotion.orb, _ms);
+  add('scene.motion.row', SceneMotion.row, _ms);
+  add('scene.motion.stagger', SceneMotion.stagger, _ms);
+  add('scene.motion.wipe', SceneMotion.wipe, _ms);
+  add('scene.motion.count', SceneMotion.count, _ms);
+  add('scene.motion.gauge', SceneMotion.gauge, _ms);
+  add('scene.motion.spin', SceneMotion.spin, _ms);
+  add('scene.motion.scan', SceneMotion.scan, _ms);
+  add('scene.motion.fade', SceneMotion.fade, _ms);
+  add('scene.motion.flash', SceneMotion.flash, _ms);
+  add('scene.motion.wave', SceneMotion.wave, _ms);
+  add('scene.motion.orbRing', SceneMotion.orbRing, _ms);
+  add('scene.motion.indet', SceneMotion.indet, _ms);
+  add('scene.motion.ring', SceneMotion.ring, _ms);
+  add('scene.motion.blink', SceneMotion.blink, _ms);
+  add('scene.motion.blur', SceneMotion.blur, (v) => (v! as num).toDouble());
+  add('scene.motion.scale', SceneMotion.scale, (v) => (v! as num).toDouble());
   add('scene.motion.curve', _cubicOf(SceneMotion.curve), _cubic);
   return readings;
 }
