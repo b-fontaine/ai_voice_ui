@@ -4,14 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Style (pdr-0083 D4, RG-09) : hors du paquet de design, aucune source de
 /// `lib/` ne fixe une couleur, une famille, une graisse, un interlettrage, un
-/// rayon ni une taille de texte inférieure à 24 px littéraux. Les valeurs
-/// viennent de `SceneTheme`, de `SceneRadius` et des helpers du design system
-/// (`withSceneWeight`). Détecteur unique du dépôt.
+/// rayon ni une taille de texte littérale. Les valeurs viennent de
+/// `SceneTheme` (styles et micro-styles), de `SceneRadius` et des helpers du
+/// design system (`withSceneWeight`). Détecteur unique du dépôt.
+///
+/// Le plancher de 24 px est retiré (pdr-0087, pdr-0088 F1) : toute taille
+/// vient des jetons, donc aucun `fontSize:` littéral hors du paquet du design
+/// system.
 ///
 /// LIMITE : `fontSize: <identifiant>` (taille calculée ou lue ailleurs) ne se
 /// détecte pas par expression régulière ; seuls les littéraux numériques sont
-/// contrôlés. Les tailles calculées sont couvertes par le scénario U-01
-/// (aucun texte rendu sous 24 px).
+/// contrôlés. Une taille calculée à partir d'un littéral (`fontSize: 12 * k`)
+/// commence par un nombre et est donc détectée.
 
 /// Racine du dépôt (là où vit `tools/loop/gate.sh`).
 Directory _root() {
@@ -97,7 +101,7 @@ final RegExp _hardcoded = RegExp(
 );
 
 /// Taille littérale (les chaînes sont déjà retirées du code).
-final RegExp _literalSize = RegExp(r'fontSize\s*:\s*(\d+(?:\.\d+)?)\b');
+final RegExp _literalSize = RegExp(r'fontSize\s*:\s*-?\.?\d');
 
 /// Les infractions de [source] : « ligne : motif ».
 List<String> violations(String source) {
@@ -110,9 +114,7 @@ List<String> violations(String source) {
       found.add('${i + 1}:${m.group(0)}');
     }
     for (final m in _literalSize.allMatches(code)) {
-      if (double.parse(m.group(1)!) < 24) {
-        found.add('${i + 1}:taille sous 24 px : ${m.group(0)}');
-      }
+      found.add('${i + 1}:taille littérale : ${m.group(0)}');
     }
   }
   return found;
@@ -158,13 +160,29 @@ void main() {
       expect(violations('Radius.circular( 6 )'), hasLength(1));
     });
 
-    test('repère une taille littérale sous 24 px, pas les autres', () {
-      expect(violations('TextStyle(fontSize: 12)'), hasLength(1));
-      expect(violations('TextStyle(fontSize: 23.9)'), hasLength(1));
-      expect(violations('TextStyle(fontSize: 24)'), isEmpty);
-      expect(violations('TextStyle(fontSize: 76.0)'), isEmpty);
-      expect(violations('TextStyle(fontSize: theme.body.fontSize)'), isEmpty);
-    });
+    test(
+      'repère toute taille littérale, pas les expressions non littérales',
+      () {
+        expect(violations('TextStyle(fontSize: 13)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: 12)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: 23.9)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: 24)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: 76.0)'), hasLength(1));
+        expect(violations('TextStyle(fontSize:36)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: 12 * scale)'), hasLength(1));
+        expect(violations('TextStyle(fontSize: theme.body.fontSize)'), isEmpty);
+        expect(
+          violations('TextStyle(fontSize: theme.micro.badge.fontSize)'),
+          isEmpty,
+        );
+        expect(violations('TextStyle(fontSize: size)'), isEmpty);
+        expect(
+          violations('TextStyle(fontSize: scale * base.fontSize!)'),
+          isEmpty,
+        );
+        expect(violations('final fontSize = 13;'), isEmpty);
+      },
+    );
 
     test('ignore commentaires, chaînes et usages du thème', () {
       expect(violations('/// Exemple : Color(0xFF000000)'), isEmpty);
@@ -200,7 +218,7 @@ void main() {
     });
   });
 
-  test('aucun style littéral hors du paquet de design', () {
+  test('aucun style ni fontSize littéral hors du paquet de design', () {
     final root = _root();
     final files = _libSources(root);
     expect(files, isNotEmpty);

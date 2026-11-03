@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'generated/scene_tokens.g.dart';
+import 'scene_micro_styles.dart';
 import 'scene_status.dart';
 
 /// Thème de la scène Genesis Canvas (fond sombre, texte lisible à distance).
 ///
-/// Toutes les tailles de texte sont >= 24 px (RG-09, NFR-05) et les paires
+/// Les tailles de texte suivent le design system (`tokens.json`, pdr-0088 F1) et les paires
 /// texte/fond respectent le contraste WCAG AA (vérifié par `scene_theme_test`).
 /// Chiffres de largeur fixe des styles de données (`data`, `value`,
 /// `verdict`) : les valeurs qui changent ne font pas trembler la mise en page.
@@ -59,6 +60,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     required this.verdict,
     required this.transcript,
     required this.button,
+    this.micro = const SceneMicroStyles.dark(),
   });
 
   /// Thème sombre de la démo, construit depuis les constantes `SceneTokens`
@@ -184,7 +186,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
         fontWeight: SceneTokens.textButtonFontWeight,
         fontVariations: SceneTokens.textButtonFontVariations,
         color: SceneTokens.textButtonColor,
-      );
+      ),
+      micro = const SceneMicroStyles.dark();
 
   final Color background;
   final Color surface;
@@ -286,6 +289,9 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
   /// Libellé de bouton (Space Grotesk 600).
   final TextStyle button;
 
+  /// Micro-styles de `bundle.css` (`micro.badge`, `micro.chip`…), sans couleur.
+  final SceneMicroStyles micro;
+
   /// Lit l'extension dans le thème courant ; repli sur le thème sombre.
   static SceneTheme of(BuildContext context) =>
       Theme.of(context).extension<SceneTheme>() ?? const SceneTheme.dark();
@@ -351,6 +357,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     TextStyle? verdict,
     TextStyle? transcript,
     TextStyle? button,
+    SceneMicroStyles? micro,
   }) {
     return SceneTheme(
       background: background ?? this.background,
@@ -396,6 +403,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       verdict: verdict ?? this.verdict,
       transcript: transcript ?? this.transcript,
       button: button ?? this.button,
+      micro: micro ?? this.micro,
     );
   }
 
@@ -448,6 +456,7 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       verdict: s(verdict, other.verdict),
       transcript: s(transcript, other.transcript),
       button: s(button, other.button),
+      micro: micro.lerp(other.micro, t),
     );
   }
 
@@ -496,7 +505,8 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
       other.data == data &&
       other.verdict == verdict &&
       other.transcript == transcript &&
-      other.button == button;
+      other.button == button &&
+      other.micro == micro;
 
   @override
   int get hashCode => Object.hashAll(<Object>[
@@ -543,5 +553,6 @@ class SceneTheme extends ThemeExtension<SceneTheme> {
     verdict,
     transcript,
     button,
+    micro,
   ]);
 }

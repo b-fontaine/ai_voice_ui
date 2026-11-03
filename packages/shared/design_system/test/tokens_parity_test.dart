@@ -118,6 +118,26 @@ final Map<String, TextStyle> _textStyles = <String, TextStyle>{
   'button': _themeForText.button,
 };
 
+/// Les micro-styles (`SceneTheme.micro`), par nom de token
+/// `scene.micro.<nom>`. Sans couleur : elle vient du rôle du composant.
+final Map<String, TextStyle> _microStyles = <String, TextStyle>{
+  'badge': _themeForText.micro.badge,
+  'badgeLg': _themeForText.micro.badgeLg,
+  'kpiUnit': _themeForText.micro.kpiUnit,
+  'delta': _themeForText.micro.delta,
+  'tick': _themeForText.micro.tick,
+  'legend': _themeForText.micro.legend,
+  'chip': _themeForText.micro.chip,
+  'speed': _themeForText.micro.speed,
+  'quote': _themeForText.micro.quote,
+  'quoteMeta': _themeForText.micro.quoteMeta,
+  'agentName': _themeForText.micro.agentName,
+  'agentState': _themeForText.micro.agentState,
+  'callout': _themeForText.micro.callout,
+  'segment': _themeForText.micro.segment,
+  'segmentNo': _themeForText.micro.segmentNo,
+};
+
 /// Rayon de flou de `BoxShadow` pour un flou CSS [cssBlur] : le flou CSS `B`
 /// donne un écart type de `B / 2`, et `blurRadius = r` donne
 /// `sigma = 0,57735 r + 0,5` (`Shadow.convertRadiusToSigma`).
@@ -205,14 +225,19 @@ Map<String, _Reading> _buildReadings() {
   };
   colors.forEach((name, color) => add('scene.color.$name', color, _color));
 
-  for (final entry in _textStyles.entries) {
+  final styles = <String, TextStyle>{
+    for (final e in _textStyles.entries) 'text.${e.key}': e.value,
+    for (final e in _microStyles.entries) 'micro.${e.key}': e.value,
+  };
+  for (final entry in styles.entries) {
     final style = entry.value;
-    final base = 'scene.text.${entry.key}';
+    final base = 'scene.${entry.key}';
     add('$base.fontFamily', style.fontFamily, (v) => v);
     add('$base.fontFamilyFallback', style.fontFamilyFallback, (v) => v);
     add('$base.fontSize', style.fontSize, _px);
     add('$base.height', style.height, (v) => (v! as num).toDouble());
-    add('$base.color', style.color, _color);
+    // Les micro-styles n'ont pas de couleur (elle vient du rôle du thème).
+    if (style.color != null) add('$base.color', style.color, _color);
     add('$base.fontWeight', style.fontWeight, _weight);
     // La variation wght jumelle (polices variables) porte la même valeur.
     add(
@@ -288,6 +313,35 @@ void main() {
     // interlettrage n'en a pas.
     for (final entry in _textStyles.entries) {
       final path = 'scene.text.${entry.key}.letterSpacing';
+      expect(
+        tokens.containsKey(path),
+        entry.value.letterSpacing != null,
+        reason: path,
+      );
+    }
+  });
+
+  test('micro-styles : famille, taille, hauteur, graisse, interlettrage', () {
+    expectGroup('scene.micro.');
+    // Même ensemble de styles dans les deux sens : tout micro-style du JSON
+    // existe dans le Dart généré (et le thème), et inversement.
+    final jsonNames = tokens.keys
+        .where((p) => p.startsWith('scene.micro.'))
+        .map((p) => p.split('.')[2])
+        .toSet();
+    expect(jsonNames, _microStyles.keys.toSet());
+    final generated = File('lib/src/generated/scene_tokens.g.dart')
+        .readAsStringSync();
+    final generatedNames = RegExp(
+      r'static const double micro([A-Za-z]+)FontSize =',
+    ).allMatches(generated).map((m) => m.group(1)!).toSet();
+    expect(
+      generatedNames.map((n) => n[0].toLowerCase() + n.substring(1)).toSet(),
+      jsonNames,
+    );
+    for (final entry in _microStyles.entries) {
+      expect(entry.value.color, isNull, reason: '${entry.key} sans couleur');
+      final path = 'scene.micro.${entry.key}.letterSpacing';
       expect(
         tokens.containsKey(path),
         entry.value.letterSpacing != null,

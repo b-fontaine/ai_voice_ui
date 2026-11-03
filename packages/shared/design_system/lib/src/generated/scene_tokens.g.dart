@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Source : tokens/*.tokens.json ; régénérer par tool/build_tokens.sh.
-// tokens-sha256: 3520a4c47221fba83fc31bc772b9811cd6583f89a9fd87f0428ab51e0debe319
+// tokens-sha256: a50dd0931ac056539e0f44878d42f399b6ad49c50232f399229f579f62fec09a
 
 import 'dart:ui' show Color, FontVariation, FontWeight, Offset;
 
@@ -154,6 +154,174 @@ abstract final class SceneTokens {
     FontVariation('wght', 600.0),
   ];
   static const Color textButtonColor = Color(0xFFEAF0FF);
+  static const String microBadgeFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microBadgeFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microBadgeFontSize = 12.0;
+  static const double microBadgeHeight = 1.0;
+  static const FontWeight microBadgeFontWeight = FontWeight.w600;
+  static const List<FontVariation> microBadgeFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const double microBadgeLetterSpacing = 0.96;
+  static const String microBadgeLgFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microBadgeLgFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microBadgeLgFontSize = 18.0;
+  static const double microBadgeLgHeight = 1.0;
+  static const FontWeight microBadgeLgFontWeight = FontWeight.w600;
+  static const List<FontVariation> microBadgeLgFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const double microBadgeLgLetterSpacing = 1.8;
+  static const String microKpiUnitFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microKpiUnitFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microKpiUnitFontSize = 36.0;
+  static const double microKpiUnitHeight = 1.0;
+  static const FontWeight microKpiUnitFontWeight = FontWeight.w600;
+  static const List<FontVariation> microKpiUnitFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const double microKpiUnitLetterSpacing = 0.0;
+  static const String microDeltaFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microDeltaFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microDeltaFontSize = 14.0;
+  static const double microDeltaHeight = 1.4285714285714286;
+  static const FontWeight microDeltaFontWeight = FontWeight.w500;
+  static const List<FontVariation> microDeltaFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microTickFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microTickFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microTickFontSize = 12.0;
+  static const double microTickHeight = 1.0;
+  static const FontWeight microTickFontWeight = FontWeight.w500;
+  static const List<FontVariation> microTickFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microLegendFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microLegendFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microLegendFontSize = 13.0;
+  static const double microLegendHeight = 1.3846153846153846;
+  static const FontWeight microLegendFontWeight = FontWeight.w500;
+  static const List<FontVariation> microLegendFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microChipFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microChipFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microChipFontSize = 13.0;
+  static const double microChipHeight = 1.0;
+  static const FontWeight microChipFontWeight = FontWeight.w500;
+  static const List<FontVariation> microChipFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microSpeedFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microSpeedFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microSpeedFontSize = 12.0;
+  static const double microSpeedHeight = 1.0;
+  static const FontWeight microSpeedFontWeight = FontWeight.w500;
+  static const List<FontVariation> microSpeedFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microQuoteFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> microQuoteFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microQuoteFontSize = 15.0;
+  static const double microQuoteHeight = 1.4666666666666666;
+  static const FontWeight microQuoteFontWeight = FontWeight.w400;
+  static const List<FontVariation> microQuoteFontVariations = [
+    FontVariation('wght', 400.0),
+  ];
+  static const String microQuoteMetaFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microQuoteMetaFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microQuoteMetaFontSize = 12.0;
+  static const double microQuoteMetaHeight = 1.5;
+  static const FontWeight microQuoteMetaFontWeight = FontWeight.w600;
+  static const List<FontVariation> microQuoteMetaFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const String microAgentNameFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> microAgentNameFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microAgentNameFontSize = 15.0;
+  static const double microAgentNameHeight = 1.3333333333333333;
+  static const FontWeight microAgentNameFontWeight = FontWeight.w600;
+  static const List<FontVariation> microAgentNameFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const String microAgentStateFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microAgentStateFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microAgentStateFontSize = 12.0;
+  static const double microAgentStateHeight = 1.5;
+  static const FontWeight microAgentStateFontWeight = FontWeight.w500;
+  static const List<FontVariation> microAgentStateFontVariations = [
+    FontVariation('wght', 500.0),
+  ];
+  static const String microCalloutFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microCalloutFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microCalloutFontSize = 12.0;
+  static const double microCalloutHeight = 1.0;
+  static const FontWeight microCalloutFontWeight = FontWeight.w600;
+  static const List<FontVariation> microCalloutFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const String microSegmentFontFamily =
+      'packages/shared_design_system/Space Grotesk';
+  static const List<String> microSegmentFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microSegmentFontSize = 13.0;
+  static const double microSegmentHeight = 1.0;
+  static const FontWeight microSegmentFontWeight = FontWeight.w600;
+  static const List<FontVariation> microSegmentFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
+  static const String microSegmentNoFontFamily =
+      'packages/shared_design_system/JetBrains Mono';
+  static const List<String> microSegmentNoFontFamilyFallback = [
+    'packages/shared_design_system/DejaVu Sans',
+  ];
+  static const double microSegmentNoFontSize = 11.0;
+  static const double microSegmentNoHeight = 1.0;
+  static const FontWeight microSegmentNoFontWeight = FontWeight.w600;
+  static const List<FontVariation> microSegmentNoFontVariations = [
+    FontVariation('wght', 600.0),
+  ];
   static const double space1 = 4.0;
   static const double space2 = 8.0;
   static const double space3 = 12.0;

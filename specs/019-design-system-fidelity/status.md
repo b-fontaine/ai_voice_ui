@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : TDD
-- **Tentatives** : 1/3
-- **Tâche en cours** : T10b, T10c
-- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/ (tokens/scene.tokens.json, lib/src/generated, scene_theme.dart, tests), apps/genesis_canvas/test/architecture/no_hardcoded_style_test.dart
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
+- **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
@@ -17,6 +17,7 @@
 | 2026-11-03 | TDD | **T40 faite, sans code** : l'hypothèse est confirmée et déjà verrouillée par `genesis_canvas_page_act_test.dart` (7 tests verts : en mode scénario la surface `actions` ne touche pas l'acte ; pendant le rejeu elle ne l'avance pas) et par les 3 scénarios I-01 de l'acceptation (verts : « Acte 1/3 · Créer » en scénario, « Acte 4 · Rejeu » en rejeu réel, 1/3 → 2/3 → 3/3 en vivant). Pas de bogue. | `flutter test apps/genesis_canvas/test/pages/genesis_canvas_page_act_test.dart` (7 verts) ; `flutter test test/acceptance/acte_fidelite_design_test.dart --plain-name "I-01"` (3 verts) |
 | 2026-11-03 | TDD | **T10a faite** : les 9 rôles de texte aux tailles du design system (body 15, label 11 à 0,14 em, title 18, data 15, transcript 20, button 15 ; value 76, verdict 28, actIndicator 28 inchangés), `scene_tokens.g.dart` régénéré (hash et parité verts) ; `scene_theme_scale_test` (rouge : 8 échecs « 24 au lieu de 15/11/18/20 »), `text_contrast_small_test`, garde `small_text_color_guard_test` (rouge : `trend_chart.dart:152` graduations en `inkFaint`, corrigé en `textSecondary`) ; ≥ 24 px recalés en « ≥ 11 » (plus petit style de l'échelle) dans ~25 tests unitaires et 3 scénarios (C6, F-02 de la CrashList, D-02 de 013) ; **conséquences directes de la taille recalées** (titres qui ne passent plus à la ligne, lignes de checklist de 45 à 36 px, cellules réduites de `review_sentiment_test`) : T22 et T23 retouchent ces tailles. **D-02 de 013 est rouge** (les 3 extraits d'avis tiennent en entier à 15 px dans 624×302, donc pas de « + N avis ») : T23 le recalcule. V-01 et V-11 de 019 passent au vert | `.omc/state/loop/gates/20261103-110456-unit-flutter.log` (17 contrôles, tout vert) |
 | 2026-11-03 | TDD | **Suite d'acceptation complète après T10a** (hors porte `--unit`, pour détecter une régression comme en 017) : 119 verts, 18 rouges = **D-02 de 013** (attendu, T23) + 17 cas de 019 attendus (V-02 à V-10, A-01 à A-07 ; V-01, V-11 et I-01 verts) ; **aucune autre régression** (S-02, D-01, D-03 à D-07, R-01, RB-xx, U-02 à U-06 verts) | `flutter test test/acceptance` dans `apps/genesis_canvas` (sortie : scratchpad `acc-t10a.log`) |
+| 2026-11-03 | TDD | **T10b et T10c faites** : 15 micro-styles de `bundle.css` sous `scene.micro.*` dans `tokens/scene.tokens.json`, générés, exposés par l'objet valeur immuable `SceneMicroStyles` (`theme.micro.badge`…, `copyWith`/`lerp`/`==`, pas de seconde `ThemeExtension`, aucune couleur), parité dans les deux sens (rouge : `SceneMicroStyles` et `SceneTheme.micro` absents, hash `a50dd093…` ≠ `3520a4c4…`) ; garde `no_hardcoded_style_test` sans plancher de 24 px (tout `fontSize:` littéral interdit hors du paquet du design system ; auto-tests : `fontSize: 24` et `76.0` passaient avec l'ancienne règle, signalés par la nouvelle ; aucun littéral réel n'existait déjà). **Hauteurs de ligne choisies par la boucle (pdr-0062, à contrôler)** : `tick`, `callout` et `kpiUnit` à 1,0 (texte SVG sans `line-height` ; l'unité garde la ligne de 76 px de la valeur), styles écrits `/1` dans le CSS à 1,0 | `.omc/state/loop/gates/20261103-111535-unit-flutter.log` (16 contrôles, tout vert) |
 
 ## Revue d'architecte
 ### Revue du plan (mode PLAN) — verdict À AMENDER

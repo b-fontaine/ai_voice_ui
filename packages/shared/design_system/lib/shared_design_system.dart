@@ -7,6 +7,7 @@ export 'src/ds_status_chip.dart' show DsStatusChip;
 export 'src/scene_backdrop.dart' show SceneBackdrop;
 export 'src/scene_fonts.dart' show SceneFonts, registerSceneFontLicenses;
 export 'src/scene_material_theme.dart' show sceneMaterialTheme;
+export 'src/scene_micro_styles.dart' show SceneMicroStyles;
 export 'src/scene_motion.dart' show SceneMotion, SceneMotionScope;
 export 'src/scene_panel.dart' show ScenePanel, ScenePanelDecoration;
 export 'src/scene_radius.dart' show SceneRadius;
