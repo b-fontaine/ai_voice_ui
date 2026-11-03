@@ -130,10 +130,16 @@ void main() {
     expect(find.byType(DsStatusChip), findsNothing);
 
     await send(tester, _message(fixture[2]));
+    // Le chiffre héros descend de 100 vers sa valeur pendant
+    // `SceneMotion.count` (pdr-0088 F3 et F13) : la chaîne de données n'est
+    // affichée qu'à la fin du compteur.
+    await tester.pump(SceneMotion.count + const Duration(milliseconds: 50));
     expect(inCell(find.text('99,57 %')), findsOneWidget);
-    expect(inCell(find.text('Sessions sans crash')), findsOneWidget);
+    expect(inCell(findTextIgnoringCase('Sessions sans crash')), findsOneWidget);
     expect(inCell(find.text('−0,36 pt')), findsOneWidget);
-    expect(inCell(find.text('≥ 99,50 %')), findsOneWidget);
+    // Le seuil est la marque de la jauge (pdr-0088 F3), avec sa donnée telle
+    // quelle.
+    expect(inCell(find.text('seuil ≥ 99,50 %')), findsOneWidget);
     expect(inCell(findTextIgnoringCase('À risque')), findsOneWidget);
     expect(inCell(find.byType(DsStatusChip)), findsOneWidget);
     expect(find.byKey(const Key('nodata-kpi')), findsNothing);
@@ -155,7 +161,7 @@ void main() {
     expect(chip.label, 'À risque');
   });
 
-  testWidgets('le champ optionnel comparison est toléré et ignoré', (
+  testWidgets('le champ optionnel comparison est lu : repère et delta', (
     tester,
   ) async {
     createEngine();
@@ -173,8 +179,14 @@ void main() {
       }),
     );
 
+    await tester.pump(SceneMotion.count + const Duration(milliseconds: 50));
+
     expect(inCell(find.text('99,57 %')), findsOneWidget);
-    expect(find.text('99,93 %'), findsNothing);
+    // pdr-0088 F3 : la comparaison est le repère de la jauge et la ligne
+    // « vs <libellé> » des deltas, valeur entre parenthèses.
+    expect(inCell(find.text('vs Version précédente')), findsOneWidget);
+    expect(inCell(find.text('−0,36 pt (99,93 %)')), findsOneWidget);
+    expect(find.byKey(const Key('kpi-gauge-ref')), findsOneWidget);
     expect(find.byKey(const Key('neutral-kpi')), findsNothing);
   });
 

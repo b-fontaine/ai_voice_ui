@@ -182,4 +182,25 @@ void main() {
       same(opacityBefore),
     );
   });
+
+  testWidgets('settledOf : vrai pour un contenu déjà en place seulement', (
+    tester,
+  ) async {
+    bool? seen;
+    Widget probe() => Builder(
+      builder: (BuildContext context) {
+        seen = DsRise.settledOf(context);
+        return const SizedBox.shrink();
+      },
+    );
+    Widget host(Widget child) =>
+        Directionality(textDirection: TextDirection.ltr, child: child);
+
+    await tester.pumpWidget(host(DsRise(settled: true, child: probe())));
+    expect(seen, isTrue);
+    await tester.pumpWidget(host(DsRise(child: probe())));
+    expect(seen, isFalse);
+    await tester.pumpWidget(host(probe()));
+    expect(seen, isFalse, reason: 'sans DsRise : rien n\'est en place');
+  });
 }

@@ -169,11 +169,15 @@ void main() {
       lessThanOrEqualTo(rectOf(tester, 'canvas-board').bottom),
     );
     expect(find.text('5 / 6 utilisés'), findsOneWidget);
-    expect(find.byKey(const Key('comparison-kpi')), findsOneWidget);
+    // pdr-0088 F3 : la comparaison du KPI est la ligne « vs 3.3 » des deltas.
+    expect(find.byKey(const Key('kpi-delta-comparison-label')), findsOneWidget);
     expect(find.byKey(const Key('comparison-reviews')), findsOneWidget);
     expect(find.byKey(const Key('trend-series-Android 3.4')), findsOneWidget);
     expect(find.byKey(const Key('trend-series-Android 3.3')), findsOneWidget);
-    for (final key in const ['comparison-kpi', 'comparison-reviews']) {
+    for (final key in const [
+      'kpi-delta-comparison-value',
+      'comparison-reviews',
+    ]) {
       final r = rectOf(tester, key);
       expect(r.right, lessThanOrEqualTo(1920), reason: key);
       expect(r.bottom, lessThanOrEqualTo(1080), reason: key);

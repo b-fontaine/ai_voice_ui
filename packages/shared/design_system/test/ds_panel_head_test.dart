@@ -87,4 +87,45 @@ void main() {
     expect(find.text('Release 4.2.0'), findsOneWidget);
     expect(find.byType(DsCaps), findsNothing);
   });
+
+  testWidgets('wrap : une longue étiquette passe à la ligne, sans ellipse', (
+    tester,
+  ) async {
+    const String long =
+        'Sessions sans crash sur Android pendant les sept derniers jours de '
+        'la release, tous appareils et toutes versions confondus';
+    await tester.pumpWidget(
+      _host(
+        const DsPanelHead(
+          label: long,
+          wrap: true,
+          trailing: SizedBox(key: _right, width: 60, height: 26),
+        ),
+        width: 300,
+      ),
+    );
+    final Finder text = findTextIgnoringCase(long);
+    final Text widget = tester.widget(text);
+    expect(widget.maxLines, isNull);
+    expect(widget.overflow, isNot(TextOverflow.ellipsis));
+    final double line = widget.style!.fontSize! * widget.style!.height!;
+    expect(tester.getSize(text).height, greaterThan(line * 1.5));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('par défaut, une longue étiquette reste sur une ligne', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        const DsPanelHead(label: 'Une étiquette trop longue pour la place'),
+        width: 120,
+      ),
+    );
+    final Text widget = tester.widget(
+      find.descendant(of: find.byType(DsCaps), matching: find.byType(Text)),
+    );
+    expect(widget.maxLines, 1);
+    expect(widget.overflow, TextOverflow.ellipsis);
+  });
 }

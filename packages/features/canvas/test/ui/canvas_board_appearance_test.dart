@@ -50,17 +50,17 @@ Finder _content() => find.descendant(
   matching: find.byType(Surface),
 );
 
+/// Le chiffre héros, cherché par sa clé : son texte descend de 100 vers la
+/// valeur pendant `SceneMotion.count` (compteur, pdr-0088 F3 et F13), donc la
+/// chaîne de données n'est affichée qu'à la fin.
 Finder _value() => find.descendant(
   of: find.byKey(const Key('surface-kpi')),
-  matching: find.text('99,57 %'),
+  matching: find.byKey(const Key('kpi-value')),
 );
 
-/// Valeur affichée après la mise à jour de l'acte 2 (le « 99,57 % » de l'acte 1
-/// y devient « 99,43 % »).
-Finder _valueAct2() => find.descendant(
-  of: find.byKey(const Key('surface-kpi')),
-  matching: find.text('99,43 %'),
-);
+/// Le chiffre héros après la mise à jour de l'acte 2 (« 99,57 % » devient
+/// « 99,43 % » à la fin du compteur, qui rejoue : pdr-0088 F13).
+Finder _valueAct2() => _value();
 
 Finder _skeleton() => find.byKey(const Key('skeleton-kpi'));
 

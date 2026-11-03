@@ -17,11 +17,12 @@ import './step/je_clique_sur_demarrer.dart';
 import './step/la_session_active_est_la_seconde_du_relais.dart';
 import './step/aucun_message_a2ui_nest_refuse.dart';
 import './step/aucun_squelette_nest_reapparu.dart';
+import './step/lelement_nest_pas_affiche.dart';
 import './step/la_ligne_de_comparaison_de_la_surface_a_disparu.dart';
 import './step/la_courbe_ne_contient_que_la_serie.dart';
 import './step/la_surface_affiche.dart';
+import './step/le_texte_de_lelement_est.dart';
 import './step/la_ligne_de_comparaison_de_la_surface_affiche.dart';
-import './step/la_ligne_de_comparaison_de_la_surface_na_pas_de_couleur_de_statut.dart';
 import './step/le_serveur_emet_lacte2_de_la_surface_sans_le_champ_de_la_comparaison.dart';
 import './step/la_surface_naffiche_pas_letat_neutre.dart';
 import './step/aucune_erreur_nest_signalee.dart';
@@ -85,7 +86,7 @@ void main() {
           );
           await uneComparaisonAvecLa33Apparait(tester);
           await jeDis(tester, 'Non, plutôt iOS');
-          await laLigneDeComparaisonDeLaSurfaceADisparu(tester, 'kpi');
+          await lelementNestPasAffiche(tester, 'kpi-delta-comparison-label');
           await laLigneDeComparaisonDeLaSurfaceADisparu(tester, 'reviews');
           await laCourbeNeContientQueLaSerie(tester, 'iOS 3.4');
           await laSurfaceAffiche(tester, 'kpi', '99,80 %');
@@ -99,7 +100,7 @@ void main() {
       },
     );
     testWidgets(
-      '''B4 La ligne de comparaison de l'indicateur clé est neutre''',
+      '''B4 La comparaison de l'indicateur clé est une ligne de la grille des deltas''',
       (tester) async {
         try {
           await bddSetUp(tester);
@@ -108,19 +109,20 @@ void main() {
             tester,
             'Concentre-toi sur Android et compare avec la 3.3',
           );
-          await laLigneDeComparaisonDeLaSurfaceAffiche(
+          await leTexteDeLelementEst(
             tester,
-            'kpi',
-            '3.3 : 99,71 % · −0,28 pt',
+            'kpi-delta-comparison-label',
+            'vs 3.3',
+          );
+          await leTexteDeLelementEst(
+            tester,
+            'kpi-delta-comparison-value',
+            '−0,28 pt (99,71 %)',
           );
           await laLigneDeComparaisonDeLaSurfaceAffiche(
             tester,
             'reviews',
             '3.3 : 14 % négatifs · +16 pts',
-          );
-          await laLigneDeComparaisonDeLaSurfaceNaPasDeCouleurDeStatut(
-            tester,
-            'kpi',
           );
         } finally {
           await bddTearDown(tester);
@@ -134,10 +136,10 @@ void main() {
         await bddSetUp(tester);
         await leTableauDeLaRelease34EstAffiche(tester);
         await jeDis(tester, 'Concentre-toi sur Android et compare avec la 3.3');
-        await laLigneDeComparaisonDeLaSurfaceAffiche(
+        await leTexteDeLelementEst(
           tester,
-          'kpi',
-          '3.3 : 99,71 % · −0,28 pt',
+          'kpi-delta-comparison-label',
+          'vs 3.3',
         );
         await leServeurEmetLacte2DeLaSurfaceSansLeChampDeLaComparaison(
           tester,
@@ -145,7 +147,7 @@ void main() {
           'delta',
         );
         await laSurfaceAffiche(tester, 'kpi', '99,43 %');
-        await laLigneDeComparaisonDeLaSurfaceADisparu(tester, 'kpi');
+        await lelementNestPasAffiche(tester, 'kpi-delta-comparison-label');
         await laSurfaceNaffichePasLetatNeutre(tester, 'kpi');
         await aucuneErreurNestSignalee(tester);
       } finally {

@@ -2,6 +2,7 @@
 library;
 
 export 'src/ds_caps.dart' show DsCaps;
+export 'src/ds_gauge.dart' show DsGauge, DsGaugeKeys;
 export 'src/ds_neutral_state.dart' show DsNeutralState;
 export 'src/ds_panel_head.dart' show DsPanelHead;
 export 'src/ds_rise.dart' show DsRise;

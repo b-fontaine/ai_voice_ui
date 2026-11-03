@@ -42,7 +42,7 @@ Fonctionnalité: Acte 2 - transformer sans recréer
     Et je dis {'Concentre-toi sur Android et compare avec la 3.3'}
     Et une comparaison avec la 3.3 apparaît
     Quand je dis {'Non, plutôt iOS'}
-    Alors la ligne de comparaison de la surface {'kpi'} a disparu
+    Alors l'élément {'kpi-delta-comparison-label'} n'est pas affiché
     Et la ligne de comparaison de la surface {'reviews'} a disparu
     Et la courbe ne contient que la série {'iOS 3.4'}
     Et la surface {'kpi'} affiche {'99,80 %'}
@@ -51,20 +51,22 @@ Fonctionnalité: Acte 2 - transformer sans recréer
     Et aucun squelette n'est réapparu
     Et aucun message A2UI n'est refusé
 
-  Scénario: B4 La ligne de comparaison de l'indicateur clé est neutre
+  # pdr-0088 F3 : la comparaison de l'indicateur clé n'est plus une ligne de
+  # texte (D7) mais la ligne « vs 3.3 » de la grille des deltas.
+  Scénario: B4 La comparaison de l'indicateur clé est une ligne de la grille des deltas
     Étant donné le tableau de la release 3.4 est affiché
     Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
-    Alors la ligne de comparaison de la surface {'kpi'} affiche {'3.3 : 99,71 % · −0,28 pt'}
+    Alors le texte de l'élément {'kpi-delta-comparison-label'} est {'vs 3.3'}
+    Et le texte de l'élément {'kpi-delta-comparison-value'} est {'−0,28 pt (99,71 %)'}
     Et la ligne de comparaison de la surface {'reviews'} affiche {'3.3 : 14 % négatifs · +16 pts'}
-    Et la ligne de comparaison de la surface {'kpi'} n'a pas de couleur de statut
 
   Scénario: B4 Une comparaison sans écart omet seulement sa ligne
     Étant donné le tableau de la release 3.4 est affiché
     Et je dis {'Concentre-toi sur Android et compare avec la 3.3'}
-    Et la ligne de comparaison de la surface {'kpi'} affiche {'3.3 : 99,71 % · −0,28 pt'}
+    Et le texte de l'élément {'kpi-delta-comparison-label'} est {'vs 3.3'}
     Quand le serveur émet l'acte 2 de la surface {'kpi'} sans le champ {'delta'} de la comparaison
     Alors la surface {'kpi'} affiche {'99,43 %'}
-    Et la ligne de comparaison de la surface {'kpi'} a disparu
+    Et l'élément {'kpi-delta-comparison-label'} n'est pas affiché
     Et la surface {'kpi'} n'affiche pas l'état neutre
     Et aucune erreur n'est signalée
 

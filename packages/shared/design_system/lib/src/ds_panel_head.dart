@@ -10,16 +10,21 @@ import 'scene_theme.dart';
 /// 14 px, comme dans le design system. [DsPanelHead.new] affiche une étiquette
 /// en capitales (style `label`, via [DsCaps]) ; [DsPanelHead.title] affiche un
 /// titre libre dans le style `title`, sans capitales. Le côté gauche se
-/// tronque avant de repousser [trailing].
+/// tronque avant de repousser [trailing], sauf avec [wrap] (retour à la ligne).
 class DsPanelHead extends StatelessWidget {
-  const DsPanelHead({super.key, required String this.label, this.trailing})
-    : title = null;
+  const DsPanelHead({
+    super.key,
+    required String this.label,
+    this.trailing,
+    this.wrap = false,
+  }) : title = null;
 
   const DsPanelHead.title({
     super.key,
     required String this.title,
     this.trailing,
-  }) : label = null;
+  }) : label = null,
+       wrap = false;
 
   /// Espace minimal entre le côté gauche et [trailing].
   static const double gap = 12;
@@ -36,12 +41,20 @@ class DsPanelHead extends StatelessWidget {
   /// Statut ou élément affiché à droite.
   final Widget? trailing;
 
+  /// Vrai : l'étiquette passe à la ligne au lieu de se tronquer (un libellé
+  /// de donnée ne doit jamais être coupé par une ellipse).
+  final bool wrap;
+
   @override
   Widget build(BuildContext context) {
     final SceneTheme theme = SceneTheme.of(context);
     final String? caption = label;
     final Widget left = caption != null
-        ? DsCaps(caption, maxLines: 1, overflow: TextOverflow.ellipsis)
+        ? DsCaps(
+            caption,
+            maxLines: wrap ? null : 1,
+            overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
+          )
         : Text(
             title!,
             style: theme.title,

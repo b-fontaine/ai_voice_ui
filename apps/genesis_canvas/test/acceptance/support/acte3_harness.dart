@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../../support/pump_until.dart';
 import 'acte2_harness.dart';
@@ -66,7 +67,8 @@ class Acte3Harness {
       tester,
       find.descendant(
         of: find.byKey(AcceptanceKeys.surface('kpi')),
-        matching: find.textContaining('· $platform'),
+        // L'étiquette du KPI s'affiche en capitales (pdr-0088 F3 et F6).
+        matching: findTextContainingIgnoringCase('· $platform'),
       ),
       'la surface kpi doit afficher « · $platform »',
     );

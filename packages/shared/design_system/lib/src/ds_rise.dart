@@ -28,6 +28,15 @@ class DsRise extends StatefulWidget {
   /// Vrai : le contenu est déjà en place, aucune apparition.
   final bool settled;
 
+  /// Le contenu sous le [DsRise] le plus proche était-il déjà en place au
+  /// montage (surface restaurée) ? Faux sans [DsRise].
+  ///
+  /// Sert aux animations ponctuelles (compteur, jauge) : une surface restaurée
+  /// affiche son état final sans les rejouer (pdr-0088 F13). Lecture sans
+  /// abonnement : la valeur ne change pas pendant la vie du contenu.
+  static bool settledOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_RiseSettled>()?.settled ?? false;
+
   @override
   State<DsRise> createState() => _DsRiseState();
 }
@@ -53,7 +62,7 @@ class _DsRiseState extends State<DsRise>
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: oneShot,
-    child: widget.child,
+    child: _RiseSettled(settled: widget.settled, child: widget.child),
     builder: (BuildContext context, Widget? child) {
       final double t = SceneMotion.curve.transform(oneShot.value);
       final double sigma = SceneMotion.blur * (1 - t);
@@ -76,4 +85,15 @@ class _DsRiseState extends State<DsRise>
       );
     },
   );
+}
+
+/// Porte [DsRise.settled] aux descendants (voir [DsRise.settledOf]).
+class _RiseSettled extends InheritedWidget {
+  const _RiseSettled({required this.settled, required super.child});
+
+  final bool settled;
+
+  @override
+  bool updateShouldNotify(_RiseSettled oldWidget) =>
+      settled != oldWidget.settled;
 }

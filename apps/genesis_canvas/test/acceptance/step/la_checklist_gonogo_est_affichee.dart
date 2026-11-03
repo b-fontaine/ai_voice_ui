@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/acte3_harness.dart';
 import '../support/keys.dart';
@@ -32,7 +33,8 @@ Future<void> laChecklistGonogoEstAffichee(WidgetTester tester) async {
     tester,
     find.descendant(
       of: find.byKey(AcceptanceKeys.surface('checklist')),
-      matching: find.text('NO-GO Android'),
+      // La puce de recommandation s'affiche en capitales (pdr-0088 F6).
+      matching: findTextIgnoringCase('NO-GO Android'),
     ),
     'la checklist doit recommander « NO-GO Android »',
   );
@@ -40,7 +42,7 @@ Future<void> laChecklistGonogoEstAffichee(WidgetTester tester) async {
     tester,
     find.descendant(
       of: find.byKey(AcceptanceKeys.surface('checklist')),
-      matching: find.text(Acte3Harness.pendingDecision),
+      matching: findTextIgnoringCase(Acte3Harness.pendingDecision),
     ),
     'la checklist doit attendre une décision',
   );
