@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T10b, T10c
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system/ (tokens/scene.tokens.json, lib/src/generated, scene_theme.dart, tests), apps/genesis_canvas/test/architecture/no_hardcoded_style_test.dart
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
