@@ -1,6 +1,6 @@
 # 018 — État
 
-- **Étape** : Vérification
+- **Étape** : Clôture
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -19,6 +19,7 @@
 | 2026-11-03 | TDD | **TDD terminé (T10, T11)** : `gate --full` vert sur arbre propre, 67 contrôles, ligne `yes` de `gates.tsv`, commit `1d2c935` | `.omc/state/loop/gates/20261103-074646-full.log` |
 | 2026-11-03 | Revue | `architect-reviewer` (mode CODE, Opus) : verdict **À REFACTORISER** (0 bloquante, 2 importantes, 8 mineures, 0 conflit avec une décision), rapport ci-dessous | revue sur `5cc5cb0` |
 | 2026-11-03 | Refactorisation | **Lot P** (R2 `build` découpé en `_canvasZone`, `_bottomRow`, `_protocolPanelSlot` ; R3 bascule gardée ; R8 assertions relatives, `addTearDown(semantics.dispose)` impossible ; R9 doc) puis **lot A** (R1 états du panneau vérifiés dans RB-01 à RB-03, RB-01 et RB-03 rouges si le clic est neutralisé ; R4 support dédupliqué ; R5 deux extrémités de la glissière ; R6 `expectHit` avant `tapAt` ; R7 point au ras du panneau ; R10 nombre de vitesses). **`gate --full` vert sur arbre propre : 67 contrôles, ligne `yes` de `gates.tsv`, commit `f52a4c1`**. Acceptation : 116 verts | `.omc/state/loop/gates/20261103-080429-full.log` ; lots : `20261103-075854-unit-flutter.log`, `20261103-080339-unit-flutter.log` |
+| 2026-11-03 | Vérification | `gate --full` vert sur arbre propre (67 contrôles, `f52a4c1`, ligne `yes` ; les commits suivants ne touchent que `specs/`) puis capture réelle `GENESIS_REPLAY_AT=0.5 GENESIS_PROTOCOL_EXPANDED=1 tools/loop/app-smoke.sh act1-replay` (1920×1080, code 0), **lue et conforme** : barre de rejeu entière visible (REJEU, Lecture, Recommencer, glissière, Direct, cinq vitesses 0,25× à 2×), panneau « FLUX A2UI · live » déplié au-dessus de la rangée du bas (x 1116..1896, y 304..924, « Replier », 4 entrées), rail et barre du haut non recouverts, étagère « CATALOGUE · 2 / 6 utilisés » visible. **À montrer au porteur** (conséquence assumée de pdr-0086) : le panneau déplié cache la plus grande partie de la cellule de droite du haut (légende du graphique « Taux de crash du jour » tronquée, « And… ») ; l'emplacement replié à droite de la barre de rejeu est vide tant que le panneau est déplié | `.omc/state/loop/gates/20261103-080429-full.log`, capture `.omc/state/loop/snapshots/20261103-080929-act1-replay.png` |
 
 ## Revue d'architecte
 **Revue du plan (mode PLAN) : verdict À AMENDER, toutes intégrées.**
