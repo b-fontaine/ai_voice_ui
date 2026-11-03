@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : TDD
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : T34
+- **Fichiers touchés** (tâche en cours) : packages/shared/design_system (blink), packages/features/canvas (anneau de tête), apps/genesis_canvas/lib/widgets (voice, rail, replay_bar, protocol_panel), ds_gen_frame, tests
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
