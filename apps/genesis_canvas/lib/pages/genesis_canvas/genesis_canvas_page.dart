@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:entity_catalog/entity_catalog.dart'
+    show ValidatedEnvelope, ValidationAccepted;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
     show
         AgentActivityBloc,
@@ -20,6 +22,7 @@ import 'package:feature_canvas/feature_canvas.dart'
         CanvasActionSettings,
         DecisionStatusObserved,
         CanvasActionState,
+        GenerationTarget,
         CanvasBloc,
         CanvasBoard,
         CanvasResetRequested,
@@ -204,6 +207,13 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   // Surface en évidence du panneau du protocole : le canevas la lit par
   // cellule, sans que le board ni les voisines se reconstruisent (013, P6).
   final ValueNotifier<String?> _highlight = ValueNotifier<String?>(null);
+  // Surface en cours de génération (la dernière créée) et son agent : lus par
+  // chaque cellule du canevas pour son cadre de génération (019, pdr-0088 F11).
+  // Déduits de l'enveloppe validée (`ValidatedEnvelope.agent`), jamais d'un
+  // nouveau message A2UI.
+  final ValueNotifier<GenerationTarget?> _generation =
+      ValueNotifier<GenerationTarget?>(null);
+  StreamSubscription<ValidatedEnvelope>? _generationSubscription;
   late final CatalogShelfBloc _shelfBloc = CatalogShelfBloc();
   late final StageBloc _stageBloc = StageBloc();
   // Résolu une fois ici (racine de composition) ; le widget ne voit qu'un
@@ -391,6 +401,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
+    _generationSubscription = _gate.validatedBranch().listen(_onValidated);
     // Capture de vérification (spec 018) : `PanelToggled` est une bascule ;
     // on garantit le panneau déplié, un seul basculement.
     if (_settings.protocolExpandedAtStart && !_protocolBloc.state.expanded) {
@@ -467,6 +478,21 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// Identifiant de la surface de la Barre d'actions (fin de l'acte 2).
   static const String _actionsSurfaceId = 'actions';
 
+  /// Un `createSurface` accepté désigne la surface en cours de génération et
+  /// son agent (`null` en scénario et en rejeu). Seul un `createSurface` change
+  /// la cible : une mutation de l'acte 2 ne rouvre pas de cadre.
+  void _onValidated(ValidatedEnvelope envelope) {
+    if (envelope.verdict is! ValidationAccepted) return;
+    final Object? body = envelope.raw['createSurface'];
+    final Object? id = body is Map ? body['surfaceId'] : null;
+    if (id is String) {
+      _generation.value = GenerationTarget(
+        surfaceId: id,
+        agent: envelope.agent,
+      );
+    }
+  }
+
   /// Fait avancer l'indicateur d'acte (jamais en arrière). Sans effet en mode
   /// scénario et pendant le rejeu de l'acte 4 : un message rejoué ou vivant
   /// ne décrit pas l'avancement de la démo.
@@ -482,6 +508,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   /// backend, ni le journal, ni l'acte, ni les agents, ni le Bloc d'action ne
   /// sont touchés.
   void _clearScene({required bool keepPanelOpen}) {
+    _generation.value = null;
     _gate.reset();
     _bloc.add(const CanvasResetRequested());
     _protocolBloc.add(
@@ -702,8 +729,10 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     unawaited(_activitySubscription?.cancel());
     unawaited(_journalFullSubscription?.cancel());
     unawaited(_actionBusySubscription?.cancel());
+    unawaited(_generationSubscription?.cancel());
     _lifecycle.dispose();
     _highlight.dispose();
+    _generation.dispose();
     // L'orbe est un abonné de la source et porte un Ticker de ce State : elle
     // se ferme tout de suite (le mixin refuse un Ticker actif au dispose), donc
     // avant la source qu'elle écoute.
@@ -825,6 +854,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
           key: const Key('canvas-board'),
           controller: _controller,
           highlight: _highlight,
+          generation: _generation,
         ),
       ),
     ),

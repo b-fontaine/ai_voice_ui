@@ -8,6 +8,7 @@
 
 import 'package:widgetbook/widgetbook.dart' as _widgetbook;
 import 'package:genesis_widgetbook/ds/ds_gauge.stories.dart' as _genesis_widgetbook_ds_ds_gauge_stories;
+import 'package:genesis_widgetbook/ds/ds_gen_frame.stories.dart' as _genesis_widgetbook_ds_ds_gen_frame_stories;
 import 'package:genesis_widgetbook/ds/ds_neutral_state.stories.dart' as _genesis_widgetbook_ds_ds_neutral_state_stories;
 import 'package:genesis_widgetbook/ds/ds_skeleton.stories.dart' as _genesis_widgetbook_ds_ds_skeleton_stories;
 import 'package:genesis_widgetbook/ds/ds_status_chip.stories.dart' as _genesis_widgetbook_ds_ds_status_chip_stories;
@@ -22,6 +23,7 @@ import 'package:genesis_widgetbook/genesis/trend_chart.stories.dart' as _genesis
 
 final components = <_widgetbook.Component>[
   _genesis_widgetbook_ds_ds_gauge_stories.DsGaugeComponent,
+  _genesis_widgetbook_ds_ds_gen_frame_stories.DsGenFrameComponent,
   _genesis_widgetbook_ds_ds_neutral_state_stories.DsNeutralStateComponent,
   _genesis_widgetbook_ds_ds_skeleton_stories.DsSkeletonComponent,
   _genesis_widgetbook_ds_ds_status_chip_stories.DsStatusChipComponent,

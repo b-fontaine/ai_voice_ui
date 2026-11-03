@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart' show Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart'
     show
+        DsGenFrame,
         DsRise,
         DsSkeleton,
         ScenePanel,
@@ -15,6 +16,7 @@ import 'package:shared_design_system/shared_design_system.dart'
 import '../model/canvas_bloc.dart';
 import '../model/canvas_state.dart';
 import 'dashed_outline_painter.dart';
+import 'generation_target.dart';
 
 /// Grille des surfaces actives (FR-01). Vide tant qu'aucune surface n'existe.
 ///
@@ -47,6 +49,7 @@ class CanvasBoard extends StatefulWidget {
     super.key,
     required this.controller,
     this.highlight = const _NoHighlight(),
+    this.generation = const _NoGeneration(),
   });
 
   /// Hauteur réservée au bandeau de la Barre d'actions.
@@ -61,6 +64,17 @@ class CanvasBoard extends StatefulWidget {
   /// L'écouteur appartient à l'appelant (la page le crée et le libère) : un
   /// changement ne reconstruit que l'ancienne et la nouvelle cellule.
   final ValueListenable<String?> highlight;
+
+  /// Surface en cours de génération (la dernière créée) et son agent : la page
+  /// l'alimente depuis l'enveloppe validée, comme [highlight] (019 T32a,
+  /// pdr-0088 F11). Le cadre de génération (`DsGenFrame`) n'est posé que sur
+  /// cette surface, tant que sa phase est `skeleton` ou `components` ; il
+  /// s'achève à `data`. Une surface complète qui reçoit une mutation (acte 2)
+  /// ou une surface restaurée n'en reçoit jamais.
+  ///
+  /// L'écouteur appartient à l'appelant ; chaque cellule n'écoute que pour
+  /// elle-même.
+  final ValueListenable<GenerationTarget?> generation;
 
   @override
   State<CanvasBoard> createState() => _CanvasBoardState();
@@ -104,6 +118,7 @@ class _CanvasBoardState extends State<CanvasBoard> {
       id: id,
       controller: widget.controller,
       highlight: widget.highlight,
+      generation: widget.generation,
       restored: _firstBuild,
     ),
   );
@@ -116,7 +131,8 @@ class _CanvasBoardState extends State<CanvasBoard> {
   void didUpdateWidget(CanvasBoard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller ||
-        oldWidget.highlight != widget.highlight) {
+        oldWidget.highlight != widget.highlight ||
+        oldWidget.generation != widget.generation) {
       _cells.clear();
     }
   }
@@ -179,67 +195,81 @@ class _SurfaceCell extends StatelessWidget {
     required this.id,
     required this.controller,
     required this.highlight,
+    required this.generation,
     required this.restored,
   });
 
   final String id;
   final SurfaceController controller;
   final ValueListenable<String?> highlight;
+  final ValueListenable<GenerationTarget?> generation;
 
   /// Surface présente dès le premier rendu du canevas (voir
   /// `_SurfaceAppearance`).
   final bool restored;
 
   @override
-  Widget build(BuildContext context) =>
-      BlocSelector<CanvasBloc, CanvasState, SurfacePhase?>(
-        selector: (CanvasState state) => state.phaseOf(id),
-        builder: (BuildContext context, SurfacePhase? phase) {
-          if (phase == null) return const SizedBox.shrink();
-          return KeyedSubtree(
-            key: ValueKey<String>('surface-$id'),
-            // Couche panneau (pdr-0084 U9) : la décoration est une sœur
-            // statique sous le contenu, jamais son enveloppe ni dans le
-            // `ClipRect` (son ombre ne serait plus rognée). Elle est en retrait
-            // de [ScenePanel.cellInset] : les cellules sont jointives, deux panneaux
-            // voisins gardent 8 px visibles, et aucun rectangle de cellule ne
-            // change. Le contenu (`RepaintBoundary` à place fixe) ne se remonte
-            // pas et ses peintures restent isolées : le `ClipRect` contient la
-            // translation d'apparition, et le contour pointillé est posé
-            // au-dessus, sans repeindre ni le contenu ni la décoration.
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                const Positioned.fill(
-                  left: ScenePanel.cellInset,
-                  top: ScenePanel.cellInset,
-                  right: ScenePanel.cellInset,
-                  bottom: ScenePanel.cellInset,
-                  child: ScenePanelDecoration(),
-                ),
-                RepaintBoundary(
-                  key: ValueKey<String>('surface-content-$id'),
-                  child: ClipRect(
-                    child: _SurfaceAppearance(
-                      id: id,
-                      controller: controller,
-                      phase: phase,
-                      restored: restored,
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  left: ScenePanel.cellInset,
-                  top: ScenePanel.cellInset,
-                  right: ScenePanel.cellInset,
-                  bottom: ScenePanel.cellInset,
-                  child: _HighlightOutline(id: id, highlight: highlight),
-                ),
-              ],
+  Widget build(
+    BuildContext context,
+  ) => BlocSelector<CanvasBloc, CanvasState, SurfacePhase?>(
+    selector: (CanvasState state) => state.phaseOf(id),
+    builder: (BuildContext context, SurfacePhase? phase) {
+      if (phase == null) return const SizedBox.shrink();
+      return KeyedSubtree(
+        key: ValueKey<String>('surface-$id'),
+        // Couche panneau (pdr-0084 U9) : la décoration est une sœur
+        // statique sous le contenu, jamais son enveloppe ni dans le
+        // `ClipRect` (son ombre ne serait plus rognée). Elle est en retrait
+        // de [ScenePanel.cellInset] : les cellules sont jointives, deux panneaux
+        // voisins gardent 8 px visibles, et aucun rectangle de cellule ne
+        // change. Le contenu (`RepaintBoundary` à place fixe) ne se remonte
+        // pas et ses peintures restent isolées : le `ClipRect` contient la
+        // translation d'apparition, et le contour pointillé est posé
+        // au-dessus, sans repeindre ni le contenu ni la décoration. Le cadre
+        // de génération est son frère, hors du `ClipRect` et sous le
+        // contour pointillé : il couvre la cellule et peint dans le même
+        // retrait.
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const Positioned.fill(
+              left: ScenePanel.cellInset,
+              top: ScenePanel.cellInset,
+              right: ScenePanel.cellInset,
+              bottom: ScenePanel.cellInset,
+              child: ScenePanelDecoration(),
             ),
-          );
-        },
+            RepaintBoundary(
+              key: ValueKey<String>('surface-content-$id'),
+              child: ClipRect(
+                child: _SurfaceAppearance(
+                  id: id,
+                  controller: controller,
+                  phase: phase,
+                  restored: restored,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: _GenerationFrameSlot(
+                id: id,
+                phase: phase,
+                restored: restored,
+                generation: generation,
+              ),
+            ),
+            Positioned.fill(
+              left: ScenePanel.cellInset,
+              top: ScenePanel.cellInset,
+              right: ScenePanel.cellInset,
+              bottom: ScenePanel.cellInset,
+              child: _HighlightOutline(id: id, highlight: highlight),
+            ),
+          ],
+        ),
       );
+    },
+  );
 }
 
 /// Passage du squelette aux composants d'une surface (D-06, pdr-0075 D3).
@@ -356,6 +386,111 @@ class _HighlightOutlineState extends State<_HighlightOutline> {
           ),
         )
       : const SizedBox.shrink();
+}
+
+/// Avancement du cadre de génération d'une cellule.
+enum _FramePhase { off, running, done }
+
+/// Emplacement du cadre de génération `generation-frame-<id>` d'une cellule.
+///
+/// Le cadre naît quand cette surface devient la cible du port **alors qu'elle
+/// n'est pas complète** (`skeleton` ou `components`), ou à sa création si elle
+/// l'est déjà au montage ; il passe à `done` quand la phase atteint `data`, et
+/// il est retiré quand `DsGenFrame` a fini (dernier tour puis fondu, aussitôt
+/// sous animations coupées). Si une autre surface devient la cible, il est
+/// retiré sans fondu : un seul cadre est actif. Une surface déjà complète
+/// quand elle devient cible (rejeu positionné), une surface restaurée, ou une
+/// mutation de l'acte 2 n'ouvrent aucun cadre : la phase ne recule jamais.
+///
+/// N'écoute que le port : seule cette cellule se reconstruit.
+class _GenerationFrameSlot extends StatefulWidget {
+  const _GenerationFrameSlot({
+    required this.id,
+    required this.phase,
+    required this.restored,
+    required this.generation,
+  });
+
+  final String id;
+  final SurfacePhase phase;
+  final bool restored;
+  final ValueListenable<GenerationTarget?> generation;
+
+  @override
+  State<_GenerationFrameSlot> createState() => _GenerationFrameSlotState();
+}
+
+class _GenerationFrameSlotState extends State<_GenerationFrameSlot> {
+  late _FramePhase _frame = _shouldOpen ? _FramePhase.running : _FramePhase.off;
+
+  bool get _isTarget => widget.generation.value?.surfaceId == widget.id;
+
+  bool get _shouldOpen =>
+      _isTarget && !widget.restored && widget.phase != SurfacePhase.data;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.generation.addListener(_onTargetChanged);
+  }
+
+  @override
+  void didUpdateWidget(_GenerationFrameSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.generation != widget.generation) {
+      oldWidget.generation.removeListener(_onTargetChanged);
+      widget.generation.addListener(_onTargetChanged);
+    }
+    if (_frame == _FramePhase.running && widget.phase == SurfacePhase.data) {
+      _frame = _FramePhase.done;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.generation.removeListener(_onTargetChanged);
+    super.dispose();
+  }
+
+  void _onTargetChanged() {
+    if (!_isTarget) {
+      if (_frame != _FramePhase.off) setState(() => _frame = _FramePhase.off);
+    } else if (_frame == _FramePhase.off) {
+      if (_shouldOpen) setState(() => _frame = _FramePhase.running);
+    } else {
+      // Même cible, autre agent : l'étiquette change.
+      setState(() {});
+    }
+  }
+
+  void _onFinished() {
+    if (_frame == _FramePhase.done) setState(() => _frame = _FramePhase.off);
+  }
+
+  @override
+  Widget build(BuildContext context) => _frame == _FramePhase.off
+      ? const SizedBox.shrink()
+      : DsGenFrame(
+          surfaceId: widget.id,
+          agent: widget.generation.value?.agent,
+          done: _frame == _FramePhase.done,
+          onFinished: _onFinished,
+          inset: ScenePanel.cellInset,
+        );
+}
+
+/// Aucune génération en cours : valeur toujours `null`, rien à écouter.
+class _NoGeneration implements ValueListenable<GenerationTarget?> {
+  const _NoGeneration();
+
+  @override
+  GenerationTarget? get value => null;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
 }
 
 /// Aucune surbrillance : valeur toujours `null`, rien à écouter.

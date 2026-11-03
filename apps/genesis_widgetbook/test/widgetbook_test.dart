@@ -11,6 +11,7 @@ const _expectedBricks = <String>{
   'DsSkeleton',
   'DsNeutralState',
   'DsGauge',
+  'DsGenFrame',
   'ScenePanel',
   'SceneBackdrop',
 };
