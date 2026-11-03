@@ -1,6 +1,7 @@
 # language: fr
-Fonctionnalité: Design system - habillage de la scène, texte lisible, polices embarquées, mouvement sobre
+Fonctionnalité: Design system - habillage de la scène, polices embarquées, mouvement sobre
   L'habillage vient du design system du 2026-11-02 ; la disposition, les données et le comportement restent ceux de 013 et de la fiche.
+  Recalé par la spec 019 (pdr-0087, pdr-0088) : U-01 (aucun texte sous 24 px) est remplacé par V-01 de acte_fidelite_design.feature, et le flou de l'apparition (U-05, « sans flou ») est vérifié par A-01.
   Polices réelles de la scène (Ahem ne mesure pas une troncature) et plateforme simulée Linux.
   Contexte:
     Étant donné les polices réelles de la scène sont chargées
@@ -11,17 +12,6 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
   After:
     Alors l'app est fermée, le faux backend arrêté et la sémantique libérée
     Et la plateforme simulée est restaurée
-
-  @U-01 @NFR-05
-  Scénario: U-01 Aucun texte de l'écran ne passe sous 24 px, aux actes 1, 2 et 3
-    Étant donné le tableau de la release 3.4 est affiché
-    Alors tout texte visible de l'écran fait au moins {24} px
-    Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
-    Et le serveur émet la liste des crashs jusqu'au temps {'data'}
-    Alors tout texte visible de l'écran fait au moins {24} px
-    Quand la barre d'actions est jouée en direct
-    Alors tout texte visible de l'écran fait au moins {24} px
-    Et aucune erreur n'est signalée
 
   @U-02 @NFR-05 @NFR-10
   Scénario: U-02 Les données sont en JetBrains Mono à chiffres tabulaires, les mots en Space Grotesk, polices embarquées
@@ -58,7 +48,7 @@ Fonctionnalité: Design system - habillage de la scène, texte lisible, polices 
     Et le contraste du mot de chaque statut sur son fond composé est d'au moins {4.5}
 
   @U-05 @FR-04 @NFR-04
-  Scénario: U-05 Une surface apparaît en 480 ms avec 10 points de glissement, sans animation en boucle superflue
+  Scénario: U-05 Une surface apparaît en 480 ms avec 10 points de glissement (flou : voir A-01), et seul Bloquant bat en continu
     Étant donné le tableau de la release 3.4 est affiché
     Quand le serveur émet la liste des crashs jusqu'au temps {'components'}
     Alors le contenu de la surface {'crashes'} est à peine visible

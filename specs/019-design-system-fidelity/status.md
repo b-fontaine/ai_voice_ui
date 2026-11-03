@@ -1,6 +1,6 @@
 # 019 — État
 
-- **Étape** : Gherkin
+- **Étape** : TDD
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -13,6 +13,7 @@
 |---|---|---|---|
 | 2026-11-03 | Définir | `spec.md`, `plan.md`, `tasks.md` (T01, T10 à T13, T20 à T24, T30 à T34, T40, T41, T90 à T92) ; détails d'interface tranchés sous pdr-0062 : [pdr-0088](../../product/decisions/pdr-0088-019-design-system-fidelity-ui-details-assistant-decided.md) (F1 à F11, contestables) ; hypothèse sur l'indicateur d'acte en rejeu : effet attendu du mode scénario (`_reachAct` sans effet en scénario et en rejeu), à confirmer par T40 ; `product_lint` : 0 erreur | `python3 -I product/_tools/product_lint.py` |
 | 2026-11-03 | Revue du plan | `architect-reviewer` (Opus), mode PLAN : verdict **À AMENDER** (3 bloquantes, 4 importantes, 1 mineure) ; P1 à P8 intégrées dans `spec.md`, `plan.md`, `tasks.md` et [pdr-0088](../../product/decisions/pdr-0088-019-design-system-fidelity-ui-details-assistant-decided.md) (F1, F3, F4, F5, F8, F11 amendées ; F12, F13 ajoutées) ; **Q-94** ouverte (non bloquante) ; tâches réordonnées (T40 en tête, T10 scindée en a/b/c, T32 en a/b) ; `product_lint` : 0 erreur | `python3 -I product/_tools/product_lint.py` |
+| 2026-11-03 | Gherkin | T01 : `acte_fidelite_design.feature` (V-01 à V-11, A-01 à A-07, I-01 ; 22 cas : **19 rouges pour la bonne raison, 3 verts** = I-01 tel quel) ; copie documentaire en trois fichiers (`design-system-019{,-ecran,-mouvement}.feature`, limite de 250 lignes du lint) ; U-01 retiré de 017 (remplacé par V-01), U-05 renvoie à A-01 pour le flou ; contrat de clés `FidelityKeysContract` (`support/keys.dart`). Rouges attendus : V-01 « taille du style data : attendu 15, obtenu 24.0 » ; V-02 `kpi-value` introuvable ; V-03 `trend-plot` introuvable ; V-04 `checklist-table` introuvable ; V-05 `reviews-split` introuvable ; V-06 `agents-rail-label` introuvable ; V-07 `voice-orb-core` introuvable ; V-08 aucun cadre de génération ; V-09 `actions-label` introuvable ; V-10 hauteur de `shelf-KeyIndicator` 31 au lieu de 30 ; V-11 échelle non appliquée ; A-01 flou σ 0 au lieu de 4 ; A-02 `checklist-row-0` ; A-03 `trend-reveal` ; A-04 `kpi-value` ; A-05 `generation-frame-crashes` ; A-06 `voice-wave` ; A-07 `kpi-gauge` introuvable | `.omc/state/loop/gates/20261103-104916-unit-flutter.log` (8 contrôles, tout vert, 382 tests) ; `python3 -I product/_tools/product_lint.py` : 0 erreur |
 
 ## Revue d'architecte
 ### Revue du plan (mode PLAN) — verdict À AMENDER

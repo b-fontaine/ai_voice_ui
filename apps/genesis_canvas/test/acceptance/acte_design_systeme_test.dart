@@ -10,17 +10,14 @@ import './step/lapp_lancee_sur_ce_backend_avec_une_horloge_virtuelle.dart';
 import './step/lapp_est_fermee_le_faux_backend_arrete_et_la_semantique_liberee.dart';
 import './step/la_plateforme_simulee_est_restauree.dart';
 import './step/le_tableau_de_la_release34_est_affiche.dart';
-import './step/tout_texte_visible_de_lecran_fait_au_moins_px.dart';
-import './step/je_dis.dart';
-import './step/le_serveur_emet_la_liste_des_crashs_jusquau_temps.dart';
-import './step/la_barre_dactions_est_jouee_en_direct.dart';
-import './step/aucune_erreur_nest_signalee.dart';
 import './step/les_valeurs_deltas_seuils_et_etiquettes_de_lecran_sont_en_police.dart';
 import './step/les_chiffres_des_valeurs_de_lecran_sont_tabulaires.dart';
 import './step/les_titres_legendes_libelles_de_boutons_et_textes_courants_de_lecran_sont_en_police.dart';
 import './step/les_deux_polices_viennent_des_assets_du_paquet_de_design_systeme_et_de_leurs_licences_enregistrees.dart';
 import './step/aucune_police_nest_chargee_par_le_reseau.dart';
 import './step/je_note_les_rectangles_des_zones_de_lecran.dart';
+import './step/je_dis.dart';
+import './step/le_serveur_emet_la_liste_des_crashs_jusquau_temps.dart';
 import './step/le_canevas_affiche_une_grille_de_colonnes_sur_lignes.dart';
 import './step/le_canevas_fait_points_de_haut.dart';
 import './step/aucun_libelle_de_la_surface_nest_tronque.dart';
@@ -45,7 +42,7 @@ import './step/le_seuil_du_graphique_est_trace_en_en_tirets.dart';
 import './step/aucune_serie_du_graphique_nest_tracee_avec_une_couleur_de_statut_ni_avec.dart';
 
 void main() {
-  group('''Design system - habillage de la scène, texte lisible, polices embarquées, mouvement sobre''', () {
+  group('''Design system - habillage de la scène, polices embarquées, mouvement sobre''', () {
     Future<void> bddSetUp(WidgetTester tester) async {
       await lesPolicesReellesDeLaSceneSontChargees(tester);
       await laPlateformeSimuleeEstLinux(tester);
@@ -58,28 +55,6 @@ void main() {
       await laPlateformeSimuleeEstRestauree(tester);
     }
 
-    testWidgets(
-      '''U-01 Aucun texte de l'écran ne passe sous 24 px, aux actes 1, 2 et 3''',
-      (tester) async {
-        try {
-          await bddSetUp(tester);
-          await leTableauDeLaRelease34EstAffiche(tester);
-          await toutTexteVisibleDeLecranFaitAuMoinsPx(tester, 24);
-          await jeDis(
-            tester,
-            'Concentre-toi sur Android et compare avec la 3.3',
-          );
-          await leServeurEmetLaListeDesCrashsJusquauTemps(tester, 'data');
-          await toutTexteVisibleDeLecranFaitAuMoinsPx(tester, 24);
-          await laBarreDactionsEstJoueeEnDirect(tester);
-          await toutTexteVisibleDeLecranFaitAuMoinsPx(tester, 24);
-          await aucuneErreurNestSignalee(tester);
-        } finally {
-          await bddTearDown(tester);
-        }
-      },
-      tags: ['U-01', 'NFR-05'],
-    );
     testWidgets(
       '''U-02 Les données sont en JetBrains Mono à chiffres tabulaires, les mots en Space Grotesk, polices embarquées''',
       (tester) async {
@@ -172,7 +147,7 @@ void main() {
       tags: ['U-04', 'NFR-05', 'RG-09'],
     );
     testWidgets(
-      '''U-05 Une surface apparaît en 480 ms avec 10 points de glissement, sans animation en boucle superflue''',
+      '''U-05 Une surface apparaît en 480 ms avec 10 points de glissement (flou : voir A-01), et seul Bloquant bat en continu''',
       (tester) async {
         try {
           await bddSetUp(tester);
