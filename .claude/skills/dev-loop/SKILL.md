@@ -21,6 +21,7 @@ description: Une itération de la boucle de développement autonome de Genesis C
 4. **Arbre inattendu** : des modifications hors de la fonctionnalité en cours → ne les touche pas ; signale-les dans `status.md` et dans `specs/progress.md`.
 
 ## 1. Choisir le travail
+- `specs/progress.md` : une ligne dont l'étape commence par « À faire » (inscrite par le porteur ou `product-steward`) → c'est la prochaine fonctionnalité : démarre-la à l'étape Définir (branche, dossier, ligne mise à jour), même si le journal dit « en attente du porteur ». Relis toujours le tableau et la première ligne du journal avant de conclure qu'il n'y a rien à faire.
 - `specs/progress.md` : une fonctionnalité `en cours` → reprends-la (`status.md`) sur sa branche : `git switch feat/NNN-<slug>`, ou `git switch loop && git switch -c feat/NNN-<slug>` si elle n'existe pas encore.
 - Sinon : la suivante dans l'ordre de `product/roadmap/roadmap.md` et du backlog, en sautant : celles déjà présentes dans `progress.md` (colonne « Backlog »), celles `Bloquée`, celles dont une `Q-xx` bloquante est ouverte. La toute première est `specs/000-loop-harness` (déjà rédigée).
 - Nouvelle fonctionnalité : `git switch loop && git switch -c feat/NNN-<slug>` (NNN = suivant), dossier depuis `specs/_templates/`, ligne dans `progress.md` avec l'id de backlog.
