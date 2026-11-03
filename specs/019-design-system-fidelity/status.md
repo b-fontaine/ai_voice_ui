@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot F (R9, R10)
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas (generation_target, release_checklist, trend_chart, canvas_board, review_sentiment), packages/shared/design_system (ds_rise, tokens micro), apps/genesis_canvas/lib/pages/genesis_canvas/genesis_canvas_page.dart, supports de test
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
