@@ -2,7 +2,7 @@
 # id: p-fn-feature-design-system-019
 # Scénarios complémentaires de 019 (fidélité au design system : structure des composants, échelle de texte, animations) : V-01 à V-05, composants de données : échelle de texte, KeyIndicator, TrendChart, ReleaseChecklist, ReviewSentiment. Hors des 9 de la fiche (pdr-0049). Les trois fichiers design-system-019*.feature reprennent l'unique fichier d'acceptation (découpé pour la limite de taille d'un document).
 # Décisions : pdr-0087 (tailles du design system, plus de minimum de 24 px, NFR-05 suspendue), pdr-0088 (détails d'interface tranchés par la boucle, pdr-0062) ; exigences FR-04, FR-06, NFR-04, NFR-05, RG-09, RG-29.
-# V-01 remplace U-01 de 017 (aucun texte sous 24 px). Rouges au départ : V-01 à V-05 (taille hors échelle, clé de widget introuvable).
+# V-01 remplace U-01 de 017 (plus de minimum de 24 px : l'échelle de texte du design system). État final (019 livrée, miroir de l'acceptation, tous verts) : V-01 depuis T10a, V-02 depuis T20, V-03 depuis T21, V-04 depuis T22, V-05 depuis T23 ; suite d'acceptation de l'app à 137 verts.
 # Les parties d'un composant sont cherchées par clés de widgets `<surface>-<partie>` (contrat dans apps/genesis_canvas/test/acceptance/support/keys.dart) ; les animations se prouvent à l'horloge simulée du banc de test, jamais par capture.
 # Automatisé en Flutter : apps/genesis_canvas/test/acceptance/acte_fidelite_design.feature.
 # Steps sans chiffre initial (pdr-0022-gherkin-steps-no-leading-digit).

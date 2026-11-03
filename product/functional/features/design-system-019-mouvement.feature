@@ -2,7 +2,7 @@
 # id: p-fn-feature-design-system-019-mouvement
 # Scénarios complémentaires de 019 (fidélité au design system : structure des composants, échelle de texte, animations) : A-01 à A-07 et I-01, mouvement (horloge simulée) et indicateur d'acte. Hors des 9 de la fiche (pdr-0049). Les trois fichiers design-system-019*.feature reprennent l'unique fichier d'acceptation (découpé pour la limite de taille d'un document).
 # Décisions : pdr-0087 (tailles du design system, plus de minimum de 24 px, NFR-05 suspendue), pdr-0088 (détails d'interface tranchés par la boucle, pdr-0062) ; exigences FR-04, FR-06, NFR-04, NFR-05, RG-09, RG-29.
-# A-01 reprend le flou d'apparition qu'excluait U-05 de 017. Rouges au départ : A-01 à A-07 (aucun flou, structure animée absente) ; seuls les garde-fous « aucune animation en boucle » de A-07 sont déjà verts. Verts au départ : les trois scénarios I-01, qui verrouillent le comportement actuel de l'indicateur d'acte (confirmé à la lecture du code).
+# A-01 reprend le flou d'apparition qu'excluait U-05 de 017. État final (019 livrée, miroir de l'acceptation, tous verts) : A-01 depuis T12, A-02 depuis T22, A-03 depuis T21, A-04 depuis T23, A-05 depuis T32, A-06 depuis T33, A-07 depuis T22 (reverifié en T34) ; les trois scénarios I-01 verrouillent l'indicateur d'acte (effet attendu du mode scénario, confirmé par T40).
 # Les parties d'un composant sont cherchées par clés de widgets `<surface>-<partie>` (contrat dans apps/genesis_canvas/test/acceptance/support/keys.dart) ; les animations se prouvent à l'horloge simulée du banc de test, jamais par capture.
 # Automatisé en Flutter : apps/genesis_canvas/test/acceptance/acte_fidelite_design.feature.
 # Steps sans chiffre initial (pdr-0022-gherkin-steps-no-leading-digit).

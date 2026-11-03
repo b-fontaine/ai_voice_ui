@@ -2,7 +2,7 @@
 # id: p-fn-feature-design-system-019-ecran
 # Scénarios complémentaires de 019 (fidélité au design system : structure des composants, échelle de texte, animations) : V-06 à V-11, reste de l'écran : rail, barre vocale, cadre de génération, actions et statuts, pied, contraste. Hors des 9 de la fiche (pdr-0049). Les trois fichiers design-system-019*.feature reprennent l'unique fichier d'acceptation (découpé pour la limite de taille d'un document).
 # Décisions : pdr-0087 (tailles du design system, plus de minimum de 24 px, NFR-05 suspendue), pdr-0088 (détails d'interface tranchés par la boucle, pdr-0062) ; exigences FR-04, FR-06, NFR-04, NFR-05, RG-09, RG-29.
-# Rouges au départ : V-06 à V-11 (clé de widget introuvable, aucun texte sous 24 px pour mesurer le contraste, aucun cadre de génération).
+# État final (019 livrée, miroir de l'acceptation, tous verts) : V-06 depuis T30, V-07 depuis T31, V-08 depuis T32, V-10 depuis T33, V-11 depuis T10a ; V-09 (T24) corrigé : « Valider » reste actif (rien dans l'app ne le désactive, pdr-0016, C1) et les tirets se voient sur « Bloquer » dès le clic (pdr-0088 F7).
 # Les parties d'un composant sont cherchées par clés de widgets `<surface>-<partie>` (contrat dans apps/genesis_canvas/test/acceptance/support/keys.dart) ; les animations se prouvent à l'horloge simulée du banc de test, jamais par capture.
 # Automatisé en Flutter : apps/genesis_canvas/test/acceptance/acte_fidelite_design.feature.
 # Steps sans chiffre initial (pdr-0022-gherkin-steps-no-leading-digit).
