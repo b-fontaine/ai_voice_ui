@@ -58,6 +58,7 @@ import './step/le_serveur_emet_les_donnees_des_quatre_surfaces.dart';
 import './step/lelement_est_invisible_ou_absent.dart';
 import './step/le_serveur_emet_la_barre_dactions_de_la_fin_de_lacte2.dart';
 import './step/lelement_a_un_rayon_de_points.dart';
+import './step/je_clique_sur_le_bouton.dart';
 import './step/les_puces_de_statut_font_points_de_haut_et_sont_arrondies_en_pilule.dart';
 import './step/le_mot_de_chaque_puce_de_statut_est_en_capitales.dart';
 import './step/je_clique_sur_le_bouton_du_panneau_protocole.dart';
@@ -102,7 +103,6 @@ import './step/le_tableau_de_la_release34_est_joue_en_direct_une_surface_toutes_
 import './step/je_clique_sur_lecture.dart';
 import './step/je_choisis_la_vitesse.dart';
 import './step/jattends_la_fin_du_rejeu.dart';
-import './step/je_clique_sur_le_bouton.dart';
 
 void main() {
   group('''Fidélité au design system - structure des composants, échelle de texte, animations''', () {
@@ -685,7 +685,12 @@ void main() {
             'action-validate_release-visual',
             44,
           );
-          await lelementEstAffiche(tester, 'action-validate_release-dashes');
+          await lelementNestPasAffiche(
+            tester,
+            'action-validate_release-dashes',
+          );
+          await jeCliqueSurLeBouton(tester, 'block_release');
+          await lelementEstAffiche(tester, 'action-block_release-dashes');
           await lesPucesDeStatutFontPointsDeHautEtSontArrondiesEnPilule(
             tester,
             26,

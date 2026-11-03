@@ -89,7 +89,10 @@ Fonctionnalité: Fidélité au design system - structure des composants, échell
     Et l'élément {'action-block_release-visual'} a une lueur de teinte {'nogo'}
     Et l'élément {'action-block_release-dashes'} n'est pas affiché
     Et l'élément {'action-validate_release-visual'} fait {44} points de haut
-    Et l'élément {'action-validate_release-dashes'} est affiché
+    Et l'élément {'action-validate_release-dashes'} n'est pas affiché
+    # Rien dans l'app ne désactive « Valider » tant qu'un critère bloque (ActionAvailability, pdr-0016, C1) : la bordure en tirets se voit sur un bouton réellement désactivé, ici « Bloquer » dès le clic (action en cours).
+    Quand je clique sur le bouton {'block_release'}
+    Alors l'élément {'action-block_release-dashes'} est affiché
     Et les puces de statut font {26} points de haut et sont arrondies en pilule
     Et le mot de chaque puce de statut est en capitales
 
