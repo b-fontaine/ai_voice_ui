@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 0/3
-- **Tâche en cours** : —
-- **Fichiers touchés** (tâche en cours) : —
+- **Tentatives** : 1/3
+- **Tâche en cours** : lot A (R1)
+- **Fichiers touchés** (tâche en cours) : packages/features/canvas/lib/src/catalog/key_indicator.dart, tests key_indicator, acte2_transformer.feature (B4)
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
