@@ -20,7 +20,7 @@ tags: [nfr, latence, lisibilite, resilience, securite]
 | NFR-02 | Latence UI | Premier squelette affiché en moins de 1,5 s après la fin de la phrase | Horodatage du journal A2UI ; ⚠️ depuis 011, la prise de la demande attend jusqu'à `REQUEST_WINDOW_SETTLE` (300 ms) : à remesurer (Q-80) ; **012** : le modèle de composition (p50 1,79 s) ne tient pas ce seuil seul, le squelette part avant l'appel (Q-82, [p-ar-llm-composer](../architecture/llm-composer.md)) | [ux-genui-streaming-loading] |
 | NFR-03 | Latence UI | Acte 1 complet en moins de 8 s | Horodatage du journal A2UI | — |
 | NFR-04 | Fluidité | 60 images/s pendant les animations d'apparition | Flutter DevTools, onglet Performance | [perf-profile-mode-devtools] |
-| NFR-05 | Lisibilité | Texte d'au moins 24 px, contraste WCAG AA, lisible depuis le fond de salle | Test sur vidéoprojecteur réel | [ds-a11y-wcag-contrast] |
+| NFR-05 | Lisibilité | **Suspendue le 2026-11-03 ([pdr-0087](../decisions/pdr-0087-design-system-fidelity-no-24px-minimum.md))** : ~~texte d'au moins 24 px~~ (tailles du design system) ; contraste WCAG AA maintenu ; à observer en répétition : lisibilité au fond de la salle, la rétablir si elle pose problème | Test sur vidéoprojecteur réel | [ds-a11y-wcag-contrast] |
 | NFR-06 | Lisibilité | Au maximum 6 surfaces visibles en même temps | Revue visuelle | — |
 | NFR-07 | Résilience | ~~Bascule en mode secours en moins de 2 s, sans redémarrer l'app~~ — **retirée par pdr-0032** | ~~Répétition avec Wi-Fi coupé~~ | — |
 | NFR-08 | Déterminisme | Données fictives figées ; seule la composition de l'UI varie | Snapshot des réponses d'agents | — |
@@ -48,7 +48,7 @@ Détails d'interface tranchés par la boucle sous pdr-0062 ([pdr-0075](../decisi
 | NFR | Acquis | Reste |
 |---|---|---|
 | NFR-04 | périmètre de reconstruction et de peinture prouvé par test (l'arrivée d'une surface ne reconstruit ni ne repeint ses voisines ; fondus de 200 ms et de 150 ms, durée nulle sous `disableAnimations`) ; scénarios D-06 et D-07 ([p-fn-feature-design-ergonomics-013](features/design-ergonomie-013.feature)) | les **60 i/s eux-mêmes** : DevTools au profil `--profile` sur la machine de démo, en répétition (J7) |
-| NFR-05 | texte ≥ 24 px et contraste AA vérifiés par tests et par les captures 1920×1080 ; cibles ≥ 48 px sous Linux ; aucun libellé de checklist ni d'avis tronqué (Q-83 → pdr-0075 D2) | mesure sur **vidéoprojecteur réel** et fond de salle : J7, porteur |
+| NFR-05 | (suspendue, pdr-0087 : plus de seuil de 24 px) contraste AA vérifiés par tests et par les captures 1920×1080 ; cibles ≥ 48 px sous Linux ; aucun libellé de checklist ni d'avis tronqué (Q-83 → pdr-0075 D2) | mesure sur **vidéoprojecteur réel** et fond de salle : J7, porteur |
 
 ## NFR-12 après 014 (2026-10-31)
 
