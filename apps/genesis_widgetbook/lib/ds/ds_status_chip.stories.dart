@@ -29,6 +29,16 @@ final $Blocking = _Story(
   ),
 );
 
+/// Grande puce du verdict (40 px, texte `badgeLg`), avec la lueur `glow-nogo`
+/// quand le statut est bloquant.
+final $Verdict = _Story(
+  args: _Args(
+    status: NullableEnumArg(SceneStatus.blocking, values: SceneStatus.values),
+    label: StringArg('NO-GO'),
+    large: BoolArg(true),
+  ),
+);
+
 /// Statut inconnu ou absent : style neutre.
 final $Neutral = _Story(
   args: _Args(status: Arg.fixed(null), label: StringArg('Inconnu')),
@@ -41,8 +51,8 @@ final defaults = _Defaults(
       dsStorySetup(Align(alignment: Alignment.topLeft, child: child)),
 );
 
-/// Les quatre statuts côte à côte : ok (avec ✓), risque, bloquant (point
-/// battant, immobile ici) et neutre. Le `setup` remplace la puce par la
+/// Les quatre statuts côte à côte (pilules de 26 px, capitales) : ok (avec ✓),
+/// risque, bloquant (point battant, immobile ici) et neutre. Le `setup` remplace la puce par la
 /// rangée : le `builder` généré doit rendre un `DsStatusChip`.
 final $AllStatuses = _Story(
   setup: (context, child, args) => dsStorySetup(

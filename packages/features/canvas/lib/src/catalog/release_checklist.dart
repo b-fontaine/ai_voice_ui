@@ -155,9 +155,6 @@ const double _gap = 8;
 /// Espace entre le seuil et la valeur d'un critère présenté sur deux lignes.
 const double _pairGap = 12;
 
-double _chipHeight(SceneTheme theme) =>
-    lineHeightOf(theme.body) + 2 * DsStatusChip.verticalPadding;
-
 /// Liste des critères : jamais de troncature muette, les textes passent à la
 /// ligne. Deux présentations, choisies pour toute la liste :
 ///
@@ -326,9 +323,9 @@ class _TableLayout extends _Layout {
     required this.chip,
   }) : super(<double>[
          for (int i = 0; i < count; i++)
-           (lineHeightOf(theme.body) > _chipHeight(theme)
+           (lineHeightOf(theme.body) > DsStatusChip.height
                    ? lineHeightOf(theme.body)
-                   : _chipHeight(theme)) +
+                   : DsStatusChip.height) +
                _rowPadding,
        ]);
 
@@ -420,7 +417,7 @@ class _StackedLayout extends _Layout {
         ? (threshold > value ? threshold : value)
         : threshold + value;
     final double text = label + pair;
-    final double chipH = _chipHeight(theme);
+    final double chipH = DsStatusChip.height;
     return (text > chipH ? text : chipH) + _rowPadding;
   }
 

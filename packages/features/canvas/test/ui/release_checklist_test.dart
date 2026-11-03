@@ -96,7 +96,10 @@ void main() {
     expect(h.inCell(find.text('revue faite')), findsOneWidget);
     expect(h.inCell(find.text('24 %')), findsOneWidget);
     expect(h.inCell(_chipLabeled('À RISQUE')), findsOneWidget);
-    expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
+    expect(
+      h.inCell(findTextIgnoringCase('En attente de décision')),
+      findsOneWidget,
+    );
     expect(h.inCell(findTextIgnoringCase('Validé')), findsOneWidget);
     expect(h.inCell(_chipLabeled('À risque')), findsNWidgets(2));
     // 3 puces d item + recommandation + statut de décision.
@@ -164,7 +167,9 @@ void main() {
   ) async {
     // pdr-0087 / pdr-0088 F1 : les lignes passent de 45 à 36 px (texte de
     // 15 px) ; la cellule est réduite pour que la liste déborde encore.
-    final h = _realFontsHarness(size: const Size(940, 220));
+    // 019 T13 : la puce passe à 26 px, les lignes à 28 px (3 × 8 px de moins
+    // pour les 3 critères gardés : 220 → 196).
+    final h = _realFontsHarness(size: const Size(940, 196));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     final data = cloneJson(h.data);
@@ -190,7 +195,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(h.engineErrors, isEmpty);
-    // 3 critères de 36 px tiennent avec la marque : 9 critères masqués.
+    // 3 critères de 28 px tiennent avec la marque : 9 critères masqués.
     expect(h.inCell(find.text('+ 9 autres critères')), findsOneWidget);
     expect(h.inCell(find.text('Critère bloquant')), findsOneWidget);
     expect(h.inCell(findTextIgnoringCase('Bloquant')), findsOneWidget);
@@ -198,15 +203,19 @@ void main() {
     expect(h.inCell(find.text('Critère 2')), findsOneWidget);
     expect(h.inCell(find.text('Critère 3')), findsNothing);
     expect(h.inCell(_chipLabeled('À RISQUE')), findsOneWidget);
-    expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
+    expect(
+      h.inCell(findTextIgnoringCase('En attente de décision')),
+      findsOneWidget,
+    );
     h.expectTextAtLeastScaleMinimum(tester);
   });
 
   testWidgets('critères masqués : bloquants puis risques en priorité, '
       'ordre d\'origine conservé', (tester) async {
     // pdr-0087 / pdr-0088 F1 : lignes de 36 px au lieu de 45 px, cellule
-    // réduite en conséquence (340 → 280 px).
-    final h = _realFontsHarness(size: const Size(940, 280));
+    // réduite en conséquence (340 → 280 px). 019 T13 : puce de 26 px, lignes de
+    // 28 px (cinq lignes et l'en-tête, 280 → 228).
+    final h = _realFontsHarness(size: const Size(940, 228));
     await h.pump(tester);
     await h.sendFixtureTo(tester, 2);
     final data = cloneJson(h.data);
@@ -228,7 +237,7 @@ void main() {
     await h.sendData(tester, data);
 
     expect(tester.takeException(), isNull);
-    // 5 critères de 36 px tiennent avec la marque : seul E est masqué.
+    // 5 critères de 28 px tiennent avec la marque : seul E est masqué.
     expect(h.inCell(find.text('+ 1 autres critères')), findsOneWidget);
     expect(h.inCell(find.text('A')), findsOneWidget);
     expect(h.inCell(find.text('C')), findsOneWidget);
@@ -269,7 +278,7 @@ void main() {
 
       expect(h.inCell(find.text('99,43 % (3.3 : 99,71 %)')), findsOneWidget);
       expect(h.inCell(find.text('30 % (3.3 : 14 %)')), findsOneWidget);
-      expect(h.inCell(find.text('NO-GO Android')), findsOneWidget);
+      expect(h.inCell(findTextIgnoringCase('NO-GO Android')), findsOneWidget);
       expect(h.inCell(findTextIgnoringCase('Bloquant')), findsNWidgets(2));
       expect(find.byKey(const Key('neutral-checklist')), findsNothing);
       h.expectTextAtLeastScaleMinimum(tester);
@@ -305,7 +314,7 @@ void main() {
     await h.sendVariant(tester, 'act2');
     await h.sendVariant(tester, 'correction-ios');
 
-    expect(h.inCell(find.text('GO iOS')), findsOneWidget);
+    expect(h.inCell(findTextIgnoringCase('GO iOS')), findsOneWidget);
     expect(h.inCell(find.text('99,80 %')), findsOneWidget);
     expect(find.byKey(const Key('neutral-checklist')), findsNothing);
     h.expectTextAtLeastScaleMinimum(tester);

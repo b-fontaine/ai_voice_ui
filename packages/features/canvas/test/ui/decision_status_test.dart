@@ -126,9 +126,9 @@ void main() {
     // Les images à durée nulle n'avancent pas la transition : l'ancien et le
     // nouveau statut sont brièvement tous deux présents.
     expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
-    expect(find.text('En attente de décision'), findsOneWidget);
+    expect(findTextIgnoringCase('En attente de décision'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('En attente de décision'), findsNothing);
+    expect(findTextIgnoringCase('En attente de décision'), findsNothing);
     expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
   });
 
@@ -167,7 +167,7 @@ void main() {
       await tester.pump();
       expect(chips(), findsOneWidget);
       expect(findTextIgnoringCase('Bloquée'), findsOneWidget);
-      expect(find.text('En attente de décision'), findsNothing);
+      expect(findTextIgnoringCase('En attente de décision'), findsNothing);
     });
 
     testWidgets('vitesse 2 : la transition dure 200 ms', (tester) async {

@@ -1,10 +1,20 @@
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
-import 'package:flutter/widgets.dart' show Key, State;
+import 'package:flutter/widgets.dart' show Key, State, Widget;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Surface;
+import 'package:shared_design_system/shared_design_system.dart'
+    show DsStatusChip;
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/catalog_harness.dart';
+
+/// Puce de la recommandation (libellé de donnée « À RISQUE ») : les puces des
+/// critères portent « À risque », que la mise en capitales rend identique à
+/// l'écran, d'où la recherche sur le libellé d'origine.
+final Finder _recommendationChip = find.byWidgetPredicate(
+  (Widget w) => w is DsStatusChip && w.label == 'À RISQUE',
+  description: 'puce de la recommandation « À RISQUE »',
+);
 
 /// Sonde de propagation (009 T05) : un `updateDataModel` limité au
 /// sous-chemin `/checklist/decisionStatus` doit reconstruire le composant lié
@@ -26,7 +36,10 @@ void main() {
     await h.pump(tester);
     await h.sendFixtureTo(tester, 3);
 
-    expect(h.inCell(find.text('En attente de décision')), findsOneWidget);
+    expect(
+      h.inCell(findTextIgnoringCase('En attente de décision')),
+      findsOneWidget,
+    );
     final State<Surface> surfaceState = tester.state<State<Surface>>(
       find.descendant(
         of: find.byKey(const Key('surface-checklist')),
@@ -47,9 +60,12 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(h.inCell(findTextIgnoringCase('Bloquée')), findsOneWidget);
-    expect(h.inCell(find.text('En attente de décision')), findsNothing);
+    expect(
+      h.inCell(findTextIgnoringCase('En attente de décision')),
+      findsNothing,
+    );
     expect(h.inCell(find.text('Checklist go/no-go')), findsOneWidget);
-    expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
+    expect(h.inCell(_recommendationChip), findsOneWidget);
     expect(h.inCell(find.text('37 PR')), findsOneWidget);
     expect(
       identical(
@@ -74,7 +90,7 @@ void main() {
     expect(h.inCell(findTextIgnoringCase('Validée')), findsOneWidget);
     expect(h.inCell(findTextIgnoringCase('Bloquée')), findsNothing);
     expect(h.inCell(find.text('Checklist go/no-go')), findsOneWidget);
-    expect(h.inCell(find.text('À RISQUE')), findsOneWidget);
+    expect(h.inCell(_recommendationChip), findsOneWidget);
     expect(
       identical(
         tester.state<State<Surface>>(find.byType(Surface)),

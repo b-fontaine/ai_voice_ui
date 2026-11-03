@@ -71,7 +71,7 @@ class ScenePanelArgs extends StoryArgs<ScenePanel> {
        this.paddingArg = $initArg(
          'padding',
          padding,
-         ConstArg(const EdgeInsets.all(SceneSpace.space4)),
+         ConstArg(ScenePanel.defaultPadding),
        )!,
        this.insetArg = $initArg(
          'inset',
@@ -83,7 +83,7 @@ class ScenePanelArgs extends StoryArgs<ScenePanel> {
   ScenePanelArgs.fixed({
     Key? key,
     required Widget child,
-    EdgeInsetsGeometry padding = const EdgeInsets.all(SceneSpace.space4),
+    EdgeInsetsGeometry padding = ScenePanel.defaultPadding,
     double inset = ScenePanel.cellInset,
     List<BoxShadow>? glow,
   }) : this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
