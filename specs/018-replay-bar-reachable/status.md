@@ -1,6 +1,6 @@
 # 018 — État
 
-- **Étape** : Refactorisation
+- **Étape** : Vérification
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -17,6 +17,8 @@
 | 2026-11-03 | TDD | **T10 faite** : le panneau déplié se pose au-dessus de la rangée du bas (`Expanded(Stack)` sous le rail ; `Positioned.fill(Align(bottomRight, BlocSelector → Padding(bas 148 si déplié) → ProtocolPanel)))` ; `ProtocolPanel` inchangé, `Padding` toujours présent). Rouge : `genesis_canvas_page_layout_test` « panneau déplié » `Expected ≤ 932.0, Actual 1072.0`. Vert : R-01, RB-01 à RB-03 (18 scénarios `acte4_rejouer` + `acte_barre_rejeu`), acceptation complète 116 verts (D-01 à D-07, U-xx compris), nombre d'entrées montrées inchangé (4). Test de focus du bouton « Replier » ajouté (caractérisation, déjà vert : le focus reste sur le bouton). `genesis_canvas_page_replay_reach_test.dart` supprimé (couvert par RB-01 sans marge). Commentaire obsolète de `replay_bar.dart` corrigé, géométrie de 8 px conservée. Reste : T11 | `.omc/state/loop/gates/20261103-074223-unit-flutter.log` |
 | 2026-11-03 | TDD | **T11 faite** : `GENESIS_PROTOCOL_EXPANDED` (`1`/`true` ou `0`/`false`, absent ou vide = faux, autre valeur = erreur de configuration en français sans recopier la valeur) lue par `GenesisConfig` (`protocolExpandedAtStart`), transmise par `GenesisCanvasApp` aux réglages de la page, un seul `PanelToggled` dans `initState` ; ligne ajoutée à la table de `frontend-screen.md`. Rouge : les deux fichiers de test ne compilaient pas (`No named parameter 'protocolExpandedAtStart'`). Vert : tests de configuration, de réglages et de page (déplié 780×620 et « Replier » avec la variable, replié 140 de haut sans) ; acceptation 116 verts. `app-smoke.sh` hérite de l'environnement du shell : `GENESIS_REPLAY_AT=0.5 GENESIS_PROTOCOL_EXPANDED=1 tools/loop/app-smoke.sh act1-replay` transmet la variable | `.omc/state/loop/gates/20261103-074610-unit-flutter.log` |
 | 2026-11-03 | TDD | **TDD terminé (T10, T11)** : `gate --full` vert sur arbre propre, 67 contrôles, ligne `yes` de `gates.tsv`, commit `1d2c935` | `.omc/state/loop/gates/20261103-074646-full.log` |
+| 2026-11-03 | Revue | `architect-reviewer` (mode CODE, Opus) : verdict **À REFACTORISER** (0 bloquante, 2 importantes, 8 mineures, 0 conflit avec une décision), rapport ci-dessous | revue sur `5cc5cb0` |
+| 2026-11-03 | Refactorisation | **Lot P** (R2 `build` découpé en `_canvasZone`, `_bottomRow`, `_protocolPanelSlot` ; R3 bascule gardée ; R8 assertions relatives, `addTearDown(semantics.dispose)` impossible ; R9 doc) puis **lot A** (R1 états du panneau vérifiés dans RB-01 à RB-03, RB-01 et RB-03 rouges si le clic est neutralisé ; R4 support dédupliqué ; R5 deux extrémités de la glissière ; R6 `expectHit` avant `tapAt` ; R7 point au ras du panneau ; R10 nombre de vitesses). **`gate --full` vert sur arbre propre : 67 contrôles, ligne `yes` de `gates.tsv`, commit `f52a4c1`**. Acceptation : 116 verts | `.omc/state/loop/gates/20261103-080429-full.log` ; lots : `20261103-075854-unit-flutter.log`, `20261103-080339-unit-flutter.log` |
 
 ## Revue d'architecte
 **Revue du plan (mode PLAN) : verdict À AMENDER, toutes intégrées.**
