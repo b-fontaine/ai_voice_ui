@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 
+import '../support/act_indicator_finder.dart';
 import '../support/page_rig.dart';
 
 /// Avance automatique de l'indicateur d'acte (011, T24) : la page relie la
@@ -84,13 +85,7 @@ void main() {
 
     await emit(tester, rig, createSurface('actions'));
     expect(act(rig), 2);
-    expect(
-      find.descendant(
-        of: find.byKey(indicator),
-        matching: find.textContaining('Acte 2/3'),
-      ),
-      findsOneWidget,
-    );
+    expect(findActIndicatorLabel('Acte 2/3'), findsOneWidget);
   });
 
   testWidgets(

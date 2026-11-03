@@ -8,6 +8,7 @@ import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_backend_fakes/testing_backend_fakes.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../support/act_indicator_finder.dart';
 import '../support/page_rig.dart';
 import '../support/paragraphs.dart';
 
@@ -99,7 +100,7 @@ void main() {
     // Rail, étagère, indicateur d'acte et panneau sont tous présents.
     expect(find.byKey(const Key('agent-Qualité')), findsOneWidget);
     expect(find.text('4 / 6 utilisés'), findsOneWidget);
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
     expect(find.byKey(const Key('protocol-entry-0')), findsNothing);
     // Le thème de scène est installé au niveau du ThemeData.
     expect(
@@ -315,7 +316,7 @@ void main() {
     expectCleanScreen(tester, rig);
     expect(find.text('0 / 6 utilisés'), findsOneWidget);
     expect(findTextIgnoringCase('REJEU'), findsOneWidget);
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
   });
 
   testWidgets('après la remise à vide : écran initial, aucun débordement', (

@@ -24,6 +24,7 @@ import 'package:shared_backend_channel/shared_backend_channel.dart'
     show RelayFailure, RelayFailureKind;
 import 'package:testing_voice_fakes/testing_voice_fakes.dart';
 
+import '../support/act_indicator_finder.dart';
 import '../support/contrast.dart';
 import '../support/focus_ring.dart';
 import '../support/paragraphs.dart';
@@ -227,13 +228,7 @@ void main() {
   testWidgets('acte 1 par défaut : « Acte 1/3 · Créer »', (tester) async {
     await pumpBar(tester);
 
-    expect(
-      find.descendant(
-        of: indicator(),
-        matching: findTextIgnoringCase('Acte 1/3 · Créer'),
-      ),
-      findsOneWidget,
-    );
+    expect(findActIndicatorLabel('Acte 1/3 · Créer'), findsOneWidget);
   });
 
   testWidgets('les segments d\'acte prennent les micro-styles segment et '
@@ -265,10 +260,7 @@ void main() {
         await tester.tap(indicator());
         await tester.pump();
         await tester.pump();
-        expect(
-          find.descendant(of: indicator(), matching: find.text(text)),
-          findsOneWidget,
-        );
+        expect(findActIndicatorLabel(text), findsOneWidget);
       }
 
       await clickAndExpect('Acte 2/3 · Transformer');
@@ -289,7 +281,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.textContaining('Acte 1/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3'), findsOneWidget);
   });
 
   group('sélecteur d\'actes en segments (F8, T31)', () {
@@ -581,7 +573,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.textContaining('Acte 2/3'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 2/3'), findsOneWidget);
   });
 
   testWidgets('« Remettre à vide » est inactif quand un agent est en attente', (
@@ -611,13 +603,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(
-      find.descendant(
-        of: indicator(),
-        matching: findTextIgnoringCase('Acte 4 · Rejeu'),
-      ),
-      findsOneWidget,
-    );
+    expect(findActIndicatorLabel('Acte 4 · Rejeu'), findsOneWidget);
     await tester.tap(indicator());
     await tester.pump();
     await tester.pump();
@@ -646,7 +632,7 @@ void main() {
     expect(resets, 0, reason: 'la remise à vide classique ne part pas');
     expect(replay.stage.exits, 1);
     expect(replay.bloc.state, isA<ReplayLive>());
-    expect(findTextIgnoringCase('Acte 1/3 · Créer'), findsOneWidget);
+    expect(findActIndicatorLabel('Acte 1/3 · Créer'), findsOneWidget);
   });
 
   testWidgets('en rejeu : « Remettre à vide » reste actif même si occupé', (
@@ -731,7 +717,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(findTextIgnoringCase('Acte 2/3 · Transformer'), findsOneWidget);
+      expect(findActIndicatorLabel('Acte 2/3 · Transformer'), findsOneWidget);
       expect(paragraphsTruncated(tester), isEmpty);
       expect(tester.takeException(), isNull);
 

@@ -193,10 +193,8 @@ ButtonStyle _targetStyle(SceneTheme theme) {
 /// pdr-0088 F12). Les mots sont ceux de `StageState.actName`.
 ///
 /// En rejeu ([replaying]), un seul segment « Acte 4 · Rejeu » au style
-/// `actIndicator`. Hors rejeu, le libellé complet [label] (« Acte n/3 · nom »)
-/// est aussi présent sous forme de texte invisible et sans taille : c'est le
-/// texte que lisent les scénarios d'acceptation (I-01) ; le lecteur d'écran,
-/// lui, passe par le `Semantics` du bouton.
+/// `actIndicator`. Le libellé complet (« Acte n/3 · nom ») est porté par le
+/// `Semantics` du bouton, que lisent aussi les tests.
 class _ActSegments extends StatelessWidget {
   const _ActSegments({
     required this.act,
@@ -249,23 +247,6 @@ class _ActSegments extends StatelessWidget {
                     if (i > 1) const SizedBox(width: 4),
                     _actSegment(context, theme, i),
                   ],
-                  // Libellé complet, sans taille ni peinture.
-                  ExcludeSemantics(
-                    child: SizedBox.shrink(
-                      child: OverflowBox(
-                        maxWidth: double.infinity,
-                        maxHeight: double.infinity,
-                        child: Opacity(
-                          opacity: 0,
-                          child: Text(
-                            label,
-                            softWrap: false,
-                            style: sceneTextStyle(context, theme.actIndicator),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ],
             ),

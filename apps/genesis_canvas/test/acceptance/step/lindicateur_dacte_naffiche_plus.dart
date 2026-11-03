@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:testing_real_fonts/testing_real_fonts.dart';
 
+import '../../support/act_indicator_finder.dart';
 import '../support/keys.dart';
 
 /// Usage: l'indicateur d'acte n'affiche plus {'Rejeu'}
@@ -12,10 +12,7 @@ Future<void> lindicateurDacteNaffichePlus(
   final indicator = find.byKey(AcceptanceKeys.actIndicator);
   expect(indicator, findsOneWidget, reason: 'act-indicator absent');
   expect(
-    find.descendant(
-      of: indicator,
-      matching: findTextContainingIgnoringCase(text),
-    ),
+    findActIndicatorLabel(text),
     findsNothing,
     reason: "l'indicateur d'acte affiche encore « $text »",
   );
