@@ -5,8 +5,8 @@ import '../support/design_harness.dart';
 
 /// Usage: la surface {'reviews'} affiche entre {1} et {2} extraits d'avis entiers et l'indication « + N avis » pour les autres
 ///
-/// Les extraits portent la clé `review-excerpt-<i>` (existante). Le contrat
-/// en fournit trois : en 3 x 2 (cellule de 624 x 302) seuls [min] à [max]
+/// Les extraits portent la clé `reviews-card-<n>` (T23 de 019, qui remplace
+/// l'ancienne clé `review-excerpt-<i>`). Le contrat en fournit trois : en 3 x 2 (cellule de 624 x 302) seuls [min] à [max]
 /// tiennent entiers, les autres sont annoncés par « + N avis », N étant leur
 /// nombre.
 Future<void>
@@ -22,7 +22,7 @@ laSurfaceAfficheEntreEtExtraitsDavisEntiersEtLindicationNAvisPourLesAutres(
   final shown = <int>[
     for (var i = 0; i < provided; i++)
       if (find
-          .descendant(of: cell, matching: find.byKey(Key('review-excerpt-$i')))
+          .descendant(of: cell, matching: find.byKey(Key('reviews-card-$i')))
           .evaluate()
           .isNotEmpty)
         i,

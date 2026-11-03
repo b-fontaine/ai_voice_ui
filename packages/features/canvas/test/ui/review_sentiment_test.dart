@@ -8,7 +8,7 @@ import '../support/catalog_harness.dart';
 final Finder excerptRows = find.byWidgetPredicate(
   (w) =>
       w.key is ValueKey &&
-      '${(w.key as ValueKey).value}'.startsWith('review-excerpt-'),
+      RegExp(r'^reviews-card-\d+$').hasMatch('${(w.key as ValueKey).value}'),
 );
 
 /// Cellule d'une grille 3 x 2 à 1920 x 1080 : 624 x 302.
@@ -16,18 +16,6 @@ const Size gridCell3x2 = Size(624, 302);
 
 /// Cellule d'une grille 2 x 2 à 1920 x 1080 : 936 x 302.
 const Size gridCell2x2 = Size(936, 302);
-
-/// Cellules à la hauteur réduite (pdr-0087 / pdr-0088 F1) : à 15 px, les trois
-/// extraits de l'acte 2 tiennent en entier dans 302 px, ce qui n'exerce plus
-/// la règle « extraits entiers puis + N avis » (D2). La hauteur est abaissée
-/// pour que la cellule déborde encore ; T23 (cartes de verbatims) rétablit la
-/// cellule réelle.
-///
-/// Plage utile mesurée : de 200 à 230 px en 3 x 2 ; en 2 x 2, autour de 190 px
-/// (170 px n'affiche aucun extrait, 200 px les trois : extraits sur une seule
-/// ligne dans 936 px).
-const Size reducedCell3x2 = Size(624, 220);
-const Size reducedCell2x2 = Size(936, 190);
 
 /// Harnais en polices réelles (Ahem, environ 24 px par glyphe, ne permet de
 /// juger ni la largeur d'une ligne ni son retour à la ligne).
@@ -127,7 +115,7 @@ void main() {
       h.inCell(find.textContaining("L'app se ferme dès que je valide")),
       findsOneWidget,
     );
-    expect(h.inCell(find.byKey(const Key('review-split-bar'))), findsOneWidget);
+    expect(h.inCell(find.byKey(const Key('reviews-split'))), findsOneWidget);
     expect(h.engineErrors, isEmpty);
     expect(tester.takeException(), isNull);
   });
@@ -146,7 +134,7 @@ void main() {
   group('extraits entiers puis « + N avis » (D2)', () {
     testWidgets('3 x 2 (624 x 302), acte 2 : extraits entiers, nombre fixé, '
         'aucun paragraphe tronqué', (tester) async {
-      final h = _realFontsHarness(size: reducedCell3x2);
+      final h = _realFontsHarness();
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
@@ -187,18 +175,18 @@ void main() {
       expect(tester.widget<Text>(text).maxLines, isNull);
     });
 
-    testWidgets('2 x 2 (936 x 302), acte 2 : même nombre d\'extraits '
-        'qu\'en 3 x 2, compte cohérent', (tester) async {
-      final h = _realFontsHarness(size: reducedCell2x2);
+    testWidgets('2 x 2 (936 x 302), acte 2 : les trois cartes tiennent en '
+        'entier, donc aucune indication « + N avis »', (tester) async {
+      final h = _realFontsHarness(size: gridCell2x2);
       await h.pump(tester);
       await h.sendFixtureTo(tester, 2);
       await h.sendVariant(tester, 'act2');
 
-      // La hauteur (302 px) limite les extraits, pas la largeur : le nombre
-      // reste celui du 3 x 2.
+      // Largeur doublée : chaque texte tient sur moins de lignes, les trois
+      // cartes entrent dans les 302 px (pdr-0088 F1, T23).
       final int shown = h.inCell(excerptRows).evaluate().length;
-      expect(shown, 1);
-      expect(_hiddenCount(tester), 3 - shown);
+      expect(shown, 3);
+      expect(_hiddenCount(tester), isNull);
       expect(paragraphsTruncated(tester, root: _cell), isEmpty);
       h.expectTextAtLeastScaleMinimum(tester);
       expect(tester.takeException(), isNull);
