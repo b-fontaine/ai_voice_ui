@@ -350,7 +350,7 @@ class _Deltas extends StatelessWidget {
           Text(
             kpi.trend,
             key: const Key('kpi-delta-trend-value'),
-            style: base.copyWith(color: _tone(theme, kpi.trend)),
+            style: base.copyWith(color: theme.textPrimary),
             maxLines: 1,
           ),
           last: comparison == null,
@@ -367,7 +367,7 @@ class _Deltas extends StatelessWidget {
                 children: <InlineSpan>[
                   TextSpan(
                     text: comparison.delta,
-                    style: TextStyle(color: _tone(theme, comparison.delta)),
+                    style: TextStyle(color: theme.textPrimary),
                   ),
                   TextSpan(
                     text: ' (${comparison.value})',
@@ -382,16 +382,5 @@ class _Deltas extends StatelessWidget {
           ),
       ],
     );
-  }
-
-  /// Baisse en `nogo` (`gc-down`), hausse en `go` (`gc-up`), sinon neutre.
-  /// Seul le signe écrit de l'écart est lu.
-  Color _tone(SceneTheme theme, String delta) {
-    final String sign = delta.trimLeft().isEmpty ? '' : delta.trimLeft()[0];
-    return switch (sign) {
-      '\u2212' || '-' => theme.blockingForeground,
-      '+' => theme.okForeground,
-      _ => theme.textPrimary,
-    };
   }
 }

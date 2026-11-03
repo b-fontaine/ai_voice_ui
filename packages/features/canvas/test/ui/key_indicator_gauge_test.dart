@@ -218,26 +218,28 @@ void main() {
       );
     });
 
-    testWidgets('étiquettes en ink-muted 14 px ; baisse nogo, hausse go', (
-      tester,
-    ) async {
-      await _act2(
-        tester,
-        edit: (data) => (data['comparison'] as Map)['delta'] = '+0,12 pt',
-      );
-      final Text label = tester.widget(_key('kpi-delta-trend-label'));
-      expect(label.style?.color, _theme.textSecondary);
-      expect(label.style?.fontSize, 14);
-      final Text down = tester.widget(_key('kpi-delta-trend-value'));
-      expect(
-        down.style?.color ?? down.textSpan?.style?.color,
-        _theme.blockingForeground,
-      );
-      final Text up = tester.widget(_key('kpi-delta-comparison-value'));
-      final TextSpan root = up.textSpan! as TextSpan;
-      expect(root.children!.first.style?.color, _theme.okForeground);
-      expect(root.children!.last.style?.color, _theme.textSecondary);
-    });
+    testWidgets(
+      'étiquettes en ink-muted 14 px ; écarts neutres, jamais selon le signe '
+      '(pdr-0064 D7, revue du code de 019, R1)',
+      (tester) async {
+        await _act2(
+          tester,
+          edit: (data) => (data['comparison'] as Map)['delta'] = '+0,12 pt',
+        );
+        final Text label = tester.widget(_key('kpi-delta-trend-label'));
+        expect(label.style?.color, _theme.textSecondary);
+        expect(label.style?.fontSize, 14);
+        final Text down = tester.widget(_key('kpi-delta-trend-value'));
+        expect(
+          down.style?.color ?? down.textSpan?.style?.color,
+          _theme.textPrimary,
+        );
+        final Text up = tester.widget(_key('kpi-delta-comparison-value'));
+        final TextSpan root = up.textSpan! as TextSpan;
+        expect(root.children!.first.style?.color, _theme.textPrimary);
+        expect(root.children!.last.style?.color, _theme.textSecondary);
+      },
+    );
   });
 
   group('en-tête, chiffre héros et lueur', () {

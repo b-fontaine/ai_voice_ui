@@ -22,6 +22,7 @@ import './step/la_ligne_de_comparaison_de_la_surface_a_disparu.dart';
 import './step/la_courbe_ne_contient_que_la_serie.dart';
 import './step/la_surface_affiche.dart';
 import './step/le_texte_de_lelement_est.dart';
+import './step/lelement_na_pas_de_couleur_de_statut.dart';
 import './step/la_ligne_de_comparaison_de_la_surface_affiche.dart';
 import './step/le_serveur_emet_lacte2_de_la_surface_sans_le_champ_de_la_comparaison.dart';
 import './step/la_surface_naffiche_pas_letat_neutre.dart';
@@ -119,6 +120,11 @@ void main() {
             'kpi-delta-comparison-value',
             '−0,28 pt (99,71 %)',
           );
+          await lelementNaPasDeCouleurDeStatut(
+            tester,
+            'kpi-delta-comparison-value',
+          );
+          await lelementNaPasDeCouleurDeStatut(tester, 'kpi-delta-trend-value');
           await laLigneDeComparaisonDeLaSurfaceAffiche(
             tester,
             'reviews',

@@ -95,6 +95,36 @@ void main() {
     expect(h.engineErrors, isEmpty);
   });
 
+  testWidgets('les écarts sont neutres : jamais déduits du signe écrit '
+      '(pdr-0064 D7, pdr-0088 F3 ; revue du code de 019, R1)', (tester) async {
+    final h = CatalogHarness('kpi', 'kpi');
+    await h.pump(tester, motion: _still);
+    await h.sendFixtureTo(tester, 2);
+    await h.sendVariant(tester, 'act2');
+
+    const SceneTheme theme = SceneTheme.dark();
+    final Text trend = tester.widget(
+      h.inCell(find.byKey(const Key('kpi-delta-trend-value'))),
+    );
+    expect(trend.data, startsWith('\u2212'), reason: 'écart négatif écrit');
+    expect(trend.style?.color, theme.textPrimary);
+
+    final Text comparison = tester.widget(
+      h.inCell(find.byKey(const Key('kpi-delta-comparison-value'))),
+    );
+    final TextSpan root = comparison.textSpan! as TextSpan;
+    final TextSpan delta = root.children!.first as TextSpan;
+    expect(delta.text, startsWith('\u2212'));
+    expect(delta.style?.color, theme.textPrimary);
+    final List<Color> status = <Color>[
+      theme.okForeground,
+      theme.riskForeground,
+      theme.blockingForeground,
+    ];
+    expect(status, isNot(contains(trend.style?.color)));
+    expect(status, isNot(contains(delta.style?.color)));
+  });
+
   for (final field in <String>['label', 'value', 'delta']) {
     testWidgets('comparison sans $field : ligne omise, reste rendu', (
       tester,

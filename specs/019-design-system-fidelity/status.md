@@ -1,9 +1,9 @@
 # 019 — État
 
 - **Étape** : Refactorisation
-- **Tentatives** : 1/3
-- **Tâche en cours** : lot A (R1)
-- **Fichiers touchés** (tâche en cours) : packages/features/canvas/lib/src/catalog/key_indicator.dart, tests key_indicator, acte2_transformer.feature (B4)
+- **Tentatives** : 0/3
+- **Tâche en cours** : —
+- **Fichiers touchés** (tâche en cours) : —
 - **Branche** : feat/019-design-system-fidelity
 - **Backlog** : EP-04, EP-01
 - **Mis à jour** : 2026-11-03 10:45
@@ -35,6 +35,7 @@
 | 2026-11-03 | TDD | **T41 faite** : `DsPanelHead`, `DsCaps`, `DsBlink`, `DsBeacon` ajoutés à `_expectedBricks` (rouge : « le catalogue contient les 6 composants genesis et les briques », 1 échec sur 74) puis leurs histoires (`DsPanelHead` : `LabelAndStatus`, `LongLabelEllipsis`, `TitleWrap` ; `DsCaps` : `Label` ; `DsBlink` : `Solid` ; `DsBeacon` : `Dot`, toutes par `dsStorySetup`, animations coupées) ; `flutter test` de `apps/genesis_widgetbook` : 100 verts. Les captures ne sont pas inspectées à l'œil (les tests vérifient que le rendu ne plante pas). **Toutes les tâches de TDD sont faites** ; reste `gate --full` puis la revue d'architecte | `.omc/state/loop/gates/20261103-150316-unit-flutter.log` (8 contrôles, tout vert) |
 | 2026-11-03 | TDD | **`gate --full` vert, 67 contrôles** : toutes les tâches de TDD (T01, T10a à T41) sont cochées ; condition de passage atteinte. Prochaine étape : Revue d'architecte (mode CODE) | `.omc/state/loop/gates/20261103-150348-full.log` |
 | 2026-11-03 | Revue | `architect-reviewer` (Opus), mode CODE : verdict **À REFACTORISER** (1 bloquante R1, 8 importantes R2 à R9, mineures R10) ; verdict et R1…R10 collés dans « Revue d'architecte » ; lots A à F ; F13 de pdr-0088 amendé ; Q-94 (b) ajoutée | — |
+| 2026-11-03 | Refactorisation | **Lot A (R1) fait** : `_tone` supprimé, tendance et écart de comparaison en `textPrimary` (valeur entre parenthèses en `textSecondary`) ; B4 de `acte2_transformer.feature` rétabli (nouveau step générique `l'élément {…} n'a pas de couleur de statut`, lit les couleurs du `Text` et de tous ses `TextSpan`, pour `kpi-delta-comparison-value` et `kpi-delta-trend-value`) ; cas `les écarts sont neutres…` dans `key_indicator_test`. **Rouge constaté** sur l'ancien code (vérifié en restaurant temporairement `HEAD`) : `Expected: Color(0.9176, 0.9412, 1.0)` (textPrimary) `Actual: Color(1.0, 0.3529, 0.4627)` (nogo). Conséquence : `key_indicator_gauge_test` « baisse nogo, hausse go » (écrit en T20 sur la fausse règle) recalé en « écarts neutres ». Acceptation `acte2_transformer` et `acte_fidelite_design` : 28 verts. Écart au TDD : le code de production a été corrigé avant le test (le rouge a été constaté a posteriori sur l'ancien code) | `.omc/state/loop/gates/20261103-152353-unit-flutter.log` (14 contrôles, tout vert) |
 
 ## Revue d'architecte
 ### Revue du plan (mode PLAN) — verdict À AMENDER
@@ -49,7 +50,7 @@
 
 ### Revue du code (mode CODE, Opus) — verdict À REFACTORISER (1 bloquante, 8 importantes, 1 groupe de mineures)
 Conforme : dépendances (la slice canvas n'importe aucune autre slice), DI et état (aucun `getIt` hors page, aucun Cubit), `SceneTheme` seule `ThemeExtension`, contrat A2UI inchangé, cycle de vie (tous les `AnimationController` disposés, toutes les boucles sous `SceneMotionScope.loop`, flou de `DsRise` coupé à t = 1), période PPCM de `DsGenFrame` justifiée, aucun `skip`/`.only`/TODO.
-- [ ] **R1 bloquante** `key_indicator.dart:353,370,389-397` (`_Deltas._tone`) : la couleur des écarts est déduite du signe écrit, contraire à pdr-0064 D7 (comparaison neutre, jamais déduite du texte du `delta`) et à pdr-0088 F3 ; l'étape B4 de `acte2_transformer.feature` qui la protégeait a été retirée. Remède : supprimer `_tone` (tendance et écart en `textPrimary`, valeur entre parenthèses en `textSecondary`), rétablir B4 pour `kpi-delta-comparison-value` et l'ajouter pour `kpi-delta-trend-value`, un cas dans `key_indicator_test`. Comportement : retour à la décision.
+- [x] **R1 bloquante** `key_indicator.dart:353,370,389-397` (`_Deltas._tone`) : la couleur des écarts est déduite du signe écrit, contraire à pdr-0064 D7 (comparaison neutre, jamais déduite du texte du `delta`) et à pdr-0088 F3 ; l'étape B4 de `acte2_transformer.feature` qui la protégeait a été retirée. Remède : supprimer `_tone` (tendance et écart en `textPrimary`, valeur entre parenthèses en `textSecondary`), rétablir B4 pour `kpi-delta-comparison-value` et l'ajouter pour `kpi-delta-trend-value`, un cas dans `key_indicator_test`. Comportement : retour à la décision.
 - [ ] **R2 importante** focus clavier invisible (`sm_button.dart:73-85`, `stage_bar.dart:181-195`, `replay_bar.dart:153-171` et `:401-408`) : fonction du design system `sceneTargetStyle(SceneTheme, {OutlinedBorder shape})` (cible 48 pt transparente, `side` `accent` 2 px sous `WidgetState.focused`) utilisée par `action_bar.dart`, `SmButton`, `stage_bar`, `replay_bar` ; glissière : `Focus(onFocusChange:)` et anneau `accent` autour de `replay-track-knob` ; un test de widget par contrôle. Visuel au focus seulement.
 - [ ] **R3 importante** `ds_status_chip.dart:131,171-224` : `_BeaconDot` recopie `DsBeacon` pour que U-05 le reconnaisse à un `AnimatedWidget` (un test façonne le code) → `DsBeacon(color:, size: DsStatusChip.dotSize)` et le step `parmi_les_statuts_seul_le_statut_bat_en_continu.dart` collecte aussi les `CustomPaint.painter` et compte leurs notifications.
 - [ ] **R4 importante** cycle de vie de boucle recopié 8 fois (`ds_blink`, `ds_beacon`, `ds_status_chip`, `agents_rail` `_IndeterminateBar`, `voice_wave`, anneaux de `voice_orb`, `trend_chart` `_HeadRing`, `ds_gen_frame`) → mixin `SceneLoop<T>` (`scene_loop.dart`, pendant de `SceneOneShot` : `loopBase`, `loopRestValue`, `loopActive`, `loopReverse`, `syncLoop()`, `dispose`) et un test unique.

@@ -58,6 +58,9 @@ Fonctionnalité: Acte 2 - transformer sans recréer
     Quand je dis {'Concentre-toi sur Android et compare avec la 3.3'}
     Alors le texte de l'élément {'kpi-delta-comparison-label'} est {'vs 3.3'}
     Et le texte de l'élément {'kpi-delta-comparison-value'} est {'−0,28 pt (99,71 %)'}
+    # pdr-0064 D7 : la couleur d'un statut vient de son code, jamais du signe écrit de l'écart (revue du code de 019, R1).
+    Et l'élément {'kpi-delta-comparison-value'} n'a pas de couleur de statut
+    Et l'élément {'kpi-delta-trend-value'} n'a pas de couleur de statut
     Et la ligne de comparaison de la surface {'reviews'} affiche {'3.3 : 14 % négatifs · +16 pts'}
 
   Scénario: B4 Une comparaison sans écart omet seulement sa ligne
