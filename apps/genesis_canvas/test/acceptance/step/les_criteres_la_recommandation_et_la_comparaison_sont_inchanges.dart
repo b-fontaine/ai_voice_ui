@@ -18,14 +18,17 @@ Future<void> lesCriteresLaRecommandationEtLaComparaisonSontInchanges(
     isNotEmpty,
     reason: "les textes d'avant le clic n'ont pas été relevés",
   );
-  const decisions = <String>{
+  // Les puces s'affichent en capitales (pdr-0088 F6) : comparaison sans casse.
+  final decisions = <String>{
     Acte3Harness.pendingDecision,
     'Bloquée',
     'Validée',
-  };
+  }.map((d) => d.toUpperCase()).toSet();
   for (final id in AcceptanceKeys.act1Surfaces) {
     List<String> withoutDecision(List<String> texts) => texts
-        .where((t) => !(id == 'checklist' && decisions.contains(t)))
+        .where(
+          (t) => !(id == 'checklist' && decisions.contains(t.toUpperCase())),
+        )
         .toList();
     expect(
       withoutDecision(Acte3Harness.textsOf(tester, id)),

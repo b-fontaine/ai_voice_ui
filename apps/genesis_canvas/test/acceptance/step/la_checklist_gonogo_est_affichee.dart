@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import '../support/acte3_harness.dart';
+import '../support/design_harness.dart';
 import '../support/keys.dart';
 import '../support/session_harness.dart';
 import 'le_tableau_de_la_release34_est_affiche.dart';
@@ -46,6 +47,9 @@ Future<void> laChecklistGonogoEstAffichee(WidgetTester tester) async {
     ),
     'la checklist doit attendre une décision',
   );
+  // Le compteur du KPI (1,4 s, pdr-0088 F3) doit être fini : la photographie
+  // « avant le clic » compare des textes stables.
+  await DesignHarness.elapse(tester, const Duration(milliseconds: 1600));
   for (final id in AcceptanceKeys.act1Surfaces) {
     Acte3Harness.textsBefore[id] = Acte3Harness.textsOf(tester, id);
   }

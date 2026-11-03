@@ -1,5 +1,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import 'acte3_harness.dart';
 import 'session_harness.dart';
@@ -31,7 +32,7 @@ class InterruptionHarness {
   /// Le texte [text] du statut de décision, dans la surface `checklist`.
   static Finder checklistText(String text) => find.descendant(
     of: find.byKey(const Key('surface-checklist')),
-    matching: find.text(text),
+    matching: findTextIgnoringCase(text),
   );
 
   /// Dernier transport créé (le seul de la session courante).
