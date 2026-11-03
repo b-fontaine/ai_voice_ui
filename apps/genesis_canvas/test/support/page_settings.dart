@@ -24,4 +24,5 @@ GenesisCanvasPageSettings pageSettingsOf([
   replayJournalMaxEntries: config.replayJournalMaxEntries,
   replayDefaultSpeed: config.replayDefaultSpeed,
   replayCaptureAt: config.replayCaptureAt,
+  protocolExpandedAtStart: config.protocolExpandedAtStart,
 );

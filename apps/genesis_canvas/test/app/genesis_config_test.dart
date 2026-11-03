@@ -546,6 +546,44 @@ void main() {
       expect(read('2'), 2.0);
     });
 
+    test('GENESIS_PROTOCOL_EXPANDED : booléen, faux par défaut', () {
+      bool read(String? value) => GenesisConfig.fromEnvironment(
+        <String, String>{'GENESIS_PROTOCOL_EXPANDED': ?value},
+      ).protocolExpandedAtStart;
+
+      expect(const GenesisConfig().protocolExpandedAtStart, isFalse);
+      expect(read(null), isFalse);
+      expect(read(''), isFalse);
+      expect(read(' 1 '), isTrue);
+      expect(read('true'), isTrue);
+      expect(read('TRUE'), isTrue);
+      expect(read('0'), isFalse);
+      expect(read('false'), isFalse);
+    });
+
+    test('GENESIS_PROTOCOL_EXPANDED invalide : erreur en français sans la '
+        'valeur', () {
+      expect(
+        () => GenesisConfig.fromEnvironment(const <String, String>{
+          'GENESIS_PROTOCOL_EXPANDED': 'peut-etre-secret',
+        }),
+        throwsA(
+          isA<GenesisConfigException>()
+              .having(
+                (e) => e.message,
+                'message',
+                contains('GENESIS_PROTOCOL_EXPANDED'),
+              )
+              .having(
+                (e) => e.message,
+                'message',
+                isNot(contains('peut-etre-secret')),
+              )
+              .having((e) => e.message, 'message', contains('attendu')),
+        ),
+      );
+    });
+
     test('GENESIS_REPLAY_AT : fraction de 0 à 1, absente par défaut', () {
       double? read(String? value) => GenesisConfig.fromEnvironment(
         <String, String>{'GENESIS_REPLAY_AT': ?value},

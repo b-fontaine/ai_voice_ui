@@ -8,7 +8,7 @@ Format : `- [ ] Txx [P?] <pile> — <tâche> · test d'abord : <test qui doit é
 
 ## TDD
 - [x] T10 Flutter — page : pose du panneau par `Expanded(Stack)` + `Positioned.fill(Align(BlocSelector → Padding → ProtocolPanel))` ; `Key('bottom-row')` ; commentaire obsolète de `replay_bar.dart` ; remplacement du test `genesis_canvas_page_replay_reach_test.dart` (par RB-01) ; test « panneau déplié » de `genesis_canvas_page_layout_test.dart` (`panel.bottom <= bottom-row.top`, `panel.top >= board.top`, `panel.bottom <= board.bottom`) ; test de focus et de sémantique du bouton (Entrée déplie, le focus reste, « Replier » dans la fenêtre, Entrée replie) · test d'abord : ces tests de page rouges, puis RB-01 à RB-03 et R-01 verts, suite d'acceptation de l'app entière verte
-- [ ] T11 Flutter — `GENESIS_PROTOCOL_EXPANDED` : `GenesisConfig`, page (un `PanelToggled` au montage), `frontend-screen.md` · test d'abord : test de configuration (absent → faux ; valeur invalide → erreur en français sans recopier la valeur) et test de page qui démarre déplié
+- [x] T11 Flutter — `GENESIS_PROTOCOL_EXPANDED` : `GenesisConfig`, page (un `PanelToggled` au montage), `frontend-screen.md` · test d'abord : test de configuration (absent → faux ; valeur invalide → erreur en français sans recopier la valeur) et test de page qui démarre déplié
 
 ## Clôture
 - [ ] T90 `tools/loop/gate.sh --full` vert

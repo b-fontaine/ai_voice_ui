@@ -30,6 +30,7 @@ import 'package:feature_catalog_shelf/feature_catalog_shelf.dart'
     show CatalogShelfBloc, CatalogShelfCleared, CatalogShelfSourceSubscribed;
 import 'package:feature_protocol_feed/feature_protocol_feed.dart'
     show
+        PanelToggled,
         ProtocolFeedBloc,
         ProtocolFeedCleared,
         ProtocolFeedEntriesCleared,
@@ -390,6 +391,11 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     // l'abonnement effectif du Bloc.
     _protocolBloc.add(ProtocolSourceSubscribed(_gate.validatedBranch()));
     _shelfBloc.add(CatalogShelfSourceSubscribed(_gate.validatedBranch()));
+    // Capture de vérification (spec 018) : un seul basculement, au montage ;
+    // le panneau démarre replié, donc il se déplie.
+    if (_settings.protocolExpandedAtStart) {
+      _protocolBloc.add(const PanelToggled());
+    }
     if (replay != null) {
       // Le routeur ne ferme pas sa sortie à la fin du flux : la fin du
       // scénario déclenche la capture (comportement de 000).

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/widgets/agents_rail/agents_rail.dart';
 import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:shared_design_system/shared_design_system.dart';
@@ -220,6 +221,39 @@ void main() {
     await tester.pump();
     await tester.pump();
     expectCleanScreen(tester, rig);
+    expect(rectOf(tester, 'protocol-panel').height, 140);
+  });
+
+  testWidgets('GENESIS_PROTOCOL_EXPANDED : la page démarre avec le panneau '
+      'déplié, un seul basculement', (tester) async {
+    final rig = PageRig(
+      tester,
+      config: const GenesisConfig(protocolExpandedAtStart: true),
+    );
+    await rig.mount(tester, themed: true);
+    await rig.start(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Replier'), findsOneWidget);
+    expect(rectOf(tester, 'protocol-panel').size, const Size(780, 620));
+    // Les reconstructions suivantes ne rebasculent pas le panneau.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Replier'), findsOneWidget);
+    expect(rectOf(tester, 'protocol-panel').size, const Size(780, 620));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sans GENESIS_PROTOCOL_EXPANDED : le panneau reste replié', (
+    tester,
+  ) async {
+    final rig = PageRig(tester);
+    await rig.mount(tester, themed: true);
+    await rig.start(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Déplier'), findsOneWidget);
     expect(rectOf(tester, 'protocol-panel').height, 140);
   });
 

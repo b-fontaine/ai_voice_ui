@@ -9,6 +9,7 @@ void main() {
     Duration replayMaxGap = const Duration(seconds: 3),
     double replayDefaultSpeed = 1.0,
     double? replayCaptureAt,
+    bool protocolExpandedAtStart = false,
   }) => GenesisCanvasPageSettings(
     orbAttack: const Duration(milliseconds: 80),
     orbRelease: const Duration(milliseconds: 250),
@@ -29,6 +30,7 @@ void main() {
     replayMaxGap: replayMaxGap,
     replayDefaultSpeed: replayDefaultSpeed,
     replayCaptureAt: replayCaptureAt,
+    protocolExpandedAtStart: protocolExpandedAtStart,
   );
 
   test('égalité par valeur', () {
@@ -36,6 +38,18 @@ void main() {
     expect(make().hashCode, make().hashCode);
     expect(make(), isNot(make(threshold: 0.5)));
   });
+
+  test(
+    'panneau du protocole déplié au démarrage : faux par défaut, égalité',
+    () {
+      expect(make().protocolExpandedAtStart, isFalse);
+      expect(
+        make(protocolExpandedAtStart: true),
+        make(protocolExpandedAtStart: true),
+      );
+      expect(make(protocolExpandedAtStart: true), isNot(make()));
+    },
+  );
 
   test('réglages du rejeu : défauts et égalité par valeur', () {
     final settings = make();
