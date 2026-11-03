@@ -1,6 +1,6 @@
 # 018 — État
 
-- **Étape** : Revue
+- **Étape** : Refactorisation
 - **Tentatives** : 0/3
 - **Tâche en cours** : —
 - **Fichiers touchés** (tâche en cours) : —
@@ -28,6 +28,20 @@
 - [x] **P6 (importante)** le contournement de 017 est dans `replay_bar.dart` (remplissage de 8 px, commentaire l. 23-25) et `genesis_canvas_page_replay_reach_test.dart`, pas dans `acte4_rejouer*` → fichiers listés au plan.
 - [x] **P7 (importante)** conception de RB-01 à RB-03 (rejeu en pause à mi-parcours, `hitTestable()` et rectangle hors du panneau, extrémités de la glissière, `Key('bottom-row')`, traversée des clics, nombre d'entrées).
 - [x] **P8 (mineure)** test de focus et de sémantique du bouton ; observation à remonter sans bloquer : le second bouton de la Barre d'actions tombe probablement sous le panneau déplié à l'acte 3 (antérieur à 018) ; note `knowledge/` sur `hitTestable()` en clôture.
+
+**Revue du code (mode CODE, `architect-reviewer`, Opus) : verdict À REFACTORISER** — 0 bloquante, 2 importantes (R1, R2), 8 mineures (R3 à R10), 0 conflit avec une décision. Ce qui tient : imports par barrels, aucun `getIt` nouveau, pas de Cubit, configuration injectée, `PanelToggled` unique en `initState` (transformer `droppable`, aucun fuite), `Padding` toujours présent (focus du bouton protégé par un test), `Align`/`Padding` ne captent aucun clic hors du panneau. Lots prévus : **P** (page et configuration : R2, R3, R8, R9) puis **A** (acceptation : R1, R4, R5, R6, R7, R10).
+- [ ] **R1 (importante)** RB-01 peut passer pour une mauvaise raison : le clic sur le bouton du panneau passe par `SessionHarness.tap` (`warnIfMissed: false`) ; si le panneau reste replié RB-01 copie RB-02 → ajouter `Et le panneau protocole est déplié` après le clic (RB-01, RB-03) et `est replié` (RB-02) dans les deux `.feature`, régénérer, relancer `product_lint`.
+- [ ] **R2 (importante)** `build` de `genesis_canvas_page.dart` (~225 lignes) → extraire `_canvasZone()`, `_bottomRow()`, `_protocolPanelSlot()` sans changer l'arbre.
+- [ ] **R3 (mineure)** `PanelToggled` est une bascule : garder `if (protocolExpandedAtStart && !_protocolBloc.state.expanded)` et corriger le commentaire.
+- [ ] **R4 (mineure)** duplication du support d'acceptation (prédicat `protocol-entry-` ×3 → `AcceptanceKeys.protocolEntries()` ; rectangle de la fenêtre ×2 → `windowRect` ; `hitTestable` ×3 → `expectHitTestable` ; `panelRect` → `DesignHarness.rectOf` ; boucle sur `entries.at(i)`).
+- [ ] **R5 (mineure)** le step de la glissière vérifie les deux extrémités → renommer « les deux extrémités de la glissière sont atteignables » (steps, deux `.feature`, description).
+- [ ] **R6 (mineure)** `je_place_le_curseur_au_milieu` (`tapAt` sans vérification) → `expectHit` avant ; idem « je pose le doigt… » et « je glisse… » si le départ peut être sous le panneau ; noter `warnIfMissed` dans la note `knowledge/` de T92.
+- [ ] **R7 (mineure)** `reset-button` et `mic-button` sont hors du `Stack` → ajouter un point au ras du panneau (`canvasBoard` à `panel.centerLeft - Offset(4, 0)`) dans RB-03.
+- [ ] **R8 (mineure)** `genesis_canvas_page_layout_test` : replié, assertions relatives (`panel.bottomRight == bottom-row.bottomRight`, `top`, taille 460×140) ; `addTearDown(semantics.dispose)`.
+- [ ] **R9 (mineure)** doc de `protocolExpandedAtStart` : insensible à la casse, espaces ignorés, autre valeur → erreur de configuration.
+- [ ] **R10 (mineure)** RB-01/RB-02 : vérifier que le nombre de widgets `replay-speed-*` vaut `speeds.length`.
+- Cohérence documentaire à traiter en T92 : `frontend-screen.md:22` (ancrage du panneau déplié), `replay.md` (table des variables : `GENESIS_PROTOCOL_EXPANDED`), contour pointillé de la cellule de droite du haut qui peut rester masqué en rejeu (à montrer au porteur sur la capture ; pdr-0086 « Réexaminer si »).
+- Observation déjà notée (antérieure à 018, non mesurée, à remonter au porteur sans bloquer) : le second bouton de la Barre d'actions est probablement sous le panneau déplié à l'acte 3 (`jeCliqueSur`, `warnIfMissed: false`, ne le détecterait pas).
 
 ## Questions pour le porteur
 Aucune.
