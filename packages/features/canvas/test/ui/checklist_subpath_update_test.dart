@@ -1,5 +1,5 @@
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
-import 'package:flutter/widgets.dart' show Key, State, Widget;
+import 'package:flutter/widgets.dart' show Key, Size, State, Widget;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show Surface;
 import 'package:shared_design_system/shared_design_system.dart'
@@ -27,9 +27,15 @@ void main() {
 
   testWidgets('mise à jour du sous-chemin decisionStatus : Bloquée puis '
       'Validée, surface conservée', (tester) async {
+    // Fenêtre assez large pour que la cellule garde sa largeur de 940 px ; sa
+    // hauteur loge les trois lignes du tableau (019 T22 : 274 px).
+    tester.view.physicalSize = const Size(1200, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final h = CatalogHarness(
       'checklist',
       'checklist',
+      size: const Size(940, 274),
       fontFamily: realFontFamily,
       fontFamilyFallback: realFontFallback,
     );
