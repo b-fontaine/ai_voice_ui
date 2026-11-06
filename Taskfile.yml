@@ -1,0 +1,44 @@
+# Raccourcis du projet (go-task : https://taskfile.dev). `task --list` pour les voir.
+version: '3'
+
+vars:
+  LOOP_WT: '{{.ROOT_DIR}}/../ai_voice_ui-loop'
+  DEMO_PROJECT: genesis-demo
+  DASHBOARD_PORT: 8765
+
+tasks:
+  slides:
+    desc: Lance la présentation (reveal.js + Vite, ouvre le navigateur)
+    dir: slides
+    cmds:
+      - npm ci --no-audit --no-fund
+      - npm start
+
+  demo:
+    desc: Lance la démo (backend + agents en Docker, app Linux) et laisse la pile Docker démarrée
+    cmds:
+      - tools/demo/run.sh --keep
+
+  demo:clean:
+    desc: Arrête et supprime les conteneurs et réseaux de la démo (le volume du journal de session est gardé)
+    cmds:
+      - docker compose -p {{.DEMO_PROJECT}} down --remove-orphans
+
+  loop:
+    desc: Lance la boucle autonome, son superviseur et le tableau de bord (http://127.0.0.1:{{.DASHBOARD_PORT}})
+    preconditions:
+      - sh: test -d "{{.LOOP_WT}}"
+        msg: "Worktree de boucle absent ({{.LOOP_WT}}) : tools/loop/setup-worktree.sh"
+      - sh: "! tmux has-session -t genesis-loop 2>/dev/null"
+        msg: "La boucle tourne déjà : tmux attach -t genesis-loop"
+    cmds:
+      - rm -f "{{.LOOP_WT}}/.omc/state/loop/STOP"
+      - cd "{{.LOOP_WT}}" && tools/loop/start-loop.sh
+      - tmux has-session -t genesis-supervisor 2>/dev/null || tmux new-session -d -s genesis-supervisor -c "{{.LOOP_WT}}" tools/loop/supervisor.sh
+      - |
+        if ss -ltn | grep -q "127.0.0.1:{{.DASHBOARD_PORT}} "; then
+          echo "Tableau de bord déjà en marche"
+        else
+          setsid nohup python3 -I tools/loop/dashboard.py --port {{.DASHBOARD_PORT}} >/dev/null 2>&1 &
+        fi
+      - 'echo "Boucle lancée. Regarder : tmux attach -t genesis-loop · Suivi : http://127.0.0.1:{{.DASHBOARD_PORT}}"'
