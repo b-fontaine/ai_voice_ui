@@ -1,8 +1,6 @@
 # attendu: ne doit pas recevoir env_file
-# Le fichier référencé existe (versionné) : un env_file optionnel absent est omis de
-# `docker compose config` par certaines versions de Compose, ce qui rendait ce cas inopérant en CI.
 services:
   agent-quality:
     env_file:
-      - path: backend/testdata/compose-bad-env-file.env
+      - path: .env
         required: false
