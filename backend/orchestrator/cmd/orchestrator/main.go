@@ -92,20 +92,31 @@ func serve(ctx context.Context, logger *slog.Logger, servers []*http.Server, clo
 	for _, s := range servers {
 		go func() { serveErr <- s.ListenAndServe() }()
 	}
-	var failure error
+	var errs []error
+	pending := len(servers)
 	select {
 	case err := <-serveErr:
+		pending--
 		if !errors.Is(err, http.ErrServerClosed) {
-			failure = err
+			errs = append(errs, err)
 			logger.Error("un serveur s'arrête : arrêt des autres", "error", err)
 		}
 	case <-ctx.Done():
 	}
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	errs := []error{failure}
 	for _, s := range servers {
 		errs = append(errs, s.Shutdown(shutdownCtx))
+	}
+	// Shutdown peut rendre la main avant qu'une goroutine encore en démarrage n'ait ouvert
+	// son écouteur (puis constaté l'arrêt et l'ait refermé) : on attend que chaque
+	// ListenAndServe soit revenu, pour ne rendre la main qu'une fois aucun port ouvert.
+	// Après Shutdown, chacun revient sans délai (ErrServerClosed), même si l'arrêt des
+	// connexions actives a expiré.
+	for ; pending > 0; pending-- {
+		if err := <-serveErr; !errors.Is(err, http.ErrServerClosed) {
+			errs = append(errs, err)
+		}
 	}
 	errs = append(errs, closeApp(shutdownCtx))
 	return errors.Join(errs...)

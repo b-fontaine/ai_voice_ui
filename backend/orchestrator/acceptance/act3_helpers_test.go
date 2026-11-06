@@ -4,6 +4,7 @@ package acceptance
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -67,12 +68,28 @@ type deliveryProxy struct {
 
 func newDeliveryProxy(t *testing.T, agentAddr string) *deliveryProxy {
 	t.Helper()
+	return newDeliveryProxyVia(t, agentAddr, nil)
+}
+
+// newDeliveryProxyVia comme newDeliveryProxy, avec le transport sortant donné (nil : celui
+// par défaut).
+//
+// Le corps de chaque requête est lu en entier AVANT d'être transmis : sinon le corps sortant
+// serait le corps entrant lui-même. Or le serveur HTTP/1 ferme le corps entrant dès que le
+// mandataire écrit les en-têtes de réponse (premier événement SSE, FlushInterval -1), et le
+// transport sortant relit ce corps après en avoir envoyé Content-Length octets pour vérifier
+// sa fin. Sur une machine lente, cette relecture arrive après la réponse de l'agent : elle
+// échoue (« invalid Read on closed Body »), le transport ferme la connexion vers l'agent en
+// plein flux et Livraison passe en failed (« flux interrompu »).
+func newDeliveryProxyVia(t *testing.T, agentAddr string, transport http.RoundTripper) *deliveryProxy {
+	t.Helper()
 	target, err := url.Parse("http://" + agentAddr)
 	if err != nil {
 		t.Fatalf("URL de l'agent : %v", err)
 	}
 	rp := httputil.NewSingleHostReverseProxy(target)
 	rp.FlushInterval = -1 // flux A2A (SSE) transmis sans délai
+	rp.Transport = transport
 	p := &deliveryProxy{arrived: make(chan struct{}, 16), free: make(chan struct{})}
 	p.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -96,6 +113,15 @@ func newDeliveryProxy(t *testing.T, agentAddr string) *deliveryProxy {
 				http.Error(w, "indisponible", http.StatusServiceUnavailable)
 				return
 			}
+		}
+		if r.Body != nil && r.Body != http.NoBody {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "corps illisible", http.StatusBadRequest)
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(body))
+			r.ContentLength = int64(len(body))
 		}
 		rp.ServeHTTP(w, r)
 	}))

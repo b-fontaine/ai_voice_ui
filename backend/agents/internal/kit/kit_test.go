@@ -234,7 +234,16 @@ func (s *syncBuffer) String() string {
 func TestRejectionLogsReasonAndTaskNeverTheRequestText(t *testing.T) {
 	var logs syncBuffer
 	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	// L'horodatage est retiré : « 13.529Z » contient « 3.5 », fragment de la
+	// demande que l'assertion cherche ; seul ce que le code journalise compte.
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) == 0 && a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		},
+	})))
 	t.Cleanup(func() { slog.SetDefault(prev) })
 
 	base := serve(t, testProfile(t), fakeComposer{fn: func(context.Context, kit.Request) (kit.Composition, error) {
