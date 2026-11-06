@@ -381,6 +381,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : 39 = clic → confirmation vocale ;
+     39.1 = journal du flux A2UI et rejeu, atteint par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 08 · Séquence 3 : clic → action → voix -->
 <section id="p05-08" data-hud="low">
   <p class="eyebrow">Flux de données · 3 / 4 · acte 3</p>
@@ -438,6 +441,7 @@
     Le rail garde les tuiles du dernier direct pendant le rejeu, sans liaison animée : ni le plan ni l'activité des agents ne sont rejoués. Le porteur a choisi de documenter ce comportement plutôt que de le changer [pdr-0081-rail-in-replay-and-ignore-stray-speech].
     Le rejeu est déterministe, puisqu'il n'appelle ni LLM ni réseau. Un format de fichier voisin, en JSONL, sert au rejeu scripté de la boucle de développement [p-ar-replay] [test-mock-boundaries-only]. Pas de pas-à-pas au clavier : lecture, pause et vitesse suffisent [pdr-0059-acts-2-3-and-replay-simplifications].
   </aside>
+</section>
 </section>
 
 <!-- 10 · Sécurité -->

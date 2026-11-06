@@ -84,6 +84,8 @@
   color: var(--j-amber);
 }
 .np-next { flex: 1; min-width: 0; overflow: hidden; font-size: 24px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.np-down-wrap:not([hidden]) { display: flex; flex: 1; min-width: 0; align-items: baseline; gap: 8px; }
+.np-down { min-width: 0; overflow: hidden; font-size: 20px; color: var(--j-cyan); text-overflow: ellipsis; white-space: nowrap; }
 .np-keys { font-size: 15px; color: var(--j-text-dim); white-space: nowrap; }
 
 .notes-page kbd {

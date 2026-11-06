@@ -89,6 +89,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : 23 = transports ; 23.1 à 23.13 = détails
+     de la voix, atteints par ↓ seulement. → depuis la pile passe au chapitre A2A. -->
+<section data-start-indexv="0">
 <!-- 3. Transports -->
 <section data-hud="low">
   <p class="eyebrow">Transport</p>
@@ -599,4 +602,5 @@ abstract interface class VoiceTransport {
     VoiceSession est la machine à états qui l'utilise : Idle, Connecting, Active, Stopping, puis Idle ou Failed ; un transport neuf à chaque démarrage, et un compteur de génération écarte les événements d'une session précédente [rt-graceful-close].
     Côté backend Go, le fournisseur est isolé derrière les ports LiveProvider (créer la session, ouvrir le sideband, raccrocher) et Sideband (événements, commentaires, fermeture), avec un adaptateur pour GPT-Live [pdr-0012-voice-provider-openai]. Les adaptateurs Gemini restent une alternative, non écrite dans le dépôt.
   </aside>
+</section>
 </section>

@@ -24,13 +24,15 @@ const renderNotes = (html) =>
 
 channel.onmessage = ({ data }) => {
   if (data?.type !== 'slide') return;
-  $('np-counter').textContent = `${data.index + 1} / ${data.total}`;
+  $('np-counter').textContent = `${data.label} / ${data.total}`;
   $('np-eyebrow').textContent = data.eyebrow;
   $('np-title').textContent = data.title || 'Slide sans titre';
   $('np-notes').innerHTML = renderNotes(data.notes);
   $('np-notes').scrollTop = 0;
   $('np-next').textContent = data.next || 'Fin de la présentation';
-  document.title = `${data.index + 1}/${data.total} · ${data.title} — Notes`;
+  $('np-down').textContent = data.down;
+  $('np-down-wrap').hidden = !data.down;
+  document.title = `${data.label}/${data.total} · ${data.title} — Notes`;
 };
 channel.postMessage({ type: 'hello' });
 
@@ -75,15 +77,19 @@ document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   switch (e.key) {
     case 'ArrowRight':
-    case 'ArrowDown':
     case 'PageDown':
     case ' ':
-      nav('next');
+      nav('right');
+      break;
+    case 'ArrowDown':
+      nav('down');
       break;
     case 'ArrowLeft':
-    case 'ArrowUp':
     case 'PageUp':
-      nav('prev');
+      nav('left');
+      break;
+    case 'ArrowUp':
+      nav('up');
       break;
     case '+':
     case '=':

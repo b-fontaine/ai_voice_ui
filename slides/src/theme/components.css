@@ -819,7 +819,7 @@
 }
 
 /* ---- 15. Mise en page utilitaire ---------------------------------------- */
-.reveal .stack > * + * { margin-top: 24px; }
+.reveal .stack:not(section) > * + * { margin-top: 24px; } /* section.stack = pile verticale reveal */
 .reveal .row {
   display: flex;
   flex-wrap: wrap;

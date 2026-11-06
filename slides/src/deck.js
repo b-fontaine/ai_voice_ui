@@ -23,6 +23,7 @@ import './theme/code.css';
 import { startHud } from './background/hud.js';
 import { setupAutoplay } from './autoplay.js';
 import { setupNotesWindow } from './notes-window.js';
+import { slideLabel } from './slide-label.js';
 
 /** Taille logique des slides (16:9). Reveal met à l'échelle pour l'écran. */
 export const SLIDE_WIDTH = 1600;
@@ -36,13 +37,15 @@ export function startDeck(options = {}) {
     minScale: 0.2,
     maxScale: 2.0,
     hash: true,
-    slideNumber: 'c/t',
+    // « 23 / 50 » sur le fil principal, « 23.4 / 50 » dans un débranchement.
+    slideNumber: (slide) => [slideLabel(deck, slide), '/', deck.getHorizontalSlides().length],
     showSlideNumber: 'all',
     controls: true,
     controlsTutorial: false,
     progress: true,
     center: true,
-    navigationMode: 'linear',
+    // → passe à la slide principale suivante, ↓ entre dans un débranchement.
+    navigationMode: 'default',
     transition: 'fade',
     transitionSpeed: 'default',
     backgroundTransition: 'fade',

@@ -135,6 +135,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : 27 = Task ; 27.1 à 27.3 = Message/Part/Artifact,
+     suivi d'une Task, bindings et versions, atteints par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 04.3 — Cycle de vie d'une Task -->
 <section data-hud="low">
   <h2>La Task : une machine à états</h2>
@@ -303,7 +306,11 @@
     La spec 1.0 définit des opérations abstraites et trois liaisons : JSON-RPC 2.0, gRPC et HTTP+JSON, dite REST [proto-a2a-bindings]. Un serveur peut n'en exposer qu'une : le client lit donc supportedInterfaces pour savoir lesquelles sont disponibles. Côté Flutter, REST ou JSON-RPC suffisent avec http et SSE ; sur le web, on évite gRPC faute de HTTP/2 natif, mais il reste pertinent entre services backend. Le point qui demande le plus d'attention, c'est la version : la 1.0 est incompatible sur le fil avec la 0.3, et beaucoup de tutoriels et de SDK tiers suivent encore la 0.3 [proto-a2a-overview]. On l'a vérifié pendant le spike SP-03 : genui_a2a parle v0.3 et envoie message/stream. Le handler natif v1.0 de a2a-go v2 refuse les deux formes : message/stream y est inconnu (-32601, method not found), et même un nom v1.0 sans en-tête A2A-Version est rejeté en -32009 (« requested 0.3, served 1.0 »). La solution qui a fait passer le spike : monter le handler de compatibilité a2av0 [proto-a2a-go-v03-compat]. Les puces marquées « reco » sont des recommandations internes, elles ne viennent pas de la spec. Pour le produit, la question du canal est tranchée (Q-39, pdr-0045, acceptée) : l'app parle au backend par un WebSocket maison, genui_a2a sort de la stack de l'app, et A2A ne circule plus qu'entre l'orchestrateur et les agents, tous deux en Go avec a2a-go v2, donc en v1.0 natif, sans couche de compatibilité. On y revient au chapitre suivant.
   </aside>
 </section>
+</section>
 
+<!-- Débranchement (pile verticale) : 28 = authentification ;
+     28.1 = patterns multi-agents, atteinte par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 04.7 — Sécurité A2A -->
 <section data-hud="low">
   <h2>L'authentification dans A2A</h2>
@@ -359,6 +366,7 @@
   <aside class="notes">
     Anthropic distingue les workflows, des chemins de code prédéfinis, des agents, où le LLM pilote lui-même ses étapes, et recommande la solution la plus simple possible [ma-simplicity-first]. Ses patterns composables : prompt chaining, routing, parallélisation, orchestrator-workers et evaluator-optimizer [ma-workflow-patterns]. Le SDK OpenAI Agents ajoute deux délégations : agent-as-tool, où le manager garde la conversation, et handoff, où le spécialiste devient l'agent actif [ma-handoff-vs-agent-as-tool] ; Google ADK a les mêmes idées avec transfer_to_agent et AgentTool [ma-adk-collaboration-modes]. La colonne de droite est notre lecture pour la voix, une opinion fondée sur ces notes : chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent très vite. Dans notre cas, on privilégie donc un routeur codé quand c'est possible, la voix comme manager qui appelle des outils, orchestrator-workers seulement si l'utilisateur accepte d'attendre (avec un accusé de réception parlé), et l'evaluator-optimizer plutôt hors ligne. Dans la démo, le routage est codé : l'orchestrateur choisit les agents en comparant la demande aux tags de leurs cartes, sans appel LLM [p-ar-backend]. Le seul LLM ajouté est le composeur de l'agent Qualité. Le banc l'avait déjà mesuré trop lent pour notre objectif d'un premier squelette en moins de 1,5 s (p50 1,79 s, NFR-02) ; c'est pourquoi le squelette des surfaces part avant l'appel, une voie que le porteur doit encore confirmer (Q-82) [p-ar-llm-composer]. À la répétition au micro du 2026-10-31, l'appel a pris environ 3,7 s, sur une seule mesure.
   </aside>
+</section>
 </section>
 
 <!-- 04.9 — La voix délègue une seule fois : où tourne quoi -->
@@ -440,6 +448,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : 30 = sécurité de bout en bout ;
+     30.1 = observabilité et évaluation, atteinte par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 04.10 — Sécurité de bout en bout -->
 <section data-hud="low">
   <h2>Sécurité de bout en bout</h2>
@@ -514,4 +525,5 @@ session  gen_ai.conversation.id
   <aside class="notes">
     Pour l'observabilité, les conventions sémantiques OpenTelemetry GenAI définissent des spans invoke_agent, invoke_workflow et execute_tool ; elles ont déménagé dans un dépôt dédié et sont toutes au statut Development, donc les noms peuvent encore changer [ma-otel-genai-spans]. Notre mapping, qui est une recommandation : une trace par session vocale, avec gen_ai.conversation.id égal à l'id de session ; une délégation devient invoke_agent orchestrator, qui contient un execute_tool par appel MCP ou A2A et un invoke_agent pour GenUI. Pas d'audio ni de transcription enregistrés par défaut : ce sont des données personnelles. Pour l'évaluation, le cookbook OpenAI rappelle qu'une confirmation convaincante à l'oral ne garantit pas que la bonne action a été faite ; d'où l'intérêt d'évaluer séparément la délégation, l'action backend et la restitution du résultat vérifié [ma-voice-agent-evals]. Trois paliers : CRAWL avec une requête générée par TTS, WALK avec de vrais enregistrements dégradés (bruit, écho, pertes de paquets), RUN avec un appelant simulé en full duplex sur plusieurs tours. Le modèle étant non déterministe, on répète les runs et on rapporte P50 et P90 avec la taille d'échantillon ; CRAWL en CI, WALK et RUN en nightly, c'est notre recommandation. Pour être transparent sur la démo : ce mapping OTel n'est pas implémenté. On s'en tient à un journal de session horodaté, une trace par session et un enregistrement par appel A2A (pdr-0048, acceptée) ; c'est ce journal qui a fourni les mesures de la répétition. Côté évaluation, notre plan qualité prévoit CRAWL en CI et WALK et RUN en répétition [p-ar-quality] ; la campagne répétée dont on a les chiffres est le banc du composeur LLM : 25 plans valides sur 25, p50 1,79 s, p90 2,69 s [p-ar-llm-composer].
   </aside>
+</section>
 </section>

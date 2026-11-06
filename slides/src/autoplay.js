@@ -3,6 +3,11 @@
 // l'enchaînement affiche tout d'un coup ; l'appui suivant change de slide.
 // « Précédent » revient directement à la slide d'avant, entièrement affichée.
 //
+// Débranchements (piles verticales) : → passe à la slide principale suivante,
+// même depuis le milieu d'un débranchement ; ↓ y entre puis avance dedans
+// (en bas de la pile, ↓ rejoint la slide principale suivante) ; ↑ remonte ;
+// ← revient à la slide principale précédente.
+//
 // Réglages par slide :
 //   data-autoplay="off"        pas d'enchaînement (fragments au clic)
 //   data-autoplay-step="1200"  délai entre deux fragments, en ms
@@ -11,8 +16,10 @@ const FIRST_DELAY_MS = 450; // laisse finir la transition de slide
 const STEP_MS = 650;
 const CODE_STEP_MS = 2200; // étapes de surlignage de code : le temps de lire
 
-const NEXT_KEYS = [39, 40, 32, 34, 76, 74]; // → ↓ espace PgDn L J (N ouvre les notes)
-const PREV_KEYS = [37, 38, 33, 80, 72, 75]; // ← ↑ PgUp P H K
+const RIGHT_KEYS = [39, 32, 34, 76]; // → espace PgDn L (N ouvre les notes)
+const DOWN_KEYS = [40, 74]; // ↓ J
+const LEFT_KEYS = [37, 33, 80, 72]; // ← PgUp P H
+const UP_KEYS = [38, 75]; // ↑ K
 
 export function setupAutoplay(deck) {
   // Les aperçus de la vue orateur reçoivent l'état de la fenêtre principale :
@@ -54,30 +61,50 @@ export function setupAutoplay(deck) {
     }
   };
 
-  const advance = () => {
+  // Pendant l'affichage progressif, « avancer » affiche tout d'un coup.
+  const forward = (move) => () => {
     if (hasHiddenFragments(deck.getCurrentSlide())) showAll();
-    else deck.next({ skipFragments: true });
+    else move();
+  };
+  const backward = (move) => () => {
+    stop();
+    move();
   };
 
-  const back = () => {
-    stop();
-    deck.prev({ skipFragments: true });
-  };
+  const advance = forward(() => deck.right({ skipFragments: true }));
+  const down = forward(() =>
+    deck.availableRoutes().down
+      ? deck.down({ skipFragments: true })
+      : deck.right({ skipFragments: true }),
+  );
+  const back = backward(() => deck.left({ skipFragments: true }));
+  const up = backward(() =>
+    deck.availableRoutes().up
+      ? deck.up({ skipFragments: true })
+      : deck.left({ skipFragments: true }),
+  );
 
   const keyboard = {};
-  NEXT_KEYS.forEach((k) => (keyboard[k] = advance));
-  PREV_KEYS.forEach((k) => (keyboard[k] = back));
+  RIGHT_KEYS.forEach((k) => (keyboard[k] = advance));
+  DOWN_KEYS.forEach((k) => (keyboard[k] = down));
+  LEFT_KEYS.forEach((k) => (keyboard[k] = back));
+  UP_KEYS.forEach((k) => (keyboard[k] = up));
 
   // Les flèches à l'écran suivent la même logique que le clavier.
+  const CONTROLS = [
+    ['.navigate-right', advance],
+    ['.navigate-down', down],
+    ['.navigate-left', back],
+    ['.navigate-up', up],
+  ];
   document.addEventListener(
     'click',
     (e) => {
-      const next = e.target.closest?.('.reveal .controls .navigate-right');
-      const prev = e.target.closest?.('.reveal .controls .navigate-left');
-      if (!next && !prev) return;
+      const hit = CONTROLS.find(([sel]) => e.target.closest?.(`.reveal .controls ${sel}`));
+      if (!hit) return;
       e.preventDefault();
       e.stopPropagation();
-      next ? advance() : back();
+      hit[1]();
     },
     true,
   );
@@ -87,5 +114,5 @@ export function setupAutoplay(deck) {
   deck.on('overviewshown', stop);
   deck.on('overviewhidden', () => schedule(FIRST_DELAY_MS));
 
-  return { keyboard, advance, back };
+  return { keyboard, advance, back, down, up };
 }

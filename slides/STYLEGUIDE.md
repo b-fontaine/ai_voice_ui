@@ -243,7 +243,7 @@ void main() {
 
 ## 14. Fragments stylés
 
-Les fragments s'affichent **automatiquement** en arrivant sur la slide (`src/autoplay.js`, 650 ms entre deux fragments, 2,2 s pour les étapes de surlignage de code). Réglages par `<section>` : `data-autoplay-step="1200"` (délai en ms) ou `data-autoplay="off"` (fragments au clic). Pas de piles verticales : une `<section>` par slide, dans l'ordre.
+Les fragments s'affichent **automatiquement** en arrivant sur la slide (`src/autoplay.js`, 650 ms entre deux fragments, 2,2 s pour les étapes de surlignage de code). Réglages par `<section>` : `data-autoplay-step="1200"` (délai en ms) ou `data-autoplay="off"` (fragments au clic). Une `<section>` par slide, dans l'ordre ; un débranchement facultatif est une pile verticale (`<section data-start-indexv="0">` englobant les slides), voir `README.md` § Navigation. La classe utilitaire `.stack` ne s'applique pas aux `<section>` (reveal pose `stack` sur les piles verticales).
 
 En plus des fragments natifs de reveal.js (`fade-up`, `highlight-red`…) :
 
