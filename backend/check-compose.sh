@@ -8,8 +8,11 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
 # Le profil bench (composer-bench) est contrôlé comme le reste.
-COMPOSE_PROFILES=bench docker compose config --no-env-resolution --format json | python3 -I -c '
-import json, sys
+# `env_file` est aussi cherché dans le texte des fichiers compose : selon la version de
+# Docker Compose (2.38.2 en CI), `config --no-env-resolution` l'omet de sa sortie.
+COMPOSE_PROFILES=bench docker compose config --no-env-resolution --format json \
+  | COMPOSE_RAW_FILES="${COMPOSE_FILE:-docker-compose.yaml}" python3 -I -c '
+import json, os, re, sys
 
 cfg = json.load(sys.stdin)
 services = cfg.get("services", {})
@@ -20,6 +23,33 @@ errors = []
 def check(ok, message):
     if not ok:
         errors.append(message)
+
+
+def raw_env_file_services(paths):
+    """Services qui déclarent env_file dans le texte des fichiers compose (YAML en blocs)."""
+    found = set()
+    for path in paths:
+        in_services, svc_indent, svc = False, None, None
+        for line in open(path, encoding="utf-8"):
+            text = line.split("#", 1)[0].rstrip()
+            if not text.strip():
+                continue
+            indent = len(text) - len(text.lstrip(" "))
+            if indent == 0:
+                in_services, svc_indent, svc = text.startswith("services:"), None, None
+                continue
+            if not in_services:
+                continue
+            if svc_indent is None:
+                svc_indent = indent
+            if indent == svc_indent:
+                svc = text.strip().rstrip(":").strip("\"")
+            elif svc and re.match(r"\s*env_file\s*:", text):
+                found.add(svc)
+    return found
+
+
+raw_env_file = raw_env_file_services(os.environ["COMPOSE_RAW_FILES"].split(":"))
 
 
 orch = services.get("orchestrator")
@@ -52,7 +82,7 @@ for name in agent_names:
     check(not agent.get("ports"), name + " ne doit publier aucun port")
     check(set((agent.get("networks") or {}).keys()) == {"agents"},
           name + " doit etre uniquement sur le reseau agents")
-    check("env_file" not in agent, name + " ne doit pas recevoir env_file")
+    check("env_file" not in agent and name not in raw_env_file, name + " ne doit pas recevoir env_file")
     # R1 : le Dockerfile des agents impose ARG AGENT (sans défaut) ; le compose doit le fournir.
     build_args = (agent.get("build") or {}).get("args") or {}
     check(build_args.get("AGENT") == name[len("agent-"):],
@@ -192,7 +222,7 @@ for ip in allowed:
 bench = services.get("composer-bench")
 if bench is not None:
     check(not bench.get("ports"), "composer-bench ne doit publier aucun port")
-    check("env_file" not in bench, "composer-bench ne doit pas recevoir env_file")
+    check("env_file" not in bench and "composer-bench" not in raw_env_file, "composer-bench ne doit pas recevoir env_file")
     check(set((bench.get("networks") or {}).keys()) == {"agents"}, "composer-bench doit etre uniquement sur le reseau agents")
     bench_env = bench.get("environment") or {}
     for key in bench_env:
