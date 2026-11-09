@@ -2,17 +2,17 @@
 id: pdr-0046-flutter-3-47-8-pinned
 title: "PDR-0046 — Flutter figé à 3.47.8 (Dart 3.13.7)"
 area: decisions
-status: validated
-updated: 2026-10-29
+status: superseded
+updated: 2026-11-09
 sources: [specs/000-loop-harness/status.md, pubspec.yaml, pubspec.lock, knowledge:ds-widgetbook-4-spike]
-links: [p-rm-open-questions, p-ar-stack, p-rm-roadmap, p-rm-spikes, p-fn-nfr, pdr-0010-pinned-experimental-versions, pdr-0018-a2ui-v09-genui-0-10-4, ds-widgetbook-4-spike, perf-desktop-specifics, genui-overview]
+links: [pdr-0090-flutter-3-47-9-pinned, p-rm-open-questions, p-ar-stack, p-rm-roadmap, p-rm-spikes, p-fn-nfr, pdr-0010-pinned-experimental-versions, pdr-0018-a2ui-v09-genui-0-10-4, ds-widgetbook-4-spike, perf-desktop-specifics, genui-overview]
 tags: [pdr, decision, versions, flutter, reproducibility]
-decision_status: acceptée
+decision_status: remplacée par pdr-0090-flutter-3-47-9-pinned
 decided_on: 2026-10-29
 decided_by: "Benoît FONTAINE (porteur), conversation avec l'assistant du 2026-10-29"
 scope: technique
 supersedes: []
-superseded_by: null
+superseded_by: pdr-0090-flutter-3-47-9-pinned
 ---
 # PDR-0046 — Flutter figé à 3.47.8
 
@@ -55,5 +55,6 @@ Part de l'assistant : recommandation acceptée par le porteur.
 | Date | Événement | Qui |
 |---|---|---|
 | 2026-10-29 | Acceptée ; Q-25 tranchée (Flutter 3.47.8). Parole du porteur (conversation avec l'assistant, 2026-10-29), en réponse au tableau des questions présenté juste avant : « Pour les questions, utilise tes recommandations » | Benoît FONTAINE (porteur), conversation |
+| 2026-11-09 | Remplacée par [pdr-0090](pdr-0090-flutter-3-47-9-pinned.md) : le porteur a monté son Flutter local en 3.47.9 et demandé d'aligner le projet | Benoît FONTAINE (porteur), conversation |
 
 Pas d'archive brute.

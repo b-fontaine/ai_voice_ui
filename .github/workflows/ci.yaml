@@ -46,8 +46,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.47.8
+          # Version lue dans `environment: flutter:` du pubspec racine : une seule source,
+          # tenue à jour par tools/flutter-upgrade.sh (`task upgrade`).
+          flutter-version-file: pubspec.yaml
           channel: stable
+      - name: Dépôt aligné sur le SDK (pubspec.yaml de chaque paquet et pubspec.lock)
+        run: tools/flutter-upgrade.sh --check
       - name: Analyse et tests de chaque paquet Flutter
         run: |
           set -e
