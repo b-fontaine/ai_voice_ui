@@ -8,10 +8,10 @@
   <div class="chapter-rule"></div>
   <p class="subtitle">L'interface générative côté Flutter</p>
   <aside class="notes">
-    GenUI : définition · histoire · moteur genui
-    A2UI message par message : surfaces, composants, data model, actions
-    Puis transports · sécurité
-    ⚠ genui alpha · A2UI pré-1.0 · tout est daté d'octobre 2026
+    Ce chapitre montre comment un agent décrit un écran que Flutter rend avec ses propres widgets.
+    On suit l'ordre : d'où vient GenUI, le moteur genui, puis le protocole A2UI message par message.
+    ⚠ genui est en alpha et A2UI en pré-1.0 : tout ce qui suit est daté d'octobre 2026.
+    → On commence par définir ce que l'agent génère réellement.
   </aside>
 </section>
 
@@ -47,10 +47,10 @@
   <p class="lead fragment glow-in mt-1">L'agent décrit l'interface en <span class="accent">JSON</span> ; le client la rend avec <span class="amber">ses widgets</span></p>
   <p class="refs">[genui-overview] · [genui-a2ui-overview] · [proto-a2ui-pointer] · [ux-genui-catalog-as-ds]</p>
   <aside class="notes">
-    JSON déclaratif · aucun code Flutter ni HTML ne transite
-    genui : LLM + catalogue de widgets approuvés · A2UI v0.9
-    IA : quels composants, quelles données · dev : lesquels existent, leur style
-    README A2UI : « safe like data, but expressive like code »
+    Rien d'exécutable ne transite : ni code Flutter ni HTML, seulement une description de l'écran.
+    L'agent se limite à des indications sémantiques ; le style reste entièrement côté client.
+    Le README d'A2UI résume l'objectif par « safe like data, but expressive like code ».
+    → Le terme GenUI est plus ancien que ce protocole : voyons d'où il vient.
   </aside>
 </section>
 
@@ -98,12 +98,12 @@
   <p class="mt-2 fragment glow-in"><span class="badge badge--neutral">alpha</span> <span class="badge badge--neutral">pré-1.0</span> <span class="muted">chaque version mineure de genui casse l'API</span></p>
   <p class="refs">[genui-overview] · [genui-a2ui-overview] · [genui-migration-from-0-7] · [genui-migration-0-10] · [genui-a2ui-v1-rc] · avant 2026 : blogs officiels (Vercel, Flutter, Google Developers) et pub.dev</p>
   <aside class="notes">
-    01/03/2024 · Vercel AI SDK 3.0 → RSC streamés, code exécuté côté serveur
-    28/07/2025 flutter_genui 0.0.1 · 12/11/2025 renommé genui 0.5.0
-    18/11/2025 annonce GenUI SDK alpha, inspiré de l'app Gemini
-    15/12/2025 A2UI open source · Apache 2.0 · contributions CopilotKit
-    v0.8 → v0.9 : discriminant plat, beginRendering → createSurface
-    26/10/2026 = statut constaté, pas une sortie · on épingle les versions
+    Le terme a plus de deux ans et demi, et l'écosystème Flutter l'a rejoint en un peu plus d'un an.
+    Chez Vercel, le LLM renvoyait des React Server Components, donc du code exécuté côté serveur.
+    L'équipe Flutter a annoncé le SDK le 18/11/2025, inspiré de la mise en page de l'app Gemini.
+    Entre-temps, le format passe de v0.8 à v0.9 : beginRendering devient createSurface.
+    ⚠ 26/10/2026 est la date à laquelle ce statut a été relevé dans le README d'A2UI.
+    → Vu ce rythme, le projet épingle les versions exactes. Voyons comment le paquet genui est construit.
   </aside>
 </section>
 
@@ -183,12 +183,12 @@
   </svg>
   <p class="refs">[genui-architecture] · [genui-user-actions] · [genui-multiple-surfaces] · [genui-migration-0-10]</p>
   <aside class="notes">
-    Depuis 0.8 : 3 rôles · SurfaceController = moteur, un DataModel par surface
-    Transport (A2uiTransportAdapter) : texte → messages · Conversation = façade
-    genui n'appelle aucun LLM : votre onSend · addChunk · addMessage si déjà parsé
-    Retour : onSubmit → sendRequest → onSend → LLM
-    Méthode = sendRequest (la doc dit parfois sendMessage) · types a2ui_core depuis 0.10
-    Genesis Canvas : app-channel → validation → handleMessage, sans Conversation
+    genui n'appelle aucun LLM : c'est votre callback onSend qui le fait, genui ne fait qu'appliquer les messages.
+    Le texte du modèle arrive par morceaux via addChunk ; un message déjà parsé, issu d'un tool call, passe par addMessage.
+    Au clic suivant apparaît la boucle retour, de l'action utilisateur jusqu'au LLM.
+    Dans Genesis Canvas, l'app n'utilise ni Conversation ni Transport : elle valide puis appelle handleMessage.
+    ⚠ La méthode s'appelle sendRequest, même si la doc écrit parfois sendMessage ; depuis 0.10, types a2ui_core.
+    → Voyons maintenant ce que contiennent ces messages A2UI.
   </aside>
 </section>
 
@@ -196,7 +196,7 @@
 <section data-hud="low">
   <p class="eyebrow">Protocole A2UI v0.9 · agent → client</p>
   <h2>Les messages de l'agent au client</h2>
-  <pre data-title="flux A2UI v0.9 (un message par ligne sur le fil)"><code class="language-json" data-trim data-line-numbers="1-3|4-7|8|9">
+  <pre data-title="flux A2UI v0.9 (un message par ligne sur le fil)"><code class="language-json" data-trim data-line-numbers>
 {"version":"v0.9","createSurface":{"surfaceId":"main",
   "catalogId":"https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
   "sendDataModel":true}}
@@ -215,12 +215,12 @@
   </div>
   <p class="refs">[genui-a2ui-messages] · [genui-a2ui-overview] · [genui-multiple-surfaces]</p>
   <aside class="notes">
-    Spec v0.9.1 adaptée · sur le fil : 1 message = 1 ligne JSONL
-    « version » + une seule clé parmi les 4
-    createSurface fige surfaceId et catalogId · updateComponents : un id « root »
-    Pièges : genui exige « v0.9 » exact (spec : « v0.9.1 ») · ordre garanti par le transport
-    createSurface sur un id actif = erreur → deleteSurface d'abord
-    MIME application/a2ui+json · doc Flutter cite encore les noms v0.8
+    Tout le protocole descendant tient en quatre messages, et chacun porte une seule de ces clés.
+    Lignes 1 à 3 : la surface s'ouvre. Lignes 4 à 7 : la structure. Ligne 8 : les valeurs. Ligne 9 : la fermeture.
+    Sur le fil c'est du JSONL : un message par ligne, ici replié pour la lisibilité.
+    Recréer une surface encore active est une erreur : il faut d'abord la supprimer.
+    ⚠ genui exige « v0.9 » exactement, alors que la spec publiée s'appelle v0.9.1.
+    → Ligne 5 : root ne cite ses enfants que par leur id. Voyons pourquoi les composants sont à plat.
   </aside>
 </section>
 
@@ -263,11 +263,12 @@
   </ul>
   <p class="refs">[genui-a2ui-overview] · [genui-a2ui-messages] · [ux-genui-streaming-loading]</p>
   <aside class="notes">
-    Liste d'adjacence : ids, enfants via child / children
-    Pour le LLM : plus simple que l'imbrication
-    Rendu dès que root existe · enfants dans des updates incrémentaux
-    Au clic : « name » arrive → l'arbre se complète
-    v0.9 : "component": "Text" au lieu de {"Text": {...}}
+    La structure voyage à plat, et c'est le client qui reconstruit l'arbre à partir des ids.
+    On appelle ça une liste d'adjacence : les enfants sont référencés par id, via child ou children.
+    Au clic, « name » arrive dans un second message et l'arbre se complète.
+    Dans l'exemple précédent tout arrivait d'un coup ; la spec permet d'étaler l'envoi.
+    Changement depuis la v0.8 : le type est un champ plat "component": "Text", plus un objet {"Text": …}.
+    → L'arbre est en place ; reste à savoir d'où viennent les valeurs affichées.
   </aside>
 </section>
 
@@ -302,12 +303,12 @@
   </div>
   <p class="refs">[genui-data-model] · [genui-a2ui-client-messages] · [ux-genui-streaming-loading] · [genui-a2ui-security] · [genui-a2ui-v1-rc]</p>
   <aside class="notes">
-    Un DataModel par surface · propriété = littéral ou {"path"} JSON Pointer
-    updateDataModel sans value → clé supprimée · mises à jour granulaires
-    Saisie (TextField, Slider…) écrit dans le modèle, sans LLM
-    Remonte via context d'action ou sendDataModel → aucun secret (opinion)
-    v1.0 RC : {"@path"}, non supporté par genui 0.10.x
-    Genesis Canvas : chemin entier (/kpi), sauf /checklist/decisionStatus · sendDataModel false
+    Séparer structure et valeurs permet de changer un chiffre sans renvoyer l'écran.
+    Les liaisons sont des JSON Pointer ; un updateDataModel sans value supprime la clé.
+    Un update remplace l'objet à ce chemin : un champ absent de la nouvelle valeur disparaît du rendu.
+    Dans Genesis Canvas, les agents écrivent donc le chemin entier, /kpi, et sendDataModel vaut false.
+    ⚠ La v1.0 RC passe à {"@path": …}, que genui 0.10.x ne comprend pas.
+    → Le context d'une action est l'un des chemins de retour : suivons le parcours complet d'un clic.
   </aside>
 </section>
 
@@ -333,12 +334,12 @@
   <p class="mono small mt-1"><span class="accent">action</span> = { name, surfaceId, sourceComponentId, timestamp, context }</p>
   <p class="refs">[genui-user-actions] · [genui-a2ui-client-messages] · [genui-a2ui-security]</p>
   <aside class="notes">
-    Action attachée au composant · ex. « confirm_rdv » + context lié
-    Clic → ActionDelegate (local possible) → onSubmit → sendRequest → onSend
-    context = seulement ce que l'agent a déclaré · functionCall (openUrl) local
-    Reco : événement typé vers l'orchestrateur · sans Conversation, écouter onSubmit
-    Genesis Canvas : POST /canvas/actions → Livraison → updateDataModel decisionStatus
-    Répétition 31/10 : « La release 3.4 est bloquée » 0,65 s après le clic
+    Un clic devient un message structuré vers l'agent, sauf s'il est traité localement.
+    Exemple : un bouton porte l'action « confirm_rdv » ; son context ne contient que ce que l'agent a déclaré.
+    Dans Genesis Canvas : POST /canvas/actions, puis l'agent Livraison répond par un updateDataModel.
+    À la répétition du 31/10, la voix a confirmé « La release 3.4 est bloquée » 0,65 s après le clic.
+    ⚠ Sans Conversation, il faut écouter onSubmit soi-même, sinon les clics sont perdus.
+    → Ces échanges reposent sur le catalogue : voyons comment on y déclare un composant.
   </aside>
 </section>
 
@@ -347,7 +348,7 @@
   <p class="eyebrow">Catalogue</p>
   <h2>Définir un composant du catalogue</h2>
   <div class="grid-2-1">
-    <pre data-title="catalog_item.dart"><code class="language-dart" data-trim data-line-numbers="2|3-6|7-11|13-14">
+    <pre data-title="catalog_item.dart"><code class="language-dart" data-trim data-line-numbers>
 final riddleCard = CatalogItem(
   name: 'RiddleCard',
   dataSchema: S.object(properties: {
@@ -372,12 +373,12 @@ final catalog = BasicCatalogItems.asCatalog()
   </div>
   <p class="refs">[genui-custom-catalog-item] · [genui-catalog-ids] · [ux-genui-catalog-as-ds]</p>
   <aside class="notes">
-    CatalogItem = name · dataSchema (json_schema_builder) · widgetBuilder
-    Descriptions du schéma injectées dans le prompt → écrites pour le LLM
-    catalogId = URI, contrat · supportedCatalogIds · 1 catalogue par surface en v0.9
-    Piège : copyWith sans catalogId → id basique, items ignorés par l'agent distant
-    Prod : item = composant du DS, versionné comme une API (reco)
-    Genesis Canvas : 1 composant métier par surface · data {"path": "/kpi"} · BoundObject
+    Un composant du catalogue est un contrat : un nom, un schéma lu par le LLM et votre widget.
+    Ligne 2 : le nom. Lignes 3 à 6 : le schéma, dont les descriptions sont écrites pour le LLM.
+    Lignes 7 à 11 : le builder. Lignes 13 et 14 : l'item s'ajoute au catalogue de base.
+    Dans Genesis Canvas, chaque surface est un seul composant métier, lié à un objet entier comme /kpi.
+    ⚠ Ligne 14 : copyWith sans catalogId garde l'id du catalogue basique ; un agent distant ignore vos items.
+    → Reste à acheminer ces messages entre l'agent et l'app.
   </aside>
 </section>
 
@@ -416,12 +417,12 @@ final catalog = BasicCatalogItems.asCatalog()
   </div>
   <p class="refs">[genui-a2ui-transports] · [genui-a2a-connector] · [proto-agui-overview] · [proto-a2ui-pointer]</p>
   <aside class="notes">
-    Garanties : ordre fiable · délimitation · métadonnées · retour optionnel
-    A2A : Part de message · capabilities en metadata · session = contextId
-    Vérifié 29/10 : JSON-RPC message/stream sur SSE · A2A v0.3 · X-A2A-Extensions
-    Doc Flutter dit WebSocket · code genui_a2a : SSE
-    AG-UI : événements backend ↔ app · MCP : sortie d'outil ou ressource
-    Voix (reco) : A2UI hors du canal de données temps réel → canal séparé
+    A2UI ne fixe pas le transport, seulement les garanties qu'il doit offrir.
+    Délimiter, concrètement : une ligne JSONL, une frame WebSocket ou un événement SSE.
+    Avec A2A, chaque message A2UI est une Part ; vérifié le 29/10 : JSON-RPC message/stream, A2A v0.3.
+    Pour la voix, notre recommandation : l'A2UI passe par un canal séparé du canal de données temps réel.
+    ⚠ La doc Flutter parle de WebSocket, mais le code de genui_a2a utilise bien SSE.
+    → Chaque canal est aussi un point d'entrée possible : passons à la sécurité.
   </aside>
 </section>
 
@@ -453,12 +454,12 @@ final catalog = BasicCatalogItems.asCatalog()
   </blockquote>
   <p class="refs">[ma-prompt-injection-tools] · [genui-a2ui-security] · [p-ar-security] · [rt-ephemeral-keys] · pdr-0053 · pdr-0074</p>
   <aside class="notes">
-    Chaque saut = surface d'attaque · injection directe ou indirecte (avis client)
-    Un exemple, sans garantie · validé 2 fois : orchestrateur, puis app
-    Message refusé : aucune surface · marqué « refusé » dans le panneau protocole
-    Voix : résumé de l'orchestrateur seulement · clic = événement typé
-    Agents : réseau Docker interne, sans port ni clé · passerelle pour le modèle
-    Prévu dès l'architecture, avant le code · plus dur à ajouter après
+    Je présente un exemple de sécurisation, sans prétendre à une garantie.
+    Injection indirecte, dans nos données : une consigne glissée dans un extrait d'avis client.
+    Validé veut dire composants, propriétés, liaisons et chemins ; un message refusé n'affiche aucune surface.
+    La voix ne reçoit qu'un résumé de l'orchestrateur ; un clic n'est qu'un nom d'action et une surface.
+    SDP : la description de session WebRTC. Le backend la relaie, donc la clé OpenAI reste sur le serveur.
+    → Une sortie invalide n'est pas toujours une attaque : voyons comment gérer les erreurs de génération.
   </aside>
 </section>
 
@@ -502,12 +503,12 @@ final catalog = BasicCatalogItems.asCatalog()
   </div>
   <p class="refs">[genui-error-reporting] · [ux-genui-errors-validation] · [ux-genui-streaming-loading] · [ux-ai-human-in-the-loop]</p>
   <aside class="notes">
-    VALIDATION_FAILED : surfaceId + JSON Pointer + message → le LLM se corrige
-    Mesuré 29/10 : hors catalogue, double create signalés · update orphelin silencieux
-    Plafond 2–3 tours (reco) · ai_voice_widget en autorisait 20
-    UX : erreur non affichée · chargement en 2 temps (Cloudscape) · confirmer avant action
-    Genesis Canvas : repli déterministe, sans correction · données incomplètes → état neutre (RG-10)
-    handleMessage ne lève jamais : erreurs dans onSubmit, à écouter
+    Une erreur de validation est destinée au modèle, qui se corrige au tour suivant ; l'utilisateur ne la voit pas.
+    Elle pointe le champ fautif par un JSON Pointer ; ai_voice_widget autorisait jusqu'à 20 tours de correction.
+    Mesuré le 29/10 : hors catalogue et double création sont signalés, un update orphelin passe en silence.
+    Dans Genesis Canvas, pas de boucle : un plan invalide bascule sur la composition déterministe.
+    ⚠ handleMessage ne lève jamais d'exception : ses erreurs sortent par onSubmit, qu'il faut écouter.
+    → A2UI n'est pas seul sur ce terrain : situons-le parmi les autres approches.
   </aside>
 </section>
 
@@ -530,11 +531,12 @@ final catalog = BasicCatalogItems.asCatalog()
   <p class="mt-1 fragment glow-in">Elles peuvent se combiner : <span class="accent">AG-UI peut transporter de l'A2UI</span></p>
   <p class="refs">[proto-protocol-map] · [proto-mcp-extensions] · [proto-agui-overview] · [proto-a2ui-pointer]</p>
   <aside class="notes">
-    MCP = faire · A2A = déléguer · AG-UI = parler à l'app · A2UI = afficher
-    MCP Apps : ressource ui://, HTML en iframe sandboxée, postMessage → WebView
-    AG-UI : CopilotKit + LangChain, CrewAI · ne décrit pas l'UI · ag_ui 0.3.0
-    Doc AG-UI : A2UI et AG-UI « work well together »
-    « Flutter natif » = reco interne : A2UI le plus adapté
+    Ces protocoles répondent à des questions différentes, ce qui explique qu'ils se combinent.
+    MCP : ce que l'agent peut faire. A2A : à qui il délègue. AG-UI : comment il parle à l'app. A2UI : ce qu'il affiche.
+    MCP Apps : une page HTML déclarée en ui://, qui dialogue par postMessage ; en Flutter, il faut une WebView.
+    AG-UI vient de CopilotKit, avec LangChain et CrewAI ; il ne décrit pas lui-même l'interface.
+    ⚠ « Flutter natif » est notre avis : MCP Apps en WebView coûterait en cohérence visuelle et en sécurité.
+    → Voyons ce que Genesis Canvas a retenu de tout cela.
   </aside>
 </section>
 
@@ -552,11 +554,11 @@ final catalog = BasicCatalogItems.asCatalog()
   <p class="fragment rise-in mt-1">Canal app ↔ backend : WebSocket <span class="mono">app-channel</span> maison, genui_a2a hors de l'app <span class="badge badge--accepted">pdr-0045</span></p>
   <p class="refs">product/decisions : pdr-0007 · pdr-0014 · pdr-0018 · pdr-0023 · pdr-0036 · pdr-0045 · pdr-0053 · pdr-0060 · pdr-0074 · [p-fn-catalog] · [p-ar-llm-composer]</p>
   <aside class="notes">
-    « v0.9 » exact + genui 0.10.4 : décision contrainte par les faits
-    Catalogue fermé, style par le thème : point central du talk
-    6 composants · ActionBar fin acte 2 · CrashList sur demande
-    Qualité : petit modèle OpenAI → plan · repli déterministe, à dire au public
-    Répétition 31/10 : squelette ~0,1 s, chiffres ~3,7 s · une seule session
-    → partie projet
+    Le catalogue fermé, avec un style qui ne dépend pas de l'IA, est pour moi le point central du talk.
+    « v0.9 » et genui 0.10.4 découlent directement des faits vérifiés : c'est une décision contrainte.
+    La Barre d'actions apparaît à la fin de l'acte 2 ; la Liste des crashs seulement quand on la demande.
+    Répétition du 31/10 : squelette environ 0,1 s après l'accusé vocal, chiffres environ 3,7 s plus tard.
+    ⚠ Ces durées viennent d'une seule session. Le repli déterministe de l'agent Qualité est à annoncer au public.
+    → Tout cet écran se pilote à la voix : chapitre suivant, l'agent vocal voice-to-voice en WebRTC.
   </aside>
 </section>

@@ -15,11 +15,10 @@
   <div class="chapter-rule"></div>
   <p class="subtitle">Converser à voix haute avec l'application</p>
   <aside class="notes">
-    Deuxième brique : la voix temps réel
-    Voice-to-voice · modèles fin oct. 2026 · session WebRTC sans clé client
-    Tour de parole : VAD, barge-in, écho · latence · délégation des outils
-    Faire taire l'IA : « Stop », correction, chevauchement · répétition du 31/10
-    API très mouvantes (gpt-live-1, Gemini 3.8 Live) → état fin octobre 2026
+    Deuxième brique du talk : faire parler l'application, à voix haute et en temps réel.
+    On verra les modèles, le transport et le tour de parole, puis comment Genesis Canvas fait taire l'IA.
+    ⚠ Ces API bougent très vite (gpt-live-1, Gemini 3.8 Live) : tout ce qui suit est l'état relevé fin octobre 2026.
+    → D'abord, ce qui distingue un modèle voice-to-voice de l'approche historique.
   </aside>
 </section>
 
@@ -56,11 +55,11 @@
   <p class="fragment glow-in mt-2">Moins d'étapes enchaînées, et <span class="accent">le tour de parole est géré par le modèle</span> (GPT-Live).</p>
   <p class="refs">[rt-gpt-live-overview] · [rt-gemini-audio-vad] · [rt-barge-in]</p>
   <aside class="notes">
-    Cascade : STT → LLM → TTS · chaque étape attend · intonation perdue
-    ⚠ Comparaison avec la cascade = cadrage général, aucun chiffre dans la base
-    gpt-live-1 : full-duplex, écoute et parle, gère le tour de parole
-    Gemini « native audio » : choisit la langue → la contraindre par instruction système
-    Barge-in pris en charge par le modèle → moins de travail côté app
+    Un modèle natif traite l'audio de bout en bout, sans repasser par du texte entre deux étapes.
+    Dans la cascade, chaque étape attend la précédente, et le passage par le texte perd l'intonation.
+    Gemini « native audio » choisit même la langue de réponse : on la contraint par l'instruction système.
+    ⚠ Cette comparaison est un cadrage général : la base ne contient aucun chiffre mesuré sur la cascade.
+    → Plusieurs modèles natifs existent fin octobre : voyons lesquels, et lequel on a retenu.
   </aside>
 </section>
 
@@ -83,12 +82,12 @@
   <p class="mt-1">Genesis Canvas : <span class="mono">gpt-live-1</span> <span class="badge badge--accepted">pdr-0012 acceptée</span> voix <span class="mono">brise</span> <span class="badge badge--accepted">pdr-0037 acceptée</span></p>
   <p class="refs">[rt-openai-realtime-vs-live] · [rt-gpt-live-overview] · [rt-gemini-live-models] · [rt-gemini-function-calling] · pdr-0012 · pdr-0037</p>
   <aside class="notes">
-    Realtime et GPT-Live : deux API distinctes · /v1/realtime?model=gpt-live-1 échoue
-    gpt-live-1 : 0,05 $/min, à la seconde · WebRTC : 15 s facturées d'avance
-    gemini-3.8-live : défaut API directe · absent de Firebase AI Logic (20/10)
-    Choix : gpt-live-1 WebRTC, port VoiceSession · Gemini en alternative · voix « brise »
-    SP-02 (29/10) partiel : relais SDP, délégation client, barge-in navigateur, un essai
-    ⚠ AEC flutter_webrtc sous Linux restait à vérifier (SP-06)
+    Chez OpenAI, Realtime et GPT-Live sont deux API distinctes, qu'on confond facilement.
+    gpt-live-1 n'est pas un modèle Realtime : l'URL /v1/realtime?model=gpt-live-1 ne fonctionne pas.
+    Prix : 0,05 $ la minute, à la seconde ; en WebRTC, 15 s sont facturées dès l'ouverture, puis créditées.
+    gemini-3.8-live est le défaut de l'API Gemini directe, mais il manquait à Firebase AI Logic au 20 octobre.
+    ⚠ Le spike SP-02 du 29/10 n'a validé ce choix que partiellement : une machine, un seul essai de barge-in.
+    → Les fournisseurs divergent dès le transport : WebRTC chez OpenAI, WebSocket chez Gemini.
   </aside>
 </section>
 
@@ -114,12 +113,12 @@
   <p class="fragment glow-in mt-1">OpenAI recommande WebRTC pour GPT-Live, <span class="amber">y compris entre serveurs</span>.</p>
   <p class="refs">[proto-rtc-transport-choice] · [perf-audio-latency] · [rt-latency]</p>
   <aside class="notes">
-    WebRTC : UDP chiffré + ICE · jitter buffer, codec, AEC · perte tolérée
-    WebSocket : PCM brut sur TCP · head-of-line · buffers à la charge de l'app
-    OpenAI recommande WebRTC, y compris serveur à serveur · WebSocket supporté
-    Gemini Live : WebSocket avec état, PCM 16 bits 24 kHz
-    Entre agents non vocaux : HTTP + SSE suffit (reco interne)
-    Coût WebRTC : vraie piste micro · TURN sur réseaux d'entreprise
+    Pour la voix, WebRTC fournit d'office ce qu'il faudrait sinon écrire soi-même, surtout l'annulation d'écho.
+    Un paquet perdu est simplement sauté, ce qui convient à la voix ; en TCP, il bloque tout ce qui suit.
+    Gemini Live reste en WebSocket avec état (PCM 16 bits, 24 kHz) : les deux transports coexistent.
+    Entre agents non vocaux, HTTP + SSE nous semble suffire ; c'est une recommandation interne.
+    ⚠ Le prix de WebRTC : une vraie piste micro, et un serveur TURN sur les réseaux d'entreprise restrictifs.
+    → ↓ ouvre les détails facultatifs (session, sécurité, écho, latence, outils) ; → passe au chapitre A2A.
   </aside>
 </section>
 
@@ -144,12 +143,11 @@
   </div>
   <p class="refs">[rt-gpt-live-webrtc-session] · [rt-gpt-live-lifecycle] · [rt-gpt-live-sideband] · pdr-0045</p>
   <aside class="notes">
-    Backend crée la session : seul mécanisme documenté pour GPT-Live
-    Client : DataChannel oai-events avant createOffer · collecte ICE (timeout 10 s)
-    Backend : POST /v1/live/sessions + clé projet → 201 : session.id + answer
-    Sans audio.format · sans session.start → attendre session.started
-    Backend garde session.id → sideband WebSocket (suite plus loin)
-    Genesis : app-channel WSS (pdr-0045), DataChannel non lu · création ≈ 1 s (SP-02)
+    Pour GPT-Live, la seule façon documentée d'ouvrir une session passe par notre propre backend.
+    L'exemple officiel attend la fin de la collecte ICE, avec 10 s de timeout, avant d'envoyer l'offre.
+    Ne pas envoyer audio.format (négocié par SDP) ni session.start : attendre session.started.
+    Genesis Canvas ne lit pas le DataChannel : tout arrive par l'app-channel (pdr-0045). Création ≈ 1 s au spike.
+    → ↓ Ce relais est aussi ce qui garde la clé hors de l'app : comparons les fournisseurs. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -176,12 +174,12 @@
   </ul>
   <p class="refs">[rt-ephemeral-keys] · [rt-gemini-ephemeral-tokens] · [proj-avw-risks] · NFR-09 · pdr-0012 · pdr-0041</p>
   <aside class="notes">
-    Aucune clé longue durée côté client · mécanisme selon le fournisseur
-    GPT-Live : relais SDP seul · NFR-09 dit « jeton éphémère » → respectée autrement
-    Gemini direct : auth_tokens · 30 min, 1 min pour ouvrir · liveConnectConstraints
-    Jeton mal borné → aussi exposé qu'une clé longue durée
-    Projet précédent : clé du widget réutilisée pour un autre LLM → fuite
-    Démo : 127.0.0.1, sans auth, clé OpenAI côté backend (pdr-0041)
+    Le moyen de garder la clé hors de l'app dépend entièrement du fournisseur.
+    NFR-09 parle de « jeton éphémère » ; pour GPT-Live c'est un relais, l'exigence est tenue autrement (pdr-0012).
+    Côté Gemini, liveConnectConstraints verrouille en plus modèle et instructions côté serveur.
+    ⚠ Un jeton éphémère mal borné expose autant qu'une clé longue durée.
+    Vécu sur un projet précédent : la clé passée au widget servait aussi à un autre appel LLM, d'où une fuite.
+    → ↓ Une fois la session ouverte, elle suit un cycle de vie strict. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -228,12 +226,12 @@
   </div>
   <p class="refs">[rt-gpt-live-lifecycle] · [rt-gpt-live-session-config] · [rt-graceful-close] · pdr-0052</p>
   <aside class="notes">
-    Config fixée à la création : modèle, voix, délégation immuables
-    Changer de voix → nouvelle session · instructions complétées par instructions.append
-    instructions · thinking (silencieux) · commentary (paraphrasé) · accusé ≠ prononcé
-    Clôture : close_requested, expired, content, remote_hangup, connection_lost
-    Durée max non documentée · expires_at = 2 h (SP-02) · une session par acte (pdr-0052)
-    stop ≠ dispose · attente bornée à 5 s côté backend (VOICE_CLOSE_GUARD)
+    Une session GPT-Live suit une séquence stricte, et presque tout s'y décide à la création.
+    Modèle, voix et délégation sont immuables : changer de voix impose une nouvelle session.
+    thinking reste silencieux, commentary est dit en paraphrase ; l'accusé ne garantit pas la prononciation.
+    Durée max non documentée ; au spike, expires_at valait 2 h. Le porteur a retenu une session par acte (pdr-0052).
+    ⚠ session.closed peut ne jamais arriver : le backend borne l'attente à 5 s (VOICE_CLOSE_GUARD).
+    → ↓ Pendant la conversation, la question centrale devient : qui a la parole. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -257,12 +255,12 @@
   </div>
   <p class="refs">[rt-barge-in] · [rt-gemini-audio-vad] · [rt-openai-realtime-vs-live] · FR-13 · FR-19 · pdr-0069</p>
   <aside class="notes">
-    Barge-in = FR-13 : l'IA se tait aussitôt et écoute
-    GPT-Live : aucun événement d'interruption · voix continue 0,6–1 s (SP-02)
-    FR-19 → orchestrateur lit la transcription, publie voice.interrupted (pdr-0069)
-    Realtime WebRTC : serveur tronque · speech_started puis response.cancelled
-    Gemini : interrupted → client vide sa file PCM · silence 500–800 ms
-    Couper la voix n'annule pas les outils → annuler, confirmer, puis annoncer
+    Les trois fournisseurs traitent l'interruption très différemment, et GPT-Live en dit le moins.
+    Barge-in : l'utilisateur coupe la parole à l'IA. FR-13 exige qu'elle se taise et écoute aussitôt.
+    Les 0,6 à 1 s viennent du spike SP-02, horloge du relais, sans compter la lecture côté client.
+    Gemini : sans vider la file PCM, l'IA continue depuis le tampon ; à 100–200 ms de silence, phrases fragmentées.
+    ⚠ Couper la voix n'annule pas les outils : la doc dit d'annuler, d'attendre la confirmation, puis d'annoncer.
+    → ↓ Autre interruption, involontaire celle-là : l'écho de l'IA dans le micro. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -311,12 +309,12 @@
   <p class="fragment rise-in small">En plus, côté backend (015) : les mots que l'IA vient de dire ne comptent pas pour juger un chevauchement. Sur enceinte, 15 s de commentaire sans auto-interruption <span class="badge badge--open">un seul essai · Q-80</span></p>
   <p class="refs">[rt-echo-cancellation] · [rt-barge-in] · [proj-avw-risks] · SP-06 · p-ar-voice-overlap · Q-80</p>
   <aside class="notes">
-    Sans AEC : voix de l'IA → micro → VAD → auto-interruption
-    flutter_webrtc : APM libwebrtc par défaut · même pile → référence d'écho
-    PCM maison (Gemini, firebase_ai) : AEC non garanti → casque, mute ou VAD énergie
-    Projet précédent : double capture micro → une seule source
-    015 : mots de l'IA des 8 dernières s ignorés · complète l'AEC acoustique
-    ⚠ Enceinte 31/10 : ≈ 15 s sans auto-interruption · un essai, cible 10/10 (Q-80)
+    Sans annulation d'écho, l'IA s'entend dans le micro, croit que l'utilisateur parle et se coupe elle-même.
+    APM : module de traitement audio de libwebrtc, actif par défaut ; la même pile capte et joue, d'où la référence.
+    PCM maison (Gemini via firebase_ai) : casque, micro coupé pendant que l'IA parle (sans barge-in) ou VAD d'énergie.
+    Le filtre de 015 travaille sur les mots transcrits ; il complète l'annulation acoustique sans la remplacer.
+    ⚠ Un seul essai sur enceinte, le 31/10, loin du 10 sur 10 visé : le point reste à confirmer.
+    → ↓ L'écho traité, reste la latence perçue. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -338,12 +336,12 @@
   </ul>
   <p class="refs">[rt-latency] · [perf-audio-latency] · [rt-gemini-audio-vad] · [ma-filler-acknowledgements] · NFR-01 · pdr-0038</p>
   <aside class="notes">
-    NFR-01 : réponse perçue &lt; 1 s · p90 sur 10 répétitions · horloge app
-    Fin de tour trop courte : fragments · trop longue : IA lente · Gemini 500–800 ms
-    Chunks 20–40 ms au rythme réel (reco interne) · au-delà de 100 ms, latence ↑
-    Accusé auto : acknowledgement_delay_ms (800 ms dans la doc) · pré-chauffage : 15 s facturées
-    Squelette GenUI avant l'appel au compositeur (012)
-    ⚠ p90 NFR-01 pas encore chronométré · mesures du 31/10 plus loin
+    La latence se joue à plusieurs endroits : fin de tour, transport, outils et affichage.
+    NFR-01 se mesure au p90 sur 10 répétitions, horloge monotone de l'app, sans aligner client et serveur (pdr-0038).
+    Fin de tour trop courte : phrases hachées ; trop longue : l'IA paraît lente. Au-delà de 100 ms par chunk, ça traîne.
+    Le pré-chauffage a un prix : OpenAI facture 15 s dès la création de la session WebRTC.
+    ⚠ Le p90 de NFR-01 n'est pas encore chronométré ; les premières mesures réelles viennent plus loin.
+    → ↓ Le levier « outils lents » dépend de la façon dont GPT-Live délègue. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -400,12 +398,12 @@
   <p class="mt-1">Sideband <span class="mono">wss …/attach</span> : <span class="accent">un seul propriétaire</span> par appel. Mode <span class="mono">client</span> <span class="badge badge--accepted">pdr-0050 acceptée</span></p>
   <p class="refs">[rt-gpt-live-delegation] · [rt-gpt-live-sideband] · [rt-tool-calling-voice] · [p-ar-backend] · pdr-0045 · pdr-0050</p>
   <aside class="notes">
-    Sideband : wss …/{id}/attach, clé du même projet · transcripts, délégations, audio
-    Mode client : session.delegation.created → tâche de l'orchestrateur
-    Retour : commentary.append (à dire) · thinking.append (silencieux) · 500 tokens max
-    A2UI hors modèle vocal, par l'app-channel · au modèle : résumé court (reco interne)
-    Client et serveur peuvent répondre → un seul propriétaire par appel
-    Mode client retenu après SP-02 · délégation ≈ 1 s après la parole, sans le texte
+    GPT-Live n'exécute pas les outils : il les délègue à un backend qui s'attache à la session.
+    Le sideband reçoit transcripts, délégations et même une copie de l'audio ; chaque append fait 500 tokens au plus.
+    Les surfaces A2UI ne repassent pas par le modèle vocal ; on ne lui renvoie qu'un résumé court (reco interne).
+    Mesuré au spike : la délégation arrive ≈ 1 s après la fin de la parole, et sans le texte de la demande.
+    ⚠ Client et serveur peuvent répondre au même appel : sans propriétaire unique, doublon ou action faite deux fois.
+    → ↓ Ce « sans le texte » a des conséquences : comparons les deux modes. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -430,12 +428,12 @@
   </ul>
   <p class="refs">[rt-gpt-live-delegation] · [ma-filler-acknowledgements] · [rt-transcription] · [rt-gpt-live-delegation-latency] · pdr-0050</p>
   <aside class="notes">
-    Mode fixé à la création · client par défaut → toujours le fixer explicitement
-    responses : modèle Responses + outils hébergés · sans response.create, aucune reprise
-    client : délégation sans les mots → contexte reconstruit depuis les transcripts
-    Accusé générique · résultat parlé = vrai retour d'outil uniquement
-    Genesis : commentaire générique dès la délégation · paraphrasé, jamais mot pour mot
-    Un append, même vide, annule tous les accusés · y compris d'autres délégations
+    En mode client, notre orchestrateur fait le travail, mais doit reconstruire la demande depuis les transcripts.
+    Le mode vaut client par défaut s'il est omis ; on le fixe toujours explicitement, ici par configuration.
+    En mode responses, sans response.create, le backend ne reprend pas.
+    Genesis envoie un commentaire générique dès la délégation ; le modèle le paraphrase, jamais mot pour mot.
+    ⚠ Piège : l'append qui annule les accusés touche aussi ceux des autres délégations en cours.
+    → ↓ Transcription d'entrée et délégations donnent aussi le moyen de faire taire l'IA. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -468,12 +466,12 @@
   <p class="fragment glow-in mt-1 small">01 à 03 : <span class="mono">voice.interrupted {at_ms, cause}</span> publié par le backend, piste distante coupée par l'app. Dans tous les cas : session ouverte, surfaces complètes gardées, actions jamais annulées.</p>
   <p class="refs">[p-ar-voice-interruption] · [p-ar-voice-overlap] · [rt-transcription] · FR-12 · FR-13 · FR-17 · FR-19 · FR-20 · pdr-0069 · pdr-0076 · pdr-0077 · pdr-0080</p>
   <aside class="notes">
-    Aucun événement d'interruption → détection backend sur la transcription d'entrée
-    Hybride (pdr-0069) : consigne au modèle · détection orchestrateur · coupure locale app
-    « Stop » (011) : stop, tais-toi, annule, arrête · une phrase courte dite
-    ⚠ Correction en vol (014) : non, plutôt, en fait · jamais observée en réel (Q-87)
-    ⚠ Boutons (014) locaux · track.enabled sous flutter_webrtc Linux non prouvé (Q-79)
-    → Parler par-dessus (015) : slide suivante
+    Faute d'événement d'interruption chez GPT-Live, le backend détecte sur la transcription d'entrée (pdr-0069).
+    Q-87 : on ignore si GPT-Live crée une délégation pour la correction tant que la précédente est en cours.
+    ⚠ Sans elle, l'IA se tait mais rien n'est replanifié. Jamais observé en réel, testé avec un faux fournisseur.
+    Q-79 : on n'a pas prouvé que track.enabled = false coupe vraiment son et micro sous flutter_webrtc Linux.
+    ⚠ Testé seulement avec un faux pair : à vérifier à l'oreille en répétition.
+    → ↓ La carte 03 repose sur un classifieur : voyons comment le backend juge un chevauchement. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -499,12 +497,12 @@
   <p class="fragment glow-in mt-1 small">Sept variables <span class="mono">VOICE_OVERLAP_*</span>, activées dans le compose : valeurs de départ <span class="badge badge--open">Q-80 ouverte</span></p>
   <p class="refs">[p-ar-voice-overlap] · [rt-gpt-live-output-level] · [rt-transcription] · [rt-echo-cancellation] · pdr-0077 · pdr-0080 · Q-80</p>
   <aside class="notes">
-    Classifieur unique : correction › stop › chevauchement · un voice.interrupted par énoncé
-    Sortie sideband continue, blocs de 200 ms → niveau 0,02 ou mot IA &lt; 2 s
-    Garde figée au premier delta : GPT-Live se coupe en 0,6–1 s
-    Écho : mots complets seulement · nombre toujours significatif, sauf écho
-    Limite : « super » dit sur son propre accusé l'annule
-    ⚠ Limite : reprise juste après l'IA (&lt; 2 s) → chevauchement · réglages Q-80
+    Le plus délicat est de savoir si l'IA parle encore au moment où le speaker commence.
+    Le flux de sortie du sideband est continu, silence compris, par blocs de 200 ms : d'où le seuil de niveau.
+    La garde est figée au premier delta, car GPT-Live coupe sa voix 0,6 à 1 s après le début de la parole.
+    Pour l'écho, seuls les mots complets comptent, car les deltas arrivent en fragments.
+    ⚠ Limites : « super » dit sur son propre accusé l'annule ; une reprise moins de 2 s après l'IA compte aussi.
+    → ↓ Tout cela a été essayé une première fois au micro le 31 octobre. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -529,12 +527,12 @@
   </ul>
   <p class="refs">product/sources/2026-10-31-repetition-micro.md · NFR-01 · NFR-02 · Q-79 · Q-80 · Q-87 · pdr-0081</p>
   <aside class="notes">
-    ⚠ Une seule répétition (31/10), enceinte, journal serveur · ordres de grandeur, aucun p90
-    « Prépare la release 3.4 » · NFR-02 (squelette &lt; 1,5 s) tenu de justesse
-    ⚠ NFR-01 (&lt; 1 s, p90, horloge app) non mesuré · marge à trouver
-    « Non, arrête » ≈ 1,5 s : jugé acceptable par le porteur
-    « Stop » non transcrit une fois · phrase par-dessus mal transcrite → 016 (Q-80)
-    Voix dans la pièce a reçu une réponse → à ignorer (pdr-0081), via 016
+    Ce sont les ordres de grandeur d'un seul essai, lus dans le journal côté serveur ; aucun p90.
+    Phrase testée : « Prépare la release 3.4 ». NFR-02, squelette en moins de 1,5 s, est tenu de justesse.
+    Le léger délai de « Non, arrête » a été jugé acceptable par le porteur.
+    La phrase mal transcrite par-dessus l'IA a été parfaitement comprise une fois dite au calme.
+    ⚠ NFR-01 (moins d'une seconde, p90, horloge de l'app) n'est pas encore mesuré, et il y a de la marge à trouver.
+    → ↓ Ces constats s'ajoutent aux leçons d'un widget vocal antérieur. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -576,11 +574,12 @@
   </div>
   <p class="refs">[proj-avw-risks] · [rt-graceful-close] · [rt-provider-abstraction] · [rt-barge-in]</p>
   <aside class="notes">
-    Six pièges d'un widget antérieur → devenus règles du projet
-    stop ne fermait rien · dispose fermait un singleton → relance impossible
-    Double capture micro · clé du widget réutilisée pour un autre appel LLM
-    Le plus dur à repérer : faux résultats → vrai résultat ou erreur explicite
-    Config en dur · timer 3 s → signaux fournisseur, niveau audio distant
+    Ces six pièges viennent de l'analyse du code d'un widget antérieur ; chacun est devenu une règle du projet.
+    Le stop ne fermait ni la peer connection ni le micro ; dispose fermait les StreamControllers d'un singleton.
+    La seconde capture tournait en parallèle de getUserMedia, d'où des conflits de session audio.
+    Le plus difficile à repérer est le 04 : désormais on renvoie le vrai résultat, ou une erreur explicite.
+    Pour le 06, on préfère les signaux du fournisseur et le niveau audio de la piste distante.
+    → ↓ La règle 01 se lit directement dans le port livré. (→ : chapitre A2A)
   </aside>
 </section>
 
@@ -589,7 +588,7 @@
   <p class="eyebrow">Abstraction des fournisseurs</p>
   <h2>Les ports de la voix, tels que livrés</h2>
   <div class="grid-2-1 center-items">
-    <pre data-title="voice_transport.dart"><code class="language-dart" data-trim data-line-numbers="2-3|4-5|6-7">
+    <pre data-title="voice_transport.dart"><code class="language-dart" data-trim data-line-numbers>
 abstract interface class VoiceTransport {
   Future&lt;String&gt; createOfferSdp();
   Future&lt;void&gt; applyAnswer(String sdp);
@@ -607,12 +606,12 @@ abstract interface class VoiceTransport {
   </div>
   <p class="refs">[rt-provider-abstraction] · [rt-graceful-close] · [p-ar-frontend] · pdr-0012 · pdr-0050</p>
   <aside class="notes">
-    Reco initiale : port VoiceSession unique, avec outils · code livré différent
-    Outils délégués au backend (pdr-0050) → l'app ne renvoie aucun résultat
-    App : port réduit au transport · une instance par démarrage
-    VoiceSession : Idle → Connecting → Active → Stopping → Idle ou Failed
-    Compteur de génération : écarte les événements d'une session précédente
-    Go : LiveProvider + Sideband, adaptateur GPT-Live · Gemini non écrit
+    Le port de l'app s'est réduit au transport, parce que les outils sont délégués au backend (pdr-0050).
+    Lignes 2-3 : la négociation SDP. Lignes 4-5 : couper la voix de l'IA ou le micro. Lignes 6-7 : stop puis dispose.
+    La reco de départ était un port VoiceSession unique, avec les outils ; l'app ne renvoie finalement aucun résultat.
+    Une instance par démarrage ; un compteur de génération écarte les événements d'une session précédente.
+    ⚠ Le booléen de setMicEnabled ne prouve que l'absence d'exception côté Dart (lié à Q-79).
+    → L'orchestrateur délègue ensuite aux agents : c'est le chapitre suivant, A2A et multi-agents.
   </aside>
 </section>
 </section>

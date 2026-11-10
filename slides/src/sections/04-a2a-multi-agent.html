@@ -11,10 +11,10 @@
   <div class="chapter-rule"></div>
   <p class="subtitle">Faire collaborer plusieurs agents en sécurité</p>
   <aside class="notes">
-    Après GenUI/A2UI et la voix temps réel : faire collaborer plusieurs agents
-    Qui parle à qui · quel protocole · quelle sécurité
-    Chapitre générique : A2A et patterns multi-agents, état fin 2026
-    → Genesis Canvas les applique au chapitre suivant
+    On a vu comment l'écran est généré et comment la voix circule ; il reste à faire travailler plusieurs agents ensemble.
+    Le chapitre reste générique : A2A et les patterns multi-agents tels qu'ils sont documentés fin 2026.
+    Fil conducteur : qui parle à qui, avec quel protocole, et où l'on garde la main sur la sécurité.
+    → D'abord une carte des protocoles, car chacun couvre une frontière différente du système.
   </aside>
 </section>
 
@@ -93,12 +93,12 @@
   </svg>
   <p class="refs">[proto-protocol-map] · [proto-agui-overview] · [proto-mcp-overview] · [proto-a2a-overview]</p>
   <aside class="notes">
-    Protocoles complémentaires : une frontière chacun
-    MCP : agent → outils, ce qu'il peut faire · spec 2026-07-28, sans état
-    A2A : entre agents opaques → à qui déléguer
-    AG-UI (hors schéma) : agent ↔ app, événements typés, pré-1.0
-    A2UI : un format, voyage dans tout canal · WebRTC : la voix
-    Confusion fréquente : A2A pour un outil, MCP pour des agents autonomes
+    Ces protocoles se complètent : chacun couvre une frontière du système, et aucun ne remplace les autres.
+    MCP (Model Context Protocol) : sa spec courante, la 2026-07-28, est devenue sans état.
+    AG-UI, absent du schéma, relie un agent à l'app par des événements typés ; encore pré-1.0, il peut porter de l'A2UI.
+    Dans la démo, A2A ne circule qu'entre l'orchestrateur et ses trois agents ; l'A2UI voyage dedans jusqu'au backend.
+    ⚠ Confusion fréquente : A2A pour appeler un simple outil, ou MCP pour coordonner des agents autonomes.
+    → A2A est le moins connu des quatre : on commence par sa pièce de base, la carte que chaque agent publie.
   </aside>
 </section>
 
@@ -107,12 +107,12 @@
   <h2>A2A : l'Agent Card</h2>
   <div class="row mt-0">
     <span class="badge badge--verified">A2A v1.0.0</span>
-    <span class="badge badge--neutral badge--plain">Linux Foundation · a rejoint l'AAIF (2026)</span>
+    <span class="badge badge--neutral badge--plain">Linux Foundation · entrée à l'AAIF annoncée (2026)</span>
     <span class="badge badge--neutral badge--plain">SDK : Python · JS · Java · .NET · Go · Rust</span>
     <span class="badge badge--open badge--plain">pas de SDK Dart officiel</span>
   </div>
   <div class="grid-2 mt-1">
-    <pre data-title="/.well-known/agent-card.json · agent Qualité, abrégé"><code class="language-json" data-trim data-line-numbers="2-3|4-7|8-10|11-13">
+    <pre data-title="/.well-known/agent-card.json · agent Qualité, abrégé"><code class="language-json" data-trim data-line-numbers>
 {
   "name": "Qualité",
   "description": "Agent Qualité de Genesis Canvas : …",
@@ -139,12 +139,12 @@
   </div>
   <p class="refs">[proto-a2a-overview] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk] · [p-ar-backend]</p>
   <aside class="notes">
-    Créé par Google → Linux Foundation · TSC : AWS, Microsoft, SAP… · rejoint l'AAIF
-    v1.0.0 · SDK Python, JS, Java, .NET, Go, Rust · pas de Dart
-    supportedInterfaces (nouveau en 1.0) · capabilities : SSE, push, carte étendue
-    skills (tags, exemples) → l'orchestrateur choisit à qui déléguer
-    Exemple : vraie carte de l'agent Qualité · Go, a2a-go v2, abrégée
-    Pas de securitySchemes : démo locale sans auth (pdr-0041) → aucun secret
+    Un agent A2A est un serveur HTTP qui se décrit lui-même dans un fichier JSON, à une adresse connue d'avance.
+    Lignes 2 et 3 : l'identité. Lignes 4 à 7 : où le joindre, en quel binding. Lignes 8 à 10 : streaming et extension A2UI.
+    Lignes 11 à 13 : le skill. Ses tags (ligne 12) sont ce que l'orchestrateur compare à la demande pour choisir.
+    C'est la vraie carte de notre agent Qualité, en Go avec a2a-go v2 ; chacun des trois agents tourne dans son conteneur.
+    L'orchestrateur relit les cartes à chaque délégation : le choix des agents se fait en code, sans appel LLM.
+    ⚠ Pas de securitySchemes ici : la démo tourne en local sans authentification (pdr-0041), donc rien à cacher.
   </aside>
 </section>
 
@@ -205,11 +205,12 @@
   </svg>
   <p class="refs">[proto-a2a-task-lifecycle] · noms complets : TASK_STATE_*</p>
   <aside class="notes">
-    Task : id + contextId (fil de conversation)
-    3 familles : actifs · interrompus (au client de répondre) · terminaux
-    Préfixe TASK_STATE_ · UNSPECIFIED = valeur par défaut, à ne pas utiliser
-    Terminal = définitif → nouvelle Task, même contextId
-    Reco interne, hors spec : INPUT_REQUIRED → question vocale ou formulaire · AUTH_REQUIRED → OAuth
+    Quand l'orchestrateur envoie une demande, l'agent ouvre une Task et publie son état au fil du travail.
+    Le contextId sert de fil de conversation : plusieurs Tasks successives peuvent le partager.
+    Dans la démo : SUBMITTED à l'arrivée, WORKING pendant que l'agent produit ses écrans, puis COMPLETED.
+    Demande hors de son périmètre : REJECTED. Sur « Stop », l'orchestrateur envoie CancelTask et la Task finit en CANCELED.
+    ⚠ Relier INPUT_REQUIRED à une question vocale et AUTH_REQUIRED à OAuth est une reco interne ; la spec n'en dit rien.
+    → ↓ pour le détail (messages, suivi en flux, versions). Sinon → l'authentification.
   </aside>
 </section>
 
@@ -236,7 +237,7 @@
         <span class="badge badge--neutral badge--plain fragment hl-amber">data · A2UI</span>
       </div>
     </div>
-    <pre data-title="Message A2A v1.0"><code class="language-json" data-trim data-line-numbers="2-3|4-5|6-7">
+    <pre data-title="Message A2A v1.0"><code class="language-json" data-trim data-line-numbers>
 {
   "role": "ROLE_USER",
   "messageId": "m1",
@@ -250,12 +251,12 @@
   </div>
   <p class="refs">[proto-a2a-message-parts-artifacts] · [proto-a2a-task-lifecycle] · [proto-a2a-go-v03-compat]</p>
   <aside class="notes">
-    Message = un tour (ROLE_USER / ROLE_AGENT) · Artifact = produit de la Task
-    Part 1.0 : exactement un champ · text, raw (base64), url, data
-    Résultats → Artifacts · Messages → dialogue
-    Part data → transporte l'A2UI
-    Spike : genui_a2a (A2A v0.3) lit l'A2UI dans les statuts, ignore artifact-update
-    Nos agents Go : A2UI en statut WORKING · résumé vocal en Artifact texte
+    C'est ici que A2A et A2UI se rejoignent : A2A est l'enveloppe, et l'A2UI voyage dans une Part data.
+    Lignes 2 et 3 : qui parle, et l'id du message. Ligne 5 : une Part texte. Lignes 6 et 7 : une Part data, du JSON libre.
+    Nos agents mettent chaque message A2UI v0.9 dans une Part data d'un statut WORKING, et le résumé dans un Artifact texte.
+    Raison : au spike, genui_a2a (A2A v0.3) lisait l'A2UI dans les statuts et ignorait les artifact-update.
+    ⚠ La spec conseille de ranger les résultats dans les Artifacts ; l'A2UI en statut WORKING est un choix du projet, issu du spike.
+    → ↓ comment ces statuts arrivent à l'orchestrateur, un par un. Sinon → retour au fil principal.
   </aside>
 </section>
 
@@ -287,12 +288,12 @@
   </div>
   <p class="refs">[proto-a2a-streaming-push] · [proto-a2a-task-lifecycle] · [p-ar-backend]</p>
   <aside class="notes">
-    Client connecté : SSE (SendStreamingMessage, SubscribeToTask) si capabilities.streaming
-    Un objet par événement, dans l'ordre · fin = état terminal (plus de flag final en 1.0)
-    Client déconnecté (mobile) : webhooks push, at-least-once → dédupliquer
-    Reco interne : backend reçoit → relaie par FCM ou WebSocket
-    Nos agents : SUBMITTED → WORKING par message A2UI → Artifact → COMPLETED
-    Refus → REJECTED · « Stop » → CANCELED · streaming seul, pas de push
+    La séquence affichée est celle de nos agents : l'orchestrateur reste connecté du début à la fin de la Task.
+    SSE (Server-Sent Events) : un flux HTTP descendant, un objet par événement, dans l'ordre ; en 1.0, l'état terminal clôt.
+    À chaque statut WORKING, l'orchestrateur valide l'A2UI contre le catalogue puis le relaie tel quel à l'app (WebSocket).
+    Le résumé de l'Artifact part vers la voix, qui le restitue une fois les résultats reçus.
+    ⚠ Nos agents n'annoncent que le streaming : le panneau push concerne un client mobile, absent de la démo.
+    → ↓ un dernier détail : bindings et versions, un écart qu'on a payé au spike. Sinon → retour au fil principal.
   </aside>
 </section>
 
@@ -330,12 +331,12 @@
   </div>
   <p class="refs">[proto-a2a-bindings] · [proto-a2a-overview] · [proto-a2a-go-v03-compat] · pdr-0045</p>
   <aside class="notes">
-    3 liaisons : JSON-RPC 2.0 · gRPC · REST → lire supportedInterfaces
-    Flutter : REST ou JSON-RPC · web : pas de gRPC (pas de HTTP/2 natif)
-    1.0 incompatible sur le fil avec 0.3 · tutos et SDK tiers encore en 0.3
-    SP-03 : message/stream → -32601 · sans en-tête A2A-Version → -32009 · correctif a2av0
-    Produit (Q-39, pdr-0045) : WebSocket maison app ↔ backend · A2A v1.0 natif entre Go
-    → on y revient au chapitre suivant
+    Le piège principal d'A2A aujourd'hui est la version : la 1.0 est incompatible sur le fil avec la 0.3.
+    Beaucoup de tutoriels et de SDK tiers suivent encore la 0.3. Un serveur peut n'exposer qu'un binding.
+    SP-03 : message/stream donnait -32601 (méthode inconnue) ; sans en-tête A2A-Version, -32009 (0.3 demandée, 1.0 servie).
+    Côté web, gRPC est écarté faute de HTTP/2 natif dans le navigateur ; il reste valable entre services backend.
+    Depuis pdr-0045, A2A ne circule qu'entre processus Go, en v1.0 native, sans couche de compatibilité.
+    → Fin du détail : retour au fil principal avec l'authentification.
   </aside>
 </section>
 </section>
@@ -374,12 +375,12 @@
   </div>
   <p class="refs">[proto-a2a-security] · [proto-a2a-agent-card] · [proto-a2a-dart-sdk] · [p-ar-security]</p>
   <aside class="notes">
-    securitySchemes style OpenAPI · serveur rejette identifiant absent ou invalide
-    5 schémas · 1.0 : retrait OAuth implicit et password, ajout Device Code
-    Reco interne : app → orchestrateur OAuth2 code + PKCE · agents : client credentials ou mTLS
-    SDK Dart communautaire a2a : ni auth de la spec, ni carte étendue
-    Démo (pdr-0041) : 127.0.0.1, sans auth utilisateur, clé OpenAI au backend
-    Agents isolés : réseau Docker interne, sans port publié, sans sortie (sauf passerelle LLM)
+    A2A s'appuie sur des mécanismes d'authentification existants, déclarés dans la carte à la manière d'OpenAPI.
+    La 1.0 a retiré les flows OAuth implicit et password, et ajouté le Device Code.
+    Le SDK Dart communautaire a2a ne gère ni ces schémas (hormis HTTPS) ni la carte étendue.
+    Dans la démo, l'isolement réseau en tient lieu : agents sur un réseau Docker interne, sans port publié ni sortie.
+    ⚠ Le schéma du haut est une recommandation pour un vrai déploiement ; la démo n'en applique aucune flèche.
+    → ↓ les patterns multi-agents et leur coût en voix. Sinon → où tourne chaque agent.
   </aside>
 </section>
 
@@ -401,12 +402,12 @@
   <p class="mt-1 lead">Anthropic conseille de commencer simple ; on a donc privilégié un workflow codé à un superviseur LLM.</p>
   <p class="refs">[ma-workflow-patterns] · [ma-handoff-vs-agent-as-tool] · [ma-simplicity-first] · [ma-adk-collaboration-modes] · [p-ar-backend]</p>
   <aside class="notes">
-    Anthropic : workflows (code) ou agents (LLM pilote) → le plus simple possible
-    OpenAI Agents SDK : agent-as-tool · handoff · ADK : transfer_to_agent, AgentTool
-    Colonne de droite = notre lecture : chaque saut LLM ajoute de la latence
-    Démo : routage codé sur les tags des cartes · seul LLM = composeur Qualité
-    Composeur : p50 1,79 s, objectif 1,5 s (NFR-02) · ~3,7 s en répétition (1 mesure)
-    ⚠ Squelette envoyé avant l'appel : à confirmer par le porteur (Q-82)
+    Chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent tout de suite.
+    Sources : Anthropic pour routing et orchestrator-workers ; OpenAI Agents SDK pour agent-as-tool et handoff ; ADK pareil.
+    Dans la démo, le routage est codé sur les tags des cartes ; le seul LLM ajouté est le composeur de l'agent Qualité.
+    Composeur : p50 1,79 s au banc pour un objectif de 1,5 s (NFR-02) ; environ 3,7 s en répétition, sur une seule mesure.
+    D'où le squelette des surfaces envoyé avant l'appel, gardé par le porteur (pdr-0078) ; NFR-02 reste à remesurer.
+    → Retour au fil principal : où tourne chaque agent.
   </aside>
 </section>
 </section>
@@ -486,12 +487,12 @@
   </div>
   <p class="refs">[ma-target-architecture] · [ma-where-to-run-agents] · [ma-realtime-handoff-limits] · [adr-0002-orchestrator-backend] · [adr-0003-backend-go]</p>
   <aside class="notes">
-    Rappel ch. 3 : la voix délègue, l'A2UI ne repasse pas par le modèle vocal
-    Client : audio/WebRTC, rendu A2UI (catalogue = liste blanche), outils sans secret
-    Backend : orchestrateur, GenUI, clients MCP/A2A · secrets, permissions, audit
-    Handoff temps réel = même modèle → OpenAI recommande la délégation par outil
-    Démo : chaque agent A2A produit son A2UI, l'orchestrateur valide et relaie (pdr-0036)
-    3 agents : Qualité, Voix du client, Livraison · un conteneur chacun
+    Un seul agent vocal parle à l'utilisateur ; tout ce qui demande un secret ou une permission vit au backend.
+    Pourquoi pas plusieurs voix qui se passent la main : en temps réel, un handoff garde le même modèle.
+    Pour un autre modèle ou un agent backend, la doc OpenAI recommande la délégation par outil.
+    Dans la démo, les « Agent(s) GenUI » sont nos trois agents A2A : chacun produit l'A2UI de ses surfaces (pdr-0036).
+    Qualité, Voix du client et Livraison : un conteneur chacun. L'orchestrateur ne recompose rien, il valide et relaie.
+    → Plus il y a d'agents, plus il y a de sauts à protéger : la sécurité de bout en bout.
   </aside>
 </section>
 
@@ -537,12 +538,12 @@
   </div>
   <p class="refs">[ma-prompt-injection-tools] · [ma-guardrails] · [ma-real-tool-results] · [ma-mcp-security] · [ma-where-to-run-agents] · [p-ar-security]</p>
   <aside class="notes">
-    OWASP : injection directe · indirecte (retour MCP, réponse A2A) → chaque saut exposé
-    1 (règle projet) : agents sans clé OpenAI → passerelle LLM interne filtrée
-    2-3 (reco internes, OWASP) : résumé à la voix · garde-fous avant l'action
-    MCP : pas de token passthrough · SSRF · serveurs en liste blanche
-    4 (doc GPT-Live) : statut réel · couper la voix n'arrête pas le backend
-    Hors périmètre → REJECTED, motif fermé · check-compose.sh vérifie en CI
+    En multi-agent, le risque qui se multiplie est l'injection indirecte, cachée dans un retour MCP ou une réponse A2A.
+    Origine des mesures : 1 règle du projet, 2 et 3 recommandations internes fondées sur l'OWASP, 4 doc GPT-Live.
+    Démo : les agents n'ont pas la clé OpenAI ; le composeur passe par une passerelle LLM interne, filtrée par adresse.
+    Hors périmètre : REJECTED, motif fermé, journalisé sans le texte. Le script check-compose.sh vérifie ces règles en CI.
+    ⚠ Couper la voix n'arrête pas le backend : il faut annuler les Tasks, ce que fait « Stop » avec CancelTask.
+    → ↓ observer et évaluer ce système. Sinon → le chapitre suivant, le projet Genesis Canvas.
   </aside>
 </section>
 
@@ -575,12 +576,12 @@ session  gen_ai.conversation.id
   <p class="mt-1 small">Ce qu'on évalue séparément : <span class="accent">délégation</span> · <span class="accent">action backend</span> · <span class="accent">restitution</span> ; runs répétés, P50 / P90.</p>
   <p class="refs">[ma-otel-genai-spans] · [ma-voice-agent-evals] · [p-ar-quality] · [p-ar-llm-composer]</p>
   <aside class="notes">
-    OTel GenAI : invoke_agent, invoke_workflow, execute_tool · statut Development
-    Mapping (reco) : 1 trace par session · pas d'audio ni de transcription stockés
-    Cookbook OpenAI : confirmation orale convaincante ≠ bonne action → évaluer séparément
-    Runs répétés · P50 / P90 avec taille d'échantillon
-    Démo : OTel non implémenté → journal de session horodaté (pdr-0048)
-    Banc composeur : 25/25 plans valides · p50 1,79 s · p90 2,69 s
+    Une confirmation orale convaincante ne prouve pas que la bonne action a eu lieu : on évalue chaque étape à part.
+    Les conventions OTel GenAI ont déménagé dans un dépôt dédié et leurs noms peuvent encore changer.
+    Pas d'audio ni de transcription enregistrés par défaut : ce sont des données personnelles.
+    Démo : ni OTel ni SigNoz, un journal de session horodaté (pdr-0048) ; c'est lui qui a fourni les mesures de répétition.
+    Seule campagne répétée chiffrée : le banc du composeur, 25 plans valides sur 25, p50 1,79 s, p90 2,69 s.
+    → Fin du chapitre : place au projet Genesis Canvas, l'application de démo elle-même.
   </aside>
 </section>
 </section>

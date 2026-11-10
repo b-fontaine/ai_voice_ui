@@ -17,10 +17,10 @@
   </div>
   <p class="mt-2 title-font upper">Benoît FONTAINE</p>
   <aside class="notes">
-    Bonsoir Nantes · une app Flutter construit ses écrans pendant qu'on lui parle
-    ⚠ Sous-titre proposé, aucun titre officiel : à valider
-    45 min · Meetup Flutter Nantes · 12/11/2026 · talk enregistré
-    5 mots-clés en bas = 5 briques démontées une par une
+    Bonsoir Nantes. Ce soir, on regarde une application Flutter construire ses écrans pendant qu'on lui parle.
+    Format : 45 minutes, talk enregistré. Les cinq mots-clés du bas sont les briques qu'on va démonter une par une.
+    ⚠ Le sous-titre est une proposition : la documentation du projet ne fixe aucun titre officiel.
+    → Avant les briques, quelques mots sur moi et sur le projet.
   </aside>
 </section>
 
@@ -60,13 +60,12 @@
   </div>
   <p class="refs">[p-fn-vision] · [pdr-0001-conference-demo-deliverable] · [p-ar-security] · [rt-ephemeral-keys]</p>
   <aside class="notes">
-    Benoît FONTAINE · expert IA, grand éditeur · enseigne à l'université de Nantes
-    Medium · LinkedIn : me contacter après le talk
-    Genesis Canvas : app Flutter desktop Linux, écrans construits à la voix
-    Démo de conférence → briques expérimentales, versions figées
-    3 questions : GenUI (A2UI v0.9) · voix temps réel (gpt-live-1) · sécurité (aucune clé dans l'app)
-    État au 31/10 : 4 actes livrés, barge-in, compositeur LLM, répétition au micro
-    ⚠ Pas encore vérifié : coupure audio Linux (Q-79), délais (Q-80), correction en vol (Q-87)
+    Genesis Canvas sert de fil rouge aux trois questions, dans cet ordre.
+    L'app tourne sous Linux. C'est une démo de conférence, ce qui autorise des briques expérimentales à versions figées.
+    Choix retenus : A2UI v0.9 pour l'interface, OpenAI gpt-live-1 pour la voix ; le backend crée la session voix.
+    Au 31 octobre, les quatre actes sont livrés (créer, transformer, interagir, rejouer), avec l'interruption à la voix.
+    ⚠ Pas encore vérifié en répétition : coupure audio sous Linux, délais, correction en vol (Q-79, Q-80, Q-87).
+    → Pour situer ces questions, voici le chemin complet d'une demande, de la voix jusqu'à l'écran.
   </aside>
 </section>
 
@@ -90,12 +89,12 @@
   <p class="small muted fragment rise-in">En local, par <span class="mono">docker compose</span> : orchestrateur Go, un conteneur par agent A2A, passerelle LLM interne pour le compositeur. Seuls GPT-Live et le LLM texte sortent de la machine.</p>
   <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision] · [p-ar-overview] · [pdr-0074-012-llm-composer-gateway-crashlist-details]</p>
   <aside class="notes">
-    Voix → agent vocal, seul interlocuteur → orchestrateur backend Go
-    Orchestrateur → vrais serveurs A2A · chaque agent produit son A2UI
-    A2UI validé par l'orchestrateur, relayé sans recomposition
-    GenUI : catalogue fermé · JSON jamais exécuté comme du code
-    Qualité : gpt-6-luna via passerelle · chiffres du jeu de données · repli déterministe
-    Tout en local : docker compose, 127.0.0.1 · WebSocket app-channel, clics en HTTP
+    Ce schéma résume le parcours qu'on va suivre ce soir, de gauche à droite.
+    L'agent vocal reste mon seul interlocuteur ; il délègue en un seul point à l'orchestrateur.
+    Le catalogue est fermé : l'agent ne demande que des composants déclarés, et son JSON n'est jamais exécuté.
+    Pour l'agent Qualité, gpt-6-luna choisit les composants ; les chiffres viennent du jeu de données, repli déterministe.
+    Services sur 127.0.0.1. L'app reçoit l'A2UI par un WebSocket maison, l'app-channel ; les clics repartent en HTTP.
+    → Ces agents ont besoin d'un métier et de données : voici le cas d'usage retenu.
   </aside>
 </section>
 
@@ -124,11 +123,11 @@
   </div>
   <p class="refs">[pdr-0003-use-case-release-copilot] · [pdr-0005-frozen-fictional-dataset] · [pdr-0013-orchestrator-visible-agent-selection]</p>
   <aside class="notes">
-    Métier familier : go/no-go d'une release mobile
-    Crashs · avis des stores · changelog · captures → écrans variés
-    App fictive « Release Copilot » · données figées, seule la composition varie
-    Même quand un modèle compose : chiffres tirés du jeu de données
-    3 agents · l'intérêt : voir l'orchestrateur choisir lesquels activer
+    Un métier que la plupart des développeurs Flutter connaissent : préparer le go/no-go d'une release.
+    Croiser ces sources donne des écrans variés, ce qui sert la démo.
+    Les données ne bougent pas d'une exécution à l'autre ; seule la composition de l'interface varie.
+    L'intérêt est de voir l'orchestrateur choisir quels agents il active ; leur nombre importe peu.
+    → Avant la première brique, ce que le dépôt met à disposition au-delà de la démo.
   </aside>
 </section>
 
@@ -139,11 +138,11 @@
     <div class="grid-2 stretch-items">
       <div class="card fragment rise-in">
         <h3>knowledge/</h3>
-        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">269</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
+        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">272</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
       </div>
       <div class="card fragment rise-in">
         <h3>product/</h3>
-        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">81</strong> décisions (PDR), <strong class="accent">89</strong> questions tracées.</p>
+        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">90</strong> décisions (PDR), <strong class="accent">94</strong> questions tracées.</p>
       </div>
       <div class="card card--amber fragment rise-in">
         <h3>.claude/</h3>
@@ -162,11 +161,11 @@
   </div>
   <p class="refs">knowledge/index.yaml · product/README.md · .claude/ · tools/loop/README.md · [pdr-0043-light-spec-kit-sdd-template]</p>
   <aside class="notes">
-    knowledge/ : 269 notes · 12 domaines · 8 ADR
-    219 vérifiées · 17 secondaires · 33 opinions → API plus rapides que l'entraînement
-    product/ : 19 FR · 11 NFR · 29 RG · 81 PDR · 89 questions (3 ouvertes)
-    .claude/ : 6 skills · 4 agents, qui lisent la base avant d'agir
-    tools/loop : boucle autonome, gate.sh · 2 linters · specs/ en SDD léger
-    ⚠ Chiffres du 31/10 : à remesurer avant le talk
+    Le dépôt est public : ces briques peuvent se reprendre sur d'autres projets.
+    La base existe parce que ces API évoluent plus vite que les données d'entraînement des modèles.
+    Sur les 272 notes, 220 sont vérifiées sur la doc officielle, 19 viennent d'une source secondaire, 33 sont des opinions.
+    Les 4 agents (product-steward, feature-developer, architect-reviewer, refactorer) lisent la base avant d'agir.
+    Chiffres recomptés le 10 novembre sur la branche principale du dépôt.
+    → Première brique : GenUI, l'interface générative côté Flutter.
   </aside>
 </section>
