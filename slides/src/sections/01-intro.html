@@ -1,6 +1,6 @@
 <!-- ===================================================================
-     01 — Introduction : couverture, orateur, projet, cas d'usage,
-     ce qui est réutilisable.
+     01 — Introduction, après la démo d'ouverture : couverture, retour sur
+     les actes, chemin d'une demande, orateur et projet, cas d'usage.
      =================================================================== -->
 
 <!-- a) Couverture -->
@@ -17,14 +17,87 @@
   </div>
   <p class="mt-2 title-font upper">Benoît FONTAINE</p>
   <aside class="notes">
-    Bonsoir Nantes. Ce soir, on regarde une application Flutter construire ses écrans pendant qu'on lui parle.
+    La démo vient d'avoir lieu : cette application Flutter a construit ses écrans pendant que je lui parlais.
+    Idée centrale du talk : l'IA choisit quoi afficher ; les composants, leur rendu et leur style restent ceux du développeur.
     Format : 45 minutes, talk enregistré. Les cinq mots-clés du bas sont les briques qu'on va démonter une par une.
-    ⚠ Le sous-titre est une proposition : la documentation du projet ne fixe aucun titre officiel.
-    → Avant les briques, quelques mots sur moi et sur le projet.
+    → D'abord, reprenons ce que vous venez de voir, acte par acte.
   </aside>
 </section>
 
-<!-- b) Orateur + projet, puis vue d'ensemble de l'architecture -->
+<!-- a bis) Les actes : retour sur la démo d'ouverture -->
+<section id="p01-actes">
+  <p class="eyebrow">Ce que vous venez de voir</p>
+  <h2>Trois actes et un rejeu</h2>
+  <div class="timeline mt-1">
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 1 · créer</span>
+      <span class="tl-title">« Prépare la release 3.4 »</span>
+      <span class="tl-text">4 surfaces : indicateur clé, courbe, sentiment des avis, checklist</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 2 · transformer</span>
+      <span class="tl-title">« Concentre-toi sur Android »</span>
+      <span class="tl-text">Les surfaces mutent sur place ; la Barre d'actions arrive avec le NO-GO Android</span>
+    </div>
+    <div class="tl-item fragment rise-in">
+      <span class="tl-date">Acte 3 · interagir</span>
+      <span class="tl-title">Clic « Bloquer la release »</span>
+      <span class="tl-text">Checklist « Bloquée », confirmation à la voix</span>
+    </div>
+    <div class="tl-item is-now fragment rise-in">
+      <span class="tl-date">Acte 4 · rejeu</span>
+      <span class="tl-title">Le flux A2UI rejoué</span>
+      <span class="tl-text">Au ralenti, synchronisé avec le JSON, sans réseau ; « Direct » remet à vide</span>
+    </div>
+  </div>
+  <div class="kpi-row mt-2 fragment glow-in">
+    <div class="kpi"><span class="kpi-value">&lt; 1<small>s</small></span><span class="kpi-label">réponse vocale · NFR-01</span></div>
+    <div class="kpi"><span class="kpi-value">&lt; 1,5<small>s</small></span><span class="kpi-label">squelette · NFR-02</span></div>
+    <div class="kpi kpi--amber"><span class="kpi-value">&lt; 8<small>s</small></span><span class="kpi-label">acte 1 complet · NFR-03</span></div>
+  </div>
+  <p class="small mt-1 fragment glow-in">Répétition du 31/10, un échantillon : accusé ≈ 1,5 s après la phrase, squelette + 0,1 s, chiffres + 3,7 s <span class="badge badge--open">Q-80 ouverte</span></p>
+  <p class="refs">pdr-0004 · pdr-0020 · pdr-0024 · pdr-0059 · pdr-0061 · pdr-0016 · pdr-0032 · pdr-0066 · pdr-0081 · product/sources/2026-10-31-repetition-micro.md</p>
+  <aside class="notes">
+    Ce que vous venez de voir tient en trois actes et un rejeu ; le scénario est court pour tenir en direct.
+    Acte 1 : une phrase, quatre surfaces. Acte 2 : tout passe sur Android et aucune surface n'est retirée.
+    Acte 3 : un clic, et la voix confirme le vrai résultat. Acte 4 : le même flux A2UI rejoué, sans réseau ni modèle.
+    Les trois chiffres sont des exigences de la fiche, mesurées sur l'horloge de l'app.
+    ⚠ Un seul échantillon au 31/10. NFR-01 se mesure au p90 sur dix essais, ce n'est pas encore fait (Q-80).
+    → Voici le chemin complet d'une de ces demandes, de la voix jusqu'à l'écran.
+  </aside>
+</section>
+
+<!-- b) Vue d'ensemble de l'architecture -->
+<section data-hud="low">
+  <h2>Vue d'ensemble de l'architecture</h2>
+  <div class="flow mt-2">
+    <div class="node node--round fragment glow-in">Voix<small>speaker</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">WebRTC</span></div>
+    <div class="node fragment glow-in">Agent vocal<small>gpt-live-1</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">délégation</span></div>
+    <div class="node fragment glow-in">Orchestrateur<small>backend Go</small></div>
+    <div class="arrow fragment glow-in"><span class="arrow-label">A2A</span></div>
+    <div class="node node--amber fragment glow-in">Agents<small>3 serveurs A2A</small></div>
+    <div class="arrow arrow--amber fragment glow-in"><span class="arrow-label">A2UI</span><span class="arrow-label arrow-label--below" style="top: 62px">JSON validé et relayé par l'orchestrateur</span></div>
+    <div class="node fragment glow-in">GenUI<small>widgets Flutter</small></div>
+  </div>
+  <blockquote class="mt-2 fragment scan-in">
+    <p>L'agent produit une description d'interface en JSON ; le rendu s'appuie sur le catalogue de widgets défini par le développeur Flutter.</p>
+    <cite>D'après la fiche produit Genesis Canvas</cite>
+  </blockquote>
+  <p class="small muted fragment rise-in">En local, par <span class="mono">docker compose</span> : orchestrateur Go, un conteneur par agent A2A, passerelle LLM interne pour le compositeur. Seuls GPT-Live et le LLM texte sortent de la machine.</p>
+  <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision] · [p-ar-overview] · [pdr-0074-012-llm-composer-gateway-crashlist-details]</p>
+  <aside class="notes">
+    Ce schéma résume le parcours qu'on va suivre ce soir, de gauche à droite.
+    L'agent vocal reste mon seul interlocuteur ; il délègue en un seul point à l'orchestrateur.
+    Le catalogue est fermé : l'agent ne demande que des composants déclarés, et son JSON n'est jamais exécuté.
+    Pour l'agent Qualité, gpt-6-luna choisit les composants ; les chiffres viennent du jeu de données, repli déterministe.
+    Services sur 127.0.0.1. L'app reçoit l'A2UI par un WebSocket maison, l'app-channel ; les clics repartent en HTTP.
+    → Avant d'ouvrir chaque brique, quelques mots sur moi et sur les trois questions du talk.
+  </aside>
+</section>
+
+<!-- c) Orateur + projet -->
 <section>
   <h2>L'orateur, le projet</h2>
   <div class="intro-split">
@@ -65,36 +138,7 @@
     Choix retenus : A2UI v0.9 pour l'interface, OpenAI gpt-live-1 pour la voix ; le backend crée la session voix.
     Au 31 octobre, les quatre actes sont livrés (créer, transformer, interagir, rejouer), avec l'interruption à la voix.
     ⚠ Pas encore vérifié en répétition : coupure audio sous Linux, délais, correction en vol (Q-79, Q-80, Q-87).
-    → Pour situer ces questions, voici le chemin complet d'une demande, de la voix jusqu'à l'écran.
-  </aside>
-</section>
-
-<section data-hud="low">
-  <h2>Vue d'ensemble de l'architecture</h2>
-  <div class="flow mt-2">
-    <div class="node node--round fragment glow-in">Voix<small>speaker</small></div>
-    <div class="arrow fragment glow-in"><span class="arrow-label">WebRTC</span></div>
-    <div class="node fragment glow-in">Agent vocal<small>gpt-live-1</small></div>
-    <div class="arrow fragment glow-in"><span class="arrow-label">délégation</span></div>
-    <div class="node fragment glow-in">Orchestrateur<small>backend Go</small></div>
-    <div class="arrow fragment glow-in"><span class="arrow-label">A2A</span></div>
-    <div class="node node--amber fragment glow-in">Agents<small>3 serveurs A2A</small></div>
-    <div class="arrow arrow--amber fragment glow-in"><span class="arrow-label">A2UI</span><span class="arrow-label arrow-label--below" style="top: 62px">JSON validé et relayé par l'orchestrateur</span></div>
-    <div class="node fragment glow-in">GenUI<small>widgets Flutter</small></div>
-  </div>
-  <blockquote class="mt-2 fragment scan-in">
-    <p>L'agent produit une description d'interface en JSON ; le rendu s'appuie sur le catalogue de widgets défini par le développeur Flutter.</p>
-    <cite>D'après la fiche produit Genesis Canvas</cite>
-  </blockquote>
-  <p class="small muted fragment rise-in">En local, par <span class="mono">docker compose</span> : orchestrateur Go, un conteneur par agent A2A, passerelle LLM interne pour le compositeur. Seuls GPT-Live et le LLM texte sortent de la machine.</p>
-  <p class="refs">[ma-target-architecture] · [pdr-0036-real-a2a-agents-produce-a2ui] · [genui-a2ui-security] · [p-fn-vision] · [p-ar-overview] · [pdr-0074-012-llm-composer-gateway-crashlist-details]</p>
-  <aside class="notes">
-    Ce schéma résume le parcours qu'on va suivre ce soir, de gauche à droite.
-    L'agent vocal reste mon seul interlocuteur ; il délègue en un seul point à l'orchestrateur.
-    Le catalogue est fermé : l'agent ne demande que des composants déclarés, et son JSON n'est jamais exécuté.
-    Pour l'agent Qualité, gpt-6-luna choisit les composants ; les chiffres viennent du jeu de données, repli déterministe.
-    Services sur 127.0.0.1. L'app reçoit l'A2UI par un WebSocket maison, l'app-channel ; les clics repartent en HTTP.
-    → Ces agents ont besoin d'un métier et de données : voici le cas d'usage retenu.
+    → Les agents ont besoin d'un métier et de données : voici le cas d'usage retenu.
   </aside>
 </section>
 
@@ -127,45 +171,6 @@
     Croiser ces sources donne des écrans variés, ce qui sert la démo.
     Les données ne bougent pas d'une exécution à l'autre ; seule la composition de l'interface varie.
     L'intérêt est de voir l'orchestrateur choisir quels agents il active ; leur nombre importe peu.
-    → Avant la première brique, ce que le dépôt met à disposition au-delà de la démo.
-  </aside>
-</section>
-
-<!-- d) Ce que vous pouvez réutiliser -->
-<section data-hud="low">
-  <h2>Ce que vous pouvez réutiliser</h2>
-  <div class="reuse-split">
-    <div class="grid-2 stretch-items">
-      <div class="card fragment rise-in">
-        <h3>knowledge/</h3>
-        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">272</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
-      </div>
-      <div class="card fragment rise-in">
-        <h3>product/</h3>
-        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">90</strong> décisions (PDR), <strong class="accent">94</strong> questions tracées.</p>
-      </div>
-      <div class="card card--amber fragment rise-in">
-        <h3>.claude/</h3>
-        <p class="small mb-0"><strong class="amber">6</strong> skills (<span class="mono">kb&#8209;lookup</span>, <span class="mono">kb&#8209;curate</span>, <span class="mono">product&#8209;*</span>, <span class="mono">dev&#8209;loop</span>) et <strong class="amber">4</strong> agents.</p>
-      </div>
-      <div class="card card--amber fragment rise-in">
-        <h3>tools/ &amp; specs/</h3>
-        <p class="small mb-0">Boucle autonome, porte <span class="mono">gate.sh</span>, linters <span class="mono">kb_lint</span> / <span class="mono">product_lint</span>, gabarit SDD.</p>
-      </div>
-    </div>
-    <div class="hud-panel repo-qr fragment glow-in">
-      <p class="panel-title">Dépôt GitHub</p>
-      <img src="github-qr.svg" alt="QR code vers github.com/b-fontaine/ai_voice_ui" />
-      <a class="mono small" href="https://github.com/b-fontaine/ai_voice_ui">github.com/<br />b&#8209;fontaine/ai_voice_ui</a>
-    </div>
-  </div>
-  <p class="refs">knowledge/index.yaml · product/README.md · .claude/ · tools/loop/README.md · [pdr-0043-light-spec-kit-sdd-template]</p>
-  <aside class="notes">
-    Le dépôt est public : ces briques peuvent se reprendre sur d'autres projets.
-    La base existe parce que ces API évoluent plus vite que les données d'entraînement des modèles.
-    Sur les 272 notes, 220 sont vérifiées sur la doc officielle, 19 viennent d'une source secondaire, 33 sont des opinions.
-    Les 4 agents (product-steward, feature-developer, architect-reviewer, refactorer) lisent la base avant d'agir.
-    Chiffres recomptés le 10 novembre sur la branche principale du dépôt.
     → Première brique : GenUI, l'interface générative côté Flutter.
   </aside>
 </section>

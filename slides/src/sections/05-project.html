@@ -3,7 +3,7 @@
      Sources : product/ (pdr-*, Q-xx, architecture/, functional/, roadmap/),
      knowledge/ (ids entre crochets), specs/000 à 015, specs/progress.md, tools/loop/,
      product/sources/2026-10-31-repetition-micro.md.
-     État décrit : 31/10/2026 (fonctionnalités 000 à 015 livrées, répétition au micro). À relire avant le talk.
+     État décrit : 10/11/2026 (fonctionnalités 000 à 019 livrées ; seule répétition au micro : 31/10).
      ================================================================ -->
 
 <!-- 00 · Titre de chapitre -->
@@ -11,13 +11,13 @@
   <p class="chapter-num">Chapitre <b>05</b></p>
   <h2>Genesis Canvas sous le capot</h2>
   <div class="chapter-rule"></div>
-  <p class="subtitle">Écran, actes, architecture technique et agentique, flux de données, méthode</p>
+  <p class="subtitle">Écran, architecture technique et agentique, flux de données, méthode, coûts</p>
   <aside class="notes">
     Pour finir, j'ouvre le capot du projet qui a servi de fil rouge pendant tout le talk.
     C'est un livrable de conférence : il n'a jamais été pensé pour la production.
     Release Copilot : décider go ou no-go pour la 3.4 d'une app mobile fictive face à la 3.3, sur des données figées.
-    Tout ce qui suit décrit l'état au 31 octobre : seize fonctionnalités livrées et une première répétition au micro.
-    ⚠ Je dis à chaque fois ce qui est décidé, observé en réel ou à vérifier : Q-79, Q-80, Q-87 et la fonctionnalité 016.
+    Vingt fonctionnalités sont livrées (000 à 019) ; la seule répétition au micro date du 31 octobre.
+    ⚠ Je dis à chaque fois ce qui est décidé, observé en réel ou à vérifier : Q-79, Q-80 et Q-87 restent ouvertes.
     → On commence par ce que voit le public : l'écran.
   </aside>
 </section>
@@ -76,50 +76,7 @@
     Cette demande fait passer la grille en 3×2. La sixième est la Barre d'actions, un bandeau de 72 px sous la grille.
     Six est un plafond de lisibilité (NFR-06). C'est l'app qui place les surfaces, dans un ordre fixe.
     ⚠ GPT-Live n'émet aucun événement d'interruption : l'orchestrateur détecte « Stop » ou la voix qui chevauche l'IA.
-    → Cet écran sert un scénario découpé en actes.
-  </aside>
-</section>
-
-<!-- 02 · Les actes -->
-<section id="p05-02">
-  <p class="eyebrow">Scénario · pdr-0004 · pdr-0032</p>
-  <h2>Trois actes et un rejeu</h2>
-  <div class="timeline mt-1">
-    <div class="tl-item fragment rise-in">
-      <span class="tl-date">Acte 1 · créer</span>
-      <span class="tl-title">« Prépare la release 3.4 »</span>
-      <span class="tl-text">4 surfaces : indicateur clé, courbe, sentiment des avis, checklist</span>
-    </div>
-    <div class="tl-item fragment rise-in">
-      <span class="tl-date">Acte 2 · transformer</span>
-      <span class="tl-title">« Concentre-toi sur Android »</span>
-      <span class="tl-text">Les surfaces mutent sur place ; la Barre d'actions arrive avec le NO-GO Android</span>
-    </div>
-    <div class="tl-item fragment rise-in">
-      <span class="tl-date">Acte 3 · interagir</span>
-      <span class="tl-title">Clic « Bloquer la release »</span>
-      <span class="tl-text">Checklist « Bloquée », confirmation à la voix</span>
-    </div>
-    <div class="tl-item is-now fragment rise-in">
-      <span class="tl-date">Acte 4 · rejeu</span>
-      <span class="tl-title">Le flux A2UI rejoué</span>
-      <span class="tl-text">Au ralenti, synchronisé avec le JSON, sans réseau ; « Direct » remet à vide</span>
-    </div>
-  </div>
-  <div class="kpi-row mt-2 fragment glow-in">
-    <div class="kpi"><span class="kpi-value">&lt; 1<small>s</small></span><span class="kpi-label">réponse vocale · NFR-01</span></div>
-    <div class="kpi"><span class="kpi-value">&lt; 1,5<small>s</small></span><span class="kpi-label">squelette · NFR-02</span></div>
-    <div class="kpi kpi--amber"><span class="kpi-value">&lt; 8<small>s</small></span><span class="kpi-label">acte 1 complet · NFR-03</span></div>
-  </div>
-  <p class="small mt-1 fragment glow-in">Répétition du 31/10, un échantillon : accusé ≈ 1,5 s après la phrase, squelette + 0,1 s, chiffres + 3,7 s <span class="badge badge--open">Q-80 ouverte</span></p>
-  <p class="refs">pdr-0004 · pdr-0020 · pdr-0024 · pdr-0059 · pdr-0061 · pdr-0016 · pdr-0032 · pdr-0066 · pdr-0081 · product/sources/2026-10-31-repetition-micro.md</p>
-  <aside class="notes">
-    Le scénario est court pour tenir en direct ; les quatre actes sont livrés par les fonctionnalités 006 à 010.
-    Acte 2 : tout passe sur Android et aucune surface n'est retirée. À l'acte 3, « Valider la release » marche pareil.
-    En cas de panne, le secours prévu est une vidéo que je pilote, en dehors de l'app.
-    Les trois chiffres sont des exigences de la fiche, mesurées sur l'horloge de l'app.
-    ⚠ Un seul échantillon au 31/10. NFR-01 se mesure au p90 sur dix essais, ce n'est pas encore fait (Q-80).
-    → Pour tenir ces délais, il faut savoir où tourne chaque composant.
+    → Pour tenir les délais vus en ouverture, il faut savoir où tourne chaque composant.
   </aside>
 </section>
 
@@ -248,6 +205,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : architecture agentique ;
+     l'ouverture de la session voix, atteinte par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 05 · Architecture agentique -->
 <section id="p05-05" data-hud="low">
   <p class="eyebrow">Architecture agentique · pdr-0036</p>
@@ -318,7 +278,7 @@
     Chaque agent produit lui-même l'A2UI de ses surfaces ; l'orchestrateur le valide et le relaie sans le recomposer.
     Seul Qualité appelle un LLM, gpt-6-luna, avec repli déterministe. Voix du client et Livraison sont déterministes.
     Le modèle vocal ne voit jamais l'A2UI : il reçoit un résumé, par le commentary, ce qui suppose le mode client.
-    → Suivons les messages un par un, en commençant par l'ouverture de la session voix.
+    → ↓ en option : l'ouverture de la session voix. Sinon → ce qui se passe quand le speaker demande quelque chose.
   </aside>
 </section>
 
@@ -349,6 +309,7 @@
     Une session est plafonnée à 30 minutes, puis fermée proprement (pdr-0067).
     → La session est ouverte : voyons ce qui se passe quand le speaker demande quelque chose.
   </aside>
+</section>
 </section>
 
 <!-- 07 · Séquence 2 : voix → surface -->
@@ -383,8 +344,8 @@
   </aside>
 </section>
 
-<!-- Débranchement (pile verticale) : 39 = clic → confirmation vocale ;
-     39.1 = journal du flux A2UI et rejeu, atteint par ↓ seulement. -->
+<!-- Débranchement (pile verticale) : clic → confirmation vocale ;
+     le journal du flux A2UI et le rejeu, atteints par ↓ seulement. -->
 <section data-start-indexv="0">
 <!-- 08 · Séquence 3 : clic → action → voix -->
 <section id="p05-08" data-hud="low">
@@ -468,43 +429,14 @@
     Les données sont toutes fictives. Aucune clé ne vit dans l'app, et un test le vérifie.
     Le contrôle de Host bloque le DNS rebinding ; un POST portant un en-tête Origin est refusé.
     Si le backend était un jour exposé, on passerait à des JWT vérifiés par JWKS.
-    ⚠ En répétition, une voix dans la pièce a obtenu une réponse de l'IA ; le correctif viendra de la fonctionnalité 016.
-    → Un mot sur le spike qui a levé le principal risque technique côté A2A.
-  </aside>
-</section>
-
-<!-- 11 · Spike SP-03 -->
-<section id="p05-11" data-hud="low">
-  <p class="eyebrow">Spike SP-03 · 29/10/2026</p>
-  <h2>Agent Go et client genui_a2a</h2>
-  <div class="flow">
-    <div class="node">Client Flutter<small>genui 0.10.4 · genui_a2a 0.10.1</small></div>
-    <div class="arrow arrow--both"><span class="arrow-label">message/stream · SSE</span><span class="arrow-label arrow-label--below">A2A v0.3</span></div>
-    <div class="node node--amber">Agent Go<small>a2a-go v2.7.0 · a2acompat/a2av0</small></div>
-  </div>
-  <div class="grid-2 mt-1">
-    <ul class="check-list compact small">
-      <li class="fragment rise-in">Surface rendue de bout en bout</li>
-      <li class="fragment rise-in">Clic → <code>connectAndSend</code> → « validé »</li>
-      <li class="fragment rise-in">Sans code d'adaptation supplémentaire</li>
-    </ul>
-    <ul class="cross-list compact small">
-      <li class="fragment rise-in">Handler natif v1.0 : <code>message/stream</code> inconnu</li>
-      <li class="fragment rise-in"><code>sendEvent</code> n'atteint pas le flux</li>
-      <li class="fragment rise-in">Agent Card sans <code>url</code> hors v0.3</li>
-    </ul>
-  </div>
-  <p class="small mt-1 fragment glow-in"><span class="badge badge--verified">SP-03 vérifié</span> <span class="badge badge--accepted">pdr-0045 : WSS maison, genui_a2a hors de l'app</span></p>
-  <p class="refs">specs/001-sp-03-a2a-go-genui · p-rm-spikes · pdr-0045 · [proto-a2a-go-v03-compat] · [genui-a2a-connector] · [genui-test-a2a-roundtrip]</p>
-  <aside class="notes">
-    Ce spike devait dire si un agent Go peut streamer de l'A2UI vers le client Flutter genui_a2a. Réponse : oui.
-    genui_a2a parle A2A v0.3 : le handler v1.0 répond -32601, il faut monter le handler de compatibilité.
-    Portée : test widget contre l'agent Go réel, mais avec un tap simulé et un client jetable, hors de l'app.
-    Le même jour, j'ai retenu un WebSocket maison ; ce spike reste la preuve qu'un client A2A Flutter fonctionnerait.
+    ⚠ En répétition, une voix dans la pièce a obtenu une réponse de l'IA ; 016 ajoute une consigne de silence, vue sur un seul essai.
     → Passons à la façon dont tout cela a été développé.
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : méthode ; ce que le dépôt met à
+     disposition, atteint par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- 12 · Méthode -->
 <section id="p05-12">
   <p class="eyebrow">Méthode · éléments réutilisables</p>
@@ -514,13 +446,13 @@
       <div class="card fragment rise-in">
         <span class="card-icon">KB</span>
         <h3>knowledge/</h3>
-        <p class="small">269 notes datées, index YAML, ADR réutilisables</p>
+        <p class="small">272 notes datées, index YAML, ADR réutilisables</p>
         <p class="small mono accent">kb-lookup<br>kb-curate</p>
       </div>
       <div class="card card--amber fragment rise-in">
         <span class="card-icon">PR</span>
         <h3>product/</h3>
-        <p class="small">81 PDR (79 acceptées, 2 remplacées), 89 questions dont 3 ouvertes, exigences FR / NFR</p>
+        <p class="small">90 PDR (87 en vigueur, 3 remplacées), 94 questions dont 7 ouvertes, exigences FR / NFR</p>
         <p class="small mono amber">product-lookup<br>product-decide</p>
       </div>
     </div>
@@ -535,7 +467,7 @@
         <li>Refactorisation</li>
         <li>Vérification, clôture</li>
       </ol>
-      <p class="small mb-0">16 fonctionnalités publiées (000 à 015) · <code>gate --full</code> : 67 contrôles</p>
+      <p class="small mb-0">20 fonctionnalités publiées (000 à 019) · <code>gate --full</code> : 67 contrôles</p>
     </div>
   </div>
   <p class="refs">AGENTS.md · tools/loop/README.md · .claude/skills · .claude/agents · pdr-0043 · pdr-0062 · specs/progress.md</p>
@@ -544,14 +476,54 @@
     L'assistant recommande et je tranche ; il décide seul quand les faits ne laissent qu'une réponse, et le signale.
     La boucle tourne dans un worktree séparé et ne publie sur main que par un script.
     Garde-fous : quota, trois tentatives par étape, tests désactivés refusés, budget OpenAI.
-    ⚠ La fonctionnalité 016 vient de la répétition et reste à concevoir. Chiffres du 31/10, à recompter la veille.
-    → Cette méthode a aussi un coût, c'est le sujet suivant.
+    Les fonctionnalités 016 à 019 viennent de la répétition et du design system. Chiffres recomptés le 10 novembre.
+    → ↓ en option : ce que le dépôt met à disposition. Sinon → le coût de cette méthode.
   </aside>
+</section>
+
+<!-- 12 bis · Ce que vous pouvez réutiliser -->
+<section data-hud="low">
+  <h2>Ce que vous pouvez réutiliser</h2>
+  <div class="reuse-split">
+    <div class="grid-2 stretch-items">
+      <div class="card fragment rise-in">
+        <h3>knowledge/</h3>
+        <p class="small mb-0">Base de connaissances zettelkasten : <strong class="accent">272</strong> notes datées et sourcées, sur <strong class="accent">12</strong> domaines ; <strong class="accent">8</strong> ADR.</p>
+      </div>
+      <div class="card fragment rise-in">
+        <h3>product/</h3>
+        <p class="small mb-0">Doc produit : <strong class="accent">19</strong> FR, <strong class="accent">11</strong> NFR, <strong class="accent">29</strong> règles (RG) en vigueur, <strong class="accent">90</strong> décisions (PDR), <strong class="accent">94</strong> questions tracées.</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3>.claude/</h3>
+        <p class="small mb-0"><strong class="amber">6</strong> skills (<span class="mono">kb&#8209;lookup</span>, <span class="mono">kb&#8209;curate</span>, <span class="mono">product&#8209;*</span>, <span class="mono">dev&#8209;loop</span>) et <strong class="amber">4</strong> agents.</p>
+      </div>
+      <div class="card card--amber fragment rise-in">
+        <h3>tools/ &amp; specs/</h3>
+        <p class="small mb-0">Boucle autonome, porte <span class="mono">gate.sh</span>, linters <span class="mono">kb_lint</span> / <span class="mono">product_lint</span>, gabarit SDD.</p>
+      </div>
+    </div>
+    <div class="hud-panel repo-qr fragment glow-in">
+      <p class="panel-title">Dépôt GitHub</p>
+      <img src="github-qr.svg" alt="QR code vers github.com/b-fontaine/ai_voice_ui" />
+      <a class="mono small" href="https://github.com/b-fontaine/ai_voice_ui">github.com/<br />b&#8209;fontaine/ai_voice_ui</a>
+    </div>
+  </div>
+  <p class="refs">knowledge/index.yaml · product/README.md · .claude/ · tools/loop/README.md · [pdr-0043-light-spec-kit-sdd-template]</p>
+  <aside class="notes">
+    Le dépôt est public : ces briques peuvent se reprendre sur d'autres projets.
+    La base existe parce que ces API évoluent plus vite que les données d'entraînement des modèles.
+    Sur les 272 notes, 220 sont vérifiées sur la doc officielle, 19 viennent d'une source secondaire, 33 sont des opinions.
+    Les 4 agents (product-steward, feature-developer, architect-reviewer, refactorer) lisent la base avant d'agir.
+    Chiffres recomptés le 10 novembre sur la branche principale du dépôt.
+    → Retour au fil principal : ce que tout cela coûte.
+  </aside>
+</section>
 </section>
 
 <!-- 13 · Budgéter : production et développement -->
 <section id="p05-13" data-hud="low">
-  <p class="eyebrow">Coûts · mesurés sur le projet au 31/10/2026</p>
+  <p class="eyebrow">Coûts · mesurés sur le projet au 10/11/2026</p>
   <h2>Budgéter ce genre de projet</h2>
   <div class="grid-2 stretch-items">
     <div class="hud-panel">
@@ -572,22 +544,24 @@
       <p class="panel-title">En développement</p>
       <div class="kpi-row kpi-row--compact">
         <div class="kpi kpi--amber"><span class="kpi-value">20<small>€</small></span><span class="kpi-label">budget LLM total</span></div>
-        <div class="kpi"><span class="kpi-value">0,54<small>€</small></span><span class="kpi-label">dépensés par la boucle, 16 fonctionnalités</span></div>
+        <div class="kpi"><span class="kpi-value">≈ 900<small>$</small></span><span class="kpi-label">jetons des agents de code, au prix API</span></div>
       </div>
       <ul class="compact small mt-1">
-        <li class="fragment rise-in">mocks aux frontières + rejeu A2UI : <strong>au plus un essai réel</strong> par fonctionnalité (~0,03-0,07 €)</li>
-        <li class="fragment rise-in">registre de dépenses versionné ; 12 € pour la boucle, 8 € pour les répétitions</li>
-        <li class="fragment rise-in">agents de code : quota d'abonnement <strong>lissé</strong> sur la semaine, pause à 90 % sur 5 h</li>
+        <li class="fragment rise-in">OpenAI : <strong>0,58 €</strong> sur les 20 € ; mocks aux frontières + rejeu A2UI, au plus un essai réel par fonctionnalité</li>
+        <li class="fragment rise-in">agents de code : 18 800 requêtes ; les trois quarts du coût viennent du contexte relu (cache), un quart du texte produit</li>
+        <li class="fragment rise-in">coût théorique, couvert ici par un abonnement : quota <strong>lissé</strong> sur la semaine, pause à 90 % sur 5 h</li>
       </ul>
     </div>
   </div>
-  <p class="refs">[rt-gpt-live-overview] · [rt-gpt-live-sideband] · [pdr-0030-llm-budget-20-eur] · pdr-0067 · pdr-0074 · tools/loop/README.md · specs/openai-spend.tsv</p>
+  <p class="refs">[rt-gpt-live-overview] · [rt-gpt-live-sideband] · [pdr-0030-llm-budget-20-eur] · pdr-0067 · pdr-0074 · tools/loop/README.md · specs/openai-spend.tsv · journaux de session Claude Code</p>
   <aside class="notes">
     En production, la voix domine : environ 3 $ par heure de conversation.
     Les 15 s minimum sont facturées dès l'ouverture en WebRTC, même pour une session très courte.
     Une session dont le sideband n'a pas pu s'attacher reste facturée jusqu'au Hangup.
-    Les 0,54 € : 0,26 pour le spike SP-02, 0,15 pour les essais réels, environ 0,13 pour mesurer les modèles de 012.
-    ⚠ Les répétitions au micro ne sont pas dans ce registre. Chiffres à mettre à jour la veille.
+    Les 0,58 € d'OpenAI : 0,26 pour le spike SP-02, 0,19 pour les essais réels, 0,13 pour mesurer les modèles de 012.
+    Les 900 $ : jetons de Claude Code relevés dans les journaux de session, du 26/10 au 3/11, au prix catalogue de l'API.
+    Détail : environ 450 $ pour la boucle autonome, autant pour les sessions interactives ; 981 $ au 10/11 avec ce talk.
+    ⚠ Coût théorique, jamais facturé tel quel. Hors répétitions au micro et hors travail fait sur claude.ai.
     → Pour conclure, ce que je retiendrais de ce projet.
   </aside>
 </section>
@@ -596,6 +570,7 @@
 <section id="p05-14">
   <p class="eyebrow">En résumé</p>
   <h2>L'essentiel à retenir</h2>
+  <p class="mt-0 mb-0">L'IA choisit quoi afficher ; <span class="accent">les composants et leur style restent ceux du développeur</span>.</p>
   <div class="grid-3 stretch-items">
     <div class="card fragment rise-in">
       <span class="card-icon">01</span>
@@ -625,15 +600,15 @@
     <div class="card card--amber fragment rise-in">
       <span class="card-icon">06</span>
       <h3>Coûts</h3>
-      <p class="small mb-0">0,05 $/min pour la voix en production ; 0,54 € d'OpenAI pour seize fonctionnalités en développement.</p>
+      <p class="small mb-0">0,05 $/min pour la voix en production ; ≈ 900 $ de jetons d'agents de code en développement, au prix API.</p>
     </div>
   </div>
   <p class="refs">[genui-overview] · [rt-gpt-live-overview] · [ma-target-architecture] · [p-ar-security] · [pdr-0030-llm-budget-20-eur]</p>
   <aside class="notes">
-    Pour conclure, six points que je retiendrais de ce projet.
+    Pour conclure : l'idée centrale en une phrase, puis six points que je retiendrais de ce projet.
     La voix et A2UI évoluent vite, d'où les versions épinglées exactement et une base de notes datées.
     Sécurité : en plus du catalogue fermé, les retours d'agents sont traités comme des données non fiables.
-    ⚠ Une première répétition au micro a eu lieu le 31/10 ; Q-79, Q-80 et Q-87 restent à observer. Chiffres à actualiser.
+    ⚠ Une seule répétition au micro, le 31/10 ; Q-79, Q-80 et Q-87 restent à observer. Chiffres recomptés le 10/11.
     → Le dépôt est public, l'adresse est en bas de l'écran. Merci, place aux questions.
   </aside>
 </section>

@@ -343,6 +343,9 @@
   </aside>
 </section>
 
+<!-- Débranchement (pile verticale) : catalogue ; les transports,
+     atteints par ↓ seulement. -->
+<section data-start-indexv="0">
 <!-- ------------------------------------------------------------------ -->
 <section data-hud="low">
   <p class="eyebrow">Catalogue</p>
@@ -378,7 +381,7 @@ final catalog = BasicCatalogItems.asCatalog()
     Lignes 7 à 11 : le builder. Lignes 13 et 14 : l'item s'ajoute au catalogue de base.
     Dans Genesis Canvas, chaque surface est un seul composant métier, lié à un objet entier comme /kpi.
     ⚠ Ligne 14 : copyWith sans catalogId garde l'id du catalogue basique ; un agent distant ignore vos items.
-    → Reste à acheminer ces messages entre l'agent et l'app.
+    → ↓ en option : comment acheminer ces messages. Sinon → la sécurité.
   </aside>
 </section>
 
@@ -424,6 +427,7 @@ final catalog = BasicCatalogItems.asCatalog()
     ⚠ La doc Flutter parle de WebSocket, mais le code de genui_a2a utilise bien SSE.
     → Chaque canal est aussi un point d'entrée possible : passons à la sécurité.
   </aside>
+</section>
 </section>
 
 <!-- ------------------------------------------------------------------ -->
