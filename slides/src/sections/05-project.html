@@ -13,12 +13,12 @@
   <div class="chapter-rule"></div>
   <p class="subtitle">Écran, actes, architecture technique et agentique, flux de données, méthode</p>
   <aside class="notes">
-    Dernière partie : projet fil rouge · livrable de conférence, hors production
-    Release Copilot : go / no-go release 3.4 face à 3.3 · données fictives figées
-    Idée : l'agent décrit l'UI en données · Flutter garde le rendu (catalogue)
-    État au 31/10 : 16 fonctionnalités (000 à 015) · 1re répétition au micro
-    Je distingue : décidé · observé en réel · à vérifier
-    ⚠ À vérifier : Q-79, Q-80, Q-87 · 016 encore à concevoir
+    Pour finir, j'ouvre le capot du projet qui a servi de fil rouge pendant tout le talk.
+    C'est un livrable de conférence : il n'a jamais été pensé pour la production.
+    Release Copilot : décider go ou no-go pour la 3.4 d'une app mobile fictive face à la 3.3, sur des données figées.
+    Tout ce qui suit décrit l'état au 31 octobre : seize fonctionnalités livrées et une première répétition au micro.
+    ⚠ Je dis à chaque fois ce qui est décidé, observé en réel ou à vérifier : Q-79, Q-80, Q-87 et la fonctionnalité 016.
+    → On commence par ce que voit le public : l'écran.
   </aside>
 </section>
 
@@ -71,12 +71,12 @@
   <p class="small mt-1">Orbe : <span class="badge badge--neutral badge--plain">repos</span> <span class="badge badge--neutral badge--plain">écoute</span> <span class="badge badge--neutral badge--plain">réflexion</span> <span class="badge badge--neutral badge--plain">parole</span> <span class="badge badge--neutral badge--plain">interrompue</span> <span class="badge badge--neutral badge--plain">micro coupé</span></p>
   <p class="refs">p-fn-screen · pdr-0008 · pdr-0015 · pdr-0019 · pdr-0054 · pdr-0075 · pdr-0069 · pdr-0077</p>
   <aside class="notes">
-    Écran unique 1920×1080 : résultat + fabrication (agents, protocole, catalogue)
-    Barre : orbe · transcription des 2 voix · régie (acte, vider, micro, faire taire)
-    Rail horizontal 96 px (013) · liaison animée de délégation (015)
-    Canevas 676 px : 2×2 puis 3×2 · 6 surfaces visibles max · layout tenu par l'app
-    GPT-Live sans événement d'interruption → orchestrateur : « Stop » ou chevauchement
-    ⚠ Coupure son et micro sous flutter_webrtc Linux non prouvée (Q-79)
+    Un seul écran montre en même temps le résultat et sa fabrication : les agents, le protocole, le catalogue.
+    Les trois actes posent quatre surfaces dans la grille 2×2. La cinquième, la liste des crashs, vient sur demande.
+    Cette demande fait passer la grille en 3×2. La sixième est la Barre d'actions, un bandeau de 72 px sous la grille.
+    Six est un plafond de lisibilité (NFR-06). C'est l'app qui place les surfaces, dans un ordre fixe.
+    ⚠ GPT-Live n'émet aucun événement d'interruption : l'orchestrateur détecte « Stop » ou la voix qui chevauche l'IA.
+    → Cet écran sert un scénario découpé en actes.
   </aside>
 </section>
 
@@ -114,12 +114,12 @@
   <p class="small mt-1 fragment glow-in">Répétition du 31/10, un échantillon : accusé ≈ 1,5 s après la phrase, squelette + 0,1 s, chiffres + 3,7 s <span class="badge badge--open">Q-80 ouverte</span></p>
   <p class="refs">pdr-0004 · pdr-0020 · pdr-0024 · pdr-0059 · pdr-0061 · pdr-0016 · pdr-0032 · pdr-0066 · pdr-0081 · product/sources/2026-10-31-repetition-micro.md</p>
   <aside class="notes">
-    MVP : créer · transformer · interagir + acte 4 rejeu · livrés (006 à 010)
-    Acte 2 : mutation sur place, tout Android, aucune surface retirée
-    Acte 3 : clic → agent Livraison → vrai résultat → checklist + voix
-    Acte 4 : rejeu A2UI seul · « Direct » vide · secours vidéo hors app
-    Chiffres = exigences de la fiche, mesurées sur l'horloge de l'app
-    ⚠ Un seul échantillon le 31/10 · p90 sur 10 essais à faire (Q-80)
+    Le scénario est court pour tenir en direct ; les quatre actes sont livrés par les fonctionnalités 006 à 010.
+    Acte 2 : tout passe sur Android et aucune surface n'est retirée. À l'acte 3, « Valider la release » marche pareil.
+    En cas de panne, le secours prévu est une vidéo que je pilote, en dehors de l'app.
+    Les trois chiffres sont des exigences de la fiche, mesurées sur l'horloge de l'app.
+    ⚠ Un seul échantillon au 31/10. NFR-01 se mesure au p90 sur dix essais, ce n'est pas encore fait (Q-80).
+    → Pour tenir ces délais, il faut savoir où tourne chaque composant.
   </aside>
 </section>
 
@@ -201,12 +201,11 @@
   </svg>
   <p class="refs">p-ar-overview · pdr-0028 · pdr-0029 · pdr-0041 · pdr-0036 · pdr-0045 · pdr-0060 · pdr-0074 · [adr-0002-orchestrator-backend] · [adr-0003-backend-go]</p>
   <aside class="notes">
-    App Flutter Linux, debug hors conteneur : audio, rendu A2UI, rejeu, régie
-    Backend Go hexagonal · docker compose · orchestrateur + 1 conteneur par agent
-    Seul l'orchestrateur publie un port : 127.0.0.1, sans auth · clé dans .env
-    Voix app ⇄ gpt-live-1 en direct · backend en sideband
-    app-channel : WebSocket maison, diffusion seule · clics en HTTP
-    LLM texte gpt-6-luna · agents sans clé → passerelle de l'orchestrateur
+    L'app ne porte que l'audio, le rendu et la régie ; tout ce qui demande une clé vit dans le backend.
+    Seuls GPT-Live et le LLM texte sortent de la machine. L'app tourne en debug, hors conteneur.
+    Un processus par agent est décidé ; un conteneur par agent est un choix de conception.
+    Les agents n'ont ni clé ni sortie réseau : ils appellent gpt-6-luna par la passerelle de l'orchestrateur.
+    → Regardons maintenant l'intérieur de l'app et du backend.
   </aside>
 </section>
 
@@ -237,15 +236,15 @@
       </ul>
     </div>
   </div>
-  <p class="small mt-1 fragment glow-in"><span class="badge badge--accepted">pdr-0018 · A2UI v0.9 · genui 0.10.4</span> <span class="badge badge--accepted">pdr-0046 · Flutter 3.47.8</span> <span class="badge badge--accepted">pdr-0047 · Go 1.27.3</span></p>
-  <p class="refs">p-ar-frontend · p-ar-backend · p-ar-stack · pdr-0046 · pdr-0047 · pdr-0075 · [arch-clean-fsd-combo] · [di-no-service-locator] · [ma-backend-sdk-go]</p>
+  <p class="small mt-1 fragment glow-in"><span class="badge badge--accepted">pdr-0018 · A2UI v0.9 · genui 0.10.4</span> <span class="badge badge--accepted">pdr-0090 · Flutter 3.47.9</span> <span class="badge badge--accepted">pdr-0047 · Go 1.27.3</span></p>
+  <p class="refs">p-ar-frontend · p-ar-backend · p-ar-stack · pdr-0090 · pdr-0047 · pdr-0075 · [arch-clean-fsd-combo] · [di-no-service-locator] · [ma-backend-sdk-go]</p>
   <aside class="notes">
-    Flutter : Clean dans chaque slice FSD · coordination par entities/session
-    2 entités (catalog, session) · environ une feature par zone
-    Un seul flux d'événements · Bloc sans Cubit · getIt en racine seulement
-    013 : tokens DTCG → constantes Dart · Widgetbook 4 en bêta épinglée
-    Go hexagonal : LiveProvider (package live jeune) · LlmText
-    Versions épinglées · A2UI v0.9 + genui 0.10.4 = décision contrainte
+    Côté Flutter, les features ne s'importent pas entre elles : elles se coordonnent par les ports de entities/session.
+    Dans le code : deux entités, catalog et session, et à peu près une feature par zone de l'écran.
+    getIt n'est appelé que dans la page racine de composition (pdr-0057).
+    Côté Go, LiveProvider isole le package live d'openai-go, encore jeune ; LlmText isole le modèle de composition.
+    ⚠ Widgetbook 4 est en bêta, épinglée. A2UI v0.9 avec genui 0.10.4 était la seule combinaison possible.
+    → Reste la partie agentique : qui parle à qui, et qui produit l'écran.
   </aside>
 </section>
 
@@ -314,12 +313,12 @@
   <p class="small fragment glow-in" data-fragment-index="5">Catalogue : <span class="badge badge--neutral badge--plain">Indicateur clé</span> <span class="badge badge--neutral badge--plain">Courbe de tendance</span> <span class="badge badge--neutral badge--plain">Sentiment des avis</span> <span class="badge badge--neutral badge--plain">Checklist go/no-go</span> <span class="badge badge--neutral badge--plain">Barre d'actions</span> <span class="badge badge--neutral badge--plain">Liste des crashs</span></p>
   <p class="refs">pdr-0036 · pdr-0013 · pdr-0014 · pdr-0023 · pdr-0037 · pdr-0050 · pdr-0060 · pdr-0074 · [ma-target-architecture] · [rt-gpt-live-delegation]</p>
   <aside class="notes">
-    gpt-live-1 seul interlocuteur · une délégation → orchestrateur · voix « brise »
-    Orchestrateur : planifie, choisit visiblement les agents, appels en parallèle
-    Vrais serveurs A2A · chacun produit son A2UI · validé puis relayé tel quel
-    Composition guidée par exemples (012) : gpt-6-luna → plan · repli déterministe
-    LLM pour Qualité seul (3 composants) · les 2 autres déterministes
-    Clics = actions typées, choix du projet · commentary : mode client (SP-02)
+    L'agent vocal ne construit aucun écran : il délègue la demande à l'orchestrateur, en une seule fois.
+    L'orchestrateur choisit les agents d'après les tags de leurs Agent Cards, puis les appelle en parallèle, en flux.
+    Chaque agent produit lui-même l'A2UI de ses surfaces ; l'orchestrateur le valide et le relaie sans le recomposer.
+    Seul Qualité appelle un LLM, gpt-6-luna, avec repli déterministe. Voix du client et Livraison sont déterministes.
+    Le modèle vocal ne voit jamais l'A2UI : il reçoit un résumé, par le commentary, ce qui suppose le mode client.
+    → Suivons les messages un par un, en commençant par l'ouverture de la session voix.
   </aside>
 </section>
 
@@ -343,12 +342,12 @@
   </div>
   <p class="refs">[rt-gpt-live-webrtc-session] · [rt-gpt-live-sideband] · [rt-ephemeral-keys] · pdr-0012 · pdr-0050 · pdr-0067 · p-ar-app-channel-contract</p>
   <aside class="notes">
-    Client : offre SDP (micro + DataChannel oai-events) après collecte ICE
-    Backend relaie l'offre · appelle l'API Live avec la clé projet
-    Pas de jeton éphémère documenté → la clé reste au serveur
-    Audio direct app ⇄ OpenAI, pour la latence
-    Backend connaît session.id → sideband : transcripts, délégations, commentaires
-    Délégation en mode client (SP-02) · session plafonnée à 30 min
+    L'app ne contacte pas OpenAI pour créer la session : elle passe par le backend, qui garde la clé.
+    La doc GPT-Live ne décrit aucun jeton éphémère, d'où ce relais de l'offre SDP.
+    Une fois la session ouverte, l'audio va en direct de l'app à OpenAI, pour la latence.
+    Le relais donne aussi session.id au backend : il s'attache en sideband et reçoit transcripts et délégations.
+    Une session est plafonnée à 30 minutes, puis fermée proprement (pdr-0067).
+    → La session est ouverte : voyons ce qui se passe quand le speaker demande quelque chose.
   </aside>
 </section>
 
@@ -375,12 +374,12 @@
   </div>
   <p class="refs">p-ar-agents-protocols · p-ar-llm-composer · pdr-0036 · pdr-0074 · pdr-0078 · [genui-a2ui-messages] · [rt-latency] · product/sources/2026-10-31-repetition-micro.md</p>
   <aside class="notes">
-    Phrase → GPT-Live · backend reçoit transcript + délégation en sideband
-    Plan → rail allumé · accusé générique, sans anticiper le résultat
-    Appel modèle ~1,8 s, trop pour NFR-02 → squelette envoyé avant
-    Erreur → composition déterministe, sans second appel
-    Validation A2UI v0.9 → app-channel, jamais le canal voix · puis vrai résumé
-    ⚠ Un échantillon (31/10) · Q-80 ouverte · p90 &gt; 8 s → écrans fixes
+    Le squelette part avant les chiffres pour que l'écran réagisse vite, même quand le modèle est lent.
+    L'appel au modèle prend à lui seul environ 1,8 s, trop pour NFR-02, d'où ce squelette anticipé.
+    L'accusé vocal reste générique : la voix n'annonce rien avant d'avoir le vrai résumé.
+    L'A2UI ne passe jamais par le canal de la session voix, seulement par l'app-channel.
+    ⚠ Un seul échantillon mesuré (Q-80). Si le p90 dépassait 8 s, on reviendrait aux écrans fixes (pdr-0078).
+    → C'était l'acte 1 ; à l'acte 3, le point de départ est un clic.
   </aside>
 </section>
 
@@ -409,12 +408,12 @@
   </div>
   <p class="refs">p-ar-agents-protocols · [genui-user-actions] · [ma-real-tool-results] · pdr-0016 · pdr-0059 · pdr-0065 · product/sources/2026-10-31-repetition-micro.md</p>
   <aside class="notes">
-    Clic → action typée (nom + surface) vers l'orchestrateur · rien d'autre relayé
-    Livraison seule dans le rail (tag de sa carte) · vrai résultat → « Bloquée »
-    Voix après le résultat réel · évite le faux « status ok »
-    Dite hors délégation : personne n'a parlé
-    Observé le 31/10 : « C'est fait… » 0,65 s après le clic
-    Pas de confirmation hors GenUI : décision du porteur, action fictive
+    Le clic ne s'exécute pas dans l'app : il part comme action typée, et c'est l'agent qui fait le vrai travail.
+    L'orchestrateur retient Livraison seul, par le tag action:block_release de sa carte.
+    Seuls le nom de l'action et la surface sont envoyés ; aucune autre donnée du client n'atteint l'agent.
+    La voix attend le résultat réel avant de confirmer, pour éviter le faux « status ok ».
+    Elle parle hors délégation, puisque personne n'a rien dit. Pas de confirmation hors GenUI : décision du porteur.
+    → En option, ↓ : le journal et le rejeu de l'acte 4. Sinon, → passe directement à la sécurité.
   </aside>
 </section>
 
@@ -439,12 +438,11 @@
   </div>
   <p class="refs">p-ar-replay · pdr-0032 · pdr-0038 · pdr-0066 · pdr-0081 · [genui-a2ui-messages] · [genui-multiple-surfaces]</p>
   <aside class="notes">
-    Journal en mémoire du flux A2UI reçu, refus compris · jamais sur disque
-    Ni voix, ni transcription, ni actions enregistrées
-    Entrée : seq strict · t_ms horloge monotone · brut · agent et tâche
-    Même gate que le direct · 0,25× à 2× · attentes plafonnées à 3 s
-    Curseur = vider puis réinjecter (A2UI incrémental) · rail figé, non rejoué
-    Déterministe : ni LLM ni réseau · format JSONL voisin pour la boucle
+    Le rejeu montre la même chose que le direct parce qu'il passe par le même chemin de validation.
+    Le journal ne garde que le flux A2UI, refus compris, et reste en mémoire : c'est du JSON produit par un LLM.
+    Le numéro d'ordre est strict car A2UI impose l'ordre des messages ; les attentes sont plafonnées à 3 s.
+    ⚠ Le rail garde les tuiles du dernier direct : ni le plan ni l'activité des agents ne sont rejoués (pdr-0081).
+    → Retour au fil principal : la sécurité.
   </aside>
 </section>
 </section>
@@ -466,12 +464,12 @@
   </table>
   <p class="refs">p-ar-security · pdr-0041 · pdr-0030 · pdr-0007 · pdr-0053 · pdr-0074 · [genui-a2ui-security] · [ma-prompt-injection-tools]</p>
   <aside class="notes">
-    Aucune clé dans l'app (testé) · pas de jeton éphémère GPT-Live → relais SDP
-    Agents sans clé (012) : réseau interne, sans sortie, passerelle
-    Risque principal : financier et réputationnel · données toutes fictives
-    127.0.0.1 sans auth · Host vérifié · débit limité · Origin refusé · 20 €
-    UI validée deux fois (orchestrateur, app) · style de l'IA ignoré
-    Vu en répétition : voix tierce → réponse de l'IA · à ignorer, 016 à faire
+    Ici le risque principal est financier et réputationnel : un quota brûlé ou un contenu inattendu à l'écran.
+    Les données sont toutes fictives. Aucune clé ne vit dans l'app, et un test le vérifie.
+    Le contrôle de Host bloque le DNS rebinding ; un POST portant un en-tête Origin est refusé.
+    Si le backend était un jour exposé, on passerait à des JWT vérifiés par JWKS.
+    ⚠ En répétition, une voix dans la pièce a obtenu une réponse de l'IA ; le correctif viendra de la fonctionnalité 016.
+    → Un mot sur le spike qui a levé le principal risque technique côté A2A.
   </aside>
 </section>
 
@@ -499,11 +497,11 @@
   <p class="small mt-1 fragment glow-in"><span class="badge badge--verified">SP-03 vérifié</span> <span class="badge badge--accepted">pdr-0045 : WSS maison, genui_a2a hors de l'app</span></p>
   <p class="refs">specs/001-sp-03-a2a-go-genui · p-rm-spikes · pdr-0045 · [proto-a2a-go-v03-compat] · [genui-a2a-connector] · [genui-test-a2a-roundtrip]</p>
   <aside class="notes">
-    Question : agent Go a2a-go v2 → A2UI en stream vers genui_a2a ? Oui, 29/10
-    genui_a2a 0.10.1 = A2A v0.3 · handler v1.0 : -32601 → a2acompat/a2av0
-    5 événements SSE · surface rendue · tap → connectAndSend → « validé »
-    Portée : test widget, agent Go réel, tap simulé, client jetable · hors app
-    Ensuite, 29/10 : WSS maison retenu · genui_a2a hors de la stack
+    Ce spike devait dire si un agent Go peut streamer de l'A2UI vers le client Flutter genui_a2a. Réponse : oui.
+    genui_a2a parle A2A v0.3 : le handler v1.0 répond -32601, il faut monter le handler de compatibilité.
+    Portée : test widget contre l'agent Go réel, mais avec un tap simulé et un client jetable, hors de l'app.
+    Le même jour, j'ai retenu un WebSocket maison ; ce spike reste la preuve qu'un client A2A Flutter fonctionnerait.
+    → Passons à la façon dont tout cela a été développé.
   </aside>
 </section>
 
@@ -542,12 +540,12 @@
   </div>
   <p class="refs">AGENTS.md · tools/loop/README.md · .claude/skills · .claude/agents · pdr-0043 · pdr-0062 · specs/progress.md</p>
   <aside class="notes">
-    knowledge/ : notes datées, sourcées · kb-lookup avant chaque tâche
-    product/ : PDR avec décideur · l'assistant recommande, je tranche
-    Boucle : worktree séparé · publie sur main par script · Spec Kit léger
-    Garde-fous : quota · 3 tentatives/étape · tests désactivés refusés · budget
-    Agents : feature-developer · architect-reviewer · refactorer · product-steward
-    016 à concevoir · chiffres du 31/10 à recompter la veille
+    Les agents de code ont une mémoire datée ; la base de notes vérifiées leur donne l'état actuel des API.
+    L'assistant recommande et je tranche ; il décide seul quand les faits ne laissent qu'une réponse, et le signale.
+    La boucle tourne dans un worktree séparé et ne publie sur main que par un script.
+    Garde-fous : quota, trois tentatives par étape, tests désactivés refusés, budget OpenAI.
+    ⚠ La fonctionnalité 016 vient de la répétition et reste à concevoir. Chiffres du 31/10, à recompter la veille.
+    → Cette méthode a aussi un coût, c'est le sujet suivant.
   </aside>
 </section>
 
@@ -585,12 +583,12 @@
   </div>
   <p class="refs">[rt-gpt-live-overview] · [rt-gpt-live-sideband] · [pdr-0030-llm-budget-20-eur] · pdr-0067 · pdr-0074 · tools/loop/README.md · specs/openai-spend.tsv</p>
   <aside class="notes">
-    Prod : la voix domine · ~3 $/h · 15 s facturées dès l'ouverture
-    LLM texte à part · Qualité seul sur gpt-6-luna → coût ÷ 3
-    Sideband non attaché → facturé jusqu'au Hangup · usage.seconds ~15 s
-    Dev 0,54 € sur 20 € : SP-02 0,26 · essais 0,15 · 012 ~0,13
-    12 € boucle · 8 € répétitions (hors registre) · à mettre à jour la veille
-    Agents de code : 90 % semaine au prorata, plafond 95 % · pause 90 %/5 h
+    En production, la voix domine : environ 3 $ par heure de conversation.
+    Les 15 s minimum sont facturées dès l'ouverture en WebRTC, même pour une session très courte.
+    Une session dont le sideband n'a pas pu s'attacher reste facturée jusqu'au Hangup.
+    Les 0,54 € : 0,26 pour le spike SP-02, 0,15 pour les essais réels, environ 0,13 pour mesurer les modèles de 012.
+    ⚠ Les répétitions au micro ne sont pas dans ce registre. Chiffres à mettre à jour la veille.
+    → Pour conclure, ce que je retiendrais de ce projet.
   </aside>
 </section>
 
@@ -632,12 +630,10 @@
   </div>
   <p class="refs">[genui-overview] · [rt-gpt-live-overview] · [ma-target-architecture] · [p-ar-security] · [pdr-0030-llm-budget-20-eur]</p>
   <aside class="notes">
-    GenUI : UI en données A2UI v0.9 · rendu par le catalogue Flutter
-    Voix : gpt-live-1 en WebRTC · clé au backend, qui relaie la session
-    Agents : délégation unique → orchestrateur → agents A2A produisent l'A2UI
-    Sécurité : injection possible · catalogue fermé, validation, retours = données
-    Méthode : KB + skills · mocks · Q-79, Q-80, Q-87 encore à observer
-    Coûts : 0,05 $/min voix · 0,54 € en dev, 16 fonctionnalités · à actualiser
-    → Dépôt public, adresse en bas · merci, place aux questions
+    Pour conclure, six points que je retiendrais de ce projet.
+    La voix et A2UI évoluent vite, d'où les versions épinglées exactement et une base de notes datées.
+    Sécurité : en plus du catalogue fermé, les retours d'agents sont traités comme des données non fiables.
+    ⚠ Une première répétition au micro a eu lieu le 31/10 ; Q-79, Q-80 et Q-87 restent à observer. Chiffres à actualiser.
+    → Le dépôt est public, l'adresse est en bas de l'écran. Merci, place aux questions.
   </aside>
 </section>
