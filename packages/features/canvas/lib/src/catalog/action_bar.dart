@@ -1,6 +1,6 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/action_availability.dart';
@@ -15,7 +15,7 @@ import 'bound_item.dart';
 /// Les boutons ne sont actifs que si un [ActionAvailability] au-dessus les y
 /// autorise ; le clic appelle son `onAction(id, surface)` (la barre ne connaît
 /// ni Bloc ni backend). Sans fournisseur, ils restent inactifs.
-final CatalogItem actionBarItem = boundCatalogItem<_ActionBar>(
+final ComponentImplementation actionBarItem = boundCatalogItem<_ActionBar>(
   name: 'ActionBar',
   description: 'Barre d\'actions liée à /actions.',
   parse: _ActionBar.tryParse,

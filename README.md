@@ -1,6 +1,6 @@
 # Genesis Canvas
 
-Démo de conférence Flutter desktop : la **voix** du speaker déclenche un **orchestrateur** et des **agents A2A**, qui renvoient de l'**UI déclarative A2UI** rendue en direct par **GenUI**. Cas d'usage : **Release Copilot**, la préparation de la décision go/no-go d'une release mobile, sur des données fictives.
+Démo de conférence Flutter desktop : la **voix** du speaker déclenche un **orchestrateur** et des **agents A2A**, qui renvoient de l'**UI déclarative A2UI** rendue en direct par **`a2ui_flutter`** (le successeur de `genui`). Cas d'usage : **Release Copilot**, la préparation de la décision go/no-go d'une release mobile, sur des données fictives.
 
 > « L'agent ne génère pas du code, il génère de la donnée d'interface ; le développeur Flutter garde la main sur le rendu via son catalogue. »
 

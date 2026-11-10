@@ -10,7 +10,12 @@ void main() {
       },
       'updateComponents': {
         'version': 'v0.9',
-        'updateComponents': {'surfaceId': 's1', 'components': <Object?>[]},
+        'updateComponents': {
+          'surfaceId': 's1',
+          'components': <Object?>[
+            {'id': 'root', 'component': 'Text', 'text': 'Bonjour'},
+          ],
+        },
       },
       'updateDataModel': {
         'version': 'v0.9',
@@ -42,13 +47,16 @@ void main() {
     });
 
     test('refuse une version différente de v0.9', () {
-      expect(
-        () => A2uiDecoder.decode({
-          'version': 'v0.8',
-          'createSurface': <String, Object?>{},
-        }),
-        throwsA(isA<A2uiDecodeException>()),
-      );
+      for (final version in <Object?>['v0.8', 'v0.9.1', '1.0', null]) {
+        expect(
+          () => A2uiDecoder.decode({
+            'version': version,
+            'createSurface': {'surfaceId': 's1', 'catalogId': 'c'},
+          }),
+          throwsA(isA<A2uiDecodeException>()),
+          reason: '$version',
+        );
+      }
     });
 
     test('refuse un corps invalide', () {

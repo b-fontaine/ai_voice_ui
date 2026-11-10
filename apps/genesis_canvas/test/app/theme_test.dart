@@ -1,10 +1,10 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_canvas/app/config/genesis_config.dart';
 import 'package:genesis_canvas/app/app.dart';
-import 'package:genui/genui.dart' show Surface;
 
 /// Faux paquet d'assets : frontière plateforme, contenu par chemin.
 class _FakeBundle extends CachingAssetBundle {
@@ -51,7 +51,7 @@ void main() {
     await tester.pump();
 
     final text = find.descendant(
-      of: find.byType(Surface),
+      of: find.byType(A2uiSurface),
       // La valeur (texte principal du KPI) ; le libellé est volontairement
       // en gris secondaire.
       matching: find.text('99,57 %'),

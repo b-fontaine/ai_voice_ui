@@ -1,5 +1,5 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart';
 
 import '../support/keys.dart';
 
@@ -15,5 +15,5 @@ Future<void> aucuneSurfaceNestAffichee(WidgetTester tester) async {
     );
     expect(find.byKey(AcceptanceKeys.skeleton(id)), findsNothing);
   }
-  expect(find.byType(Surface), findsNothing);
+  expect(find.byType(A2uiSurface), findsNothing);
 }

@@ -1,6 +1,6 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 
 import '../support/session_harness.dart';
 
@@ -10,14 +10,18 @@ import '../support/session_harness.dart';
 /// global 7 j, version 3.4 = 99,57 %.
 ///
 /// Migration A8b (catalogue `genesis`) : la valeur est portée par la cellule
-/// `surface-kpi` (liée à `/kpi`), rendue PAR le moteur genui (sous `Surface`).
+/// `surface-kpi` (liée à `/kpi`), rendue PAR le moteur A2UI (sous
+/// `A2uiSurface`).
 Future<void> laValeurLieeAuModeleDeDonneesEstAffichee(
   WidgetTester tester,
 ) async {
   const kpi = Key('surface-kpi');
   expect(find.byKey(kpi), findsOneWidget);
   final value = find.descendant(
-    of: find.descendant(of: find.byKey(kpi), matching: find.byType(Surface)),
+    of: find.descendant(
+      of: find.byKey(kpi),
+      matching: find.byType(A2uiSurface),
+    ),
     matching: find.textContaining('99,57'),
   );
   // Le chiffre descend de 100 vers sa valeur pendant 1,4 s (compteur, pdr-0088

@@ -1,5 +1,5 @@
 import 'package:a2ui_core/a2ui_core.dart'
-    show A2uiMessage, DataModel, UpdateDataModelMessage;
+    show AgentToRendererMessage, UpdateDataModelMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:test/test.dart';
 
@@ -21,7 +21,7 @@ A2uiEnvelopeReceived _event(
   String? agent,
   String? task,
 }) => A2uiEnvelopeReceived(
-  message: A2uiMessage.fromJson(raw),
+  message: AgentToRendererMessage.fromJson(raw),
   raw: raw,
   agent: agent,
   task: task,
@@ -156,18 +156,10 @@ void main() {
       final A2uiJournal journal = A2uiJournal(maxEntries: 10);
       journal.append(live, 0);
 
-      // Comme le gate : genui range la valeur par référence, puis une mise à
-      // jour de sous-chemin la modifie en place.
+      // Un consommateur du message vivant modifie sa valeur en place.
       final UpdateDataModelMessage message =
           live.message as UpdateDataModelMessage;
-      final DataModel model = DataModel();
-      model.set(message.path!, message.value);
-      model.set('/checklist/decisionStatus', 'go');
-      expect(
-        (message.value! as Map<Object?, Object?>).containsKey('decisionStatus'),
-        isTrue,
-        reason: 'la mutation en place est bien reproduite',
-      );
+      (message.value! as Map<Object?, Object?>)['decisionStatus'] = 'go';
 
       final A2uiEnvelopeReceived replayed = journal.entries.single.toEnvelope();
       expect(replayed.raw.toString(), isNot(contains('decisionStatus')));

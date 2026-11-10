@@ -1,7 +1,7 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/widgets.dart' show Key, Size, State, Widget;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 import 'package:shared_design_system/shared_design_system.dart'
     show DsStatusChip;
 import 'package:testing_real_fonts/testing_real_fonts.dart';
@@ -46,10 +46,10 @@ void main() {
       h.inCell(findTextIgnoringCase('En attente de décision')),
       findsOneWidget,
     );
-    final State<Surface> surfaceState = tester.state<State<Surface>>(
+    final State<A2uiSurface> surfaceState = tester.state<State<A2uiSurface>>(
       find.descendant(
         of: find.byKey(const Key('surface-checklist')),
-        matching: find.byType(Surface),
+        matching: find.byType(A2uiSurface),
       ),
     );
 
@@ -75,7 +75,7 @@ void main() {
     expect(h.inCell(find.text('37 PR')), findsOneWidget);
     expect(
       identical(
-        tester.state<State<Surface>>(find.byType(Surface)),
+        tester.state<State<A2uiSurface>>(find.byType(A2uiSurface)),
         surfaceState,
       ),
       isTrue,
@@ -99,7 +99,7 @@ void main() {
     expect(h.inCell(_recommendationChip), findsOneWidget);
     expect(
       identical(
-        tester.state<State<Surface>>(find.byType(Surface)),
+        tester.state<State<A2uiSurface>>(find.byType(A2uiSurface)),
         surfaceState,
       ),
       isTrue,

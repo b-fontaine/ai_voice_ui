@@ -4,7 +4,8 @@ import 'package:shared_core/shared_core.dart';
 const _createSurface =
     '{"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"c"}}}';
 const _updateComponents =
-    '{"t_ms": 300, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[]}}}';
+    '{"t_ms": 300, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1",'
+    '"components":[{"id":"root","component":"Text","text":"T"}]}}}';
 const _updateDataModel =
     '{"t_ms": 1000, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s1"}}}';
 
@@ -52,7 +53,12 @@ void main() {
         },
         {
           'version': 'v0.9',
-          'updateComponents': {'surfaceId': 's1', 'components': <Object?>[]},
+          'updateComponents': {
+            'surfaceId': 's1',
+            'components': [
+              {'id': 'root', 'component': 'Text', 'text': 'T'},
+            ],
+          },
         },
       ]);
       // Le décodeur normalise (il ajoute `sendDataModel`) : la ligne brute,
@@ -120,7 +126,7 @@ void main() {
         _createSurface,
         '{"t_ms": 10, "message": {"version":"v0.9",'
             '"createSurface":{"surfaceId":"s1","catalogId":"c"},'
-            '"updateComponents":{"surfaceId":"s1","components":[]}}}',
+            '"updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Text","text":"T"}]}}}',
       ]);
 
       expect(

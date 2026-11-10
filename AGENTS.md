@@ -3,7 +3,7 @@
 Application Flutter multi-agents. Elle réunit :
 - un **orchestrateur** ;
 - un **agent vocal** voice-to-voice temps réel (OpenAI `gpt-live-1` en WebRTC, ou Gemini Live via Firebase AI Logic) ;
-- un **agent GenUI**, qui génère des écrans avec le package `genui` et le protocole A2UI ;
+- un **agent GenUI**, qui génère des écrans avec le protocole A2UI, rendus par l'app avec `a2ui_core` et `a2ui_flutter` (qui remplacent le package `genui`) ;
 - des **outils**, exposés via MCP et A2A.
 
 Le produit en cours de construction est **Genesis Canvas** (cas d'usage « Release Copilot ») : une démo de conférence Flutter desktop. Sa documentation fonctionnelle et technique est dans `product/` (voir § 1 bis).

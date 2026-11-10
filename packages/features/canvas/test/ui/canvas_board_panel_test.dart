@@ -1,11 +1,13 @@
+import 'package:a2ui_core/a2ui_core.dart' show MessageProcessor;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show CatalogImplementation, ComponentImplementation;
+import 'package:a2ui_flutter/v0_9/basic_catalog.dart' as v0_9;
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_canvas/src/ui/dashed_outline_painter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart'
-    show BasicCatalogItems, Catalog, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../support/messages.dart';
@@ -15,7 +17,7 @@ import '../support/messages.dart';
 /// un rectangle de 013 (D-01, D-07, S-02) ni repeindre les voisines (NFR-04).
 void main() {
   const SceneTheme theme = SceneTheme.dark();
-  late SurfaceController controller;
+  late MessageProcessor<ComponentImplementation> controller;
   late CanvasBloc bloc;
   late ValueNotifier<String?> highlight;
 
@@ -25,8 +27,8 @@ void main() {
       ..devicePixelRatio = 1
       ..physicalSize = const Size(1872, 676);
     addTearDown(tester.view.reset);
-    controller = SurfaceController(
-      catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+    controller = MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[v0_9.basicCatalog()],
     );
     bloc = CanvasBloc(controller);
     highlight = ValueNotifier<String?>(null);

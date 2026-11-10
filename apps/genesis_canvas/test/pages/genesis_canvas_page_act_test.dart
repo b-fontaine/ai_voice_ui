@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:feature_canvas/feature_canvas.dart'
     show ActionRequested, CanvasActionBloc;
@@ -164,7 +164,7 @@ void main() {
     final raw = Map<String, Object?>.from(
       createSurface('actions')['data']! as Map,
     );
-    messages.add((raw: raw, message: A2uiMessage.fromJson(raw)));
+    messages.add((raw: raw, message: AgentToRendererMessage.fromJson(raw)));
     await settle(tester);
     expect(find.byKey(const Key('surface-actions')), findsOneWidget);
     expect(act(rig), 1);

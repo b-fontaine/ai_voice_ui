@@ -1,7 +1,7 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
 import 'keys.dart';
@@ -130,10 +130,10 @@ class DesignHarness {
     return opacity;
   }
 
-  /// Le moteur de rendu (`Surface`) de la surface [id] : son contenu, hors
+  /// Le moteur de rendu (`A2uiSurface`) de la surface [id] : son contenu, hors
   /// squelette.
   static Finder contentOf(String id) =>
-      find.descendant(of: surface(id), matching: find.byType(Surface));
+      find.descendant(of: surface(id), matching: find.byType(A2uiSurface));
 
   /// Plus petite cible (largeur, hauteur) de la commande de clé [key] : le
   /// bouton Material qu'elle porte ou contient, sinon le widget lui-même.

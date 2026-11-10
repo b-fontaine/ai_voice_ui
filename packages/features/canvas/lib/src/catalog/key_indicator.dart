@@ -1,5 +1,5 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/surface_restored.dart';
@@ -14,7 +14,7 @@ import 'gauge_scale.dart';
 /// et repère de comparaison, deltas « Tendance » et « vs `comparaison` ». Les
 /// données sont des chaînes : une valeur, un seuil ou une comparaison
 /// illisibles ne donnent ni jauge, ni marque, ni repère (jamais inventés).
-final CatalogItem keyIndicatorItem = boundCatalogItem<_Kpi>(
+final ComponentImplementation keyIndicatorItem = boundCatalogItem<_Kpi>(
   name: 'KeyIndicator',
   description: 'Indicateur clé lié à /kpi.',
   parse: _Kpi.tryParse,

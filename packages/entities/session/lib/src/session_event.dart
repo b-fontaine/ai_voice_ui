@@ -1,4 +1,4 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:collection/collection.dart' show DeepCollectionEquality;
 
 const DeepCollectionEquality _deepEq = DeepCollectionEquality();
@@ -126,7 +126,7 @@ final class AgentActivityReceived extends SessionEvent {
 /// Enveloppe A2UI reçue : le message décodé et le corps brut d'origine.
 ///
 /// L'égalité porte sur le corps brut (comparé en profondeur), dont [message]
-/// est dérivé, car [A2uiMessage] n'a pas d'égalité par valeur.
+/// est dérivé, car [AgentToRendererMessage] n'a pas d'égalité par valeur.
 final class A2uiEnvelopeReceived extends SessionEvent {
   const A2uiEnvelopeReceived({
     required this.message,
@@ -135,7 +135,7 @@ final class A2uiEnvelopeReceived extends SessionEvent {
     this.task,
   });
 
-  final A2uiMessage message;
+  final AgentToRendererMessage message;
   final Map<String, Object?> raw;
   final String? agent;
   final String? task;

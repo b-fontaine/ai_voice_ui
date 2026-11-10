@@ -1,4 +1,5 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage, A2uiValidationError;
+import 'package:a2ui_core/a2ui_core.dart'
+    show A2uiProtocolVersion, A2uiValidationError, AgentToRendererMessage;
 
 /// Message A2UI v0.9 refusé par [A2uiDecoder].
 ///
@@ -12,7 +13,7 @@ class A2uiDecodeException implements Exception {
   String toString() => 'A2uiDecodeException : $message';
 }
 
-/// Convertit un JSON brut en [A2uiMessage] (A2UI v0.9).
+/// Convertit un JSON brut en [AgentToRendererMessage] (A2UI v0.9).
 ///
 /// Partagé par le rejeu et le flux vivant.
 abstract final class A2uiDecoder {
@@ -20,12 +21,17 @@ abstract final class A2uiDecoder {
   ///
   /// Lève [A2uiDecodeException] si l'entrée n'est pas un objet, si la version
   /// est refusée ou si le corps est mal formé.
-  static A2uiMessage decode(Object? raw) {
+  static AgentToRendererMessage decode(Object? raw) {
     if (raw is! Map<String, Object?>) {
       throw const A2uiDecodeException('objet JSON attendu');
     }
+    // `a2ui_core` lit aussi v0.9.1 et 1.0 : la démo n'accepte que v0.9
+    // (pdr-0018).
+    if (raw['version'] != A2uiProtocolVersion.v0_9.jsonValue) {
+      throw const A2uiDecodeException('version v0.9 attendue');
+    }
     try {
-      return A2uiMessage.fromJson(raw);
+      return AgentToRendererMessage.fromJson(raw);
     } on A2uiValidationError catch (e) {
       throw A2uiDecodeException(e.message);
     } on TypeError catch (e) {

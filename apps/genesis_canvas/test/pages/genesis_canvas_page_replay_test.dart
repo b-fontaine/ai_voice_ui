@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:entity_session/entity_session.dart' show A2uiJournal;
 import 'package:feature_canvas/feature_canvas.dart'
@@ -79,7 +79,7 @@ void main() {
     for (final envelope in await act1Envelopes(tester)) {
       if (envelope['type'] != 'a2ui') continue;
       final raw = Map<String, Object?>.from(envelope['data']! as Map);
-      messages.add((raw: raw, message: A2uiMessage.fromJson(raw)));
+      messages.add((raw: raw, message: AgentToRendererMessage.fromJson(raw)));
       await tester.pump();
       await tester.pump();
     }
@@ -380,7 +380,7 @@ void main() {
       await tester.pump();
       final first = envelopes.firstWhere((e) => e['type'] == 'a2ui');
       final raw = Map<String, Object?>.from(first['data']! as Map);
-      feed.add((raw: raw, message: A2uiMessage.fromJson(raw)));
+      feed.add((raw: raw, message: AgentToRendererMessage.fromJson(raw)));
       await tester.pump();
       await tester.pump();
       return (rig: rig, exits: exits, feed: feed);

@@ -1,4 +1,4 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 
 /// Événements du `CanvasBloc`.
 sealed class CanvasEvent {
@@ -14,7 +14,7 @@ sealed class CanvasCommand extends CanvasEvent {
 /// le flux, l'annule à la fermeture ou si une nouvelle source arrive.
 final class CanvasSourceSubscribed extends CanvasEvent {
   const CanvasSourceSubscribed(this.messages);
-  final Stream<A2uiMessage> messages;
+  final Stream<AgentToRendererMessage> messages;
 }
 
 /// Remise à vide du canevas (toutes les surfaces sont supprimées du moteur).
@@ -22,10 +22,10 @@ final class CanvasResetRequested extends CanvasCommand {
   const CanvasResetRequested();
 }
 
-/// Un message A2UI v0.9 décodé à appliquer au moteur genui.
+/// Un message A2UI v0.9 décodé à appliquer au moteur de rendu.
 ///
 /// Le Bloc déduit les changements de surface et de phase du type du message.
 final class A2uiMessageReceived extends CanvasCommand {
   const A2uiMessageReceived(this.message);
-  final A2uiMessage message;
+  final AgentToRendererMessage message;
 }

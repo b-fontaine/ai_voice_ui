@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_canvas/src/ui/action_availability.dart'
@@ -8,7 +10,6 @@ import 'package:feature_canvas/src/ui/action_availability.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 
@@ -31,25 +32,27 @@ class _RecordingClient implements CanvasActionClient {
 /// Disponibilité des actions de la Barre d'actions (T16) : lue par le
 /// composant par un `InheritedWidget` interne à la slice.
 void main() {
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
 
   Future<void> pumpBar(
     WidgetTester tester, {
     Widget Function(Widget)? wrap,
   }) async {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+    );
     addTearDown(controller.dispose);
     for (final Map<String, dynamic> json in contractFixture(
       'actions',
       GenesisContract.defaultCatalogId,
       variant: 'act2',
     )) {
-      controller.handleMessage(a2ui.A2uiMessage.fromJson(json));
+      controller.processMessages(a2ui.AgentToRendererMessage.fromJson(json));
     }
     final Widget surface = SizedBox(
       width: 940,
       height: 200,
-      child: Surface(surfaceContext: controller.contextFor('actions')),
+      child: A2uiSurface(surface: controller.model.getSurface('actions')!),
     );
     await tester.pumpWidget(
       MaterialApp(

@@ -9,7 +9,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  a2ui_core: 0.1.1
+  a2ui_core: 0.6.0
+  a2ui_flutter: 0.2.0
   entity_catalog:
     path: ../../packages/entities/catalog
   entity_session:
@@ -32,7 +33,6 @@ dependencies:
     sdk: flutter
   flutter_bloc: 9.1.1
   flutter_webrtc: 1.6.3
-  genui: 0.10.4
   get_it: 9.3.0
   injectable: 3.0.0
   shared_backend_channel:

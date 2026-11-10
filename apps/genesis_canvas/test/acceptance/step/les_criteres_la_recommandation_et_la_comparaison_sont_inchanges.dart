@@ -38,7 +38,7 @@ Future<void> lesCriteresLaRecommandationEtLaComparaisonSontInchanges(
     expect(
       tester.state(Acte2Harness.engineOf(id)),
       same(Acte2Harness.surfaceStates[id]),
-      reason: 'la surface $id a été recréée (autre State de Surface)',
+      reason: 'la surface $id a été recréée (autre State de A2uiSurface)',
     );
   }
 }

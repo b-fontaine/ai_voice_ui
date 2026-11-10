@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:feature_replay/feature_replay.dart';
@@ -14,7 +14,10 @@ A2uiEnvelopeReceived _create(String id) {
       'catalogId': 'https://a2ui.org/specification/v0_9/basic_catalog.json',
     },
   };
-  return A2uiEnvelopeReceived(message: A2uiMessage.fromJson(raw), raw: raw);
+  return A2uiEnvelopeReceived(
+    message: AgentToRendererMessage.fromJson(raw),
+    raw: raw,
+  );
 }
 
 A2uiEnvelopeReceived _delete(String id) {
@@ -22,7 +25,10 @@ A2uiEnvelopeReceived _delete(String id) {
     'version': 'v0.9',
     'deleteSurface': <String, Object?>{'surfaceId': id},
   };
-  return A2uiEnvelopeReceived(message: A2uiMessage.fromJson(raw), raw: raw);
+  return A2uiEnvelopeReceived(
+    message: AgentToRendererMessage.fromJson(raw),
+    raw: raw,
+  );
 }
 
 class _Stage implements ReplayStage {

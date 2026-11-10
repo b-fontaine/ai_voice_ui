@@ -1,6 +1,6 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart';
 
 import 'keys.dart';
 
@@ -14,7 +14,7 @@ class Acte2Harness {
   /// à chaque refus du validateur.
   static StringBuffer errors = StringBuffer();
 
-  /// `State` de la `Surface` de chaque surface, relevé quand le tableau de
+  /// `State` de l'`A2uiSurface` de chaque surface, relevé quand le tableau de
   /// l'acte 1 est complet.
   static final Map<String, State> surfaceStates = <String, State>{};
 
@@ -31,10 +31,10 @@ class Acte2Harness {
     delegations = 1;
   }
 
-  /// Le moteur de rendu (`Surface`) de la cellule [id].
+  /// Le moteur de rendu (`A2uiSurface`) de la cellule [id].
   static Finder engineOf(String id) => find.descendant(
     of: find.byKey(AcceptanceKeys.surface(id)),
-    matching: find.byType(Surface),
+    matching: find.byType(A2uiSurface),
   );
 
   /// Relève l'état du rendu de chaque surface de l'acte 1.

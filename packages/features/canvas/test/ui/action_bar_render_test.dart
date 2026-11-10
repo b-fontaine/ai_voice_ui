@@ -1,4 +1,6 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_canvas/src/ui/action_availability.dart'
@@ -7,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../support/catalog_harness.dart';
@@ -16,7 +17,7 @@ import '../support/catalog_harness.dart';
 /// lisibilité et tenue dans le bandeau de 72 px.
 void main() {
   const SceneTheme theme = SceneTheme.dark();
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
 
   Widget app(Widget child) => MaterialApp(
     theme: ThemeData(
@@ -44,7 +45,7 @@ void main() {
           );
         }
       }
-      controller.handleMessage(a2ui.A2uiMessage.fromJson(json));
+      controller.processMessages(a2ui.AgentToRendererMessage.fromJson(json));
     }
   }
 
@@ -56,7 +57,9 @@ void main() {
     bool enabled = true,
     double height = CanvasBoard.actionsBandHeight,
   }) async {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+    );
     addTearDown(controller.dispose);
     feed(alter, withData: withData);
     Widget surface = Align(
@@ -65,7 +68,7 @@ void main() {
         key: const Key('band'),
         width: 940,
         height: height,
-        child: Surface(surfaceContext: controller.contextFor('actions')),
+        child: A2uiSurface(surface: controller.model.getSurface('actions')!),
       ),
     );
     if (onAction != null) {
@@ -235,7 +238,9 @@ void main() {
     testWidgets('squelette peint par CanvasBoard dès createSurface', (
       tester,
     ) async {
-      controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+      controller = a2ui.MessageProcessor<ComponentImplementation>(
+        catalogs: <CatalogImplementation>[genesisCatalog()],
+      );
       final CanvasBloc bloc = CanvasBloc(controller);
       addTearDown(() async {
         await bloc.close();
@@ -258,7 +263,9 @@ void main() {
         GenesisContract.defaultCatalogId,
         variant: 'act2',
       ).first;
-      bloc.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(create)));
+      bloc.add(
+        A2uiMessageReceived(a2ui.AgentToRendererMessage.fromJson(create)),
+      );
       for (var i = 0; i < 6; i++) {
         await tester.pump();
       }

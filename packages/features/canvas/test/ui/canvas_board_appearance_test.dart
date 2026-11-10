@@ -1,9 +1,9 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:feature_canvas/feature_canvas.dart' show A2uiMessageReceived;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 import 'package:shared_design_system/shared_design_system.dart' show DsSkeleton;
 
 import '../support/catalog_harness.dart';
@@ -47,7 +47,7 @@ double _blurOf(Finder finder) {
 
 Finder _content() => find.descendant(
   of: find.byKey(const Key('surface-kpi')),
-  matching: find.byType(Surface),
+  matching: find.byType(A2uiSurface),
 );
 
 /// Le chiffre héros, cherché par sa clé : son texte descend de 100 vers la
@@ -191,15 +191,15 @@ void main() {
     // Composants (480 ms) puis valeurs (160 ms).
     await tester.pump(const Duration(milliseconds: 640));
     expect(_opacityOf(_value()), 1.0);
-    final State surfaceBefore = tester.state(find.byType(Surface));
+    final State surfaceBefore = tester.state(find.byType(A2uiSurface));
 
     await h.sendVariant(tester, 'act2');
 
-    expect(tester.state(find.byType(Surface)), same(surfaceBefore));
+    expect(tester.state(find.byType(A2uiSurface)), same(surfaceBefore));
     expect(_valueAct2(), findsOneWidget);
     expect(_opacityOf(_content()), 1.0);
     expect(_skeleton(), findsNothing);
-    expect(find.byType(Surface), findsOneWidget);
+    expect(find.byType(A2uiSurface), findsOneWidget);
     // Le point de Bloquant bat en continu (U7) : `hasRunningAnimations` ne
     // peut plus servir. Aucun fondu ni aucune translation ne repart : le
     // contenu et la valeur restent opaques et immobiles à plusieurs instants.
@@ -231,12 +231,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 640));
     final Finder status = find.byKey(const Key('decision-status'));
     final State before = tester.state(status);
-    final State surfaceBefore = tester.state(find.byType(Surface));
+    final State surfaceBefore = tester.state(find.byType(A2uiSurface));
 
     await h.sendVariant(tester, 'act2');
 
     expect(tester.state(status), same(before));
-    expect(tester.state(find.byType(Surface)), same(surfaceBefore));
+    expect(tester.state(find.byType(A2uiSurface)), same(surfaceBefore));
     expect(
       find.descendant(of: status, matching: find.byType(FadeTransition)),
       findsWidgets,
@@ -321,19 +321,19 @@ void main() {
     expect(_blurOf(_content()), 0);
   });
 
-  testWidgets('le State de la Surface survit au fondu et aux données', (
+  testWidgets('le State de A2uiSurface survit au fondu et aux données', (
     tester,
   ) async {
     final h = CatalogHarness('kpi', 'kpi');
     await h.pump(tester, motion: _live);
     await h.sendFixtureTo(tester, 2);
-    final State before = tester.state(find.byType(Surface));
+    final State before = tester.state(find.byType(A2uiSurface));
 
     await tester.pump(const Duration(milliseconds: 480));
     await h.send(tester, h.fixture[2]);
     await tester.pump(const Duration(milliseconds: 480));
 
-    expect(tester.state(find.byType(Surface)), same(before));
+    expect(tester.state(find.byType(A2uiSurface)), same(before));
   });
 
   testWidgets('une surface déjà complète au premier build ne rejoue rien', (
@@ -357,7 +357,9 @@ void main() {
 
     // Le rejeu reconstruit une surface d'un seul coup, à sa phase finale.
     for (var i = 0; i < 3; i++) {
-      h.bloc.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(h.fixture[i])));
+      h.bloc.add(
+        A2uiMessageReceived(a2ui.AgentToRendererMessage.fromJson(h.fixture[i])),
+      );
     }
     for (var i = 0; i < 6; i++) {
       await tester.pump();
@@ -378,7 +380,7 @@ void main() {
 
     h.bloc.add(
       A2uiMessageReceived(
-        a2ui.A2uiMessage.fromJson(<String, dynamic>{
+        a2ui.AgentToRendererMessage.fromJson(<String, dynamic>{
           'version': 'v0.9',
           'deleteSurface': <String, dynamic>{'surfaceId': 'kpi'},
         }),

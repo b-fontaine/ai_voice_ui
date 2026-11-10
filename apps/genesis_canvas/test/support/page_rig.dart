@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:a2ui_flutter/a2ui_flutter.dart' show CatalogImplementation;
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_voice_session/feature_voice_session.dart';
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
@@ -15,7 +16,6 @@ import 'package:genesis_canvas/widgets/top_bar/top_bar.dart';
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/material.dart'
     show Material, MaterialApp, MaterialType, ThemeData;
-import 'package:genui/genui.dart' show Catalog;
 import 'package:shared_design_system/shared_design_system.dart'
     show sceneMaterialTheme;
 import 'package:get_it/get_it.dart';
@@ -173,7 +173,7 @@ class PageRig {
     resetClient.startupArmed = replay == null;
     final page = GenesisCanvasPage(
       getIt: getIt,
-      catalogs: <Catalog>[genesisCatalog(catalogId: rigCatalog)],
+      catalogs: <CatalogImplementation>[genesisCatalog(catalogId: rigCatalog)],
       replay: replay,
       snapshotFactory: (exitHandler) => SnapshotService(
         path: snapshotPath,

@@ -1,5 +1,5 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import 'bound_item.dart';
@@ -10,7 +10,7 @@ import 'bound_item.dart';
 /// Trois états comme les autres composants liés : squelette (cellule du
 /// board), sans données (objet absent, aucune ligne) et état neutre (RG-10)
 /// si `items` n'est pas une liste ou si une ligne est incomplète.
-final CatalogItem crashListItem = boundCatalogItem<_Crashes>(
+final ComponentImplementation crashListItem = boundCatalogItem<_Crashes>(
   name: 'CrashList',
   description: 'Liste des principaux crashs liée à /crashes.',
   parse: _Crashes.tryParse,

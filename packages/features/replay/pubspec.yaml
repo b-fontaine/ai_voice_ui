@@ -16,7 +16,7 @@ dependencies:
     path: ../../entities/session
 
 dev_dependencies:
-  a2ui_core: 0.1.1
+  a2ui_core: 0.6.0
   fake_async: 1.3.3
   flutter_lints: 6.0.0
   flutter_test:

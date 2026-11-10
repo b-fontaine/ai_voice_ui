@@ -1,5 +1,5 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/surface_restored.dart';
@@ -15,13 +15,14 @@ import 'text_metrics.dart';
 /// Le code `level` pilote la couleur des puces, le liseré des lignes
 /// bloquantes et le compteur ; les libellés sont affichés tels quels (jamais
 /// interprétés).
-final CatalogItem releaseChecklistItem = boundCatalogItem<ChecklistData>(
-  name: 'ReleaseChecklist',
-  description: 'Checklist go/no-go liée à /checklist.',
-  parse: ChecklistData.tryParse,
-  build: (BuildContext context, ChecklistData c, String _) =>
-      _ChecklistView(checklist: c),
-);
+final ComponentImplementation releaseChecklistItem =
+    boundCatalogItem<ChecklistData>(
+      name: 'ReleaseChecklist',
+      description: 'Checklist go/no-go liée à /checklist.',
+      parse: ChecklistData.tryParse,
+      build: (BuildContext context, ChecklistData c, String _) =>
+          _ChecklistView(checklist: c),
+    );
 
 /// Glissement de départ d'une ligne (`gc-row` : `translateX(-12px)`).
 const double _rowShift = 12;

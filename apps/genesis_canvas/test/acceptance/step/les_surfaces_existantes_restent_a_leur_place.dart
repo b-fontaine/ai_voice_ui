@@ -7,8 +7,8 @@ import '../support/keys.dart';
 /// Usage: les surfaces existantes restent à leur place
 ///
 /// Mêmes cellules, mêmes positions, même `State` du moteur de rendu
-/// (`Surface`) qu'avant la phrase : rien n'a été recréé ni remonté (D1) ; aucun
-/// squelette n'est repeint.
+/// (`A2uiSurface`) qu'avant la phrase : rien n'a été recréé ni remonté (D1) ;
+/// aucun squelette n'est repeint.
 Future<void> lesSurfacesExistantesRestentALeurPlace(WidgetTester tester) async {
   expect(
     Acte2Harness.surfaceStates,
@@ -29,7 +29,7 @@ Future<void> lesSurfacesExistantesRestentALeurPlace(WidgetTester tester) async {
     expect(
       tester.state(Acte2Harness.engineOf(id)),
       same(Acte2Harness.surfaceStates[id]),
-      reason: 'la surface $id a été recréée (autre State de Surface)',
+      reason: 'la surface $id a été recréée (autre State de A2uiSurface)',
     );
     expect(
       find.descendant(

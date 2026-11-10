@@ -36,8 +36,8 @@ class A2uiGate {
   final void Function(String code)? onRejected;
 
   final GenesisMessageValidator _validator;
-  final StreamController<a2ui.A2uiMessage> _accepted =
-      StreamController<a2ui.A2uiMessage>();
+  final StreamController<a2ui.AgentToRendererMessage> _accepted =
+      StreamController<a2ui.AgentToRendererMessage>();
   final List<StreamController<ValidatedEnvelope>> _branches =
       <StreamController<ValidatedEnvelope>>[];
   StreamSubscription<SessionEvent>? _subscription;
@@ -59,14 +59,15 @@ class A2uiGate {
   }
 
   /// Messages à appliquer au canevas, dans l'ordre.
-  Stream<a2ui.A2uiMessage> get accepted => _accepted.stream;
+  Stream<a2ui.AgentToRendererMessage> get accepted => _accepted.stream;
 
   /// Adapte un flux de rejeu au flux unique de `SessionEvent`. `raw` est le
   /// JSON **brut** du message, tel qu'il a été lu (sans agent ni tâche) : c'est
   /// lui que le validateur contrôle, jamais le JSON reconstruit depuis le
   /// message décodé (le décodeur peut écarter ou normaliser une propriété).
   static Stream<SessionEvent> replayEvents(
-    Stream<({Map<String, Object?> raw, a2ui.A2uiMessage message})> replay,
+    Stream<({Map<String, Object?> raw, a2ui.AgentToRendererMessage message})>
+    replay,
   ) => replay.map(
     (entry) => A2uiEnvelopeReceived(
       message: entry.message,
@@ -112,7 +113,12 @@ class A2uiGate {
         break;
     }
     for (final String surfaceId in envelope.compensations) {
-      _accepted.add(a2ui.DeleteSurfaceMessage(surfaceId: surfaceId));
+      _accepted.add(
+        a2ui.DeleteSurfaceMessage(
+          version: a2ui.A2uiProtocolVersion.v0_9.jsonValue,
+          surfaceId: surfaceId,
+        ),
+      );
     }
   }
 
