@@ -29,6 +29,7 @@
 ## Journal
 | Date | Événement |
 |---|---|
+| 2026-11-09 | hors boucle, à la demande du porteur : Flutter monté à 3.47.9 ([pdr-0090](../product/decisions/pdr-0090-flutter-3-47-9-pinned.md), remplace pdr-0046) ; 4 dépendances transitives montées ; la CI lit la version dans `pubspec.yaml` ; `tools/flutter-upgrade.sh` et `task upgrade` ajoutés. Reste : répétition complète par le porteur ; le worktree de boucle doit reprendre `main` avant tout `pub get`. |
 | 2026-11-03 | le porteur a testé en direct et validé l'UI pour la démo ([pdr-0089](../product/decisions/pdr-0089-design-accepted-for-demo-after-019.md)) : pas de 020 ; reste J7 en répétition (Q-79, Q-80, Q-87, Q-90, Q-93, SP-06, 60 i/s) |
 | 2026-11-03 | décisions du porteur reçues (24 px retirés, fidélité au design system et animations → [pdr-0087](../product/decisions/pdr-0087-design-system-fidelity-no-24px-minimum.md)) ; prochaine : 019 (fidélité au design system, animations comprises, vérification de l'indicateur d'acte en rejeu) |
 | 2026-11-03 | 019 : **publiée sur `origin/main`** (`c032887`, `publish.sh` code 0, `gate --full` vert, 67 contrôles : `.omc/state/loop/gates/20261103-163954-full.log`, push `fede4d8..c032887`). Prochaine : le reste de J7 se joue en répétition avec le porteur (SP-06 AEC sur enceinte, seuils `VOICE_OVERLAP_*`, fenêtre `VOICE_RECOVERY_WINDOW`, Q-79, Q-80, Q-87, Q-90, Q-92 b à e, Q-93, **Q-94**, lisibilité au fond de la salle sans plancher de 24 px, mesure des 60 i/s au profil) ; hors de ce périmètre, rien à développer sans décision du porteur. |

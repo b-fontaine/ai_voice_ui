@@ -3,9 +3,9 @@ id: pdr-0010-pinned-experimental-versions
 title: "PDR-0010 — Versions figées de Flutter, genui et genui_a2a ; pubspec.lock committé"
 area: decisions
 status: validated
-updated: 2026-10-29
+updated: 2026-11-09
 sources: [product/sources/product-description.pdf#p1, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p12, knowledge:genui-overview, knowledge:ma-package-versions, knowledge:adr-0008-ds-widgetbook-4-beta, knowledge:ds-widgetbook-4-spike]
-links: [pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0045-app-backend-channel-wss-recommended, p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike, pdr-0018-a2ui-v09-genui-0-10-4]
+links: [pdr-0090-flutter-3-47-9-pinned, pdr-0046-flutter-3-47-8-pinned, pdr-0047-go-and-tool-versions-pinned, pdr-0045-app-backend-channel-wss-recommended, p-fn-nfr, p-ar-stack, p-ar-quality, p-rm-spikes, p-rm-open-questions, pdr-0001-conference-demo-deliverable, pdr-0011-adopt-knowledge-adrs, genui-overview, ma-package-versions, genui-migration-0-10, genui-a2a-connector, adr-0008-ds-widgetbook-4-beta, ds-widgetbook-4-spike, pdr-0018-a2ui-v09-genui-0-10-4]
 tags: [pdr, decision, versions, reproducibility, genui, flutter]
 decision_status: acceptée
 decided_on: 2026-10-28
@@ -28,7 +28,7 @@ Part de l'assistant : mise en forme ; état des versions tiré de knowledge.
 
 ## Hypothèses
 - ✅ Flutter 3.47.8 a été exécuté avec succès dans le spike Widgetbook [ds-widgetbook-4-spike].
-- ✅ Versions exactes arrêtées le 2026-10-29 : Flutter 3.47.8 ([pdr-0046](pdr-0046-flutter-3-47-8-pinned.md), Q-25), `genui` 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md)), Go et outils ([pdr-0047](pdr-0047-go-and-tool-versions-pinned.md), Q-46). `genui_a2a` n'entre pas dans la stack de l'app ([pdr-0045](pdr-0045-app-backend-channel-wss-recommended.md), Q-39) ; `a2ui_core` reste transitif via genui 0.10.4. Relevés datés du 2026-10-26, à revérifier sur pub.dev avant tout ajout [ma-package-versions] → [p-ar-stack](../architecture/stack.md).
+- ✅ Versions exactes arrêtées le 2026-10-29 : Flutter 3.47.8 ([pdr-0046](pdr-0046-flutter-3-47-8-pinned.md), Q-25 ; monté à 3.47.9 le 2026-11-09, [pdr-0090](pdr-0090-flutter-3-47-9-pinned.md)), `genui` 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md)), Go et outils ([pdr-0047](pdr-0047-go-and-tool-versions-pinned.md), Q-46). `genui_a2a` n'entre pas dans la stack de l'app ([pdr-0045](pdr-0045-app-backend-channel-wss-recommended.md), Q-39) ; `a2ui_core` reste transitif via genui 0.10.4. Relevés datés du 2026-10-26, à revérifier sur pub.dev avant tout ajout [ma-package-versions] → [p-ar-stack](../architecture/stack.md).
 - ✅ Écart E3 levé le 2026-10-29 : A2UI v0.9 avec genui 0.10.4 → [pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md) (Q-03 tranchée).
 
 ## Options
@@ -63,5 +63,6 @@ Aucune alternative documentée dans la source.
 | 2026-10-28 | Consignée en PDR | Assistant (mise en forme) |
 | 2026-10-29 | Hypothèse E3 levée : A2UI v0.9 avec genui 0.10.4 ([pdr-0018](pdr-0018-a2ui-v09-genui-0-10-4.md), décision contrainte) | Assistant |
 | 2026-10-29 | Versions précisées par [pdr-0046](pdr-0046-flutter-3-47-8-pinned.md) (Flutter) et [pdr-0047](pdr-0047-go-and-tool-versions-pinned.md) (Go, outils, genui) ; décision de fond reconfirmée, sans changement | Assistant (mise en forme, sur décisions du porteur) |
+| 2026-11-09 | Flutter monté à 3.47.9 par [pdr-0090](pdr-0090-flutter-3-47-9-pinned.md), qui remplace pdr-0046 ; politique d'épinglage inchangée | Benoît FONTAINE (porteur), conversation |
 
 Pas d'archive brute.

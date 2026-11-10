@@ -24,6 +24,16 @@ tasks:
     cmds:
       - docker compose -p {{.DEMO_PROJECT}} down --remove-orphans
 
+  upgrade:
+    desc: Aligne le dépôt sur le Flutter installé (pubspec, lock, CI) et met à jour les dépendances ; `task upgrade -- --verify` enchaîne la porte complète
+    cmds:
+      - tools/flutter-upgrade.sh {{.CLI_ARGS}}
+
+  upgrade:check:
+    desc: Vérifie, sans rien modifier, que le dépôt est aligné sur le Flutter installé
+    cmds:
+      - tools/flutter-upgrade.sh --check
+
   loop:
     desc: Lance la boucle autonome, son superviseur et le tableau de bord (http://127.0.0.1:{{.DASHBOARD_PORT}})
     preconditions:
