@@ -31,7 +31,8 @@ enum CanvasSourceStatus {
 
 /// État du canevas : des identifiants de surface ordonnés et leur phase.
 ///
-/// Aucun état genui n'est conservé ici : le rendu lit le `SurfaceController`.
+/// Aucun état du moteur n'est conservé ici : le rendu lit le
+/// `MessageProcessor`.
 @immutable
 final class CanvasState {
   const CanvasState._(

@@ -1,6 +1,6 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart';
 import 'package:shared_core/shared_core.dart' show AppClock;
 
 import 'keys.dart';
@@ -248,7 +248,7 @@ class Acte4Harness {
     }
     return <String, Object?>{
       'surfaces': surfaces,
-      'engines': find.byType(Surface).evaluate().length,
+      'engines': find.byType(A2uiSurface).evaluate().length,
       'shelf': textsUnder(find.byKey(AcceptanceKeys.catalogShelf)),
       'panel': textsUnder(find.byKey(AcceptanceKeys.protocolPanel))
           .where((t) => !_timeOfDay.hasMatch(t))

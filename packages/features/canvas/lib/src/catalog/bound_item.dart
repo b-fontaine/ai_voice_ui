@@ -1,21 +1,23 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart'
-    show BoundObject, CatalogItem, CatalogItemContext;
 import 'package:json_schema_builder/json_schema_builder.dart' show S, Schema;
 import 'package:shared_design_system/shared_design_system.dart';
 
-/// Fabrique un `CatalogItem` du catalogue `genesis` lié à l'objet du contrat
-/// (`GenesisContract.boundPathOf(name)`, source unique du chemin).
+/// Fabrique un `ComponentImplementation` du catalogue `genesis` lié à l'objet
+/// du contrat (`GenesisContract.boundPathOf(name)`, source unique du chemin).
 ///
-/// L'objet est lu avec `BoundObject` (jamais `dataContext.subscribe` dans le
-/// `widgetBuilder`, A1b). Trois états distincts :
+/// L'objet arrive résolu dans `props` : la propriété `data` (`{"path": …}`)
+/// est une liaison, que le moteur suit et dont le changement reconstruit le
+/// composant (jamais d'abonnement au data model dans le `builder`, A1b).
+/// Trois états distincts :
 /// - objet absent : cellule « sans données » (`nodata-<surfaceId>`) ;
 /// - objet incomplet, de mauvais type ou de statut hors enum : état neutre
 ///   (`neutral-<surfaceId>`, RG-10), jamais d'exception ;
 /// - objet valide ([parse] renvoie une valeur) : [build], qui reçoit aussi
 ///   l'identifiant de la surface du contexte de rendu.
-CatalogItem boundCatalogItem<T extends Object>({
+ComponentImplementation boundCatalogItem<T extends Object>({
   required String name,
   required String description,
   required T? Function(Object raw) parse,
@@ -25,9 +27,9 @@ CatalogItem boundCatalogItem<T extends Object>({
   final String path =
       GenesisContract.boundPathOf(name) ??
       (throw ArgumentError.value(name, 'name', 'composant sans liaison'));
-  return CatalogItem(
+  return ComponentImplementation(
     name: name,
-    dataSchema: S.object(
+    schema: S.object(
       description: description,
       properties: <String, Schema>{
         'data': S.object(
@@ -38,32 +40,27 @@ CatalogItem boundCatalogItem<T extends Object>({
       },
       required: <String>['data'],
     ),
-    widgetBuilder: (CatalogItemContext ctx) {
-      final Object data = ctx.data;
-      return BoundObject(
-        dataContext: ctx.dataContext,
-        value: data is Map ? data['data'] : null,
-        builder: (BuildContext context, Object? object) {
-          if (object == null) {
-            return _ValueFade(
-              state: _BoundState.noData,
-              child: NoDataCell(key: Key('nodata-${ctx.surfaceId}')),
-            );
-          }
-          final T? value = _safeParse(parse, object);
-          if (value == null) {
-            return _ValueFade(
-              state: _BoundState.neutral,
-              child: SizedBox.expand(
-                child: DsNeutralState(key: Key('neutral-${ctx.surfaceId}')),
-              ),
-            );
-          }
-          return _ValueFade(
-            state: _BoundState.data,
-            child: build(context, value, ctx.surfaceId),
-          );
-        },
+    builder: (BuildContext context, node, props, buildChild) {
+      final String surfaceId = A2uiSurface.of(context).id;
+      final Object? object = props.value('data');
+      if (object == null) {
+        return _ValueFade(
+          state: _BoundState.noData,
+          child: NoDataCell(key: Key('nodata-$surfaceId')),
+        );
+      }
+      final T? value = _safeParse(parse, object);
+      if (value == null) {
+        return _ValueFade(
+          state: _BoundState.neutral,
+          child: SizedBox.expand(
+            child: DsNeutralState(key: Key('neutral-$surfaceId')),
+          ),
+        );
+      }
+      return _ValueFade(
+        state: _BoundState.data,
+        child: build(context, value, surfaceId),
       );
     },
   );

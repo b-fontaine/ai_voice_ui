@@ -41,7 +41,7 @@ class _Utf8Bundle extends CachingAssetBundle {
 
 const _jsonl = '''
 {"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"s1","catalogId":"c"}}}
-{"t_ms": 200, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[]}}}
+{"t_ms": 200, "message": {"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Text","text":"T"}]}}}
 
 {"t_ms": 500, "message": {"version":"v0.9","updateDataModel":{"surfaceId":"s1"}}}
 ''';

@@ -1,12 +1,15 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:feature_replay/feature_replay.dart';
 import 'package:flutter/widgets.dart';
 
 A2uiEnvelopeReceived _envelope(Map<String, Object?> raw) =>
-    A2uiEnvelopeReceived(message: A2uiMessage.fromJson(raw), raw: raw);
+    A2uiEnvelopeReceived(
+      message: AgentToRendererMessage.fromJson(raw),
+      raw: raw,
+    );
 
 A2uiEnvelopeReceived _create(String id) => _envelope(<String, Object?>{
   'version': 'v0.9',

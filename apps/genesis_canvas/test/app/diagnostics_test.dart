@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/material.dart' show Key;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 
 import '../acceptance/support/session_harness.dart';
 import '../support/pump_until.dart';
@@ -56,7 +56,7 @@ void main() {
       );
       await SessionHarness.waitFor(
         tester,
-        find.byType(Surface),
+        find.byType(A2uiSurface),
         'surface suivante non rendue',
       );
       expect(lines(sink), hasLength(2));

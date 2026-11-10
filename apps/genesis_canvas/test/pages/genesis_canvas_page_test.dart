@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:a2ui_flutter/a2ui_flutter.dart' show CatalogImplementation;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,6 @@ import 'package:genesis_canvas/app/scenario/scenario_player.dart';
 import 'package:genesis_canvas/pages/genesis_canvas/genesis_canvas.dart';
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
-import 'package:genui/genui.dart' show Catalog;
 import 'package:shared_core/shared_core.dart' show ReplayedMessage;
 import 'package:get_it/get_it.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
@@ -52,7 +52,7 @@ const _unknownComponent =
 ''';
 
 // Rejeu conforme au contrat. Avec un catalogue vide injecté, le gate l'accepte
-// mais genui signale une erreur par `reportError`, sans lever d'exception.
+// mais le moteur signale une erreur sur `model.onError`, sans lever d'exception.
 const _valid =
     '''
 {"t_ms": 0, "message": {"version":"v0.9","createSurface":{"surfaceId":"kpi","catalogId":"$_catalog"}}}
@@ -94,7 +94,7 @@ void main() {
     bool capture = true,
     String scenario = 'demo',
     bool withReplay = true,
-    List<Catalog>? catalogs,
+    List<CatalogImplementation>? catalogs,
     GenesisConfig config = const GenesisConfig(),
   }) async {
     tester.view.physicalSize = const Size(1920, 1080);
@@ -107,7 +107,8 @@ void main() {
           GenesisCanvasPage(
             getIt: newGetIt(),
             catalogs:
-                catalogs ?? <Catalog>[genesisCatalog(catalogId: _catalog)],
+                catalogs ??
+                <CatalogImplementation>[genesisCatalog(catalogId: _catalog)],
             replay: withReplay
                 ? ScenarioPlayer(
                     bundle: _FakeBundle(<String, String>{
@@ -143,29 +144,31 @@ void main() {
   }
 
   test('une seule source du catalogue : deux catalogues sont refusés', () {
-    GenesisCanvasPage page(List<Catalog> catalogs) => GenesisCanvasPage(
-      getIt: GetIt.asNewInstance(),
-      catalogs: catalogs,
-      snapshotFactory: (exitHandler) => SnapshotService(
-        path: null,
-        exitHandler: exitHandler,
-        errorSink: errors,
-      ),
-      exitHandler: exitCodes.add,
-      errorSink: errors,
-      settings: pageSettingsOf(),
-    );
+    GenesisCanvasPage page(List<CatalogImplementation> catalogs) =>
+        GenesisCanvasPage(
+          getIt: GetIt.asNewInstance(),
+          catalogs: catalogs,
+          snapshotFactory: (exitHandler) => SnapshotService(
+            path: null,
+            exitHandler: exitHandler,
+            errorSink: errors,
+          ),
+          exitHandler: exitCodes.add,
+          errorSink: errors,
+          settings: pageSettingsOf(),
+        );
 
     expect(
-      () => page(<Catalog>[
+      () => page(<CatalogImplementation>[
         genesisCatalog(catalogId: _catalog),
         genesisCatalog(catalogId: '$_catalog-bis'),
       ]),
       throwsAssertionError,
     );
-    expect(() => page(const <Catalog>[]), throwsAssertionError);
+    expect(() => page(const <CatalogImplementation>[]), throwsAssertionError);
     expect(
-      page(<Catalog>[genesisCatalog(catalogId: _catalog)]).catalogId,
+      page(<CatalogImplementation>[genesisCatalog(catalogId: _catalog)])
+          .catalogId,
       _catalog,
     );
   });
@@ -176,11 +179,13 @@ void main() {
     await launch(
       tester,
       _valid,
-      catalogs: <Catalog>[Catalog(const [], catalogId: _catalog)],
+      catalogs: <CatalogImplementation>[
+        CatalogImplementation(id: _catalog, components: const []),
+      ],
     );
 
     expect(exitCodes, <int>[1]);
-    expect(errors.toString(), contains('Erreur du moteur genui'));
+    expect(errors.toString(), contains('Erreur du moteur A2UI'));
   });
 
   testWidgets('message refusé pendant le rejeu : code fermé seul et sortie 1', (
@@ -286,7 +291,9 @@ void main() {
         child: withOverlay(
           GenesisCanvasPage(
             getIt: newGetIt(),
-            catalogs: <Catalog>[genesisCatalog(catalogId: _catalog)],
+            catalogs: <CatalogImplementation>[
+              genesisCatalog(catalogId: _catalog),
+            ],
             replay: messages.stream,
             snapshotFactory: (exitHandler) => SnapshotService(
               path: '${dir.path}/out.png',

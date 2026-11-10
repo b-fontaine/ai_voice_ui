@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/surface_restored.dart';
@@ -19,7 +19,7 @@ import 'trend_legend.dart';
 /// seuil, point de tête avec sa valeur et annotation « ▲ seuil franchi dès Jn ».
 /// Toutes ces valeurs sont dérivées de la donnée (`trend_geometry.dart`) ; le
 /// tracé se dévoile de gauche à droite (`gc-wipe`).
-final CatalogItem trendChartItem = boundCatalogItem<_Trend>(
+final ComponentImplementation trendChartItem = boundCatalogItem<_Trend>(
   name: 'TrendChart',
   description: 'Courbe de tendance liée à /trend.',
   parse: _Trend.tryParse,

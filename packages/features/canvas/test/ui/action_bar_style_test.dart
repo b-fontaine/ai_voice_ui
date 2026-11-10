@@ -1,11 +1,12 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:feature_canvas/src/ui/action_availability.dart'
     show ActionAvailability;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../support/catalog_harness.dart';
@@ -15,7 +16,7 @@ import '../support/catalog_harness.dart';
 /// tirets, étiquette issue du `title` de `/actions`. Le clic reste un clic.
 void main() {
   const SceneTheme theme = SceneTheme.dark();
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
 
   Future<void> pumpBar(
     WidgetTester tester, {
@@ -24,7 +25,9 @@ void main() {
     Set<String> done = const <String>{},
     String? title,
   }) async {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+    );
     addTearDown(controller.dispose);
     for (final Map<String, dynamic> json in contractFixture(
       'actions',
@@ -36,14 +39,14 @@ void main() {
         body['value'] = cloneJson(body['value'] as Map<String, dynamic>)
           ..['title'] = title;
       }
-      controller.handleMessage(a2ui.A2uiMessage.fromJson(json));
+      controller.processMessages(a2ui.AgentToRendererMessage.fromJson(json));
     }
     Widget surface = Align(
       alignment: Alignment.topLeft,
       child: SizedBox(
         width: 940,
         height: CanvasBoard.actionsBandHeight,
-        child: Surface(surfaceContext: controller.contextFor('actions')),
+        child: A2uiSurface(surface: controller.model.getSurface('actions')!),
       ),
     );
     if (onAction != null) {

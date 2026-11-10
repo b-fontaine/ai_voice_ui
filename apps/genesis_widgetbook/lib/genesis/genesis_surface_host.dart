@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:feature_canvas/feature_canvas.dart' show genesisCatalog;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
-import 'package:genui/genui.dart' show Surface, SurfaceController;
 
 /// État montré par une story d'un composant du catalogue genesis.
 enum GenesisSurfaceState {
@@ -72,7 +73,7 @@ List<Map<String, dynamic>> messagesFor(
 
 /// Hôte d'une surface du catalogue genesis, pour les stories.
 ///
-/// Crée un `SurfaceController(catalogs: [genesisCatalog()])`, libéré dans
+/// Crée un `MessageProcessor(catalogs: [genesisCatalog()])`, libéré dans
 /// [State.dispose], lui injecte les messages A2UI de l'exemple [example] du
 /// contrat (adaptés à [state]) et affiche la surface. C'est le motif
 /// `CachedSurface` de la doc Widgetbook GenUI (ds-widgetbook-4-genui) : le
@@ -95,9 +96,12 @@ class GenesisSurfaceHost extends StatefulWidget {
 }
 
 class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
-  late final SurfaceController _controller = SurfaceController(
-    catalogs: [genesisCatalog()],
-  );
+  late final a2ui.MessageProcessor<ComponentImplementation> _controller =
+      a2ui.MessageProcessor<ComponentImplementation>(
+        catalogs: [genesisCatalog()],
+        validationConfig: a2ui.ValidationConfig.relaxed,
+        reportErrorsOnly: true,
+      );
   String? _surfaceId;
   String? _error;
 
@@ -133,20 +137,23 @@ class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
         parseExample(text, GenesisContract.defaultCatalogId),
         state,
       );
-      // Un second `createSurface` sur le même contrôleur serait rejeté et le
+      // Un second `createSurface` sur le même moteur serait rejeté et le
       // modèle de données resterait rempli : on supprime d'abord la surface.
       final previous = _surfaceId;
       _surfaceId = null;
       if (previous != null) {
-        _controller.handleMessage(
-          a2ui.DeleteSurfaceMessage(surfaceId: previous),
+        _controller.processMessages(
+          a2ui.DeleteSurfaceMessage(
+            version: a2ui.A2uiProtocolVersion.v0_9.jsonValue,
+            surfaceId: previous,
+          ),
         );
       }
       String? surfaceId;
       for (final json in messages) {
-        final message = a2ui.A2uiMessage.fromJson(json);
+        final message = a2ui.AgentToRendererMessage.fromJson(json);
         if (message is a2ui.CreateSurfaceMessage) surfaceId = message.surfaceId;
-        _controller.handleMessage(message);
+        _controller.processMessages(message);
       }
       setState(() {
         _error = null;
@@ -173,7 +180,8 @@ class _GenesisSurfaceHostState extends State<GenesisSurfaceHost> {
     final error = _error;
     if (error != null) return Text(error, key: const Key('host-error'));
     final id = _surfaceId;
-    if (id == null) return const SizedBox.shrink();
-    return Surface(surfaceContext: _controller.contextFor(id));
+    final surface = id == null ? null : _controller.model.getSurface(id);
+    if (surface == null) return const SizedBox.shrink();
+    return A2uiSurface(surface: surface);
   }
 }

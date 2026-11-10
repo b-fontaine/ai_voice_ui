@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 
 import '../a2ui/a2ui_decoder.dart';
 
@@ -10,7 +10,10 @@ typedef ReplayDelay = Future<void> Function(Duration duration);
 /// Un message rejoué : le JSON `message` **brut** de la ligne et le message
 /// décodé. La validation porte sur le brut (le décodeur peut écarter ou
 /// normaliser une propriété).
-typedef ReplayedMessage = ({Map<String, Object?> raw, A2uiMessage message});
+typedef ReplayedMessage = ({
+  Map<String, Object?> raw,
+  AgentToRendererMessage message,
+});
 
 /// Ligne de rejeu invalide : JSON illisible, `t_ms` absent ou décroissant,
 /// message absent ou refusé par le décodeur A2UI v0.9 (version, corps).
@@ -45,7 +48,8 @@ class A2uiReplaySource {
       Future<void>.delayed(duration);
 
   /// Flux des messages décodés, à consommer une seule fois.
-  Stream<A2uiMessage> messages() => entries().map((entry) => entry.message);
+  Stream<AgentToRendererMessage> messages() =>
+      entries().map((entry) => entry.message);
 
   /// Comme [messages], avec en plus le JSON brut de chaque message.
   Stream<ReplayedMessage> entries() async* {
@@ -68,10 +72,8 @@ class A2uiReplaySource {
     }
   }
 
-  static ({int tMs, Map<String, Object?> raw, A2uiMessage message}) _parse(
-    String raw,
-    int lineNumber,
-  ) {
+  static ({int tMs, Map<String, Object?> raw, AgentToRendererMessage message})
+  _parse(String raw, int lineNumber) {
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);

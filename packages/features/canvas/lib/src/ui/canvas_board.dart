@@ -1,8 +1,10 @@
+import 'package:a2ui_core/a2ui_core.dart' show MessageProcessor, SurfaceModel;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart' show GenesisContract;
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:genui/genui.dart' show Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart'
     show
         DsGenFrame,
@@ -25,10 +27,9 @@ import 'surface_restored.dart';
 /// [controller] est celui que le `CanvasBloc` alimente ; il est injecté.
 ///
 /// Chaque surface a sa cellule `surface-<id>` dès `createSurface`. Le board
-/// peint lui-même le squelette tant que la phase est `skeleton` : avec genui
-/// 0.10.4 le `defaultBuilder` de `Surface` ne s'affiche jamais après
-/// `createSurface` (la définition existe, sans `root`). `Surface` n'est montée
-/// qu'à partir de `updateComponents`.
+/// peint lui-même le squelette tant que la phase est `skeleton` : `A2uiSurface`
+/// ne peint rien tant que la surface n'a pas de `root`. `A2uiSurface` n'est
+/// montée qu'à partir de `updateComponents`.
 ///
 /// La Barre d'actions est un **bandeau** sous la grille, de largeur égale et
 /// de hauteur [actionsBandHeight], réservée dès la première surface : la grille
@@ -56,7 +57,7 @@ class CanvasBoard extends StatefulWidget {
   /// Hauteur réservée au bandeau de la Barre d'actions.
   static const double actionsBandHeight = 72;
 
-  final SurfaceController controller;
+  final MessageProcessor<ComponentImplementation> controller;
 
   /// Surface du message en cours du panneau du protocole (D2) : elle reçoit un
   /// contour pointillé `highlight-<id>` si elle est présente dans le canevas
@@ -201,7 +202,7 @@ class _SurfaceCell extends StatelessWidget {
   });
 
   final String id;
-  final SurfaceController controller;
+  final MessageProcessor<ComponentImplementation> controller;
   final ValueListenable<String?> highlight;
   final ValueListenable<GenerationTarget?> generation;
 
@@ -276,7 +277,7 @@ class _SurfaceCell extends StatelessWidget {
 /// Passage du squelette aux composants d'une surface (D-06, pdr-0075 D3).
 ///
 /// Tant que la phase est `skeleton`, le squelette est seul à l'écran. Au
-/// passage aux composants, le squelette part aussitôt et la `Surface` est
+/// passage aux composants, le squelette part aussitôt et l'`A2uiSurface` est
 /// montée une fois pour toutes dans un [DsRise] (son `State` n'est jamais
 /// recréé) : elle apparaît en fondu, de flou et de 10 px
 /// vers sa place (`gc-rise`, pdr-0087 / pdr-0088 F5). La durée vient de
@@ -296,7 +297,7 @@ class _SurfaceAppearance extends StatefulWidget {
   });
 
   final String id;
-  final SurfaceController controller;
+  final MessageProcessor<ComponentImplementation> controller;
   final SurfacePhase phase;
 
   /// Surface déjà présente au premier rendu du canevas : pas d'apparition.
@@ -323,12 +324,20 @@ class _SurfaceAppearanceState extends State<_SurfaceAppearance> {
     if (widget.phase == SurfacePhase.skeleton) {
       return DsSkeleton(key: ValueKey<String>('skeleton-${widget.id}'));
     }
+    final SurfaceModel<ComponentImplementation>? surface = widget
+        .controller
+        .model
+        .getSurface(widget.id);
     return DsRise(
       settled: _settled,
-      // La `Surface` est construite une fois : seul l'habillage suit l'image.
+      // L'`A2uiSurface` est construite une fois : seul l'habillage suit
+      // l'image. Une surface que le moteur a refusée n'a pas de modèle : la
+      // cellule reste vide.
       child: SurfaceRestored(
         restored: _settled,
-        child: Surface(surfaceContext: widget.controller.contextFor(widget.id)),
+        child: surface == null
+            ? const SizedBox.shrink()
+            : A2uiSurface(surface: surface),
       ),
     );
   }

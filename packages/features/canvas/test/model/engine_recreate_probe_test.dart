@@ -3,16 +3,17 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:entity_session/entity_session.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
-/// Sonde genui 0.10.4 (feature 010, T05) : la remise à vide du canevas
+/// Sonde du moteur A2UI (feature 010, T05) : la remise à vide du canevas
 /// (`CanvasResetRequested` = `deleteSurface` sur chaque surface), du validateur
 /// (`A2uiGate.reset`) puis la réinjection des mêmes messages bruts redonnent le
 /// même rendu, sans refus ni erreur du moteur. C'est le mécanisme du rejeu.
@@ -42,7 +43,7 @@ List<Map<String, Object?>> _act1() {
 }
 
 void main() {
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
   late CanvasBloc bloc;
   late A2uiGate gate;
   late StreamController<SessionEvent> input;
@@ -68,7 +69,10 @@ void main() {
   ) async {
     for (final Map<String, Object?> raw in raws) {
       input.add(
-        A2uiEnvelopeReceived(message: a2ui.A2uiMessage.fromJson(raw), raw: raw),
+        A2uiEnvelopeReceived(
+          message: a2ui.AgentToRendererMessage.fromJson(raw),
+          raw: raw,
+        ),
       );
       await settle(tester);
     }
@@ -87,7 +91,9 @@ void main() {
         'reviews',
         'checklist',
       ];
-      controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+      controller = a2ui.MessageProcessor<ComponentImplementation>(
+        catalogs: <CatalogImplementation>[genesisCatalog()],
+      );
       bloc = CanvasBloc(controller);
       input = StreamController<SessionEvent>.broadcast();
       rejected = <String>[];
@@ -97,17 +103,18 @@ void main() {
         catalogId: GenesisContract.defaultCatalogId,
         onRejected: rejected.add,
       );
-      final StreamSubscription<dynamic> errors = controller.onSubmit.listen(
-        (m) => engineErrors.add(m.toString()),
+      final a2ui.Subscription errors = controller.model.onError.subscribe(
+        (a2ui.A2uiRendererError e) => engineErrors.add(jsonEncode(e.toJson())),
       );
       final StreamSubscription<CanvasState> stateSub = bloc.stream.listen(
         states.add,
       );
-      final StreamSubscription<a2ui.A2uiMessage> acceptedSub = gate.accepted
+      final StreamSubscription<a2ui.AgentToRendererMessage> acceptedSub = gate
+          .accepted
           .listen((m) => bloc.add(A2uiMessageReceived(m)));
       gate.attach(input.stream);
       addTearDown(() async {
-        await errors.cancel();
+        errors.unsubscribe();
         await stateSub.cancel();
         await acceptedSub.cancel();
         await gate.dispose();
@@ -139,7 +146,7 @@ void main() {
       for (final String id in expectedIds) {
         expect(bloc.state.phaseOf(id), SurfacePhase.data, reason: id);
       }
-      expect(find.byType(Surface), findsNWidgets(expectedIds.length));
+      expect(find.byType(A2uiSurface), findsNWidgets(expectedIds.length));
       final List<String> reference = shownTexts(tester);
       // L'étiquette du KPI s'affiche en capitales (pdr-0088 F6).
       expect(reference, contains('SESSIONS SANS CRASH'));
@@ -153,14 +160,21 @@ void main() {
         await settle(tester);
         gate.reset();
         expect(bloc.state.surfaceIds, isEmpty, reason: 'tour $round');
-        expect(controller.activeSurfaceIds, isEmpty, reason: 'tour $round');
-        expect(find.byType(Surface), findsNothing, reason: 'tour $round');
+        expect(
+          controller.model.allSurfaces.map((s) => s.id),
+          isEmpty,
+          reason: 'tour $round',
+        );
+        expect(find.byType(A2uiSurface), findsNothing, reason: 'tour $round');
 
         states.clear();
         await inject(tester, messages);
 
         expect(bloc.state.surfaceIds, expectedIds, reason: 'tour $round');
-        expect(controller.activeSurfaceIds, unorderedEquals(expectedIds));
+        expect(
+          controller.model.allSurfaces.map((s) => s.id),
+          unorderedEquals(expectedIds),
+        );
         for (final String id in expectedIds) {
           expect(
             bloc.state.phaseOf(id),
@@ -180,7 +194,7 @@ void main() {
             reason: '$id, tour $round',
           );
         }
-        expect(find.byType(Surface), findsNWidgets(expectedIds.length));
+        expect(find.byType(A2uiSurface), findsNWidgets(expectedIds.length));
         expect(shownTexts(tester), reference, reason: 'tour $round');
         expect(rejected, isEmpty, reason: 'tour $round');
         expect(engineErrors, isEmpty, reason: 'tour $round');

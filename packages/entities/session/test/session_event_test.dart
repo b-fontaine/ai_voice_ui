@@ -1,11 +1,12 @@
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:entity_session/entity_session.dart';
 import 'package:test/test.dart';
 
-A2uiMessage _message() => A2uiMessage.fromJson(<String, Object?>{
-  'version': 'v0.9',
-  'deleteSurface': <String, Object?>{'surfaceId': 's1'},
-});
+AgentToRendererMessage _message() =>
+    AgentToRendererMessage.fromJson(<String, Object?>{
+      'version': 'v0.9',
+      'deleteSurface': <String, Object?>{'surfaceId': 's1'},
+    });
 
 void main() {
   final Map<String, Object?> raw = <String, Object?>{

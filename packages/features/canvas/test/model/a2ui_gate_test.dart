@@ -42,18 +42,21 @@ Map<String, Object?> _delete(String id) => <String, Object?>{
 
 A2uiEnvelopeReceived _event(Map<String, Object?> raw, {String? agent}) =>
     A2uiEnvelopeReceived(
-      message: a2ui.A2uiMessage.fromJson(raw),
+      message: a2ui.AgentToRendererMessage.fromJson(raw),
       raw: raw,
       agent: agent,
       task: agent == null ? null : 'task_1',
     );
 
-typedef Replayed = ({Map<String, Object?> raw, a2ui.A2uiMessage message});
+typedef Replayed = ({
+  Map<String, Object?> raw,
+  a2ui.AgentToRendererMessage message,
+});
 
 Replayed _replayed(Map<String, Object?> raw) =>
-    (raw: raw, message: a2ui.A2uiMessage.fromJson(raw));
+    (raw: raw, message: a2ui.AgentToRendererMessage.fromJson(raw));
 
-String _kind(a2ui.A2uiMessage m) =>
+String _kind(a2ui.AgentToRendererMessage m) =>
     m.toJson().keys.firstWhere((k) => k != 'version');
 
 void main() {
@@ -61,7 +64,7 @@ void main() {
   late List<String> rejected;
   late A2uiGate gate;
   late List<ValidatedEnvelope> validated;
-  late List<a2ui.A2uiMessage> accepted;
+  late List<a2ui.AgentToRendererMessage> accepted;
 
   Future<void> settle() => Future<void>.delayed(Duration.zero);
 
@@ -70,7 +73,7 @@ void main() {
     rejected = <String>[];
     gate = A2uiGate(catalogId: _catalog, onRejected: rejected.add);
     validated = <ValidatedEnvelope>[];
-    accepted = <a2ui.A2uiMessage>[];
+    accepted = <a2ui.AgentToRendererMessage>[];
     gate.validatedBranch().listen(validated.add);
     gate.accepted.listen(accepted.add);
     gate.attach(input.stream);
@@ -244,7 +247,7 @@ void main() {
     final replay = StreamController<Replayed>();
     final second = A2uiGate(catalogId: _catalog, onRejected: rejected.add);
     addTearDown(second.dispose);
-    final out = <a2ui.A2uiMessage>[];
+    final out = <a2ui.AgentToRendererMessage>[];
     final seen = <ValidatedEnvelope>[];
     second.validatedBranch().listen(seen.add);
     second.accepted.listen(out.add);
@@ -281,7 +284,10 @@ void main() {
 
     replay
       ..add(_replayed(_create('kpi')))
-      ..add((raw: raw, message: a2ui.A2uiMessage.fromJson(decodedSide)));
+      ..add((
+        raw: raw,
+        message: a2ui.AgentToRendererMessage.fromJson(decodedSide),
+      ));
     await settle();
 
     expect(seen.last.verdict, const ValidationRejected('bad_property'));

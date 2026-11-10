@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show AccessibilityFeatures;
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart' show AgentToRendererMessage;
 import 'package:feature_stage_controls/feature_stage_controls.dart'
     show StageActReached, StageBloc;
 import 'package:flutter/widgets.dart';
@@ -93,7 +93,10 @@ void main() {
         for (final envelope in await act1Envelopes(tester)) {
           if (envelope['type'] != 'a2ui') continue;
           final raw = Map<String, Object?>.from(envelope['data']! as Map);
-          messages.add((raw: raw, message: A2uiMessage.fromJson(raw)));
+          messages.add((
+            raw: raw,
+            message: AgentToRendererMessage.fromJson(raw),
+          ));
           await tester.pump();
         }
         await reachAct(tester, rig, act);

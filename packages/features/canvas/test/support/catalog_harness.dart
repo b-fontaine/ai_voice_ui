@@ -1,15 +1,15 @@
 import 'dart:convert';
-import 'dart:async';
 import 'dart:io';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
 /// Lit les lignes de la fixture `<variant>-<name>.jsonl` du contrat
@@ -39,7 +39,7 @@ List<Map<String, dynamic>> contractFixture(
 }
 
 /// Moteur + Bloc + plateau pour tester un composant du catalogue sur sa
-/// fixture. Les erreurs du moteur (`onSubmit`) sont collectées.
+/// fixture. Les erreurs du moteur (`model.onError`) sont collectées.
 class CatalogHarness {
   CatalogHarness(
     this.surface,
@@ -49,16 +49,21 @@ class CatalogHarness {
     this.fontFamilyFallback,
     this.variant = 'act1',
   }) {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+      validationConfig: a2ui.ValidationConfig.relaxed,
+    );
     bloc = CanvasBloc(controller);
-    _sub = controller.onSubmit.listen((m) => engineErrors.add(m.toString()));
+    _sub = controller.model.onError.subscribe(
+      (a2ui.A2uiRendererError e) => engineErrors.add(jsonEncode(e.toJson())),
+    );
     fixture = contractFixture(
       fixtureName,
       GenesisContract.defaultCatalogId,
       variant: variant,
     );
     addTearDown(() async {
-      await _sub.cancel();
+      _sub.unsubscribe();
       await bloc.close();
       controller.dispose();
     });
@@ -76,9 +81,9 @@ class CatalogHarness {
   /// de test (Ahem) ; un test de budget de hauteur y met des polices réelles.
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
-  late final SurfaceController controller;
+  late final a2ui.MessageProcessor<ComponentImplementation> controller;
   late final CanvasBloc bloc;
-  late final StreamSubscription<dynamic> _sub;
+  late final a2ui.Subscription _sub;
   late final List<Map<String, dynamic>> fixture;
   final List<String> engineErrors = <String>[];
 
@@ -130,7 +135,7 @@ class CatalogHarness {
         );
 
   Future<void> send(WidgetTester tester, Map<String, dynamic> json) async {
-    bloc.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(json)));
+    bloc.add(A2uiMessageReceived(a2ui.AgentToRendererMessage.fromJson(json)));
     for (var i = 0; i < 6; i++) {
       await tester.pump();
     }

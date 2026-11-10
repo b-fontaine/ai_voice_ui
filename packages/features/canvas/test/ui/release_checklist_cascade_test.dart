@@ -1,6 +1,6 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show A2uiSurface;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Surface;
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
@@ -43,7 +43,7 @@ double _opacity(WidgetTester tester, int n) {
     return opacity;
   }
 
-  final double surface = of(tester.renderObject(find.byType(Surface)));
+  final double surface = of(tester.renderObject(find.byType(A2uiSurface)));
   return of(tester.renderObject(_row(n))) / surface;
 }
 

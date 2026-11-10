@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:shared_backend_channel/shared_backend_channel.dart';
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
@@ -180,20 +181,24 @@ void main() {
   });
 
   group('Barre d\'actions : en cours, fait, réactivé', () {
-    late SurfaceController controller;
+    late a2ui.MessageProcessor<ComponentImplementation> controller;
     late CanvasBloc canvas;
     late CanvasActionBloc actions;
     late _RecordingClient client;
 
     Future<void> send(WidgetTester tester, Map<String, dynamic> json) async {
-      canvas.add(A2uiMessageReceived(a2ui.A2uiMessage.fromJson(json)));
+      canvas.add(
+        A2uiMessageReceived(a2ui.AgentToRendererMessage.fromJson(json)),
+      );
       for (var i = 0; i < 6; i++) {
         await tester.pump();
       }
     }
 
     Future<void> pumpBoard(WidgetTester tester) async {
-      controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+      controller = a2ui.MessageProcessor<ComponentImplementation>(
+        catalogs: <CatalogImplementation>[genesisCatalog()],
+      );
       canvas = CanvasBloc(controller);
       client = _RecordingClient();
       actions = CanvasActionBloc(

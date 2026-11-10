@@ -6,7 +6,7 @@ import '../support/keys.dart';
 
 /// Usage: les surfaces de l'acte 1 gardent leur State
 ///
-/// Même `State` du moteur de rendu (`Surface`) que celui relevé quand le
+/// Même `State` du moteur de rendu (`A2uiSurface`) que celui relevé quand le
 /// tableau de l'acte 1 était complet : rien n'a été recréé ni remonté quand la
 /// grille a changé de forme (A7). Les positions peuvent changer.
 Future<void> lesSurfacesDeLacte1GardentLeurState(WidgetTester tester) async {
@@ -19,7 +19,7 @@ Future<void> lesSurfacesDeLacte1GardentLeurState(WidgetTester tester) async {
     expect(
       tester.state(Acte2Harness.engineOf(id)),
       same(Acte2Harness.surfaceStates[id]),
-      reason: 'la surface $id a été recréée (autre State de Surface)',
+      reason: 'la surface $id a été recréée (autre State de A2uiSurface)',
     );
     expect(
       find.descendant(

@@ -96,11 +96,11 @@ void main() {
     }
   });
 
-  test('entities/catalog est en Dart pur : ni flutter ni genui', () {
+  test('entities/catalog est en Dart pur : ni flutter ni a2ui_flutter', () {
     final catalog = under('packages/entities/catalog');
     expect(catalog, isNotEmpty, reason: 'entities/catalog absent');
     for (final p in catalog) {
-      for (final forbidden in ['flutter', 'genui']) {
+      for (final forbidden in ['flutter', 'a2ui_flutter']) {
         expect(
           {...p.deps, ...p.devDeps},
           isNot(contains(forbidden)),

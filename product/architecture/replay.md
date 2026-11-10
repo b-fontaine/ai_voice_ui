@@ -3,9 +3,9 @@ id: p-ar-replay
 title: Journal A2UI et rejeu (acte 4)
 area: architecture
 status: validated
-updated: 2026-11-03
+updated: 2026-11-10
 sources: [specs/018-replay-bar-reachable/spec.md, specs/018-replay-bar-reachable/plan.md, specs/018-replay-bar-reachable/status.md, specs/010-j6-act4-replay/spec.md, specs/010-j6-act4-replay/plan.md, specs/010-j6-act4-replay/status.md, product/sources/product-description.pdf#p2, product/sources/product-description.pdf#p3, product/sources/product-description.pdf#p4, product/sources/product-description.pdf#p7, product/sources/product-description.pdf#p9, knowledge:test-mock-boundaries-only, knowledge:ds-widgetbook-4-genui, knowledge:genui-a2ui-messages]
-links: [pdr-0085-replay-bar-not-covered-by-protocol-panel, pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided, p-fn-feature-replay-bar-018, p-ar-overview, p-ar-frontend, p-ar-frontend-screen, p-rm-roadmap, p-rm-backlog, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals]
+links: [pdr-0085-replay-bar-not-covered-by-protocol-panel, pdr-0086-018-protocol-panel-above-bottom-row-assistant-decided, p-fn-feature-replay-bar-018, p-ar-overview, p-ar-frontend, p-ar-frontend-screen, p-rm-roadmap, p-rm-backlog, p-ar-backend, p-ar-quality, p-ar-stage-runtime, p-ar-security, p-fn-requirements, p-fn-nfr, p-fn-business-rules, p-fn-risks-acceptance, p-fn-dataset, p-fn-screen, p-rm-open-questions, pdr-0005-frozen-fictional-dataset, pdr-0006-replay-fallback-must, pdr-0032-obs-video-fallback-a2ui-replay-act, pdr-0066-010-act4-replay-details-assistant-decided, pdr-0033-optional-shortcuts-mouse-first, pdr-0038-latency-measured-on-app-clock, pdr-0018-a2ui-v09-genui-0-10-4, genui-a2ui-messages, genui-multiple-surfaces, ds-widgetbook-4-genui, test-mock-boundaries-only, ma-voice-agent-evals, pdr-0091-a2ui-flutter-replaces-genui]
 tags: [rejeu, replay, journal, acte-4, determinisme]
 ---
 # Journal A2UI et rejeu (acte 4)
@@ -32,7 +32,7 @@ Journal **en mémoire** côté client (`A2uiJournal`, `entity_session`), jamais 
 |---|---|
 | `seq` | numéro d'ordre strict (l'ordre A2UI est obligatoire, [genui-a2ui-messages]) |
 | `t_ms` | temps depuis le premier message, horloge de l'app, croissant ([pdr-0038](../decisions/pdr-0038-latency-measured-on-app-clock.md)) |
-| `raw` | message A2UI **brut** tel que reçu (copie profonde non modifiable ; le message décodé n'est **jamais** conservé : il est redécodé depuis `raw` à chaque injection, car le moteur genui modifie en place les valeurs d'un `updateDataModel`) |
+| `raw` | message A2UI **brut** tel que reçu (copie profonde non modifiable ; le message décodé n'est **jamais** conservé : il est redécodé depuis `raw` à chaque injection, car ses valeurs sont modifiables ; genui 0.10.4 les modifiait en place, `a2ui_core` 0.6.0 les copie) |
 | `agent`, `task` | agent émetteur et tâche (lien protocole ↔ composant, FR-05) |
 
 Aucun marqueur en J6 : les marqueurs de mesure (fin de phrase du speaker, début d'acte) servent NFR-02/03 et relèvent de J8. Les actions utilisateur ne sont pas enregistrées : leurs effets arrivent déjà sous forme de messages A2UI des agents. Le format de fichier JSONL `{t_ms, message}` n'est lu que par le rejeu scripté de la boucle (`GENESIS_SCENARIO`).

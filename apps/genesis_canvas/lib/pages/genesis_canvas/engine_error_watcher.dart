@@ -1,52 +1,37 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:genui/genui.dart'
-    show ChatMessage, UiInteractionPart, UiPartListExtension;
+import 'package:a2ui_core/a2ui_core.dart'
+    show A2uiRendererError, EventSource, Subscription;
 
-/// Écoute les erreurs que le moteur genui signale par `reportError`.
+/// Écoute les erreurs que le moteur A2UI signale sur `model.onError`.
 ///
-/// `SurfaceController.handleMessage` n'échoue jamais : il avale les erreurs
-/// d'état et de validation et les pousse dans `onSubmit` sous la forme
-/// `{"version":"v0.9","error":{…}}`. Sans écoute, un rejeu invalide
-/// passerait pour réussi. Le compteur [count] permet à l'appelant de sortir
-/// avec le code 1.
+/// Le `MessageProcessor` de la page ne lève pas d'exception pour un message
+/// refusé (`reportErrorsOnly`) : il publie l'erreur, comme celles que les
+/// surfaces signalent au rendu, sur `model.onError`. Sans écoute, un rejeu
+/// invalide passerait pour réussi. Le compteur [count] permet à l'appelant de
+/// sortir avec le code 1.
 class EngineErrorWatcher {
   EngineErrorWatcher({
-    required Stream<ChatMessage> onSubmit,
+    required EventSource<A2uiRendererError> errors,
     required this.errorSink,
   }) {
-    _subscription = onSubmit.listen(_onMessage);
+    _subscription = errors.subscribe(_onError);
   }
 
   /// Destination des messages d'erreur (`stderr` en prod).
   final StringSink errorSink;
 
-  late final StreamSubscription<ChatMessage> _subscription;
+  late final Subscription _subscription;
   int _count = 0;
 
   /// Nombre d'erreurs du moteur vues depuis la création.
   int get count => _count;
 
-  void _onMessage(ChatMessage message) {
-    for (final UiInteractionPart part in message.parts.uiInteractionParts) {
-      final Object? decoded = _tryDecode(part.interaction);
-      if (decoded is Map<String, dynamic> && decoded.containsKey('error')) {
-        _count++;
-        errorSink.writeln(
-          'Erreur du moteur genui : ${jsonEncode(decoded['error'])}',
-        );
-      }
-    }
+  void _onError(A2uiRendererError error) {
+    _count++;
+    errorSink.writeln('Erreur du moteur A2UI : ${jsonEncode(error.toJson())}');
   }
 
-  static Object? _tryDecode(String source) {
-    try {
-      return jsonDecode(source);
-    } on FormatException {
-      return null;
-    }
-  }
-
-  Future<void> dispose() => _subscription.cancel();
+  Future<void> dispose() async => _subscription.unsubscribe();
 }

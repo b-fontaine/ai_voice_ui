@@ -791,7 +791,7 @@ void main() {
         null;
 
     ReplayedMessage replayed(Map<String, Object?> json) =>
-        (raw: json, message: a2ui.A2uiMessage.fromJson(json));
+        (raw: json, message: a2ui.AgentToRendererMessage.fromJson(json));
 
     Future<void> pumpMessages(WidgetTester tester) async {
       await tester.pump();

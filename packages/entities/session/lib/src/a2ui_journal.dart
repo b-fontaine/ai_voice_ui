@@ -2,15 +2,16 @@ import 'dart:collection' show UnmodifiableListView;
 import 'dart:math' as math;
 
 import 'package:a2ui_core/a2ui_core.dart'
-    show A2uiMessage, CreateSurfaceMessage;
+    show AgentToRendererMessage, CreateSurfaceMessage;
 
 import 'session_event.dart' show A2uiEnvelopeReceived;
 
 /// Une enveloppe A2UI enregistrée, avec sa date relative au premier message.
 ///
 /// Seul [raw] est conservé : le message décodé du direct n'est jamais gardé,
-/// car le gate le transmet à genui, qui le modifie en place. Il est redécodé
-/// à chaque injection ([toEnvelope]).
+/// car ses valeurs sont modifiables : le partager entre le direct et le rejeu
+/// exposerait une injection aux changements de l'autre. Il est redécodé à
+/// chaque injection ([toEnvelope]).
 ///
 /// Le contenu peut provenir d'un modèle de langage : il n'apparaît jamais
 /// dans [toString], donc ni dans les logs ni dans un `errorSink`.
@@ -37,10 +38,11 @@ final class JournalEntry {
 
   /// Reconstruit l'enveloppe à injecter : le message est redécodé à chaque
   /// appel depuis une copie profonde modifiable de [raw], donc jamais partagé
-  /// avec le direct ni entre deux injections (genui range les valeurs par
-  /// référence et les modifie en place).
+  /// avec le direct ni entre deux injections.
   A2uiEnvelopeReceived toEnvelope() => A2uiEnvelopeReceived(
-    message: A2uiMessage.fromJson(_thaw(raw) as Map<String, Object?>),
+    message: AgentToRendererMessage.fromJson(
+      _thaw(raw) as Map<String, Object?>,
+    ),
     raw: raw,
     agent: agent,
     task: task,

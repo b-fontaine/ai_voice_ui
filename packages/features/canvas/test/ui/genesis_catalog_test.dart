@@ -2,13 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 import 'package:testing_real_fonts/testing_real_fonts.dart';
 
@@ -40,33 +41,36 @@ List<Map<String, dynamic>> _fixture(String catalogId) {
       .toList();
 }
 
-a2ui.A2uiMessage _message(Map<String, dynamic> json) =>
-    a2ui.A2uiMessage.fromJson(json);
+a2ui.AgentToRendererMessage _message(Map<String, dynamic> json) =>
+    a2ui.AgentToRendererMessage.fromJson(json);
 
-a2ui.A2uiMessage _dataMessage(Object? value) => _message(<String, dynamic>{
-  'version': 'v0.9',
-  'updateDataModel': <String, dynamic>{
-    'surfaceId': 'kpi',
-    'path': '/kpi',
-    'value': value,
-  },
-});
+a2ui.AgentToRendererMessage _dataMessage(Object? value) =>
+    _message(<String, dynamic>{
+      'version': 'v0.9',
+      'updateDataModel': <String, dynamic>{
+        'surfaceId': 'kpi',
+        'path': '/kpi',
+        'value': value,
+      },
+    });
 
 void main() {
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
   late CanvasBloc bloc;
   late List<String> engineErrors;
   late List<Map<String, dynamic>> fixture;
 
   void createEngine() {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+    );
     bloc = CanvasBloc(controller);
     engineErrors = <String>[];
-    final sub = controller.onSubmit.listen((message) {
-      engineErrors.add(message.toString());
-    });
+    final a2ui.Subscription sub = controller.model.onError.subscribe(
+      (a2ui.A2uiRendererError e) => engineErrors.add(jsonEncode(e.toJson())),
+    );
     addTearDown(() async {
-      await sub.cancel();
+      sub.unsubscribe();
       await bloc.close();
       controller.dispose();
     });
@@ -92,7 +96,10 @@ void main() {
     ),
   );
 
-  Future<void> send(WidgetTester tester, a2ui.A2uiMessage message) async {
+  Future<void> send(
+    WidgetTester tester,
+    a2ui.AgentToRendererMessage message,
+  ) async {
     bloc.add(A2uiMessageReceived(message));
     for (var i = 0; i < 6; i++) {
       await tester.pump();
@@ -117,12 +124,12 @@ void main() {
     await sendFixtureTo(tester, 1);
     expect(find.byKey(const Key('surface-kpi')), findsOneWidget);
     expect(find.byKey(const Key('skeleton-kpi')), findsOneWidget);
-    expect(find.byType(Surface), findsNothing);
+    expect(find.byType(A2uiSurface), findsNothing);
     expect(find.textContaining('99,57'), findsNothing);
 
     final updateComponents = fixture[1];
     await send(tester, _message(updateComponents));
-    expect(find.byType(Surface), findsOneWidget);
+    expect(find.byType(A2uiSurface), findsOneWidget);
     expect(find.byKey(const Key('skeleton-kpi')), findsNothing);
     expect(find.byKey(const Key('neutral-kpi')), findsNothing);
     expect(find.byKey(const Key('nodata-kpi')), findsOneWidget);
@@ -264,10 +271,10 @@ void main() {
 
   testWidgets('le catalogId est configurable', (tester) async {
     final catalog = genesisCatalog(catalogId: 'https://example.test/c');
-    expect(catalog.catalogId, 'https://example.test/c');
-    expect(genesisCatalog().catalogId, GenesisContract.defaultCatalogId);
+    expect(catalog.id, 'https://example.test/c');
+    expect(genesisCatalog().id, GenesisContract.defaultCatalogId);
     expect(
-      catalog.items.map((i) => i.name),
+      catalog.components.keys,
       GenesisContract.components,
       reason: 'les 6 composants du contrat, dans l ordre',
     );

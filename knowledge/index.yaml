@@ -21,7 +21,7 @@ domains:
     prefixes: [genui-]
     index: genui/index.yaml
     description: "GenUI (package genui / genui_a2a 0.10.x) et protocole A2UI : catalogues, surfaces, data binding, actions, intégrations LLM, tests, migrations"
-    keywords: [genui, a2ui, ui générative, generative ui, catalogue, catalog, CatalogItem, surface, SurfaceController, Conversation, data model, binding, PromptBuilder, createSurface, updateComponents, action utilisateur, user action, genui_a2a, migration]
+    keywords: [genui, a2ui, a2ui_core, a2ui_flutter, ui générative, generative ui, catalogue, catalog, CatalogItem, ComponentImplementation, surface, SurfaceController, MessageProcessor, A2uiSurface, Conversation, data model, binding, PromptBuilder, createSurface, updateComponents, action utilisateur, user action, genui_a2a, migration]
   - name: flutter-architecture
     prefixes: [arch-]
     index: flutter-architecture/index.yaml
@@ -108,6 +108,8 @@ tasks:
     notes: [genui-overview, genui-architecture, genui-voice-bridge, genui-custom-llm-adapter, genui-firebase-ai, genui-a2a-connector, genui-conversation-events, genui-multiple-surfaces, genui-a2ui-messages, genui-test-surface-controller, proj-avw-genui-bridge]
   - task: "Migrer du code genui 0.6/0.7/0.9 vers 0.10"
     notes: [genui-migration-from-0-7, genui-migration-0-10, genui-overview, genui-a2ui-overview, proj-avw-genui-bridge, ma-package-versions]
+  - task: "Migrer du code genui vers a2ui_core / a2ui_flutter"
+    notes: [genui-migration-to-a2ui, genui-migration-0-10, genui-a2ui-overview, genui-custom-catalog-item, genui-data-model]
   - task: "Brancher un outil MCP"
     notes: [proto-mcp-overview, proto-mcp-primitives, proto-mcp-transports, proto-mcp-authorization, proto-mcp-elicitation, proto-mcp-deprecations, proto-mcp-dart-sdks, ma-mcp-security, ma-prompt-injection-tools, rt-tool-calling-voice]
   - task: "Intégrer un agent distant A2A"

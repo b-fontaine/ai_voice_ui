@@ -1,22 +1,24 @@
+import 'package:a2ui_core/a2ui_core.dart' show MessageProcessor;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
+import 'package:a2ui_flutter/v0_9/basic_catalog.dart' as v0_9;
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_design_system/shared_design_system.dart' show SceneTheme;
-import 'package:genui/genui.dart'
-    show BasicCatalogItems, Catalog, Surface, SurfaceController;
 
 import '../support/messages.dart';
 
 void main() {
-  late SurfaceController controller;
+  late MessageProcessor<ComponentImplementation> controller;
   late CanvasBloc bloc;
 
   /// Construit le moteur et le Bloc dans la zone du test : un Bloc créé dans
   /// `setUp` vit hors de la zone `FakeAsync` et `pump` ne vide pas ses flux.
   void createEngine() {
-    controller = SurfaceController(
-      catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+    controller = MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[v0_9.basicCatalog()],
     );
     bloc = CanvasBloc(controller);
     addTearDown(() async {
@@ -58,7 +60,7 @@ void main() {
     await pumpBoard(tester);
 
     expect(find.byKey(const Key('canvas-board')), findsOneWidget);
-    expect(find.byType(Surface), findsNothing);
+    expect(find.byType(A2uiSurface), findsNothing);
   });
 
   testWidgets('une surface créée par messages v0.9 affiche sa valeur liée', (
@@ -77,10 +79,10 @@ void main() {
       );
     await settle(tester);
 
-    expect(find.byType(Surface), findsOneWidget);
+    expect(find.byType(A2uiSurface), findsOneWidget);
     expect(
       find.descendant(
-        of: find.byType(Surface),
+        of: find.byType(A2uiSurface),
         matching: find.text('Sessions sans crash'),
       ),
       findsOneWidget,
@@ -104,7 +106,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byType(Surface), findsNothing);
+    expect(find.byType(A2uiSurface), findsNothing);
   });
 
   testWidgets('Surface est montée dès updateComponents et le squelette part', (
@@ -121,7 +123,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const Key('surface-kpi')),
-        matching: find.byType(Surface),
+        matching: find.byType(A2uiSurface),
       ),
       findsOneWidget,
     );
@@ -140,7 +142,7 @@ void main() {
     bloc.add(A2uiMessageReceived(deleteSurface('kpi')));
     await settle(tester);
 
-    expect(find.byType(Surface), findsNothing);
+    expect(find.byType(A2uiSurface), findsNothing);
   });
 
   testWidgets(
@@ -299,10 +301,10 @@ void main() {
 
     Finder engineOf(String id) => find.descendant(
       of: find.byKey(Key('surface-$id')),
-      matching: find.byType(Surface),
+      matching: find.byType(A2uiSurface),
     );
 
-    testWidgets('à l\'arrivée de crashes, les quatre Surface gardent leur '
+    testWidgets('à l\'arrivée de crashes, les quatre A2uiSurface gardent leur '
         'State et la grille passe à 3 × 2', (tester) async {
       await pumpAct1(tester);
       final Map<String, State> states = <String, State>{
@@ -318,7 +320,7 @@ void main() {
         expect(
           tester.state(engineOf(id)),
           same(states[id]),
-          reason: 'le State de Surface $id a été recréé',
+          reason: 'le State de A2uiSurface $id a été recréé',
         );
       }
       Rect cell(String id) => tester.getRect(find.byKey(Key('surface-$id')));
@@ -399,7 +401,7 @@ void main() {
 
     Finder engineOf(String id) => find.descendant(
       of: find.byKey(Key('surface-$id')),
-      matching: find.byType(Surface),
+      matching: find.byType(A2uiSurface),
     );
 
     testWidgets('à l\'arrivée de actions, les quatre surfaces gardent leur '
@@ -427,7 +429,7 @@ void main() {
         expect(
           tester.state(engineOf(id)),
           same(states[id]),
-          reason: 'le State de Surface $id a été recréé',
+          reason: 'le State de A2uiSurface $id a été recréé',
         );
       }
     });
@@ -550,14 +552,14 @@ void main() {
       tester,
     ) async {
       await createTwo(tester, highlighted: 'kpi');
-      final Element before = tester.element(find.byType(Surface));
+      final Element before = tester.element(find.byType(A2uiSurface));
 
       highlight.value = 'trend';
       await tester.pump();
 
       expect(find.byKey(const Key('highlight-kpi')), findsNothing);
       expect(find.byKey(const Key('highlight-trend')), findsOneWidget);
-      expect(tester.element(find.byType(Surface)), same(before));
+      expect(tester.element(find.byType(A2uiSurface)), same(before));
     });
   });
 }

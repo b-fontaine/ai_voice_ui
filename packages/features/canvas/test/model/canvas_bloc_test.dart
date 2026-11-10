@@ -1,22 +1,24 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' show A2uiMessage;
+import 'package:a2ui_core/a2ui_core.dart'
+    show AgentToRendererMessage, MessageProcessor;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show CatalogImplementation, ComponentImplementation;
+import 'package:a2ui_flutter/v0_9/basic_catalog.dart' as v0_9;
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart'
-    show BasicCatalogItems, Catalog, SurfaceController;
 
 import 'package:testing_bloc_harness/testing_bloc_harness.dart';
 
 import '../support/messages.dart';
 
 void main() {
-  late SurfaceController controller;
+  late MessageProcessor<ComponentImplementation> controller;
   late CanvasBloc bloc;
 
   setUp(() {
-    controller = SurfaceController(
-      catalogs: <Catalog>[BasicCatalogItems.asCatalog()],
+    controller = MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[v0_9.basicCatalog()],
     );
     bloc = CanvasBloc(controller);
   });
@@ -44,7 +46,7 @@ void main() {
       SurfacePhase.components,
       SurfacePhase.data,
     ]);
-    expect(controller.activeSurfaceIds, <String>['s']);
+    expect(controller.model.allSurfaces.map((s) => s.id), <String>['s']);
   });
 
   test("A2uiMessageReceived deleteSurface retire la surface du moteur et de l'état", () async {
@@ -58,7 +60,7 @@ void main() {
       <String>['s'],
       <String>[],
     ]);
-    expect(controller.activeSurfaceIds, isEmpty);
+    expect(controller.model.allSurfaces.map((s) => s.id), isEmpty);
   });
 
   test(
@@ -72,13 +74,13 @@ void main() {
       });
 
       expect(states.last.surfaceIds, isEmpty);
-      expect(controller.activeSurfaceIds, isEmpty);
+      expect(controller.model.allSurfaces.map((s) => s.id), isEmpty);
     },
   );
 
   group('CanvasSourceSubscribed', () {
     test('flux terminé : playing puis completed, messages appliqués', () async {
-      final source = StreamController<A2uiMessage>();
+      final source = StreamController<AgentToRendererMessage>();
       final states = await statesAfter(bloc, (b) async {
         b.add(CanvasSourceSubscribed(source.stream));
         await Future<void>.delayed(Duration.zero);
@@ -96,7 +98,7 @@ void main() {
     });
 
     test('erreur du flux : failed avec le message', () async {
-      final source = StreamController<A2uiMessage>();
+      final source = StreamController<AgentToRendererMessage>();
       final states = await statesAfter(bloc, (b) async {
         b.add(CanvasSourceSubscribed(source.stream));
         await Future<void>.delayed(Duration.zero);
@@ -115,7 +117,7 @@ void main() {
 
     test("close() pendant le flux annule l'abonnement", () async {
       var cancelled = false;
-      final source = StreamController<A2uiMessage>(
+      final source = StreamController<AgentToRendererMessage>(
         onCancel: () => cancelled = true,
       );
       bloc.add(CanvasSourceSubscribed(source.stream));

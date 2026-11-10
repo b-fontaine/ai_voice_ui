@@ -1,5 +1,5 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart' show ComponentImplementation;
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart' show CatalogItem;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../ui/surface_restored.dart';
@@ -11,7 +11,7 @@ import 'text_metrics.dart';
 /// légende et barre de répartition positifs / négatifs, ligne de comparaison
 /// de l'acte 2 si `comparison` est complet, puis les extraits d'avis en
 /// cartes (`gc-quote`).
-final CatalogItem reviewSentimentItem = boundCatalogItem<_Reviews>(
+final ComponentImplementation reviewSentimentItem = boundCatalogItem<_Reviews>(
   name: 'ReviewSentiment',
   description: 'Sentiment des avis lié à /reviews.',
   parse: _Reviews.tryParse,

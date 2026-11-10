@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:a2ui_core/a2ui_core.dart'
+    show MessageProcessor, ValidationConfig;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show CatalogImplementation, ComponentImplementation;
 import 'package:feature_agent_activity/feature_agent_activity.dart'
     show
         AgentActivityBloc,
@@ -81,7 +85,6 @@ import 'package:feature_voice_session/feature_voice_session.dart'
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:genui/genui.dart' show Catalog, SurfaceController;
 import 'package:get_it/get_it.dart';
 import 'package:shared_backend_channel/shared_backend_channel.dart'
     show CanvasActionClient, CanvasResetClient, CanvasResetResult;
@@ -143,13 +146,11 @@ class GenesisCanvasPage extends StatefulWidget {
   final GetIt getIt;
 
   /// Catalogue du moteur : exactement un.
-  final List<Catalog> catalogs;
+  final List<CatalogImplementation> catalogs;
 
   /// Identifiant du catalogue que le validateur A2UI exige dans
   /// `createSurface` : dérivé de [catalogs], jamais fourni à part.
-  String get catalogId =>
-      catalogs.single.catalogId ??
-      (throw StateError("le catalogue de la page n'a pas d'identifiant"));
+  String get catalogId => catalogs.single.id;
   final SnapshotFactory snapshotFactory;
   final ExitHandler exitHandler;
 
@@ -241,9 +242,14 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   late final OrbLevelController _orb;
 
   // Canevas.
-  late final SurfaceController _controller = SurfaceController(
-    catalogs: widget.catalogs,
-  );
+  // Un message refusé est signalé sur `model.onError` (surveillé par
+  // `_engineErrors`) au lieu de lever une exception.
+  late final MessageProcessor<ComponentImplementation> _controller =
+      MessageProcessor<ComponentImplementation>(
+        catalogs: widget.catalogs,
+        validationConfig: ValidationConfig.relaxed,
+        reportErrorsOnly: true,
+      );
   late final CanvasBloc _bloc = CanvasBloc(_controller);
   // UNE instance du validateur A2UI pour la session, en direct comme en rejeu.
   late final A2uiGate _gate = A2uiGate(
@@ -319,7 +325,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
     super.initState();
     // Écoute dès la création : le moteur ne rejoue pas les erreurs passées.
     _engineErrors = EngineErrorWatcher(
-      onSubmit: _controller.onSubmit,
+      errors: _controller.model.onError,
       errorSink: widget.errorSink,
     );
     _lifecycle = AppLifecycleListener(
@@ -690,8 +696,8 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   static const int _maxSettleFrames = 10;
 
   Future<void> _captureWhenSettled() async {
-    // Au moins une frame (genui construit la surface), puis tant qu'une frame
-    // reste programmée (validation asynchrone), dans la limite du plafond.
+    // Au moins une frame (le moteur construit la surface), puis tant qu'une
+    // frame reste programmée, dans la limite du plafond.
     final binding = WidgetsBinding.instance;
     var frames = 0;
     do {
@@ -781,7 +787,7 @@ class _GenesisCanvasPageState extends State<GenesisCanvasPage>
   ///    écoute, par la page) puis du canevas ;
   /// 7. Blocs du panneau du protocole, de l'étagère et de la régie : ils
   ///    lisent le gate, donc ils ne se ferment qu'après lui ;
-  /// 8. moteur genui, une fois le Bloc du canevas fermé.
+  /// 8. moteur A2UI, une fois le Bloc du canevas fermé.
   Future<void> _shutdown() async {
     final bound = _settings.sessionCloseTimeout;
     await _step('Bloc de session', _voiceBloc.close);

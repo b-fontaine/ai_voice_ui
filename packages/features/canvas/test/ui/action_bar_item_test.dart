@@ -1,9 +1,10 @@
 import 'package:a2ui_core/a2ui_core.dart' as a2ui;
+import 'package:a2ui_flutter/a2ui_flutter.dart'
+    show A2uiSurface, CatalogImplementation, ComponentImplementation;
 import 'package:entity_catalog/entity_catalog.dart';
 import 'package:feature_canvas/feature_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:genui/genui.dart' show Catalog, Surface, SurfaceController;
 import 'package:shared_design_system/shared_design_system.dart';
 
 import '../support/catalog_harness.dart';
@@ -11,13 +12,15 @@ import '../support/catalog_harness.dart';
 /// Affichage de `ActionBar` seul sur la surface `actions` (le clic et la place
 /// dans le plateau relèvent de T15/T16/T17).
 void main() {
-  late SurfaceController controller;
+  late a2ui.MessageProcessor<ComponentImplementation> controller;
 
   Future<void> pumpActions(
     WidgetTester tester, {
     Object? Function(Map<String, dynamic> value)? alter,
   }) async {
-    controller = SurfaceController(catalogs: <Catalog>[genesisCatalog()]);
+    controller = a2ui.MessageProcessor<ComponentImplementation>(
+      catalogs: <CatalogImplementation>[genesisCatalog()],
+    );
     addTearDown(controller.dispose);
     final fixture = contractFixture(
       'actions',
@@ -29,7 +32,7 @@ void main() {
         final body = json['updateDataModel'] as Map<String, dynamic>;
         body['value'] = alter(cloneJson(body['value'] as Map<String, dynamic>));
       }
-      controller.handleMessage(a2ui.A2uiMessage.fromJson(json));
+      controller.processMessages(a2ui.AgentToRendererMessage.fromJson(json));
     }
     await tester.pumpWidget(
       MaterialApp(
@@ -41,7 +44,9 @@ void main() {
           body: SizedBox(
             width: 940,
             height: 200,
-            child: Surface(surfaceContext: controller.contextFor('actions')),
+            child: A2uiSurface(
+              surface: controller.model.getSurface('actions')!,
+            ),
           ),
         ),
       ),
