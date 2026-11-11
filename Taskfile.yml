@@ -14,6 +14,12 @@ tasks:
       - npm ci --no-audit --no-fund
       - npm start
 
+  widgetbook:
+    desc: Lance le catalogue Widgetbook dans Chrome ; `task widgetbook -- -d linux` (ou tout autre argument de `flutter run`) change la cible
+    dir: apps/genesis_widgetbook
+    cmds:
+      - flutter run {{.CLI_ARGS | default "-d chrome"}}
+
   demo:
     desc: Lance la démo (backend + agents en Docker, app Linux) et laisse la pile Docker démarrée
     cmds:

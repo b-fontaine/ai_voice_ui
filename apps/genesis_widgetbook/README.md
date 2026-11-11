@@ -11,10 +11,20 @@ Catalogue [Widgetbook](https://docs.widgetbook.io/~v4) (4.0.0-beta.14) des briqu
 
 ## Lancer
 
+Depuis la racine du dépôt :
+
+```sh
+task widgetbook
+```
+
+Ou directement :
+
 ```sh
 cd apps/genesis_widgetbook
 flutter run -d chrome
 ```
+
+Les arguments placés après `--` remplacent `-d chrome`, par exemple `task widgetbook -- -d linux`.
 
 Le dossier `web/` est versionné. Il n'y a pas de dossier `linux/` : pour une exécution en fenêtre de bureau, générer le runner localement avec `flutter create --platforms=linux .` (non versionné), puis `flutter run -d linux`.
 
