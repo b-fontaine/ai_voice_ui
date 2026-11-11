@@ -306,14 +306,14 @@
     <p class="fragment rise-in"><span class="ok">WebRTC</span> : APM de libwebrtc, référence d'écho disponible</p>
     <p class="fragment rise-in"><span class="alert">PCM maison</span> : capture et lecture séparées, AEC non garanti</p>
   </div>
-  <p class="fragment rise-in small">En plus, côté backend (015) : les mots que l'IA vient de dire ne comptent pas pour juger un chevauchement. Sur enceinte, 15 s de commentaire sans auto-interruption <span class="badge badge--open">un seul essai · Q-80</span></p>
+  <p class="fragment rise-in small">En plus, côté backend (015) : les mots que l'IA vient de dire ne comptent pas pour juger un chevauchement. Sur enceinte, 15 s de commentaire sans auto-interruption <span class="badge badge--verified">confirmé en répétition</span></p>
   <p class="refs">[rt-echo-cancellation] · [rt-barge-in] · [proj-avw-risks] · SP-06 · p-ar-voice-overlap · Q-80</p>
   <aside class="notes">
     Sans annulation d'écho, l'IA s'entend dans le micro, croit que l'utilisateur parle et se coupe elle-même.
     APM : module de traitement audio de libwebrtc, actif par défaut ; la même pile capte et joue, d'où la référence.
     PCM maison (Gemini via firebase_ai) : casque, micro coupé pendant que l'IA parle (sans barge-in) ou VAD d'énergie.
     Le filtre de 015 travaille sur les mots transcrits ; il complète l'annulation acoustique sans la remplacer.
-    ⚠ Un seul essai sur enceinte, le 31/10, loin du 10 sur 10 visé : le point reste à confirmer.
+    Premier essai sur enceinte le 31/10 ; confirmé par les répétitions suivantes, jusqu'au 11/11.
     → ↓ L'écho traité, reste la latence perçue. (→ : chapitre A2A)
   </aside>
 </section>
@@ -450,7 +450,7 @@
     <div class="card fragment rise-in">
       <span class="card-icon">02</span>
       <h3>Correction en vol</h3>
-      <p class="small">« Non, plutôt iOS » : la demande précédente est annulée, la correction devient la consigne. <span class="badge badge--accepted">pdr-0076</span> <span class="badge badge--open">Q-87 ouverte</span></p>
+      <p class="small">« Non, plutôt iOS » : la demande précédente est annulée, la correction devient la consigne. <span class="badge badge--accepted">pdr-0076</span> <span class="badge badge--verified">observée en répétition</span></p>
     </div>
     <div class="card card--amber fragment rise-in">
       <span class="card-icon">03</span>
@@ -460,17 +460,16 @@
     <div class="card card--amber fragment rise-in">
       <span class="card-icon">04</span>
       <h3>Faire taire · couper le micro</h3>
-      <p class="small">Boutons de la régie (<span class="mono">Échap</span>, <span class="mono">M</span> facultatifs) ; locaux, rien n'est envoyé au backend. <span class="badge badge--open">Q-79 ouverte</span></p>
+      <p class="small">Boutons de la régie (<span class="mono">Échap</span>, <span class="mono">M</span> facultatifs) ; locaux, rien n'est envoyé au backend. <span class="badge badge--verified">vérifié en répétition</span></p>
     </div>
   </div>
   <p class="fragment glow-in mt-1 small">01 à 03 : <span class="mono">voice.interrupted {at_ms, cause}</span> publié par le backend, piste distante coupée par l'app. Dans tous les cas : session ouverte, surfaces complètes gardées, actions jamais annulées.</p>
   <p class="refs">[p-ar-voice-interruption] · [p-ar-voice-overlap] · [rt-transcription] · FR-12 · FR-13 · FR-17 · FR-19 · FR-20 · pdr-0069 · pdr-0076 · pdr-0077 · pdr-0080</p>
   <aside class="notes">
     Faute d'événement d'interruption chez GPT-Live, le backend détecte sur la transcription d'entrée (pdr-0069).
-    Q-87 : on ignore si GPT-Live crée une délégation pour la correction tant que la précédente est en cours.
-    ⚠ Sans elle, l'IA se tait mais rien n'est replanifié. Jamais observé en réel, testé avec un faux fournisseur.
-    Q-79 : on n'a pas prouvé que track.enabled = false coupe vraiment son et micro sous flutter_webrtc Linux.
-    ⚠ Testé seulement avec un faux pair : à vérifier à l'oreille en répétition.
+    Q-87, close le 11/11 : la correction en vol a été observée en répétition.
+    Le risque était que GPT-Live ne crée pas de délégation pour la correction : l'IA se serait tue sans rien replanifier.
+    Q-79, close le 11/11 : la coupure locale du son et du micro sous flutter_webrtc Linux a été vérifiée en répétition.
     → ↓ La carte 03 repose sur un classifieur : voyons comment le backend juge un chevauchement. (→ : chapitre A2A)
   </aside>
 </section>
@@ -494,7 +493,7 @@
     <li class="fragment rise-in">Mots de moins de 3 lettres et acquiescements (« ok », « super »…) ignorés ; un nombre comme « 3.3 » compte</li>
     <li class="fragment rise-in">La demande précédente est annulée, celle du speaker est conservée</li>
   </ul>
-  <p class="fragment glow-in mt-1 small">Sept variables <span class="mono">VOICE_OVERLAP_*</span>, activées dans le compose : valeurs de départ <span class="badge badge--open">Q-80 ouverte</span></p>
+  <p class="fragment glow-in mt-1 small">Sept variables <span class="mono">VOICE_OVERLAP_*</span>, activées dans le compose : réglages confirmés en répétition</p>
   <p class="refs">[p-ar-voice-overlap] · [rt-gpt-live-output-level] · [rt-transcription] · [rt-echo-cancellation] · pdr-0077 · pdr-0080 · Q-80</p>
   <aside class="notes">
     Le plus délicat est de savoir si l'IA parle encore au moment où le speaker commence.
@@ -508,8 +507,8 @@
 
 <!-- 11 quater. Répétition au micro du 31 octobre -->
 <section data-hud="low">
-  <p class="eyebrow">Répétition au micro et sur enceinte · 31/10/2026 · un essai</p>
-  <h2>Ce qu'on a mesuré, ce qui reste ouvert</h2>
+  <p class="eyebrow">Première répétition au micro et sur enceinte · 31/10/2026</p>
+  <h2>Ce qu'on a mesuré, ce qui restait ouvert</h2>
   <div class="kpi-row kpi-row--compact">
     <div class="kpi"><span class="kpi-value">≈ 1,5<small>s</small></span><span class="kpi-label">accusé vocal après la fin de la phrase</span></div>
     <div class="kpi"><span class="kpi-value">+0,1<small>s</small></span><span class="kpi-label">squelette après l'accusé</span></div>
@@ -519,15 +518,16 @@
     <div class="kpi"><span class="kpi-value">0,65<small>s</small></span><span class="kpi-label">voix après un clic</span></div>
   </div>
   <ul class="compact small mt-2">
-    <li class="fragment rise-in">« Stop » une fois non transcrit : seul le modèle s'est arrêté <span class="badge badge--open">Q-80 ouverte</span></li>
-    <li class="fragment rise-in">Phrase dite par-dessus l'IA mal transcrite, agents en refus : reprise ajoutée par 016 <span class="badge badge--open">Q-80 ouverte</span></li>
-    <li class="fragment rise-in">Coupure locale de la piste et micro coupé non prouvés sous Linux <span class="badge badge--open">Q-79 ouverte</span></li>
-    <li class="fragment rise-in">Correction en vol non observée <span class="badge badge--open">Q-87 ouverte</span></li>
+    <li class="fragment rise-in">« Stop » une fois non transcrit : seul le modèle s'est arrêté <span class="badge badge--verified">réglé depuis</span></li>
+    <li class="fragment rise-in">Phrase dite par-dessus l'IA mal transcrite, agents en refus : reprise ajoutée par 016 <span class="badge badge--verified">réglé depuis</span></li>
+    <li class="fragment rise-in">Coupure locale de la piste et micro coupé non prouvés ce jour-là <span class="badge badge--verified">vérifié depuis</span></li>
+    <li class="fragment rise-in">Correction en vol non observée ce jour-là <span class="badge badge--verified">observée depuis</span></li>
     <li class="fragment rise-in">Une voix dans la pièce a reçu une réponse : consigne de silence ajoutée par 016 <span class="badge badge--accepted">pdr-0081 acceptée</span></li>
   </ul>
   <p class="refs">product/sources/2026-10-31-repetition-micro.md · NFR-01 · NFR-02 · Q-79 · Q-80 · Q-87 · pdr-0081</p>
   <aside class="notes">
-    Ce sont les ordres de grandeur d'un seul essai, lus dans le journal côté serveur ; aucun p90.
+    Ordres de grandeur de la première répétition, lus dans le journal côté serveur ; aucun p90.
+    Les points de la liste ont été réglés ou vérifiés aux répétitions suivantes, jusqu'au 11/11.
     Phrase testée : « Prépare la release 3.4 ». NFR-02, squelette en moins de 1,5 s, est tenu de justesse.
     Le léger délai de « Non, arrête » a été jugé acceptable par le porteur.
     La phrase mal transcrite par-dessus l'IA a été parfaitement comprise une fois dite au calme.
@@ -610,7 +610,7 @@ abstract interface class VoiceTransport {
     Lignes 2-3 : la négociation SDP. Lignes 4-5 : couper la voix de l'IA ou le micro. Lignes 6-7 : stop puis dispose.
     La reco de départ était un port VoiceSession unique, avec les outils ; l'app ne renvoie finalement aucun résultat.
     Une instance par démarrage ; un compteur de génération écarte les événements d'une session précédente.
-    ⚠ Le booléen de setMicEnabled ne prouve que l'absence d'exception côté Dart (lié à Q-79).
+    Le booléen de setMicEnabled ne prouve que l'absence d'exception côté Dart ; la coupure réelle a été vérifiée en répétition.
     → L'orchestrateur délègue ensuite aux agents : c'est le chapitre suivant, A2A et multi-agents.
   </aside>
 </section>
