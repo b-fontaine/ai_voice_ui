@@ -148,8 +148,9 @@
   </aside>
 </section>
 
-<!-- Débranchement (pile verticale) : 27 = Task ; 27.1 à 27.3 = Message/Part/Artifact,
-     suivi d'une Task, bindings et versions, atteints par ↓ seulement. -->
+<!-- Débranchement (pile verticale) : la Task ; tout le détail d'A2A et du
+     multi-agents (messages, flux, versions, spike, authentification, patterns,
+     placement, sécurité, observabilité), atteint par ↓ seulement. -->
 <section data-start-indexv="0">
 <!-- 04.3 — Cycle de vie d'une Task -->
 <section data-hud="low">
@@ -210,7 +211,7 @@
     Dans la démo : SUBMITTED à l'arrivée, WORKING pendant que l'agent produit ses écrans, puis COMPLETED.
     Demande hors de son périmètre : REJECTED. Sur « Stop », l'orchestrateur envoie CancelTask et la Task finit en CANCELED.
     ⚠ Relier INPUT_REQUIRED à une question vocale et AUTH_REQUIRED à OAuth est une reco interne ; la spec n'en dit rien.
-    → ↓ pour le détail (messages, suivi en flux, versions). Sinon → l'authentification.
+    → ↓ pour le détail (messages, versions, authentification, patterns, sécurité). Sinon → le projet Genesis Canvas.
   </aside>
 </section>
 
@@ -256,7 +257,7 @@
     Nos agents mettent chaque message A2UI v0.9 dans une Part data d'un statut WORKING, et le résumé dans un Artifact texte.
     Raison : au spike, genui_a2a (A2A v0.3) lisait l'A2UI dans les statuts et ignorait les artifact-update.
     ⚠ La spec conseille de ranger les résultats dans les Artifacts ; l'A2UI en statut WORKING est un choix du projet, issu du spike.
-    → ↓ comment ces statuts arrivent à l'orchestrateur, un par un. Sinon → retour au fil principal.
+    → ↓ comment ces statuts arrivent à l'orchestrateur, un par un. (→ : chapitre suivant)
   </aside>
 </section>
 
@@ -293,7 +294,7 @@
     À chaque statut WORKING, l'orchestrateur valide l'A2UI contre le catalogue puis le relaie tel quel à l'app (WebSocket).
     Le résumé de l'Artifact part vers la voix, qui le restitue une fois les résultats reçus.
     ⚠ Nos agents n'annoncent que le streaming : le panneau push concerne un client mobile, absent de la démo.
-    → ↓ un dernier détail : bindings et versions, un écart qu'on a payé au spike. Sinon → retour au fil principal.
+    → ↓ bindings et versions, un écart qu'on a payé au spike. (→ : chapitre suivant)
   </aside>
 </section>
 
@@ -336,14 +337,41 @@
     SP-03 : message/stream donnait -32601 (méthode inconnue) ; sans en-tête A2A-Version, -32009 (0.3 demandée, 1.0 servie).
     Côté web, gRPC est écarté faute de HTTP/2 natif dans le navigateur ; il reste valable entre services backend.
     Depuis pdr-0045, A2A ne circule qu'entre processus Go, en v1.0 native, sans couche de compatibilité.
-    → Fin du détail : retour au fil principal avec l'authentification.
+    → ↓ le spike en question. (→ : chapitre suivant)
   </aside>
 </section>
+<!-- 04.6 bis — Spike SP-03 (venu du chapitre 05) -->
+<section data-hud="low">
+  <p class="eyebrow">Spike SP-03 · 29/10/2026</p>
+  <h2>Agent Go et client genui_a2a</h2>
+  <div class="flow">
+    <div class="node">Client Flutter<small>genui 0.10.4 · genui_a2a 0.10.1</small></div>
+    <div class="arrow arrow--both"><span class="arrow-label">message/stream · SSE</span><span class="arrow-label arrow-label--below">A2A v0.3</span></div>
+    <div class="node node--amber">Agent Go<small>a2a-go v2.7.0 · a2acompat/a2av0</small></div>
+  </div>
+  <div class="grid-2 mt-1">
+    <ul class="check-list compact small">
+      <li class="fragment rise-in">Surface rendue de bout en bout</li>
+      <li class="fragment rise-in">Clic → <code>connectAndSend</code> → « validé »</li>
+      <li class="fragment rise-in">Sans code d'adaptation supplémentaire</li>
+    </ul>
+    <ul class="cross-list compact small">
+      <li class="fragment rise-in">Handler natif v1.0 : <code>message/stream</code> inconnu</li>
+      <li class="fragment rise-in"><code>sendEvent</code> n'atteint pas le flux</li>
+      <li class="fragment rise-in">Agent Card sans <code>url</code> hors v0.3</li>
+    </ul>
+  </div>
+  <p class="small mt-1 fragment glow-in"><span class="badge badge--verified">SP-03 vérifié</span> <span class="badge badge--accepted">pdr-0045 : WSS maison, genui_a2a hors de l'app</span></p>
+  <p class="refs">specs/001-sp-03-a2a-go-genui · p-rm-spikes · pdr-0045 · [proto-a2a-go-v03-compat] · [genui-a2a-connector] · [genui-test-a2a-roundtrip]</p>
+  <aside class="notes">
+    Ce spike devait dire si un agent Go peut streamer de l'A2UI vers le client Flutter genui_a2a. Réponse : oui.
+    genui_a2a parle A2A v0.3 : le handler v1.0 répond -32601, il faut monter le handler de compatibilité.
+    Portée : test widget contre l'agent Go réel, mais avec un tap simulé et un client jetable, hors de l'app.
+    Le même jour, j'ai retenu un WebSocket maison ; ce spike reste la preuve qu'un client A2A Flutter fonctionnerait.
+    → ↓ l'authentification entre agents. (→ : chapitre suivant)
+  </aside>
 </section>
 
-<!-- Débranchement (pile verticale) : 28 = authentification ;
-     28.1 = patterns multi-agents, atteinte par ↓ seulement. -->
-<section data-start-indexv="0">
 <!-- 04.7 — Sécurité A2A -->
 <section data-hud="low">
   <h2>L'authentification dans A2A</h2>
@@ -380,7 +408,7 @@
     Le SDK Dart communautaire a2a ne gère ni ces schémas (hormis HTTPS) ni la carte étendue.
     Dans la démo, l'isolement réseau en tient lieu : agents sur un réseau Docker interne, sans port publié ni sortie.
     ⚠ Le schéma du haut est une recommandation pour un vrai déploiement ; la démo n'en applique aucune flèche.
-    → ↓ les patterns multi-agents et leur coût en voix. Sinon → où tourne chaque agent.
+    → ↓ les patterns multi-agents et leur coût en voix. (→ : chapitre suivant)
   </aside>
 </section>
 
@@ -405,11 +433,10 @@
     Chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent tout de suite.
     Sources : Anthropic pour routing et orchestrator-workers ; OpenAI Agents SDK pour agent-as-tool et handoff ; ADK pareil.
     Dans la démo, le routage est codé sur les tags des cartes ; le seul LLM ajouté est le composeur de l'agent Qualité.
-    Composeur : p50 1,79 s au banc pour un objectif de 1,5 s (NFR-02) ; environ 3,7 s en répétition, sur une seule mesure.
+    Composeur : p50 1,79 s au banc pour un objectif de 1,5 s (NFR-02) ; 2 à 4 s en répétition, sur sept sessions.
     D'où le squelette des surfaces envoyé avant l'appel, gardé par le porteur (pdr-0078) ; NFR-02 reste à remesurer.
-    → Retour au fil principal : où tourne chaque agent.
+    → ↓ où tourne chaque agent. (→ : chapitre suivant)
   </aside>
-</section>
 </section>
 
 <!-- 04.9 — La voix délègue une seule fois : où tourne quoi -->
@@ -492,13 +519,10 @@
     Pour un autre modèle ou un agent backend, la doc OpenAI recommande la délégation par outil.
     Dans la démo, les « Agent(s) GenUI » sont nos trois agents A2A : chacun produit l'A2UI de ses surfaces (pdr-0036).
     Qualité, Voix du client et Livraison : un conteneur chacun. L'orchestrateur ne recompose rien, il valide et relaie.
-    → Plus il y a d'agents, plus il y a de sauts à protéger : la sécurité de bout en bout.
+    → ↓ plus il y a d'agents, plus il y a de sauts à protéger : la sécurité de bout en bout. (→ : chapitre suivant)
   </aside>
 </section>
 
-<!-- Débranchement (pile verticale) : 30 = sécurité de bout en bout ;
-     30.1 = observabilité et évaluation, atteinte par ↓ seulement. -->
-<section data-start-indexv="0">
 <!-- 04.10 — Sécurité de bout en bout -->
 <section data-hud="low">
   <h2>Sécurité de bout en bout</h2>
