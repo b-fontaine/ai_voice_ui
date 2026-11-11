@@ -433,7 +433,7 @@
     Chaque saut LLM ajoute de la latence, et en conversation vocale elle se ressent tout de suite.
     Sources : Anthropic pour routing et orchestrator-workers ; OpenAI Agents SDK pour agent-as-tool et handoff ; ADK pareil.
     Dans la démo, le routage est codé sur les tags des cartes ; le seul LLM ajouté est le composeur de l'agent Qualité.
-    Composeur : p50 1,79 s au banc pour un objectif de 1,5 s (NFR-02) ; environ 3,7 s en répétition, sur une seule mesure.
+    Composeur : p50 1,79 s au banc pour un objectif de 1,5 s (NFR-02) ; 2 à 4 s en répétition, sur sept sessions.
     D'où le squelette des surfaces envoyé avant l'appel, gardé par le porteur (pdr-0078) ; NFR-02 reste à remesurer.
     → ↓ où tourne chaque agent. (→ : chapitre suivant)
   </aside>

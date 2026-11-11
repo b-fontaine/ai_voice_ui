@@ -3,7 +3,7 @@
      Sources : product/ (pdr-*, Q-xx, architecture/, functional/, roadmap/),
      knowledge/ (ids entre crochets), specs/000 à 015, specs/progress.md, tools/loop/,
      product/sources/2026-10-31-repetition-micro.md.
-     État décrit : 10/11/2026 (fonctionnalités 000 à 019 livrées ; seule répétition au micro : 31/10).
+     État décrit : 10/11/2026 (fonctionnalités 000 à 019 livrées ; répétitions au micro du 31/10 au 11/11).
      ================================================================ -->
 
 <!-- 00 · Titre de chapitre -->
@@ -16,8 +16,8 @@
     Pour finir, j'ouvre le capot du projet qui a servi de fil rouge pendant tout le talk.
     C'est un livrable de conférence : il n'a jamais été pensé pour la production.
     Release Copilot : décider go ou no-go pour la 3.4 d'une app mobile fictive face à la 3.3, sur des données figées.
-    Vingt fonctionnalités sont livrées (000 à 019) ; la seule répétition au micro date du 31 octobre.
-    ⚠ Je dis à chaque fois ce qui est décidé, observé en réel ou à vérifier : Q-79, Q-80 et Q-87 restent ouvertes.
+    Vingt fonctionnalités sont livrées (000 à 019), et la démo a été répétée au micro du 31 octobre au 11 novembre.
+    Je dis à chaque fois ce qui est décidé, observé en réel ou encore à vérifier.
     → On commence par ce que voit le public : l'écran.
   </aside>
 </section>
@@ -339,7 +339,7 @@
     L'appel au modèle prend à lui seul environ 1,8 s, trop pour NFR-02, d'où ce squelette anticipé.
     L'accusé vocal reste générique : la voix n'annonce rien avant d'avoir le vrai résumé.
     L'A2UI ne passe jamais par le canal de la session voix, seulement par l'app-channel.
-    ⚠ Un seul échantillon mesuré (Q-80). Si le p90 dépassait 8 s, on reviendrait aux écrans fixes (pdr-0078).
+    Sur sept répétitions, l'écran de l'acte 1 est complet 2,4 à 4,3 s après la délégation. Au-delà de 8 s au p90 : écrans fixes (pdr-0078).
     → C'était l'acte 1 ; à l'acte 3, le point de départ est un clic.
   </aside>
 </section>
@@ -429,7 +429,7 @@
     Les données sont toutes fictives. Aucune clé ne vit dans l'app, et un test le vérifie.
     Le contrôle de Host bloque le DNS rebinding ; un POST portant un en-tête Origin est refusé.
     Si le backend était un jour exposé, on passerait à des JWT vérifiés par JWKS.
-    ⚠ En répétition, une voix dans la pièce a obtenu une réponse de l'IA ; 016 ajoute une consigne de silence, vue sur un seul essai.
+    ⚠ En répétition, une voix dans la pièce a obtenu une réponse de l'IA ; 016 ajoute une consigne de silence.
     → Passons à la façon dont tout cela a été développé.
   </aside>
 </section>
@@ -608,7 +608,7 @@
     Pour conclure : l'idée centrale en une phrase, puis six points que je retiendrais de ce projet.
     La voix et A2UI évoluent vite, d'où les versions épinglées exactement et une base de notes datées.
     Sécurité : en plus du catalogue fermé, les retours d'agents sont traités comme des données non fiables.
-    ⚠ Une seule répétition au micro, le 31/10 ; Q-79, Q-80 et Q-87 restent à observer. Chiffres recomptés le 10/11.
+    Sept répétitions au micro relevées dans le journal, du 31/10 au 11/11. Chiffres du dépôt recomptés le 10/11.
     → Le dépôt est public, l'adresse est en bas de l'écran. Merci, place aux questions.
   </aside>
 </section>
