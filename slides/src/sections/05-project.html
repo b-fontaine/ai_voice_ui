@@ -609,6 +609,77 @@
     La voix et A2UI évoluent vite, d'où les versions épinglées exactement et une base de notes datées.
     Sécurité : en plus du catalogue fermé, les retours d'agents sont traités comme des données non fiables.
     Sept répétitions au micro relevées dans le journal, du 31/10 au 11/11. Chiffres du dépôt recomptés le 10/11.
-    → Le dépôt est public, l'adresse est en bas de l'écran. Merci, place aux questions.
+    → Avant les questions : une information tombée cette semaine, puis mes contacts.
+  </aside>
+</section>
+
+<!-- 15 · Dernière minute (genui remplacé), puis contacts et dépôt.
+     Deux temps, au clic (data-autoplay="off") : l'info occupe la slide, puis
+     se réduit à un bandeau quand les deux panneaux apparaissent. -->
+<section id="p05-15" data-autoplay="off">
+  <p class="eyebrow">Pour finir · relevé sur pub.dev le 11/11/2026</p>
+  <h2>Dernière minute, puis vos questions</h2>
+  <div class="outro">
+    <div class="hud-panel hud-panel--amber outro-news fragment" data-fragment-index="0">
+      <div class="outro-head">
+        <p class="panel-title">Dernière minute</p>
+        <p class="outro-headline"><code>genui</code> est remplacé par <code>a2ui_core</code> + <code>a2ui_flutter</code></p>
+      </div>
+      <div class="outro-detail">
+        <div class="grid-2">
+          <div>
+            <h4>Ce qui ne change pas</h4>
+            <ul class="compact">
+              <li>le protocole A2UI v0.9 et ses quatre messages</li>
+              <li>le catalogue fermé et les schémas des composants</li>
+              <li>cette démo, ce soir : <code>genui</code> 0.10.4 figé <span class="badge badge--accepted">pdr-0018</span>, migration après le talk</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Ce qui change</h4>
+            <ul class="compact">
+              <li>trois paquets : <code>a2ui_core</code> (moteur), <code>a2ui_flutter</code> (widgets), <code>a2ui_agent</code> (prompts)</li>
+              <li>les noms : <code>SurfaceController</code> → <code>MessageProcessor</code>, <code>Surface</code> → <code>A2uiSurface</code></li>
+              <li>un décodage plus strict des messages</li>
+            </ul>
+          </div>
+        </div>
+        <p class="outro-dates mb-0"><code>a2ui_flutter</code> 0.1.0 le 4 novembre, 0.3.0 le 11 novembre · migration de ce dépôt proposée par l'équipe A2UI <span class="badge badge--proposed">PR #9 proposée</span></p>
+      </div>
+    </div>
+    <div class="outro-panels">
+      <div class="hud-panel outro-speaker fragment rise-in" data-fragment-index="0">
+        <div class="portrait">
+          <img src="portrait.png" alt="Portrait de Benoît FONTAINE" />
+        </div>
+        <div>
+          <h3 class="mt-0">Benoît FONTAINE</h3>
+          <ul class="plain compact">
+            <li><span class="mono amber small">FONCTION</span><br />Expert IA chez un grand éditeur de logiciels</li>
+            <li><span class="mono amber small">ENSEIGNEMENT</span><br />université de Nantes</li>
+            <li><span class="mono amber small">LIENS</span><br />
+              <a class="mono small" href="https://fr.linkedin.com/in/b-fontaine">fr.linkedin.com/in/b-fontaine</a><br />
+              <a class="mono small" href="https://medium.benoitfontaine.fr/">medium.benoitfontaine.fr</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="hud-panel repo-qr fragment rise-in" data-fragment-index="0">
+        <p class="panel-title">Dépôt GitHub</p>
+        <img src="github-qr.svg" alt="QR code vers github.com/b-fontaine/ai_voice_ui" />
+        <a class="mono small" href="https://github.com/b-fontaine/ai_voice_ui">github.com/<br />b&#8209;fontaine/ai_voice_ui</a>
+        <p class="outro-pr mb-0">PR #9 en cours : migration vers <code>a2ui_flutter</code>, proposée par l'équipe A2UI</p>
+      </div>
+    </div>
+  </div>
+  <p class="refs">pub.dev/packages/genui · pub.dev/packages/a2ui_flutter · github.com/b-fontaine/ai_voice_ui/pull/9 · [genui-overview] · [pdr-0018-a2ui-v09-genui-0-10-4]</p>
+  <aside class="notes">
+    Premier temps : pub.dev affiche genui comme arrêté, remplacé par a2ui_flutter. Même éditeur, labs.flutter.dev.
+    Ce que j'ai montré reste valable : le protocole, les messages et le catalogue ne changent pas.
+    Ce qui change, ce sont les paquets et les noms des types. Le moteur refuse aussi des messages que genui tolérait.
+    La démo de ce soir tourne sur genui 0.10.4, figé. La migration est proposée dans une PR ; je la regarderai après ce talk.
+    Les nouveaux paquets ont une semaine : trois versions d'a2ui_flutter entre le 4 et le 11 novembre.
+    Un appui : l'info se réduit en bandeau, mes contacts et le QR code du dépôt apparaissent.
+    → Le dépôt est public. Merci, place aux questions.
   </aside>
 </section>
