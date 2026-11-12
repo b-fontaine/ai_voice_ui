@@ -18,6 +18,7 @@ Démo de conférence Flutter desktop : la **voix** du speaker déclenche un **or
 | [`knowledge/`](knowledge/index.yaml) | Base de connaissances **réutilisable** (zettelkasten) : faits vérifiés et datés sur la voix temps réel, GenUI/A2UI, l'architecture Flutter, Bloc, les tests, les protocoles d'agents, le design system, et décisions technologiques génériques (`adr-*`) |
 | [`specs/`](specs/README.md) | Une fonctionnalité = un dossier (spec, plan, tâches, état) ; avancement dans [`specs/progress.md`](specs/progress.md) |
 | [`tools/loop/`](tools/loop/README.md) | Boucle de développement autonome : porte de qualité, quota, superviseur, publication |
+| [`docs/flux/`](docs/flux/index.html) | Trois schémas animés pour comprendre la démo (flux GenUI, flux vocal, acte 1 de bout en bout), avec extraits de code et fichiers concernés ; page HTML autonome, à ouvrir dans un navigateur |
 | [`spikes/`](spikes/) | Expériences techniques jetables (ex. [`spikes/widgetbook4`](spikes/widgetbook4/README.md)) |
 | `.claude/` | Skills et agents utilisés par Claude Code pour consulter et entretenir `knowledge/` et `product/` |
 | [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) | Règles du projet pour les agents IA |
