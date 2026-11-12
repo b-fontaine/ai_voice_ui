@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis Canvas · guide</title>
+<meta name="description" content="Guide de la démo Genesis Canvas : une app Flutter desktop qui compose ses écrans à la voix, avec GenUI, A2UI, une voix temps réel et des agents A2A.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Page d'accueil du site : un guide en une colonne, mêmes couleurs que l'app et que la page des flux. */
+:root{
+  color-scheme:dark;
+  --void:#04060C; --s1:#0A0F1E; --s2:#101731; --s3:#18213F;
+  --line:#1F2A4D; --line2:#3A4C80;
+  --ink:#EAF0FF; --muted:#93A1CC; --faint:#66739E;
+  --signal:#3DE8FF; --plasma:#A58BFF; --go:#3EF2A5; --warn:#FFC845;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--void);color:var(--ink);font:400 16px/1.6 var(--display);
+  padding:32px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+a{color:var(--signal);text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--signal);outline-offset:3px;border-radius:4px}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin:0 0 10px}
+h1{font:600 clamp(30px,6vw,44px)/1.1 var(--display);letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+h2{font:600 22px/1.2 var(--display);margin:0 0 6px;text-wrap:balance}
+h3{font:600 17px/1.3 var(--display);margin:0 0 4px}
+p{margin:0 0 10px;color:var(--muted);max-width:68ch}
+p strong,li strong{color:var(--ink);font-weight:500}
+.lead{font-size:18px;color:var(--ink)}
+code{font:400 13px var(--mono);color:#cfd9ff;background:var(--s1);border:1px solid var(--line);padding:1px 6px;border-radius:4px;overflow-wrap:anywhere}
+pre{margin:8px 0 0;background:var(--s1);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font:400 13px/1.6 var(--mono);color:#cfd9ff}
+pre code{background:none;border:none;padding:0}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.flux{display:block;text-decoration:none;background:var(--s1);border:1px solid var(--signal);border-radius:12px;padding:22px 24px;color:var(--ink)}
+.flux:hover{background:var(--s2)}
+.flux .go{font:500 15px var(--display);color:var(--signal);margin-top:10px;display:inline-block}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tabs a{display:block;text-decoration:none;background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--ink)}
+.tabs a:hover{border-color:var(--line2);background:var(--s2)}
+.tabs b{display:block;font:600 16px var(--display);margin-bottom:4px}
+.tabs span{display:block;font-size:14px;color:var(--muted)}
+ol.path{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;counter-reset:s}
+ol.path li{counter-increment:s;display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding:16px 0;border-top:1px solid var(--line)}
+ol.path li:last-child{border-bottom:1px solid var(--line)}
+ol.path li::before{content:counter(s);font:600 15px var(--mono);color:var(--void);background:var(--plasma);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;margin-top:2px}
+ol.path p{margin:0;font-size:15px}
+.say{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.say li{background:var(--s1);border:1px solid var(--line);border-left:2px solid var(--plasma);border-radius:0 8px 8px 0;padding:10px 14px;color:var(--muted);font-size:15px}
+.say b{color:var(--ink);font-weight:500}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted)}
+td:first-child{white-space:nowrap}
+footer{border-top:1px solid var(--line);padding-top:18px;color:var(--faint);font-size:14px}
+footer p{color:var(--faint);margin:0 0 4px}
+@media (max-width:640px){.tabs{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Meetup Flutter Nantes · 12 novembre 2026</p>
+  <h1>Genesis Canvas</h1>
+  <p class="lead">Une app Flutter desktop qui compose ses écrans pendant qu'on lui parle.</p>
+  <p>Le speaker dit « Prépare la release 3.4 ». Un modèle vocal temps réel confie la demande à un orchestrateur, qui appelle trois agents. Les agents décrivent l'interface en JSON (protocole A2UI) et Flutter l'affiche avec son propre catalogue de widgets. Le cas d'usage, « Release Copilot », aide à décider si une release mobile peut sortir, sur des données fictives.</p>
+  <p>Ce site accompagne le talk. Le code, les slides et la documentation sont dans le <a href="https://github.com/b-fontaine/ai_voice_ui">dépôt GitHub</a>.</p>
+</header>
+
+<section aria-labelledby="h-flux">
+  <h2 id="h-flux">Commencer par les trois flux</h2>
+  <a class="flux" href="flux/">
+    <h3>Les flux de la démo en schémas animés</h3>
+    <p>Trois schémas à dérouler étape par étape. À chaque étape : qui parle à qui, ce qui circule et dans quel format, ce que l'écran affiche, l'extrait de code réel et les fichiers concernés.</p>
+    <span class="go">Ouvrir les schémas →</span>
+  </a>
+  <div class="tabs">
+    <a href="flux/#genui"><b>Flux GenUI</b><span>Comment un écran se crée, reçoit ses valeurs et se met à jour.</span></a>
+    <a href="flux/#voix"><b>Flux vocal</b><span>La session voix, les interruptions et le clic confirmé à l'oral.</span></a>
+    <a href="flux/#acte1"><b>Acte 1 de bout en bout</b><span>De la phrase prononcée aux quatre composants affichés.</span></a>
+  </div>
+</section>
+
+<section aria-labelledby="h-guide">
+  <h2 id="h-guide">Parcours conseillé</h2>
+  <p>Quatre étapes, de la vue d'ensemble au code. Comptez une vingtaine de minutes pour les deux premières.</p>
+  <ol class="path">
+    <li><div><h3>Voir comment les pièces s'assemblent</h3>
+      <p>Déroulez d'abord <a href="flux/#acte1">l'acte 1 de bout en bout</a> : il montre tous les acteurs. Passez ensuite au <a href="flux/#genui">flux GenUI</a> pour le détail des messages, puis au <a href="flux/#voix">flux vocal</a>.</p></div></li>
+    <li><div><h3>Lire l'architecture</h3>
+      <p>La <a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/product/architecture/overview.md">vue d'ensemble</a> explique où tourne chaque composant. Le <a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/product/README.md">guide de la documentation produit</a> propose un parcours par profil : développeur Flutter, développeur backend, agent IA.</p></div></li>
+    <li><div><h3>Ouvrir le code cité dans les schémas</h3>
+      <p>Chaque étape des schémas donne ses fichiers. L'app est dans <code>apps/</code> et <code>packages/</code>, l'orchestrateur et les agents dans <code>backend/</code>, le catalogue de composants partagé dans <code>contracts/a2ui/genesis/v1/</code>.</p></div></li>
+    <li><div><h3>Lancer la démo chez soi</h3>
+      <p>Les commandes sont plus bas. Un contrôle sans micro ni coût permet de vérifier l'installation avant d'ouvrir une vraie session vocale.</p></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-run">
+  <h2 id="h-run">Lancer la démo</h2>
+  <p><strong>Il faut</strong> Docker, Flutter (cible Linux desktop) et une clé API OpenAI. La clé reste dans un fichier <code>.env</code> à la racine, lu par le backend seul ; l'app ne la voit jamais.</p>
+<pre><code>git clone https://github.com/b-fontaine/ai_voice_ui.git
+cd ai_voice_ui
+printf 'OPENAI_API_KEY=sk-...\n' > .env
+
+tools/demo/run.sh --check   # contrôle sans micro ni coût : pile Docker + app, capture d'écran, arrêt
+tools/demo/run.sh           # backend, trois agents, puis l'app ; tout s'arrête à la fermeture</code></pre>
+  <p>Une fois l'app ouverte, cliquez sur « Démarrer », puis enchaînez :</p>
+  <ul class="say">
+    <li><b>« Prépare la release 3.4 »</b> · quatre composants apparaissent.</li>
+    <li><b>« Concentre-toi sur Android et compare avec la 3.3 »</b> · les composants changent sur place, une barre d'actions s'ajoute.</li>
+    <li><b>Clic sur « Bloquer la release »</b> · la checklist se met à jour et la voix confirme.</li>
+  </ul>
+  <p>La voix est facturée par OpenAI à la durée de session ; le script arrête la pile Docker à la fermeture de l'app. Avec <a href="https://taskfile.dev">Task</a>, <code>task demo</code> lance la même chose en laissant la pile démarrée, <code>task demo:clean</code> la supprime et <code>task slides</code> ouvre la présentation.</p>
+</section>
+
+<section aria-labelledby="h-map">
+  <h2 id="h-map">Ce que contient le dépôt</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Dossier</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/tree/main/apps"><code>apps/</code></a>, <a href="https://github.com/b-fontaine/ai_voice_ui/tree/main/packages"><code>packages/</code></a></td><td>L'app Flutter : session voix, canevas, catalogue de widgets, design system.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/tree/main/backend"><code>backend/</code></a></td><td>L'orchestrateur et les trois agents A2A, en Go.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/tree/main/contracts"><code>contracts/</code></a></td><td>Le catalogue A2UI partagé entre le backend et l'app, avec des exemples de messages.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/tree/main/slides"><code>slides/</code></a></td><td>La présentation du talk (reveal.js), utilisable hors ligne.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/product/README.md"><code>product/</code></a></td><td>La documentation du produit : exigences, écran, architecture, décisions.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/knowledge/index.yaml"><code>knowledge/</code></a></td><td>Une base de notes datées et sourcées sur la voix temps réel, GenUI, A2UI et les protocoles d'agents.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/specs/README.md"><code>specs/</code></a></td><td>Une fonctionnalité par dossier : spécification, plan, tâches, état.</td></tr>
+      <tr><td><a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/tools/loop/README.md"><code>tools/loop/</code></a></td><td>La boucle de développement autonome et sa porte de qualité.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-reuse">
+  <h2 id="h-reuse">Ce que vous pouvez réutiliser</h2>
+  <p><strong>La base de connaissances.</strong> Les notes de <code>knowledge/</code> ne dépendent pas de cette démo. Elles servent de point de départ pour un projet de voix temps réel ou d'interface générée.</p>
+  <p><strong>La méthode de travail avec des agents de code.</strong> <a href="https://github.com/b-fontaine/ai_voice_ui/blob/main/AGENTS.md"><code>AGENTS.md</code></a> fixe les règles du projet ; les skills de <code>.claude/</code> obligent l'agent à consulter la documentation avant d'agir.</p>
+  <p><strong>Le patron d'architecture.</strong> Un catalogue fermé de composants, validé côté serveur puis côté app, et une clé d'API qui reste dans le backend.</p>
+</section>
+
+<footer>
+  <p>Benoît FONTAINE · <a href="https://fr.linkedin.com/in/b-fontaine">LinkedIn</a> · <a href="https://medium.benoitfontaine.fr/">Medium</a> · <a href="https://github.com/b-fontaine/ai_voice_ui">github.com/b-fontaine/ai_voice_ui</a></p>
+  <p>Démo de conférence sur des données fictives. Elle tourne en local et n'est pas prévue pour la production.</p>
+</footer>
+
+</div>
+</body>
+</html>
